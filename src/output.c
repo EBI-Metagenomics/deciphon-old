@@ -65,6 +65,12 @@ int dcp_output_write(struct dcp_output* output, struct nmm_model const* model)
     return nmm_output_write(output->nmm_output, model);
 }
 
+int dcp_output_close(struct dcp_output* output)
+{
+    fclose(output->stream);
+    return 0;
+}
+
 int dcp_output_destroy(struct dcp_output* output)
 {
     int errno = 0;
