@@ -75,15 +75,18 @@ err:
 
 int dcp_output_destroy(struct dcp_output* output)
 {
+    int   errno = 0;
     FILE* tmp_stream = NULL;
     if (nmm_output_destroy(output->tmp_output)) {
         imm_error("could not destroy temporary output");
-        goto err;
+        errno = 1;
+        goto cleanup;
     }
 
     if (fwrite(&output->nprofiles, sizeof(output->nprofiles), 1, output->stream) < 1) {
         imm_error("could not write nprofiles");
-        goto err;
+        errno = 1;
+        goto cleanup;
     }
 
     struct offset* offset = NULL;
@@ -92,50 +95,44 @@ int dcp_output_destroy(struct dcp_output* output)
         uint64_t v = start + offset->value;
         if (fwrite(&v, sizeof(v), 1, output->stream) < 1) {
             imm_error("could not write offset");
-            goto err;
+            errno = 1;
+            goto cleanup;
         }
     }
 
     tmp_stream = fopen(output->tmp_filepath, "rb");
     if (!tmp_stream) {
         imm_error("failed to open %s", output->tmp_filepath);
-        goto err;
+        errno = 1;
+        goto cleanup;
     }
 
-    if (file_copy_content(output->stream, tmp_stream))
-        goto err;
-
-    if (fclose(tmp_stream)) {
-        imm_error("failed to close file %s", output->tmp_filepath);
-        goto err;
+    if (file_copy_content(output->stream, tmp_stream)) {
+        imm_error("failed to copy file");
+        errno = 1;
+        goto cleanup;
     }
 
-    if (fclose(output->stream)) {
+cleanup:
+    if (output->stream && fclose(output->stream))
         imm_error("failed to close file %s", output->filepath);
-        goto err;
-    }
 
-    return 0;
-
-err:
     if (output->filepath)
         free_c(output->filepath);
 
-    if (output->stream)
-        fclose(output->stream);
+    if (tmp_stream && fclose(tmp_stream))
+        imm_error("failed to close file %s", output->tmp_filepath);
 
     if (output->tmp_filepath)
         free_c(output->tmp_filepath);
 
-    if (tmp_stream)
-        fclose(tmp_stream);
-
-    c_list_for_each_entry (offset, &output->profile_offsets, link) {
+    struct offset* safe = NULL;
+    c_list_for_each_entry_safe (offset, safe, &output->profile_offsets, link) {
         free_c(offset);
     }
 
     free_c(output);
-    return 1;
+    return errno;
 }
 
 int dcp_output_write(struct dcp_output* output, struct nmm_profile const* prof)

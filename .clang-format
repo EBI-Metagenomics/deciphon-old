@@ -76,6 +76,7 @@ ForEachMacros:
   - mstate_table_for_each
   - mtrans_table_for_each
   - c_list_for_each_entry
+  - c_list_for_each_entry_safe
 IncludeBlocks:   Preserve
 IncludeCategories:
   - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'

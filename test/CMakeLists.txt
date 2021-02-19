@@ -16,4 +16,4 @@ function(deciphon_add_test name)
     target_compile_definitions(test_${name} PUBLIC "TMPDIR=\"${TMPDIR}\"")
 endfunction()
 
-deciphon_add_test(output)
+deciphon_add_test(io)
