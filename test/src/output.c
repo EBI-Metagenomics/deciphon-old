@@ -75,7 +75,7 @@ void test_output(void)
     imm_seq_destroy(seq);
     imm_results_destroy(results);
 
-    struct dcp_output* output = dcp_output_create(TMPDIR "/three_models.deciphon", 3);
+    struct dcp_output* output = dcp_output_create(TMPDIR "/three_models.deciphon");
     cass_cond(output != NULL);
 
     struct nmm_profile* p = nmm_profile_create(abc);
@@ -99,14 +99,14 @@ void test_output(void)
     struct dcp_input* input = dcp_input_create(TMPDIR "/three_models.deciphon");
     cass_cond(input != NULL);
     struct dcp_partition* part = dcp_input_create_partition(input, 0, 2);
-    cass_equal(dcp_partition_nmodels(part), 2);
-    cass_cond(!dcp_partition_eof(part));
+    cass_equal(dcp_partition_nprofiles(part), 2);
+    cass_cond(!dcp_partition_end(part));
     struct nmm_profile const* prof = dcp_partition_read(part);
-    cass_cond(!dcp_partition_eof(part));
+    cass_cond(!dcp_partition_end(part));
     cass_cond(prof != NULL);
     nmm_profile_destroy(prof);
     prof = dcp_partition_read(part);
-    cass_cond(dcp_partition_eof(part));
+    cass_cond(dcp_partition_end(part));
     cass_cond(prof != NULL);
 
     dcp_input_destroy(input);

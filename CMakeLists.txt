@@ -25,6 +25,7 @@ find_package(imm REQUIRED)
 find_package(nmm REQUIRED)
 
 add_library(deciphon
+    src/file.c
     src/input.c
     src/output.c
     src/partition.c

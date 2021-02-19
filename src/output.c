@@ -1,109 +1,156 @@
-#include "deciphon/output.h"
+#include "deciphon/deciphon.h"
+#include "file.h"
 #include "free.h"
+#include "lib/c-list.h"
 #include "nmm/nmm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+struct offset
+{
+    uint64_t value;
+    CList    link;
+};
+
 struct dcp_output
 {
     char const*        filepath;
     FILE*              stream;
-    uint32_t           nmodels;
-    uint64_t*          model_offsets;
-    uint32_t           model_idx;
-    struct nmm_output* nmm_output;
-    char const*        nmm_filepath;
+    uint32_t           nprofiles;
+    CList              profile_offsets;
+    char const*        tmp_filepath;
+    struct nmm_output* tmp_output;
 };
 
 static char const* create_tmp_filepath(char const* filepath);
 
-struct dcp_output* dcp_output_create(char const* filepath, uint32_t nmodels)
+int dcp_output_close(struct dcp_output* output)
 {
-    char const* nmm_filepath = create_tmp_filepath(filepath);
+    if (fclose(output->stream)) {
+        imm_error("failed to close file %s", output->filepath);
+        return 1;
+    }
+    return 0;
+}
 
+struct dcp_output* dcp_output_create(char const* filepath)
+{
     struct dcp_output* output = malloc(sizeof(*output));
     output->filepath = strdup(filepath);
     output->stream = NULL;
-    output->nmodels = nmodels;
-    output->model_offsets = malloc(nmodels * sizeof(*output->model_offsets));
-    uint64_t start = sizeof(output->nmodels) + output->nmodels * sizeof(*output->model_offsets);
-    for (uint32_t i = 0; i < nmodels; ++i)
-        output->model_offsets[i] = start;
-    output->model_idx = 0;
-    output->nmm_output = nmm_output_create(nmm_filepath);
-    output->nmm_filepath = nmm_filepath;
-    if (!output->nmm_output) {
-        imm_error("could not output create");
-        goto ERROR;
+    output->nprofiles = 0;
+    c_list_init(&output->profile_offsets);
+    output->tmp_filepath = create_tmp_filepath(filepath);
+    output->tmp_output = NULL;
+
+    if (!(output->stream = fopen(filepath, "wb"))) {
+        imm_error("could not open file %s for writing", filepath);
+        goto err;
     }
 
-    output->stream = fopen(filepath, "wb");
-    if (!output->stream) {
-        imm_error("could not open file %s for writing", filepath);
-        goto ERROR;
+    if (!(output->tmp_output = nmm_output_create(output->tmp_filepath))) {
+        imm_error("could not create output");
+        goto err;
     }
 
     return output;
 
-ERROR:
-    free_c(output->filepath);
+err:
+    if (output->filepath)
+        free_c(output->filepath);
+
     if (output->stream)
         fclose(output->stream);
-    free_c(output->model_offsets);
-    if (output->nmm_output)
-        nmm_output_destroy(output->nmm_output);
+
+    if (output->tmp_filepath)
+        free_c(output->tmp_filepath);
+
+    if (output->tmp_output)
+        nmm_output_destroy(output->tmp_output);
+
     free_c(output);
-    free_c(nmm_filepath);
     return NULL;
-}
-
-int dcp_output_write(struct dcp_output* output, struct nmm_profile const* prof)
-{
-    IMM_BUG(output->model_idx == output->nmodels);
-    output->model_offsets[output->model_idx++] += (uint64_t)nmm_output_ftell(output->nmm_output);
-    return nmm_output_write(output->nmm_output, prof);
-}
-
-int dcp_output_close(struct dcp_output* output)
-{
-    fclose(output->stream);
-    return 0;
 }
 
 int dcp_output_destroy(struct dcp_output* output)
 {
-    int errno = 0;
-    if (nmm_output_destroy(output->nmm_output)) {
-        imm_error("could not output destroy");
-        errno = 1;
-        goto CLEANUP;
+    FILE* tmp_stream = NULL;
+    if (nmm_output_destroy(output->tmp_output)) {
+        imm_error("could not destroy temporary output");
+        goto err;
     }
 
-    fwrite(&output->nmodels, sizeof(output->nmodels), 1, output->stream);
-    for (uint32_t i = 0; i < output->nmodels; ++i) {
-        fwrite(output->model_offsets + i, sizeof(*output->model_offsets), 1, output->stream);
+    if (fwrite(&output->nprofiles, sizeof(output->nprofiles), 1, output->stream) < 1) {
+        imm_error("could not write nprofiles");
+        goto err;
     }
 
-    FILE*         istream = fopen(output->nmm_filepath, "rb");
-    char          buffer[100];
-    unsigned long n = fread(buffer, sizeof(*buffer), 100, istream);
-    while (n > 0) {
-        fwrite(buffer, sizeof(*buffer), n, output->stream);
-        n = fread(buffer, sizeof(*buffer), 100, istream);
+    struct offset* offset = NULL;
+    uint64_t       start = sizeof(output->nprofiles) + output->nprofiles * sizeof(offset->value);
+    c_list_for_each_entry (offset, &output->profile_offsets, link) {
+        uint64_t v = start + offset->value;
+        if (fwrite(&v, sizeof(v), 1, output->stream) < 1) {
+            imm_error("could not write offset");
+            goto err;
+        }
+    }
+
+    tmp_stream = fopen(output->tmp_filepath, "rb");
+    if (!tmp_stream) {
+        imm_error("failed to open %s", output->tmp_filepath);
+        goto err;
+    }
+
+    if (file_copy_content(output->stream, tmp_stream))
+        goto err;
+
+    if (fclose(tmp_stream)) {
+        imm_error("failed to close file %s", output->tmp_filepath);
+        goto err;
     }
 
     if (fclose(output->stream)) {
         imm_error("failed to close file %s", output->filepath);
-        errno = 1;
-        goto CLEANUP;
+        goto err;
     }
 
-    fclose(istream);
+    return 0;
 
-CLEANUP:
-    free_c(output->filepath);
-    return errno;
+err:
+    if (output->filepath)
+        free_c(output->filepath);
+
+    if (output->stream)
+        fclose(output->stream);
+
+    if (output->tmp_filepath)
+        free_c(output->tmp_filepath);
+
+    if (tmp_stream)
+        fclose(tmp_stream);
+
+    c_list_for_each_entry (offset, &output->profile_offsets, link) {
+        free_c(offset);
+    }
+
+    free_c(output);
+    return 1;
+}
+
+int dcp_output_write(struct dcp_output* output, struct nmm_profile const* prof)
+{
+    struct offset* offset = malloc(sizeof(*offset));
+    int64_t        v = nmm_output_ftell(output->tmp_output);
+    if (v < 0) {
+        imm_error("failed to ftell");
+        free_c(offset);
+        return 1;
+    }
+    offset->value = (uint64_t)v;
+    c_list_link_tail(&output->profile_offsets, &offset->link);
+    output->nprofiles++;
+    return nmm_output_write(output->tmp_output, prof);
 }
 
 static char const* create_tmp_filepath(char const* filepath)
