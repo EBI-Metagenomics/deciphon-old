@@ -23,12 +23,14 @@ endif()
 find_package(elapsed REQUIRED)
 find_package(imm REQUIRED)
 find_package(nmm REQUIRED)
+find_package(Threads REQUIRED)
 
 add_library(deciphon
     src/file.c
     src/input.c
     src/output.c
     src/partition.c
+    src/thread.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
@@ -62,6 +64,7 @@ target_include_directories(deciphon
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC NMM::nmm)
 target_link_libraries(deciphon PUBLIC ELAPSED::elapsed)
+target_link_libraries(deciphon PUBLIC Threads::Threads)
 set_target_properties(deciphon PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(deciphon PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 target_compile_features(deciphon PRIVATE c_std_11)

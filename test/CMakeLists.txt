@@ -7,6 +7,7 @@ function(deciphon_add_test name)
     target_link_libraries(test_${name} PRIVATE DECIPHON::deciphon)
     target_link_libraries(test_${name} PUBLIC CASS::cass)
     target_compile_options(test_${name} PRIVATE ${WARNING_FLAGS})
+    target_compile_features(test_${name} PRIVATE c_std_11)
     add_test(NAME ${name} COMMAND test_${name})
 
     set(TMPDIR "${CMAKE_CURRENT_BINARY_DIR}/test_${name}.tmp")
