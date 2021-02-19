@@ -1,8 +1,8 @@
 #include "cass/cass.h"
 #include "deciphon/deciphon.h"
-#include "nmm/nmm.h"
-#include "imm/imm.h"
 #include "helper.h"
+#include "imm/imm.h"
+#include "nmm/nmm.h"
 
 #ifndef TMPDIR
 #define TMPDIR ""
@@ -35,14 +35,12 @@ void test_output(void)
 
     struct imm_hmm* hmm = imm_hmm_create(abc);
 
-    struct nmm_frame_state const* state1 =
-        nmm_frame_state_create("S0", basep, codont, (imm_float)0.1);
+    struct nmm_frame_state const* state1 = nmm_frame_state_create("S0", basep, codont, (imm_float)0.1);
     struct nmm_codon_state const* state2 = nmm_codon_state_create("S1", codonp);
 
     imm_hmm_add_state(hmm, nmm_frame_state_super(state1), imm_log(1.0));
     imm_hmm_add_state(hmm, nmm_codon_state_super(state2), imm_log(0.0001));
-    imm_hmm_set_trans(hmm, nmm_frame_state_super(state1), nmm_codon_state_super(state2),
-                      imm_log(0.2));
+    imm_hmm_set_trans(hmm, nmm_frame_state_super(state1), nmm_codon_state_super(state2), imm_log(0.2));
 
     struct imm_path* path = imm_path_create();
     imm_path_append(path, imm_step_create(nmm_frame_state_super(state1), 1));
@@ -70,8 +68,8 @@ void test_output(void)
     cass_cond(imm_results_size(results) == 1);
     struct imm_result const* r = imm_results_get(results, 0);
     struct imm_subseq        subseq = imm_result_subseq(r);
-    struct imm_path const*   p = imm_result_path(r);
-    imm_float                loglik = imm_hmm_loglikelihood(hmm, imm_subseq_cast(&subseq), p);
+    struct imm_path const*   p_c = imm_result_path(r);
+    imm_float                loglik = imm_hmm_loglikelihood(hmm, imm_subseq_cast(&subseq), p_c);
     cass_close(loglik, -6.0198640216);
     cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
     imm_seq_destroy(seq);
@@ -80,12 +78,12 @@ void test_output(void)
     struct dcp_output* output = dcp_output_create(TMPDIR "/three_models.deciphon", 3);
     cass_cond(output != NULL);
 
-    struct nmm_model* m = nmm_model_create(abc);
-    nmm_model_append_hmm_block(m, imm_hmm_block_create(hmm, dp));
-    cass_equal(dcp_output_write(output, m), 0);
-    cass_equal(dcp_output_write(output, m), 0);
-    cass_equal(dcp_output_write(output, m), 0);
-    nmm_model_destroy(m);
+    struct nmm_profile* p = nmm_profile_create(abc);
+    nmm_profile_append_model(p, imm_model_create(hmm, dp));
+    cass_equal(dcp_output_write(output, p), 0);
+    cass_equal(dcp_output_write(output, p), 0);
+    cass_equal(dcp_output_write(output, p), 0);
+    nmm_profile_destroy(p);
     cass_equal(dcp_output_destroy(output), 0);
 
     nmm_base_abc_destroy(base);
@@ -100,26 +98,26 @@ void test_output(void)
 
     struct dcp_input* input = dcp_input_create(TMPDIR "/three_models.deciphon");
     cass_cond(input != NULL);
-    struct dcp_partition *part = dcp_input_create_partition(input, 0, 2);
+    struct dcp_partition* part = dcp_input_create_partition(input, 0, 2);
     cass_equal(dcp_partition_nmodels(part), 2);
     cass_cond(!dcp_partition_eof(part));
-    struct nmm_model const* model = dcp_partition_read(part);
+    struct nmm_profile const* prof = dcp_partition_read(part);
     cass_cond(!dcp_partition_eof(part));
-    cass_cond(model != NULL);
-    nmm_model_destroy(model);
-    model = dcp_partition_read(part);
+    cass_cond(prof != NULL);
+    nmm_profile_destroy(prof);
+    prof = dcp_partition_read(part);
     cass_cond(dcp_partition_eof(part));
-    cass_cond(model != NULL);
+    cass_cond(prof != NULL);
 
     dcp_input_destroy(input);
 
-    struct imm_hmm_block* block = nmm_model_get_hmm_block(model, 0);
+    struct imm_model* block = nmm_profile_get_model(prof, 0);
 
-    cass_equal(imm_hmm_block_nstates(block), 2);
+    cass_equal(imm_model_nstates(block), 2);
 
-    abc = nmm_model_abc(model);
-    hmm = imm_hmm_block_hmm(block);
-    dp = imm_hmm_block_dp(block);
+    abc = nmm_profile_abc(prof);
+    hmm = imm_model_hmm(block);
+    dp = imm_model_dp(block);
 
     seq = imm_seq_create("A", abc);
     task = imm_dp_task_create(dp);
@@ -129,28 +127,28 @@ void test_output(void)
     cass_cond(imm_results_size(results) == 1);
     r = imm_results_get(results, 0);
     subseq = imm_result_subseq(r);
-    p = imm_result_path(r);
-    loglik = imm_hmm_loglikelihood(hmm, imm_subseq_cast(&subseq), p);
+    p_c = imm_result_path(r);
+    loglik = imm_hmm_loglikelihood(hmm, imm_subseq_cast(&subseq), p_c);
     cass_close(loglik, -6.0198640216);
     cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
     imm_results_destroy(results);
 
-    for (uint16_t i = 0; i < imm_hmm_block_nstates(block); ++i)
-        imm_state_destroy(imm_hmm_block_state(block, i));
+    for (uint16_t i = 0; i < imm_model_nstates(block); ++i)
+        imm_state_destroy(imm_model_state(block, i));
 
-    for (uint16_t i = 0; i < nmm_model_nbase_lprobs(model); ++i)
-        nmm_base_lprob_destroy(nmm_model_base_lprob(model, i));
+    for (uint16_t i = 0; i < nmm_profile_nbase_lprobs(prof); ++i)
+        nmm_base_lprob_destroy(nmm_profile_base_lprob(prof, i));
 
-    for (uint16_t i = 0; i < nmm_model_ncodon_margs(model); ++i)
-        nmm_codon_marg_destroy(nmm_model_codon_marg(model, i));
+    for (uint16_t i = 0; i < nmm_profile_ncodon_margs(prof); ++i)
+        nmm_codon_marg_destroy(nmm_profile_codon_marg(prof, i));
 
-    for (uint16_t i = 0; i < nmm_model_ncodon_lprobs(model); ++i)
-        nmm_codon_lprob_destroy(nmm_model_codon_lprob(model, i));
+    for (uint16_t i = 0; i < nmm_profile_ncodon_lprobs(prof); ++i)
+        nmm_codon_lprob_destroy(nmm_profile_codon_lprob(prof, i));
 
     imm_seq_destroy(seq);
     imm_abc_destroy(abc);
     imm_hmm_destroy(hmm);
     imm_dp_destroy(dp);
-    nmm_model_destroy(model);
+    nmm_profile_destroy(prof);
     imm_dp_task_destroy(task);
 }

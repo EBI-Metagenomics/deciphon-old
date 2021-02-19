@@ -1,6 +1,6 @@
 #include "deciphon/output.h"
 #include "free.h"
-#include "imm/imm.h"
+#include "nmm/nmm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,11 +58,11 @@ ERROR:
     return NULL;
 }
 
-int dcp_output_write(struct dcp_output* output, struct nmm_model const* model)
+int dcp_output_write(struct dcp_output* output, struct nmm_profile const* prof)
 {
     IMM_BUG(output->model_idx == output->nmodels);
     output->model_offsets[output->model_idx++] += (uint64_t)nmm_output_ftell(output->nmm_output);
-    return nmm_output_write(output->nmm_output, model);
+    return nmm_output_write(output->nmm_output, prof);
 }
 
 int dcp_output_close(struct dcp_output* output)

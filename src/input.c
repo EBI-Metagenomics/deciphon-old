@@ -1,8 +1,7 @@
-#include "deciphon/input.h"
-#include "deciphon/partition.h"
+#include "deciphon/deciphon.h"
 #include "free.h"
-#include "imm/imm.h"
 #include "minmax.h"
+#include "nmm/nmm.h"
 #include <stdlib.h>
 #include <string.h>
 

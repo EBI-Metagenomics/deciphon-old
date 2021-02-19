@@ -11,8 +11,7 @@ struct dcp_partition
     uint32_t          curr_model;
 };
 
-struct dcp_partition* dcp_partition_create(char const* filepath, uint64_t start_offset,
-                                           uint32_t nmodels)
+struct dcp_partition* dcp_partition_create(char const* filepath, uint64_t start_offset, uint32_t nmodels)
 {
     struct dcp_partition* p = malloc(sizeof(*p));
     p->filepath = filepath;
@@ -24,7 +23,7 @@ struct dcp_partition* dcp_partition_create(char const* filepath, uint64_t start_
     return p;
 }
 
-struct nmm_model const* dcp_partition_read(struct dcp_partition* part)
+struct nmm_profile const* dcp_partition_read(struct dcp_partition* part)
 {
     if (dcp_partition_eof(part))
         return NULL;
@@ -38,9 +37,6 @@ int dcp_partition_reset(struct dcp_partition* part)
     return nmm_input_fseek(part->input, (int64_t)part->start_offset);
 }
 
-bool dcp_partition_eof(struct dcp_partition const* part)
-{
-    return part->curr_model >= part->nmodels;
-}
+bool dcp_partition_eof(struct dcp_partition const* part) { return part->curr_model >= part->nmodels; }
 
 uint32_t dcp_partition_nmodels(struct dcp_partition const* part) { return part->nmodels; }
