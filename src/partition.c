@@ -47,14 +47,13 @@ err:
 
 void dcp_partition_destroy(struct dcp_partition const* part)
 {
-    if (part->filepath)
-        free_c(part->filepath);
-
-    if (part->input)
-        nmm_input_destroy(part->input);
+    free_c(part->filepath);
+    nmm_input_destroy(part->input);
+    free_c(part);
 }
 
-bool dcp_partition_end(struct dcp_partition const* part) { return part->curr_profile >= part->nprofiles; }
+bool dcp_partition_end(struct dcp_partition const* part) { 
+    return part->curr_profile >= part->nprofiles; }
 
 uint32_t dcp_partition_nprofiles(struct dcp_partition const* part) { return part->nprofiles; }
 
