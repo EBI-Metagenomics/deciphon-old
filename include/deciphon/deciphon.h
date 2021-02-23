@@ -7,6 +7,7 @@ extern "C"
 #endif
 
 #include "deciphon/input.h"
+#include "deciphon/master.h"
 #include "deciphon/output.h"
 #include "deciphon/partition.h"
 

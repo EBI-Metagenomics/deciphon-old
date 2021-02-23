@@ -23,14 +23,18 @@ endif()
 find_package(elapsed REQUIRED)
 find_package(imm REQUIRED)
 find_package(nmm REQUIRED)
-find_package(Threads REQUIRED)
+# find_package(Threads REQUIRED)
+option(OPENMP "Enable OpenMP" On)
+if(OPENMP)
+    find_package(OpenMP)
+endif()
 
 add_library(deciphon
     src/file.c
     src/input.c
     src/output.c
     src/partition.c
-    src/thread.c
+    src/master.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
@@ -64,12 +68,14 @@ target_include_directories(deciphon
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC NMM::nmm)
 target_link_libraries(deciphon PUBLIC ELAPSED::elapsed)
-target_link_libraries(deciphon PUBLIC Threads::Threads)
+target_link_libraries(deciphon PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
+# target_link_libraries(deciphon PUBLIC Threads::Threads)
 set_target_properties(deciphon PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(deciphon PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 target_compile_features(deciphon PRIVATE c_std_11)
 target_compile_definitions(deciphon PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPRECATE>)
 target_compile_definitions(deciphon PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
+target_compile_definitions(deciphon PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OPENMP>)
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
 target_compile_options(deciphon PRIVATE "-fverbose-asm")
 target_link_libraries(deciphon INTERFACE $<$<BOOL:${UNIX}>:m>)
