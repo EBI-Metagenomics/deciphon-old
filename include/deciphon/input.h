@@ -9,8 +9,6 @@ struct dcp_input;
 struct dcp_partition;
 
 DCP_API struct dcp_input*         dcp_input_create(char const* filepath);
-DCP_API struct dcp_partition*     dcp_input_create_partition(struct dcp_input const* input, uint32_t partition,
-                                                             uint32_t npartitions);
 DCP_API int                       dcp_input_destroy(struct dcp_input* input);
 DCP_API bool                      dcp_input_end(struct dcp_input const* input);
 DCP_API struct nmm_profile const* dcp_input_read(struct dcp_input* input);

@@ -1,5 +1,6 @@
 #include "ck_ring.h"
 #include "deciphon/deciphon.h"
+#include "elapsed/elapsed.h"
 #include "nmm/nmm.h"
 #include <stdatomic.h>
 
@@ -19,14 +20,14 @@ int dcp_master(char const* db_filepath, char const* seq_str)
     memset(buffer, 0, sizeof(*buffer) * BUFFSIZE);
     ck_ring_init(&ring_spmc, BUFFSIZE);
 
-    atomic_bool finished = false;
+    atomic_bool    finished = false;
+    struct elapsed elapsed = elapsed_init();
+    elapsed_start(&elapsed);
 #pragma omp parallel default(none) shared(input, seq_str, ring_spmc, buffer, finished)
     {
 #pragma omp master
         {
-            int i = 0;
             while (!dcp_input_end(input)) {
-                printf("Producer %d\n", i++);
                 struct nmm_profile const* prof = dcp_input_read(input);
 
                 while (!ck_ring_enqueue_spmc(&ring_spmc, buffer, prof))
@@ -50,6 +51,8 @@ int dcp_master(char const* db_filepath, char const* seq_str)
     }
     dcp_input_destroy(input);
     free(buffer);
+    elapsed_end(&elapsed);
+    printf("Elapsed time: %f seconds\n", elapsed_seconds(&elapsed));
     return 0;
 }
 
