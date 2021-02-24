@@ -8,14 +8,16 @@
 #endif
 
 void test_output(void);
-void test_input_1partition(void);
-void test_master(void);
+void test_input(void);
+void test_small(void);
+void test_pfam(void);
 
 int main(void)
 {
     test_output();
-    test_input_1partition();
-    test_master();
+    test_input();
+    test_small();
+    /* test_pfam(); */
     return cass_status();
 }
 
@@ -83,6 +85,7 @@ void test_output(void)
     /* First profile */
     struct nmm_profile* p = nmm_profile_create(abc);
     nmm_profile_append_model(p, imm_model_create(hmm, dp));
+    nmm_profile_append_model(p, imm_model_create(hmm, dp));
     cass_equal(dcp_output_write(output, p), 0);
     nmm_profile_destroy(p, false);
 
@@ -106,7 +109,7 @@ void test_output(void)
     nmm_codon_lprob_destroy(codonp);
 }
 
-void test_input_1partition(void)
+void test_input(void)
 {
     struct dcp_input* input = dcp_input_create(TMPDIR "/two_profiles.deciphon");
     cass_cond(input != NULL);
@@ -117,7 +120,7 @@ void test_input_1partition(void)
     struct nmm_profile const* prof = dcp_input_read(input);
     cass_cond(!dcp_input_end(input));
     cass_cond(prof != NULL);
-    cass_equal(nmm_profile_nmodels(prof), 1);
+    cass_equal(nmm_profile_nmodels(prof), 2);
     struct imm_abc const* abc = nmm_profile_abc(prof);
 
     struct imm_model* model = nmm_profile_get_model(prof, 0);
@@ -205,8 +208,62 @@ void test_input_1partition(void)
     dcp_input_destroy(input);
 }
 
-/* void test_master(void) { dcp_master(TMPDIR "/two_profiles.deciphon", "A"); } */
-void test_master(void)
+void test_small(void)
+{
+    char const seq[] = "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
+                       "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
+                       "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC";
+
+    unsigned long N = 1;
+    /* unsigned long N = 30; */
+    char* s = malloc(sizeof(char) * (N * 2000 + 1));
+    for (unsigned long i = 0; i < N * 2000; ++i) {
+        s[i] = seq[i % 2000];
+    }
+    s[N * 2000] = '\0';
+
+    cass_cond(strlen(s) == N * 2000);
+    dcp_master(TMPDIR "/two_profiles.deciphon", s);
+}
+
+void test_pfam(void)
 {
     char const seq[] = "AAAACGCGTGTCACGACAACGCGTACGTTTCGACGAGTACGACGCCCGGG"
                        "AAAACGCGTGTCGACGACGAACGCGTACGTTTACGACGAGTACGACGCCC"
