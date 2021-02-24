@@ -34,6 +34,7 @@ add_library(deciphon
     src/input.c
     src/master.c
     src/output.c
+    src/profile.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 

@@ -3,6 +3,7 @@
 #include "imath.h"
 #include "minmax.h"
 #include "nmm/nmm.h"
+#include "profile.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -77,10 +78,9 @@ int dcp_input_destroy(struct dcp_input* input)
 
 bool dcp_input_end(struct dcp_input const* input) { return input->curr_profile >= input->nprofiles; }
 
-struct nmm_profile const* dcp_input_read(struct dcp_input* input)
+struct dcp_profile const* dcp_input_read(struct dcp_input* input)
 {
     if (dcp_input_end(input))
         return NULL;
-    input->curr_profile++;
-    return nmm_input_read(input->nmm_input);
+    return profile_create(input->curr_profile++, nmm_input_read(input->nmm_input));
 }

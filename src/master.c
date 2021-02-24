@@ -2,6 +2,7 @@
 #include "deciphon/deciphon.h"
 #include "elapsed/elapsed.h"
 #include "nmm/nmm.h"
+#include "profile.h"
 #include <stdatomic.h>
 
 #ifdef _OPENMP
@@ -10,7 +11,7 @@
 
 #define BUFFSIZE 256
 
-void process(char const* seq_str, struct nmm_profile const* prof);
+void process(char const* seq_str, struct dcp_profile const* prof);
 
 int dcp_master(char const* db_filepath, char const* seq_str)
 {
@@ -28,7 +29,7 @@ int dcp_master(char const* db_filepath, char const* seq_str)
 #pragma omp master
         {
             while (!dcp_input_end(input)) {
-                struct nmm_profile const* prof = dcp_input_read(input);
+                struct dcp_profile const* prof = dcp_input_read(input);
 
                 while (!ck_ring_enqueue_spmc(&ring_spmc, buffer, prof))
                     ck_pr_stall();
@@ -37,7 +38,7 @@ int dcp_master(char const* db_filepath, char const* seq_str)
         }
 
         while (true) {
-            struct nmm_profile const* prof = NULL;
+            struct dcp_profile const* prof = NULL;
 
             while (!ck_ring_dequeue_spmc(&ring_spmc, buffer, &prof) && !finished)
                 ck_pr_stall();
@@ -46,7 +47,7 @@ int dcp_master(char const* db_filepath, char const* seq_str)
                 break;
 
             process(seq_str, prof);
-            nmm_profile_destroy(prof, true);
+            dcp_profile_destroy(prof, true);
         }
     }
     dcp_input_destroy(input);
@@ -56,13 +57,14 @@ int dcp_master(char const* db_filepath, char const* seq_str)
     return 0;
 }
 
-void process(char const* seq_str, struct nmm_profile const* prof)
+void process(char const* seq_str, struct dcp_profile const* prof)
 {
-    struct imm_abc const* abc = nmm_profile_abc(prof);
-    struct imm_seq const* seq = imm_seq_create(seq_str, abc);
+    struct nmm_profile const* p = profile_nmm(prof);
+    struct imm_abc const*     abc = nmm_profile_abc(p);
+    struct imm_seq const*     seq = imm_seq_create(seq_str, abc);
 
-    struct imm_model* alt = nmm_profile_get_model(prof, 0);
-    struct imm_model* null = nmm_profile_get_model(prof, 1);
+    struct imm_model* alt = nmm_profile_get_model(p, 0);
+    struct imm_model* null = nmm_profile_get_model(p, 1);
 
     struct imm_hmm* hmm_alt = imm_model_hmm(alt);
     struct imm_hmm* hmm_null = imm_model_hmm(null);
