@@ -32,9 +32,10 @@ endif()
 add_library(deciphon
     src/file.c
     src/input.c
-    src/output.c
-    src/partition.c
     src/master.c
+    src/output.c
+    src/queue.c
+    src/task.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 

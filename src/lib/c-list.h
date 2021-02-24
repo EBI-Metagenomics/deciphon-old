@@ -72,11 +72,6 @@ static inline void c_list_init(CList *what) {
 #define c_list_entry(_what, _t, _m) \
         ((_t *) ((char *)(_what) - offsetof(_t, _m)))
 
-/* #define c_list_entry(_what, _t, _m) \ */
-/*         ((_t *)(void *)(((unsigned long)(void *)(_what) ?: \ */
-/*                          offsetof(_t, _m)) - offsetof(_t, _m))) */
-
-
 /**
  * c_list_is_linked() - check whether an entry is linked
  * @what:               entry to check, or NULL

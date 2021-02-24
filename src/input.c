@@ -8,14 +8,13 @@
 
 struct dcp_input
 {
-    char const* filepath;
-    FILE*       stream;
-    uint32_t    nprofiles;
-    uint64_t*   profile_offsets;
+    char const*       filepath;
+    FILE*             stream;
+    struct nmm_input* nmm_input;
+    uint32_t          nprofiles;
+    uint64_t*         profile_offsets;
+    uint32_t          curr_profile;
 };
-
-static inline uint32_t default_partition_size(uint32_t nprofiles, uint32_t npartitions);
-static inline uint32_t nprofiles_of_partition(uint32_t nprofiles, uint32_t npartitions, uint32_t partition);
 
 struct dcp_input* dcp_input_create(char const* filepath)
 {
@@ -39,6 +38,14 @@ struct dcp_input* dcp_input_create(char const* filepath)
         goto err;
     }
 
+    input->nmm_input = nmm_input_screate(filepath, input->stream);
+    if (!input->nmm_input) {
+        imm_error("could not nmm_input_screate");
+        goto err;
+    }
+
+    input->curr_profile = 0;
+
     return input;
 
 err:
@@ -51,19 +58,11 @@ err:
     if (input->profile_offsets)
         free_c(input->profile_offsets);
 
+    if (input->nmm_input)
+        nmm_input_destroy(input->nmm_input);
+
     free_c(input);
     return NULL;
-}
-
-struct dcp_partition* dcp_input_create_partition(struct dcp_input const* input, uint32_t partition,
-                                                 uint32_t npartitions)
-{
-    IMM_BUG(input->nprofiles < npartitions);
-    IMM_BUG(partition >= npartitions);
-    uint32_t part_size = default_partition_size(input->nprofiles, npartitions);
-    uint32_t index = part_size * partition;
-    uint32_t n = nprofiles_of_partition(input->nprofiles, npartitions, partition);
-    return dcp_partition_create(input->filepath, input->profile_offsets[index], n);
 }
 
 int dcp_input_destroy(struct dcp_input* input)
@@ -71,17 +70,17 @@ int dcp_input_destroy(struct dcp_input* input)
     free_c(input->filepath);
     fclose(input->stream);
     free_c(input->profile_offsets);
+    nmm_input_destroy(input->nmm_input);
     free_c(input);
     return 0;
 }
 
-static inline uint32_t default_partition_size(uint32_t nprofiles, uint32_t npartitions)
-{
-    return imath_ceildiv(nprofiles, npartitions);
-}
+bool dcp_input_end(struct dcp_input const* input) { return input->curr_profile >= input->nprofiles; }
 
-static inline uint32_t nprofiles_of_partition(uint32_t nprofiles, uint32_t npartitions, uint32_t partition)
+struct nmm_profile const* dcp_input_read(struct dcp_input* input)
 {
-    uint32_t part_size = default_partition_size(nprofiles, npartitions);
-    return MIN(part_size, nprofiles - part_size * partition);
+    if (dcp_input_end(input))
+        return NULL;
+    input->curr_profile++;
+    return nmm_input_read(input->nmm_input);
 }
