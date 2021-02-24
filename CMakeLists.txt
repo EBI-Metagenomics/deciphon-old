@@ -34,8 +34,6 @@ add_library(deciphon
     src/input.c
     src/master.c
     src/output.c
-    src/queue.c
-    src/task.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
@@ -69,6 +67,7 @@ target_include_directories(deciphon
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC NMM::nmm)
 target_link_libraries(deciphon PUBLIC ELAPSED::elapsed)
+target_link_libraries(deciphon PUBLIC ck)
 target_link_libraries(deciphon PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 target_link_libraries(deciphon PUBLIC Threads::Threads)
 set_target_properties(deciphon PROPERTIES VERSION ${PROJECT_VERSION})

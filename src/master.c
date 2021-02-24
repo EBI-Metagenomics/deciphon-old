@@ -1,47 +1,55 @@
+#include "ck_ring.h"
 #include "deciphon/deciphon.h"
 #include "nmm/nmm.h"
-#include "queue.h"
-#include "task.h"
+#include <stdatomic.h>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
+#define BUFFSIZE 256
+
 void process(char const* seq_str, struct nmm_profile const* prof);
 
 int dcp_master(char const* db_filepath, char const* seq_str)
 {
-    struct dcp_input* input = dcp_input_create(db_filepath);
-    struct queue*     queue = queue_create(256);
+    struct dcp_input*   input = dcp_input_create(db_filepath);
+    ck_ring_t ring_spmc CK_CC_CACHELINE;
+    ck_ring_buffer_t*   buffer = malloc(sizeof(*buffer) * BUFFSIZE);
+    memset(buffer, 0, sizeof(*buffer) * BUFFSIZE);
+    ck_ring_init(&ring_spmc, BUFFSIZE);
 
-#pragma omp parallel default(none) shared(input, seq_str, queue)
+    atomic_bool finished = false;
+#pragma omp parallel default(none) shared(input, seq_str, ring_spmc, buffer, finished)
     {
 #pragma omp master
         {
-            /* int i = 0; */
+            int i = 0;
             while (!dcp_input_end(input)) {
-                /* printf("Producer %d\n", i++); */
+                printf("Producer %d\n", i++);
                 struct nmm_profile const* prof = dcp_input_read(input);
-                struct task*              task = task_create(prof);
-                queue_push(queue, task);
+
+                while (!ck_ring_enqueue_spmc(&ring_spmc, buffer, prof))
+                    ck_pr_stall();
             }
-            queue_finish(queue);
+            finished = true;
         }
 
         while (true) {
-            struct task* task = NULL;
+            struct nmm_profile const* prof = NULL;
 
-            task = queue_pop(queue);
-            if (task) {
-                /* printf("Process\n"); */
-                process(seq_str, task->profile);
-            } else {
+            while (!ck_ring_dequeue_spmc(&ring_spmc, buffer, &prof) && !finished)
+                ck_pr_stall();
+
+            if (finished)
                 break;
-            }
+
+            process(seq_str, prof);
+            nmm_profile_destroy(prof, true);
         }
     }
-    queue_destroy(queue);
     dcp_input_destroy(input);
+    free(buffer);
     return 0;
 }
 
@@ -81,5 +89,4 @@ void process(char const* seq_str, struct nmm_profile const* prof)
     imm_seq_destroy(seq);
     imm_dp_task_destroy(task_alt);
     imm_dp_task_destroy(task_null);
-    nmm_profile_destroy(prof, true);
 }
