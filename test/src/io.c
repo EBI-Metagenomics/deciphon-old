@@ -15,7 +15,7 @@ void test_pfam(void);
 int main(void)
 {
     test_output();
-    test_input();
+    /* test_input(); */
     test_small();
     /* test_pfam(); */
     return cass_status();
@@ -261,6 +261,7 @@ void test_small(void)
 
     cass_cond(strlen(s) == N * 2000);
     dcp_master(TMPDIR "/two_profiles.deciphon", s);
+    free(s);
 }
 
 void test_pfam(void)

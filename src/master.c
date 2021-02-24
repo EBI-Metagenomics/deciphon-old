@@ -42,7 +42,7 @@ int dcp_master(char const* db_filepath, char const* seq_str)
             while (!ck_ring_dequeue_spmc(&ring_spmc, buffer, &prof) && !finished)
                 ck_pr_stall();
 
-            if (finished)
+            if (!prof && finished)
                 break;
 
             process(seq_str, prof);
@@ -87,7 +87,7 @@ void process(char const* seq_str, struct nmm_profile const* prof)
     imm_float null_loglik = imm_hmm_loglikelihood(hmm_null, imm_subseq_cast(&subseq), imm_result_path(r));
     imm_results_destroy(results);
 
-    /* printf("alt_loglik: %f vs null_loglik: %f\n", alt_loglik, null_loglik); */
+    printf("alt_loglik: %f vs null_loglik: %f\n", alt_loglik, null_loglik);
 
     imm_seq_destroy(seq);
     imm_dp_task_destroy(task_alt);
