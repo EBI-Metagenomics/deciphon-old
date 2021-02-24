@@ -1,6 +1,6 @@
 #include "deciphon/deciphon.h"
-#include "elapsed/elapsed.h"
 #include "lib/c-list.h"
+#include "lib/c11threads.h"
 #include "nmm/nmm.h"
 #ifdef _OPENMP
 #include <omp.h>
@@ -26,57 +26,70 @@ struct task* task_create(struct nmm_profile const* prof)
 
 struct queue
 {
-    /* omp_lock_t   lock; */
     struct CList tasks;
     uint32_t     ntasks;
     uint32_t     max_size;
-    /* omp_lock_t   full; */
-    /* omp_lock_t   empty; */
+
+    mtx_t mtx;
+    cnd_t empty;
+    cnd_t full;
+    bool  finished;
 };
 
 struct queue* queue_create(uint32_t max_size);
 void          queue_push(struct queue* queue, struct task* task);
 struct task*  queue_pop(struct queue* queue);
 uint32_t      queue_size(struct queue* queue);
-void          queue_lock_push(struct queue* queue);
-void          queue_unlock_push(struct queue* queue);
-/* void          queue_wait_not_full(struct queue* queue); */
-/* void          queue_wait_not_empty(struct queue* queue); */
+void          queue_finish(struct queue* queue);
 
 struct queue* queue_create(uint32_t max_size)
 {
     struct queue* queue = malloc(sizeof(*queue));
-    /* omp_init_lock(&queue->lock); */
+
     c_list_init(&queue->tasks);
     queue->ntasks = 0;
     queue->max_size = max_size;
-    /* omp_init_lock(&queue->full); */
-    /* omp_init_lock(&queue->empty); */
-    /* omp_set_lock(&queue->empty); */
+
+    mtx_init(&queue->mtx, mtx_plain);
+    cnd_init(&queue->empty);
+    cnd_init(&queue->full);
+    queue->finished = false;
+
     return queue;
 }
 
-/* void queue_wait_not_full(struct queue* queue) { omp_set_lock(&queue->full); } */
-
-/* void queue_wait_not_empty(struct queue* queue) { omp_set_lock(&queue->empty); } */
-
-/* void queue_lock_push(struct queue* queue) { omp_set_lock(&queue->push_lock); } */
-
-/* void queue_unlock_push(struct queue* queue) { omp_unset_lock(&queue->push_lock); } */
-
 void queue_push(struct queue* queue, struct task* task)
 {
-    /* omp_set_lock(&queue->lock); */
+    mtx_lock(&queue->mtx);
+
+    while (queue->ntasks >= queue->max_size) {
+        struct timespec now;
+        timespec_get(&now, TIME_UTC);
+        now.tv_sec += 1;
+        cnd_timedwait(&queue->full, &queue->mtx, &now);
+    }
 
     c_list_link_tail(&queue->tasks, &task->link);
     queue->ntasks++;
 
-    /* omp_unset_lock(&queue->lock); */
+    if (queue->ntasks == 1)
+        cnd_broadcast(&queue->empty);
+
+    mtx_unlock(&queue->mtx);
 }
 
 struct task* queue_pop(struct queue* queue)
 {
-    /* omp_set_lock(&queue->lock); */
+    mtx_lock(&queue->mtx);
+
+    while (queue->ntasks == 0 && !queue->finished) {
+        cnd_wait(&queue->empty, &queue->mtx);
+    }
+
+    if (queue->ntasks == 0 && queue->finished) {
+        mtx_unlock(&queue->mtx);
+        return NULL;
+    }
 
     struct CList* elem = c_list_first(&queue->tasks);
     struct task*  task = NULL;
@@ -84,102 +97,53 @@ struct task* queue_pop(struct queue* queue)
         task = c_list_entry(elem, struct task, link);
         c_list_unlink(elem);
         queue->ntasks--;
+        if (queue->ntasks + 1 == queue->max_size)
+            cnd_broadcast(&queue->full);
     }
 
-    /* omp_unset_lock(&queue->lock); */
+    mtx_unlock(&queue->mtx);
     return task;
 }
 
 uint32_t queue_size(struct queue* queue) { return queue->ntasks; }
 
+void queue_finish(struct queue* queue)
+{
+    mtx_lock(&queue->mtx);
+    queue->finished = true;
+    mtx_unlock(&queue->mtx);
+}
+
 int dcp_master(char const* db_filepath, char const* seq_str)
 {
     struct dcp_input*     input = dcp_input_create(db_filepath);
     struct dcp_partition* part = dcp_input_create_partition(input, 0, 1);
-    struct queue*         queue = queue_create(2);
-    bool                  finished = false;
-    omp_lock_t            push_lock;
-    omp_lock_t            pop_lock;
-    omp_init_lock(&push_lock);
-    omp_init_lock(&pop_lock);
-    omp_set_lock(&pop_lock);
+    struct queue*         queue = queue_create(512);
 
-#pragma omp parallel default(none) shared(part, seq_str, queue, finished, push_lock, pop_lock) /* if(1 == 2) */
+#pragma omp parallel default(none) shared(part, seq_str, queue) /* if(1 == 2) */
     {
 #pragma omp master
         {
             int i = 0;
             while (!dcp_partition_end(part)) {
-                /* printf("Read profile %d\n", i); */
-                printf("Producer\n");
-                i++;
+                printf("Producer %d\n", i++);
                 struct nmm_profile const* prof = dcp_partition_read(part);
                 struct task*              task = task_create(prof);
-
-                omp_set_lock(&push_lock);
-
-                printf("Producer 1\n");
-#pragma omp        critical(queue)
-                {
-                    printf("Producer 2\n");
-                    omp_unset_lock(&push_lock);
-                    printf("Producer 3\n");
-                    queue_push(queue, task);
-                    printf("Producer 4\n");
-                    if (queue_size(queue) == 4)
-                        omp_set_lock(&push_lock);
-                    printf("Producer 5\n");
-                    if (queue_size(queue) == 1) {
-#pragma omp critical(pop)
-                        {
-                            omp_unset_lock(&pop_lock);
-                        }
-                    }
-                    printf("Producer 6\n");
-                }
+                queue_push(queue, task);
             }
-#pragma omp atomic write
-            finished = true;
-            printf("FINISHED\n");
+            queue_finish(queue);
         }
 
         while (true) {
             struct task* task = NULL;
-            printf("Consumer\n");
 
-#pragma omp critical(pop)
-            {
-                omp_set_lock(&pop_lock);
-            }
-
-            printf("Consumer 1\n");
-#pragma omp critical(queue)
-            {
-                printf("Consumer 2\n");
-
-#pragma omp critical(pop)
-                {
-                    omp_unset_lock(&pop_lock);
-                }
-                printf("Consumer 3\n");
-                task = queue_pop(queue);
-                printf("Consumer 4\n");
-                if (queue_size(queue) == 3)
-                    omp_unset_lock(&push_lock);
-                printf("Consumer 5\n");
-                if (queue_size(queue) == 0) {
-#pragma omp critical(pop)
-                    {
-                        omp_set_lock(&pop_lock);
-                    }
-                }
-                printf("Consumer 6\n");
-            }
+            task = queue_pop(queue);
             if (task) {
-                printf("process\n");
-                process(seq_str, task->profile);
-            } else
-                printf(".");
+                printf("Process\n");
+                /* process(seq_str, task->profile); */
+            } else {
+                break;
+            }
         }
     }
     dcp_partition_destroy(part);
