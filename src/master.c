@@ -16,10 +16,10 @@ void process(char const* seq_str, struct dcp_profile const* prof);
 int dcp_master(char const* db_filepath, char const* seq_str)
 {
     struct dcp_input*   input = dcp_input_create(db_filepath);
+
     ck_ring_t ring_spmc CK_CC_CACHELINE;
-    ck_ring_buffer_t*   buffer = malloc(sizeof(*buffer) * BUFFSIZE);
-    memset(buffer, 0, sizeof(*buffer) * BUFFSIZE);
     ck_ring_init(&ring_spmc, BUFFSIZE);
+    ck_ring_buffer_t    buffer[BUFFSIZE] = {0};
 
     atomic_bool    finished = false;
     struct elapsed elapsed = elapsed_init();
@@ -37,21 +37,21 @@ int dcp_master(char const* db_filepath, char const* seq_str)
             finished = true;
         }
 
-        while (true) {
+        do {
             struct dcp_profile const* prof = NULL;
+            bool                      ok = true;
 
-            while (!ck_ring_dequeue_spmc(&ring_spmc, buffer, &prof) && !finished)
+            while (!(ok = ck_ring_dequeue_spmc(&ring_spmc, buffer, &prof)) && !finished) {
                 ck_pr_stall();
+            }
 
-            if (!prof && finished)
-                break;
-
-            process(seq_str, prof);
-            dcp_profile_destroy(prof, true);
-        }
+            if (ok) {
+                process(seq_str, prof);
+                dcp_profile_destroy(prof, true);
+            }
+        } while (!finished);
     }
     dcp_input_destroy(input);
-    free(buffer);
     elapsed_end(&elapsed);
     printf("Elapsed time: %f seconds\n", elapsed_seconds(&elapsed));
     return 0;
@@ -75,21 +75,15 @@ void process(char const* seq_str, struct dcp_profile const* prof)
     struct imm_dp_task* task_alt = imm_dp_task_create(dp_alt);
     struct imm_dp_task* task_null = imm_dp_task_create(dp_null);
 
-    imm_dp_task_setup(task_alt, seq, 0);
-    struct imm_results const* results = imm_dp_viterbi(dp_alt, task_alt);
-    struct imm_result const*  r = imm_results_get(results, 0);
-    struct imm_subseq         subseq = imm_result_subseq(r);
-    imm_float                 alt_loglik = imm_hmm_loglikelihood(hmm_alt, imm_subseq_cast(&subseq), imm_result_path(r));
-    imm_results_destroy(results);
+    imm_dp_task_setup(task_alt, seq);
+    struct imm_result const* r = imm_dp_viterbi(dp_alt, task_alt);
+    imm_float                alt_loglik = imm_hmm_loglikelihood(hmm_alt, seq, imm_result_path(r));
+    imm_result_destroy(r);
 
-    imm_dp_task_setup(task_null, seq, 0);
-    results = imm_dp_viterbi(dp_null, task_null);
-    r = imm_results_get(results, 0);
-    subseq = imm_result_subseq(r);
-    imm_float null_loglik = imm_hmm_loglikelihood(hmm_null, imm_subseq_cast(&subseq), imm_result_path(r));
-    imm_results_destroy(results);
-
-    printf("alt_loglik: %f vs null_loglik: %f\n", alt_loglik, null_loglik);
+    imm_dp_task_setup(task_null, seq);
+    r = imm_dp_viterbi(dp_null, task_null);
+    imm_float null_loglik = imm_hmm_loglikelihood(hmm_null, seq, imm_result_path(r));
+    imm_result_destroy(r);
 
     imm_seq_destroy(seq);
     imm_dp_task_destroy(task_alt);

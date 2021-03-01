@@ -15,7 +15,7 @@ void test_pfam(void);
 int main(void)
 {
     test_output();
-    /* test_input(); */
+    test_input();
     test_small();
     /* test_pfam(); */
     return cass_status();
@@ -66,18 +66,15 @@ void test_output(void)
 
     seq = imm_seq_create("A", abc);
     struct imm_dp_task* task = imm_dp_task_create(dp);
-    imm_dp_task_setup(task, seq, 0);
-    struct imm_results const* results = imm_dp_viterbi(dp, task);
+    imm_dp_task_setup(task, seq);
+    struct imm_result const* r = imm_dp_viterbi(dp, task);
     imm_dp_task_destroy(task);
-    cass_cond(results != NULL);
-    cass_cond(imm_results_size(results) == 1);
-    struct imm_result const* r = imm_results_get(results, 0);
-    struct imm_subseq        subseq = imm_result_subseq(r);
-    imm_float                loglik = imm_hmm_loglikelihood(hmm, imm_subseq_cast(&subseq), imm_result_path(r));
+    cass_cond(r != NULL);
+    imm_float loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
     cass_close(loglik, -6.0198640216);
     cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
     imm_seq_destroy(seq);
-    imm_results_destroy(results);
+    imm_result_destroy(r);
 
     struct dcp_output* output = dcp_output_create(TMPDIR "/two_profiles.deciphon");
     cass_cond(output != NULL);
@@ -117,13 +114,13 @@ void test_input(void)
     cass_cond(!dcp_input_end(input));
 
     /* ------------------ first profile ------------------ */
-    struct nmm_profile const* prof = dcp_input_read(input);
+    struct dcp_profile const* prof = dcp_input_read(input);
     cass_cond(!dcp_input_end(input));
     cass_cond(prof != NULL);
-    cass_equal(nmm_profile_nmodels(prof), 2);
-    struct imm_abc const* abc = nmm_profile_abc(prof);
+    cass_equal(dcp_profile_nmodels(prof), 2);
+    struct imm_abc const* abc = dcp_profile_abc(prof);
 
-    struct imm_model* model = nmm_profile_get_model(prof, 0);
+    struct imm_model* model = dcp_profile_get_model(prof, 0);
 
     cass_equal(imm_model_nstates(model), 2);
 
@@ -132,31 +129,28 @@ void test_input(void)
 
     struct imm_seq const* seq = imm_seq_create("A", abc);
     struct imm_dp_task*   task = imm_dp_task_create(dp);
-    imm_dp_task_setup(task, seq, 0);
-    struct imm_results const* results = imm_dp_viterbi(dp, task);
-    cass_cond(results != NULL);
-    cass_cond(imm_results_size(results) == 1);
-    struct imm_result const* r = imm_results_get(results, 0);
-    struct imm_subseq        subseq = imm_result_subseq(r);
-    imm_float                loglik = imm_hmm_loglikelihood(hmm, imm_subseq_cast(&subseq), imm_result_path(r));
+    imm_dp_task_setup(task, seq);
+    struct imm_result const* r = imm_dp_viterbi(dp, task);
+    cass_cond(r != NULL);
+    imm_float loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
 
     cass_close(loglik, -6.0198640216);
     cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
-    imm_results_destroy(results);
+    imm_result_destroy(r);
 
     imm_dp_task_destroy(task);
     imm_seq_destroy(seq);
-    nmm_profile_destroy(prof, true);
+    dcp_profile_destroy(prof, true);
 
     /* ------------------ second profile ------------------ */
     prof = dcp_input_read(input);
     cass_cond(prof != NULL);
     cass_cond(dcp_input_end(input));
-    cass_equal(nmm_profile_nmodels(prof), 2);
-    abc = nmm_profile_abc(prof);
+    cass_equal(dcp_profile_nmodels(prof), 2);
+    abc = dcp_profile_abc(prof);
 
     /* First model */
-    model = nmm_profile_get_model(prof, 0);
+    model = dcp_profile_get_model(prof, 0);
 
     cass_equal(imm_model_nstates(model), 2);
 
@@ -165,23 +159,20 @@ void test_input(void)
 
     seq = imm_seq_create("A", abc);
     task = imm_dp_task_create(dp);
-    imm_dp_task_setup(task, seq, 0);
-    results = imm_dp_viterbi(dp, task);
-    cass_cond(results != NULL);
-    cass_cond(imm_results_size(results) == 1);
-    r = imm_results_get(results, 0);
-    subseq = imm_result_subseq(r);
-    loglik = imm_hmm_loglikelihood(hmm, imm_subseq_cast(&subseq), imm_result_path(r));
+    imm_dp_task_setup(task, seq);
+    r = imm_dp_viterbi(dp, task);
+    cass_cond(r != NULL);
+    loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
 
     cass_close(loglik, -6.0198640216);
     cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
-    imm_results_destroy(results);
+    imm_result_destroy(r);
 
     imm_dp_task_destroy(task);
     imm_seq_destroy(seq);
 
     /* Second model */
-    model = nmm_profile_get_model(prof, 1);
+    model = dcp_profile_get_model(prof, 1);
 
     cass_equal(imm_model_nstates(model), 2);
 
@@ -190,21 +181,18 @@ void test_input(void)
 
     seq = imm_seq_create("A", abc);
     task = imm_dp_task_create(dp);
-    imm_dp_task_setup(task, seq, 0);
-    results = imm_dp_viterbi(dp, task);
-    cass_cond(results != NULL);
-    cass_cond(imm_results_size(results) == 1);
-    r = imm_results_get(results, 0);
-    subseq = imm_result_subseq(r);
-    loglik = imm_hmm_loglikelihood(hmm, imm_subseq_cast(&subseq), imm_result_path(r));
+    imm_dp_task_setup(task, seq);
+    r = imm_dp_viterbi(dp, task);
+    cass_cond(r != NULL);
+    loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
 
     cass_close(loglik, -6.0198640216);
     cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
-    imm_results_destroy(results);
+    imm_result_destroy(r);
 
     imm_dp_task_destroy(task);
     imm_seq_destroy(seq);
-    nmm_profile_destroy(prof, true);
+    dcp_profile_destroy(prof, true);
     dcp_input_destroy(input);
 }
 
