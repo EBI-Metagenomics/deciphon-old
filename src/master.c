@@ -15,11 +15,11 @@ void process(char const* seq_str, struct dcp_profile const* prof);
 
 int dcp_master(char const* db_filepath, char const* seq_str)
 {
-    struct dcp_input*   input = dcp_input_create(db_filepath);
+    struct dcp_input* input = dcp_input_create(db_filepath);
 
     ck_ring_t ring_spmc CK_CC_CACHELINE;
     ck_ring_init(&ring_spmc, BUFFSIZE);
-    ck_ring_buffer_t    buffer[BUFFSIZE] = {0};
+    ck_ring_buffer_t buffer[BUFFSIZE] = {0};
 
     atomic_bool    finished = false;
     struct elapsed elapsed = elapsed_init();
@@ -30,6 +30,7 @@ int dcp_master(char const* db_filepath, char const* seq_str)
         {
             while (!dcp_input_end(input)) {
                 struct dcp_profile const* prof = dcp_input_read(input);
+                printf("dcp_input_read\n");
 
                 while (!ck_ring_enqueue_spmc(&ring_spmc, buffer, prof))
                     ck_pr_stall();
@@ -37,9 +38,9 @@ int dcp_master(char const* db_filepath, char const* seq_str)
             finished = true;
         }
 
+        bool ok = true;
         do {
             struct dcp_profile const* prof = NULL;
-            bool                      ok = true;
 
             while (!(ok = ck_ring_dequeue_spmc(&ring_spmc, buffer, &prof)) && !finished) {
                 ck_pr_stall();
@@ -48,8 +49,9 @@ int dcp_master(char const* db_filepath, char const* seq_str)
             if (ok) {
                 process(seq_str, prof);
                 dcp_profile_destroy(prof, true);
+                printf("dcp_profile_destroy\n");
             }
-        } while (!finished);
+        } while (ok || !finished);
     }
     dcp_input_destroy(input);
     elapsed_end(&elapsed);
