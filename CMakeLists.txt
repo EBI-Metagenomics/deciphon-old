@@ -31,9 +31,12 @@ endif()
 add_library(deciphon
     src/file.c
     src/input.c
-    src/master.c
     src/output.c
     src/profile.c
+    src/profile_ring.c
+    src/result.c
+    src/result_ring.c
+    src/server.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 

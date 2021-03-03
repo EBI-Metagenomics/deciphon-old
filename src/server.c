@@ -1,0 +1,143 @@
+#include "deciphon/deciphon.h"
+#include "elapsed/elapsed.h"
+#include "free.h"
+#include "nmm/nmm.h"
+#include "profile.h"
+#include "profile_ring.h"
+#include "result.h"
+#include "result_ring.h"
+#include <stdatomic.h>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+struct dcp_server
+{
+    struct dcp_input*   input;
+    atomic_bool         finished;
+    atomic_uint         nrunning_tasks;
+    char const*         filepath;
+    char const*         sequence;
+    struct profile_ring profiles;
+    struct result_ring  results;
+    struct elapsed      elapsed;
+};
+
+void              destroy(struct dcp_server* server);
+void              init(struct dcp_server* server, char const* filepath, char const* seq);
+void              profile_consumer(struct dcp_server* server);
+void              profile_producer(struct dcp_server* server);
+void              result_consumer(struct dcp_server* server);
+struct dcp_result scan(struct dcp_server* server, struct dcp_profile const* profile);
+
+struct dcp_server* dcp_server_create(char const* filepath, char const* sequence)
+{
+    struct dcp_server* server = malloc(sizeof(*server));
+    server->input = dcp_input_create(filepath);
+    server->finished = false;
+    server->nrunning_tasks = 0;
+    server->filepath = filepath;
+    server->sequence = sequence;
+    server->profiles = profile_ring_init();
+    server->results = result_ring_init();
+    server->elapsed = elapsed_init();
+    return server;
+}
+
+void dcp_server_destroy(struct dcp_server const* server) { free_c(server); }
+
+double dcp_server_elapsed(struct dcp_server const* server) { return elapsed_seconds(&server->elapsed); }
+
+void dcp_server_start(struct dcp_server* server)
+{
+    elapsed_start(&server->elapsed);
+#pragma omp        parallel default(none) shared(server)
+    {
+#pragma omp single nowait
+        profile_producer(server);
+
+#pragma omp task
+        profile_consumer(server);
+
+#pragma omp single nowait
+        result_consumer(server);
+    }
+    elapsed_end(&server->elapsed);
+}
+
+void profile_consumer(struct dcp_server* server)
+{
+    server->nrunning_tasks++;
+    struct dcp_profile const* prof = NULL;
+    do {
+        while (!(prof = profile_ring_pop(&server->profiles)) && !server->finished) {
+            ck_pr_stall();
+        }
+
+        if (prof) {
+            struct dcp_result  r = scan(server, prof);
+            struct dcp_result* nr = malloc(sizeof(*nr));
+            memcpy(nr, &r, sizeof(r));
+            result_ring_push(&server->results, nr);
+            dcp_profile_destroy(prof, true);
+        }
+    } while (prof || !server->finished);
+    server->nrunning_tasks--;
+}
+
+void profile_producer(struct dcp_server* server)
+{
+    while (!dcp_input_end(server->input)) {
+        struct dcp_profile const* prof = dcp_input_read(server->input);
+        profile_ring_push(&server->profiles, prof);
+    }
+    dcp_input_destroy(server->input);
+    server->finished = true;
+}
+
+void result_consumer(struct dcp_server* server)
+{
+    struct dcp_result const* result = NULL;
+    do {
+        while (!(result = result_ring_pop(&server->results)) && (!server->finished || server->nrunning_tasks > 0)) {
+            ck_pr_stall();
+        }
+
+        if (result) {
+            result_destroy(result);
+        }
+    } while (result || !server->finished || server->nrunning_tasks > 0);
+}
+
+struct dcp_result scan(struct dcp_server* server, struct dcp_profile const* profile)
+{
+    struct nmm_profile const* p = profile_nmm(profile);
+    struct imm_abc const*     abc = nmm_profile_abc(p);
+    struct imm_seq const*     seq = imm_seq_create(server->sequence, abc);
+
+    struct imm_model* alt = nmm_profile_get_model(p, 0);
+    struct imm_model* null = nmm_profile_get_model(p, 1);
+
+    struct imm_hmm* hmm_alt = imm_model_hmm(alt);
+    struct imm_hmm* hmm_null = imm_model_hmm(null);
+
+    struct imm_dp const* dp_alt = imm_model_dp(alt);
+    struct imm_dp const* dp_null = imm_model_dp(null);
+
+    struct imm_dp_task* task_alt = imm_dp_task_create(dp_alt);
+    struct imm_dp_task* task_null = imm_dp_task_create(dp_null);
+
+    imm_dp_task_setup(task_alt, seq);
+    struct imm_result const* alt_result = imm_dp_viterbi(dp_alt, task_alt);
+    imm_float                alt_loglik = imm_hmm_loglikelihood(hmm_alt, seq, imm_result_path(alt_result));
+
+    imm_dp_task_setup(task_null, seq);
+    struct imm_result const* null_result = imm_dp_viterbi(dp_null, task_null);
+    imm_float                null_loglik = imm_hmm_loglikelihood(hmm_null, seq, imm_result_path(null_result));
+
+    imm_seq_destroy(seq);
+    imm_dp_task_destroy(task_alt);
+    imm_dp_task_destroy(task_null);
+    return (struct dcp_result){dcp_profile_id(profile), null_result, null_loglik, alt_result, alt_loglik};
+}
