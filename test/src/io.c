@@ -210,7 +210,7 @@ void test_small(void)
     }
 
     for (uint32_t i = 0; i < nresults; ++i)
-        free((void*)results[i]);
+        dcp_result_destroy(results[i]);
     free(results);
 }
 
