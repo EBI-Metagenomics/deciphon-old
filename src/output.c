@@ -135,7 +135,7 @@ cleanup:
     return errno;
 }
 
-int dcp_output_write(struct dcp_output* output, struct nmm_profile const* prof)
+int dcp_output_write(struct dcp_output* output, struct dcp_profile const* prof)
 {
     struct offset* offset = malloc(sizeof(*offset));
     int64_t        v = nmm_output_ftell(output->tmp_output);
@@ -147,7 +147,7 @@ int dcp_output_write(struct dcp_output* output, struct nmm_profile const* prof)
     offset->value = (uint64_t)v;
     c_list_link_tail(&output->profile_offsets, &offset->link);
     output->nprofiles++;
-    return nmm_output_write(output->tmp_output, prof);
+     return nmm_output_write(output->tmp_output, dcp_profile_nmm_profile(prof));
 }
 
 static char const* create_tmp_filepath(char const* filepath)

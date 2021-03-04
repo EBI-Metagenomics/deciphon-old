@@ -120,7 +120,7 @@ void result_consumer(struct dcp_server* server)
 
 struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile)
 {
-    struct nmm_profile const* p = profile_nmm(profile);
+    struct nmm_profile const* p = dcp_profile_nmm_profile(profile);
     struct imm_abc const*     abc = nmm_profile_abc(p);
     struct imm_seq const*     seq = imm_seq_create(server->sequence, abc);
 

@@ -80,18 +80,18 @@ void test_output(void)
     cass_cond(output != NULL);
 
     /* First profile */
-    struct nmm_profile* p = nmm_profile_create(abc);
-    nmm_profile_append_model(p, imm_model_create(hmm, dp));
-    nmm_profile_append_model(p, imm_model_create(hmm, dp));
+    struct dcp_profile* p = dcp_profile_create(abc);
+    dcp_profile_append_model(p, imm_model_create(hmm, dp));
+    dcp_profile_append_model(p, imm_model_create(hmm, dp));
     cass_equal(dcp_output_write(output, p), 0);
-    nmm_profile_destroy(p, false);
+    dcp_profile_destroy(p, false);
 
     /* Second profile */
-    p = nmm_profile_create(abc);
-    nmm_profile_append_model(p, imm_model_create(hmm, dp));
-    nmm_profile_append_model(p, imm_model_create(hmm, dp));
+    p = dcp_profile_create(abc);
+    dcp_profile_append_model(p, imm_model_create(hmm, dp));
+    dcp_profile_append_model(p, imm_model_create(hmm, dp));
     cass_equal(dcp_output_write(output, p), 0);
-    nmm_profile_destroy(p, false);
+    dcp_profile_destroy(p, false);
 
     cass_equal(dcp_output_destroy(output), 0);
 
@@ -208,15 +208,6 @@ void test_small(void)
         cass_close(dcp_result_alt_loglik(results[i]), -6.0198640823);
         cass_close(dcp_result_null_loglik(results[i]), -6.0198640823);
         printf("Alt stream: %s\n", dcp_result_alt_stream(results[i]));
-        /* printf("Nul stream: %s\n", dcp_result_null_stream(results[i])); */
-        /* struct imm_result const* alt = dcp_result_alt_result(results[i]); */
-        /* struct imm_path const*   path = imm_result_path(alt); */
-        /* struct imm_step const*   step = imm_path_first(path); */
-        /* while (step) { */
-
-        /*     imm_step_state(step); */
-        /*     step = imm_path_next(path, step); */
-        /* } */
     }
 
     for (uint32_t i = 0; i < nresults; ++i)
