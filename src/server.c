@@ -14,33 +14,30 @@
 
 struct dcp_server
 {
-    struct dcp_input*   input;
     atomic_bool         finished;
     atomic_uint         nrunning_tasks;
     char const*         filepath;
     char const*         sequence;
     struct profile_ring profiles;
-    struct result_ring  results;
+    CList               results;
     struct elapsed      elapsed;
 };
 
-void              destroy(struct dcp_server* server);
-void              init(struct dcp_server* server, char const* filepath, char const* seq);
-void              profile_consumer(struct dcp_server* server);
-void              profile_producer(struct dcp_server* server);
-void              result_consumer(struct dcp_server* server);
-struct dcp_result scan(struct dcp_server* server, struct dcp_profile const* profile);
+void               destroy(struct dcp_server* server);
+void               init(struct dcp_server* server, char const* filepath, char const* seq);
+void               profile_consumer(struct dcp_server* server);
+void               profile_producer(struct dcp_server* server);
+struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile);
 
 struct dcp_server* dcp_server_create(char const* filepath, char const* sequence)
 {
     struct dcp_server* server = malloc(sizeof(*server));
-    server->input = dcp_input_create(filepath);
     server->finished = false;
     server->nrunning_tasks = 0;
     server->filepath = filepath;
     server->sequence = sequence;
     server->profiles = profile_ring_init();
-    server->results = result_ring_init();
+    c_list_init(&server->results);
     server->elapsed = elapsed_init();
     return server;
 }
@@ -59,11 +56,20 @@ void dcp_server_start(struct dcp_server* server)
 
 #pragma omp task
         profile_consumer(server);
-
-#pragma omp single nowait
-        result_consumer(server);
     }
     elapsed_end(&server->elapsed);
+}
+
+struct dcp_result const** dcp_server_results(struct dcp_server const* server, uint32_t* nresults)
+{
+    *nresults = (uint32_t)c_list_length(&server->results);
+    struct dcp_result const** results = malloc(*nresults * sizeof(*results));
+    struct dcp_result const*  result = NULL;
+    uint32_t                  i = 0;
+    c_list_for_each_entry (result, &server->results, link) {
+        results[i++] = result;
+    }
+    return results;
 }
 
 void profile_consumer(struct dcp_server* server)
@@ -76,10 +82,9 @@ void profile_consumer(struct dcp_server* server)
         }
 
         if (prof) {
-            struct dcp_result  r = scan(server, prof);
-            struct dcp_result* nr = malloc(sizeof(*nr));
-            memcpy(nr, &r, sizeof(r));
-            result_ring_push(&server->results, nr);
+            struct dcp_result* r = scan(server, prof);
+#pragma omp critical
+            c_list_link_tail(&server->results, &r->link);
             dcp_profile_destroy(prof, true);
         }
     } while (prof || !server->finished);
@@ -88,14 +93,16 @@ void profile_consumer(struct dcp_server* server)
 
 void profile_producer(struct dcp_server* server)
 {
-    while (!dcp_input_end(server->input)) {
-        struct dcp_profile const* prof = dcp_input_read(server->input);
+    struct dcp_input* input = dcp_input_create(server->filepath);
+    while (!dcp_input_end(input)) {
+        struct dcp_profile const* prof = dcp_input_read(input);
         profile_ring_push(&server->profiles, prof);
     }
-    dcp_input_destroy(server->input);
+    dcp_input_destroy(input);
     server->finished = true;
 }
 
+#if 0
 void result_consumer(struct dcp_server* server)
 {
     struct dcp_result const* result = NULL;
@@ -109,8 +116,9 @@ void result_consumer(struct dcp_server* server)
         }
     } while (result || !server->finished || server->nrunning_tasks > 0);
 }
+#endif
 
-struct dcp_result scan(struct dcp_server* server, struct dcp_profile const* profile)
+struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile)
 {
     struct nmm_profile const* p = profile_nmm(profile);
     struct imm_abc const*     abc = nmm_profile_abc(p);
@@ -139,5 +147,13 @@ struct dcp_result scan(struct dcp_server* server, struct dcp_profile const* prof
     imm_seq_destroy(seq);
     imm_dp_task_destroy(task_alt);
     imm_dp_task_destroy(task_null);
-    return (struct dcp_result){dcp_profile_id(profile), null_result, null_loglik, alt_result, alt_loglik};
+
+    struct dcp_result* r = malloc(sizeof(*r));
+    r->profid = dcp_profile_id(profile);
+    r->null_result = null_result;
+    r->null_loglik = null_loglik;
+    r->alt_result = alt_result;
+    r->alt_loglik = alt_loglik;
+    c_list_init(&r->link);
+    return r;
 }

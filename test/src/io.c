@@ -196,12 +196,22 @@ void test_input(void)
     dcp_input_destroy(input);
 }
 
-void test_small(void) {
-
-    struct dcp_server *server = dcp_server_create(TMPDIR "/two_profiles.deciphon", "A");
+void test_small(void)
+{
+    struct dcp_server* server = dcp_server_create(TMPDIR "/two_profiles.deciphon", "A");
     dcp_server_start(server);
+    uint32_t                  nresults = 0;
+    struct dcp_result const** results = dcp_server_results(server, &nresults);
     dcp_server_destroy(server);
 
+    for (uint32_t i = 0; i < nresults; ++i) {
+        printf("%d %.10f %.10f\n", dcp_result_profid(results[i]), dcp_result_null_loglik(results[i]),
+               dcp_result_alt_loglik(results[i]));
+    }
+
+    for (uint32_t i = 0; i < nresults; ++i)
+        free((void*)results[i]);
+    free(results);
 }
 
 void test_pfam(void)
@@ -256,7 +266,7 @@ void test_pfam(void)
     s[N * 2000] = '\0';
 
     cass_cond(strlen(s) == N * 2000);
-    struct dcp_server *server = dcp_server_create("/Users/horta/tmp/deciphon/Pfam-A.deciphon", s);
+    struct dcp_server* server = dcp_server_create("/Users/horta/tmp/deciphon/Pfam-A.deciphon", s);
     dcp_server_start(server);
     dcp_server_destroy(server);
 }

@@ -9,6 +9,7 @@ extern "C"
 #include "deciphon/input.h"
 #include "deciphon/output.h"
 #include "deciphon/profile.h"
+#include "deciphon/result.h"
 #include "deciphon/server.h"
 
 #ifdef __cplusplus
