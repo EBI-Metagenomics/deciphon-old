@@ -7,10 +7,11 @@
 struct dcp_result
 {
     uint32_t                 profid;
-    struct imm_result const* null_result;
-    imm_float                null_loglik;
-    struct imm_result const* alt_result;
     imm_float                alt_loglik;
+    struct imm_result const* alt_result;
+    char const*              alt_stream;
+    imm_float                null_loglik;
+    struct imm_result const* null_result;
     CList                    link;
 };
 

@@ -205,8 +205,18 @@ void test_small(void)
     dcp_server_destroy(server);
 
     for (uint32_t i = 0; i < nresults; ++i) {
-        printf("%d %.10f %.10f\n", dcp_result_profid(results[i]), dcp_result_null_loglik(results[i]),
-               dcp_result_alt_loglik(results[i]));
+        cass_close(dcp_result_alt_loglik(results[i]), -6.0198640823);
+        cass_close(dcp_result_null_loglik(results[i]), -6.0198640823);
+        printf("Alt stream: %s\n", dcp_result_alt_stream(results[i]));
+        /* printf("Nul stream: %s\n", dcp_result_null_stream(results[i])); */
+        /* struct imm_result const* alt = dcp_result_alt_result(results[i]); */
+        /* struct imm_path const*   path = imm_result_path(alt); */
+        /* struct imm_step const*   step = imm_path_first(path); */
+        /* while (step) { */
+
+        /*     imm_step_state(step); */
+        /*     step = imm_path_next(path, step); */
+        /* } */
     }
 
     for (uint32_t i = 0; i < nresults; ++i)
