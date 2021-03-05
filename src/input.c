@@ -15,7 +15,25 @@ struct dcp_input
     uint32_t          nprofiles;
     uint64_t*         profile_offsets;
     uint32_t          curr_profile;
+
+    bool closed;
 };
+
+int dcp_input_close(struct dcp_input* input)
+{
+    if (input->closed)
+        return 0;
+
+    int errno = 0;
+
+    if (fclose(input->stream)) {
+        imm_error("failed to close file %s", input->filepath);
+        errno = 1;
+    }
+
+    input->closed = true;
+    return errno;
+}
 
 struct dcp_input* dcp_input_create(char const* filepath)
 {
@@ -47,6 +65,7 @@ struct dcp_input* dcp_input_create(char const* filepath)
     }
 
     input->curr_profile = 0;
+    input->closed = false;
 
     return input;
 
@@ -69,12 +88,12 @@ err:
 
 int dcp_input_destroy(struct dcp_input* input)
 {
+    int errno = dcp_input_close(input);
     free_c(input->filepath);
-    fclose(input->stream);
     free_c(input->profile_offsets);
     nmm_input_destroy(input->nmm_input);
     free_c(input);
-    return 0;
+    return errno;
 }
 
 bool dcp_input_end(struct dcp_input const* input) { return input->curr_profile >= input->nprofiles; }

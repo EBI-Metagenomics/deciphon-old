@@ -1,6 +1,7 @@
 #include "profile.h"
 #include "deciphon/deciphon.h"
 #include "free.h"
+#include "misc.h"
 #include "nmm/nmm.h"
 #include <stdlib.h>
 
@@ -31,10 +32,7 @@ void dcp_profile_destroy(struct dcp_profile const* prof, bool deep)
     free_c(prof);
 }
 
-void dcp_profile_free(struct dcp_profile const* prof)
-{
-    free_c(prof);
-}
+void dcp_profile_free(struct dcp_profile const* prof) { free_c(prof); }
 
 struct imm_model* dcp_profile_get_model(struct dcp_profile const* prof, uint8_t i)
 {
@@ -46,6 +44,13 @@ uint32_t dcp_profile_id(struct dcp_profile const* prof) { return prof->id; }
 uint8_t dcp_profile_nmodels(struct dcp_profile const* prof) { return nmm_profile_nmodels(prof->nmm_profile); }
 
 struct nmm_profile const* dcp_profile_nmm_profile(struct dcp_profile const* prof) { return prof->nmm_profile; }
+
+void dcp_profile_setup(struct imm_hmm* hmm, struct imm_dp* dp, bool multiple_hits, uint32_t target_length,
+                       bool hmmer3_compat)
+{
+    struct special_trans trans = target_length_model(multiple_hits, target_length, hmmer3_compat);
+    set_special_trans(trans, hmm, dp);
+}
 
 struct dcp_profile* profile_create(uint32_t id, struct nmm_profile* prof)
 {

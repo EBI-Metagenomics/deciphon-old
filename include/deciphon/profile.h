@@ -9,6 +9,8 @@
 #define DCP_PROFILE_INVALID_PROFID UINT32_MAX
 
 struct dcp_profile;
+struct imm_dp;
+struct imm_hmm;
 struct imm_model;
 struct nmm_profile;
 
@@ -21,5 +23,8 @@ DCP_API struct imm_model*         dcp_profile_get_model(struct dcp_profile const
 DCP_API uint32_t                  dcp_profile_id(struct dcp_profile const* prof);
 DCP_API struct nmm_profile const* dcp_profile_nmm_profile(struct dcp_profile const* prof);
 DCP_API uint8_t                   dcp_profile_nmodels(struct dcp_profile const* prof);
+
+DCP_API void dcp_profile_setup(struct imm_hmm* hmm, struct imm_dp* dp, bool multiple_hits, uint32_t target_length,
+                               bool hmmer3_compat);
 
 #endif

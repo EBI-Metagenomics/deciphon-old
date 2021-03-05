@@ -21,14 +21,23 @@ struct dcp_output
     CList              profile_offsets;
     char const*        tmp_filepath;
     struct nmm_output* tmp_output;
+    bool               closed;
 };
 
 static char const* create_tmp_filepath(char const* filepath);
 
 int dcp_output_close(struct dcp_output* output)
 {
+    if (output->closed)
+        return 0;
+
     int   errno = 0;
-    FILE* tmp_stream = fopen(output->tmp_filepath, "rb");
+    FILE* tmp_stream = NULL;
+    if (nmm_output_close(output->tmp_output)) {
+        errno = 1;
+        goto cleanup;
+    }
+    tmp_stream = fopen(output->tmp_filepath, "rb");
     if (!tmp_stream) {
         imm_error("failed to open %s", output->tmp_filepath);
         errno = 1;
@@ -65,6 +74,7 @@ cleanup:
     if (tmp_stream && fclose(tmp_stream))
         imm_error("failed to close file %s", output->tmp_filepath);
 
+    output->closed = true;
     return errno;
 }
 
@@ -77,6 +87,7 @@ struct dcp_output* dcp_output_create(char const* filepath)
     c_list_init(&output->profile_offsets);
     output->tmp_filepath = create_tmp_filepath(filepath);
     output->tmp_output = NULL;
+    output->closed = false;
 
     if (!(output->stream = fopen(filepath, "wb"))) {
         imm_error("could not open file %s for writing", filepath);

@@ -8,6 +8,7 @@
 struct dcp_input;
 struct dcp_partition;
 
+DCP_API int                       dcp_input_close(struct dcp_input* input);
 DCP_API struct dcp_input*         dcp_input_create(char const* filepath);
 DCP_API int                       dcp_input_destroy(struct dcp_input* input);
 DCP_API bool                      dcp_input_end(struct dcp_input const* input);
