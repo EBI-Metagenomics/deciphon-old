@@ -33,6 +33,7 @@ void dcp_profile_destroy(struct dcp_profile const* prof, bool deep)
 
 void dcp_profile_free(struct dcp_profile const* prof)
 {
+    nmm_profile_free(prof->nmm_profile);
     free_c(prof);
 }
 
