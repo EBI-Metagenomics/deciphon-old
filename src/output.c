@@ -27,11 +27,21 @@ static char const* create_tmp_filepath(char const* filepath);
 
 int dcp_output_close(struct dcp_output* output)
 {
-    if (fclose(output->stream)) {
-        imm_error("failed to close file %s", output->filepath);
-        return 1;
+    FILE* tmp_stream = fopen(output->tmp_filepath, "rb");
+    if (!tmp_stream) {
+        imm_error("failed to open %s", output->tmp_filepath);
+        goto err;
     }
+
+    if (file_copy_content(output->stream, tmp_stream)) {
+        imm_error("failed to copy file");
+        goto err;
+    }
+
     return 0;
+
+err:
+    return 1;
 }
 
 struct dcp_output* dcp_output_create(char const* filepath)
@@ -100,15 +110,7 @@ int dcp_output_destroy(struct dcp_output* output)
         }
     }
 
-    tmp_stream = fopen(output->tmp_filepath, "rb");
-    if (!tmp_stream) {
-        imm_error("failed to open %s", output->tmp_filepath);
-        errno = 1;
-        goto cleanup;
-    }
-
-    if (file_copy_content(output->stream, tmp_stream)) {
-        imm_error("failed to copy file");
+    if (dcp_output_close(output)) {
         errno = 1;
         goto cleanup;
     }
@@ -147,7 +149,7 @@ int dcp_output_write(struct dcp_output* output, struct dcp_profile const* prof)
     offset->value = (uint64_t)v;
     c_list_link_tail(&output->profile_offsets, &offset->link);
     output->nprofiles++;
-     return nmm_output_write(output->tmp_output, dcp_profile_nmm_profile(prof));
+    return nmm_output_write(output->tmp_output, dcp_profile_nmm_profile(prof));
 }
 
 static char const* create_tmp_filepath(char const* filepath)
