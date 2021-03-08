@@ -31,6 +31,7 @@ endif()
 add_library(deciphon
     src/file.c
     src/input.c
+    src/metadata.c
     src/misc.c
     src/output.c
     src/profile.c

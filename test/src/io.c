@@ -80,17 +80,21 @@ void test_output(void)
     cass_cond(output != NULL);
 
     /* First profile */
-    struct dcp_profile* p = dcp_profile_create(abc);
+    struct dcp_metadata const* mt = dcp_metadata_create("name0", "acc0");
+    struct dcp_profile*        p = dcp_profile_create(abc, mt);
     dcp_profile_append_model(p, imm_model_create(hmm, dp));
     dcp_profile_append_model(p, imm_model_create(hmm, dp));
     cass_equal(dcp_output_write(output, p), 0);
+    dcp_metadata_destroy(mt);
     dcp_profile_destroy(p, false);
 
     /* Second profile */
-    p = dcp_profile_create(abc);
+    mt = dcp_metadata_create("name1", "acc1");
+    p = dcp_profile_create(abc, mt);
     dcp_profile_append_model(p, imm_model_create(hmm, dp));
     dcp_profile_append_model(p, imm_model_create(hmm, dp));
     cass_equal(dcp_output_write(output, p), 0);
+    dcp_metadata_destroy(mt);
     dcp_profile_destroy(p, false);
 
     cass_equal(dcp_output_destroy(output), 0);
@@ -118,7 +122,10 @@ void test_input(void)
     cass_cond(!dcp_input_end(input));
     cass_cond(prof != NULL);
     cass_equal(dcp_profile_nmodels(prof), 2);
-    struct imm_abc const* abc = dcp_profile_abc(prof);
+    struct imm_abc const*      abc = dcp_profile_abc(prof);
+    struct dcp_metadata const* mt = dcp_profile_get_metadata(prof);
+    cass_equal(strncmp(dcp_metadata_get_acc(mt), "acc0", 4), 0);
+    cass_equal(strncmp(dcp_metadata_get_name(mt), "name0", 5), 0);
 
     struct imm_model* model = dcp_profile_get_model(prof, 0);
 
@@ -148,6 +155,9 @@ void test_input(void)
     cass_cond(dcp_input_end(input));
     cass_equal(dcp_profile_nmodels(prof), 2);
     abc = dcp_profile_abc(prof);
+    mt = dcp_profile_get_metadata(prof);
+    cass_equal(strncmp(dcp_metadata_get_acc(mt), "acc1", 4), 0);
+    cass_equal(strncmp(dcp_metadata_get_name(mt), "name1", 5), 0);
 
     /* First model */
     model = dcp_profile_get_model(prof, 0);
@@ -205,9 +215,8 @@ void test_small(void)
     dcp_server_destroy(server);
 
     for (uint32_t i = 0; i < nresults; ++i) {
-        cass_close(dcp_result_alt_loglik(results[i]), -6.0198640823);
-        cass_close(dcp_result_null_loglik(results[i]), -6.0198640823);
-        printf("Alt stream: %s\n", dcp_result_alt_stream(results[i]));
+        cass_close(dcp_result_alt_loglik(results[i]), -6.0198640216);
+        cass_close(dcp_result_null_loglik(results[i]), -6.0198640216);
     }
 
     for (uint32_t i = 0; i < nresults; ++i)

@@ -7,6 +7,7 @@ extern "C"
 #endif
 
 #include "deciphon/input.h"
+#include "deciphon/metadata.h"
 #include "deciphon/output.h"
 #include "deciphon/profile.h"
 #include "deciphon/result.h"

@@ -25,3 +25,24 @@ int file_copy_content(FILE* dst, FILE* src)
     }
     return 0;
 }
+
+int file_read_string(FILE* stream, char* str, size_t max_size)
+{
+    size_t count = 0;
+    do {
+        int c = fgetc(stream);
+        if (c == EOF) {
+            /* EOF means either an error or end of file but
+             * we do not care which. Clear file error flag
+             * and return -1 */
+            clearerr(stream);
+            return 1;
+        } else {
+            /* Cast c to char */
+            *str = (char)c;
+            count++;
+        }
+    } while ((*str++ != '\0') && (count < max_size));
+
+    return count == max_size;
+}

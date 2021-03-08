@@ -2,7 +2,9 @@
 #include "file.h"
 #include "free.h"
 #include "lib/c-list.h"
+#include "metadata.h"
 #include "nmm/nmm.h"
+#include "profile.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,12 +15,20 @@ struct offset
     CList    link;
 };
 
+struct metadata
+{
+    struct dcp_metadata const* mt;
+    CList                      link;
+};
+
 struct dcp_output
 {
     char const*        filepath;
     FILE*              stream;
     uint32_t           nprofiles;
     CList              profile_offsets;
+    CList              profile_metadatas;
+    uint32_t           profile_metadata_size;
     char const*        tmp_filepath;
     struct nmm_output* tmp_output;
     bool               closed;
@@ -52,10 +62,19 @@ int dcp_output_close(struct dcp_output* output)
 
     struct offset* offset = NULL;
     uint64_t       start = sizeof(output->nprofiles) + output->nprofiles * sizeof(offset->value);
+    start += output->profile_metadata_size;
     c_list_for_each_entry (offset, &output->profile_offsets, link) {
         uint64_t v = start + offset->value;
         if (fwrite(&v, sizeof(v), 1, output->stream) < 1) {
             imm_error("could not write offset");
+            errno = 1;
+            goto cleanup;
+        }
+    }
+
+    struct metadata* mt = NULL;
+    c_list_for_each_entry (mt, &output->profile_metadatas, link) {
+        if (profile_metadata_write(mt->mt, output->stream)) {
             errno = 1;
             goto cleanup;
         }
@@ -85,6 +104,8 @@ struct dcp_output* dcp_output_create(char const* filepath)
     output->stream = NULL;
     output->nprofiles = 0;
     c_list_init(&output->profile_offsets);
+    c_list_init(&output->profile_metadatas);
+    output->profile_metadata_size = 0;
     output->tmp_filepath = create_tmp_filepath(filepath);
     output->tmp_output = NULL;
     output->closed = false;
@@ -138,10 +159,16 @@ cleanup:
     if (output->tmp_filepath)
         free_c(output->tmp_filepath);
 
-    struct offset* safe = NULL;
+    struct offset* safe_offset = NULL;
     struct offset* offset = NULL;
-    c_list_for_each_entry_safe (offset, safe, &output->profile_offsets, link) {
+    c_list_for_each_entry_safe (offset, safe_offset, &output->profile_offsets, link) {
         free_c(offset);
+    }
+
+    struct metadata* safe_mt = NULL;
+    struct metadata* mt = NULL;
+    c_list_for_each_entry_safe (mt, safe_mt, &output->profile_metadatas, link) {
+        free_c(mt);
     }
 
     free_c(output);
@@ -150,16 +177,24 @@ cleanup:
 
 int dcp_output_write(struct dcp_output* output, struct dcp_profile const* prof)
 {
-    struct offset* offset = malloc(sizeof(*offset));
-    int64_t        v = nmm_output_ftell(output->tmp_output);
+    int64_t v = nmm_output_ftell(output->tmp_output);
     if (v < 0) {
         imm_error("failed to ftell");
-        free_c(offset);
         return 1;
     }
+    struct offset* offset = malloc(sizeof(*offset));
     offset->value = (uint64_t)v;
+    c_list_init(&offset->link);
     c_list_link_tail(&output->profile_offsets, &offset->link);
+
+    struct metadata* mt = malloc(sizeof(*mt));
+    mt->mt = profile_metadata_clone(dcp_profile_get_metadata(prof));
+    c_list_init(&mt->link);
+    c_list_link_tail(&output->profile_metadatas, &mt->link);
+
     output->nprofiles++;
+    output->profile_metadata_size += profile_metadata_size(mt->mt);
+
     return nmm_output_write(output->tmp_output, dcp_profile_nmm_profile(prof));
 }
 
