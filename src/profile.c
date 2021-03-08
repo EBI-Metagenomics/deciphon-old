@@ -42,7 +42,7 @@ void dcp_profile_destroy(struct dcp_profile const* prof, bool deep)
 
 void dcp_profile_free(struct dcp_profile const* prof) { free_c(prof); }
 
-struct imm_model* dcp_profile_get_model(struct dcp_profile const* prof, uint8_t i)
+struct imm_model* dcp_profile_model(struct dcp_profile const* prof, uint8_t i)
 {
     return nmm_profile_get_model(prof->nmm_profile, i);
 }
@@ -51,7 +51,7 @@ uint32_t dcp_profile_id(struct dcp_profile const* prof) { return prof->id; }
 
 uint8_t dcp_profile_nmodels(struct dcp_profile const* prof) { return nmm_profile_nmodels(prof->nmm_profile); }
 
-struct dcp_metadata const* dcp_profile_get_metadata(struct dcp_profile const* prof) { return prof->mt; }
+struct dcp_metadata const* dcp_profile_metadata(struct dcp_profile const* prof) { return prof->mt; }
 
 struct nmm_profile const* dcp_profile_nmm_profile(struct dcp_profile const* prof) { return prof->nmm_profile; }
 

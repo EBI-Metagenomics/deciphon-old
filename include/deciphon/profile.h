@@ -20,9 +20,9 @@ DCP_API void                       dcp_profile_append_model(struct dcp_profile* 
 DCP_API struct dcp_profile*        dcp_profile_create(struct imm_abc const* abc, struct dcp_metadata const* mt);
 DCP_API void                       dcp_profile_destroy(struct dcp_profile const* prof, bool deep);
 DCP_API void                       dcp_profile_free(struct dcp_profile const* prof);
-DCP_API struct imm_model*          dcp_profile_get_model(struct dcp_profile const* prof, uint8_t i);
+DCP_API struct imm_model*          dcp_profile_model(struct dcp_profile const* prof, uint8_t i);
 DCP_API uint32_t                   dcp_profile_id(struct dcp_profile const* prof);
-DCP_API struct dcp_metadata const* dcp_profile_get_metadata(struct dcp_profile const* prof);
+DCP_API struct dcp_metadata const* dcp_profile_metadata(struct dcp_profile const* prof);
 DCP_API struct nmm_profile const*  dcp_profile_nmm_profile(struct dcp_profile const* prof);
 DCP_API uint8_t                    dcp_profile_nmodels(struct dcp_profile const* prof);
 

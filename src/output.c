@@ -188,7 +188,7 @@ int dcp_output_write(struct dcp_output* output, struct dcp_profile const* prof)
     c_list_link_tail(&output->profile_offsets, &offset->link);
 
     struct metadata* mt = malloc(sizeof(*mt));
-    mt->mt = profile_metadata_clone(dcp_profile_get_metadata(prof));
+    mt->mt = profile_metadata_clone(dcp_profile_metadata(prof));
     c_list_init(&mt->link);
     c_list_link_tail(&output->profile_metadatas, &mt->link);
 
