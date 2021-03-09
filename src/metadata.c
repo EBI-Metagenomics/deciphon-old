@@ -27,9 +27,9 @@ void dcp_metadata_destroy(struct dcp_metadata const* mt)
     free_c(mt);
 }
 
-char const* dcp_metadata_get_acc(struct dcp_metadata const* mt) { return mt->acc; }
+char const* dcp_metadata_acc(struct dcp_metadata const* mt) { return mt->acc; }
 
-char const* dcp_metadata_get_name(struct dcp_metadata const* mt) { return mt->name; }
+char const* dcp_metadata_name(struct dcp_metadata const* mt) { return mt->name; }
 
 struct dcp_metadata const* profile_metadata_clone(struct dcp_metadata const* mt)
 {

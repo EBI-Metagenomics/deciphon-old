@@ -124,8 +124,8 @@ void test_input(void)
     cass_equal(dcp_profile_nmodels(prof), 2);
     struct imm_abc const*      abc = dcp_profile_abc(prof);
     struct dcp_metadata const* mt = dcp_profile_metadata(prof);
-    cass_equal(strncmp(dcp_metadata_get_acc(mt), "acc0", 4), 0);
-    cass_equal(strncmp(dcp_metadata_get_name(mt), "name0", 5), 0);
+    cass_equal(strncmp(dcp_metadata_acc(mt), "acc0", 4), 0);
+    cass_equal(strncmp(dcp_metadata_name(mt), "name0", 5), 0);
 
     struct imm_model* model = dcp_profile_model(prof, 0);
 
@@ -156,8 +156,8 @@ void test_input(void)
     cass_equal(dcp_profile_nmodels(prof), 2);
     abc = dcp_profile_abc(prof);
     mt = dcp_profile_metadata(prof);
-    cass_equal(strncmp(dcp_metadata_get_acc(mt), "acc1", 4), 0);
-    cass_equal(strncmp(dcp_metadata_get_name(mt), "name1", 5), 0);
+    cass_equal(strncmp(dcp_metadata_acc(mt), "acc1", 4), 0);
+    cass_equal(strncmp(dcp_metadata_name(mt), "name1", 5), 0);
 
     /* First model */
     model = dcp_profile_model(prof, 0);
