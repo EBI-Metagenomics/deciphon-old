@@ -29,22 +29,42 @@ void               profile_consumer(struct dcp_server* server);
 void               profile_producer(struct dcp_server* server);
 struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile);
 
-struct dcp_server* dcp_server_create(char const* filepath, char const* sequence)
+struct dcp_server* dcp_server_create(char const* filepath)
 {
     struct dcp_server* server = malloc(sizeof(*server));
     server->finished = false;
     server->nrunning_tasks = 0;
-    server->filepath = filepath;
-    server->sequence = sequence;
+    server->filepath = strdup(filepath);
     server->profiles = profile_ring_init();
     c_list_init(&server->results);
     server->elapsed = elapsed_init();
     return server;
 }
 
-void dcp_server_destroy(struct dcp_server const* server) { free_c(server); }
+void dcp_server_destroy(struct dcp_server const* server)
+{
+    free_c(server->filepath);
+    free_c(server);
+}
 
 double dcp_server_elapsed(struct dcp_server const* server) { return elapsed_seconds(&server->elapsed); }
+
+struct dcp_result const** dcp_server_scan(struct dcp_server* server, char const* sequence, uint32_t* nresults)
+{
+    server->sequence = sequence;
+    c_list_init(&server->results);
+    dcp_server_start(server);
+
+    *nresults = (uint32_t)c_list_length(&server->results);
+    struct dcp_result const** results = malloc(*nresults * sizeof(*results));
+    struct dcp_result const*  result = NULL;
+    uint32_t                  i = 0;
+    c_list_for_each_entry (result, &server->results, link) {
+        results[i++] = result;
+    }
+
+    return results;
+}
 
 void dcp_server_start(struct dcp_server* server)
 {
@@ -58,18 +78,6 @@ void dcp_server_start(struct dcp_server* server)
         profile_consumer(server);
     }
     elapsed_end(&server->elapsed);
-}
-
-struct dcp_result const** dcp_server_results(struct dcp_server const* server, uint32_t* nresults)
-{
-    *nresults = (uint32_t)c_list_length(&server->results);
-    struct dcp_result const** results = malloc(*nresults * sizeof(*results));
-    struct dcp_result const*  result = NULL;
-    uint32_t                  i = 0;
-    c_list_for_each_entry (result, &server->results, link) {
-        results[i++] = result;
-    }
-    return results;
 }
 
 void profile_consumer(struct dcp_server* server)

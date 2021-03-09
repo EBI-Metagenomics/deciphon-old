@@ -76,7 +76,7 @@ void test_output(void)
     imm_seq_destroy(seq);
     imm_result_destroy(r);
 
-    struct dcp_output* output = dcp_output_create(TMPDIR "/two_profiles.deciphon");
+    struct dcp_output* output = dcp_output_create(TMPDIR "/two_profiles.dcp");
     cass_cond(output != NULL);
 
     /* First profile */
@@ -112,7 +112,7 @@ void test_output(void)
 
 void test_input(void)
 {
-    struct dcp_input* input = dcp_input_create(TMPDIR "/two_profiles.deciphon");
+    struct dcp_input* input = dcp_input_create(TMPDIR "/two_profiles.dcp");
     cass_cond(input != NULL);
 
     cass_cond(!dcp_input_end(input));
@@ -208,10 +208,9 @@ void test_input(void)
 
 void test_small(void)
 {
-    struct dcp_server* server = dcp_server_create(TMPDIR "/two_profiles.deciphon", "A");
-    dcp_server_start(server);
+    struct dcp_server* server = dcp_server_create(TMPDIR "/two_profiles.dcp");
     uint32_t                  nresults = 0;
-    struct dcp_result const** results = dcp_server_results(server, &nresults);
+    struct dcp_result const** results = dcp_server_scan(server, "A", &nresults);
     dcp_server_destroy(server);
 
     for (uint32_t i = 0; i < nresults; ++i) {
@@ -276,7 +275,11 @@ void test_pfam(void)
     s[N * 2000] = '\0';
 
     cass_cond(strlen(s) == N * 2000);
-    struct dcp_server* server = dcp_server_create("/Users/horta/tmp/deciphon/Pfam-A.deciphon", s);
-    dcp_server_start(server);
+    uint32_t                  nresults = 0;
+    struct dcp_server*        server = dcp_server_create("/Users/horta/tmp/deciphon/Pfam-A.dcp");
+    struct dcp_result const** results = dcp_server_scan(server, s, &nresults);
+    for (uint32_t i = 0; i < nresults; ++i)
+        dcp_result_destroy(results[i]);
+    free(results);
     dcp_server_destroy(server);
 }
