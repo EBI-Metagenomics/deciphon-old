@@ -229,6 +229,7 @@ void test_small(void)
     }
 
     dcp_results_destroy(results);
+    dcp_task_destroy(task);
     dcp_server_destroy(server);
 }
 

@@ -12,6 +12,8 @@ struct dcp_task
     struct dcp_results* results;
 };
 
+static void free_sequences(struct dcp_task* task);
+
 void dcp_task_add(struct dcp_task* task, char const* sequence)
 {
     struct sequence* seq = malloc(sizeof(*seq));
@@ -30,19 +32,13 @@ struct dcp_task* dcp_task_create(void)
 
 void dcp_task_destroy(struct dcp_task const* task)
 {
-    dcp_task_reset((struct dcp_task*)task);
+    free_sequences((struct dcp_task*)task);
     free_c(task);
 }
 
 void dcp_task_reset(struct dcp_task* task)
 {
-    struct sequence* iter = NULL;
-    struct sequence* safe = NULL;
-    c_list_for_each_entry_safe (iter, safe, &task->sequences, link) {
-        c_list_unlink(&iter->link);
-        free_c(iter);
-    }
-    c_list_init(&task->sequences);
+    free_sequences(task);
     task->results = dcp_results_create();
 }
 
@@ -62,4 +58,16 @@ struct sequence const* task_next_sequence(struct dcp_task* task, struct sequence
     if (next == &task->sequences)
         return NULL;
     return c_list_entry(next, struct sequence const, link);
+}
+
+static void free_sequences(struct dcp_task* task)
+{
+    struct sequence* iter = NULL;
+    struct sequence* safe = NULL;
+    c_list_for_each_entry_safe (iter, safe, &task->sequences, link) {
+        c_list_unlink(&iter->link);
+        free_c(iter->sequence);
+        free_c(iter);
+    }
+    c_list_init(&task->sequences);
 }

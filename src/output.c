@@ -168,6 +168,7 @@ cleanup:
     struct metadata* safe_mt = NULL;
     struct metadata* mt = NULL;
     c_list_for_each_entry_safe (mt, safe_mt, &output->profile_metadatas, link) {
+        dcp_metadata_destroy(mt->mt);
         free_c(mt);
     }
 
