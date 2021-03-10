@@ -70,7 +70,9 @@ static inline void c_list_init(CList *what) {
  * Return: Pointer to parent container, or NULL.
  */
 #define c_list_entry(_what, _t, _m) \
-        ((_t *) ((char *)(_what) - offsetof(_t, _m)))
+        ((_t *)(void *)(((unsigned long)(void *)(_what) ?                       \
+                         (unsigned long)(void *)(_what) :                       \
+                         offsetof(_t, _m)) - offsetof(_t, _m)))
 
 /**
  * c_list_is_linked() - check whether an entry is linked
@@ -234,7 +236,7 @@ static inline void c_list_splice(CList *target, CList *source) {
  *
  * Return: Pointer to first list element, or NULL if empty.
  */
-static inline CList *c_list_first(CList *list) {
+static inline CList const*c_list_first(CList const*list) {
         return c_list_is_empty(list) ? NULL : list->next;
 }
 
@@ -247,7 +249,7 @@ static inline CList *c_list_first(CList *list) {
  *
  * Return: Pointer to last list element, or NULL if empty.
  */
-static inline CList *c_list_last(CList *list) {
+static inline CList const*c_list_last(CList const*list) {
         return c_list_is_empty(list) ? NULL : list->prev;
 }
 

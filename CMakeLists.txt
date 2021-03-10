@@ -3,6 +3,10 @@ project(deciphon VERSION 0.0.1 LANGUAGES C)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
+
 # Generate compile_commands.json file
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -38,7 +42,9 @@ add_library(deciphon
     src/profile_ring.c
     src/result.c
     src/result_ring.c
+    src/results.c
     src/server.c
+    src/task.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
@@ -76,7 +82,7 @@ target_link_libraries(deciphon PUBLIC ck)
 target_link_libraries(deciphon PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 set_target_properties(deciphon PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(deciphon PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
-target_compile_features(deciphon PRIVATE c_std_11)
+# target_compile_features(deciphon PUBLIC c_std_11)
 target_compile_definitions(deciphon PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPRECATE>)
 target_compile_definitions(deciphon PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})

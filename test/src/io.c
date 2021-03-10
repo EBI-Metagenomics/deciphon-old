@@ -209,18 +209,27 @@ void test_input(void)
 void test_small(void)
 {
     struct dcp_server* server = dcp_server_create(TMPDIR "/two_profiles.dcp");
-    uint32_t                  nresults = 0;
-    struct dcp_result const** results = dcp_server_scan(server, "A", &nresults);
-    dcp_server_destroy(server);
+    struct dcp_task*   task = dcp_task_create();
+    dcp_task_add(task, "A");
+    dcp_server_scan(server, task);
+    struct dcp_results const* results = dcp_task_results(task);
+    struct dcp_result const*  result = dcp_results_first(results);
+    while (result) {
 
-    for (uint32_t i = 0; i < nresults; ++i) {
-        cass_close(dcp_result_alt_loglik(results[i]), -6.0198640216);
-        cass_close(dcp_result_null_loglik(results[i]), -6.0198640216);
+        if (dcp_result_profid(result) == 0 && dcp_result_seqid(result) == 0) {
+            cass_close(dcp_result_alt_loglik(result), -6.0198640216);
+        }
+
+        if (dcp_result_profid(result) == 1 && dcp_result_seqid(result) == 0) {
+            cass_close(dcp_result_alt_loglik(result), -6.0198640216);
+        }
+        struct dcp_result const* tmp = result;
+        result = dcp_results_next(results, result);
+        dcp_result_destroy(tmp);
     }
 
-    for (uint32_t i = 0; i < nresults; ++i)
-        dcp_result_destroy(results[i]);
-    free(results);
+    dcp_results_destroy(results);
+    dcp_server_destroy(server);
 }
 
 void test_pfam(void)
@@ -275,11 +284,11 @@ void test_pfam(void)
     s[N * 2000] = '\0';
 
     cass_cond(strlen(s) == N * 2000);
-    uint32_t                  nresults = 0;
-    struct dcp_server*        server = dcp_server_create("/Users/horta/tmp/deciphon/Pfam-A.dcp");
-    struct dcp_result const** results = dcp_server_scan(server, s, &nresults);
-    for (uint32_t i = 0; i < nresults; ++i)
-        dcp_result_destroy(results[i]);
-    free(results);
-    dcp_server_destroy(server);
+    /* uint32_t nresults = 0; */
+    /* struct dcp_server*        server = dcp_server_create("/Users/horta/tmp/deciphon/Pfam-A.dcp"); */
+    /* struct dcp_result const** results = dcp_server_scan(server, s, &nresults); */
+    /* for (uint32_t i = 0; i < nresults; ++i) */
+    /* dcp_result_destroy(results[i]); */
+    /* free(results); */
+    /* dcp_server_destroy(server); */
 }

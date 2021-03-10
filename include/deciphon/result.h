@@ -13,5 +13,6 @@ DCP_API void                     dcp_result_destroy(struct dcp_result const* res
 DCP_API imm_float                dcp_result_null_loglik(struct dcp_result const* result);
 DCP_API struct imm_result const* dcp_result_null_result(struct dcp_result const* result);
 DCP_API uint32_t                 dcp_result_profid(struct dcp_result const* result);
+DCP_API uint32_t                 dcp_result_seqid(struct dcp_result const* result);
 
 #endif

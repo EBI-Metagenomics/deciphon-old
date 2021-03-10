@@ -6,6 +6,8 @@
 #include "profile_ring.h"
 #include "result.h"
 #include "result_ring.h"
+#include "sequence.h"
+#include "task.h"
 #include <stdatomic.h>
 
 #ifdef _OPENMP
@@ -17,17 +19,16 @@ struct dcp_server
     atomic_bool         finished;
     atomic_uint         nrunning_tasks;
     char const*         filepath;
-    char const*         sequence;
     struct profile_ring profiles;
-    CList               results;
     struct elapsed      elapsed;
 };
 
 void               destroy(struct dcp_server* server);
 void               init(struct dcp_server* server, char const* filepath, char const* seq);
-void               profile_consumer(struct dcp_server* server);
+void               profile_consumer(struct dcp_server* server, struct dcp_task* task);
 void               profile_producer(struct dcp_server* server);
-struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile);
+struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
+                        uint32_t seqid);
 
 struct dcp_server* dcp_server_create(char const* filepath)
 {
@@ -36,7 +37,6 @@ struct dcp_server* dcp_server_create(char const* filepath)
     server->nrunning_tasks = 0;
     server->filepath = strdup(filepath);
     server->profiles = profile_ring_init();
-    c_list_init(&server->results);
     server->elapsed = elapsed_init();
     return server;
 }
@@ -49,38 +49,21 @@ void dcp_server_destroy(struct dcp_server const* server)
 
 double dcp_server_elapsed(struct dcp_server const* server) { return elapsed_seconds(&server->elapsed); }
 
-struct dcp_result const** dcp_server_scan(struct dcp_server* server, char const* sequence, uint32_t* nresults)
-{
-    server->sequence = sequence;
-    c_list_init(&server->results);
-    dcp_server_start(server);
-
-    *nresults = (uint32_t)c_list_length(&server->results);
-    struct dcp_result const** results = malloc(*nresults * sizeof(*results));
-    struct dcp_result const*  result = NULL;
-    uint32_t                  i = 0;
-    c_list_for_each_entry (result, &server->results, link) {
-        results[i++] = result;
-    }
-
-    return results;
-}
-
-void dcp_server_start(struct dcp_server* server)
+void dcp_server_scan(struct dcp_server* server, struct dcp_task* task)
 {
     elapsed_start(&server->elapsed);
-#pragma omp        parallel default(none) shared(server)
+#pragma omp        parallel default(none) shared(server, task)
     {
 #pragma omp single nowait
         profile_producer(server);
 
 #pragma omp task
-        profile_consumer(server);
+        profile_consumer(server, task);
     }
     elapsed_end(&server->elapsed);
 }
 
-void profile_consumer(struct dcp_server* server)
+void profile_consumer(struct dcp_server* server, struct dcp_task* task)
 {
     server->nrunning_tasks++;
     struct dcp_profile const* prof = NULL;
@@ -90,9 +73,17 @@ void profile_consumer(struct dcp_server* server)
         }
 
         if (prof) {
-            struct dcp_result* r = scan(server, prof);
 #pragma omp critical
-            c_list_link_tail(&server->results, &r->link);
+            {
+                struct sequence const* seq = task_first_sequence(task);
+                uint32_t               seqid = 0;
+                while (seq) {
+                    struct dcp_result* r = scan(server, prof, seq->sequence, seqid++);
+                    /* #pragma omp critical */
+                    task_add_result(task, r);
+                    seq = task_next_sequence(task, seq);
+                }
+            }
             dcp_profile_destroy(prof, true);
         }
     } while (prof || !server->finished);
@@ -126,11 +117,12 @@ void result_consumer(struct dcp_server* server)
 }
 #endif
 
-struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile)
+struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
+                        uint32_t seqid)
 {
     struct nmm_profile const* p = dcp_profile_nmm_profile(profile);
     struct imm_abc const*     abc = nmm_profile_abc(p);
-    struct imm_seq const*     seq = imm_seq_create(server->sequence, abc);
+    struct imm_seq const*     seq = imm_seq_create(sequence, abc);
 
     struct imm_model* alt = nmm_profile_get_model(p, 0);
     struct imm_model* null = nmm_profile_get_model(p, 1);
@@ -158,6 +150,7 @@ struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* pro
 
     struct dcp_result* r = malloc(sizeof(*r));
     r->profid = dcp_profile_id(profile);
+    r->seqid = seqid;
     r->alt_loglik = alt_loglik;
     r->alt_result = alt_result;
     r->alt_stream = NULL;

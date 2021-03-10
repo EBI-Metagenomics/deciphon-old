@@ -11,7 +11,9 @@ extern "C"
 #include "deciphon/output.h"
 #include "deciphon/profile.h"
 #include "deciphon/result.h"
+#include "deciphon/results.h"
 #include "deciphon/server.h"
+#include "deciphon/task.h"
 
 #ifdef __cplusplus
 }
