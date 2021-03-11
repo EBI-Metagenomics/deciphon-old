@@ -1,5 +1,5 @@
 #include "profile_ring.h"
-#include "array.h"
+#include "util.h"
 
 struct profile_ring profile_ring_init(void)
 {

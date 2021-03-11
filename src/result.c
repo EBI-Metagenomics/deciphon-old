@@ -1,6 +1,6 @@
 #include "result.h"
 #include "deciphon/deciphon.h"
-#include "free.h"
+#include <stdlib.h>
 
 imm_float dcp_result_alt_loglik(struct dcp_result const* result) { return result->alt_loglik; }
 
@@ -12,8 +12,8 @@ void dcp_result_destroy(struct dcp_result const* result)
 {
     imm_result_destroy(result->null_result);
     imm_result_destroy(result->alt_result);
-    free_c(result->alt_stream);
-    free_c(result);
+    free((void*)result->alt_stream);
+    free((void*)result);
 }
 
 imm_float dcp_result_null_loglik(struct dcp_result const* result) { return result->null_loglik; }

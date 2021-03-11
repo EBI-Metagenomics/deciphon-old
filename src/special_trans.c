@@ -1,8 +1,8 @@
-#include "misc.h"
-#include "bug.h"
+#include "special_trans.h"
+#include "util.h"
 #include <string.h>
 
-struct special_trans target_length_model(bool multiple_hits, uint32_t target_length, bool hmmer3_compat)
+struct special_trans special_trans_get(bool multiple_hits, uint32_t target_length, bool hmmer3_compat)
 {
     imm_float L = (imm_float)target_length;
     BUG(L == 0);
@@ -36,7 +36,7 @@ struct special_trans target_length_model(bool multiple_hits, uint32_t target_len
     return t;
 }
 
-void set_special_trans(struct special_trans trans, struct imm_hmm* hmm, struct imm_dp* dp)
+void special_trans_set(struct special_trans trans, struct imm_hmm* hmm, struct imm_dp* dp)
 {
     struct imm_state const* S = NULL;
     struct imm_state const* B = NULL;

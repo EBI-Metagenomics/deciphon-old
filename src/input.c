@@ -1,11 +1,8 @@
 #include "deciphon/deciphon.h"
-#include "free.h"
-#include "imath.h"
 #include "metadata.h"
-#include "minmax.h"
 #include "nmm/nmm.h"
 #include "profile.h"
-#include <stdlib.h>
+#include "util.h"
 #include <string.h>
 
 struct dcp_input
@@ -14,9 +11,9 @@ struct dcp_input
     FILE*                       stream;
     struct nmm_input*           nmm_input;
     uint32_t                    nprofiles;
-    uint64_t*                   profile_offsets;
+    uint64_t const*             profile_offsets;
     struct dcp_metadata const** profile_metadatas;
-    uint32_t                    curr_profile;
+    uint32_t                    profid;
 
     bool closed;
 };
@@ -29,7 +26,7 @@ int dcp_input_close(struct dcp_input* input)
     int errno = 0;
 
     if (fclose(input->stream)) {
-        imm_error("failed to close file %s", input->filepath);
+        error("failed to close file %s", input->filepath);
         errno = 1;
     }
 
@@ -46,18 +43,19 @@ struct dcp_input* dcp_input_create(char const* filepath)
     input->profile_metadatas = NULL;
     input->nmm_input = NULL;
     if (!input->stream) {
-        imm_error("could not open file %s for reading", filepath);
+        error("could not open file %s for reading", filepath);
         goto err;
     }
 
     if (fread(&input->nprofiles, sizeof(input->nprofiles), 1, input->stream) < 1) {
-        imm_error("failed to read nprofiles");
+        error("failed to read nprofiles");
         goto err;
     }
 
-    input->profile_offsets = malloc(input->nprofiles * sizeof(*input->profile_offsets));
-    if (fread(input->profile_offsets, sizeof(*input->profile_offsets), input->nprofiles, input->stream) < 1) {
-        imm_error("failed to read profile_offsets");
+    uint64_t* profile_offsets = malloc(input->nprofiles * sizeof(*input->profile_offsets));
+    input->profile_offsets = profile_offsets;
+    if (fread(profile_offsets, sizeof(*profile_offsets), input->nprofiles, input->stream) < 1) {
+        error("failed to read profile_offsets");
         goto err;
     }
 
@@ -72,24 +70,24 @@ struct dcp_input* dcp_input_create(char const* filepath)
 
     input->nmm_input = nmm_input_screate(filepath, input->stream);
     if (!input->nmm_input) {
-        imm_error("could not nmm_input_screate");
+        error("could not nmm_input_screate");
         goto err;
     }
 
-    input->curr_profile = 0;
+    input->profid = 0;
     input->closed = false;
 
     return input;
 
 err:
     if (input->filepath)
-        free_c(input->filepath);
+        free((void*)input->filepath);
 
     if (input->stream)
         fclose(input->stream);
 
     if (input->profile_offsets)
-        free_c(input->profile_offsets);
+        free((void*)input->profile_offsets);
 
     if (input->profile_metadatas) {
         for (uint32_t i = 0; i < input->nprofiles; ++i) {
@@ -97,35 +95,42 @@ err:
                 break;
             dcp_metadata_destroy(input->profile_metadatas[i]);
         }
-        free_c(input->profile_metadatas);
+        free(input->profile_metadatas);
     }
 
     if (input->nmm_input)
         nmm_input_destroy(input->nmm_input);
 
-    free_c(input);
+    free(input);
     return NULL;
 }
 
 int dcp_input_destroy(struct dcp_input* input)
 {
     int errno = dcp_input_close(input);
-    free_c(input->filepath);
-    free_c(input->profile_offsets);
+    free((void*)input->filepath);
+    free((void*)input->profile_offsets);
     for (uint32_t i = 0; i < input->nprofiles; ++i)
         dcp_metadata_destroy(input->profile_metadatas[i]);
-    free_c(input->profile_metadatas);
+    free(input->profile_metadatas);
     nmm_input_destroy(input->nmm_input);
-    free_c(input);
+    free(input);
     return errno;
 }
 
-bool dcp_input_end(struct dcp_input const* input) { return input->curr_profile >= input->nprofiles; }
+bool dcp_input_end(struct dcp_input const* input) { return input->profid >= input->nprofiles; }
+
+struct dcp_metadata const* dcp_input_metadata(struct dcp_input const* input, uint32_t profid)
+{
+    return input->profile_metadatas[profid];
+}
+
+uint32_t dcp_input_nprofiles(struct dcp_input const* input) { return input->nprofiles; }
 
 struct dcp_profile const* dcp_input_read(struct dcp_input* input)
 {
     if (dcp_input_end(input))
         return NULL;
-    struct dcp_metadata const* mt = profile_metadata_clone(input->profile_metadatas[input->curr_profile]);
-    return profile_create(input->curr_profile++, nmm_input_read(input->nmm_input), mt);
+    struct dcp_metadata const* mt = profile_metadata_clone(input->profile_metadatas[input->profid]);
+    return profile_create(input->profid++, nmm_input_read(input->nmm_input), mt);
 }

@@ -2,7 +2,6 @@
 #define PROFILE_H
 
 #include <stdint.h>
-#include <stdio.h>
 
 struct dcp_metadata;
 struct dcp_profile;

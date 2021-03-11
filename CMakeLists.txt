@@ -33,10 +33,8 @@ if(OPENMP)
 endif()
 
 add_library(deciphon
-    src/file.c
     src/input.c
     src/metadata.c
-    src/misc.c
     src/output.c
     src/profile.c
     src/profile_ring.c
@@ -44,7 +42,9 @@ add_library(deciphon
     src/result_ring.c
     src/results.c
     src/server.c
+    src/special_trans.c
     src/task.c
+    src/util.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 

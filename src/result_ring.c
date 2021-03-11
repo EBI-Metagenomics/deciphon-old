@@ -1,5 +1,5 @@
 #include "result_ring.h"
-#include "array.h"
+#include "util.h"
 
 struct result_ring result_ring_init(void)
 {

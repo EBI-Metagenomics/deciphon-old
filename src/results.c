@@ -1,8 +1,7 @@
+#include "results.h"
 #include "deciphon/deciphon.h"
-#include "free.h"
 #include "lib/c-list.h"
 #include "result.h"
-#include "results.h"
 #include <stdlib.h>
 
 struct dcp_results
@@ -17,7 +16,7 @@ struct dcp_results* dcp_results_create(void)
     return results;
 }
 
-void dcp_results_destroy(struct dcp_results const* results) { free_c(results); }
+void dcp_results_destroy(struct dcp_results const* results) { free((void*)results); }
 
 struct dcp_result const* dcp_results_first(struct dcp_results const* results)
 {

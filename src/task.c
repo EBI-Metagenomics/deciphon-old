@@ -1,6 +1,5 @@
 #include "task.h"
 #include "deciphon/deciphon.h"
-#include "free.h"
 #include "results.h"
 #include "sequence.h"
 #include <stdlib.h>
@@ -33,7 +32,7 @@ struct dcp_task* dcp_task_create(void)
 void dcp_task_destroy(struct dcp_task const* task)
 {
     free_sequences((struct dcp_task*)task);
-    free_c(task);
+    free((void*)task);
 }
 
 void dcp_task_reset(struct dcp_task* task)
@@ -66,8 +65,8 @@ static void free_sequences(struct dcp_task* task)
     struct sequence* safe = NULL;
     c_list_for_each_entry_safe (iter, safe, &task->sequences, link) {
         c_list_unlink(&iter->link);
-        free_c(iter->sequence);
-        free_c(iter);
+        free((void*)iter->sequence);
+        free(iter);
     }
     c_list_init(&task->sequences);
 }

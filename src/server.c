@@ -1,6 +1,5 @@
 #include "deciphon/deciphon.h"
 #include "elapsed/elapsed.h"
-#include "free.h"
 #include "nmm/nmm.h"
 #include "profile.h"
 #include "profile_ring.h"
@@ -43,8 +42,8 @@ struct dcp_server* dcp_server_create(char const* filepath)
 
 void dcp_server_destroy(struct dcp_server const* server)
 {
-    free_c(server->filepath);
-    free_c(server);
+    free((void*)server->filepath);
+    free((void*)server);
 }
 
 double dcp_server_elapsed(struct dcp_server const* server) { return elapsed_seconds(&server->elapsed); }

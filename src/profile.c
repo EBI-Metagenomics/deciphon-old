@@ -1,13 +1,8 @@
 #include "profile.h"
-#include "array.h"
 #include "deciphon/deciphon.h"
-#include "file.h"
-#include "free.h"
-#include "misc.h"
 #include "nmm/nmm.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "special_trans.h"
+#include "util.h"
 
 struct dcp_profile
 {
@@ -37,10 +32,10 @@ void dcp_profile_destroy(struct dcp_profile const* prof, bool deep)
     nmm_profile_destroy(prof->nmm_profile, deep);
     if (deep)
         dcp_metadata_destroy(prof->mt);
-    free_c(prof);
+    free((void*)prof);
 }
 
-void dcp_profile_free(struct dcp_profile const* prof) { free_c(prof); }
+void dcp_profile_free(struct dcp_profile const* prof) { free((void*)prof); }
 
 struct imm_model* dcp_profile_model(struct dcp_profile const* prof, uint8_t i)
 {
@@ -58,8 +53,8 @@ struct nmm_profile const* dcp_profile_nmm_profile(struct dcp_profile const* prof
 void dcp_profile_setup(struct imm_hmm* hmm, struct imm_dp* dp, bool multiple_hits, uint32_t target_length,
                        bool hmmer3_compat)
 {
-    struct special_trans trans = target_length_model(multiple_hits, target_length, hmmer3_compat);
-    set_special_trans(trans, hmm, dp);
+    struct special_trans trans = special_trans_get(multiple_hits, target_length, hmmer3_compat);
+    special_trans_set(trans, hmm, dp);
 }
 
 struct dcp_profile* profile_create(uint32_t id, struct nmm_profile* prof, struct dcp_metadata const* mt)

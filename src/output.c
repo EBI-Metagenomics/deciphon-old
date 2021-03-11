@@ -1,12 +1,9 @@
 #include "deciphon/deciphon.h"
-#include "file.h"
-#include "free.h"
 #include "lib/c-list.h"
 #include "metadata.h"
 #include "nmm/nmm.h"
 #include "profile.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "util.h"
 #include <string.h>
 
 struct offset
@@ -49,13 +46,13 @@ int dcp_output_close(struct dcp_output* output)
     }
     tmp_stream = fopen(output->tmp_filepath, "rb");
     if (!tmp_stream) {
-        imm_error("failed to open %s", output->tmp_filepath);
+        error("failed to open %s", output->tmp_filepath);
         errno = 1;
         goto cleanup;
     }
 
     if (fwrite(&output->nprofiles, sizeof(output->nprofiles), 1, output->stream) < 1) {
-        imm_error("could not write nprofiles");
+        error("could not write nprofiles");
         errno = 1;
         goto cleanup;
     }
@@ -66,7 +63,7 @@ int dcp_output_close(struct dcp_output* output)
     c_list_for_each_entry (offset, &output->profile_offsets, link) {
         uint64_t v = start + offset->value;
         if (fwrite(&v, sizeof(v), 1, output->stream) < 1) {
-            imm_error("could not write offset");
+            error("could not write offset");
             errno = 1;
             goto cleanup;
         }
@@ -80,18 +77,18 @@ int dcp_output_close(struct dcp_output* output)
         }
     }
 
-    if (file_copy_content(output->stream, tmp_stream)) {
-        imm_error("failed to copy file");
+    if (fcopy_content(output->stream, tmp_stream)) {
+        error("failed to copy file");
         errno = 1;
         goto cleanup;
     }
 
 cleanup:
     if (output->stream && fclose(output->stream))
-        imm_error("failed to close file %s", output->filepath);
+        error("failed to close file %s", output->filepath);
 
     if (tmp_stream && fclose(tmp_stream))
-        imm_error("failed to close file %s", output->tmp_filepath);
+        error("failed to close file %s", output->tmp_filepath);
 
     output->closed = true;
     return errno;
@@ -111,12 +108,12 @@ struct dcp_output* dcp_output_create(char const* filepath)
     output->closed = false;
 
     if (!(output->stream = fopen(filepath, "wb"))) {
-        imm_error("could not open file %s for writing", filepath);
+        error("could not open file %s for writing", filepath);
         goto err;
     }
 
     if (!(output->tmp_output = nmm_output_create(output->tmp_filepath))) {
-        imm_error("could not create output");
+        error("could not create output");
         goto err;
     }
 
@@ -124,18 +121,18 @@ struct dcp_output* dcp_output_create(char const* filepath)
 
 err:
     if (output->filepath)
-        free_c(output->filepath);
+        free((void*)output->filepath);
 
     if (output->stream)
         fclose(output->stream);
 
     if (output->tmp_filepath)
-        free_c(output->tmp_filepath);
+        free((void*)output->tmp_filepath);
 
     if (output->tmp_output)
         nmm_output_destroy(output->tmp_output);
 
-    free_c(output);
+    free(output);
     return NULL;
 }
 
@@ -143,7 +140,7 @@ int dcp_output_destroy(struct dcp_output* output)
 {
     int errno = 0;
     if (nmm_output_destroy(output->tmp_output)) {
-        imm_error("could not destroy temporary output");
+        error("could not destroy temporary output");
         errno = 1;
         goto cleanup;
     }
@@ -154,25 +151,25 @@ int dcp_output_destroy(struct dcp_output* output)
     }
 cleanup:
     if (output->filepath)
-        free_c(output->filepath);
+        free((void*)output->filepath);
 
     if (output->tmp_filepath)
-        free_c(output->tmp_filepath);
+        free((void*)output->tmp_filepath);
 
     struct offset* safe_offset = NULL;
     struct offset* offset = NULL;
     c_list_for_each_entry_safe (offset, safe_offset, &output->profile_offsets, link) {
-        free_c(offset);
+        free(offset);
     }
 
     struct metadata* safe_mt = NULL;
     struct metadata* mt = NULL;
     c_list_for_each_entry_safe (mt, safe_mt, &output->profile_metadatas, link) {
         dcp_metadata_destroy(mt->mt);
-        free_c(mt);
+        free(mt);
     }
 
-    free_c(output);
+    free(output);
     return errno;
 }
 
@@ -180,7 +177,7 @@ int dcp_output_write(struct dcp_output* output, struct dcp_profile const* prof)
 {
     int64_t v = nmm_output_ftell(output->tmp_output);
     if (v < 0) {
-        imm_error("failed to ftell");
+        error("failed to ftell");
         return 1;
     }
     struct offset* offset = malloc(sizeof(*offset));

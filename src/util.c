@@ -1,32 +1,32 @@
-#include "file.h"
-#include "imm/imm.h"
+#include "util.h"
+#include <stdarg.h>
 
 #define BUFFSIZE (8 * 1024)
 
-int file_copy_content(FILE* dst, FILE* src)
+int fcopy_content(FILE* dst, FILE* src)
 {
     char   buffer[BUFFSIZE];
     size_t n = 0;
     while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, src)) > 0) {
         if (n < BUFFSIZE && ferror(src)) {
-            imm_error("failed to read from file");
+            error("failed to read from file");
             clearerr(src);
             return 1;
         }
         if (fwrite(buffer, sizeof(*buffer), n, dst) < n) {
-            imm_error("failed to write to file");
+            error("failed to write to file");
             return 1;
         }
     }
     if (ferror(src)) {
-        imm_error("failed to read from file");
+        error("failed to read from file");
         clearerr(src);
         return 1;
     }
     return 0;
 }
 
-int file_read_string(FILE* stream, char* str, size_t max_size)
+int fread_string(FILE* stream, char* str, size_t max_size)
 {
     size_t count = 0;
     do {
@@ -45,4 +45,22 @@ int file_read_string(FILE* stream, char* str, size_t max_size)
     } while ((*str++ != '\0') && (count < max_size));
 
     return count == max_size;
+}
+
+void die(char const* err, ...)
+{
+    va_list params;
+    va_start(params, err);
+    error(err, params);
+    va_end(params);
+    exit(1);
+}
+
+void error(char const* err, ...)
+{
+    va_list params;
+    va_start(params, err);
+    vfprintf(stderr, err, params);
+    fputc('\n', stderr);
+    va_end(params);
 }

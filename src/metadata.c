@@ -1,8 +1,6 @@
 #include "metadata.h"
-#include "array.h"
 #include "deciphon/deciphon.h"
-#include "file.h"
-#include "free.h"
+#include "util.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -22,9 +20,9 @@ struct dcp_metadata* dcp_metadata_create(char const* name, char const* acc)
 
 void dcp_metadata_destroy(struct dcp_metadata const* mt)
 {
-    free_c(mt->name);
-    free_c(mt->acc);
-    free_c(mt);
+    free((void*)mt->name);
+    free((void*)mt->acc);
+    free((void*)mt);
 }
 
 char const* dcp_metadata_acc(struct dcp_metadata const* mt) { return mt->acc; }
@@ -44,21 +42,17 @@ struct dcp_metadata const* profile_metadata_read(FILE* stream)
     char name[UINT8_MAX];
     char acc[UINT8_MAX];
 
-    if (file_read_string(stream, name, ARRAY_SIZE(name))) {
-        imm_error("failed to read name from metadata");
+    if (fread_string(stream, name, ARRAY_SIZE(name))) {
+        error("failed to read name from metadata");
         return NULL;
     }
 
-    if (file_read_string(stream, acc, ARRAY_SIZE(acc))) {
-        imm_error("failed to read acc from metadata");
+    if (fread_string(stream, acc, ARRAY_SIZE(acc))) {
+        error("failed to read acc from metadata");
         return NULL;
     }
 
-    struct dcp_metadata* mt = malloc(sizeof(*mt));
-    mt->name = strdup(name);
-    mt->acc = strdup(acc);
-
-    return mt;
+    return dcp_metadata_create(name, acc);
 }
 
 uint16_t profile_metadata_size(struct dcp_metadata const* mt)
@@ -74,7 +68,7 @@ int profile_metadata_write(struct dcp_metadata const* mt, FILE* stream)
     errno += fputc('\0', stream) != '\0';
 
     if (errno) {
-        imm_error("failed to write metadata");
+        error("failed to write metadata");
         return 1;
     }
     return 0;
