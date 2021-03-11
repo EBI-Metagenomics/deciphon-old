@@ -78,16 +78,13 @@ void profile_consumer(struct dcp_server* server, struct dcp_task* task)
         }
 
         if (prof) {
+            struct sequence const* seq = task_first_sequence(task);
+            uint32_t               seqid = 0;
+            while (seq) {
+                struct dcp_result* r = scan(server, prof, seq->sequence, seqid++);
 #pragma omp critical
-            {
-                struct sequence const* seq = task_first_sequence(task);
-                uint32_t               seqid = 0;
-                while (seq) {
-                    struct dcp_result* r = scan(server, prof, seq->sequence, seqid++);
-                    /* #pragma omp critical */
-                    task_add_result(task, r);
-                    seq = task_next_sequence(task, seq);
-                }
+                task_add_result(task, r);
+                seq = task_next_sequence(task, seq);
             }
             dcp_profile_destroy(prof, true);
         }
@@ -164,6 +161,7 @@ struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* pro
     r->alt_stream = NULL;
     r->null_loglik = null_loglik;
     r->null_result = null_result;
+    r->null_stream = NULL;
     c_list_init(&r->link);
 
     struct imm_path const* path = imm_result_path(alt_result);
@@ -215,6 +213,56 @@ struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* pro
         --i;
     alt_stream[i] = '\0';
     r->alt_stream = alt_stream;
+
+    path = imm_result_path(null_result);
+    step = imm_path_first(path);
+    size = 1;
+    while (step) {
+        size += strlen(imm_state_get_name(imm_step_state(step))) + 3;
+        step = imm_path_next(path, step);
+    }
+    if (size > 1)
+        --size;
+
+    char* null_stream = malloc(sizeof(*r->null_stream) * size);
+    step = imm_path_first(path);
+    i = 0;
+    while (step) {
+        char const* name = imm_state_get_name(imm_step_state(step));
+        while (*name != '\0')
+            null_stream[i++] = *(name++);
+
+        null_stream[i++] = ':';
+
+        if (imm_step_seq_len(step) == 0)
+            null_stream[i++] = '0';
+        else if (imm_step_seq_len(step) == 1)
+            null_stream[i++] = '1';
+        else if (imm_step_seq_len(step) == 2)
+            null_stream[i++] = '2';
+        else if (imm_step_seq_len(step) == 3)
+            null_stream[i++] = '3';
+        else if (imm_step_seq_len(step) == 4)
+            null_stream[i++] = '4';
+        else if (imm_step_seq_len(step) == 5)
+            null_stream[i++] = '5';
+        else if (imm_step_seq_len(step) == 6)
+            null_stream[i++] = '6';
+        else if (imm_step_seq_len(step) == 7)
+            null_stream[i++] = '7';
+        else if (imm_step_seq_len(step) == 8)
+            null_stream[i++] = '8';
+        else if (imm_step_seq_len(step) == 9)
+            null_stream[i++] = '9';
+
+        null_stream[i++] = ',';
+
+        step = imm_path_next(path, step);
+    }
+    if (i > 0)
+        --i;
+    null_stream[i] = '\0';
+    r->null_stream = null_stream;
 
     return r;
 }

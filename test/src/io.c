@@ -213,11 +213,15 @@ void test_small(void)
 {
     char const* names[] = {"name0", "name1"};
     char const* accs[] = {"acc0", "acc1"};
-    imm_float   logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
-                           imm_lprob_invalid(), -3.5707764696, -5.1196932619};
+    imm_float   alt_logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
+                               imm_lprob_invalid(), -3.5707764696, -5.1196932619};
+    imm_float   null_logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
+                                imm_lprob_invalid(), -3.5707764696, -5.1196932619};
+    char const* alt_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
+    char const* null_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
 
     struct dcp_server* server = dcp_server_create(TMPDIR "/two_profiles.dcp");
-    struct dcp_task*   task = dcp_task_create();
+    struct dcp_task*   task = dcp_task_create(true, true);
     dcp_task_add(task, "ACT");
     dcp_task_add(task, "AGATG");
     dcp_task_add(task, "CCCCCC");
@@ -231,7 +235,12 @@ void test_small(void)
 
         cass_equal(strcmp(names[profid], dcp_metadata_name(mt)), 0);
         cass_equal(strcmp(accs[profid], dcp_metadata_acc(mt)), 0);
-        cass_close(dcp_result_alt_loglik(result), logliks[profid * 3 + seqid]);
+
+        cass_close(dcp_result_alt_loglik(result), alt_logliks[profid * 3 + seqid]);
+        cass_close(dcp_result_null_loglik(result), null_logliks[profid * 3 + seqid]);
+
+        cass_equal(strcmp(dcp_result_alt_stream(result), alt_streams[profid * 3 + seqid]), 0);
+        cass_equal(strcmp(dcp_result_null_stream(result), null_streams[profid * 3 + seqid]), 0);
 
         struct dcp_result const* tmp = result;
         result = dcp_results_next(results, result);

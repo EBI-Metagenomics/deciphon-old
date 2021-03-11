@@ -13,6 +13,7 @@ struct dcp_result
     char const*              alt_stream;
     imm_float                null_loglik;
     struct imm_result const* null_result;
+    char const*              null_stream;
     CList                    link;
 };
 

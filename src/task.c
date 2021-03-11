@@ -7,6 +7,8 @@
 
 struct dcp_task
 {
+    bool                loglik;
+    bool                null;
     CList               sequences;
     struct dcp_results* results;
 };
@@ -21,9 +23,11 @@ void dcp_task_add(struct dcp_task* task, char const* sequence)
     c_list_link_tail(&task->sequences, &seq->link);
 }
 
-struct dcp_task* dcp_task_create(void)
+struct dcp_task* dcp_task_create(bool loglik, bool null)
 {
     struct dcp_task* task = malloc(sizeof(*task));
+    task->loglik = loglik;
+    task->null = null;
     c_list_init(&task->sequences);
     task->results = dcp_results_create();
     return task;
