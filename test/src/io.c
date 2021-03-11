@@ -61,18 +61,18 @@ void test_output(void)
     imm_seq_destroy(seq);
     imm_path_destroy(path);
 
-    struct imm_dp const* dp = imm_hmm_create_dp(hmm, nmm_frame_state_super(state1));
+    struct imm_dp const* dp = imm_hmm_create_dp(hmm, nmm_codon_state_super(state2));
     cass_cond(dp != NULL);
 
-    seq = imm_seq_create("A", abc);
+    seq = imm_seq_create("ACCATG", abc);
     struct imm_dp_task* task = imm_dp_task_create(dp);
     imm_dp_task_setup(task, seq);
     struct imm_result const* r = imm_dp_viterbi(dp, task);
     imm_dp_task_destroy(task);
     cass_cond(r != NULL);
     imm_float loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
-    cass_close(loglik, -6.0198640216);
-    cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
+    cass_close(loglik, -10.0458194611);
+    cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -10.0458194611);
     imm_seq_destroy(seq);
     imm_result_destroy(r);
 
@@ -87,8 +87,11 @@ void test_output(void)
     cass_equal(dcp_output_write(output, p), 0);
     dcp_metadata_destroy(mt);
     dcp_profile_destroy(p, false);
+    imm_dp_destroy(dp);
 
     /* Second profile */
+    imm_hmm_set_trans(hmm, nmm_frame_state_super(state1), nmm_codon_state_super(state2), imm_log(0.9));
+    dp = imm_hmm_create_dp(hmm, nmm_codon_state_super(state2));
     mt = dcp_metadata_create("name1", "acc1");
     p = dcp_profile_create(abc, mt);
     dcp_profile_append_model(p, imm_model_create(hmm, dp));
@@ -96,6 +99,7 @@ void test_output(void)
     cass_equal(dcp_output_write(output, p), 0);
     dcp_metadata_destroy(mt);
     dcp_profile_destroy(p, false);
+    imm_dp_destroy(dp);
 
     cass_equal(dcp_output_destroy(output), 0);
 
@@ -106,7 +110,6 @@ void test_output(void)
     nmm_codon_state_destroy(state2);
     nmm_codon_marg_destroy(codont);
     nmm_base_lprob_destroy(basep);
-    imm_dp_destroy(dp);
     nmm_codon_lprob_destroy(codonp);
 }
 
@@ -134,15 +137,15 @@ void test_input(void)
     struct imm_hmm*      hmm = imm_model_hmm(model);
     struct imm_dp const* dp = imm_model_dp(model);
 
-    struct imm_seq const* seq = imm_seq_create("A", abc);
+    struct imm_seq const* seq = imm_seq_create("ACCATG", abc);
     struct imm_dp_task*   task = imm_dp_task_create(dp);
     imm_dp_task_setup(task, seq);
     struct imm_result const* r = imm_dp_viterbi(dp, task);
     cass_cond(r != NULL);
     imm_float loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
 
-    cass_close(loglik, -6.0198640216);
-    cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
+    cass_close(loglik, -10.0458194611);
+    cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -10.0458194611);
     imm_result_destroy(r);
 
     imm_dp_task_destroy(task);
@@ -167,15 +170,15 @@ void test_input(void)
     hmm = imm_model_hmm(model);
     dp = imm_model_dp(model);
 
-    seq = imm_seq_create("A", abc);
+    seq = imm_seq_create("ACCATG", abc);
     task = imm_dp_task_create(dp);
     imm_dp_task_setup(task, seq);
     r = imm_dp_viterbi(dp, task);
     cass_cond(r != NULL);
     loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
 
-    cass_close(loglik, -6.0198640216);
-    cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
+    cass_close(loglik, -8.5417420643);
+    cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -8.5417420643);
     imm_result_destroy(r);
 
     imm_dp_task_destroy(task);
@@ -189,15 +192,15 @@ void test_input(void)
     hmm = imm_model_hmm(model);
     dp = imm_model_dp(model);
 
-    seq = imm_seq_create("A", abc);
+    seq = imm_seq_create("ACCATG", abc);
     task = imm_dp_task_create(dp);
     imm_dp_task_setup(task, seq);
     r = imm_dp_viterbi(dp, task);
     cass_cond(r != NULL);
     loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
 
-    cass_close(loglik, -6.0198640216);
-    cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -6.0198640216);
+    cass_close(loglik, -8.5417420643);
+    cass_close(imm_hmm_loglikelihood(hmm, seq, imm_result_path(r)), -8.5417420643);
     imm_result_destroy(r);
 
     imm_dp_task_destroy(task);
@@ -208,21 +211,28 @@ void test_input(void)
 
 void test_small(void)
 {
+    char const* names[] = {"name0", "name1"};
+    char const* accs[] = {"acc0", "acc1"};
+    imm_float   logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
+                           imm_lprob_invalid(), -3.5707764696, -5.1196932619};
+
     struct dcp_server* server = dcp_server_create(TMPDIR "/two_profiles.dcp");
     struct dcp_task*   task = dcp_task_create();
-    dcp_task_add(task, "A");
+    dcp_task_add(task, "ACT");
+    dcp_task_add(task, "AGATG");
+    dcp_task_add(task, "CCCCCC");
     dcp_server_scan(server, task);
     struct dcp_results const* results = dcp_task_results(task);
     struct dcp_result const*  result = dcp_results_first(results);
     while (result) {
+        uint32_t                   profid = dcp_result_profid(result);
+        uint32_t                   seqid = dcp_result_seqid(result);
+        struct dcp_metadata const* mt = dcp_server_metadata(server, profid);
 
-        if (dcp_result_profid(result) == 0 && dcp_result_seqid(result) == 0) {
-            cass_close(dcp_result_alt_loglik(result), -6.0198640216);
-        }
+        cass_equal(strcmp(names[profid], dcp_metadata_name(mt)), 0);
+        cass_equal(strcmp(accs[profid], dcp_metadata_acc(mt)), 0);
+        cass_close(dcp_result_alt_loglik(result), logliks[profid * 3 + seqid]);
 
-        if (dcp_result_profid(result) == 1 && dcp_result_seqid(result) == 0) {
-            cass_close(dcp_result_alt_loglik(result), -6.0198640216);
-        }
         struct dcp_result const* tmp = result;
         result = dcp_results_next(results, result);
         dcp_result_destroy(tmp);

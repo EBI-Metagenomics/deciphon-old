@@ -1,5 +1,4 @@
 #include "deciphon/deciphon.h"
-#include "elapsed/elapsed.h"
 #include "nmm/nmm.h"
 #include "profile.h"
 #include "profile_ring.h"
@@ -19,7 +18,7 @@ struct dcp_server
     atomic_uint         nrunning_tasks;
     char const*         filepath;
     struct profile_ring profiles;
-    struct elapsed      elapsed;
+    struct dcp_input*   input;
 };
 
 void               destroy(struct dcp_server* server);
@@ -36,21 +35,29 @@ struct dcp_server* dcp_server_create(char const* filepath)
     server->nrunning_tasks = 0;
     server->filepath = strdup(filepath);
     server->profiles = profile_ring_init();
-    server->elapsed = elapsed_init();
+    server->input = dcp_input_create(server->filepath);
+    if (!server->input) {
+        free((void*)server->filepath);
+        free(server);
+        return NULL;
+    }
     return server;
 }
 
 void dcp_server_destroy(struct dcp_server const* server)
 {
     free((void*)server->filepath);
+    dcp_input_destroy(server->input);
     free((void*)server);
 }
 
-double dcp_server_elapsed(struct dcp_server const* server) { return elapsed_seconds(&server->elapsed); }
+struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, uint32_t profid)
+{
+    return dcp_input_metadata(server->input, profid);
+}
 
 void dcp_server_scan(struct dcp_server* server, struct dcp_task* task)
 {
-    elapsed_start(&server->elapsed);
 #pragma omp        parallel default(none) shared(server, task)
     {
 #pragma omp single nowait
@@ -59,7 +66,6 @@ void dcp_server_scan(struct dcp_server* server, struct dcp_task* task)
 #pragma omp task
         profile_consumer(server, task);
     }
-    elapsed_end(&server->elapsed);
 }
 
 void profile_consumer(struct dcp_server* server, struct dcp_task* task)
@@ -91,12 +97,11 @@ void profile_consumer(struct dcp_server* server, struct dcp_task* task)
 
 void profile_producer(struct dcp_server* server)
 {
-    struct dcp_input* input = dcp_input_create(server->filepath);
-    while (!dcp_input_end(input)) {
-        struct dcp_profile const* prof = dcp_input_read(input);
+    dcp_input_reset(server->input);
+    while (!dcp_input_end(server->input)) {
+        struct dcp_profile const* prof = dcp_input_read(server->input);
         profile_ring_push(&server->profiles, prof);
     }
-    dcp_input_destroy(input);
     server->finished = true;
 }
 
@@ -137,11 +142,15 @@ struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* pro
 
     imm_dp_task_setup(task_alt, seq);
     struct imm_result const* alt_result = imm_dp_viterbi(dp_alt, task_alt);
-    imm_float                alt_loglik = imm_hmm_loglikelihood(hmm_alt, seq, imm_result_path(alt_result));
+    imm_float                alt_loglik = imm_lprob_invalid();
+    if (!imm_path_empty(imm_result_path(alt_result)))
+        alt_loglik = imm_hmm_loglikelihood(hmm_alt, seq, imm_result_path(alt_result));
 
     imm_dp_task_setup(task_null, seq);
     struct imm_result const* null_result = imm_dp_viterbi(dp_null, task_null);
-    imm_float                null_loglik = imm_hmm_loglikelihood(hmm_null, seq, imm_result_path(null_result));
+    imm_float                null_loglik = imm_lprob_invalid();
+    if (!imm_path_empty(imm_result_path(null_result)))
+        null_loglik = imm_hmm_loglikelihood(hmm_null, seq, imm_result_path(null_result));
 
     imm_seq_destroy(seq);
     imm_dp_task_destroy(task_alt);

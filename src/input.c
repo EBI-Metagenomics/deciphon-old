@@ -15,7 +15,8 @@ struct dcp_input
     struct dcp_metadata const** profile_metadatas;
     uint32_t                    profid;
 
-    bool closed;
+    int64_t start;
+    bool    closed;
 };
 
 int dcp_input_close(struct dcp_input* input)
@@ -76,6 +77,10 @@ struct dcp_input* dcp_input_create(char const* filepath)
 
     input->profid = 0;
     input->closed = false;
+    if ((input->start = imm_file_tell(input->stream)) < 0) {
+        error("could not ftell %s", input->filepath);
+        goto err;
+    }
 
     return input;
 
@@ -133,4 +138,13 @@ struct dcp_profile const* dcp_input_read(struct dcp_input* input)
         return NULL;
     struct dcp_metadata const* mt = profile_metadata_clone(input->profile_metadatas[input->profid]);
     return profile_create(input->profid++, nmm_input_read(input->nmm_input), mt);
+}
+
+int dcp_input_reset(struct dcp_input* input)
+{
+    if (imm_file_seek(input->stream, input->start, SEEK_SET)) {
+        error("could not fseek %s", input->filepath);
+        return 1;
+    }
+    return 0;
 }
