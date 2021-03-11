@@ -26,7 +26,7 @@ void               init(struct dcp_server* server, char const* filepath, char co
 void               profile_consumer(struct dcp_server* server, struct dcp_task* task);
 void               profile_producer(struct dcp_server* server);
 struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
-                        uint32_t seqid);
+                        uint32_t seqid, struct dcp_task_cfg const* cfg);
 
 struct dcp_server* dcp_server_create(char const* filepath)
 {
@@ -81,7 +81,7 @@ void profile_consumer(struct dcp_server* server, struct dcp_task* task)
             struct sequence const* seq = task_first_sequence(task);
             uint32_t               seqid = 0;
             while (seq) {
-                struct dcp_result* r = scan(server, prof, seq->sequence, seqid++);
+                struct dcp_result* r = scan(server, prof, seq->sequence, seqid++, task_cfg(task));
 #pragma omp critical
                 task_add_result(task, r);
                 seq = task_next_sequence(task, seq);
@@ -119,7 +119,7 @@ void result_consumer(struct dcp_server* server)
 #endif
 
 struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
-                        uint32_t seqid)
+                        uint32_t seqid, struct dcp_task_cfg const* cfg)
 {
     struct nmm_profile const* p = dcp_profile_nmm_profile(profile);
     struct imm_abc const*     abc = nmm_profile_abc(p);

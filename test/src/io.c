@@ -220,8 +220,9 @@ void test_small(void)
     char const* alt_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
     char const* null_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
 
-    struct dcp_server* server = dcp_server_create(TMPDIR "/two_profiles.dcp");
-    struct dcp_task*   task = dcp_task_create(true, true);
+    struct dcp_server*  server = dcp_server_create(TMPDIR "/two_profiles.dcp");
+    struct dcp_task_cfg cfg = {true, true, true, false};
+    struct dcp_task*    task = dcp_task_create(cfg);
     dcp_task_add(task, "ACT");
     dcp_task_add(task, "AGATG");
     dcp_task_add(task, "CCCCCC");
