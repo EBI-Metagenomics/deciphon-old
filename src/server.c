@@ -21,12 +21,18 @@ struct dcp_server
     struct dcp_input*   input;
 };
 
-void               destroy(struct dcp_server* server);
-void               init(struct dcp_server* server, char const* filepath, char const* seq);
-void               profile_consumer(struct dcp_server* server, struct dcp_task* task);
-void               profile_producer(struct dcp_server* server);
-struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
-                        uint32_t seqid, struct dcp_task_cfg const* cfg);
+struct model_scan_result
+{
+    imm_float                loglik;
+    struct imm_result const* result;
+    char const*              stream;
+};
+
+static struct model_scan_result model_scan(struct imm_model* model, struct imm_seq const* seq);
+static void                     profile_consumer(struct dcp_server* server, struct dcp_task* task);
+static void                     profile_producer(struct dcp_server* server);
+static struct dcp_result*       scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
+                                     uint32_t seqid, struct dcp_task_cfg const* cfg);
 
 struct dcp_server* dcp_server_create(char const* filepath)
 {
@@ -68,7 +74,7 @@ void dcp_server_scan(struct dcp_server* server, struct dcp_task* task)
     }
 }
 
-void profile_consumer(struct dcp_server* server, struct dcp_task* task)
+static void profile_consumer(struct dcp_server* server, struct dcp_task* task)
 {
     server->nrunning_tasks++;
     struct dcp_profile const* prof = NULL;
@@ -92,7 +98,7 @@ void profile_consumer(struct dcp_server* server, struct dcp_task* task)
     server->nrunning_tasks--;
 }
 
-void profile_producer(struct dcp_server* server)
+static void profile_producer(struct dcp_server* server)
 {
     dcp_input_reset(server->input);
     while (!dcp_input_end(server->input)) {
@@ -118,53 +124,47 @@ void result_consumer(struct dcp_server* server)
 }
 #endif
 
-struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
-                        uint32_t seqid, struct dcp_task_cfg const* cfg)
+static struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
+                               uint32_t seqid, struct dcp_task_cfg const* cfg)
 {
     struct nmm_profile const* p = dcp_profile_nmm_profile(profile);
     struct imm_abc const*     abc = nmm_profile_abc(p);
     struct imm_seq const*     seq = imm_seq_create(sequence, abc);
 
-    struct imm_model* alt = nmm_profile_get_model(p, 0);
-    struct imm_model* null = nmm_profile_get_model(p, 1);
-
-    struct imm_hmm* hmm_alt = imm_model_hmm(alt);
-    struct imm_hmm* hmm_null = imm_model_hmm(null);
-
-    struct imm_dp const* dp_alt = imm_model_dp(alt);
-    struct imm_dp const* dp_null = imm_model_dp(null);
-
-    struct imm_dp_task* task_alt = imm_dp_task_create(dp_alt);
-    struct imm_dp_task* task_null = imm_dp_task_create(dp_null);
-
-    imm_dp_task_setup(task_alt, seq);
-    struct imm_result const* alt_result = imm_dp_viterbi(dp_alt, task_alt);
-    imm_float                alt_loglik = imm_lprob_invalid();
-    if (!imm_path_empty(imm_result_path(alt_result)))
-        alt_loglik = imm_hmm_loglikelihood(hmm_alt, seq, imm_result_path(alt_result));
-
-    imm_dp_task_setup(task_null, seq);
-    struct imm_result const* null_result = imm_dp_viterbi(dp_null, task_null);
-    imm_float                null_loglik = imm_lprob_invalid();
-    if (!imm_path_empty(imm_result_path(null_result)))
-        null_loglik = imm_hmm_loglikelihood(hmm_null, seq, imm_result_path(null_result));
-
-    imm_seq_destroy(seq);
-    imm_dp_task_destroy(task_alt);
-    imm_dp_task_destroy(task_null);
+    struct model_scan_result alt = model_scan(nmm_profile_get_model(p, 0), seq);
+    struct model_scan_result null = model_scan(nmm_profile_get_model(p, 1), seq);
 
     struct dcp_result* r = malloc(sizeof(*r));
     r->profid = dcp_profile_id(profile);
     r->seqid = seqid;
-    r->alt_loglik = alt_loglik;
-    r->alt_result = alt_result;
-    r->alt_stream = NULL;
-    r->null_loglik = null_loglik;
-    r->null_result = null_result;
-    r->null_stream = NULL;
+    r->alt_loglik = alt.loglik;
+    r->alt_result = alt.result;
+    r->alt_stream = alt.stream;
+    r->null_loglik = null.loglik;
+    r->null_result = null.result;
+    r->null_stream = null.stream;
     c_list_init(&r->link);
 
-    struct imm_path const* path = imm_result_path(alt_result);
+    return r;
+}
+
+static struct model_scan_result model_scan(struct imm_model* model, struct imm_seq const* seq)
+{
+    struct imm_hmm* hmm = imm_model_hmm(model);
+
+    struct imm_dp const* dp = imm_model_dp(model);
+
+    struct imm_dp_task* task = imm_dp_task_create(dp);
+
+    imm_dp_task_setup(task, seq);
+    struct imm_result const* result = imm_dp_viterbi(dp, task);
+    imm_float                loglik = imm_lprob_invalid();
+    if (!imm_path_empty(imm_result_path(result)))
+        loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(result));
+
+    imm_dp_task_destroy(task);
+
+    struct imm_path const* path = imm_result_path(result);
     struct imm_step const* step = imm_path_first(path);
     size_t                 size = 1;
     while (step) {
@@ -174,95 +174,44 @@ struct dcp_result* scan(struct dcp_server* server, struct dcp_profile const* pro
     if (size > 1)
         --size;
 
-    char* alt_stream = malloc(sizeof(*r->alt_stream) * size);
+    char* stream = malloc(sizeof(*stream) * size);
     step = imm_path_first(path);
     size_t i = 0;
     while (step) {
         char const* name = imm_state_get_name(imm_step_state(step));
         while (*name != '\0')
-            alt_stream[i++] = *(name++);
+            stream[i++] = *(name++);
 
-        alt_stream[i++] = ':';
+        stream[i++] = ':';
 
         if (imm_step_seq_len(step) == 0)
-            alt_stream[i++] = '0';
+            stream[i++] = '0';
         else if (imm_step_seq_len(step) == 1)
-            alt_stream[i++] = '1';
+            stream[i++] = '1';
         else if (imm_step_seq_len(step) == 2)
-            alt_stream[i++] = '2';
+            stream[i++] = '2';
         else if (imm_step_seq_len(step) == 3)
-            alt_stream[i++] = '3';
+            stream[i++] = '3';
         else if (imm_step_seq_len(step) == 4)
-            alt_stream[i++] = '4';
+            stream[i++] = '4';
         else if (imm_step_seq_len(step) == 5)
-            alt_stream[i++] = '5';
+            stream[i++] = '5';
         else if (imm_step_seq_len(step) == 6)
-            alt_stream[i++] = '6';
+            stream[i++] = '6';
         else if (imm_step_seq_len(step) == 7)
-            alt_stream[i++] = '7';
+            stream[i++] = '7';
         else if (imm_step_seq_len(step) == 8)
-            alt_stream[i++] = '8';
+            stream[i++] = '8';
         else if (imm_step_seq_len(step) == 9)
-            alt_stream[i++] = '9';
+            stream[i++] = '9';
 
-        alt_stream[i++] = ',';
+        stream[i++] = ',';
 
         step = imm_path_next(path, step);
     }
     if (i > 0)
         --i;
-    alt_stream[i] = '\0';
-    r->alt_stream = alt_stream;
+    stream[i] = '\0';
 
-    path = imm_result_path(null_result);
-    step = imm_path_first(path);
-    size = 1;
-    while (step) {
-        size += strlen(imm_state_get_name(imm_step_state(step))) + 3;
-        step = imm_path_next(path, step);
-    }
-    if (size > 1)
-        --size;
-
-    char* null_stream = malloc(sizeof(*r->null_stream) * size);
-    step = imm_path_first(path);
-    i = 0;
-    while (step) {
-        char const* name = imm_state_get_name(imm_step_state(step));
-        while (*name != '\0')
-            null_stream[i++] = *(name++);
-
-        null_stream[i++] = ':';
-
-        if (imm_step_seq_len(step) == 0)
-            null_stream[i++] = '0';
-        else if (imm_step_seq_len(step) == 1)
-            null_stream[i++] = '1';
-        else if (imm_step_seq_len(step) == 2)
-            null_stream[i++] = '2';
-        else if (imm_step_seq_len(step) == 3)
-            null_stream[i++] = '3';
-        else if (imm_step_seq_len(step) == 4)
-            null_stream[i++] = '4';
-        else if (imm_step_seq_len(step) == 5)
-            null_stream[i++] = '5';
-        else if (imm_step_seq_len(step) == 6)
-            null_stream[i++] = '6';
-        else if (imm_step_seq_len(step) == 7)
-            null_stream[i++] = '7';
-        else if (imm_step_seq_len(step) == 8)
-            null_stream[i++] = '8';
-        else if (imm_step_seq_len(step) == 9)
-            null_stream[i++] = '9';
-
-        null_stream[i++] = ',';
-
-        step = imm_path_next(path, step);
-    }
-    if (i > 0)
-        --i;
-    null_stream[i] = '\0';
-    r->null_stream = null_stream;
-
-    return r;
+    return (struct model_scan_result){loglik, result, stream};
 }
