@@ -66,10 +66,10 @@ static void free_sequences(struct dcp_task* task)
     struct list* i = list_head(&task->sequences);
     while (i) {
         struct list      tmp = *i;
+        list_del(i);
         struct sequence* seq = container_of(i, struct sequence, link);
         free((void*)seq->sequence);
         free(seq);
-        list_del(i);
         i = list_next(&task->sequences, &tmp);
     }
     list_init(&task->sequences);
