@@ -1,4 +1,5 @@
 #include "deciphon/deciphon.h"
+#include "imm/imm.h"
 #include "nmm/nmm.h"
 #include "profile.h"
 #include "profile_ring.h"
@@ -28,7 +29,8 @@ struct model_scan_result
     char const*              stream;
 };
 
-static struct model_scan_result model_scan(struct imm_model* model, struct imm_seq const* seq);
+static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq,
+                                           bool calc_loglik);
 static void                     profile_consumer(struct dcp_server* server, struct dcp_task* task);
 static void                     profile_producer(struct dcp_server* server);
 static struct dcp_result*       scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
@@ -131,37 +133,45 @@ static struct dcp_result* scan(struct dcp_server* server, struct dcp_profile con
     struct imm_abc const*     abc = nmm_profile_abc(p);
     struct imm_seq const*     seq = imm_seq_create(sequence, abc);
 
-    struct model_scan_result alt = model_scan(nmm_profile_get_model(p, 0), seq);
-    struct model_scan_result null = model_scan(nmm_profile_get_model(p, 1), seq);
-
-    imm_seq_destroy(seq);
-
     struct dcp_result* r = malloc(sizeof(*r));
     r->profid = dcp_profile_id(profile);
     r->seqid = seqid;
+
+    struct imm_hmm* hmm = imm_model_hmm(nmm_profile_get_model(p, 0));
+    struct imm_dp*  dp = imm_model_dp(nmm_profile_get_model(p, 0));
+    /* profile_setup(hmm, dp, cfg->multiple_hits, imm_seq_length(seq), cfg->hmmer3_compat); */
+    struct model_scan_result alt = model_scan(hmm, dp, seq, cfg->loglik);
+
     r->alt_loglik = alt.loglik;
     r->alt_result = alt.result;
     r->alt_stream = alt.stream;
-    r->null_loglik = null.loglik;
-    r->null_result = null.result;
-    r->null_stream = null.stream;
+    r->null_loglik = imm_lprob_invalid();
+    r->null_result = NULL;
+    r->null_stream = NULL;
+    if (cfg->null) {
+        hmm = imm_model_hmm(nmm_profile_get_model(p, 1));
+        dp = imm_model_dp(nmm_profile_get_model(p, 1));
+        struct model_scan_result null = model_scan(hmm, dp, seq, cfg->loglik);
+        r->null_loglik = null.loglik;
+        r->null_result = null.result;
+        r->null_stream = null.stream;
+    }
     list_init(&r->link);
+
+    imm_seq_destroy(seq);
 
     return r;
 }
 
-static struct model_scan_result model_scan(struct imm_model* model, struct imm_seq const* seq)
+static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq,
+                                           bool calc_loglik)
 {
-    struct imm_hmm* hmm = imm_model_hmm(model);
-
-    struct imm_dp const* dp = imm_model_dp(model);
-
     struct imm_dp_task* task = imm_dp_task_create(dp);
 
     imm_dp_task_setup(task, seq);
     struct imm_result const* result = imm_dp_viterbi(dp, task);
     imm_float                loglik = imm_lprob_invalid();
-    if (!imm_path_empty(imm_result_path(result)))
+    if (calc_loglik && !imm_path_empty(imm_result_path(result)))
         loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(result));
 
     imm_dp_task_destroy(task);

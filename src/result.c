@@ -10,10 +10,14 @@ char const* dcp_result_alt_stream(struct dcp_result const* result) { return resu
 
 void dcp_result_destroy(struct dcp_result const* result)
 {
-    imm_result_destroy(result->null_result);
+    if (result->null_result)
+        imm_result_destroy(result->null_result);
+
+    if (result->null_stream)
+        free((void*)result->null_stream);
+
     imm_result_destroy(result->alt_result);
     free((void*)result->alt_stream);
-    free((void*)result->null_stream);
     free((void*)result);
 }
 

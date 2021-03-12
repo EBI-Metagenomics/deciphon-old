@@ -50,13 +50,6 @@ struct dcp_metadata const* dcp_profile_metadata(struct dcp_profile const* prof) 
 
 struct nmm_profile const* dcp_profile_nmm_profile(struct dcp_profile const* prof) { return prof->nmm_profile; }
 
-void dcp_profile_setup(struct imm_hmm* hmm, struct imm_dp* dp, bool multiple_hits, uint32_t target_length,
-                       bool hmmer3_compat)
-{
-    struct special_trans trans = special_trans_get(multiple_hits, target_length, hmmer3_compat);
-    special_trans_set(trans, hmm, dp);
-}
-
 struct dcp_profile* profile_create(uint32_t id, struct nmm_profile* prof, struct dcp_metadata const* mt)
 {
     struct dcp_profile* p = malloc(sizeof(*p));
@@ -64,4 +57,11 @@ struct dcp_profile* profile_create(uint32_t id, struct nmm_profile* prof, struct
     p->nmm_profile = prof;
     p->mt = mt;
     return p;
+}
+
+void profile_setup(struct imm_hmm* hmm, struct imm_dp* dp, bool multiple_hits, uint32_t target_length,
+                   bool hmmer3_compat)
+{
+    struct special_trans trans = special_trans_get(multiple_hits, target_length, hmmer3_compat);
+    special_trans_set(trans, hmm, dp);
 }

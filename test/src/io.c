@@ -9,14 +9,17 @@
 
 void test_output(void);
 void test_input(void);
-void test_small(void);
+void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer3_compat);
 void test_pfam(void);
 
 int main(void)
 {
     test_output();
     test_input();
-    test_small();
+    test_small(true, true, true, true);
+    test_small(false, true, true, true);
+    test_small(true, false, true, true);
+    test_small(false, false, true, true);
     /* test_pfam(); */
     return cass_status();
 }
@@ -209,7 +212,7 @@ void test_input(void)
     dcp_input_destroy(input);
 }
 
-void test_small(void)
+void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer3_compat)
 {
     char const* names[] = {"name0", "name1"};
     char const* accs[] = {"acc0", "acc1"};
@@ -221,7 +224,7 @@ void test_small(void)
     char const* null_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
 
     struct dcp_server*  server = dcp_server_create(TMPDIR "/two_profiles.dcp");
-    struct dcp_task_cfg cfg = {true, true, true, false};
+    struct dcp_task_cfg cfg = {calc_loglik, calc_null, multiple_hits, hmmer3_compat};
     struct dcp_task*    task = dcp_task_create(cfg);
     dcp_task_add(task, "ACT");
     dcp_task_add(task, "AGATG");
@@ -237,11 +240,15 @@ void test_small(void)
         cass_equal(strcmp(names[profid], dcp_metadata_name(mt)), 0);
         cass_equal(strcmp(accs[profid], dcp_metadata_acc(mt)), 0);
 
-        cass_close(dcp_result_alt_loglik(result), alt_logliks[profid * 3 + seqid]);
-        cass_close(dcp_result_null_loglik(result), null_logliks[profid * 3 + seqid]);
+        if (calc_loglik) {
+            cass_close(dcp_result_alt_loglik(result), alt_logliks[profid * 3 + seqid]);
+            if (calc_null)
+                cass_close(dcp_result_null_loglik(result), null_logliks[profid * 3 + seqid]);
+        }
 
         cass_equal(strcmp(dcp_result_alt_stream(result), alt_streams[profid * 3 + seqid]), 0);
-        cass_equal(strcmp(dcp_result_null_stream(result), null_streams[profid * 3 + seqid]), 0);
+        if (calc_null)
+            cass_equal(strcmp(dcp_result_null_stream(result), null_streams[profid * 3 + seqid]), 0);
 
         struct dcp_result const* tmp = result;
         result = dcp_results_next(results, result);
