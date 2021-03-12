@@ -8,7 +8,7 @@ struct dcp_results
     struct list results;
 };
 
-struct dcp_results* dcp_results_create(void)
+struct dcp_results* results_create(void)
 {
     struct dcp_results* results = malloc(sizeof(*results));
     list_init(&results->results);

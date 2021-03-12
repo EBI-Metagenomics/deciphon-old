@@ -27,7 +27,7 @@ struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
     struct dcp_task* task = malloc(sizeof(*task));
     task->cfg = cfg;
     list_init(&task->sequences);
-    task->results = dcp_results_create();
+    task->results = results_create();
     return task;
 }
 
@@ -40,7 +40,7 @@ void dcp_task_destroy(struct dcp_task const* task)
 void dcp_task_reset(struct dcp_task* task)
 {
     free_sequences(task);
-    task->results = dcp_results_create();
+    task->results = results_create();
 }
 
 struct dcp_results const* dcp_task_results(struct dcp_task const* task) { return task->results; }

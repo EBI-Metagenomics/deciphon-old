@@ -64,6 +64,8 @@ struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, 
     return dcp_input_metadata(server->input, profid);
 }
 
+uint32_t dcp_server_nprofiles(struct dcp_server const* server) { return dcp_input_nprofiles(server->input); }
+
 void dcp_server_scan(struct dcp_server* server, struct dcp_task* task)
 {
 #pragma omp        parallel default(none) shared(server, task)
@@ -139,7 +141,7 @@ static struct dcp_result* scan(struct dcp_server* server, struct dcp_profile con
 
     struct imm_hmm* hmm = imm_model_hmm(nmm_profile_get_model(p, 0));
     struct imm_dp*  dp = imm_model_dp(nmm_profile_get_model(p, 0));
-    /* profile_setup(hmm, dp, cfg->multiple_hits, imm_seq_length(seq), cfg->hmmer3_compat); */
+    profile_setup(hmm, dp, cfg->multiple_hits, imm_seq_length(seq), cfg->hmmer3_compat);
     struct model_scan_result alt = model_scan(hmm, dp, seq, cfg->loglik);
 
     r->alt_loglik = alt.loglik;
