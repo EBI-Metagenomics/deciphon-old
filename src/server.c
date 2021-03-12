@@ -7,6 +7,7 @@
 #include "result_ring.h"
 #include "sequence.h"
 #include "task.h"
+#include <nmm/frame_state.h>
 #include <stdatomic.h>
 
 #ifdef _OPENMP
@@ -27,6 +28,7 @@ struct model_scan_result
     imm_float                loglik;
     struct imm_result const* result;
     char const*              stream;
+    char const*              codon_stream;
 };
 
 static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq,
@@ -147,9 +149,11 @@ static struct dcp_result* scan(struct dcp_server* server, struct dcp_profile con
     r->alt_loglik = alt.loglik;
     r->alt_result = alt.result;
     r->alt_stream = alt.stream;
+    r->alt_codon_stream = alt.codon_stream;
     r->null_loglik = imm_lprob_invalid();
     r->null_result = NULL;
     r->null_stream = NULL;
+    r->null_codon_stream = NULL;
     if (cfg->null) {
         hmm = imm_model_hmm(nmm_profile_get_model(p, 1));
         dp = imm_model_dp(nmm_profile_get_model(p, 1));
@@ -157,6 +161,7 @@ static struct dcp_result* scan(struct dcp_server* server, struct dcp_profile con
         r->null_loglik = null.loglik;
         r->null_result = null.result;
         r->null_stream = null.stream;
+        r->null_codon_stream = null.codon_stream;
     }
     list_init(&r->link);
 
@@ -177,6 +182,8 @@ static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* d
         loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(result));
 
     imm_dp_task_destroy(task);
+    /* imm_float nmm_frame_state_decode(struct nmm_frame_state const* state, struct imm_seq const* seq, */
+    /*                              struct nmm_codon* codon) */
 
     struct imm_path const* path = imm_result_path(result);
     struct imm_step const* step = imm_path_first(path);
@@ -227,5 +234,28 @@ static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* d
         --i;
     stream[i] = '\0';
 
-    return (struct model_scan_result){loglik, result, stream};
+    /* TODO: fix this dumb malloc */
+    char* codon_stream = malloc(sizeof(*codon_stream) * size * 2);
+    path = imm_result_path(result);
+    step = imm_path_first(path);
+    NMM_CODON_DECL(codon, nmm_base_abc_derived(imm_seq_get_abc(seq)));
+    uint32_t offset = 0;
+    i = 0;
+    while (step) {
+        struct imm_state const* state = imm_step_state(step);
+        if (imm_state_type_id(state) == NMM_FRAME_STATE_TYPE_ID) {
+
+            struct nmm_frame_state const* f = nmm_frame_state_derived(state);
+            struct imm_seq                subseq = IMM_SUBSEQ(seq, offset, imm_step_seq_len(step));
+            nmm_frame_state_decode(f, &subseq, &codon);
+            codon_stream[i++] = codon.a;
+            codon_stream[i++] = codon.b;
+            codon_stream[i++] = codon.c;
+        }
+        offset += imm_step_seq_len(step);
+        step = imm_path_next(path, step);
+    }
+    codon_stream[i++] = '\0';
+
+    return (struct model_scan_result){loglik, result, stream, realloc(codon_stream, i)};
 }

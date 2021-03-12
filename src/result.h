@@ -11,9 +11,11 @@ struct dcp_result
     imm_float                alt_loglik;
     struct imm_result const* alt_result;
     char const*              alt_stream;
+    char const*              alt_codon_stream;
     imm_float                null_loglik;
     struct imm_result const* null_result;
     char const*              null_stream;
+    char const*              null_codon_stream;
     struct list              link;
 };
 
