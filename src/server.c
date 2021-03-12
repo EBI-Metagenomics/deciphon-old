@@ -134,6 +134,8 @@ static struct dcp_result* scan(struct dcp_server* server, struct dcp_profile con
     struct model_scan_result alt = model_scan(nmm_profile_get_model(p, 0), seq);
     struct model_scan_result null = model_scan(nmm_profile_get_model(p, 1), seq);
 
+    imm_seq_destroy(seq);
+
     struct dcp_result* r = malloc(sizeof(*r));
     r->profid = dcp_profile_id(profile);
     r->seqid = seqid;
