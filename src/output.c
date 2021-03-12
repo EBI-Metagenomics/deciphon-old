@@ -160,18 +160,18 @@ cleanup:
     struct list* i = list_head(&output->profile_offsets);
     while (i) {
         struct list tmp = *i;
-        free(container_of(i, struct offset, link));
         list_del(i);
+        free(container_of(i, struct offset, link));
         i = list_next(&output->profile_offsets, &tmp);
     }
 
     i = list_head(&output->profile_metadatas);
     while (i) {
         struct list tmp = *i;
+        list_del(i);
         struct metadata* mt = container_of(i, struct metadata, link);
         dcp_metadata_destroy(mt->mt);
         free(mt);
-        list_del(i);
         i = list_next(&output->profile_metadatas, &tmp);
     }
 
