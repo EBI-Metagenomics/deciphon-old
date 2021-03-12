@@ -8,7 +8,7 @@
 struct dcp_task
 {
     struct dcp_task_cfg cfg;
-    CList               sequences;
+    struct list         sequences;
     struct dcp_results* results;
 };
 
@@ -18,15 +18,15 @@ void dcp_task_add(struct dcp_task* task, char const* sequence)
 {
     struct sequence* seq = malloc(sizeof(*seq));
     seq->sequence = strdup(sequence);
-    c_list_init(&seq->link);
-    c_list_link_tail(&task->sequences, &seq->link);
+    list_init(&seq->link);
+    list_add(&task->sequences, &seq->link);
 }
 
 struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
 {
     struct dcp_task* task = malloc(sizeof(*task));
     task->cfg = cfg;
-    c_list_init(&task->sequences);
+    list_init(&task->sequences);
     task->results = dcp_results_create();
     return task;
 }
@@ -51,26 +51,26 @@ struct dcp_task_cfg const* task_cfg(struct dcp_task* task) { return &task->cfg; 
 
 struct sequence const* task_first_sequence(struct dcp_task* task)
 {
-    return c_list_first_entry(&task->sequences, struct sequence const, link);
+    struct list* i = list_head(&task->sequences);
+    return i ? container_of(i, struct sequence, link) : NULL;
 }
 
 struct sequence const* task_next_sequence(struct dcp_task* task, struct sequence const* sequence)
 {
-    CList const* curr = &sequence->link;
-    CList const* next = curr->next;
-    if (next == &task->sequences)
-        return NULL;
-    return c_list_entry(next, struct sequence const, link);
+    struct list* i = list_next(&task->sequences, &sequence->link);
+    return i ? container_of(i, struct sequence, link) : NULL;
 }
 
 static void free_sequences(struct dcp_task* task)
 {
-    struct sequence* iter = NULL;
-    struct sequence* safe = NULL;
-    c_list_for_each_entry_safe (iter, safe, &task->sequences, link) {
-        c_list_unlink(&iter->link);
-        free((void*)iter->sequence);
-        free(iter);
+    struct list* i = list_head(&task->sequences);
+    while (i) {
+        struct list      tmp = *i;
+        struct sequence* seq = container_of(i, struct sequence, link);
+        free((void*)seq->sequence);
+        free(seq);
+        list_del(i);
+        i = list_next(&task->sequences, &tmp);
     }
-    c_list_init(&task->sequences);
+    list_init(&task->sequences);
 }

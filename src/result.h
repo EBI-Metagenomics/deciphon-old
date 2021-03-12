@@ -2,7 +2,7 @@
 #define RESULT_H
 
 #include "imm/imm.h"
-#include "lib/c-list.h"
+#include "lib/list.h"
 
 struct dcp_result
 {
@@ -14,7 +14,7 @@ struct dcp_result
     imm_float                null_loglik;
     struct imm_result const* null_result;
     char const*              null_stream;
-    CList                    link;
+    struct list              link;
 };
 
 #endif

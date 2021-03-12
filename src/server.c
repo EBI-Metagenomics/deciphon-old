@@ -143,7 +143,7 @@ static struct dcp_result* scan(struct dcp_server* server, struct dcp_profile con
     r->null_loglik = null.loglik;
     r->null_result = null.result;
     r->null_stream = null.stream;
-    c_list_init(&r->link);
+    list_init(&r->link);
 
     return r;
 }

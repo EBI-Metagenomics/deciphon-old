@@ -1,5 +1,5 @@
 #include "deciphon/deciphon.h"
-#include "lib/c-list.h"
+#include "lib/list.h"
 #include "metadata.h"
 #include "nmm/nmm.h"
 #include "profile.h"
@@ -8,14 +8,14 @@
 
 struct offset
 {
-    uint64_t value;
-    CList    link;
+    uint64_t    value;
+    struct list link;
 };
 
 struct metadata
 {
     struct dcp_metadata const* mt;
-    CList                      link;
+    struct list                link;
 };
 
 struct dcp_output
@@ -23,8 +23,8 @@ struct dcp_output
     char const*        filepath;
     FILE*              stream;
     uint32_t           nprofiles;
-    CList              profile_offsets;
-    CList              profile_metadatas;
+    struct list        profile_offsets;
+    struct list        profile_metadatas;
     uint32_t           profile_metadata_size;
     char const*        tmp_filepath;
     struct nmm_output* tmp_output;
@@ -60,7 +60,8 @@ int dcp_output_close(struct dcp_output* output)
     struct offset* offset = NULL;
     uint64_t       start = sizeof(output->nprofiles) + output->nprofiles * sizeof(offset->value);
     start += output->profile_metadata_size;
-    c_list_for_each_entry (offset, &output->profile_offsets, link) {
+    for (struct list* i = list_head(&output->profile_offsets); i; i = list_next(&output->profile_offsets, i)) {
+        offset = container_of(i, struct offset, link);
         uint64_t v = start + offset->value;
         if (fwrite(&v, sizeof(v), 1, output->stream) < 1) {
             error("could not write offset");
@@ -69,8 +70,8 @@ int dcp_output_close(struct dcp_output* output)
         }
     }
 
-    struct metadata* mt = NULL;
-    c_list_for_each_entry (mt, &output->profile_metadatas, link) {
+    for (struct list* i = list_head(&output->profile_metadatas); i; i = list_next(&output->profile_metadatas, i)) {
+        struct metadata* mt = container_of(i, struct metadata, link);
         if (profile_metadata_write(mt->mt, output->stream)) {
             errno = 1;
             goto cleanup;
@@ -100,8 +101,8 @@ struct dcp_output* dcp_output_create(char const* filepath)
     output->filepath = strdup(filepath);
     output->stream = NULL;
     output->nprofiles = 0;
-    c_list_init(&output->profile_offsets);
-    c_list_init(&output->profile_metadatas);
+    list_init(&output->profile_offsets);
+    list_init(&output->profile_metadatas);
     output->profile_metadata_size = 0;
     output->tmp_filepath = create_tmp_filepath(filepath);
     output->tmp_output = NULL;
@@ -156,17 +157,22 @@ cleanup:
     if (output->tmp_filepath)
         free((void*)output->tmp_filepath);
 
-    struct offset* safe_offset = NULL;
-    struct offset* offset = NULL;
-    c_list_for_each_entry_safe (offset, safe_offset, &output->profile_offsets, link) {
-        free(offset);
+    struct list* i = list_head(&output->profile_offsets);
+    while (i) {
+        free(container_of(i, struct offset, link));
+        struct list tmp = *i;
+        list_del(i);
+        i = list_next(&output->profile_offsets, &tmp);
     }
 
-    struct metadata* safe_mt = NULL;
-    struct metadata* mt = NULL;
-    c_list_for_each_entry_safe (mt, safe_mt, &output->profile_metadatas, link) {
+    i = list_head(&output->profile_metadatas);
+    while (i) {
+        struct metadata* mt = container_of(i, struct metadata, link);
         dcp_metadata_destroy(mt->mt);
         free(mt);
+        struct list tmp = *i;
+        list_del(i);
+        i = list_next(&output->profile_metadatas, &tmp);
     }
 
     free(output);
@@ -182,13 +188,13 @@ int dcp_output_write(struct dcp_output* output, struct dcp_profile const* prof)
     }
     struct offset* offset = malloc(sizeof(*offset));
     offset->value = (uint64_t)v;
-    c_list_init(&offset->link);
-    c_list_link_tail(&output->profile_offsets, &offset->link);
+    list_init(&offset->link);
+    list_add(&output->profile_offsets, &offset->link);
 
     struct metadata* mt = malloc(sizeof(*mt));
     mt->mt = profile_metadata_clone(dcp_profile_metadata(prof));
-    c_list_init(&mt->link);
-    c_list_link_tail(&output->profile_metadatas, &mt->link);
+    list_init(&mt->link);
+    list_add(&output->profile_metadatas, &mt->link);
 
     output->nprofiles++;
     output->profile_metadata_size += profile_metadata_size(mt->mt);

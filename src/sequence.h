@@ -1,12 +1,12 @@
 #ifndef SEQUENCE_H
 #define SEQUENCE_H
 
-#include "lib/c-list.h"
+#include "lib/list.h"
 
 struct sequence
 {
     char const* sequence;
-    CList       link;
+    struct list link;
 };
 
 #endif
