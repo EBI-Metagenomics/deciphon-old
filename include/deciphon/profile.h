@@ -9,13 +9,11 @@
 
 struct dcp_metadata;
 struct dcp_profile;
-struct imm_dp;
-struct imm_hmm;
 struct imm_model;
 struct nmm_profile;
 
 DCP_API struct imm_abc const*      dcp_profile_abc(struct dcp_profile const* prof);
-DCP_API void                       dcp_profile_append_model(struct dcp_profile* prof, struct imm_model* model);
+DCP_API void                       dcp_profile_add_model(struct dcp_profile* prof, struct imm_model* model);
 DCP_API struct dcp_profile*        dcp_profile_create(struct imm_abc const* abc, struct dcp_metadata const* mt);
 DCP_API void                       dcp_profile_destroy(struct dcp_profile const* prof, bool deep);
 DCP_API void                       dcp_profile_free(struct dcp_profile const* prof);

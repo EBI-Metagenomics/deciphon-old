@@ -13,7 +13,7 @@ struct dcp_profile
 
 struct imm_abc const* dcp_profile_abc(struct dcp_profile const* prof) { return nmm_profile_abc(prof->nmm_profile); }
 
-void dcp_profile_append_model(struct dcp_profile* prof, struct imm_model* model)
+void dcp_profile_add_model(struct dcp_profile* prof, struct imm_model* model)
 {
     nmm_profile_append_model(prof->nmm_profile, model);
 }

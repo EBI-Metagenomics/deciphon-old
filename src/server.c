@@ -182,8 +182,6 @@ static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* d
         loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(result));
 
     imm_dp_task_destroy(task);
-    /* imm_float nmm_frame_state_decode(struct nmm_frame_state const* state, struct imm_seq const* seq, */
-    /*                              struct nmm_codon* codon) */
 
     struct imm_path const* path = imm_result_path(result);
     struct imm_step const* step = imm_path_first(path);

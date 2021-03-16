@@ -2,7 +2,6 @@
 #define DECIPHON_OUTPUT_H
 
 #include "deciphon/export.h"
-#include <inttypes.h>
 
 struct dcp_profile;
 struct dcp_output;

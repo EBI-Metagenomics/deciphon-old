@@ -85,8 +85,8 @@ void test_output(void)
     /* First profile */
     struct dcp_metadata const* mt = dcp_metadata_create("name0", "acc0");
     struct dcp_profile*        p = dcp_profile_create(abc, mt);
-    dcp_profile_append_model(p, imm_model_create(hmm, dp));
-    dcp_profile_append_model(p, imm_model_create(hmm, dp));
+    dcp_profile_add_model(p, imm_model_create(hmm, dp));
+    dcp_profile_add_model(p, imm_model_create(hmm, dp));
     cass_equal(dcp_output_write(output, p), 0);
     dcp_metadata_destroy(mt);
     dcp_profile_destroy(p, false);
@@ -97,8 +97,8 @@ void test_output(void)
     dp = imm_hmm_create_dp(hmm, nmm_codon_state_super(state2));
     mt = dcp_metadata_create("name1", "acc1");
     p = dcp_profile_create(abc, mt);
-    dcp_profile_append_model(p, imm_model_create(hmm, dp));
-    dcp_profile_append_model(p, imm_model_create(hmm, dp));
+    dcp_profile_add_model(p, imm_model_create(hmm, dp));
+    dcp_profile_add_model(p, imm_model_create(hmm, dp));
     cass_equal(dcp_output_write(output, p), 0);
     dcp_metadata_destroy(mt);
     dcp_profile_destroy(p, false);
