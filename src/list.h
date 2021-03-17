@@ -1,9 +1,7 @@
 #ifndef LIST_H
 #define LIST_H
 
-#include <stddef.h>
-
-#define container_of(ptr, type, member) ((type*)((size_t)(void*)(ptr)-offsetof(type, member)))
+#include "container.h"
 
 struct list
 {
@@ -21,37 +19,37 @@ static inline struct list* list_head(struct list const* list) { return list->nex
 
 static inline struct list* list_tail(struct list const* list) { return list->next == list ? NULL : list->prev; }
 
-static inline struct list* list_next(struct list const* list, struct list const* item)
+static inline struct list* list_next(struct list const* list, struct list const* node)
 {
-    return item->next == list ? NULL : item->next;
+    return node->next == list ? NULL : node->next;
 }
 
-static inline void list_ins(struct list* where, struct list* item)
+static inline void list_ins(struct list* where, struct list* node)
 {
     struct list* prev = where->prev;
     struct list* next = where;
 
-    next->prev = item;
-    item->next = next;
-    item->prev = prev;
-    prev->next = item;
+    next->prev = node;
+    node->next = next;
+    node->prev = prev;
+    prev->next = node;
 }
 
-static inline void list_add(struct list* list, struct list* item)
+static inline void list_add(struct list* list, struct list* node)
 {
     struct list* next = list;
     struct list* prev = list->prev;
 
-    next->prev = item;
-    item->next = next;
-    item->prev = prev;
-    prev->next = item;
+    next->prev = node;
+    node->next = next;
+    node->prev = prev;
+    prev->next = node;
 }
 
-static inline void list_del(struct list* item)
+static inline void list_del(struct list* node)
 {
-    struct list* next = item->next;
-    struct list* prev = item->prev;
+    struct list* next = node->next;
+    struct list* prev = node->prev;
 
     prev->next = next;
     next->prev = prev;
@@ -61,8 +59,8 @@ static inline void list_del(struct list* item)
      * under normal circumstances, used to verify that nobody uses
      * non-initialized list entries. Reference: Linux kernel.
      */
-    item->next = (void*)0x100;
-    item->prev = (void*)0x122;
+    node->next = (void*)0x100;
+    node->prev = (void*)0x122;
 }
 
 #endif

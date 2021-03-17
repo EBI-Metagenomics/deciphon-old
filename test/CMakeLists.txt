@@ -1,10 +1,10 @@
 add_custom_target(all_tests)
 find_package(cass REQUIRED)
 
-function(deciphon_add_test name)
+function(dcp_add_test name)
     add_executable(test_${name} src/${name}.c)
     add_dependencies(all_tests test_${name})
-    target_link_libraries(test_${name} PRIVATE DECIPHON::deciphon)
+    target_link_libraries(test_${name} PRIVATE DECIPHON::dcp)
     target_link_libraries(test_${name} PUBLIC CASS::cass)
     target_compile_options(test_${name} PRIVATE ${WARNING_FLAGS})
     target_compile_features(test_${name} PRIVATE c_std_11)
@@ -17,4 +17,4 @@ function(deciphon_add_test name)
     target_compile_definitions(test_${name} PUBLIC "TMPDIR=\"${TMPDIR}\"")
 endfunction()
 
-deciphon_add_test(io)
+dcp_add_test(io)

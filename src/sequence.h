@@ -1,7 +1,7 @@
 #ifndef SEQUENCE_H
 #define SEQUENCE_H
 
-#include "lib/list.h"
+#include "list.h"
 
 struct sequence
 {

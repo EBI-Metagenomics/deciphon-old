@@ -1,7 +1,7 @@
-#ifndef DECIPHON_PROFILE_H
-#define DECIPHON_PROFILE_H
+#ifndef DCP_PROFILE_H
+#define DCP_PROFILE_H
 
-#include "deciphon/export.h"
+#include "dcp/export.h"
 #include <stdbool.h>
 #include <stdint.h>
 

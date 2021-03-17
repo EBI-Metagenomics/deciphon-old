@@ -1,4 +1,5 @@
-#include "deciphon/deciphon.h"
+#include "dcp/dcp.h"
+#include <pthread.h>
 #include "imm/imm.h"
 #include "nmm/nmm.h"
 #include "profile.h"
@@ -6,7 +7,6 @@
 #include "result.h"
 #include "result_ring.h"
 #include "results.h"
-#include "results_pool.h"
 #include "sequence.h"
 #include "task.h"
 #include <nmm/frame_state.h>
@@ -18,12 +18,11 @@
 
 struct dcp_server
 {
-    atomic_bool          finished;
-    atomic_uint          nrunning_tasks;
-    char const*          filepath;
-    struct profile_ring  profiles;
-    struct dcp_input*    input;
-    struct results_pool* rpool;
+    atomic_bool         finished;
+    atomic_uint         nrunning_tasks;
+    char const*         filepath;
+    struct profile_ring profiles;
+    struct dcp_input*   input;
 };
 
 struct model_scan_result
@@ -32,12 +31,12 @@ struct model_scan_result
     struct imm_result const* result;
 };
 
-static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq,
-                                           bool calc_loglik, struct stream* stream);
-static void                     profile_consumer(struct dcp_server* server, struct dcp_task* task);
-static void                     profile_producer(struct dcp_server* server);
-static void                     scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
-                                     struct dcp_result* result, uint32_t seqid, struct dcp_task_cfg const* cfg);
+static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,
+                       struct dcp_model* model);
+static void profile_consumer(struct dcp_server* server, struct dcp_task* task);
+static void profile_producer(struct dcp_server* server);
+static void scan(struct dcp_server* server, struct nmm_profile const* profile, char const* sequence,
+                 struct dcp_result* result, uint32_t seqid, struct dcp_task_cfg const* cfg);
 
 struct dcp_server* dcp_server_create(char const* filepath)
 {
@@ -52,7 +51,6 @@ struct dcp_server* dcp_server_create(char const* filepath)
         free(server);
         return NULL;
     }
-    server->rpool = results_pool_create(128);
     return server;
 }
 
@@ -60,7 +58,6 @@ void dcp_server_destroy(struct dcp_server const* server)
 {
     free((void*)server->filepath);
     dcp_input_destroy(server->input);
-    results_pool_destroy(server->rpool);
     free((void*)server);
 }
 
@@ -75,50 +72,72 @@ void dcp_server_scan(struct dcp_server* server, struct dcp_task* task)
 {
 #pragma omp        parallel default(none) shared(server, task)
     {
+        int a = 3;
+    }
+    return;
+#pragma omp        parallel default(none) shared(server, task)
+    {
 #pragma omp single nowait
         profile_producer(server);
 
 #pragma omp task
         profile_consumer(server, task);
     }
+
+    printf("outside_parallel_region\n");
+    fflush(stdout);
 }
 
 static void profile_consumer(struct dcp_server* server, struct dcp_task* task)
 {
     server->nrunning_tasks++;
     struct dcp_profile const* prof = NULL;
+    printf("enter_consumer_loop\n");
     do {
         while (!(prof = profile_ring_pop(&server->profiles)) && !server->finished) {
             ck_pr_stall();
         }
 
         if (prof) {
-            struct sequence const* seq = task_first_sequence(task);
+            struct sequence const* seq = task_first_seq(task);
             uint32_t               seqid = 0;
-            uint16_t               rid = 0;
 
             struct dcp_results* results = NULL;
-            while ((results = results_pool_get(server->rpool)) == NULL)
+            while ((results = task_alloc_results(task)) == NULL)
                 ck_pr_stall();
 
             while (seq) {
+                struct dcp_result* r = results_next(results);
+                printf("Ponto 1: %p\n", (void*)r);
+                fflush(stdout);
 
-                if (rid == results_limit(results)) {
-                    task_add_results(task, results);
-
-                    while ((results = results_pool_get(server->rpool)) == NULL)
+                if (!r) {
+                    printf("Ponto 2\n");
+                    fflush(stdout);
+                    task_push_results(task, results);
+                    printf("Ponto 2.5\n");
+                    while ((results = task_alloc_results(task)) == NULL)
                         ck_pr_stall();
-                    rid = 0;
+                    printf("continue\n");
+                    fflush(stdout);
+                    continue;
                 }
-                struct dcp_result* r = results_get(results, rid++);
-                scan(server, prof, seq->sequence, r, seqid++, task_cfg(task));
-                seq = task_next_sequence(task, seq);
+                printf("Ponto 3\n");
+                fflush(stdout);
+
+                /* result_set_profid(r, dcp_profile_id(prof)); */
+                /* result_set_seqid(r, seqid); */
+                seqid++;
+                /* scan(server, dcp_profile_nmm_profile(prof), seq->sequence, r, seqid++, task_cfg(task)); */
+                seq = task_next_seq(task, seq);
             }
 
-            task_add_results(task, results);
-            dcp_profile_destroy(prof, true);
+            task_push_results(task, results);
+            /* dcp_profile_destroy(prof, true); */
         }
     } while (prof || !server->finished);
+    printf("outside_consumer_loop\n");
+    fflush(stdout);
     server->nrunning_tasks--;
 }
 
@@ -129,107 +148,104 @@ static void profile_producer(struct dcp_server* server)
         struct dcp_profile const* prof = dcp_input_read(server->input);
         profile_ring_push(&server->profiles, prof);
     }
+    printf("server->finished = true\n");
+    fflush(stdout);
     server->finished = true;
 }
 
-static void scan(struct dcp_server* server, struct dcp_profile const* profile, char const* sequence,
+static void scan(struct dcp_server* server, struct nmm_profile const* profile, char const* sequence,
                  struct dcp_result* result, uint32_t seqid, struct dcp_task_cfg const* cfg)
 {
-    struct nmm_profile const* p = dcp_profile_nmm_profile(profile);
-    struct imm_abc const*     abc = nmm_profile_abc(p);
-    struct imm_seq const*     seq = imm_seq_create(sequence, abc);
+    struct imm_abc const* abc = nmm_profile_abc(profile);
+    struct imm_seq const* seq = imm_seq_create(sequence, abc);
 
-    result->profid = dcp_profile_id(profile);
-    result->seqid = seqid;
-
-    struct imm_hmm* hmm = imm_model_hmm(nmm_profile_get_model(p, 0));
-    struct imm_dp*  dp = imm_model_dp(nmm_profile_get_model(p, 0));
+    struct imm_hmm* hmm = imm_model_hmm(nmm_profile_get_model(profile, 0));
+    struct imm_dp*  dp = imm_model_dp(nmm_profile_get_model(profile, 0));
     profile_setup(hmm, dp, cfg->multiple_hits, imm_seq_length(seq), cfg->hmmer3_compat);
-    struct model_scan_result alt = model_scan(hmm, dp, seq, cfg->loglik, result->alt);
+    model_scan(hmm, dp, seq, cfg->loglik, result_model(result, DCP_ALT));
 
-    result->alt_loglik = alt.loglik;
-    result->alt_result = alt.result;
-    result->null_loglik = imm_lprob_invalid();
-    result->null_result = NULL;
+    struct dcp_model* null = result_model(result, DCP_NULL);
+    model_set_loglik(null, imm_lprob_invalid());
+    model_set_result(null, null->result);
     if (cfg->null) {
-        hmm = imm_model_hmm(nmm_profile_get_model(p, 1));
-        dp = imm_model_dp(nmm_profile_get_model(p, 1));
-        struct model_scan_result null = model_scan(hmm, dp, seq, cfg->loglik, result->null);
-        result->null_loglik = null.loglik;
-        result->null_result = null.result;
+        hmm = imm_model_hmm(nmm_profile_get_model(profile, 1));
+        dp = imm_model_dp(nmm_profile_get_model(profile, 1));
+        model_scan(hmm, dp, seq, cfg->loglik, null);
     }
 
     imm_seq_destroy(seq);
 }
 
-static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq,
-                                           bool calc_loglik, struct stream* stream)
+static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,
+                       struct dcp_model* model)
 {
     struct imm_dp_task* task = imm_dp_task_create(dp);
 
     imm_dp_task_setup(task, seq);
-    struct imm_result const* result = imm_dp_viterbi(dp, task);
+    struct imm_result const* r = imm_dp_viterbi(dp, task);
     imm_float                loglik = imm_lprob_invalid();
-    if (calc_loglik && !imm_path_empty(imm_result_path(result)))
-        loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(result));
+    if (calc_loglik && !imm_path_empty(imm_result_path(r)))
+        loglik = imm_hmm_loglikelihood(hmm, seq, imm_result_path(r));
+
+    model_set_loglik(model, loglik);
+    model_set_result(model, r);
 
     imm_dp_task_destroy(task);
 
-    struct imm_path const* path = imm_result_path(result);
+    struct imm_path const* path = imm_result_path(r);
     struct imm_step const* step = imm_path_first(path);
-    size_t                 size = 1;
-    while (step) {
-        size += strlen(imm_state_get_name(imm_step_state(step))) + 3;
-        step = imm_path_next(path, step);
-    }
-    if (size > 1)
-        --size;
 
-    stream->path = realloc(stream->path, sizeof(*stream->path) * size);
+    char* data = NULL;
     step = imm_path_first(path);
     size_t i = 0;
     while (step) {
         char const* name = imm_state_get_name(imm_step_state(step));
-        while (*name != '\0')
-            stream->path[i++] = *(name++);
 
-        stream->path[i++] = ':';
+        string_grow(&model->path, strlen(name) + 3);
+        data = string_data(&model->path);
+
+        while (*name != '\0')
+            data[i++] = *(name++);
+
+        data[i++] = ':';
 
         if (imm_step_seq_len(step) == 0)
-            stream->path[i++] = '0';
+            data[i++] = '0';
         else if (imm_step_seq_len(step) == 1)
-            stream->path[i++] = '1';
+            data[i++] = '1';
         else if (imm_step_seq_len(step) == 2)
-            stream->path[i++] = '2';
+            data[i++] = '2';
         else if (imm_step_seq_len(step) == 3)
-            stream->path[i++] = '3';
+            data[i++] = '3';
         else if (imm_step_seq_len(step) == 4)
-            stream->path[i++] = '4';
+            data[i++] = '4';
         else if (imm_step_seq_len(step) == 5)
-            stream->path[i++] = '5';
+            data[i++] = '5';
         else if (imm_step_seq_len(step) == 6)
-            stream->path[i++] = '6';
+            data[i++] = '6';
         else if (imm_step_seq_len(step) == 7)
-            stream->path[i++] = '7';
+            data[i++] = '7';
         else if (imm_step_seq_len(step) == 8)
-            stream->path[i++] = '8';
+            data[i++] = '8';
         else if (imm_step_seq_len(step) == 9)
-            stream->path[i++] = '9';
+            data[i++] = '9';
 
-        stream->path[i++] = ',';
+        data[i++] = ',';
 
         step = imm_path_next(path, step);
     }
     if (i > 0)
         --i;
-    stream->path[i] = '\0';
+    data = string_data(&model->path);
+    data[i] = '\0';
 
-    stream->codons = realloc(stream->codons, sizeof(*stream->codons) * size * 2);
-    path = imm_result_path(result);
+    path = imm_result_path(r);
     step = imm_path_first(path);
     NMM_CODON_DECL(codon, nmm_base_abc_derived(imm_seq_get_abc(seq)));
     uint32_t offset = 0;
     i = 0;
+    string_grow(&model->codons, 1);
+    data = string_data(&model->codons);
     while (step) {
         struct imm_state const* state = imm_step_state(step);
         if (imm_state_type_id(state) == NMM_FRAME_STATE_TYPE_ID) {
@@ -237,14 +253,14 @@ static struct model_scan_result model_scan(struct imm_hmm* hmm, struct imm_dp* d
             struct nmm_frame_state const* f = nmm_frame_state_derived(state);
             struct imm_seq                subseq = IMM_SUBSEQ(seq, offset, imm_step_seq_len(step));
             nmm_frame_state_decode(f, &subseq, &codon);
-            stream->codons[i++] = codon.a;
-            stream->codons[i++] = codon.b;
-            stream->codons[i++] = codon.c;
+            string_grow(&model->codons, 3);
+            data = string_data(&model->codons);
+            data[i++] = codon.a;
+            data[i++] = codon.b;
+            data[i++] = codon.c;
         }
         offset += imm_step_seq_len(step);
         step = imm_path_next(path, step);
     }
-    stream->codons[i++] = '\0';
-
-    return (struct model_scan_result){loglik, result};
+    data[i++] = '\0';
 }

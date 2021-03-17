@@ -1,5 +1,5 @@
 #include "metadata.h"
-#include "deciphon/deciphon.h"
+#include "dcp/dcp.h"
 #include "util.h"
 #include <stdlib.h>
 #include <string.h>

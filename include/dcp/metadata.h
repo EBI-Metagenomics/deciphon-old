@@ -1,7 +1,7 @@
-#ifndef DECIPHON_METADATA_H
-#define DECIPHON_METADATA_H
+#ifndef DCP_METADATA_H
+#define DCP_METADATA_H
 
-#include "deciphon/export.h"
+#include "dcp/export.h"
 
 struct dcp_metadata;
 

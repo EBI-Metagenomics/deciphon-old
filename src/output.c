@@ -1,5 +1,5 @@
-#include "deciphon/deciphon.h"
-#include "lib/list.h"
+#include "dcp/dcp.h"
+#include "list.h"
 #include "metadata.h"
 #include "nmm/nmm.h"
 #include "profile.h"
@@ -61,7 +61,7 @@ int dcp_output_close(struct dcp_output* output)
     uint64_t       start = sizeof(output->nprofiles) + output->nprofiles * sizeof(offset->value);
     start += output->profile_metadata_size;
     for (struct list* i = list_head(&output->profile_offsets); i; i = list_next(&output->profile_offsets, i)) {
-        offset = container_of(i, struct offset, link);
+        offset = CONTAINER_OF(i, struct offset, link);
         uint64_t v = start + offset->value;
         if (fwrite(&v, sizeof(v), 1, output->stream) < 1) {
             error("could not write offset");
@@ -71,7 +71,7 @@ int dcp_output_close(struct dcp_output* output)
     }
 
     for (struct list* i = list_head(&output->profile_metadatas); i; i = list_next(&output->profile_metadatas, i)) {
-        struct metadata* mt = container_of(i, struct metadata, link);
+        struct metadata* mt = CONTAINER_OF(i, struct metadata, link);
         if (profile_metadata_write(mt->mt, output->stream)) {
             errno = 1;
             goto cleanup;
@@ -161,7 +161,7 @@ cleanup:
     while (i) {
         struct list tmp = *i;
         list_del(i);
-        free(container_of(i, struct offset, link));
+        free(CONTAINER_OF(i, struct offset, link));
         i = list_next(&output->profile_offsets, &tmp);
     }
 
@@ -169,7 +169,7 @@ cleanup:
     while (i) {
         struct list tmp = *i;
         list_del(i);
-        struct metadata* mt = container_of(i, struct metadata, link);
+        struct metadata* mt = CONTAINER_OF(i, struct metadata, link);
         dcp_metadata_destroy(mt->mt);
         free(mt);
         i = list_next(&output->profile_metadatas, &tmp);

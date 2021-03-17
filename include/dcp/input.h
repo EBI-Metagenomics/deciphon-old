@@ -1,7 +1,7 @@
-#ifndef DECIPHON_INPUT_H
-#define DECIPHON_INPUT_H
+#ifndef DCP_INPUT_H
+#define DCP_INPUT_H
 
-#include "deciphon/export.h"
+#include "dcp/export.h"
 #include <stdbool.h>
 #include <stdint.h>
 

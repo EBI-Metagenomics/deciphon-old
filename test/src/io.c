@@ -1,7 +1,9 @@
 #include "cass/cass.h"
-#include "deciphon/deciphon.h"
+#include "dcp/dcp.h"
+#include "elapsed/elapsed.h"
 #include "helper.h"
 #include "nmm/nmm.h"
+#include <pthread.h>
 
 #ifndef TMPDIR
 #define TMPDIR ""
@@ -17,9 +19,9 @@ int main(void)
     test_output();
     test_input();
     test_small(true, true, true, true);
-    test_small(false, true, true, true);
-    test_small(true, false, true, true);
-    test_small(false, false, true, true);
+    /* test_small(false, true, true, true); */
+    /* test_small(true, false, true, true); */
+    /* test_small(false, false, true, true); */
     /* test_pfam(); */
     return cass_status();
 }
@@ -212,6 +214,24 @@ void test_input(void)
     dcp_input_destroy(input);
 }
 
+struct msg
+{
+    struct dcp_server* server;
+    struct dcp_task*   task;
+};
+
+void* hello(void* ptr);
+
+void* hello(void* ptr)
+{
+    struct msg* msg = ptr;
+    dcp_server_scan(msg->server, msg->task);
+    printf("OUTSIDE_SCAN\n");
+    fflush(stdout);
+    /* pthread_exit(NULL); */
+    return NULL;
+}
+
 void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer3_compat)
 {
     char const* names[] = {"name0", "name1"};
@@ -226,38 +246,60 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     struct dcp_server*  server = dcp_server_create(TMPDIR "/two_profiles.dcp");
     struct dcp_task_cfg cfg = {calc_loglik, calc_null, multiple_hits, hmmer3_compat};
     struct dcp_task*    task = dcp_task_create(cfg);
-    dcp_task_add_sequence(task, "ACT");
-    dcp_task_add_sequence(task, "AGATG");
-    dcp_task_add_sequence(task, "CCCCCC");
-    dcp_server_scan(server, task);
-    struct dcp_results const* results = dcp_task_results(task);
-    struct dcp_result const*  result = dcp_results_first(results);
-    while (result) {
-        uint32_t                   profid = dcp_result_profid(result);
-        uint32_t                   seqid = dcp_result_seqid(result);
-        struct dcp_metadata const* mt = dcp_server_metadata(server, profid);
+    dcp_task_add_seq(task, "ACT");
+    dcp_task_add_seq(task, "AGATG");
+    dcp_task_add_seq(task, "CCCCCC");
 
-        cass_equal(strcmp(names[profid], dcp_metadata_name(mt)), 0);
-        cass_equal(strcmp(accs[profid], dcp_metadata_acc(mt)), 0);
+    pthread_t  threads;
+    struct msg msg = {server, task};
+    int        rc = pthread_create(&threads, NULL, hello, (void*)&msg);
+    printf("rc: %d\n", rc);
+    fflush(stdout);
 
-        if (calc_loglik) {
-            cass_close(dcp_result_alt_loglik(result), alt_logliks[profid * 3 + seqid]);
-            if (calc_null)
-                cass_close(dcp_result_null_loglik(result), null_logliks[profid * 3 + seqid]);
-        }
+    /* for (int k = 0; k < 10; ++k) { */
+    /*     struct dcp_results* results = dcp_task_fetch_results(task); */
+    /*     printf("dcp_results: %p\n", (void*)results); */
+    /*     fflush(stdout); */
+    /*     elapsed_sleep(1); */
+    /*     if (results) */
+    /*         dcp_task_release_results(task, results); */
+    /* } */
 
-        cass_equal(strcmp(dcp_result_alt_stream(result), alt_streams[profid * 3 + seqid]), 0);
-        if (calc_null)
-            cass_equal(strcmp(dcp_result_null_stream(result), null_streams[profid * 3 + seqid]), 0);
+    printf("OUTSIDE\n");
+    fflush(stdout);
+    pthread_join(threads, NULL);
+    printf("AFTERJOIN\n");
+    fflush(stdout);
+    /* pthread_exit(NULL); */
+    return;
+    /* struct dcp_results const* results = dcp_task_results(task); */
+    /* struct dcp_result const*  result = dcp_results_first(results); */
+    /* while (result) { */
+    /*     uint32_t                   profid = dcp_result_profid(result); */
+    /*     uint32_t                   seqid = dcp_result_seqid(result); */
+    /*     struct dcp_metadata const* mt = dcp_server_metadata(server, profid); */
 
-        struct dcp_result const* tmp = result;
-        result = dcp_results_next(results, result);
-        dcp_result_destroy(tmp);
-    }
+    /*     cass_equal(strcmp(names[profid], dcp_metadata_name(mt)), 0); */
+    /*     cass_equal(strcmp(accs[profid], dcp_metadata_acc(mt)), 0); */
 
-    results_destroy(results);
-    dcp_task_destroy(task);
-    dcp_server_destroy(server);
+    /*     if (calc_loglik) { */
+    /*         cass_close(dcp_result_alt_loglik(result), alt_logliks[profid * 3 + seqid]); */
+    /*         if (calc_null) */
+    /*             cass_close(dcp_result_null_loglik(result), null_logliks[profid * 3 + seqid]); */
+    /*     } */
+
+    /*     cass_equal(strcmp(dcp_result_alt_stream(result), alt_streams[profid * 3 + seqid]), 0); */
+    /*     if (calc_null) */
+    /*         cass_equal(strcmp(dcp_result_null_stream(result), null_streams[profid * 3 + seqid]), 0); */
+
+    /*     struct dcp_result const* tmp = result; */
+    /*     result = dcp_results_next(results, result); */
+    /*     dcp_result_destroy(tmp); */
+    /* } */
+
+    /* results_destroy(results); */
+    /* dcp_task_destroy(task); */
+    /* dcp_server_destroy(server); */
 }
 
 void test_pfam(void)
@@ -313,7 +355,7 @@ void test_pfam(void)
 
     cass_cond(strlen(s) == N * 2000);
     /* uint32_t nresults = 0; */
-    /* struct dcp_server*        server = dcp_server_create("/Users/horta/tmp/deciphon/Pfam-A.dcp"); */
+    /* struct dcp_server*        server = dcp_server_create("/Users/horta/tmp/dcp/Pfam-A.dcp"); */
     /* struct dcp_result const** results = dcp_server_scan(server, s, &nresults); */
     /* for (uint32_t i = 0; i < nresults; ++i) */
     /* dcp_result_destroy(results[i]); */

@@ -1,7 +1,7 @@
-#ifndef DECIPHON_OUTPUT_H
-#define DECIPHON_OUTPUT_H
+#ifndef DCP_OUTPUT_H
+#define DCP_OUTPUT_H
 
-#include "deciphon/export.h"
+#include "dcp/export.h"
 
 struct dcp_profile;
 struct dcp_output;

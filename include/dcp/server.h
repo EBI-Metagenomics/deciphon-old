@@ -1,5 +1,5 @@
-#ifndef DECIPHON_SERVER_H
-#define DECIPHON_SERVER_H
+#ifndef DCP_SERVER_H
+#define DCP_SERVER_H
 
 #include "deciphon/export.h"
 #include <inttypes.h>

@@ -32,7 +32,7 @@ if(OPENMP)
     find_package(OpenMP)
 endif()
 
-add_library(deciphon
+add_library(dcp
     src/input.c
     src/metadata.c
     src/output.c
@@ -41,22 +41,22 @@ add_library(deciphon
     src/result.c
     src/result_ring.c
     src/results.c
-    src/results_pool.c
     src/server.c
     src/special_trans.c
+    src/str.c
     src/task.c
     src/util.c
 )
-add_library(DECIPHON::deciphon ALIAS deciphon)
+add_library(DECIPHON::dcp ALIAS dcp)
 
 # Write out mytools_export.h to the current binary directory
 # Must include ${CMAKE_CURRENT_BINARY_DIR} in the target's
 # search path.
 include(GenerateExportHeader)
-generate_export_header(deciphon BASE_NAME DECIPHON
-    INCLUDE_GUARD_NAME DECIPHON_EXPORT_H
+generate_export_header(dcp BASE_NAME DCP
+    INCLUDE_GUARD_NAME DCP_EXPORT_H
     EXPORT_MACRO_NAME DCP_API
-    EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/deciphon/export.h)
+    EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h)
 
 if(${CMAKE_C_COMPILER_ID} MATCHES "MSVC")
     set(WARNING_FLAGS /W3)
@@ -68,7 +68,7 @@ else()
     )
 endif()
 
-target_include_directories(deciphon
+target_include_directories(dcp
     PUBLIC
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -76,19 +76,18 @@ target_include_directories(deciphon
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_link_libraries(deciphon PUBLIC IMM::imm)
-target_link_libraries(deciphon PUBLIC NMM::nmm)
-target_link_libraries(deciphon PUBLIC ELAPSED::elapsed)
-target_link_libraries(deciphon PUBLIC ck)
-target_link_libraries(deciphon PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
-set_target_properties(deciphon PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(deciphon PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
-# target_compile_features(deciphon PUBLIC c_std_11)
-target_compile_definitions(deciphon PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPRECATE>)
-target_compile_definitions(deciphon PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
-target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
-target_compile_options(deciphon PRIVATE "-fverbose-asm")
-target_link_libraries(deciphon INTERFACE $<$<BOOL:${UNIX}>:m>)
+target_link_libraries(dcp PUBLIC IMM::imm)
+target_link_libraries(dcp PUBLIC NMM::nmm)
+target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
+target_link_libraries(dcp PUBLIC ck)
+target_link_libraries(dcp PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
+set_target_properties(dcp PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(dcp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPRECATE>)
+target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
+target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
+target_compile_options(dcp PRIVATE "-fverbose-asm")
+target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
 
 include(CheckCSourceCompiles)
 check_c_source_compiles(
@@ -98,16 +97,16 @@ check_c_source_compiles(
     "
     HAVE_ATTR_FORMAT
 )
-target_compile_definitions(deciphon PRIVATE $<$<BOOL:${HAVE_ATTR_FORMAT}>:HAVE_ATTR_FORMAT>)
+target_compile_definitions(dcp PRIVATE $<$<BOOL:${HAVE_ATTR_FORMAT}>:HAVE_ATTR_FORMAT>)
 
 include(CheckTypeSize)
 check_type_size("intptr_t" SIZEOF_INTPTR_T)
 if(NOT HAVE_SIZEOF_INTPTR_T)
     message(FATAL_ERROR "Could not determine the size of intptr_t.")
 endif()
-target_compile_definitions(deciphon PRIVATE SIZEOF_INTPTR_T=${SIZEOF_INTPTR_T})
+target_compile_definitions(dcp PRIVATE SIZEOF_INTPTR_T=${SIZEOF_INTPTR_T})
 
-install(TARGETS deciphon EXPORT deciphon-targets
+install(TARGETS dcp EXPORT dcp-targets
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
@@ -115,22 +114,22 @@ install(TARGETS deciphon EXPORT deciphon-targets
 )
 install(DIRECTORY include/ DESTINATION include)
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/deciphon/export.h
-    DESTINATION include/deciphon
+    ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h
+    DESTINATION include/dcp
 )
-install(EXPORT deciphon-targets
-    FILE deciphon-targets.cmake
+install(EXPORT dcp-targets
+    FILE dcp-targets.cmake
     NAMESPACE DECIPHON::
-    DESTINATION lib/cmake/deciphon
+    DESTINATION lib/cmake/dcp
 )
 include(CMakePackageConfigHelpers)
-configure_package_config_file(deciphon-config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/deciphon-config.cmake
-    INSTALL_DESTINATION lib/cmake/deciphon
+configure_package_config_file(dcp-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/dcp-config.cmake
+    INSTALL_DESTINATION lib/cmake/dcp
     NO_SET_AND_CHECK_MACRO
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/deciphon-config.cmake
-    DESTINATION lib/cmake/deciphon
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-config.cmake
+    DESTINATION lib/cmake/dcp
 )
 
 enable_testing()
