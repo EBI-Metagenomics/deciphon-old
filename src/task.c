@@ -9,12 +9,13 @@ struct dcp_task
 {
     struct dcp_task_cfg cfg;
     struct list         sequences;
-    struct dcp_results* results;
+    struct list         results;
+    bool                end;
 };
 
 static void free_sequences(struct dcp_task* task);
 
-void dcp_task_add(struct dcp_task* task, char const* sequence)
+void dcp_task_add_sequence(struct dcp_task* task, char const* sequence)
 {
     struct sequence* seq = malloc(sizeof(*seq));
     seq->sequence = strdup(sequence);
@@ -27,7 +28,8 @@ struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
     struct dcp_task* task = malloc(sizeof(*task));
     task->cfg = cfg;
     list_init(&task->sequences);
-    task->results = results_create();
+    list_init(&task->results);
+    task->end = false;
     return task;
 }
 
@@ -37,15 +39,42 @@ void dcp_task_destroy(struct dcp_task const* task)
     free((void*)task);
 }
 
+bool dcp_task_end(struct dcp_task const* task)
+{
+    bool end = false;
+#pragma omp atomic read
+    end = task->end;
+    return end;
+}
+
+struct dcp_results const* dcp_task_get_results(struct dcp_task const* task)
+{
+    struct dcp_results const* results = NULL;
+#pragma omp critical
+    {
+        struct list* link = list_head(&task->results);
+        if (link) {
+            results = container_of(link, struct dcp_results, link);
+            list_del(link);
+        }
+    }
+    return results;
+}
+
 void dcp_task_reset(struct dcp_task* task)
 {
     free_sequences(task);
-    task->results = results_create();
+    list_init(&task->results);
+
+#pragma omp atomic write
+    task->end = false;
 }
 
-struct dcp_results const* dcp_task_results(struct dcp_task const* task) { return task->results; }
-
-void task_add_result(struct dcp_task* task, struct dcp_result* result) { results_add(task->results, result); }
+void task_add_results(struct dcp_task* task, struct dcp_results* results)
+{
+#pragma omp critical
+    list_add(&task->results, &results->link);
+}
 
 struct dcp_task_cfg const* task_cfg(struct dcp_task* task) { return &task->cfg; }
 
@@ -65,7 +94,7 @@ static void free_sequences(struct dcp_task* task)
 {
     struct list* i = list_head(&task->sequences);
     while (i) {
-        struct list      tmp = *i;
+        struct list tmp = *i;
         list_del(i);
         struct sequence* seq = container_of(i, struct sequence, link);
         free((void*)seq->sequence);

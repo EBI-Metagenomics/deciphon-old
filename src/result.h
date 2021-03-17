@@ -1,22 +1,29 @@
 #ifndef RESULT_H
 #define RESULT_H
 
+#include "deciphon/deciphon.h"
 #include "imm/imm.h"
-#include "lib/list.h"
+
+struct stream
+{
+    char* path;
+    char* codons;
+};
+
+struct result
+{
+    imm_float                loglik;
+    struct imm_result const* result;
+    struct stream            stream;
+};
 
 struct dcp_result
 {
-    uint32_t                 profid;
-    uint32_t                 seqid;
-    imm_float                alt_loglik;
-    struct imm_result const* alt_result;
-    char const*              alt_stream;
-    char const*              alt_codon_stream;
-    imm_float                null_loglik;
-    struct imm_result const* null_result;
-    char const*              null_stream;
-    char const*              null_codon_stream;
-    struct list              link;
+    uint32_t      profid;
+    uint32_t      seqid;
+    struct result models[DCP_NMODELS];
 };
+
+struct dcp_result* result_create(void);
 
 #endif

@@ -226,9 +226,9 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     struct dcp_server*  server = dcp_server_create(TMPDIR "/two_profiles.dcp");
     struct dcp_task_cfg cfg = {calc_loglik, calc_null, multiple_hits, hmmer3_compat};
     struct dcp_task*    task = dcp_task_create(cfg);
-    dcp_task_add(task, "ACT");
-    dcp_task_add(task, "AGATG");
-    dcp_task_add(task, "CCCCCC");
+    dcp_task_add_sequence(task, "ACT");
+    dcp_task_add_sequence(task, "AGATG");
+    dcp_task_add_sequence(task, "CCCCCC");
     dcp_server_scan(server, task);
     struct dcp_results const* results = dcp_task_results(task);
     struct dcp_result const*  result = dcp_results_first(results);
@@ -255,7 +255,7 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
         dcp_result_destroy(tmp);
     }
 
-    dcp_results_destroy(results);
+    results_destroy(results);
     dcp_task_destroy(task);
     dcp_server_destroy(server);
 }

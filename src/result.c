@@ -2,39 +2,48 @@
 #include "deciphon/deciphon.h"
 #include <stdlib.h>
 
-char const* dcp_result_alt_codon_stream(struct dcp_result const* result) { return result->alt_codon_stream; }
-
-imm_float dcp_result_alt_loglik(struct dcp_result const* result) { return result->alt_loglik; }
-
-struct imm_result const* dcp_result_alt_result(struct dcp_result const* result) { return result->alt_result; }
-
-char const* dcp_result_alt_stream(struct dcp_result const* result) { return result->alt_stream; }
+char const* dcp_result_codons(struct dcp_result const* result, enum dcp_model model)
+{
+    return result->models[model].stream.codons;
+}
 
 void dcp_result_destroy(struct dcp_result const* result)
 {
-    if (result->null_result)
-        imm_result_destroy(result->null_result);
+    for (unsigned i = 0; i <= DCP_NMODELS; ++i) {
+        if (result->models[i].result)
+            imm_result_destroy(result->models[i].result);
 
-    if (result->null_stream)
-        free((void*)result->null_stream);
+        if (result->models[i].stream.codons)
+            free((void*)result->models[i].stream.codons);
 
-    if (result->null_codon_stream)
-        free((void*)result->null_codon_stream);
+        if (result->models[i].stream.path)
+            free((void*)result->models[i].stream.path);
+    }
 
-    imm_result_destroy(result->alt_result);
-    free((void*)result->alt_stream);
-    free((void*)result->alt_codon_stream);
     free((void*)result);
 }
 
-char const* dcp_result_null_codon_stream(struct dcp_result const* result) { return result->null_codon_stream; }
+imm_float dcp_result_loglik(struct dcp_result const* result, enum dcp_model model)
+{
+    return result->models[model].loglik;
+}
 
-imm_float dcp_result_null_loglik(struct dcp_result const* result) { return result->null_loglik; }
-
-struct imm_result const* dcp_result_null_result(struct dcp_result const* result) { return result->null_result; }
-
-char const* dcp_result_null_stream(struct dcp_result const* result) { return result->null_stream; }
+char const* dcp_result_path(struct dcp_result const* result, enum dcp_model model)
+{
+    return result->models[model].stream.path;
+}
 
 uint32_t dcp_result_profid(struct dcp_result const* result) { return result->profid; }
 
 uint32_t dcp_result_seqid(struct dcp_result const* result) { return result->seqid; }
+
+struct dcp_result* result_create(void)
+{
+    struct dcp_result* r = malloc(sizeof(*r));
+    for (unsigned i = 0; i <= DCP_NMODELS; ++i) {
+        r->models[i].result = NULL;
+        r->models[i].stream.path = NULL;
+        r->models[i].stream.codons = NULL;
+    }
+    return r;
+}

@@ -41,6 +41,7 @@ add_library(deciphon
     src/result.c
     src/result_ring.c
     src/results.c
+    src/results_pool.c
     src/server.c
     src/special_trans.c
     src/task.c
