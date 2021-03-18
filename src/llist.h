@@ -27,6 +27,12 @@ static inline void llist_add(struct llist_list* list, struct llist_node* node)
     list->first = node;
 }
 
-static inline void llist_del(struct llist_list* list) { list->first = list->first ? list->first->next : NULL; }
+static inline struct llist_node* llist_pop(struct llist_list* list)
+{
+    struct llist_node* node = list->first;
+    if (node)
+        list->first = node->next;
+    return node;
+}
 
 #endif

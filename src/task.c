@@ -1,19 +1,11 @@
 #include "task.h"
+#include "ck_pr.h"
 #include "dcp/dcp.h"
 #include "mpool.h"
 #include "results.h"
 #include "sequence.h"
 #include <stdlib.h>
 #include <string.h>
-
-struct dcp_task
-{
-    struct dcp_task_cfg cfg;
-    struct list         sequences;
-    struct list         results;
-    bool                finished;
-    struct mpool        pool;
-};
 
 static void free_sequences(struct dcp_task* task);
 
@@ -30,11 +22,13 @@ struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
     struct dcp_task* task = malloc(sizeof(*task));
     task->cfg = cfg;
     list_init(&task->sequences);
-    list_init(&task->results);
+    llist_init_list(&task->results);
     task->finished = false;
+    task->end = false;
     MPOOL_INIT(&task->pool, struct dcp_results, 2, node);
     for (unsigned i = 0; i < 2; ++i)
         results_init(mpool_slot(&task->pool, i));
+    llist_init_node(&task->link);
     return task;
 }
 
@@ -45,26 +39,39 @@ void dcp_task_destroy(struct dcp_task const* task)
     free((void*)task);
 }
 
+bool dcp_task_end(struct dcp_task const* task)
+{
+    bool end = false;
+/* #pragma omp atomic read */
+#pragma omp critical
+    end = task->end;
+    return end;
+}
+
 struct dcp_results* dcp_task_fetch_results(struct dcp_task* task)
 {
     struct dcp_results* results = NULL;
-#pragma omp critical
-    {
-        struct list* node = list_head(&task->results);
-        if (node) {
-            list_del(node);
-            results = CONTAINER_OF(node, struct dcp_results, node);
-        }
-    }
-    return results;
-}
+    bool                finished = false;
 
-bool dcp_task_finished(struct dcp_task const* task)
-{
-    bool finished = false;
-#pragma omp atomic read
-    finished = task->finished;
-    return finished;
+    while (!results && !finished) {
+        struct llist_node* node = NULL;
+
+#pragma omp critical
+        node = llist_pop(&task->results);
+
+        if (node)
+            results = CONTAINER_OF(node, struct dcp_results, node);
+        else
+            ck_pr_stall();
+
+#pragma omp critical
+        finished = task->finished;
+    }
+
+#pragma omp critical
+    task->end = task->finished && !llist_head(&task->results);
+
+    return results;
 }
 
 void dcp_task_release_results(struct dcp_task* task, struct dcp_results* results)
@@ -116,8 +123,10 @@ struct sequence const* task_next_seq(struct dcp_task* task, struct sequence cons
 
 void task_push_results(struct dcp_task* task, struct dcp_results* results)
 {
+    printf("task_push_results\n");
+    fflush(stdout);
 #pragma omp critical
-    list_add(&task->results, &results->link);
+    llist_add(&task->results, &results->link);
 }
 
 static void free_sequences(struct dcp_task* task)

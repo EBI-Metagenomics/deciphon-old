@@ -1,7 +1,6 @@
 #ifndef RESULTS_H
 #define RESULTS_H
 
-#include "list.h"
 #include "llist.h"
 #include "result.h"
 #include <stdint.h>
@@ -14,7 +13,7 @@ struct dcp_results;
 struct dcp_results
 {
     struct llist_node node;
-    struct list       link;
+    struct llist_node link;
     uint16_t          nresults;
     uint16_t          curr;
     struct dcp_result results[RESULTS_BUFFSIZE];

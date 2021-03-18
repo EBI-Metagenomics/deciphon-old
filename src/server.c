@@ -1,6 +1,6 @@
 #include "dcp/dcp.h"
-#include <pthread.h>
 #include "imm/imm.h"
+#include "llist.h"
 #include "nmm/nmm.h"
 #include "profile.h"
 #include "profile_ring.h"
@@ -9,20 +9,38 @@
 #include "results.h"
 #include "sequence.h"
 #include "task.h"
+#include "util.h"
 #include <nmm/frame_state.h>
+#include <pthread.h>
 #include <stdatomic.h>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
+enum signal
+{
+    SIGNAL_NONE,
+    SIGNAL_STOP,
+};
+
+enum status
+{
+    STATUS_CREATED,
+    STATUS_STARTED,
+    STATUS_STOPPED,
+};
+
 struct dcp_server
 {
-    atomic_bool         finished;
-    atomic_uint         nrunning_tasks;
+    pthread_t           loop_thread;
     char const*         filepath;
     struct profile_ring profiles;
     struct dcp_input*   input;
+    struct llist_list   tasks;
+    int                 producer_finished;
+    int                 signal;
+    int                 status;
 };
 
 struct model_scan_result
@@ -31,18 +49,23 @@ struct model_scan_result
     struct imm_result const* result;
 };
 
-static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,
-                       struct dcp_model* model);
-static void profile_consumer(struct dcp_server* server, struct dcp_task* task);
-static void profile_producer(struct dcp_server* server);
-static void scan(struct dcp_server* server, struct nmm_profile const* profile, char const* sequence,
-                 struct dcp_result* result, uint32_t seqid, struct dcp_task_cfg const* cfg);
+static void  model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,
+                        struct dcp_model* model);
+static void  profile_consumer(struct dcp_server* server, struct dcp_task* task);
+static void  profile_producer(struct dcp_server* server);
+static void  scan(struct dcp_server* server, struct nmm_profile const* profile, char const* sequence,
+                  struct dcp_result* result, struct dcp_task_cfg const* cfg);
+static void* server_loop(void* server);
+
+void dcp_server_add(struct dcp_server* server, struct dcp_task* task)
+{
+#pragma omp critical
+    llist_add(&server->tasks, &task->link);
+}
 
 struct dcp_server* dcp_server_create(char const* filepath)
 {
     struct dcp_server* server = malloc(sizeof(*server));
-    server->finished = false;
-    server->nrunning_tasks = 0;
     server->filepath = strdup(filepath);
     server->profiles = profile_ring_init();
     server->input = dcp_input_create(server->filepath);
@@ -51,6 +74,10 @@ struct dcp_server* dcp_server_create(char const* filepath)
         free(server);
         return NULL;
     }
+    llist_init_list(&server->tasks);
+    server->producer_finished = 0;
+    server->signal = SIGNAL_NONE;
+    server->status = STATUS_CREATED;
     return server;
 }
 
@@ -68,33 +95,31 @@ struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, 
 
 uint32_t dcp_server_nprofiles(struct dcp_server const* server) { return dcp_input_nprofiles(server->input); }
 
-void dcp_server_scan(struct dcp_server* server, struct dcp_task* task)
+int dcp_server_start(struct dcp_server* server)
 {
-#pragma omp        parallel default(none) shared(server, task)
-    {
-        int a = 3;
+    int rc = pthread_create(&server->loop_thread, NULL, server_loop, (void*)server);
+    if (rc) {
+        error("could not start loop thread: %d", rc);
+        return 1;
     }
-    return;
-#pragma omp        parallel default(none) shared(server, task)
-    {
-#pragma omp single nowait
-        profile_producer(server);
+    return 0;
+}
 
-#pragma omp task
-        profile_consumer(server, task);
-    }
+void dcp_server_stop(struct dcp_server* server)
+{
+    ck_pr_store_int(&server->signal, SIGNAL_STOP);
 
-    printf("outside_parallel_region\n");
-    fflush(stdout);
+    while (ck_pr_load_int(&server->status) != STATUS_STOPPED)
+        ck_pr_stall();
 }
 
 static void profile_consumer(struct dcp_server* server, struct dcp_task* task)
 {
-    server->nrunning_tasks++;
+    printf("profile_consumer begin\n");
+    fflush(stdout);
     struct dcp_profile const* prof = NULL;
-    printf("enter_consumer_loop\n");
     do {
-        while (!(prof = profile_ring_pop(&server->profiles)) && !server->finished) {
+        while (!(prof = profile_ring_pop(&server->profiles)) && !ck_pr_load_int(&server->producer_finished)) {
             ck_pr_stall();
         }
 
@@ -103,58 +128,60 @@ static void profile_consumer(struct dcp_server* server, struct dcp_task* task)
             uint32_t               seqid = 0;
 
             struct dcp_results* results = NULL;
-            while ((results = task_alloc_results(task)) == NULL)
+            while ((results = task_alloc_results(task)) == NULL) {
+                /* printf("1"); */
+                /* fflush(stdout); */
                 ck_pr_stall();
+            }
+            printf("PASSOU: %p\n", (void*)seq);
+            fflush(stdout);
 
             while (seq) {
                 struct dcp_result* r = results_next(results);
-                printf("Ponto 1: %p\n", (void*)r);
-                fflush(stdout);
 
                 if (!r) {
-                    printf("Ponto 2\n");
-                    fflush(stdout);
                     task_push_results(task, results);
-                    printf("Ponto 2.5\n");
-                    while ((results = task_alloc_results(task)) == NULL)
+                    while ((results = task_alloc_results(task)) == NULL) {
+                        /* printf("2"); */
+                        /* fflush(stdout); */
                         ck_pr_stall();
-                    printf("continue\n");
-                    fflush(stdout);
+                    }
                     continue;
                 }
-                printf("Ponto 3\n");
-                fflush(stdout);
 
-                /* result_set_profid(r, dcp_profile_id(prof)); */
-                /* result_set_seqid(r, seqid); */
-                seqid++;
-                /* scan(server, dcp_profile_nmm_profile(prof), seq->sequence, r, seqid++, task_cfg(task)); */
+                result_set_profid(r, dcp_profile_id(prof));
+                result_set_seqid(r, seqid);
+                /* scan(server, dcp_profile_nmm_profile(prof), seq->sequence, r, task_cfg(task)); */
                 seq = task_next_seq(task, seq);
             }
 
-            task_push_results(task, results);
-            /* dcp_profile_destroy(prof, true); */
+            if (dcp_results_size(results) > 0)
+                task_push_results(task, results);
+
+            dcp_profile_destroy(prof, true);
         }
-    } while (prof || !server->finished);
-    printf("outside_consumer_loop\n");
+    } while (prof || !ck_pr_load_int(&server->producer_finished));
+
+    printf("profile_consumer end\n");
     fflush(stdout);
-    server->nrunning_tasks--;
 }
 
 static void profile_producer(struct dcp_server* server)
 {
+    printf("profile_producer begin\n");
+    ck_pr_store_int(&server->producer_finished, 0);
     dcp_input_reset(server->input);
     while (!dcp_input_end(server->input)) {
         struct dcp_profile const* prof = dcp_input_read(server->input);
         profile_ring_push(&server->profiles, prof);
     }
-    printf("server->finished = true\n");
+    ck_pr_store_int(&server->producer_finished, 1);
+    printf("profile_producer end\n");
     fflush(stdout);
-    server->finished = true;
 }
 
 static void scan(struct dcp_server* server, struct nmm_profile const* profile, char const* sequence,
-                 struct dcp_result* result, uint32_t seqid, struct dcp_task_cfg const* cfg)
+                 struct dcp_result* result, struct dcp_task_cfg const* cfg)
 {
     struct imm_abc const* abc = nmm_profile_abc(profile);
     struct imm_seq const* seq = imm_seq_create(sequence, abc);
@@ -263,4 +290,49 @@ static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq co
         step = imm_path_next(path, step);
     }
     data[i++] = '\0';
+}
+
+static void* server_loop(void* server_ptr)
+{
+    struct dcp_server* server = server_ptr;
+
+    while (ck_pr_load_int(&server->signal) != SIGNAL_STOP) {
+
+        struct dcp_task* task = NULL;
+        /* printf("server_loop 1\n"); */
+        /* fflush(stdout); */
+
+        while (ck_pr_load_int(&server->signal) != SIGNAL_STOP && !task) {
+            ck_pr_stall();
+
+            /* printf("server_loop 2\n"); */
+            /* fflush(stdout); */
+
+#pragma omp critical
+            {
+                /* printf("server_loop 3\n"); */
+                /* fflush(stdout); */
+                struct llist_node* node = llist_pop(&server->tasks);
+                if (node) {
+                    task = CONTAINER_OF(node, struct dcp_task, link);
+                }
+            }
+        }
+
+        if (!task)
+            continue;
+
+#pragma omp        parallel default(none) shared(server, task)
+        {
+#pragma omp single nowait
+            profile_producer(server);
+
+#pragma omp task
+            profile_consumer(server, task);
+        }
+
+        task_finish(task);
+    }
+    ck_pr_store_int(&server->status, STATUS_STOPPED);
+    return NULL;
 }

@@ -11,7 +11,7 @@ uint16_t dcp_results_size(struct dcp_results const* results) { return results->c
 void results_init(struct dcp_results* results)
 {
     llist_init_node(&results->node);
-    list_init(&results->link);
+    llist_init_node(&results->link);
     results->nresults = RESULTS_BUFFSIZE;
     for (unsigned i = 0; i < RESULTS_BUFFSIZE; ++i)
         result_init(results->results + i);

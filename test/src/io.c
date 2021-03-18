@@ -214,24 +214,6 @@ void test_input(void)
     dcp_input_destroy(input);
 }
 
-struct msg
-{
-    struct dcp_server* server;
-    struct dcp_task*   task;
-};
-
-void* hello(void* ptr);
-
-void* hello(void* ptr)
-{
-    struct msg* msg = ptr;
-    dcp_server_scan(msg->server, msg->task);
-    printf("OUTSIDE_SCAN\n");
-    fflush(stdout);
-    /* pthread_exit(NULL); */
-    return NULL;
-}
-
 void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer3_compat)
 {
     char const* names[] = {"name0", "name1"};
@@ -250,11 +232,11 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     dcp_task_add_seq(task, "AGATG");
     dcp_task_add_seq(task, "CCCCCC");
 
-    pthread_t  threads;
-    struct msg msg = {server, task};
-    int        rc = pthread_create(&threads, NULL, hello, (void*)&msg);
-    printf("rc: %d\n", rc);
-    fflush(stdout);
+    /* pthread_t  threads; */
+    /* struct msg msg = {server, task}; */
+    /* int        rc = pthread_create(&threads, NULL, hello, (void*)&msg); */
+    /* printf("rc: %d\n", rc); */
+    /* fflush(stdout); */
 
     /* for (int k = 0; k < 10; ++k) { */
     /*     struct dcp_results* results = dcp_task_fetch_results(task); */
@@ -264,14 +246,27 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     /*     if (results) */
     /*         dcp_task_release_results(task, results); */
     /* } */
+    dcp_server_add(server, task);
+    cass_equal(dcp_server_start(server), 0);
 
-    printf("OUTSIDE\n");
-    fflush(stdout);
-    pthread_join(threads, NULL);
-    printf("AFTERJOIN\n");
-    fflush(stdout);
-    /* pthread_exit(NULL); */
+    while (!dcp_task_end(task)) {
+
+        printf("Ponto 1\n");
+        fflush(stdout);
+        struct dcp_results* results = dcp_task_fetch_results(task);
+        printf("Ponto 2\n");
+        fflush(stdout);
+        if (results)
+            dcp_task_release_results(task, results);
+        printf("Ponto 3\n");
+        fflush(stdout);
+    }
+    cass_cond(dcp_task_end(task));
+
+    dcp_server_stop(server);
+    dcp_server_destroy(server);
     return;
+
     /* struct dcp_results const* results = dcp_task_results(task); */
     /* struct dcp_result const*  result = dcp_results_first(results); */
     /* while (result) { */

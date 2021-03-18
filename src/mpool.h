@@ -28,13 +28,7 @@ static inline void mpool_init(struct mpool* pool, size_t slot_size, unsigned nsl
     pool->memory = memory;
 }
 
-static inline struct llist_node* mpool_alloc(struct mpool* pool)
-{
-    struct llist_node* node = llist_head(&pool->list);
-    if (node)
-        llist_del(&pool->list);
-    return node;
-}
+static inline struct llist_node* mpool_alloc(struct mpool* pool) { return llist_pop(&pool->list); }
 
 static inline void mpool_free(struct mpool* pool, struct llist_node* node) { llist_add(&pool->list, node); }
 
