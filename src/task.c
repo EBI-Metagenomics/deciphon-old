@@ -23,8 +23,8 @@ struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
     task->cfg = cfg;
     list_init(&task->sequences);
     llist_init_list(&task->results);
-    task->finished = false;
-    task->end = false;
+    task->finished = 0;
+    task->end = 0;
     MPOOL_INIT(&task->pool, struct dcp_results, 2, node);
     for (unsigned i = 0; i < 2; ++i)
         results_init(mpool_slot(&task->pool, i));
@@ -39,19 +39,12 @@ void dcp_task_destroy(struct dcp_task const* task)
     free((void*)task);
 }
 
-bool dcp_task_end(struct dcp_task const* task)
-{
-    bool end = false;
-/* #pragma omp atomic read */
-#pragma omp critical
-    end = task->end;
-    return end;
-}
+bool dcp_task_end(struct dcp_task const* task) { return ck_pr_load_int(&task->end); }
 
 struct dcp_results* dcp_task_fetch_results(struct dcp_task* task)
 {
     struct dcp_results* results = NULL;
-    bool                finished = false;
+    bool                finished = 0;
 
     while (!results && !finished) {
         struct llist_node* node = NULL;
@@ -84,7 +77,7 @@ void dcp_task_release_results(struct dcp_task* task, struct dcp_results* results
 /* { */
 /*     free_sequences(task); */
 /*     list_init(&task->results); */
-/*     task->finished = false; */
+/*     task->finished = 0; */
 /* } */
 
 struct dcp_results* task_alloc_results(struct dcp_task* task)
@@ -103,11 +96,7 @@ struct dcp_results* task_alloc_results(struct dcp_task* task)
 
 struct dcp_task_cfg const* task_cfg(struct dcp_task* task) { return &task->cfg; }
 
-void task_finish(struct dcp_task* task)
-{
-#pragma omp atomic write
-    task->finished = true;
-}
+void task_finish(struct dcp_task* task) { ck_pr_store_int(&task->finished, 1); }
 
 struct sequence const* task_first_seq(struct dcp_task* task)
 {

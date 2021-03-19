@@ -1,7 +1,7 @@
 #ifndef DCP_SERVER_H
 #define DCP_SERVER_H
 
-#include "deciphon/export.h"
+#include "dcp/export.h"
 #include <inttypes.h>
 
 struct dcp_server;

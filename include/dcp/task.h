@@ -1,7 +1,7 @@
 #ifndef DCP_TASK_H
 #define DCP_TASK_H
 
-#include "deciphon/export.h"
+#include "dcp/export.h"
 #include <stdbool.h>
 
 struct dcp_results;

@@ -14,8 +14,8 @@ struct dcp_task
     struct dcp_task_cfg cfg;
     struct list         sequences;
     struct llist_list   results;
-    bool                finished;
-    bool                end;
+    int                 finished;
+    int                 end;
     struct mpool        pool;
     struct llist_node   link;
 };

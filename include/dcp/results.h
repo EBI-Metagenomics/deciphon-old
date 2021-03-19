@@ -1,7 +1,7 @@
 #ifndef DCP_RESULTS_H
 #define DCP_RESULTS_H
 
-#include "deciphon/export.h"
+#include "dcp/export.h"
 #include <stdint.h>
 
 struct dcp_result;
