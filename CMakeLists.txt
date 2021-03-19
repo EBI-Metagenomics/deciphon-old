@@ -36,6 +36,7 @@ endif()
 add_library(dcp
     src/input.c
     src/metadata.c
+    src/mpool.c
     src/output.c
     src/profile.c
     src/profile_ring.c
