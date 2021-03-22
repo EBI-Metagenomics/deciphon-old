@@ -15,9 +15,7 @@ struct mpool
 void* mpool_alloc(struct mpool* pool)
 {
     unsigned char* slot = NULL;
-    while (!(slot = mpool_tryalloc(pool)))
-        ck_pr_stall();
-    return slot;
+    return ck_ring_dequeue_mpmc(&pool->ring, pool->buffer, &slot) ? slot : NULL;
 }
 
 struct mpool* mpool_create(unsigned slot_size, unsigned power_size)
@@ -53,9 +51,3 @@ void mpool_free(struct mpool* pool, void const* slot) { BUG(!ck_ring_enqueue_mpm
 unsigned mpool_nslots(struct mpool* pool) { return pool->nslots; }
 
 void* mpool_slot(struct mpool* pool, unsigned i) { return (void*)(pool->memory + i * pool->slot_size); }
-
-void* mpool_tryalloc(struct mpool* pool)
-{
-    unsigned char* slot = NULL;
-    return ck_ring_dequeue_mpmc(&pool->ring, pool->buffer, &slot) ? slot : NULL;
-}

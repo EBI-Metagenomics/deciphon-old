@@ -80,19 +80,19 @@ void dcp_task_release_results(struct dcp_task* task, struct dcp_results* results
 /*     task->finished = 0; */
 /* } */
 
-struct dcp_results* task_alloc_results(struct dcp_task* task)
-{
-    struct dcp_results* results = NULL;
-#pragma omp critical
-    {
-        struct llist_node* node = mpool_alloc(&task->pool);
-        if (node) {
-            results = CONTAINER_OF(node, struct dcp_results, node);
-            results_rewind(results);
-        }
-    }
-    return results;
-}
+/* struct dcp_results* task_alloc_results(struct dcp_task* task) */
+/* { */
+/*     struct dcp_results* results = NULL; */
+/* #pragma omp critical */
+/*     { */
+/*         struct llist_node* node = mpool_alloc(&task->pool); */
+/*         if (node) { */
+/*             results = CONTAINER_OF(node, struct dcp_results, node); */
+/*             results_rewind(results); */
+/*         } */
+/*     } */
+/*     return results; */
+/* } */
 
 struct dcp_task_cfg const* task_cfg(struct dcp_task* task) { return &task->cfg; }
 
@@ -100,13 +100,13 @@ void task_finish(struct dcp_task* task) { ck_pr_store_int(&task->finished, 1); }
 
 struct sequence const* task_first_seq(struct dcp_task* task)
 {
-    struct list* i = list_head(&task->sequences);
+    struct list_head* i = list_first(&task->sequences);
     return i ? CONTAINER_OF(i, struct sequence, link) : NULL;
 }
 
 struct sequence const* task_next_seq(struct dcp_task* task, struct sequence const* sequence)
 {
-    struct list* i = list_next(&task->sequences, &sequence->link);
+    struct list_head* i = list_next(&task->sequences, &sequence->link);
     return i ? CONTAINER_OF(i, struct sequence, link) : NULL;
 }
 
@@ -120,9 +120,9 @@ void task_push_results(struct dcp_task* task, struct dcp_results* results)
 
 static void free_sequences(struct dcp_task* task)
 {
-    struct list* i = list_head(&task->sequences);
+    struct list_head* i = list_first(&task->sequences);
     while (i) {
-        struct list tmp = *i;
+        struct list_head tmp = *i;
         list_del(i);
         struct sequence* seq = CONTAINER_OF(i, struct sequence, link);
         free((void*)seq->sequence);

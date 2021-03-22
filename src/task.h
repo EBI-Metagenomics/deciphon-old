@@ -3,7 +3,7 @@
 
 #include "dcp/dcp.h"
 #include "list.h"
-#include "mpool.h"
+#include "node.h"
 
 struct dcp_results;
 struct dcp_task_cfg;
@@ -12,15 +12,15 @@ struct sequence;
 struct dcp_task
 {
     struct dcp_task_cfg cfg;
-    struct list         sequences;
-    struct llist_list   results;
+    /* struct list_head    sequences; */
+    /* struct llist_list   results; */
     int                 finished;
     int                 end;
-    struct mpool        pool;
-    struct llist_node   link;
+    /* struct llist_node   link; */
+    struct node         node;
 };
 
-struct dcp_results*        task_alloc_results(struct dcp_task* task);
+/* struct dcp_results*        task_alloc_results(struct dcp_task* task); */
 struct dcp_task_cfg const* task_cfg(struct dcp_task* task);
 void                       task_finish(struct dcp_task* task);
 struct sequence const*     task_first_seq(struct dcp_task* task);

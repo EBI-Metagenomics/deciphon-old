@@ -9,13 +9,13 @@
 struct offset
 {
     uint64_t    value;
-    struct list link;
+    struct list_head link;
 };
 
 struct metadata
 {
     struct dcp_metadata const* mt;
-    struct list                link;
+    struct list_head                link;
 };
 
 struct dcp_output
@@ -23,8 +23,8 @@ struct dcp_output
     char const*        filepath;
     FILE*              stream;
     uint32_t           nprofiles;
-    struct list        profile_offsets;
-    struct list        profile_metadatas;
+    struct list_head        profile_offsets;
+    struct list_head        profile_metadatas;
     uint32_t           profile_metadata_size;
     char const*        tmp_filepath;
     struct nmm_output* tmp_output;
@@ -60,7 +60,7 @@ int dcp_output_close(struct dcp_output* output)
     struct offset* offset = NULL;
     uint64_t       start = sizeof(output->nprofiles) + output->nprofiles * sizeof(offset->value);
     start += output->profile_metadata_size;
-    for (struct list* i = list_head(&output->profile_offsets); i; i = list_next(&output->profile_offsets, i)) {
+    for (struct list_head* i = list_first(&output->profile_offsets); i; i = list_next(&output->profile_offsets, i)) {
         offset = CONTAINER_OF(i, struct offset, link);
         uint64_t v = start + offset->value;
         if (fwrite(&v, sizeof(v), 1, output->stream) < 1) {
@@ -70,7 +70,7 @@ int dcp_output_close(struct dcp_output* output)
         }
     }
 
-    for (struct list* i = list_head(&output->profile_metadatas); i; i = list_next(&output->profile_metadatas, i)) {
+    for (struct list_head* i = list_first(&output->profile_metadatas); i; i = list_next(&output->profile_metadatas, i)) {
         struct metadata* mt = CONTAINER_OF(i, struct metadata, link);
         if (profile_metadata_write(mt->mt, output->stream)) {
             errno = 1;
@@ -157,17 +157,17 @@ cleanup:
     if (output->tmp_filepath)
         free((void*)output->tmp_filepath);
 
-    struct list* i = list_head(&output->profile_offsets);
+    struct list_head* i = list_first(&output->profile_offsets);
     while (i) {
-        struct list tmp = *i;
+        struct list_head tmp = *i;
         list_del(i);
         free(CONTAINER_OF(i, struct offset, link));
         i = list_next(&output->profile_offsets, &tmp);
     }
 
-    i = list_head(&output->profile_metadatas);
+    i = list_first(&output->profile_metadatas);
     while (i) {
-        struct list tmp = *i;
+        struct list_head tmp = *i;
         list_del(i);
         struct metadata* mt = CONTAINER_OF(i, struct metadata, link);
         dcp_metadata_destroy(mt->mt);

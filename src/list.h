@@ -3,31 +3,37 @@
 
 #include "container.h"
 
-struct list
+struct list_head
 {
-    struct list* next;
-    struct list* prev;
+    struct list_head* next;
+    struct list_head* prev;
 };
 
-static inline void list_init(struct list* list)
+static inline void list_init(struct list_head* head)
 {
-    list->next = list;
-    list->prev = list;
+    head->next = head;
+    head->prev = head;
 }
 
-static inline struct list* list_head(struct list const* list) { return list->next == list ? NULL : list->next; }
-
-static inline struct list* list_tail(struct list const* list) { return list->next == list ? NULL : list->prev; }
-
-static inline struct list* list_next(struct list const* list, struct list const* node)
+static inline struct list_head* list_first(struct list_head const* head)
 {
-    return node->next == list ? NULL : node->next;
+    return head->next == head ? NULL : head->next;
 }
 
-static inline void list_ins(struct list* where, struct list* node)
+static inline struct list_head* list_last(struct list_head const* head)
 {
-    struct list* prev = where->prev;
-    struct list* next = where;
+    return head->next == head ? NULL : head->prev;
+}
+
+static inline struct list_head* list_next(struct list_head const* head, struct list_head const* node)
+{
+    return node->next == head ? NULL : node->next;
+}
+
+static inline void list_ins(struct list_head* where, struct list_head* node)
+{
+    struct list_head* prev = where->prev;
+    struct list_head* next = where;
 
     next->prev = node;
     node->next = next;
@@ -35,10 +41,10 @@ static inline void list_ins(struct list* where, struct list* node)
     prev->next = node;
 }
 
-static inline void list_add(struct list* list, struct list* node)
+static inline void list_add(struct list_head* head, struct list_head* node)
 {
-    struct list* next = list;
-    struct list* prev = list->prev;
+    struct list_head* next = head;
+    struct list_head* prev = head->prev;
 
     next->prev = node;
     node->next = next;
@@ -46,10 +52,10 @@ static inline void list_add(struct list* list, struct list* node)
     prev->next = node;
 }
 
-static inline void list_del(struct list* node)
+static inline void list_del(struct list_head* node)
 {
-    struct list* next = node->next;
-    struct list* prev = node->prev;
+    struct list_head* next = node->next;
+    struct list_head* prev = node->prev;
 
     prev->next = next;
     next->prev = prev;
@@ -57,7 +63,7 @@ static inline void list_del(struct list* node)
     /*
      * These are non-NULL pointers that will result in page faults
      * under normal circumstances, used to verify that nobody uses
-     * non-initialized list entries. Reference: Linux kernel.
+     * non-initialized head entries. Reference: Linux kernel.
      */
     node->next = (void*)0x100;
     node->prev = (void*)0x122;
