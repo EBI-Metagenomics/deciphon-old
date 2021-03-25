@@ -1,17 +1,17 @@
 #include "result.h"
 #include "dcp/dcp.h"
 
-struct dcp_string const* dcp_result_codons(struct dcp_result const* result, enum dcp_model_t model)
+struct dcp_string const* dcp_result_codons(struct dcp_result const* result, enum dcp_model model)
 {
     return &result->models[model].codons;
 }
 
-imm_float dcp_result_loglik(struct dcp_result const* result, enum dcp_model_t model)
+imm_float dcp_result_loglik(struct dcp_result const* result, enum dcp_model model)
 {
     return result->models[model].loglik;
 }
 
-struct dcp_string const* dcp_result_path(struct dcp_result const* result, enum dcp_model_t model)
+struct dcp_string const* dcp_result_path(struct dcp_result const* result, enum dcp_model model)
 {
     return &result->models[model].path;
 }

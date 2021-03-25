@@ -6,13 +6,11 @@
 #include "seq.h"
 
 static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,
-                       struct dcp_model* model);
+                       struct model* model);
 
 void scan(struct dcp_profile const* profile, struct seq const* seq, struct dcp_result* result,
           struct dcp_task_cfg const* cfg)
 {
-    printf("NMODELS: %d\n", dcp_profile_nmodels(profile));
-    fflush(stdout);
     struct imm_abc const* abc = dcp_profile_abc(profile);
     struct imm_seq const* iseq = imm_seq_create(seq_string(seq), abc);
 
@@ -22,7 +20,7 @@ void scan(struct dcp_profile const* profile, struct seq const* seq, struct dcp_r
         profile_setup(hmm, dp, cfg->multiple_hits, imm_seq_length(iseq), cfg->hmmer3_compat);
     model_scan(hmm, dp, iseq, cfg->loglik, result_model(result, DCP_ALT));
 
-    struct dcp_model* null = result_model(result, DCP_NULL);
+    struct model* null = result_model(result, DCP_NULL);
     model_set_loglik(null, imm_lprob_invalid());
     model_set_result(null, null->result);
     if (cfg->null) {
@@ -35,7 +33,7 @@ void scan(struct dcp_profile const* profile, struct seq const* seq, struct dcp_r
 }
 
 static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,
-                       struct dcp_model* model)
+                       struct model* model)
 {
     struct imm_dp_task* task = imm_dp_task_create(dp);
 

@@ -3,7 +3,7 @@
 
 #include "dcp/export.h"
 
-enum dcp_model_t
+enum dcp_model
 {
     DCP_ALT = 0,
     DCP_NULL = 1
