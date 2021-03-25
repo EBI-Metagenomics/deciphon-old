@@ -30,7 +30,7 @@ void dcp_task_destroy(struct dcp_task* task)
     struct seq* seq = NULL;
     goto enter;
     while (seq) {
-        free(seq);
+        seq_destroy(seq);
     enter:
         seq = seq_stack_pop(&task->sequences);
     }

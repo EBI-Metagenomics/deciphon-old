@@ -29,6 +29,7 @@ static inline struct seq* seq_create(char const* sequence, uint32_t id)
 
 static inline void seq_destroy(struct seq* seq)
 {
+    free((void*)seq->sequence);
     snode_deinit(&seq->node);
     free(seq);
 }
