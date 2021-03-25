@@ -162,7 +162,7 @@ static void* server_loop(void* server_addr)
             errors += input_processor(server);
             errors += task_processor(server, task);
         }
-        task_finish(task, errors ? TASK_STATUS_STOPPED : TASK_STATUS_FINISHED);
+        task_set_status(task, errors ? TASK_STATUS_STOPPED : TASK_STATUS_FINISHED);
     }
     ck_pr_store_int(&server->status, STATUS_STOPPED);
     return NULL;

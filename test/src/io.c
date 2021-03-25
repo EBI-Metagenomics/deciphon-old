@@ -234,15 +234,13 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
 
     dcp_server_add(server, task);
     dcp_server_start(server);
-    dcp_task_join(task);
 
-    while (dcp_task_status(task) == TASK_STATUS_CREATED) {
+    while (!dcp_task_eor(task)) {
 
         struct dcp_results* results = dcp_task_read(task);
         if (results)
-            dcp_task_release_results(task, results);
+            dcp_server_recyle(server, results);
     }
-    /* cass_cond(dcp_task_status(task)); */
 
     dcp_server_stop(server);
     dcp_server_join(server);

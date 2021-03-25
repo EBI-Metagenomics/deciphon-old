@@ -15,18 +15,14 @@ struct dcp_task
     struct seq_stack     sequences;
     uint32_t             seqid;
     struct results_queue results;
-    int                  finished;
-    int                  end;
+    int                  eor;
     int                  status;
     struct snode         node;
-
-    pthread_cond_t  cond;
-    pthread_mutex_t mutex;
 };
 
+void                       task_add_results(struct dcp_task* task, struct dcp_results* results);
 struct dcp_task_cfg const* task_cfg(struct dcp_task* task);
-void                       task_finish(struct dcp_task* task, enum task_status status);
-void                       task_push_results(struct dcp_task* task, struct dcp_results* results);
 struct iter_snode          task_seq_iter(struct dcp_task* task);
+void                       task_set_status(struct dcp_task* task, enum dcp_task_status status);
 
 #endif
