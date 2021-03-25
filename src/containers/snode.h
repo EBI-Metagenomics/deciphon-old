@@ -1,5 +1,5 @@
-#ifndef SNODE_H
-#define SNODE_H
+#ifndef CONTAINERS_SNODE_H
+#define CONTAINERS_SNODE_H
 
 #include <stddef.h>
 
@@ -13,11 +13,10 @@ struct snode
         NULL                                                                                                           \
     }
 
-static inline void          snode_add_next(struct snode* where, struct snode* new);
-static inline void          snode_deinit(struct snode* node);
-static inline void          snode_del(struct snode* prev, struct snode* node);
-static inline void          snode_init(struct snode* node);
-static inline struct snode* snode_next(struct snode* node);
+static inline void snode_add_next(struct snode* where, struct snode* new);
+static inline void snode_deinit(struct snode* node);
+static inline void snode_del(struct snode* prev, struct snode* node);
+static inline void snode_init(struct snode* node);
 
 static inline void snode_add_next(struct snode* where, struct snode* new)
 {
@@ -34,7 +33,5 @@ static inline void snode_del(struct snode* prev, struct snode* node)
 }
 
 static inline void snode_init(struct snode* node) { node->next = NULL; }
-
-static inline struct snode* snode_next(struct snode* node) { return node->next; }
 
 #endif

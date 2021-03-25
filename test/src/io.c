@@ -232,38 +232,19 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     dcp_task_add_seq(task, "AGATG");
     dcp_task_add_seq(task, "CCCCCC");
 
-    /* pthread_t  threads; */
-    /* struct msg msg = {server, task}; */
-    /* int        rc = pthread_create(&threads, NULL, hello, (void*)&msg); */
-    /* printf("rc: %d\n", rc); */
-    /* fflush(stdout); */
+    /* dcp_server_add(server, task); */
+    dcp_server_start(server);
 
-    /* for (int k = 0; k < 10; ++k) { */
+    /* while (!dcp_task_status(task)) { */
+
     /*     struct dcp_results* results = dcp_task_fetch_results(task); */
-    /*     printf("dcp_results: %p\n", (void*)results); */
-    /*     fflush(stdout); */
-    /*     elapsed_sleep(1); */
     /*     if (results) */
     /*         dcp_task_release_results(task, results); */
     /* } */
-    dcp_server_add(server, task);
-    cass_equal(dcp_server_start(server), 0);
-
-    while (!dcp_task_end(task)) {
-
-        printf("Ponto 1\n");
-        fflush(stdout);
-        struct dcp_results* results = dcp_task_fetch_results(task);
-        printf("Ponto 2\n");
-        fflush(stdout);
-        if (results)
-            dcp_task_release_results(task, results);
-        printf("Ponto 3\n");
-        fflush(stdout);
-    }
-    cass_cond(dcp_task_end(task));
+    /* cass_cond(dcp_task_status(task)); */
 
     dcp_server_stop(server);
+    dcp_server_join(server);
     dcp_server_destroy(server);
     return;
 

@@ -15,12 +15,18 @@ struct dcp_task_cfg
     bool hmmer3_compat;
 };
 
+enum task_status
+{
+    TASK_STATUS_CREATED,
+    TASK_STATUS_STOPPED,
+    TASK_STATUS_FINISHED,
+};
+
 DCP_API void                dcp_task_add_seq(struct dcp_task* task, char const* sequence);
 DCP_API struct dcp_task*    dcp_task_create(struct dcp_task_cfg cfg);
-DCP_API void                dcp_task_destroy(struct dcp_task const* task);
-DCP_API bool                dcp_task_end(struct dcp_task const* task);
+DCP_API void                dcp_task_destroy(struct dcp_task* task);
 DCP_API struct dcp_results* dcp_task_fetch_results(struct dcp_task* task);
-DCP_API void                dcp_task_release_results(struct dcp_task* task, struct dcp_results* results);
-/* DCP_API void                dcp_task_reset(struct dcp_task* task); */
+DCP_API int                 dcp_task_join(struct dcp_task* task);
+DCP_API enum task_status    dcp_task_status(struct dcp_task const* task);
 
 #endif

@@ -1,29 +1,18 @@
-#include "container.h"
+#include "seq_stack.h"
 #include "seq.h"
-#include "stack.h"
 
-struct seq_stack
-{
-    struct stack seqs;
-};
+void seq_stack_deinit(struct seq_stack* stack) { stack_deinit(&stack->stack); }
 
-void        seq_stack_deinit(struct seq_stack* stack);
-bool        seq_stack_empty(struct seq_stack const* stack);
-void        seq_stack_init(struct seq_stack* stack);
-struct seq* seq_stack_pop(struct seq_stack* stack);
-void        seq_stack_push(struct seq_stack* stack, struct seq* seq);
+bool seq_stack_empty(struct seq_stack const* stack) { return stack_empty(&stack->stack); }
 
-void seq_stack_deinit(struct seq_stack* stack) { stack_deinit(&stack->seqs); }
+struct iter_snode seq_stack_iter(struct seq_stack* stack) { return stack_iter(&stack->stack); }
 
-bool seq_stack_empty(struct seq_stack const* stack) { return stack_empty(&stack->seqs); }
-
-void seq_stack_init(struct seq_stack* stack) { stack_init(&stack->seqs); }
+void seq_stack_init(struct seq_stack* stack) { stack_init(&stack->stack); }
 
 struct seq* seq_stack_pop(struct seq_stack* stack)
 {
-    struct snode* node = stack_empty(&stack->seqs) ? stack_pop(&stack->seqs) : NULL;
-    struct seq*   seq = node ? CONTAINER_OF(node, struct seq, node) : NULL;
-    return seq;
+    struct snode* node = stack_empty(&stack->stack) ? stack_pop(&stack->stack) : NULL;
+    return CONTAINER_OF_OR_NULL(node, struct seq, node);
 }
 
-void seq_stack_push(struct seq_stack* stack, struct seq* seq) { stack_push(&stack->seqs, &seq->node); }
+void seq_stack_push(struct seq_stack* stack, struct seq* seq) { stack_push(&stack->stack, &seq->node); }

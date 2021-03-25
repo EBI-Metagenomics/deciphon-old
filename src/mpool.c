@@ -41,6 +41,7 @@ struct mpool* mpool_create(unsigned slot_size, unsigned power_size)
 
 void mpool_destroy(struct mpool const* pool)
 {
+    BUG(ck_ring_size(&pool->ring) != pool->nslots);
     free(pool->memory);
     free(pool->buffer);
     free((void*)pool);

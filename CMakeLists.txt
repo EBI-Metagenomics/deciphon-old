@@ -39,10 +39,12 @@ add_library(dcp
     src/mpool.c
     src/output.c
     src/profile.c
-    src/profile_ring.c
     src/result.c
     src/result_ring.c
     src/results.c
+    src/results_queue.c
+    src/scan.c
+    src/seq_stack.c
     src/server.c
     src/special_trans.c
     src/str.c
@@ -66,6 +68,7 @@ if(${CMAKE_C_COMPILER_ID} MATCHES "MSVC")
 else()
     set(WARNING_FLAGS -Wall -Wextra -pedantic -Wstrict-prototypes -Wshadow
         -Wconversion -Wmissing-prototypes -Wno-unused-parameter -Wsign-conversion
+        -Wno-gnu-statement-expression
         -Wno-unused-function # FIXME: added only to please clangd for now
         -Wno-empty-translation-unit # FIXME: added only to please clangd for now
     )
