@@ -18,7 +18,7 @@ struct dcp_results
     struct dcp_result results[RESULTS_BUFFSIZE];
 };
 
-void               results_deinit(struct dcp_results* results);
+void               results_deinit(struct dcp_results const* results);
 void               results_init(struct dcp_results* results);
 uint16_t           results_limit(struct dcp_results const* results);
 struct dcp_result* results_next(struct dcp_results* results);

@@ -20,9 +20,9 @@ uint32_t dcp_result_profid(struct dcp_result const* result) { return result->pro
 
 uint32_t dcp_result_seqid(struct dcp_result const* result) { return result->seqid; }
 
-void result_deinit(struct dcp_result* result)
+void result_deinit(struct dcp_result const* result)
 {
-    for (unsigned i = 0; i <= ARRAY_SIZE(dcp_models); ++i) {
+    for (unsigned i = 0; i < ARRAY_SIZE(dcp_models); ++i) {
         if (result->models[i].result)
             imm_result_destroy(result->models[i].result);
         string_deinit(&result->models[i].path);
@@ -32,7 +32,7 @@ void result_deinit(struct dcp_result* result)
 
 void result_init(struct dcp_result* result)
 {
-    for (unsigned i = 0; i <= ARRAY_SIZE(dcp_models); ++i) {
+    for (unsigned i = 0; i < ARRAY_SIZE(dcp_models); ++i) {
         result->models[i].result = NULL;
         string_init(&result->models[i].path);
         string_init(&result->models[i].codons);

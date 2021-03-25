@@ -71,7 +71,11 @@ void dcp_server_destroy(struct dcp_server* server)
     bus_deinit(&server->profile_bus);
     task_queue_deinit(&server->tasks);
     dcp_input_destroy(server->input);
+
+    for (unsigned i = 0; i < mpool_nslots(server->mpool); ++i)
+        results_deinit(mpool_slot(server->mpool, i));
     mpool_destroy(server->mpool);
+
     free(server);
 }
 

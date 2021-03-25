@@ -12,7 +12,7 @@ struct dcp_result
     struct model models[ARRAY_SIZE(dcp_models)];
 };
 
-void                        result_deinit(struct dcp_result* result);
+void                        result_deinit(struct dcp_result const* result);
 void                        result_init(struct dcp_result* result);
 static inline struct model* result_model(struct dcp_result* r, enum dcp_model model) { return r->models + model; }
 static inline void          result_set_profid(struct dcp_result* r, uint32_t profid) { r->profid = profid; }

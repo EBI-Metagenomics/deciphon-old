@@ -2,11 +2,15 @@
 #include "dcp/dcp.h"
 #include "result.h"
 
-void results_deinit(struct dcp_results* results) { free((void*)results); }
-
 struct dcp_result const* dcp_results_get(struct dcp_results* results, uint16_t i) { return results->results + i; }
 
 uint16_t dcp_results_size(struct dcp_results const* results) { return results->curr; }
+
+void results_deinit(struct dcp_results const* results)
+{
+    for (unsigned i = 0; i < RESULTS_BUFFSIZE; ++i)
+        result_deinit(results->results + i);
+}
 
 void results_init(struct dcp_results* results)
 {
