@@ -8,23 +8,26 @@
 static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,
                        struct dcp_model* model);
 
-void scan(struct nmm_profile const* profile, struct seq const* seq, struct dcp_result* result,
+void scan(struct dcp_profile const* profile, struct seq const* seq, struct dcp_result* result,
           struct dcp_task_cfg const* cfg)
 {
-    struct imm_abc const* abc = nmm_profile_abc(profile);
+    printf("NMODELS: %d\n", dcp_profile_nmodels(profile));
+    fflush(stdout);
+    struct imm_abc const* abc = dcp_profile_abc(profile);
     struct imm_seq const* iseq = imm_seq_create(seq_string(seq), abc);
 
-    struct imm_hmm* hmm = imm_model_hmm(nmm_profile_get_model(profile, 0));
-    struct imm_dp*  dp = imm_model_dp(nmm_profile_get_model(profile, 0));
-    profile_setup(hmm, dp, cfg->multiple_hits, imm_seq_length(iseq), cfg->hmmer3_compat);
+    struct imm_hmm* hmm = imm_model_hmm(dcp_profile_model(profile, 0));
+    struct imm_dp*  dp = imm_model_dp(dcp_profile_model(profile, 0));
+    if (cfg->setup)
+        profile_setup(hmm, dp, cfg->multiple_hits, imm_seq_length(iseq), cfg->hmmer3_compat);
     model_scan(hmm, dp, iseq, cfg->loglik, result_model(result, DCP_ALT));
 
     struct dcp_model* null = result_model(result, DCP_NULL);
     model_set_loglik(null, imm_lprob_invalid());
     model_set_result(null, null->result);
     if (cfg->null) {
-        hmm = imm_model_hmm(nmm_profile_get_model(profile, 1));
-        dp = imm_model_dp(nmm_profile_get_model(profile, 1));
+        hmm = imm_model_hmm(dcp_profile_model(profile, 1));
+        dp = imm_model_dp(dcp_profile_model(profile, 1));
         model_scan(hmm, dp, iseq, cfg->loglik, null);
     }
 

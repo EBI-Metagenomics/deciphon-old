@@ -226,7 +226,7 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     char const* null_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
 
     struct dcp_server*  server = dcp_server_create(TMPDIR "/two_profiles.dcp");
-    struct dcp_task_cfg cfg = {calc_loglik, calc_null, multiple_hits, hmmer3_compat};
+    struct dcp_task_cfg cfg = {calc_loglik, calc_null, multiple_hits, hmmer3_compat, false};
     struct dcp_task*    task = dcp_task_create(cfg);
     dcp_task_add_seq(task, "ACT");
     dcp_task_add_seq(task, "AGATG");
@@ -235,46 +235,34 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     dcp_server_add(server, task);
     dcp_server_start(server);
 
-    while (!dcp_task_eor(task)) {
+    while (!dcp_task_end(task)) {
 
         struct dcp_results* results = dcp_task_read(task);
-        if (results)
+        if (results) {
+
+            for (uint16_t i = 0; i < dcp_results_size(results); ++i) {
+                struct dcp_result const* r = dcp_results_get(results, i);
+                uint32_t                 seqid = dcp_result_seqid(r);
+                uint32_t                 profid = dcp_result_profid(r);
+                imm_float                v = dcp_result_loglik(r, DCP_ALT);
+                cass_close(v, alt_logliks[3 * profid + seqid]);
+                v = dcp_result_loglik(r, DCP_NULL);
+                cass_close(v, null_logliks[3 * profid + seqid]);
+                struct dcp_metadata const* mt = dcp_server_metadata(server, profid);
+                cass_equal(strcmp(dcp_metadata_name(mt), names[profid]), 0);
+                cass_equal(strcmp(dcp_metadata_acc(mt), accs[profid]), 0);
+                struct dcp_string const* path = dcp_result_path(r, DCP_ALT);
+                cass_equal(strcmp(dcp_string_data(path), alt_streams[3 * profid + seqid]), 0);
+                path = dcp_result_path(r, DCP_NULL);
+                cass_equal(strcmp(dcp_string_data(path), null_streams[3 * profid + seqid]), 0);
+            }
             dcp_server_recyle(server, results);
+        }
     }
 
     dcp_server_stop(server);
     dcp_server_join(server);
     dcp_server_destroy(server);
-    return;
-
-    /* struct dcp_results const* results = dcp_task_results(task); */
-    /* struct dcp_result const*  result = dcp_results_first(results); */
-    /* while (result) { */
-    /*     uint32_t                   profid = dcp_result_profid(result); */
-    /*     uint32_t                   seqid = dcp_result_seqid(result); */
-    /*     struct dcp_metadata const* mt = dcp_server_metadata(server, profid); */
-
-    /*     cass_equal(strcmp(names[profid], dcp_metadata_name(mt)), 0); */
-    /*     cass_equal(strcmp(accs[profid], dcp_metadata_acc(mt)), 0); */
-
-    /*     if (calc_loglik) { */
-    /*         cass_close(dcp_result_alt_loglik(result), alt_logliks[profid * 3 + seqid]); */
-    /*         if (calc_null) */
-    /*             cass_close(dcp_result_null_loglik(result), null_logliks[profid * 3 + seqid]); */
-    /*     } */
-
-    /*     cass_equal(strcmp(dcp_result_alt_stream(result), alt_streams[profid * 3 + seqid]), 0); */
-    /*     if (calc_null) */
-    /*         cass_equal(strcmp(dcp_result_null_stream(result), null_streams[profid * 3 + seqid]), 0); */
-
-    /*     struct dcp_result const* tmp = result; */
-    /*     result = dcp_results_next(results, result); */
-    /*     dcp_result_destroy(tmp); */
-    /* } */
-
-    /* results_destroy(results); */
-    /* dcp_task_destroy(task); */
-    /* dcp_server_destroy(server); */
 }
 
 void test_pfam(void)

@@ -111,11 +111,10 @@ static struct dcp_results* alloc_results(struct dcp_server* server)
 
 static int input_processor(struct dcp_server* server)
 {
-    if (!dcp_input_reset(server->input))
+    if (dcp_input_reset(server->input))
         return 1;
 
     int errno = 0;
-    bus_open(&server->profile_bus);
     while (!dcp_input_end(server->input)) {
 
         struct dcp_profile const* prof = dcp_input_read(server->input);
@@ -135,9 +134,7 @@ static int input_processor(struct dcp_server* server)
         }
     }
 
-    bus_close(&server->profile_bus);
-    printf("INPUT_PROCESSOR: finished\n");
-    fflush(stdout);
+    bus_close_input(&server->profile_bus);
     return errno;
 }
 
@@ -156,10 +153,14 @@ static void* server_loop(void* server_addr)
             continue;
 
         int errors = 0;
-#pragma omp        parallel default(none) shared(server, task) reduction(+ : errors)
+#pragma omp parallel default(none) shared(server, task) reduction(+ : errors)
         {
+#pragma omp single
+            bus_open_input(&server->profile_bus);
+
 #pragma omp single nowait
             errors += input_processor(server);
+
             errors += task_processor(server, task);
         }
         task_set_status(task, errors ? TASK_STATUS_STOPPED : TASK_STATUS_FINISHED);
@@ -173,7 +174,7 @@ static inline bool sigstop(struct dcp_server* server) { return ck_pr_load_int(&s
 static int task_processor(struct dcp_server* server, struct dcp_task* task)
 {
     int err = 0;
-    while (!bus_closed(&server->profile_bus) && !sigstop(server)) {
+    while (!bus_end(&server->profile_bus) && !sigstop(server)) {
 
         struct dcp_profile const* prof = NULL;
         if (!(prof = bus_recv(&server->profile_bus))) {
@@ -192,6 +193,8 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
         struct seq const* seq = NULL;
         ITER_FOREACH(seq, &it, node)
         {
+            printf("seq\n");
+            fflush(stdout);
             struct dcp_result* r = results_next(results);
             if (!r) {
                 task_add_results(task, results);
@@ -205,7 +208,7 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
 
             result_set_profid(r, dcp_profile_id(prof));
             result_set_seqid(r, seq_id(seq));
-            scan(dcp_profile_nmm_profile(prof), seq, r, task_cfg(task));
+            scan(prof, seq, r, task_cfg(task));
         }
 
         if (results)

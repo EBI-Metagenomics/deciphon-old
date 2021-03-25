@@ -13,6 +13,7 @@ struct dcp_task_cfg
     bool null;
     bool multiple_hits;
     bool hmmer3_compat;
+    bool setup; /* TODO: remove this */
 };
 
 enum dcp_task_status
@@ -25,7 +26,7 @@ enum dcp_task_status
 DCP_API void                 dcp_task_add_seq(struct dcp_task* task, char const* sequence);
 DCP_API struct dcp_task*     dcp_task_create(struct dcp_task_cfg cfg);
 DCP_API void                 dcp_task_destroy(struct dcp_task* task);
-DCP_API bool                 dcp_task_eor(struct dcp_task* task);
+DCP_API bool                 dcp_task_end(struct dcp_task* task);
 DCP_API struct dcp_results*  dcp_task_read(struct dcp_task* task);
 DCP_API enum dcp_task_status dcp_task_status(struct dcp_task const* task);
 

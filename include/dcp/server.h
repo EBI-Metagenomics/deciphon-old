@@ -2,7 +2,7 @@
 #define DCP_SERVER_H
 
 #include "dcp/export.h"
-#include <inttypes.h>
+#include <stdint.h>
 
 struct dcp_results;
 struct dcp_server;

@@ -15,7 +15,7 @@ struct dcp_task
     struct seq_stack     sequences;
     uint32_t             seqid;
     struct results_queue results;
-    int                  eor;
+    int                  end;
     int                  status;
     struct snode         node;
 };

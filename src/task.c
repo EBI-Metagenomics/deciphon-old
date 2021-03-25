@@ -18,7 +18,7 @@ struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
     seq_stack_init(&task->sequences);
     task->seqid = 0;
     results_queue_init(&task->results);
-    task->eor = 0;
+    task->end = 0;
     task->status = TASK_STATUS_CREATED;
     snode_init(&task->node);
 
@@ -41,13 +41,13 @@ void dcp_task_destroy(struct dcp_task* task)
     free(task);
 }
 
-bool dcp_task_eor(struct dcp_task* task) { return ck_pr_load_int(&task->eor); }
+bool dcp_task_end(struct dcp_task* task) { return ck_pr_load_int(&task->end); }
 
 struct dcp_results* dcp_task_read(struct dcp_task* task)
 {
     enum dcp_task_status status = dcp_task_status(task);
     if (status != TASK_STATUS_CREATED && results_queue_empty(&task->results))
-        ck_pr_store_int(&task->eor, 1);
+        ck_pr_store_int(&task->end, 1);
 
     return results_queue_pop(&task->results);
 }
