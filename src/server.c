@@ -193,8 +193,6 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
         struct seq const* seq = NULL;
         ITER_FOREACH(seq, &it, node)
         {
-            printf("seq\n");
-            fflush(stdout);
             struct dcp_result* r = results_next(results);
             if (!r) {
                 task_add_results(task, results);

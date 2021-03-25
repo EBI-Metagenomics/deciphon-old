@@ -272,6 +272,7 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
         dcp_server_recyle(server, results);
     }
     cass_equal(ncomp, 12);
+    dcp_task_destroy(task);
 
     dcp_server_stop(server);
     dcp_server_join(server);
