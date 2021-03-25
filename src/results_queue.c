@@ -29,7 +29,7 @@ void results_queue_init(struct results_queue* queue)
 struct dcp_results* results_queue_pop(struct results_queue* queue)
 {
     lock(queue);
-    struct snode*       node = queue_empty(&queue->queue) ? queue_pop(&queue->queue) : NULL;
+    struct snode*       node = !queue_empty(&queue->queue) ? queue_pop(&queue->queue) : NULL;
     struct dcp_results* results = CONTAINER_OF_OR_NULL(node, struct dcp_results, node);
     unlock(queue);
 

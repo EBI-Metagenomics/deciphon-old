@@ -1,7 +1,7 @@
+#include "bus.h"
 #include "dcp/dcp.h"
 #include "imm/imm.h"
 #include "mpool.h"
-#include "profile_bus.h"
 #include "results.h"
 #include "scan.h"
 #include "seq.h"
@@ -28,13 +28,13 @@ enum status
 
 struct dcp_server
 {
-    pthread_t          server_loop;
-    struct profile_bus profile_bus;
-    struct dcp_input*  input;
-    struct task_queue  tasks;
-    int                signal;
-    int                status;
-    struct mpool*      mpool;
+    pthread_t         server_loop;
+    struct bus        profile_bus;
+    struct dcp_input* input;
+    struct task_queue tasks;
+    int               signal;
+    int               status;
+    struct mpool*     mpool;
 };
 
 static struct dcp_results* alloc_results(struct dcp_server* server);
@@ -48,7 +48,7 @@ void dcp_server_add(struct dcp_server* server, struct dcp_task* task) { task_que
 struct dcp_server* dcp_server_create(char const* filepath)
 {
     struct dcp_server* server = malloc(sizeof(*server));
-    profile_bus_init(&server->profile_bus);
+    bus_init(&server->profile_bus);
     if (!(server->input = dcp_input_create(filepath))) {
         free(server);
         return NULL;
@@ -57,7 +57,8 @@ struct dcp_server* dcp_server_create(char const* filepath)
     server->signal = SIGNAL_NONE;
     server->status = STATUS_CREATED;
 
-    static unsigned const pool_size = 4;
+    static unsigned const pool_size = 8;
+    /* static unsigned const pool_size = 4; */
     server->mpool = mpool_create(sizeof(struct dcp_results), pool_size);
     for (unsigned i = 0; i < pool_size; ++i)
         results_init(mpool_slot(server->mpool, i));
@@ -67,7 +68,7 @@ struct dcp_server* dcp_server_create(char const* filepath)
 
 void dcp_server_destroy(struct dcp_server* server)
 {
-    profile_bus_deinit(&server->profile_bus);
+    bus_deinit(&server->profile_bus);
     task_queue_deinit(&server->tasks);
     dcp_input_destroy(server->input);
     mpool_destroy(server->mpool);
@@ -114,7 +115,7 @@ static int input_processor(struct dcp_server* server)
         return 1;
 
     int errno = 0;
-    profile_bus_open(&server->profile_bus);
+    bus_open(&server->profile_bus);
     while (!dcp_input_end(server->input)) {
 
         struct dcp_profile const* prof = dcp_input_read(server->input);
@@ -124,7 +125,7 @@ static int input_processor(struct dcp_server* server)
         }
 
         bool ok = false;
-        while (!(ok = profile_bus_send(&server->profile_bus, prof)) && !sigstop(server))
+        while (!(ok = bus_send(&server->profile_bus, prof)) && !sigstop(server))
             ck_pr_stall();
 
         if (!ok) {
@@ -134,7 +135,9 @@ static int input_processor(struct dcp_server* server)
         }
     }
 
-    profile_bus_close(&server->profile_bus);
+    bus_close(&server->profile_bus);
+    printf("INPUT_PROCESSOR: finished\n");
+    fflush(stdout);
     return errno;
 }
 
@@ -170,10 +173,10 @@ static inline bool sigstop(struct dcp_server* server) { return ck_pr_load_int(&s
 static int task_processor(struct dcp_server* server, struct dcp_task* task)
 {
     int err = 0;
-    while (!profile_bus_closed(&server->profile_bus) && !sigstop(server)) {
+    while (!bus_closed(&server->profile_bus) && !sigstop(server)) {
 
         struct dcp_profile const* prof = NULL;
-        if (!(prof = profile_bus_recv(&server->profile_bus))) {
+        if (!(prof = bus_recv(&server->profile_bus))) {
             ck_pr_stall();
             continue;
         }
@@ -191,7 +194,7 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
         {
             struct dcp_result* r = results_next(results);
             if (!r) {
-                task_push_results(task, results);
+                task_add_results(task, results);
 
                 if (!(results = alloc_results(server))) {
                     err++;
@@ -206,7 +209,7 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
         }
 
         if (results)
-            task_push_results(task, results);
+            task_add_results(task, results);
 
         dcp_profile_destroy(prof, true);
     }

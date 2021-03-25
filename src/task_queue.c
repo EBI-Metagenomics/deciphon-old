@@ -29,7 +29,7 @@ void task_queue_init(struct task_queue* taskq)
 struct dcp_task* task_queue_pop(struct task_queue* taskq)
 {
     lock(taskq);
-    struct snode*    node = queue_empty(&taskq->queue) ? queue_pop(&taskq->queue) : NULL;
+    struct snode*    node = !queue_empty(&taskq->queue) ? queue_pop(&taskq->queue) : NULL;
     struct dcp_task* task = CONTAINER_OF_OR_NULL(node, struct dcp_task, node);
     unlock(taskq);
 
