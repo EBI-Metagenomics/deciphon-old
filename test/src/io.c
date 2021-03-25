@@ -218,10 +218,13 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
 {
     char const* names[] = {"name0", "name1"};
     char const* accs[] = {"acc0", "acc1"};
-    imm_float   alt_logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
+
+    imm_float  alt_logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
                                imm_lprob_invalid(), -3.5707764696, -5.1196932619};
-    imm_float   null_logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
+    imm_float  null_logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
                                 imm_lprob_invalid(), -3.5707764696, -5.1196932619};
+    imm_float* logliks[] = {alt_logliks, null_logliks};
+
     char const* alt_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
     char const* null_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
 
@@ -244,10 +247,12 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
                 struct dcp_result const* r = dcp_results_get(results, i);
                 uint32_t                 seqid = dcp_result_seqid(r);
                 uint32_t                 profid = dcp_result_profid(r);
+
                 imm_float                v = dcp_result_loglik(r, DCP_ALT);
                 cass_close(v, alt_logliks[3 * profid + seqid]);
                 v = dcp_result_loglik(r, DCP_NULL);
-                cass_close(v, null_logliks[3 * profid + seqid]);
+                cass_close(v, logliks[DCP_NULL][3 * profid + seqid]);
+
                 struct dcp_metadata const* mt = dcp_server_metadata(server, profid);
                 cass_equal(strcmp(dcp_metadata_name(mt), names[profid]), 0);
                 cass_equal(strcmp(dcp_metadata_acc(mt), accs[profid]), 0);

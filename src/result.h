@@ -3,12 +3,13 @@
 
 #include "dcp/dcp.h"
 #include "model.h"
+#include "util.h"
 
 struct dcp_result
 {
     uint32_t         profid;
     uint32_t         seqid;
-    struct dcp_model models[DCP_NMODELS];
+    struct dcp_model models[ARRAY_SIZE(dcp_models)];
 };
 
 void                            result_deinit(struct dcp_result* result);
