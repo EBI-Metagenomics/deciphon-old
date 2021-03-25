@@ -223,14 +223,16 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
                                imm_lprob_invalid(), -3.5707764696, -5.1196932619};
     imm_float  null_logliks[] = {imm_lprob_invalid(), -5.0748538664, -6.6237706587,
                                 imm_lprob_invalid(), -3.5707764696, -5.1196932619};
-    imm_float* logliks[] = {alt_logliks, null_logliks};
+    imm_float* logliks[] = {[DCP_MODEL_ALT] = alt_logliks, [DCP_MODEL_NULL] = null_logliks};
 
-    char const* alt_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
-    char const* null_streams[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
+    char const*  alt_path[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
+    char const*  null_path[] = {"", "S0:2,S1:3", "S0:3,S1:3", "", "S0:2,S1:3", "S0:3,S1:3"};
+    char const** paths[] = {[DCP_MODEL_ALT] = alt_path, [DCP_MODEL_NULL] = null_path};
 
     struct dcp_server*  server = dcp_server_create(TMPDIR "/two_profiles.dcp");
     struct dcp_task_cfg cfg = {calc_loglik, calc_null, multiple_hits, hmmer3_compat, false};
     struct dcp_task*    task = dcp_task_create(cfg);
+
     dcp_task_add_seq(task, "ACT");
     dcp_task_add_seq(task, "AGATG");
     dcp_task_add_seq(task, "CCCCCC");
@@ -238,32 +240,38 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     dcp_server_add(server, task);
     dcp_server_start(server);
 
+    unsigned ncomp = 0;
     while (!dcp_task_end(task)) {
 
         struct dcp_results* results = dcp_task_read(task);
-        if (results) {
+        if (!results)
+            continue;
 
-            for (uint16_t i = 0; i < dcp_results_size(results); ++i) {
-                struct dcp_result const* r = dcp_results_get(results, i);
-                uint32_t                 seqid = dcp_result_seqid(r);
-                uint32_t                 profid = dcp_result_profid(r);
+        for (uint16_t i = 0; i < dcp_results_size(results); ++i) {
+            struct dcp_result const* r = dcp_results_get(results, i);
+            uint32_t                 seqid = dcp_result_seqid(r);
+            uint32_t                 profid = dcp_result_profid(r);
 
-                imm_float                v = dcp_result_loglik(r, DCP_ALT);
-                cass_close(v, alt_logliks[3 * profid + seqid]);
-                v = dcp_result_loglik(r, DCP_NULL);
-                cass_close(v, logliks[DCP_NULL][3 * profid + seqid]);
+            for (unsigned j = 0; j < ARRAY_SIZE(dcp_models); ++j) {
+
+                enum dcp_model m = dcp_models[j];
+                unsigned       k = 3 * profid + seqid;
+
+                cass_close(dcp_result_loglik(r, m), logliks[m][k]);
 
                 struct dcp_metadata const* mt = dcp_server_metadata(server, profid);
                 cass_equal(strcmp(dcp_metadata_name(mt), names[profid]), 0);
                 cass_equal(strcmp(dcp_metadata_acc(mt), accs[profid]), 0);
-                struct dcp_string const* path = dcp_result_path(r, DCP_ALT);
-                cass_equal(strcmp(dcp_string_data(path), alt_streams[3 * profid + seqid]), 0);
-                path = dcp_result_path(r, DCP_NULL);
-                cass_equal(strcmp(dcp_string_data(path), null_streams[3 * profid + seqid]), 0);
+
+                struct dcp_string const* path = dcp_result_path(r, m);
+                cass_equal(strcmp(dcp_string_data(path), paths[m][k]), 0);
+
+                ncomp++;
             }
-            dcp_server_recyle(server, results);
         }
+        dcp_server_recyle(server, results);
     }
+    cass_equal(ncomp, 12);
 
     dcp_server_stop(server);
     dcp_server_join(server);

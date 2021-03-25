@@ -18,9 +18,9 @@ void scan(struct dcp_profile const* profile, struct seq const* seq, struct dcp_r
     struct imm_dp*  dp = imm_model_dp(dcp_profile_model(profile, 0));
     if (cfg->setup)
         profile_setup(hmm, dp, cfg->multiple_hits, imm_seq_length(iseq), cfg->hmmer3_compat);
-    model_scan(hmm, dp, iseq, cfg->loglik, result_model(result, DCP_ALT));
+    model_scan(hmm, dp, iseq, cfg->loglik, result_model(result, DCP_MODEL_ALT));
 
-    struct model* null = result_model(result, DCP_NULL);
+    struct model* null = result_model(result, DCP_MODEL_NULL);
     model_set_loglik(null, imm_lprob_invalid());
     model_set_result(null, null->result);
     if (cfg->null) {

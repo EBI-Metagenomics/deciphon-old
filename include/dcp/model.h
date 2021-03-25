@@ -5,10 +5,10 @@
 
 enum dcp_model
 {
-    DCP_ALT = 0,
-    DCP_NULL = 1
+    DCP_MODEL_ALT = 0,
+    DCP_MODEL_NULL = 1
 };
 
-static int const dcp_models[2] = {DCP_ALT, DCP_NULL};
+static enum dcp_model const dcp_models[2] = {DCP_MODEL_ALT, DCP_MODEL_NULL};
 
 #endif
