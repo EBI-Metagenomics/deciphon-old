@@ -11,7 +11,7 @@ void seq_stack_init(struct seq_stack* stack) { stack_init(&stack->stack); }
 
 struct seq* seq_stack_pop(struct seq_stack* stack)
 {
-    struct snode* node = stack_empty(&stack->stack) ? stack_pop(&stack->stack) : NULL;
+    struct snode* node = !stack_empty(&stack->stack) ? stack_pop(&stack->stack) : NULL;
     return CONTAINER_OF_OR_NULL(node, struct seq, node);
 }
 
