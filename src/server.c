@@ -1,10 +1,12 @@
 #include "bus.h"
 #include "dcp/dcp.h"
+#include "gc.h"
 #include "imm/imm.h"
 #include "mpool.h"
 #include "results.h"
 #include "scan.h"
 #include "seq.h"
+#include "signal.h"
 #include "task.h"
 #include "task_bin.h"
 #include "task_queue.h"
@@ -16,12 +18,6 @@
 #include <omp.h>
 #endif
 
-enum signal
-{
-    SIGNAL_NONE,
-    SIGNAL_STOP,
-};
-
 enum status
 {
     STATUS_CREATED,
@@ -29,17 +25,10 @@ enum status
     STATUS_STOPPED,
 };
 
-struct gc
-{
-    pthread_t       thread;
-    pthread_cond_t  cond;
-    pthread_mutex_t mutex;
-};
-
 struct dcp_server
 {
     pthread_t         server_loop;
-    struct gc         gc;
+    struct gc*        gc;
     struct bus        profile_bus;
     struct dcp_input* input;
     struct task_queue tasks;
@@ -49,9 +38,10 @@ struct dcp_server
     struct mpool*     mpool;
 };
 
+void collect_garbage(void* server_addr);
+
 static struct dcp_results* alloc_results(struct dcp_server* server);
 bool                       collect_task(struct dcp_task* task, void* arg);
-static void*               garbage_collector(void* server_addr);
 static int                 input_processor(struct dcp_server* server);
 static void*               server_loop(void* server_addr);
 static inline bool         sigstop(struct dcp_server* server);
@@ -67,6 +57,7 @@ struct dcp_server* dcp_server_create(char const* filepath)
         free(server);
         return NULL;
     }
+    server->gc = gc_create(collect_garbage, server);
     task_queue_init(&server->tasks);
     task_bin_init(&server->task_bin);
     server->signal = SIGNAL_NONE;
@@ -99,7 +90,7 @@ void dcp_server_join(struct dcp_server* server)
 {
     void* ret = NULL;
     BUG(pthread_join(server->server_loop, &ret));
-    BUG(pthread_join(server->gc.thread, &ret));
+    gc_join(server->gc);
 }
 
 struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, uint32_t profid)
@@ -118,11 +109,7 @@ void dcp_server_free_task(struct dcp_server* server, struct dcp_task* task) { ta
 
 void dcp_server_start(struct dcp_server* server)
 {
-    BUG(pthread_mutex_init(&server->gc.mutex, NULL));
-    BUG(pthread_cond_init(&server->gc.cond, NULL));
-
-    BUG(pthread_create(&server->gc.thread, NULL, garbage_collector, (void*)server));
-
+    gc_start(server->gc);
     BUG(pthread_create(&server->server_loop, NULL, server_loop, (void*)server));
 }
 
@@ -139,10 +126,7 @@ void error_pthread_cond_signal(const int signal_rv)
 void dcp_server_stop(struct dcp_server* server)
 {
     ck_pr_store_int(&server->signal, SIGNAL_STOP);
-    const int signal_rv = pthread_cond_signal(&server->gc.cond);
-    if (signal_rv) {
-        error_pthread_cond_signal(signal_rv);
-    }
+    gc_stop(server->gc);
 }
 
 static struct dcp_results* alloc_results(struct dcp_server* server)
@@ -194,25 +178,10 @@ void error_pthread_cond_timedwait(const int timed_wait_rv)
     fflush(stderr);
 }
 
-static void* garbage_collector(void* server_addr)
+void collect_garbage(void* server_addr)
 {
     struct dcp_server* server = server_addr;
-    BUG(pthread_mutex_lock(&server->gc.mutex));
-    while (!sigstop(server)) {
-        struct timespec wait_time = {0, 0};
-        BUG(clock_gettime(CLOCK_REALTIME, &wait_time));
-        wait_time.tv_sec += 1;
-        int rv = pthread_cond_timedwait(&server->gc.cond, &server->gc.mutex, &wait_time);
-
-        if (rv) {
-            error_pthread_cond_timedwait(rv);
-        }
-        fflush(stdout);
-        task_bin_collect(&server->task_bin, collect_task, server);
-    }
-    task_bin_force_collect(&server->task_bin, collect_task, server);
-    BUG(pthread_mutex_unlock(&server->gc.mutex));
-    return NULL;
+    task_bin_collect(&server->task_bin, collect_task, server);
 }
 
 static int input_processor(struct dcp_server* server)
@@ -271,9 +240,7 @@ static void* server_loop(void* server_addr)
         }
         task_set_status(task, errors ? TASK_STATUS_STOPPED : TASK_STATUS_FINISHED);
 
-        BUG(pthread_mutex_lock(&server->gc.mutex));
-        BUG(pthread_cond_signal(&server->gc.cond));
-        BUG(pthread_mutex_unlock(&server->gc.mutex));
+        gc_collect(server->gc);
     }
     ck_pr_store_int(&server->status, STATUS_STOPPED);
     return NULL;
