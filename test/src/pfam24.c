@@ -26,7 +26,7 @@ int main(void)
 
     /*     dcp_server_recyle(server, results); */
     /* } */
-    dcp_task_destroy(task);
+    dcp_server_free_task(server, task);
 
     server_teardown(server);
 

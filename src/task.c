@@ -20,6 +20,7 @@ struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
     task->end = 0;
     task->status = TASK_STATUS_CREATED;
     snode_init(&task->node);
+    snode_init(&task->bin_node);
 
     return task;
 }

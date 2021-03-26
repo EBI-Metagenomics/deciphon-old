@@ -49,6 +49,7 @@ add_library(dcp
     src/special_trans.c
     src/str.c
     src/task.c
+    src/task_bin.c
     src/task_queue.c
     src/util.c
 )

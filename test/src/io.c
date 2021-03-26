@@ -269,7 +269,7 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
                 ncomp++;
             }
         }
-        dcp_server_recyle(server, results);
+        dcp_server_free_results(server, results);
     }
     cass_equal(ncomp, 12);
     dcp_task_destroy(task);

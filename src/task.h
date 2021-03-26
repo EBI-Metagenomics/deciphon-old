@@ -18,6 +18,7 @@ struct dcp_task
     int                  end;
     int                  status;
     struct snode         node;
+    struct snode         bin_node;
 };
 
 void                       task_add_results(struct dcp_task* task, struct dcp_results* results);

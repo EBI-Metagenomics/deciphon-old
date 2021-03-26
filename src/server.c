@@ -6,6 +6,7 @@
 #include "scan.h"
 #include "seq.h"
 #include "task.h"
+#include "task_bin.h"
 #include "task_queue.h"
 #include <pthread.h>
 
@@ -32,6 +33,7 @@ struct dcp_server
     struct bus        profile_bus;
     struct dcp_input* input;
     struct task_queue tasks;
+    struct task_bin   task_bin;
     int               signal;
     int               status;
     struct mpool*     mpool;
@@ -54,6 +56,7 @@ struct dcp_server* dcp_server_create(char const* filepath)
         return NULL;
     }
     task_queue_init(&server->tasks);
+    task_bin_init(&server->task_bin);
     server->signal = SIGNAL_NONE;
     server->status = STATUS_CREATED;
 
@@ -93,7 +96,12 @@ struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, 
 
 uint32_t dcp_server_nprofiles(struct dcp_server const* server) { return dcp_input_nprofiles(server->input); }
 
-void dcp_server_recyle(struct dcp_server* server, struct dcp_results* results) { mpool_free(server->mpool, results); }
+void dcp_server_free_results(struct dcp_server* server, struct dcp_results* results)
+{
+    mpool_free(server->mpool, results);
+}
+
+void dcp_server_free_task(struct dcp_server* server, struct dcp_task* task) { task_bin_put(&server->task_bin, task); }
 
 void dcp_server_start(struct dcp_server* server)
 {
