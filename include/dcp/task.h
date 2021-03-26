@@ -23,7 +23,7 @@ enum dcp_task_status
     TASK_STATUS_FINISHED,
 };
 
-DCP_API void                 dcp_task_add_seq(struct dcp_task* task, char const* sequence);
+DCP_API void                 dcp_task_add_seq(struct dcp_task* task, char const* seq);
 DCP_API struct dcp_task*     dcp_task_create(struct dcp_task_cfg cfg);
 DCP_API void                 dcp_task_destroy(struct dcp_task* task);
 DCP_API bool                 dcp_task_end(struct dcp_task* task);

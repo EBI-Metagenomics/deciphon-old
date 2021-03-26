@@ -4,10 +4,9 @@
 #include "util.h"
 #include <ck_pr.h>
 
-void dcp_task_add_seq(struct dcp_task* task, char const* sequence)
+void dcp_task_add_seq(struct dcp_task* task, char const* seq)
 {
-    struct seq* seq = seq_create(sequence, task->seqid++);
-    seq_stack_push(&task->sequences, seq);
+    seq_stack_push(&task->sequences, seq_create(seq, task->seqid++));
 }
 
 struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)

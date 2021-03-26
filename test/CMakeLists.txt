@@ -18,3 +18,4 @@ function(dcp_add_test name)
 endfunction()
 
 dcp_add_test(io)
+dcp_add_test(pfam24)

@@ -57,11 +57,12 @@ struct dcp_server* dcp_server_create(char const* filepath)
     server->signal = SIGNAL_NONE;
     server->status = STATUS_CREATED;
 
-    static unsigned const pool_size = 8;
-    /* static unsigned const pool_size = 4; */
-    server->mpool = mpool_create(sizeof(struct dcp_results), pool_size);
-    for (unsigned i = 0; i < pool_size; ++i)
+    static unsigned const pool_power_size = 8;
+    /* static unsigned const pool_power_size = 4; */
+    server->mpool = mpool_create(sizeof(struct dcp_results), pool_power_size);
+    for (unsigned i = 0; i < mpool_nslots(server->mpool); ++i) {
         results_init(mpool_slot(server->mpool, i));
+    }
 
     return server;
 }
