@@ -29,6 +29,14 @@ void task_bin_collect(struct task_bin* bin, collect_task_cb collect_task, void* 
     }
 }
 
+void task_bin_force_collect(struct task_bin* bin, collect_task_cb collect_task, void* arg)
+{
+    printf("task_bin_force_collect\n");
+    fflush(stdout);
+    ck_pr_add_uint(&bin->put_stack, 2);
+    task_bin_collect(bin, collect_task, arg);
+}
+
 void task_bin_init(struct task_bin* bin)
 {
     bin->put_stack = 0;

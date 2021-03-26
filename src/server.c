@@ -8,7 +8,9 @@
 #include "task.h"
 #include "task_bin.h"
 #include "task_queue.h"
+#include <errno.h>
 #include <pthread.h>
+#include <time.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -27,9 +29,17 @@ enum status
     STATUS_STOPPED,
 };
 
+struct gc
+{
+    pthread_t       thread;
+    pthread_cond_t  cond;
+    pthread_mutex_t mutex;
+};
+
 struct dcp_server
 {
     pthread_t         server_loop;
+    struct gc         gc;
     struct bus        profile_bus;
     struct dcp_input* input;
     struct task_queue tasks;
@@ -40,6 +50,8 @@ struct dcp_server
 };
 
 static struct dcp_results* alloc_results(struct dcp_server* server);
+bool                       collect_task(struct dcp_task* task, void* arg);
+static void*               garbage_collector(void* server_addr);
 static int                 input_processor(struct dcp_server* server);
 static void*               server_loop(void* server_addr);
 static inline bool         sigstop(struct dcp_server* server);
@@ -87,6 +99,7 @@ void dcp_server_join(struct dcp_server* server)
 {
     void* ret = NULL;
     BUG(pthread_join(server->server_loop, &ret));
+    BUG(pthread_join(server->gc.thread, &ret));
 }
 
 struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, uint32_t profid)
@@ -105,10 +118,32 @@ void dcp_server_free_task(struct dcp_server* server, struct dcp_task* task) { ta
 
 void dcp_server_start(struct dcp_server* server)
 {
+    BUG(pthread_mutex_init(&server->gc.mutex, NULL));
+    BUG(pthread_cond_init(&server->gc.cond, NULL));
+
+    BUG(pthread_create(&server->gc.thread, NULL, garbage_collector, (void*)server));
+
     BUG(pthread_create(&server->server_loop, NULL, server_loop, (void*)server));
 }
 
-void dcp_server_stop(struct dcp_server* server) { ck_pr_store_int(&server->signal, SIGNAL_STOP); }
+void error_pthread_cond_signal(const int signal_rv);
+
+void error_pthread_cond_signal(const int signal_rv)
+{
+    fprintf(stderr, "Could not signal.\n");
+    if (signal_rv == EINVAL) {
+        fprintf(stderr, "The value cond does not refer to an initialised condition variable.\n");
+    }
+}
+
+void dcp_server_stop(struct dcp_server* server)
+{
+    ck_pr_store_int(&server->signal, SIGNAL_STOP);
+    const int signal_rv = pthread_cond_signal(&server->gc.cond);
+    if (signal_rv) {
+        error_pthread_cond_signal(signal_rv);
+    }
+}
 
 static struct dcp_results* alloc_results(struct dcp_server* server)
 {
@@ -122,17 +157,75 @@ static struct dcp_results* alloc_results(struct dcp_server* server)
     return results;
 }
 
+bool collect_task(struct dcp_task* task, void* arg)
+{
+    printf("collect_task: start\n");
+    fflush(stdout);
+    if (dcp_task_status(task) == TASK_STATUS_CREATED) {
+        printf("collect_task: exit\n");
+        fflush(stdout);
+        return false;
+    }
+
+    printf("collect_task: destroy\n");
+    fflush(stdout);
+
+    dcp_task_destroy(task);
+    return true;
+}
+void error_pthread_cond_timedwait(const int timed_wait_rv);
+
+void error_pthread_cond_timedwait(const int timed_wait_rv)
+{
+    fprintf(stderr, "Conditional timed wait, failed.\n");
+    switch (timed_wait_rv) {
+    case ETIMEDOUT:
+        fprintf(stderr, "The time specified by abstime to pthread_cond_timedwait() has passed.\n");
+        break;
+    case EINVAL:
+        fprintf(stderr, "The value specified by abstime, cond or mutex is invalid.\n");
+        break;
+    case EPERM:
+        fprintf(stderr, "The mutex was not owned by the current thread at the time of the call.\n");
+        break;
+    default:
+        break;
+    }
+    fflush(stderr);
+}
+
+static void* garbage_collector(void* server_addr)
+{
+    struct dcp_server* server = server_addr;
+    BUG(pthread_mutex_lock(&server->gc.mutex));
+    while (!sigstop(server)) {
+        struct timespec wait_time = {0, 0};
+        BUG(clock_gettime(CLOCK_REALTIME, &wait_time));
+        wait_time.tv_sec += 1;
+        int rv = pthread_cond_timedwait(&server->gc.cond, &server->gc.mutex, &wait_time);
+
+        if (rv) {
+            error_pthread_cond_timedwait(rv);
+        }
+        fflush(stdout);
+        task_bin_collect(&server->task_bin, collect_task, server);
+    }
+    task_bin_force_collect(&server->task_bin, collect_task, server);
+    BUG(pthread_mutex_unlock(&server->gc.mutex));
+    return NULL;
+}
+
 static int input_processor(struct dcp_server* server)
 {
     if (dcp_input_reset(server->input))
         return 1;
 
-    int errno = 0;
+    int err = 0;
     while (!dcp_input_end(server->input)) {
 
         struct dcp_profile const* prof = dcp_input_read(server->input);
         if (!prof) {
-            errno = 1;
+            err = 1;
             break;
         }
 
@@ -142,13 +235,13 @@ static int input_processor(struct dcp_server* server)
 
         if (!ok) {
             dcp_profile_destroy(prof, true);
-            errno = 1;
+            err = 1;
             break;
         }
     }
 
     bus_close_input(&server->profile_bus);
-    return errno;
+    return err;
 }
 
 static void* server_loop(void* server_addr)
@@ -177,6 +270,10 @@ static void* server_loop(void* server_addr)
             errors += task_processor(server, task);
         }
         task_set_status(task, errors ? TASK_STATUS_STOPPED : TASK_STATUS_FINISHED);
+
+        BUG(pthread_mutex_lock(&server->gc.mutex));
+        BUG(pthread_cond_signal(&server->gc.cond));
+        BUG(pthread_mutex_unlock(&server->gc.mutex));
     }
     ck_pr_store_int(&server->status, STATUS_STOPPED);
     return NULL;

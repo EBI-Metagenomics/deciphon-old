@@ -18,9 +18,9 @@ struct dcp_task_cfg
 
 enum dcp_task_status
 {
-    TASK_STATUS_CREATED,
-    TASK_STATUS_STOPPED,
-    TASK_STATUS_FINISHED,
+    TASK_STATUS_CREATED = 0,
+    TASK_STATUS_STOPPED = 1,
+    TASK_STATUS_FINISHED = 2,
 };
 
 DCP_API void                 dcp_task_add_seq(struct dcp_task* task, char const* seq);

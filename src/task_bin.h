@@ -15,6 +15,7 @@ struct task_bin
 typedef bool (*collect_task_cb)(struct dcp_task* task, void* arg);
 
 void task_bin_collect(struct task_bin* bin, collect_task_cb collect_task, void* arg);
+void task_bin_force_collect(struct task_bin* bin, collect_task_cb collect_task, void* arg);
 void task_bin_init(struct task_bin* bin);
 void task_bin_put(struct task_bin* bin, struct dcp_task* task);
 
