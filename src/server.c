@@ -59,7 +59,7 @@ struct dcp_server* dcp_server_create(char const* filepath)
     }
     server->gc = gc_create(collect_garbage, server);
     task_queue_init(&server->tasks);
-    task_bin_init(&server->task_bin);
+    task_bin_create(&server->task_bin);
     server->signal = SIGNAL_NONE;
     server->status = STATUS_CREATED;
 

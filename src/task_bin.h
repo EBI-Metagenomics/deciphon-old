@@ -1,22 +1,18 @@
 #ifndef TASK_BIN_H
 #define TASK_BIN_H
 
-#include "containers/stack.h"
+#include <stdbool.h>
 
 struct dcp_task;
+struct task_bin;
 
-struct task_bin
-{
-    unsigned     put_stack;
-    unsigned     last_collect;
-    struct stack stacks[2];
-};
+typedef bool (*task_bin_collect_cb)(struct dcp_task* task, void* arg);
 
-typedef bool (*collect_task_cb)(struct dcp_task* task, void* arg);
-
-void task_bin_collect(struct task_bin* bin, collect_task_cb collect_task, void* arg);
-void task_bin_force_collect(struct task_bin* bin, collect_task_cb collect_task, void* arg);
-void task_bin_init(struct task_bin* bin);
-void task_bin_put(struct task_bin* bin, struct dcp_task* task);
+struct task_bin* task_bin_create(task_bin_collect_cb collect, void* collect_arg);
+void             task_bin_destroy(struct task_bin* bin);
+void             task_bin_join(struct task_bin* bin);
+void             task_bin_put(struct task_bin* bin, struct dcp_task* task);
+void             task_bin_start(struct task_bin* bin);
+void             task_bin_stop(struct task_bin* bin);
 
 #endif

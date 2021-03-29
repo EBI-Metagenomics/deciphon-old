@@ -34,6 +34,7 @@ if(OPENMP)
 endif()
 
 add_library(dcp
+    src/dthread.c
     src/gc.c
     src/input.c
     src/metadata.c
