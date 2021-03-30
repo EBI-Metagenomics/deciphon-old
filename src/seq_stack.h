@@ -10,7 +10,6 @@ struct seq_stack
     struct stack stack;
 };
 
-void              seq_stack_deinit(struct seq_stack* stack);
 bool              seq_stack_empty(struct seq_stack const* stack);
 struct iter_snode seq_stack_iter(struct seq_stack* stack);
 void              seq_stack_init(struct seq_stack* stack);

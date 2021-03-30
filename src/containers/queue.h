@@ -16,17 +16,10 @@ struct queue
         SNODE_INIT(), NULL                                                                                             \
     }
 
-static inline void              queue_deinit(struct queue* queue);
-static inline bool              queue_empty(struct queue const* queue);
-static inline void              queue_init(struct queue* queue);
-static inline struct snode*     queue_pop(struct queue* queue);
-static inline void              queue_push(struct queue* queue, struct snode* new);
-
-static inline void queue_deinit(struct queue* queue)
-{
-    snode_init(&queue->head);
-    queue->tail = NULL;
-}
+static inline bool          queue_empty(struct queue const* queue);
+static inline void          queue_init(struct queue* queue);
+static inline struct snode* queue_pop(struct queue* queue);
+static inline void          queue_push(struct queue* queue, struct snode* new);
 
 static inline bool queue_empty(struct queue const* queue) { return queue->head.next == NULL; }
 

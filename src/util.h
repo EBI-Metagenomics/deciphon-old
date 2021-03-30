@@ -26,5 +26,6 @@ int fread_string(FILE* stream, char* str, size_t max_size);
 
 void die(char const* err, ...) ATTR_FORMAT;
 void error(char const* err, ...) ATTR_FORMAT;
+void warn(char const* err, ...) ATTR_FORMAT;
 
 #endif

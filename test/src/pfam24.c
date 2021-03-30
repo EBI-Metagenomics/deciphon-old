@@ -16,7 +16,7 @@ int main(void)
     struct dcp_task*    task = dcp_task_create(cfg);
 
     dcp_task_add_seq(task, "ACT");
-    dcp_server_add(server, task);
+    dcp_server_add_task(server, task);
 
     /* while (!dcp_task_end(task)) { */
 

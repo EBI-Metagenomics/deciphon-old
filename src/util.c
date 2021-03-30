@@ -64,3 +64,12 @@ void error(char const* err, ...)
     fputc('\n', stderr);
     va_end(params);
 }
+
+void warn(char const* err, ...)
+{
+    va_list params;
+    va_start(params, err);
+    vfprintf(stderr, err, params);
+    fputc('\n', stderr);
+    va_end(params);
+}

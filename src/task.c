@@ -1,5 +1,7 @@
 #include "task.h"
 #include "dcp/dcp.h"
+#include "fifo.h"
+#include "results.h"
 #include "seq.h"
 #include "util.h"
 #include <ck_pr.h>
@@ -16,10 +18,9 @@ struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
     task->cfg = cfg;
     seq_stack_init(&task->sequences);
     task->seqid = 0;
-    results_queue_init(&task->results);
+    task->results = fifo_create();
     task->end = 0;
-    task->status = TASK_STATUS_CREATED;
-    snode_init(&task->node);
+    task->errno = 0;
     snode_init(&task->bin_node);
 
     return task;
@@ -35,35 +36,27 @@ void dcp_task_destroy(struct dcp_task* task)
         seq = seq_stack_pop(&task->sequences);
     }
 
-    seq_stack_deinit(&task->sequences);
-    results_queue_deinit(&task->results);
-    snode_deinit(&task->node);
+    fifo_destroy(task->results);
     free(task);
 }
 
 bool dcp_task_end(struct dcp_task* task) { return ck_pr_load_int(&task->end); }
 
+int dcp_task_errno(struct dcp_task const* task) { return ck_pr_load_int(&task->errno); }
+
 struct dcp_results* dcp_task_read(struct dcp_task* task)
 {
-    enum dcp_task_status status = dcp_task_status(task);
-    if (status != TASK_STATUS_CREATED && results_queue_empty(&task->results))
+    if (fifo_closed(task->results) && fifo_empty(task->results))
         ck_pr_store_int(&task->end, 1);
 
-    return results_queue_pop(&task->results);
+    struct snode* node = fifo_pop(task->results);
+    return CONTAINER_OF_OR_NULL(node, struct dcp_results, node);
 }
 
-enum dcp_task_status dcp_task_status(struct dcp_task const* task)
-{
-    return (enum dcp_task_status)ck_pr_load_int(&task->status);
-}
-
-void task_add_results(struct dcp_task* task, struct dcp_results* results)
-{
-    results_queue_push(&task->results, results);
-}
+void task_add_results(struct dcp_task* task, struct dcp_results* results) { fifo_push(task->results, &results->node); }
 
 struct dcp_task_cfg const* task_cfg(struct dcp_task* task) { return &task->cfg; }
 
-struct iter_snode task_seq_iter(struct dcp_task* task) { return seq_stack_iter(&task->sequences); }
+struct iter_snode task_seqiter(struct dcp_task* task) { return seq_stack_iter(&task->sequences); }
 
-void task_set_status(struct dcp_task* task, enum dcp_task_status status) { ck_pr_store_int(&task->status, status); }
+void task_seterr(struct dcp_task* task) { ck_pr_store_int(&task->errno, 1); }

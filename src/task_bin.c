@@ -3,6 +3,7 @@
 #include "dthread.h"
 #include "task.h"
 #include "util.h"
+#include "msleep.h"
 #include <ck_pr.h>
 #include <stdlib.h>
 
@@ -10,7 +11,8 @@ struct thread
 {
     pthread_cond_t  cond;
     pthread_mutex_t mutex;
-    bool            stop_signal;
+    int             stop_signal;
+    int             active;
     pthread_t       thread;
 };
 
@@ -28,6 +30,8 @@ static void  collect_garbage(struct task_bin* bin);
 static void  force_collection(struct task_bin* bin);
 static void* thread_routine(void* task_bin_addr);
 
+void task_bin_collect(struct task_bin* bin) { collect_garbage(bin); }
+
 struct task_bin* task_bin_create(task_bin_collect_cb collect, void* collect_arg)
 {
     struct task_bin* bin = malloc(sizeof(*bin));
@@ -39,17 +43,33 @@ struct task_bin* task_bin_create(task_bin_collect_cb collect, void* collect_arg)
     stack_init(bin->stacks + 1);
     dthread_mutex_init(&bin->thread.mutex);
     dthread_cond_init(&bin->thread.cond);
+    bin->thread.active = 0;
     bin->thread.stop_signal = 0;
     return bin;
 }
 
-void task_bin_destroy(struct task_bin* bin)
+int task_bin_destroy(struct task_bin* bin)
 {
-    BUG(!bin->thread.stop_signal);
+    int err = 0;
+    if (ck_pr_load_int(&bin->thread.active)) {
+        warn("destroying active task_bin");
+        task_bin_stop(bin);
+        for (unsigned i = 0; i < 3; ++i)
+        {
+            msleep(200);
+            if (!ck_pr_load_int(&bin->thread.active))
+                break;
+        }
+        if (ck_pr_load_int(&bin->thread.active)) {
+            error("failed to destroy task_bin");
+            return 1;
+        }
+    }
     force_collection(bin);
     pthread_cond_destroy(&bin->thread.cond);
     pthread_mutex_destroy(&bin->thread.mutex);
     free(bin);
+    return err;
 }
 
 void task_bin_join(struct task_bin* bin) { dthread_join(bin->thread.thread); }
@@ -61,14 +81,22 @@ void task_bin_put(struct task_bin* bin, struct dcp_task* task)
     ck_pr_add_uint(&bin->put_stack, 2);
 }
 
-void task_bin_start(struct task_bin* bin) { dthread_create(&bin->thread.thread, thread_routine, (void*)bin); }
+int task_bin_start(struct task_bin* bin)
+{
+    if (pthread_create(&bin->thread.thread, NULL, thread_routine, (void*)bin)) {
+        error("could not spawn thread_routine");
+        return 1;
+    }
+    ck_pr_store_int(&bin->thread.active, 1);
+    return 0;
+}
 
 void task_bin_stop(struct task_bin* bin)
 {
+    ck_pr_store_int(&bin->thread.stop_signal, 1);
     dthread_lock(&bin->thread.mutex);
-    bin->thread.stop_signal = true;
-    dthread_unlock(&bin->thread.mutex);
     pthread_cond_signal(&bin->thread.cond);
+    dthread_unlock(&bin->thread.mutex);
 }
 
 static void collect_garbage(struct task_bin* bin)
@@ -109,15 +137,16 @@ static void* thread_routine(void* task_bin_addr)
     struct task_bin* bin = task_bin_addr;
     struct thread*   thread = &bin->thread;
 
-    dthread_lock(&thread->mutex);
-    bool stop_signal = thread->stop_signal;
-    while (!stop_signal) {
+    while (!ck_pr_load_int(&thread->stop_signal)) {
 
+        dthread_lock(&thread->mutex);
         dthread_timedwait(&thread->cond, &thread->mutex, 3);
-        collect_garbage(bin);
-        stop_signal = thread->stop_signal;
-    }
-    dthread_unlock(&thread->mutex);
+        dthread_unlock(&thread->mutex);
 
+        collect_garbage(bin);
+    }
+
+    ck_pr_store_int(&thread->active, 0);
+    pthread_exit(NULL);
     return NULL;
 }

@@ -35,16 +35,17 @@ endif()
 
 add_library(dcp
     src/dthread.c
-    src/gc.c
+    src/fifo.c
+    src/fifo1.c
     src/input.c
     src/metadata.c
     src/mpool.c
+    src/msleep.c
     src/output.c
     src/profile.c
     src/result.c
     src/result_ring.c
     src/results.c
-    src/results_queue.c
     src/scan.c
     src/seq_stack.c
     src/server.c
@@ -52,7 +53,6 @@ add_library(dcp
     src/str.c
     src/task.c
     src/task_bin.c
-    src/task_queue.c
     src/util.c
 )
 add_library(DECIPHON::dcp ALIAS dcp)

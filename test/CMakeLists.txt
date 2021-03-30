@@ -17,5 +17,6 @@ function(dcp_add_test name)
     target_compile_definitions(test_${name} PUBLIC "TMPDIR=\"${TMPDIR}\"")
 endfunction()
 
-dcp_add_test(io)
-dcp_add_test(pfam24)
+# dcp_add_test(io)
+# dcp_add_test(pfam24)
+dcp_add_test(server)

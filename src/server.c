@@ -1,15 +1,14 @@
 #include "bus.h"
 #include "dcp/dcp.h"
-#include "gc.h"
+#include "dthread.h"
+#include "fifo1.h"
 #include "imm/imm.h"
 #include "mpool.h"
 #include "results.h"
 #include "scan.h"
 #include "seq.h"
-#include "signal.h"
 #include "task.h"
 #include "task_bin.h"
-#include "task_queue.h"
 #include <errno.h>
 #include <pthread.h>
 #include <time.h>
@@ -18,36 +17,27 @@
 #include <omp.h>
 #endif
 
-enum status
-{
-    STATUS_CREATED,
-    STATUS_STARTED,
-    STATUS_STOPPED,
-};
-
 struct dcp_server
 {
-    pthread_t         server_loop;
-    struct gc*        gc;
+    pthread_t         server_main;
     struct bus        profile_bus;
     struct dcp_input* input;
-    struct task_queue tasks;
-    struct task_bin   task_bin;
-    int               signal;
-    int               status;
+    struct fifo1*     tasks;
+    struct task_bin*  task_bin;
+    int               stop_signal;
     struct mpool*     mpool;
 };
 
-void collect_garbage(void* server_addr);
-
 static struct dcp_results* alloc_results(struct dcp_server* server);
 bool                       collect_task(struct dcp_task* task, void* arg);
+void                       deinit_results(void* results);
+void                       init_results(void* results);
 static int                 input_processor(struct dcp_server* server);
-static void*               server_loop(void* server_addr);
-static inline bool         sigstop(struct dcp_server* server);
+static void*               server_main(void* server_addr);
+static inline bool         sigstop(struct dcp_server* server) { return ck_pr_load_int(&server->stop_signal); }
 static int                 task_processor(struct dcp_server* server, struct dcp_task* task);
 
-void dcp_server_add(struct dcp_server* server, struct dcp_task* task) { task_queue_push(&server->tasks, task); }
+void dcp_server_add_task(struct dcp_server* server, struct dcp_task* task) { fifo1_push(server->tasks, &task->node); }
 
 struct dcp_server* dcp_server_create(char const* filepath)
 {
@@ -57,40 +47,43 @@ struct dcp_server* dcp_server_create(char const* filepath)
         free(server);
         return NULL;
     }
-    server->gc = gc_create(collect_garbage, server);
-    task_queue_init(&server->tasks);
-    task_bin_create(&server->task_bin);
-    server->signal = SIGNAL_NONE;
-    server->status = STATUS_CREATED;
-
-    static unsigned const pool_power_size = 8;
-    /* static unsigned const pool_power_size = 4; */
-    server->mpool = mpool_create(sizeof(struct dcp_results), pool_power_size);
-    for (unsigned i = 0; i < mpool_nslots(server->mpool); ++i) {
-        results_init(mpool_slot(server->mpool, i));
-    }
-
+    server->tasks = fifo1_create();
+    server->task_bin = task_bin_create(collect_task, server);
+    server->stop_signal = 0;
+    server->mpool = mpool_create(sizeof(struct dcp_results), 8, init_results);
     return server;
 }
 
-void dcp_server_destroy(struct dcp_server* server)
+int dcp_server_destroy(struct dcp_server* server)
 {
-    bus_deinit(&server->profile_bus);
-    task_queue_deinit(&server->tasks);
-    dcp_input_destroy(server->input);
-
-    for (unsigned i = 0; i < mpool_nslots(server->mpool); ++i)
-        results_deinit(mpool_slot(server->mpool, i));
-    mpool_destroy(server->mpool);
-
+    int err = 0;
+    BUG(!bus_end(&server->profile_bus));
+    if (dcp_input_destroy(server->input)) {
+        error("could not destroy input");
+        err = 1;
+    }
+    if (task_bin_destroy(server->task_bin)) {
+        error("could not destroy task_bin");
+        err = 1;
+    }
+    return 1;
+    fifo1_destroy(server->tasks);
+    mpool_destroy(server->mpool, deinit_results);
     free(server);
+    return err;
 }
+
+void dcp_server_free_results(struct dcp_server* server, struct dcp_results* results)
+{
+    mpool_free(server->mpool, results);
+}
+
+void dcp_server_free_task(struct dcp_server* server, struct dcp_task* task) { task_bin_put(server->task_bin, task); }
 
 void dcp_server_join(struct dcp_server* server)
 {
-    void* ret = NULL;
-    BUG(pthread_join(server->server_loop, &ret));
-    gc_join(server->gc);
+    dthread_join(server->server_main);
+    task_bin_join(server->task_bin);
 }
 
 struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, uint32_t profid)
@@ -100,33 +93,22 @@ struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, 
 
 uint32_t dcp_server_nprofiles(struct dcp_server const* server) { return dcp_input_nprofiles(server->input); }
 
-void dcp_server_free_results(struct dcp_server* server, struct dcp_results* results)
+int dcp_server_start(struct dcp_server* server)
 {
-    mpool_free(server->mpool, results);
-}
+    if (task_bin_start(server->task_bin))
+        return 1;
 
-void dcp_server_free_task(struct dcp_server* server, struct dcp_task* task) { task_bin_put(&server->task_bin, task); }
-
-void dcp_server_start(struct dcp_server* server)
-{
-    gc_start(server->gc);
-    BUG(pthread_create(&server->server_loop, NULL, server_loop, (void*)server));
-}
-
-void error_pthread_cond_signal(const int signal_rv);
-
-void error_pthread_cond_signal(const int signal_rv)
-{
-    fprintf(stderr, "Could not signal.\n");
-    if (signal_rv == EINVAL) {
-        fprintf(stderr, "The value cond does not refer to an initialised condition variable.\n");
+    if (pthread_create(&server->server_main, NULL, server_main, (void*)server)) {
+        error("could not spawn server_main");
+        return 1;
     }
+    return 0;
 }
 
 void dcp_server_stop(struct dcp_server* server)
 {
-    ck_pr_store_int(&server->signal, SIGNAL_STOP);
-    gc_stop(server->gc);
+    ck_pr_store_int(&server->stop_signal, 1);
+    task_bin_stop(server->task_bin);
 }
 
 static struct dcp_results* alloc_results(struct dcp_server* server)
@@ -143,59 +125,31 @@ static struct dcp_results* alloc_results(struct dcp_server* server)
 
 bool collect_task(struct dcp_task* task, void* arg)
 {
-    printf("collect_task: start\n");
-    fflush(stdout);
-    if (dcp_task_status(task) == TASK_STATUS_CREATED) {
-        printf("collect_task: exit\n");
-        fflush(stdout);
+    if (!dcp_task_end(task))
         return false;
-    }
-
-    printf("collect_task: destroy\n");
-    fflush(stdout);
 
     dcp_task_destroy(task);
     return true;
 }
-void error_pthread_cond_timedwait(const int timed_wait_rv);
 
-void error_pthread_cond_timedwait(const int timed_wait_rv)
-{
-    fprintf(stderr, "Conditional timed wait, failed.\n");
-    switch (timed_wait_rv) {
-    case ETIMEDOUT:
-        fprintf(stderr, "The time specified by abstime to pthread_cond_timedwait() has passed.\n");
-        break;
-    case EINVAL:
-        fprintf(stderr, "The value specified by abstime, cond or mutex is invalid.\n");
-        break;
-    case EPERM:
-        fprintf(stderr, "The mutex was not owned by the current thread at the time of the call.\n");
-        break;
-    default:
-        break;
-    }
-    fflush(stderr);
-}
+void deinit_results(void* results) { results_deinit(results); }
 
-void collect_garbage(void* server_addr)
-{
-    struct dcp_server* server = server_addr;
-    task_bin_collect(&server->task_bin, collect_task, server);
-}
+void init_results(void* results) { results_init(results); }
 
 static int input_processor(struct dcp_server* server)
 {
-    if (dcp_input_reset(server->input))
-        return 1;
-
     int err = 0;
+    if (dcp_input_reset(server->input)) {
+        err = 1;
+        goto cleanup;
+    }
+
     while (!dcp_input_end(server->input)) {
 
         struct dcp_profile const* prof = dcp_input_read(server->input);
         if (!prof) {
             err = 1;
-            break;
+            goto cleanup;
         }
 
         bool ok = false;
@@ -205,27 +159,30 @@ static int input_processor(struct dcp_server* server)
         if (!ok) {
             dcp_profile_destroy(prof, true);
             err = 1;
-            break;
+            goto cleanup;
         }
     }
 
+cleanup:
     bus_close_input(&server->profile_bus);
     return err;
 }
 
-static void* server_loop(void* server_addr)
+static void* server_main(void* server_addr)
 {
     struct dcp_server* server = server_addr;
 
     while (!sigstop(server)) {
 
-        struct dcp_task* task = NULL;
+        struct fifo1_node* node = NULL;
         /* TODO: put to sleep if there is no task */
-        while (!sigstop(server) && !(task = task_queue_pop(&server->tasks)))
+        while (!sigstop(server) && !(node = fifo1_pop(server->tasks)))
             ck_pr_stall();
 
-        if (!task)
+        if (!node)
             continue;
+
+        struct dcp_task* task = CONTAINER_OF(node, struct dcp_task, node);
 
         int errors = 0;
 #pragma omp parallel default(none) shared(server, task) reduction(+ : errors)
@@ -238,15 +195,13 @@ static void* server_loop(void* server_addr)
 
             errors += task_processor(server, task);
         }
-        task_set_status(task, errors ? TASK_STATUS_STOPPED : TASK_STATUS_FINISHED);
+        if (errors)
+            task_seterr(task);
 
-        gc_collect(server->gc);
+        task_bin_collect(server->task_bin);
     }
-    ck_pr_store_int(&server->status, STATUS_STOPPED);
     return NULL;
 }
-
-static inline bool sigstop(struct dcp_server* server) { return ck_pr_load_int(&server->signal) == SIGNAL_STOP; }
 
 static int task_processor(struct dcp_server* server, struct dcp_task* task)
 {
@@ -266,7 +221,7 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
             continue;
         }
 
-        struct iter_snode it = task_seq_iter(task);
+        struct iter_snode it = task_seqiter(task);
         struct seq const* seq = NULL;
         ITER_FOREACH(seq, &it, node)
         {

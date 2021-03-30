@@ -237,7 +237,7 @@ void test_small(bool calc_loglik, bool calc_null, bool multiple_hits, bool hmmer
     dcp_task_add_seq(task, "AGATG");
     dcp_task_add_seq(task, "CCCCCC");
 
-    dcp_server_add(server, task);
+    dcp_server_add_task(server, task);
     dcp_server_start(server);
 
     unsigned ncomp = 0;

@@ -1,8 +1,6 @@
 #include "seq_stack.h"
 #include "seq.h"
 
-void seq_stack_deinit(struct seq_stack* stack) { stack_deinit(&stack->stack); }
-
 bool seq_stack_empty(struct seq_stack const* stack) { return stack_empty(&stack->stack); }
 
 struct iter_snode seq_stack_iter(struct seq_stack* stack) { return stack_iter(&stack->stack); }

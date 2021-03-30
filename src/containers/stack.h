@@ -15,14 +15,11 @@ struct stack
         SNODE_INIT()                                                                                                   \
     }
 
-static inline void              stack_deinit(struct stack* stack);
 static inline bool              stack_empty(struct stack const* stack);
 static inline void              stack_init(struct stack* stack);
 static inline struct iter_snode stack_iter(struct stack* stack);
 static inline struct snode*     stack_pop(struct stack* stack);
 static inline void              stack_push(struct stack* stack, struct snode* new);
-
-static inline void stack_deinit(struct stack* stack) { snode_deinit(&stack->head); }
 
 static inline bool stack_empty(struct stack const* stack) { return stack->head.next == NULL; }
 
