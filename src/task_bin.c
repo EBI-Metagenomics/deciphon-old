@@ -1,7 +1,6 @@
 #include "task_bin.h"
 #include "clock.h"
 #include "containers/stack.h"
-#include "msleep.h"
 #include "task.h"
 #include "util.h"
 #include <ck_pr.h>
@@ -30,8 +29,8 @@ struct task_bin
 
 struct stacks_state
 {
-    unsigned collect_stack;
-    unsigned put_stack;
+    unsigned collect_stack; /* (put_stack + 1) % 2 */
+    unsigned put_stack;     /* epoch % 2 */
     unsigned epoch;
 };
 

@@ -1,6 +1,14 @@
 #include "util.h"
 #include <stdarg.h>
 
+#ifdef WIN32
+#include <windows.h>
+#elif _POSIX_C_SOURCE >= 199309L
+#include <time.h> // for nanosleep
+#else
+#include <unistd.h> // for usleep
+#endif
+
 #define BUFFSIZE (8 * 1024)
 
 int fcopy_content(FILE* dst, FILE* src)
@@ -72,4 +80,20 @@ void warn(char const* err, ...)
     vfprintf(stderr, err, params);
     fputc('\n', stderr);
     va_end(params);
+}
+
+void msleep(unsigned milliseconds)
+{
+#ifdef WIN32
+    Sleep(milliseconds);
+#elif _POSIX_C_SOURCE >= 199309L
+    struct timespec ts;
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
+    nanosleep(&ts, NULL);
+#else
+    if (milliseconds >= 1000)
+        sleep(milliseconds / 1000);
+    usleep((milliseconds % 1000) * 1000);
+#endif
 }

@@ -41,7 +41,6 @@ add_library(dcp
     src/input.c
     src/metadata.c
     src/mpool.c
-    src/msleep.c
     src/output.c
     src/profile.c
     src/result.c

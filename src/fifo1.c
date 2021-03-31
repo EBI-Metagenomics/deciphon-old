@@ -26,6 +26,7 @@ void fifo1_destroy(struct fifo1* fifo)
 {
     struct ck_fifo_spsc_entry* stub = NULL;
     ck_fifo_spsc_deinit(fifo->fifo, &stub);
+    free(fifo->fifo);
     free(fifo);
 }
 
