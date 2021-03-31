@@ -52,6 +52,13 @@ bool fifo_empty(struct fifo* fifo)
     return empty;
 }
 
+void fifo_open(struct fifo* fifo)
+{
+    lock(fifo);
+    fifo->closed = false;
+    unlock(fifo);
+}
+
 struct snode* fifo_pop(struct fifo* fifo)
 {
     lock(fifo);

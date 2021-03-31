@@ -14,6 +14,7 @@ extern "C"
 #include "dcp/result.h"
 #include "dcp/results.h"
 #include "dcp/server.h"
+#include "dcp/sleep.h"
 #include "dcp/str.h"
 #include "dcp/task.h"
 

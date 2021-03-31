@@ -36,6 +36,7 @@ struct stacks_state
 
 static inline void         advance_epoch(struct task_bin* bin) { ck_pr_add_uint(&bin->epoch, 2); }
 static void                collect_garbage(struct task_bin* bin);
+static void                destroy_tasks(struct task_bin* bin);
 static void                force_collection(struct task_bin* bin);
 static inline void         thread_activate(struct thread* thr) { ck_pr_store_int(&thr->active, 1); }
 static inline bool         thread_active(struct thread const* thr) { return ck_pr_load_int(&thr->active); }
@@ -76,6 +77,7 @@ int task_bin_destroy(struct task_bin* bin)
         }
     }
     force_collection(bin);
+    destroy_tasks(bin);
     thread_deinit(&bin->thread);
     free(bin);
     return 0;
@@ -128,6 +130,19 @@ static void collect_garbage(struct task_bin* bin)
     }
 }
 
+static void destroy_tasks(struct task_bin* bin)
+{
+    for (unsigned i = 0; i < ARRAY_SIZE(bin->stacks); ++i) {
+        struct stack* stack = bin->stacks + i;
+
+        while (!stack_empty(stack)) {
+            struct snode*    n = stack_pop(stack);
+            struct dcp_task* task = CONTAINER_OF(n, struct dcp_task, bin_node);
+            dcp_task_destroy(task);
+        }
+    }
+}
+
 static void force_collection(struct task_bin* bin)
 {
     advance_epoch(bin);
@@ -153,7 +168,7 @@ static int thread_timedstop(struct thread* thr)
 {
     for (unsigned i = 0; i < 3; ++i) {
         thread_stop(thr);
-        msleep(100 + i * 250);
+        dcp_sleep(100 + i * 250);
         if (!thread_active(thr))
             return 0;
     }

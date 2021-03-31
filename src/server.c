@@ -221,12 +221,11 @@ static void* main_thread(void* server_addr)
 
         struct dcp_task* task = CONTAINER_OF(node, struct dcp_task, node);
 
+        bus_open_input(&server->profile_bus);
+        task_open_results(task);
         int errors = 0;
-#pragma omp parallel default(none) shared(server, task) reduction(+ : errors)
+#pragma omp        parallel default(none) shared(server, task) reduction(+ : errors)
         {
-#pragma omp single
-            bus_open_input(&server->profile_bus);
-
 #pragma omp single nowait
             errors += input_processor(server);
 
@@ -234,6 +233,8 @@ static void* main_thread(void* server_addr)
         }
         if (errors)
             task_seterr(task);
+        task_close_results(task);
+        bus_close_input(&server->profile_bus);
 
         task_bin_collect(server->task_bin);
     }
@@ -293,7 +294,7 @@ static int timedjoin(struct dcp_server* server)
 {
     for (unsigned i = 0; i < 3; ++i) {
         dcp_server_stop(server);
-        msleep(100 + i * 250);
+        dcp_sleep(100 + i * 250);
         if (!active(&server->main_thread))
             return 0;
     }

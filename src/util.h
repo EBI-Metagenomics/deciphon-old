@@ -28,6 +28,4 @@ void die(char const* err, ...) ATTR_FORMAT;
 void error(char const* err, ...) ATTR_FORMAT;
 void warn(char const* err, ...) ATTR_FORMAT;
 
-void msleep(unsigned milliseconds);
-
 #endif

@@ -57,6 +57,10 @@ void task_add_results(struct dcp_task* task, struct dcp_results* results) { fifo
 
 struct dcp_task_cfg const* task_cfg(struct dcp_task* task) { return &task->cfg; }
 
+void task_close_results(struct dcp_task* task) { fifo_close(task->results); }
+
+void task_open_results(struct dcp_task* task) { fifo_open(task->results); }
+
 struct iter_snode task_seqiter(struct dcp_task* task) { return seq_stack_iter(&task->sequences); }
 
 void task_seterr(struct dcp_task* task) { ck_pr_store_int(&task->errno, 1); }
