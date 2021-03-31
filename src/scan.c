@@ -51,57 +51,49 @@ static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq co
     struct imm_path const* path = imm_result_path(r);
     struct imm_step const* step = imm_path_first(path);
 
-    char* data = NULL;
     step = imm_path_first(path);
-    size_t i = 0;
+    string_reuse(&model->path);
     while (step) {
         char const* name = imm_state_get_name(imm_step_state(step));
 
-        string_grow(&model->path, strlen(name) + 3);
-        data = string_data(&model->path);
-
         while (*name != '\0')
-            data[i++] = *(name++);
+            string_set(&model->path, *(name++));
 
-        data[i++] = ':';
+        string_set(&model->path, ':');
 
         if (imm_step_seq_len(step) == 0)
-            data[i++] = '0';
+            string_set(&model->path, '0');
         else if (imm_step_seq_len(step) == 1)
-            data[i++] = '1';
+            string_set(&model->path, '1');
         else if (imm_step_seq_len(step) == 2)
-            data[i++] = '2';
+            string_set(&model->path, '2');
         else if (imm_step_seq_len(step) == 3)
-            data[i++] = '3';
+            string_set(&model->path, '3');
         else if (imm_step_seq_len(step) == 4)
-            data[i++] = '4';
+            string_set(&model->path, '4');
         else if (imm_step_seq_len(step) == 5)
-            data[i++] = '5';
+            string_set(&model->path, '5');
         else if (imm_step_seq_len(step) == 6)
-            data[i++] = '6';
+            string_set(&model->path, '6');
         else if (imm_step_seq_len(step) == 7)
-            data[i++] = '7';
+            string_set(&model->path, '7');
         else if (imm_step_seq_len(step) == 8)
-            data[i++] = '8';
+            string_set(&model->path, '8');
         else if (imm_step_seq_len(step) == 9)
-            data[i++] = '9';
+            string_set(&model->path, '9');
 
-        data[i++] = ',';
+        string_set(&model->path, ',');
 
         step = imm_path_next(path, step);
     }
-    if (i > 0)
-        --i;
-    data = string_data(&model->path);
-    data[i] = '\0';
+    string_rollback(&model->path);
+    string_setend(&model->path);
 
     path = imm_result_path(r);
     step = imm_path_first(path);
     NMM_CODON_DECL(codon, nmm_base_abc_derived(imm_seq_get_abc(seq)));
     uint32_t offset = 0;
-    i = 0;
-    string_grow(&model->codons, 1);
-    data = string_data(&model->codons);
+    string_reuse(&model->codons);
     while (step) {
         struct imm_state const* state = imm_step_state(step);
         if (imm_state_type_id(state) == NMM_FRAME_STATE_TYPE_ID) {
@@ -109,14 +101,12 @@ static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq co
             struct nmm_frame_state const* f = nmm_frame_state_derived(state);
             struct imm_seq                subseq = IMM_SUBSEQ(seq, offset, imm_step_seq_len(step));
             nmm_frame_state_decode(f, &subseq, &codon);
-            string_grow(&model->codons, 3);
-            data = string_data(&model->codons);
-            data[i++] = codon.a;
-            data[i++] = codon.b;
-            data[i++] = codon.c;
+            string_set(&model->codons, codon.a);
+            string_set(&model->codons, codon.b);
+            string_set(&model->codons, codon.c);
         }
         offset += imm_step_seq_len(step);
         step = imm_path_next(path, step);
     }
-    data[i++] = '\0';
+    string_setend(&model->codons);
 }

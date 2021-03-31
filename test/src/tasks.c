@@ -20,7 +20,10 @@ void test_tasks(void)
 
     struct dcp_task_cfg cfg = {true, true, false, false, false};
     struct dcp_task*    task = dcp_task_create(cfg);
-    dcp_task_add_seq(task, "AGATG");
+
+    /* >Leader_Thr-sample1 */
+    /* MRRNRMIATIITTTITTLGAG */
+    dcp_task_add_seq(task, "ATGCGCCGCAACCGCATGATTGCGACCATTATTACCACCACCATTACCACCCTGGGCGCG");
     dcp_server_add_task(server, task);
 
     while (!dcp_task_end(task)) {
@@ -45,7 +48,13 @@ void test_tasks(void)
 
                 /* struct dcp_metadata const* mt = dcp_server_metadata(server, profid); */
 
-                /* struct dcp_string const* path = dcp_result_path(r, m); */
+                struct dcp_string const* path = dcp_result_path(r, m);
+                if (j == 0)
+                    printf("%.*s\n", dcp_string_size(path), dcp_string_data(path));
+
+                struct dcp_string const* codons = dcp_result_codons(r, m);
+                if (j == 0)
+                    printf("%.*s\n", dcp_string_size(codons), dcp_string_data(codons));
                 /* cass_equal(strcmp(dcp_string_data(path), paths[m][k]), 0); */
 
                 /* ncomp++; */
