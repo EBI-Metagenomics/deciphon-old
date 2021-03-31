@@ -11,7 +11,7 @@ void dthread_join(pthread_t thread);
 void dthread_lock(pthread_mutex_t* mutex);
 void dthread_mutex_destroy(pthread_mutex_t* mutex);
 void dthread_mutex_init(pthread_mutex_t* restrict mutex);
-void dthread_timedwait(pthread_cond_t* cond, pthread_mutex_t* mutex, time_t seconds);
+int  dthread_timedwait(pthread_cond_t* cond, pthread_mutex_t* mutex, time_t seconds);
 void dthread_unlock(pthread_mutex_t* mutex);
 
 #endif

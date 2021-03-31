@@ -34,6 +34,7 @@ if(OPENMP)
 endif()
 
 add_library(dcp
+    src/clock.c
     src/dthread.c
     src/fifo.c
     src/fifo1.c

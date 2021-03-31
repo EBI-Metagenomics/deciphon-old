@@ -4,6 +4,7 @@
 #include "fifo1.h"
 #include "imm/imm.h"
 #include "mpool.h"
+#include "msleep.h"
 #include "results.h"
 #include "scan.h"
 #include "seq.h"
@@ -17,9 +18,15 @@
 #include <omp.h>
 #endif
 
+struct thread
+{
+    int       active;
+    pthread_t id;
+};
+
 struct dcp_server
 {
-    pthread_t         server_main;
+    struct thread     main_thread;
     struct bus        profile_bus;
     struct dcp_input* input;
     struct fifo1*     tasks;
@@ -28,36 +35,59 @@ struct dcp_server
     struct mpool*     mpool;
 };
 
+static inline bool         active(struct thread const* thr) { return ck_pr_load_int(&thr->active); }
 static struct dcp_results* alloc_results(struct dcp_server* server);
 bool                       collect_task(struct dcp_task* task, void* arg);
 void                       deinit_results(void* results);
 void                       init_results(void* results);
 static int                 input_processor(struct dcp_server* server);
-static void*               server_main(void* server_addr);
+static void*               main_thread(void* server_addr);
 static inline bool         sigstop(struct dcp_server* server) { return ck_pr_load_int(&server->stop_signal); }
 static int                 task_processor(struct dcp_server* server, struct dcp_task* task);
+static int                 timedjoin(struct dcp_server* server);
 
 void dcp_server_add_task(struct dcp_server* server, struct dcp_task* task) { fifo1_push(server->tasks, &task->node); }
 
 struct dcp_server* dcp_server_create(char const* filepath)
 {
     struct dcp_server* server = malloc(sizeof(*server));
+    server->main_thread.active = 0;
     bus_init(&server->profile_bus);
-    if (!(server->input = dcp_input_create(filepath))) {
-        free(server);
-        return NULL;
-    }
+    server->input = NULL;
+    server->task_bin = NULL;
     server->tasks = fifo1_create();
-    server->task_bin = task_bin_create(collect_task, server);
     server->stop_signal = 0;
+
+    if (!(server->input = dcp_input_create(filepath)))
+        goto err;
+
+    if (!(server->task_bin = task_bin_create(collect_task, server)))
+        goto err;
+
     server->mpool = mpool_create(sizeof(struct dcp_results), 8, init_results);
     return server;
+
+err:
+    if (server->input)
+        dcp_input_destroy(server->input);
+    if (server->task_bin)
+        task_bin_destroy(server->task_bin);
+    free(server);
+    return NULL;
 }
 
 int dcp_server_destroy(struct dcp_server* server)
 {
-    int err = 0;
+    if (active(&server->main_thread)) {
+        warn("destroying active server");
+        if (timedjoin(server)) {
+            error("failed to destroy server");
+            return 1;
+        }
+    }
+
     BUG(!bus_end(&server->profile_bus));
+    int err = 0;
     if (dcp_input_destroy(server->input)) {
         error("could not destroy input");
         err = 1;
@@ -65,9 +95,8 @@ int dcp_server_destroy(struct dcp_server* server)
     if (task_bin_destroy(server->task_bin)) {
         error("could not destroy task_bin");
         err = 1;
-    }
-    return 1;
-    fifo1_destroy(server->tasks);
+    } else
+        fifo1_destroy(server->tasks);
     mpool_destroy(server->mpool, deinit_results);
     free(server);
     return err;
@@ -80,10 +109,17 @@ void dcp_server_free_results(struct dcp_server* server, struct dcp_results* resu
 
 void dcp_server_free_task(struct dcp_server* server, struct dcp_task* task) { task_bin_put(server->task_bin, task); }
 
-void dcp_server_join(struct dcp_server* server)
+int dcp_server_join(struct dcp_server* server)
 {
-    dthread_join(server->server_main);
-    task_bin_join(server->task_bin);
+    if (pthread_join(server->main_thread.id, NULL)) {
+        error("failed to join main_thread");
+        return 1;
+    }
+    if (task_bin_join(server->task_bin)) {
+        error("failed to join task_bin");
+        return 1;
+    }
+    return 0;
 }
 
 struct dcp_metadata const* dcp_server_metadata(struct dcp_server const* server, uint32_t profid)
@@ -98,8 +134,10 @@ int dcp_server_start(struct dcp_server* server)
     if (task_bin_start(server->task_bin))
         return 1;
 
-    if (pthread_create(&server->server_main, NULL, server_main, (void*)server)) {
-        error("could not spawn server_main");
+    ck_pr_store_int(&server->main_thread.active, 1);
+    if (pthread_create(&server->main_thread.id, NULL, main_thread, (void*)server)) {
+        ck_pr_store_int(&server->main_thread.active, 0);
+        error("could not spawn main_thread");
         return 1;
     }
     return 0;
@@ -168,7 +206,7 @@ cleanup:
     return err;
 }
 
-static void* server_main(void* server_addr)
+static void* main_thread(void* server_addr)
 {
     struct dcp_server* server = server_addr;
 
@@ -200,6 +238,8 @@ static void* server_main(void* server_addr)
 
         task_bin_collect(server->task_bin);
     }
+    ck_pr_store_int(&server->main_thread.active, 0);
+    pthread_exit(NULL);
     return NULL;
 }
 
@@ -248,4 +288,15 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
     }
 
     return err;
+}
+
+static int timedjoin(struct dcp_server* server)
+{
+    for (unsigned i = 0; i < 3; ++i) {
+        dcp_server_stop(server);
+        msleep(100 + i * 250);
+        if (!active(&server->main_thread))
+            return 0;
+    }
+    return 1;
 }

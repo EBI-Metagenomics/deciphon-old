@@ -1,34 +1,53 @@
 #include "task_bin.h"
+#include "clock.h"
 #include "containers/stack.h"
-#include "dthread.h"
+#include "msleep.h"
 #include "task.h"
 #include "util.h"
-#include "msleep.h"
 #include <ck_pr.h>
+#include <pthread.h>
 #include <stdlib.h>
+
+#define SLEEP_DURATION 5
 
 struct thread
 {
-    pthread_cond_t  cond;
-    pthread_mutex_t mutex;
-    int             stop_signal;
-    int             active;
-    pthread_t       thread;
+    struct clock* clock;
+    int           stop_signal;
+    int           active;
+    pthread_t     id;
 };
 
 struct task_bin
 {
     task_bin_collect_cb collect;
     void*               collect_arg;
-    unsigned            put_stack;
+    unsigned            epoch;
     unsigned            last_collect;
     struct stack        stacks[2];
     struct thread       thread;
 };
 
-static void  collect_garbage(struct task_bin* bin);
-static void  force_collection(struct task_bin* bin);
-static void* thread_routine(void* task_bin_addr);
+struct stacks_state
+{
+    unsigned collect_stack;
+    unsigned put_stack;
+    unsigned epoch;
+};
+
+static inline void         advance_epoch(struct task_bin* bin) { ck_pr_add_uint(&bin->epoch, 2); }
+static void                collect_garbage(struct task_bin* bin);
+static void                force_collection(struct task_bin* bin);
+static inline void         thread_activate(struct thread* thr) { ck_pr_store_int(&thr->active, 1); }
+static inline bool         thread_active(struct thread const* thr) { return ck_pr_load_int(&thr->active); }
+static inline void         thread_deactivate(struct thread* thr) { ck_pr_store_int(&thr->active, 0); }
+static inline void         thread_deinit(struct thread* thr) { clock_destroy(thr->clock); }
+static int                 thread_init(struct thread* thr);
+static void                thread_stop(struct thread* thr);
+static int                 thread_timedstop(struct thread* thr);
+static void*               main_thread(void* task_bin);
+static inline void         set_epoch(struct task_bin* bin, unsigned epoch) { ck_pr_store_uint(&bin->epoch, epoch); }
+static struct stacks_state stacks_state(struct task_bin const* bin);
 
 void task_bin_collect(struct task_bin* bin) { collect_garbage(bin); }
 
@@ -37,77 +56,61 @@ struct task_bin* task_bin_create(task_bin_collect_cb collect, void* collect_arg)
     struct task_bin* bin = malloc(sizeof(*bin));
     bin->collect = collect;
     bin->collect_arg = collect_arg;
-    bin->put_stack = 0;
+    bin->epoch = 0;
     bin->last_collect = 0;
     stack_init(bin->stacks + 0);
     stack_init(bin->stacks + 1);
-    dthread_mutex_init(&bin->thread.mutex);
-    dthread_cond_init(&bin->thread.cond);
-    bin->thread.active = 0;
-    bin->thread.stop_signal = 0;
+    if (thread_init(&bin->thread)) {
+        free(bin);
+        return NULL;
+    }
     return bin;
 }
 
 int task_bin_destroy(struct task_bin* bin)
 {
-    int err = 0;
-    if (ck_pr_load_int(&bin->thread.active)) {
+    if (thread_active(&bin->thread)) {
         warn("destroying active task_bin");
-        task_bin_stop(bin);
-        for (unsigned i = 0; i < 3; ++i)
-        {
-            msleep(200);
-            if (!ck_pr_load_int(&bin->thread.active))
-                break;
-        }
-        if (ck_pr_load_int(&bin->thread.active)) {
+        if (thread_timedstop(&bin->thread)) {
             error("failed to destroy task_bin");
             return 1;
         }
     }
     force_collection(bin);
-    pthread_cond_destroy(&bin->thread.cond);
-    pthread_mutex_destroy(&bin->thread.mutex);
+    thread_deinit(&bin->thread);
     free(bin);
-    return err;
+    return 0;
 }
 
-void task_bin_join(struct task_bin* bin) { dthread_join(bin->thread.thread); }
+int task_bin_join(struct task_bin* bin) { return pthread_join(bin->thread.id, NULL); }
 
 void task_bin_put(struct task_bin* bin, struct dcp_task* task)
 {
-    unsigned i = ck_pr_load_uint(&bin->put_stack) % 2;
-    stack_push(bin->stacks + i, &task->bin_node);
-    ck_pr_add_uint(&bin->put_stack, 2);
+    struct stacks_state ss = stacks_state(bin);
+    stack_push(bin->stacks + ss.put_stack, &task->bin_node);
+    advance_epoch(bin);
 }
 
 int task_bin_start(struct task_bin* bin)
 {
-    if (pthread_create(&bin->thread.thread, NULL, thread_routine, (void*)bin)) {
-        error("could not spawn thread_routine");
+    thread_activate(&bin->thread);
+    if (pthread_create(&bin->thread.id, NULL, main_thread, (void*)bin)) {
+        error("could not spawn thread_main");
+        thread_deactivate(&bin->thread);
         return 1;
     }
-    ck_pr_store_int(&bin->thread.active, 1);
     return 0;
 }
 
-void task_bin_stop(struct task_bin* bin)
-{
-    ck_pr_store_int(&bin->thread.stop_signal, 1);
-    dthread_lock(&bin->thread.mutex);
-    pthread_cond_signal(&bin->thread.cond);
-    dthread_unlock(&bin->thread.mutex);
-}
+void task_bin_stop(struct task_bin* bin) { thread_stop(&bin->thread); }
 
 static void collect_garbage(struct task_bin* bin)
 {
-    unsigned put_stack = ck_pr_load_uint(&bin->put_stack);
-    if (put_stack == bin->last_collect)
+    struct stacks_state ss = stacks_state(bin);
+    if (ss.put_stack == bin->last_collect)
         return;
 
-    unsigned collect_stack = (put_stack + 1) % 2;
-
-    struct stack* stack = bin->stacks + collect_stack;
+    struct stack* stack = bin->stacks + ss.collect_stack;
     struct stack  remain = STACK_INIT(remain);
     while (!stack_empty(stack)) {
 
@@ -121,32 +124,60 @@ static void collect_garbage(struct task_bin* bin)
         stack_push(stack, stack_pop(&remain));
 
     if (stack_empty(stack)) {
-        bin->last_collect = collect_stack;
-        ck_pr_store_uint(&bin->put_stack, collect_stack);
+        bin->last_collect = ss.collect_stack;
+        set_epoch(bin, ss.collect_stack);
     }
 }
 
 static void force_collection(struct task_bin* bin)
 {
-    ck_pr_add_uint(&bin->put_stack, 2);
+    advance_epoch(bin);
     collect_garbage(bin);
 }
 
-static void* thread_routine(void* task_bin_addr)
+static int thread_init(struct thread* thr)
 {
-    struct task_bin* bin = task_bin_addr;
+    if (!(thr->clock = clock_create()))
+        return 1;
+    thr->active = 0;
+    thr->stop_signal = 0;
+    return 0;
+}
+
+static void thread_stop(struct thread* thr)
+{
+    ck_pr_store_int(&thr->stop_signal, 1);
+    clock_wakeup(thr->clock);
+}
+
+static int thread_timedstop(struct thread* thr)
+{
+    for (unsigned i = 0; i < 3; ++i) {
+        thread_stop(thr);
+        msleep(100 + i * 250);
+        if (!thread_active(thr))
+            return 0;
+    }
+    return 1;
+}
+
+static void* main_thread(void* task_bin)
+{
+    struct task_bin* bin = task_bin;
     struct thread*   thread = &bin->thread;
 
     while (!ck_pr_load_int(&thread->stop_signal)) {
-
-        dthread_lock(&thread->mutex);
-        dthread_timedwait(&thread->cond, &thread->mutex, 3);
-        dthread_unlock(&thread->mutex);
-
+        clock_sleep(thread->clock, SLEEP_DURATION * 1000);
         collect_garbage(bin);
     }
 
-    ck_pr_store_int(&thread->active, 0);
+    thread_deactivate(thread);
     pthread_exit(NULL);
     return NULL;
+}
+
+static struct stacks_state stacks_state(struct task_bin const* bin)
+{
+    unsigned epoch = ck_pr_load_uint(&bin->epoch);
+    return (struct stacks_state){(epoch + 1) % 2, (epoch + 0) % 2, epoch};
 }
