@@ -11,6 +11,8 @@ void dcp_task_add_seq(struct dcp_task* task, char const* seq)
     seq_stack_push(&task->sequences, seq_create(seq, task->seqid++));
 }
 
+struct dcp_task_cfg dcp_task_cfg(struct dcp_task* task) { return task->cfg; }
+
 struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
 {
     struct dcp_task* task = malloc(sizeof(*task));

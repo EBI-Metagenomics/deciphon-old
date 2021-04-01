@@ -72,8 +72,6 @@ void special_trans_set(struct special_trans trans, struct imm_hmm* hmm, struct i
         else if (strcmp(name, "I1") == 0)
             I1 = states[i];
     }
-    printf("S<%p> B<%p>\n", (void*)S, (void*)B);
-    fflush(stdout);
     imm_dp_change_trans(dp, hmm, S, B, trans.NB);
     imm_dp_change_trans(dp, hmm, S, N, trans.NN);
     imm_dp_change_trans(dp, hmm, N, N, trans.NN);

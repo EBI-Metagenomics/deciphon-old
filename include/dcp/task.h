@@ -17,6 +17,7 @@ struct dcp_task_cfg
 };
 
 DCP_API void                dcp_task_add_seq(struct dcp_task* task, char const* seq);
+DCP_API struct dcp_task_cfg dcp_task_cfg(struct dcp_task* task);
 DCP_API struct dcp_task*    dcp_task_create(struct dcp_task_cfg cfg);
 DCP_API void                dcp_task_destroy(struct dcp_task* task);
 DCP_API bool                dcp_task_end(struct dcp_task* task);

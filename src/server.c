@@ -218,6 +218,10 @@ static void* main_thread(void* server_addr)
 
         if (!node)
             continue;
+        else {
+            printf("New task\n");
+            fflush(stdout);
+        }
 
         struct dcp_task* task = CONTAINER_OF(node, struct dcp_task, node);
 
@@ -227,7 +231,11 @@ static void* main_thread(void* server_addr)
 #pragma omp        parallel default(none) shared(server, task) reduction(+ : errors)
         {
 #pragma omp single nowait
+            {
             errors += input_processor(server);
+            printf("New input_processor\n");
+            fflush(stdout);
+            }
 
             errors += task_processor(server, task);
         }
@@ -260,6 +268,8 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
             dcp_profile_destroy(prof, true);
             continue;
         }
+            printf("New input_processor\n");
+            fflush(stdout);
 
         struct iter_snode it = task_seqiter(task);
         struct seq const* seq = NULL;
