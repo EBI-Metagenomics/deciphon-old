@@ -1,11 +1,6 @@
 #include "cass/cass.h"
 #include "dcp/dcp.h"
 #include "pfam24_data.h"
-#include "pparr.h"
-
-#define LOGLIKS(i) SHAPE(24, 2, 2, 2, 2, i)
-#define PATHS(i) SHAPE(24, 2, 2, 2, 2, i)
-#define CODONS(i) SHAPE(24, 2, 2, 2, 2, i)
 
 void test_tasks(void);
 
@@ -56,19 +51,13 @@ void test_tasks(void)
                     struct dcp_task_cfg cfg = dcp_task_cfg(task);
                     bool                h3compat = cfg.hmmer3_compat;
                     bool                mhits = cfg.multiple_hits;
-#define GET_SHAPE(i) LOGLIKS(i)
-                    cass_close(dcp_result_loglik(r, m), logliks[_(profid, seqid, j, h3compat, mhits)]);
-#undef GET_SHAPE
+                    cass_close(dcp_result_loglik(r, m), GET(logliks, profid, seqid, j, h3compat, mhits));
 
-#define GET_SHAPE(i) PATHS(i)
                     char const* path = dcp_string_data(dcp_result_path(r, m));
-                    cass_equal(strcmp(path, paths[_(profid, seqid, j, h3compat, mhits)]), 0);
-#undef GET_SHAPE
+                    cass_equal(strcmp(path, GET(paths, profid, seqid, j, h3compat, mhits)), 0);
 
-#define GET_SHAPE(i) CODONS(i)
                     char const* codon = dcp_string_data(dcp_result_codons(r, m));
-                    cass_equal(strcmp(codon, codons[_(profid, seqid, j, h3compat, mhits)]), 0);
-#undef GET_SHAPE
+                    cass_equal(strcmp(codon, GET(codons, profid, seqid, j, h3compat, mhits)), 0);
                 }
             }
             dcp_server_free_results(server, results);
