@@ -146,5 +146,6 @@ int dcp_input_reset(struct dcp_input* input)
         error("could not fseek %s", input->filepath);
         return 1;
     }
+    input->profid = 0;
     return 0;
 }
