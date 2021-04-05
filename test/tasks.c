@@ -19,10 +19,8 @@ void test_tasks(void)
 
     cass_equal(dcp_server_start(server), 0);
 
-    struct dcp_task_cfg cfgs[4] = {{true, true, false, false, true},
-                                   {true, true, true, false, true},
-                                   {true, true, false, true, true},
-                                   {true, true, true, true, true}};
+    struct dcp_task_cfg cfgs[4] = {
+        {true, true, false, false}, {true, true, true, false}, {true, true, false, true}, {true, true, true, true}};
 
     for (unsigned k = 0; k < 4; ++k) {
         struct dcp_task* task = dcp_task_create(cfgs[k]);

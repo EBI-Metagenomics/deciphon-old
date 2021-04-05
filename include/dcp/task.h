@@ -13,7 +13,6 @@ struct dcp_task_cfg
     bool null;
     bool multiple_hits;
     bool hmmer3_compat;
-    bool setup; /* TODO: remove this */
 };
 
 DCP_API void                dcp_task_add_seq(struct dcp_task* task, char const* seq);
