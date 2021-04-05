@@ -19,7 +19,7 @@ int main(void)
 
 void test_create_destroy(void)
 {
-    char const*        filepath = "/Users/horta/tmp/pfam24.dcp";
+    char const*        filepath = PFAM24_FILEPATH;
     struct dcp_server* server = dcp_server_create(filepath);
     cass_not_null(server);
 
@@ -28,7 +28,7 @@ void test_create_destroy(void)
 
 void test_start_destroy(void)
 {
-    char const* filepath = "/Users/horta/tmp/pfam24.dcp";
+    char const* filepath = PFAM24_FILEPATH;
 
     struct dcp_server* server = dcp_server_create(filepath);
     cass_not_null(server);
@@ -40,7 +40,7 @@ void test_start_destroy(void)
 
 void test_start_stop_destroy(void)
 {
-    char const* filepath = "/Users/horta/tmp/pfam24.dcp";
+    char const* filepath = PFAM24_FILEPATH;
 
     struct dcp_server* server = dcp_server_create(filepath);
     cass_not_null(server);
@@ -55,7 +55,7 @@ void test_start_stop_destroy(void)
 
 void test_start_stop_join_destroy(void)
 {
-    char const* filepath = "/Users/horta/tmp/pfam24.dcp";
+    char const* filepath = PFAM24_FILEPATH;
 
     struct dcp_server* server = dcp_server_create(filepath);
     cass_not_null(server);
@@ -68,4 +68,3 @@ void test_start_stop_join_destroy(void)
 
     cass_equal(dcp_server_destroy(server), 0);
 }
-
