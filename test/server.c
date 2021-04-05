@@ -3,6 +3,7 @@
 
 #define NTRIALS 100
 
+void test_file_not_found(void);
 void test_create_destroy(void);
 void test_start_destroy(void);
 void test_start_stop_destroy(void);
@@ -10,11 +11,18 @@ void test_start_stop_join_destroy(void);
 
 int main(void)
 {
+    test_file_not_found();
     test_create_destroy();
     test_start_destroy();
     test_start_stop_destroy();
     test_start_stop_join_destroy();
     return cass_status();
+}
+
+void test_file_not_found(void)
+{
+    struct dcp_server* server = dcp_server_create("/zxc/abc.dcp");
+    cass_null(server);
 }
 
 void test_create_destroy(void)

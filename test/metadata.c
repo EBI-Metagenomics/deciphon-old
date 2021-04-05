@@ -24,7 +24,7 @@ static char const* names[] = {
 
 static void test_metadata(void)
 {
-    char const* filepath = "/Users/horta/tmp/pfam24.dcp";
+    char const* filepath = PFAM24_FILEPATH;
 
     struct dcp_server* server = dcp_server_create(filepath);
     cass_not_null(server);
