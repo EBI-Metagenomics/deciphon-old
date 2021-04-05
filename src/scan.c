@@ -8,11 +8,13 @@
 static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,
                        struct model* model);
 
-void scan(struct dcp_profile const* profile, struct seq const* seq, struct dcp_result* result,
-          struct dcp_task_cfg const* cfg)
+int scan(struct dcp_profile const* profile, struct seq const* seq, struct dcp_result* result,
+         struct dcp_task_cfg const* cfg)
 {
     struct imm_abc const* abc = dcp_profile_abc(profile);
     struct imm_seq const* iseq = imm_seq_create(seq_string(seq), abc);
+    if (!iseq)
+        return 1;
 
     struct imm_hmm* hmm = imm_model_hmm(dcp_profile_model(profile, 0));
     struct imm_dp*  dp = imm_model_dp(dcp_profile_model(profile, 0));
@@ -29,6 +31,7 @@ void scan(struct dcp_profile const* profile, struct seq const* seq, struct dcp_r
     }
 
     imm_seq_destroy(iseq);
+    return 0;
 }
 
 static void model_scan(struct imm_hmm* hmm, struct imm_dp* dp, struct imm_seq const* seq, bool calc_loglik,

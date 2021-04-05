@@ -6,6 +6,8 @@ struct dcp_string const* dcp_result_codons(struct dcp_result const* result, enum
     return &result->models[model].codons;
 }
 
+int dcp_result_error(struct dcp_result const* result) { return result->error; }
+
 imm_float dcp_result_loglik(struct dcp_result const* result, enum dcp_model model)
 {
     return result->models[model].loglik;

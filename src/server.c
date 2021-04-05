@@ -283,7 +283,7 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
             struct dcp_result* r = results_put(results);
             result_set_profid(r, dcp_profile_id(prof));
             result_set_seqid(r, seq_id(seq));
-            scan(prof, seq, r, task_cfg(task));
+            result_set_error(r, scan(prof, seq, r, task_cfg(task)));
         }
 
         dcp_profile_destroy(prof, true);

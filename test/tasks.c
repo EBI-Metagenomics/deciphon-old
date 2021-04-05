@@ -3,12 +3,12 @@
 #include "pfam24_results.h"
 
 void test_pfam24_sample(void);
-/* void test_wrong_alphabet(void); */
+void test_wrong_alphabet(void);
 
 int main(void)
 {
     test_pfam24_sample();
-    /* test_wrong_alphabet(); */
+    test_wrong_alphabet();
     return cass_status();
 }
 
@@ -70,16 +70,33 @@ void test_pfam24_sample(void)
     cass_equal(dcp_server_destroy(server), 0);
 }
 
-/* void test_wrong_alphabet(void) */
-/* { */
-/*     char const* filepath = PFAM24_FILEPATH; */
+void test_wrong_alphabet(void)
+{
+    char const* filepath = PFAM24_FILEPATH;
 
-/*     struct dcp_server* server = dcp_server_create(filepath); */
-/*     cass_not_null(server); */
+    struct dcp_server* server = dcp_server_create(filepath);
+    cass_not_null(server);
 
-/*     struct dcp_task_cfg cfg = {true, true, false, false}; */
-/*     struct dcp_task*    task = dcp_task_create(cfg); */
-/*     dcp_task_add_seq(task, "ATGCK"); */
+    cass_equal(dcp_server_start(server), 0);
 
-/*     cass_equal(dcp_server_destroy(server), 0); */
-/* } */
+    struct dcp_task_cfg cfg = {true, true, false, false};
+    struct dcp_task*    task = dcp_task_create(cfg);
+    dcp_task_add_seq(task, "ATGCK");
+    dcp_server_add_task(server, task);
+
+    while (!dcp_task_end(task)) {
+        struct dcp_result const* r = dcp_task_read(task);
+        if (!r) {
+            dcp_sleep(10);
+            continue;
+        }
+        cass_equal(dcp_result_error(r), 1);
+        dcp_server_free_result(server, r);
+    }
+    dcp_server_free_task(server, task);
+
+    dcp_server_stop(server);
+    dcp_server_join(server);
+
+    cass_equal(dcp_server_destroy(server), 0);
+}
