@@ -19,6 +19,7 @@ struct dcp_task
     int                 errno;
     struct fifo1_node   node;
     struct snode        bin_node;
+    struct dcp_results* curr_results;
 };
 
 void                       task_add_results(struct dcp_task* task, struct dcp_results* results);

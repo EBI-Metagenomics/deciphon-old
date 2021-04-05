@@ -103,9 +103,12 @@ int dcp_server_destroy(struct dcp_server* server)
     return err;
 }
 
-void dcp_server_free_results(struct dcp_server* server, struct dcp_results* results)
+void dcp_server_free_result(struct dcp_server* server, struct dcp_result const* result)
 {
-    mpool_free(server->mpool, results);
+    struct dcp_results const* p = result->parent;
+    /* free results if last result */
+    if (results_empty(p))
+        mpool_free(server->mpool, result->parent);
 }
 
 void dcp_server_free_task(struct dcp_server* server, struct dcp_task* task) { task_bin_put(server->task_bin, task); }
@@ -157,7 +160,7 @@ static struct dcp_results* alloc_results(struct dcp_server* server)
         ck_pr_stall();
 
     if (results)
-        results_rewind(results);
+        results_reset(results);
 
     return results;
 }
@@ -166,6 +169,10 @@ bool collect_task(struct dcp_task* task, void* arg)
 {
     if (!dcp_task_end(task))
         return false;
+
+    struct dcp_server* server = arg;
+    if (task->curr_results)
+        mpool_free(server->mpool, task->curr_results);
 
     dcp_task_destroy(task);
     return true;
@@ -247,7 +254,12 @@ static void* main_thread(void* server_addr)
 
 static int task_processor(struct dcp_server* server, struct dcp_task* task)
 {
-    int err = 0;
+    int                 err = 0;
+    struct dcp_results* results = alloc_results(server);
+    if (!results) {
+        BUG(!sigstop(server));
+        err++;
+    }
     while (!bus_end(&server->profile_bus) && !sigstop(server)) {
 
         struct dcp_profile const* prof = NULL;
@@ -256,37 +268,31 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
             continue;
         }
 
-        struct dcp_results* results = alloc_results(server);
-        if (!results) {
-            BUG(!sigstop(server));
-            dcp_profile_destroy(prof, true);
-            continue;
-        }
-
         struct iter_snode it = task_seqiter(task);
         struct seq const* seq = NULL;
         ITER_FOREACH(seq, &it, node)
         {
-            struct dcp_result* r = results_next(results);
-            if (!r) {
+            if (results_full(results)) {
                 task_add_results(task, results);
 
                 if (!(results = alloc_results(server))) {
                     err++;
                     break;
                 }
-                r = results_next(results);
             }
-
+            struct dcp_result* r = results_put(results);
             result_set_profid(r, dcp_profile_id(prof));
             result_set_seqid(r, seq_id(seq));
             scan(prof, seq, r, task_cfg(task));
         }
 
-        if (results)
-            task_add_results(task, results);
-
         dcp_profile_destroy(prof, true);
+    }
+    if (results) {
+        if (results_empty(results))
+            mpool_free(server->mpool, results);
+        else
+            task_add_results(task, results);
     }
 
     return err;

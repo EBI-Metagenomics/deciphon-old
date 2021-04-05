@@ -108,7 +108,7 @@ void task_bin_stop(struct task_bin* bin) { thread_stop(&bin->thread); }
 static void collect_garbage(struct task_bin* bin)
 {
     struct stacks_state ss = stacks_state(bin);
-    if (ss.put_stack == bin->last_collect)
+    if (ss.epoch == bin->last_collect)
         return;
 
     struct stack* stack = bin->stacks + ss.collect_stack;

@@ -45,6 +45,7 @@ struct mpool* mpool_create(unsigned slot_size, unsigned power_size, mpool_init_s
 
 void mpool_destroy(struct mpool const* pool, mpool_deinit_slot_cb deinit)
 {
+    fflush(stdout);
     BUG(ck_ring_size(&pool->ring) != pool->nslots);
 
     for (unsigned i = 0; i < pool->nslots; ++i)
@@ -55,4 +56,7 @@ void mpool_destroy(struct mpool const* pool, mpool_deinit_slot_cb deinit)
     free((void*)pool);
 }
 
-void mpool_free(struct mpool* pool, void const* slot) { BUG(!ck_ring_enqueue_mpmc(&pool->ring, pool->buffer, slot)); }
+void mpool_free(struct mpool* pool, void const* slot)
+{
+    BUG(!ck_ring_enqueue_mpmc(&pool->ring, pool->buffer, slot));
+}

@@ -24,6 +24,7 @@ struct dcp_task* dcp_task_create(struct dcp_task_cfg cfg)
     task->end = 0;
     task->errno = 0;
     snode_init(&task->bin_node);
+    task->curr_results = NULL;
 
     return task;
 }
@@ -46,13 +47,27 @@ bool dcp_task_end(struct dcp_task* task) { return ck_pr_load_int(&task->end); }
 
 int dcp_task_errno(struct dcp_task const* task) { return ck_pr_load_int(&task->errno); }
 
-struct dcp_results* dcp_task_read(struct dcp_task* task)
+struct dcp_result const* dcp_task_read(struct dcp_task* task)
 {
+    if (!task->curr_results) {
+
+        struct snode* node = fifo_pop(task->results);
+        if (!node)
+            goto empty;
+
+        task->curr_results = CONTAINER_OF(node, struct dcp_results, node);
+    }
+    if (results_empty(task->curr_results)) {
+        task->curr_results = NULL;
+        goto empty;
+    }
+
+    return results_pop(task->curr_results);
+
+empty:
     if (fifo_closed(task->results) && fifo_empty(task->results))
         ck_pr_store_int(&task->end, 1);
-
-    struct snode* node = fifo_pop(task->results);
-    return CONTAINER_OF_OR_NULL(node, struct dcp_results, node);
+    return NULL;
 }
 
 void task_add_results(struct dcp_task* task, struct dcp_results* results) { fifo_push(task->results, &results->node); }

@@ -30,8 +30,9 @@ void result_deinit(struct dcp_result const* result)
     }
 }
 
-void result_init(struct dcp_result* result)
+void result_init(struct dcp_result* result, struct dcp_results const* parent)
 {
+    result->parent = parent;
     for (unsigned i = 0; i < ARRAY_SIZE(dcp_models); ++i) {
         result->models[i].result = NULL;
         string_init(&result->models[i].path);
