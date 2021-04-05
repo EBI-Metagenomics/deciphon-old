@@ -1,8 +1,8 @@
-#ifndef PFAM24_DATA_H
-#define PFAM24_DATA_H
+#ifndef PFAM24_RESULTS_H
+#define PFAM24_RESULTS_H
 
 #include "imm/imm.h"
-#include "pparr.h"
+#include "static_tensor.h"
 
 #define logliks_shape(i) SHAPE(i, 24, 2, 2, 2, 2)
 #define paths_shape(i) SHAPE(i, 24, 2, 2, 2, 2)

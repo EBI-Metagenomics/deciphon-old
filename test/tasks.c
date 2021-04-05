@@ -1,6 +1,6 @@
 #include "cass/cass.h"
 #include "dcp/dcp.h"
-#include "pfam24_data.h"
+#include "pfam24_results.h"
 
 void test_tasks(void);
 
@@ -26,12 +26,14 @@ void test_tasks(void)
 
     for (unsigned k = 0; k < 4; ++k) {
         struct dcp_task* task = dcp_task_create(cfgs[k]);
+
         /* >Leader_Thr-sample1 */
         /* MRRNRMIATIITTTITTLGAG */
-        dcp_task_add_seq(task, "ATGCGCCGCAACCGCATGATTGCGACCATTATTACCACCACCATTACCACCCTGGGCGCG");
-        dcp_task_add_seq(task,
-                         "ATGCGCCGCAACCGCATGATTGCGACCATTATTACCACCACCATTACCACCCTGGGCGCGCAGATGCGCCGCAACCGCATGATTGCGACCA"
-                         "TTATTACCACCACCATTACCACCCTGGGCGCG");
+#define LEADER_THR "ATGCGCCGCAACCGCATGATTGCGACCATTATTACCACCACCATTACCACCCTGGGCGCG"
+        dcp_task_add_seq(task, LEADER_THR);
+        dcp_task_add_seq(task, LEADER_THR "CAG" LEADER_THR);
+#undef LEADER_THR
+
         dcp_server_add_task(server, task);
 
         while (!dcp_task_end(task)) {
@@ -51,13 +53,13 @@ void test_tasks(void)
                     struct dcp_task_cfg cfg = dcp_task_cfg(task);
                     bool                h3compat = cfg.hmmer3_compat;
                     bool                mhits = cfg.multiple_hits;
-                    cass_close(dcp_result_loglik(r, m), GET(logliks, profid, seqid, j, h3compat, mhits));
+                    cass_close(dcp_result_loglik(r, m), T(logliks, profid, seqid, j, h3compat, mhits));
 
                     char const* path = dcp_string_data(dcp_result_path(r, m));
-                    cass_equal(strcmp(path, GET(paths, profid, seqid, j, h3compat, mhits)), 0);
+                    cass_equal(strcmp(path, T(paths, profid, seqid, j, h3compat, mhits)), 0);
 
                     char const* codon = dcp_string_data(dcp_result_codons(r, m));
-                    cass_equal(strcmp(codon, GET(codons, profid, seqid, j, h3compat, mhits)), 0);
+                    cass_equal(strcmp(codon, T(codons, profid, seqid, j, h3compat, mhits)), 0);
                 }
             }
             dcp_server_free_results(server, results);

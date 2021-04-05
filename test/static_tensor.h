@@ -1,5 +1,5 @@
-#ifndef PPARR_H
-#define PPARR_H
+#ifndef STATIC_TENSOR_H
+#define STATIC_TENSOR_H
 
 #define SWITCH(a, b, v) (a * (b == v))
 
@@ -23,13 +23,13 @@
 #define GET_MACRO2(_1, _2, _3, _4, _5, NAME, ...) NAME
 #define _(N, ...) GET_MACRO2(__VA_ARGS__, _5, _4, _3, _2, _1)(N##_shape, __VA_ARGS__)
 
-#define GET1(N, i0) N[_(N, i0)]
-#define GET2(N, i0, i1) N[_(N, i0, i1)]
-#define GET3(N, i0, i1, i2) N[_(N, i0, i1, i2)]
-#define GET4(N, i0, i1, i2, i3) N[_(N, i0, i1, i2, i3)]
-#define GET5(N, i0, i1, i2, i3, i4) N[_(N, i0, i1, i2, i3, i4)]
+#define T1(N, i0) N[_(N, i0)]
+#define T2(N, i0, i1) N[_(N, i0, i1)]
+#define T3(N, i0, i1, i2) N[_(N, i0, i1, i2)]
+#define T4(N, i0, i1, i2, i3) N[_(N, i0, i1, i2, i3)]
+#define T5(N, i0, i1, i2, i3, i4) N[_(N, i0, i1, i2, i3, i4)]
 
-#define GET_MACRO3(GET1, GET2, GET3, GET4, GET5, NAME, ...) NAME
-#define GET(N, ...) GET_MACRO3(__VA_ARGS__, GET5, GET4, GET3, GET2, GET1)(N, __VA_ARGS__)
+#define GET_MACRO3(T1, T2, T3, T4, T5, NAME, ...) NAME
+#define T(N, ...) GET_MACRO3(__VA_ARGS__, T5, T4, T3, T2, T1)(N, __VA_ARGS__)
 
 #endif
