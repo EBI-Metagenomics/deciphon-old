@@ -89,4 +89,5 @@ void special_trans_set(struct special_trans trans, struct imm_hmm* hmm, struct i
 
     imm_dp_change_trans(dp, hmm, B, D2, imm_lprob_zero());
     imm_dp_change_trans(dp, hmm, B, I1, imm_lprob_zero());
+    free(states);
 }

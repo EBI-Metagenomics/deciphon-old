@@ -71,6 +71,8 @@ err:
         dcp_input_destroy(server->input);
     if (server->task_bin)
         task_bin_destroy(server->task_bin);
+    if (server->tasks)
+        fifo1_destroy(server->tasks);
     free(server);
     return NULL;
 }
