@@ -1,5 +1,6 @@
 #include "clock.h"
 #include "util.h"
+#include <errno.h>
 #include <pthread.h>
 
 struct clock
@@ -43,15 +44,16 @@ void clock_sleep(struct clock* clock, unsigned milliseconds)
     struct timespec wait_time = {0, 0};
     if (clock_gettime(CLOCK_REALTIME, &wait_time)) {
         warn("clock_gettime failed");
-        return;
+        goto unlock;
     }
     wait_time.tv_sec += milliseconds / 1000;
     wait_time.tv_nsec += (milliseconds % 1000) * 1000000;
 
-    if (pthread_cond_timedwait(&clock->cond, &clock->mutex, &wait_time)) {
-        warn("cond_timedwait failed");
-        return;
-    }
+    int error = pthread_cond_timedwait(&clock->cond, &clock->mutex, &wait_time);
+    if (error && error != ETIMEDOUT)
+        warn("cond_timedwait failed: %d", error);
+
+unlock:
     if (pthread_mutex_unlock(&clock->mutex))
         warn("mutex_unlock failed");
 }
