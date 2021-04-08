@@ -254,6 +254,7 @@ static void* main_thread(void* server_addr)
 
 static int task_processor(struct dcp_server* server, struct dcp_task* task)
 {
+    bool                show_progress = getenv("SHOW_DECIPHON_PROGRESS");
     int                 err = 0;
     struct dcp_results* results = alloc_results(server);
     if (!results) {
@@ -266,6 +267,11 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
         if (!(prof = bus_recv(&server->profile_bus))) {
             ck_pr_stall();
             continue;
+        }
+        /* showing progress */
+        if (show_progress) {
+            printf(".");
+            fflush(stdout);
         }
 
         struct iter_snode it = task_seqiter(task);
