@@ -5,8 +5,8 @@
 
 void dcp_profile_del(struct dcp_profile *prof)
 {
-    imm_dp_del(prof->null);
-    imm_dp_del(prof->alt);
+    imm_dp_del(prof->dp.null);
+    imm_dp_del(prof->dp.alt);
 }
 
 #if 0
@@ -24,6 +24,6 @@ DCP_API void dcp_profile_init(struct dcp_profile *prof,
 {
     prof->idx = DCP_PROFILE_NULL_IDX;
     prof->mt = dcp_metadata(NULL, NULL);
-    prof->null = imm_dp_new(abc);
-    prof->alt = imm_dp_new(abc);
+    prof->dp.null = imm_dp_new(abc);
+    prof->dp.alt = imm_dp_new(abc);
 }

@@ -18,8 +18,11 @@ struct dcp_profile
 {
     dcp_profile_idx_t idx;
     struct dcp_metadata mt;
-    struct imm_dp *null;
-    struct imm_dp *alt;
+    struct
+    {
+        struct imm_dp *null;
+        struct imm_dp *alt;
+    } dp;
 };
 
 DCP_API void dcp_profile_init(struct dcp_profile *prof,

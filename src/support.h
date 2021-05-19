@@ -10,17 +10,29 @@
 #include <stdlib.h>
 #include <string.h>
 
+char const *tempfile(char const *filepath);
+
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
+
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define warn(code, ...) __imm_log(IMM_WARN, code, __VA_ARGS__)
 #define error(code, ...) __imm_log(IMM_ERROR, code, __VA_ARGS__)
 #define fatal(code, ...) __imm_log(IMM_FATAL, code, __VA_ARGS__)
 
+#define fopen_error(x) error(IMM_IOERROR, "could not open file %s", (x))
+
 #define xmalloc(x) __malloc((x), __FILE__, __LINE__)
 #define xmemcpy(d, s, c) __memcpy((d), (s), (c), __FILE__, __LINE__)
 #define xrealloc(ptr, new_size) __realloc((ptr), (new_size), __FILE__, __LINE__)
 #define xstrdup(x) __strdup((x), __FILE__, __LINE__)
+
+#define xdel(x)                                                                \
+    do                                                                         \
+    {                                                                          \
+        x = del(x);                                                            \
+    } while (0);
 
 static inline void *__memcpy(void *restrict dest, const void *restrict src,
                              size_t count, char const file[static 1], int line)
@@ -39,10 +51,11 @@ static inline void *__growmem(void *restrict ptr, size_t count, size_t size,
                               size_t *capacity, char const file[static 1],
                               int line) __attribute__((nonnull(1, 4)));
 
-static inline void free_if(void const *ptr)
+static inline void *del(void const *ptr)
 {
     if (ptr)
         free((void *)ptr);
+    return NULL;
 }
 
 static inline void *__malloc(size_t size, char const file[static 1], int line)
