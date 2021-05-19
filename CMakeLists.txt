@@ -26,7 +26,6 @@ endif()
 
 find_package(elapsed REQUIRED)
 find_package(imm REQUIRED)
-find_package(nmm REQUIRED)
 find_package(Threads REQUIRED)
 option(OPENMP "Enable OpenMP" On)
 if(OPENMP)
@@ -34,27 +33,29 @@ if(OPENMP)
 endif()
 
 add_library(dcp
-    src/clock.c
-    src/dthread.c
-    src/fifo.c
-    src/fifo1.c
-    src/input.c
-    src/metadata.c
-    src/mpool.c
-    src/output.c
+    # src/clock.c
+    # src/dthread.c
+    src/db.c
+    # src/fifo.c
+    # src/fifo1.c
+    # src/input.c
+    # src/metadata.c
+    # src/mpool.c
+    # src/output.c
     src/profile.c
-    src/result.c
-    src/result_ring.c
-    src/results.c
-    src/scan.c
-    src/seq_stack.c
-    src/server.c
-    src/sleep.c
-    src/special_trans.c
-    src/str.c
-    src/task.c
-    src/task_bin.c
-    src/util.c
+    # src/result.c
+    # src/result_ring.c
+    # src/results.c
+    # src/scan.c
+    # src/seq_stack.c
+    # src/server.c
+    # src/sleep.c
+    # src/special_trans.c
+    # src/str.c
+    # src/task.c
+    # src/task_bin.c
+    # src/util.c
+    third-party/cmp.c
 )
 add_library(DECIPHON::dcp ALIAS dcp)
 
@@ -85,9 +86,9 @@ target_include_directories(dcp
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/third-party
 )
 target_link_libraries(dcp PUBLIC IMM::imm)
-target_link_libraries(dcp PUBLIC NMM::nmm)
 target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
 target_link_libraries(dcp PRIVATE Threads::Threads)
 target_link_libraries(dcp PUBLIC ck)
