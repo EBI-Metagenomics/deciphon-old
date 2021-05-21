@@ -109,6 +109,29 @@ static int rewind_file(struct file_ctx *f)
                                                                                \
     } while (0)
 
+static void parse_metadata(struct dcp_db *db)
+{
+    db->mt.offset = xmalloc(sizeof(*db->mt.offset) * (db->nprofiles + 1));
+    db->mt.name_length = xmalloc(sizeof(*db->mt.name_length) * db->nprofiles);
+
+    db->mt.offset[0] = 0;
+    for (unsigned i = 0; i < db->nprofiles; ++i)
+    {
+        unsigned offset = db->mt.offset[i];
+        unsigned j = 0;
+
+        /* Name */
+        while (db->mt.data[offset + j++])
+            ;
+        db->mt.name_length[i] = (uint8_t)(j - 1);
+
+        /* Accession */
+        while (db->mt.data[offset + j++])
+            ;
+        db->mt.offset[i + 1] = offset + j;
+    }
+}
+
 static int read_metadata(struct dcp_db *db)
 {
     int status = IMM_SUCCESS;
@@ -121,6 +144,7 @@ static int read_metadata(struct dcp_db *db)
     {
         db->mt.data = xmalloc(sizeof(char) * db->mt.size);
         EREAD(!ctx->read(ctx, db->mt.data, db->mt.size), status, cleanup);
+        parse_metadata(db);
     }
 
     return status;
@@ -334,3 +358,12 @@ cleanup:
 }
 
 struct imm_abc const *dcp_db_abc(struct dcp_db const *db) { return &db->abc; }
+
+unsigned dcp_db_nprofiles(struct dcp_db const *db) { return db->nprofiles; }
+
+struct dcp_metadata dcp_db_metadata(struct dcp_db const *db, unsigned idx)
+{
+    unsigned o = db->mt.offset[idx];
+    unsigned size = db->mt.name_length[idx] + 1;
+    return dcp_metadata(db->mt.data + o, db->mt.data + o + size);
+}
