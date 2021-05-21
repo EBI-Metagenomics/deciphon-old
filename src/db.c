@@ -15,10 +15,15 @@
 #define MAX_NAME_LENGTH 63
 #define MAX_ACC_LENGTH 31
 
-enum open_mode
+#define OPEN_READ 1
+#define OPEN_WRIT 2
+
+struct file_ctx
 {
-    OPEN_READ = 0,
-    OPEN_WRITE = 1,
+    char const *filepath;
+    FILE *file;
+    uint8_t mode;
+    cmp_ctx_t ctx;
 };
 
 struct dcp_db
@@ -31,49 +36,91 @@ struct dcp_db
         uint8_t *name_length;
         uint32_t size;
         char *data;
-        char const *filepath;
-        FILE *file;
+        struct file_ctx tmpfile;
     } mt;
     struct
     {
-        char const *filepath;
-        FILE *file;
+        struct file_ctx tmpfile;
     } dp;
-    FILE *file;
-    enum open_mode mode;
+    struct file_ctx file;
 };
 
-static struct dcp_db *new_db(void)
+static int open_file(struct file_ctx *f, const char *restrict filepath,
+                     const char *restrict mode)
 {
-    struct dcp_db *db = xmalloc(sizeof(*db));
-    db->nprofiles = 0;
-    db->mt.offset = NULL;
-    db->mt.name_length = NULL;
-    db->mt.size = 0;
-    db->mt.data = NULL;
-    db->mt.filepath = NULL;
-    db->mt.file = NULL;
-    db->dp.filepath = NULL;
-    db->dp.file = NULL;
-    return db;
+    f->filepath = filepath;
+
+    if (!(f->file = fopen(filepath, mode)))
+        return error(IMM_IOERROR, "could not open file %s (%s)", filepath,
+                     mode);
+
+    cmp_init(&f->ctx, f->file, file_reader, file_skipper, file_writer);
+
+    f->mode = 0;
+    if (mode[0] == 'w')
+        f->mode |= OPEN_WRIT;
+    if (mode[0] == 'r')
+        f->mode |= OPEN_READ;
+    if (strlen(mode) > 1 && mode[1] == '+')
+        f->mode |= OPEN_READ;
+
+    return IMM_SUCCESS;
 }
 
-static int read_metadata(struct dcp_db *db, cmp_ctx_t *ctx)
+static int close_file(struct file_ctx *f)
+{
+    int status = IMM_SUCCESS;
+    if (f->file && fclose(f->file))
+        status = error(IMM_IOERROR, "could not close file %s", f->filepath);
+
+    f->file = NULL;
+    xdel(f->filepath);
+    return status;
+}
+
+static int rewind_file(struct file_ctx *f)
+{
+    if (fseek(f->file, 0L, SEEK_SET))
+    {
+        return error(IMM_IOERROR, "failed to fseek %s", f->filepath);
+    }
+    return IMM_SUCCESS;
+}
+
+#define EREAD(expr, s, o)                                                      \
+    do                                                                         \
+    {                                                                          \
+        if (!!(expr))                                                          \
+        {                                                                      \
+            s = error(IMM_IOERROR, "failed to read");                          \
+            goto o;                                                            \
+        }                                                                      \
+                                                                               \
+    } while (0)
+
+#define EWRIT(expr, s, o)                                                      \
+    do                                                                         \
+    {                                                                          \
+        if (!!(expr))                                                          \
+        {                                                                      \
+            s = error(IMM_IOERROR, "failed to write");                         \
+            goto o;                                                            \
+        }                                                                      \
+                                                                               \
+    } while (0)
+
+static int read_metadata(struct dcp_db *db)
 {
     int status = IMM_SUCCESS;
     db->mt.data = NULL;
 
-    if (!cmp_read_u32(ctx, &db->mt.size))
-    {
-        status = error(IMM_IOERROR, "failed to read");
-        goto cleanup;
-    }
+    cmp_ctx_t *ctx = &db->file.ctx;
 
-    db->mt.data = xmalloc(sizeof(char) * db->mt.size);
-    if (!ctx->read(ctx, db->mt.data, db->mt.size))
+    EREAD(!cmp_read_u32(ctx, &db->mt.size), status, cleanup);
+    if (db->mt.size > 0)
     {
-        status = error(IMM_IOERROR, "failed to read");
-        goto cleanup;
+        db->mt.data = xmalloc(sizeof(char) * db->mt.size);
+        EREAD(!ctx->read(ctx, db->mt.data, db->mt.size), status, cleanup);
     }
 
     return status;
@@ -86,90 +133,79 @@ cleanup:
 static int flush_metadata(struct dcp_db *db)
 {
     int status = IMM_SUCCESS;
-    db->mt.offset = xmalloc(sizeof(*db->mt.offset) * (db->nprofiles + 1));
-    db->mt.name_length = xmalloc(sizeof(*db->mt.name_length) * db->nprofiles);
+    /* db->mt.offset = xmalloc(sizeof(*db->mt.offset) * (db->nprofiles + 1)); */
+    /* db->mt.name_length = xmalloc(sizeof(*db->mt.name_length) *
+     * db->nprofiles); */
 
-    if (!(db->mt.file = fopen(db->mt.filepath, "rb")))
-    {
-        fopen_error(db->mt.filepath);
-        goto cleanup;
-    }
+    cmp_ctx_t *ctx = &db->file.ctx;
 
-    cmp_ctx_t ctx_tmp = {0};
-    cmp_init(&ctx_tmp, db->mt.file, file_reader, file_skipper, file_writer);
+    EWRIT(!cmp_write_u32(ctx, db->mt.size), status, cleanup);
 
-    cmp_ctx_t ctx = {0};
-    cmp_init(&ctx, db->file, file_reader, file_skipper, file_writer);
-
-    cmp_write_u32(&ctx, db->mt.size);
-
-    db->mt.offset[0] = 0;
+    /* db->mt.offset[0] = 0; */
     char name[MAX_NAME_LENGTH + 1] = {0};
     char acc[MAX_ACC_LENGTH + 1] = {0};
     for (unsigned i = 0; i < db->nprofiles; ++i)
     {
-        db->mt.offset[i + 1] = db->mt.offset[i];
+        /* db->mt.offset[i + 1] = db->mt.offset[i]; */
 
         uint32_t size = ARRAY_SIZE(name);
-        cmp_read_str(&ctx_tmp, name, &size);
-        ctx.write(&ctx, name, size + 1);
-        db->mt.offset[i + 1] += size + 1;
-        db->mt.name_length[i] = (uint8_t)size;
+        EREAD(!cmp_read_str(&db->mt.tmpfile.ctx, name, &size), status, cleanup);
+        EWRIT(!ctx->write(ctx, name, size + 1), status, cleanup);
+        /* db->mt.offset[i + 1] += size + 1; */
+        /* db->mt.name_length[i] = (uint8_t)size; */
 
         size = ARRAY_SIZE(acc);
-        cmp_read_str(&ctx_tmp, acc, &size);
-        ctx.write(&ctx, acc, size + 1);
-        db->mt.offset[i + 1] += size + 1;
+        EREAD(!cmp_read_str(&db->mt.tmpfile.ctx, acc, &size), status, cleanup);
+        EWRIT(!ctx->write(ctx, acc, size + 1), status, cleanup);
+        /* db->mt.offset[i + 1] += size + 1; */
     }
 
-    fclose(db->mt.file);
+    /* cmp_write_array(ctx, db->nprofiles + 1); */
+    /* for (unsigned i = 0; i <= db->nprofiles; ++i) */
+    /* { */
+    /*     cmp_write_u32(ctx, db->mt.offset[i]); */
+    /* } */
+
+    /* cmp_write_array(ctx, db->nprofiles); */
+    /* for (unsigned i = 0; i < db->nprofiles; ++i) */
+    /* { */
+    /*     cmp_write_u32(ctx, db->mt.name_length[i]); */
+    /* } */
+
     return status;
 
 cleanup:
-    xdel(db->mt.offset);
-    xdel(db->mt.name_length);
+    /* xdel(db->mt.offset); */
+    /* xdel(db->mt.name_length); */
     return status;
 }
 
 struct dcp_db *dcp_db_openr(char const *filepath)
 {
-    struct dcp_db *db = new_db();
-    db->mode = OPEN_READ;
+    struct dcp_db *db = xcalloc(1, sizeof(*db));
 
-    if (!(db->file = fopen(filepath, "rb")))
-    {
-        fopen_error(filepath);
+    if (open_file(&db->file, xstrdup(filepath), "rb"))
         goto cleanup;
-    }
 
-    cmp_ctx_t ctx = {0};
-    cmp_init(&ctx, db->file, file_reader, file_skipper, file_writer);
+    int status = IMM_SUCCESS;
 
     uint64_t magic_number = 0;
-    if (!cmp_read_u64(&ctx, &magic_number))
-    {
-        error(IMM_IOERROR, "failed to read");
-        goto cleanup;
-    }
+    EREAD(!cmp_read_u64(&db->file.ctx, &magic_number), status, cleanup);
     if (magic_number != MAGIC_NUMBER)
     {
         error(IMM_PARSEERROR, "wrong file magic number");
         goto cleanup;
     }
 
-    if (imm_abc_read(&db->abc, db->file))
+    if (imm_abc_read(&db->abc, db->file.file))
     {
         error(IMM_IOERROR, "failed to read");
         goto cleanup;
     }
 
-    if (!cmp_read_u32(&ctx, &db->nprofiles))
-    {
-        error(IMM_IOERROR, "failed to read");
-        goto cleanup;
-    }
+    EREAD(!cmp_read_u32(&db->file.ctx, &db->nprofiles), status, cleanup);
 
-    read_metadata(db, &ctx);
+    read_metadata(db);
 
     return db;
 
@@ -180,38 +216,21 @@ cleanup:
 
 struct dcp_db *dcp_db_openw(char const *filepath, struct imm_abc const *abc)
 {
-    struct dcp_db *db = new_db();
-    db->mt.filepath = tempfile(filepath);
-    db->dp.filepath = tempfile(filepath);
-    db->mode = OPEN_WRITE;
+    struct dcp_db *db = xcalloc(1, sizeof(*db));
 
-    if (!(db->file = fopen(filepath, "wb")))
-    {
-        fopen_error(filepath);
+    if (open_file(&db->file, xstrdup(filepath), "wb"))
         goto cleanup;
-    }
 
-    if (!(db->mt.file = fopen(db->mt.filepath, "wb")))
-    {
-        fopen_error(db->mt.filepath);
+    if (open_file(&db->mt.tmpfile, tempfile(filepath), "w+b"))
         goto cleanup;
-    }
 
-    if (!(db->dp.file = fopen(db->dp.filepath, "wb")))
-    {
-        fopen_error(db->dp.filepath);
+    if (open_file(&db->dp.tmpfile, tempfile(filepath), "w+b"))
         goto cleanup;
-    }
 
-    cmp_ctx_t ctx = {0};
-    cmp_init(&ctx, db->file, file_reader, file_skipper, file_writer);
-    if (!cmp_write_u64(&ctx, MAGIC_NUMBER))
-    {
-        error(IMM_IOERROR, "failed to write magic number");
-        goto cleanup;
-    }
+    int status = IMM_SUCCESS;
+    EWRIT(!cmp_write_u64(&db->file.ctx, MAGIC_NUMBER), status, cleanup);
 
-    if (imm_abc_write(abc, db->file))
+    if (imm_abc_write(abc, db->file.file))
     {
         error(IMM_IOERROR, "failed to write abc");
         goto cleanup;
@@ -220,48 +239,46 @@ struct dcp_db *dcp_db_openw(char const *filepath, struct imm_abc const *abc)
     return db;
 
 cleanup:
-    if (db->dp.file)
-    {
-        fclose(db->dp.file);
-        db->dp.file = NULL;
-    }
-
-    if (db->mt.file)
-    {
-        fclose(db->mt.file);
-        db->mt.file = NULL;
-    }
-
-    if (db->file)
-        fclose(db->file);
-
-    xdel(db->dp.filepath);
-    xdel(db->mt.filepath);
+    close_file(&db->dp.tmpfile);
+    close_file(&db->mt.tmpfile);
+    close_file(&db->file);
     free(db);
     return NULL;
 }
 
-#define ERET(expr)                                                             \
-    do                                                                         \
-    {                                                                          \
-        if (!(expr))                                                           \
-            return IMM_IOERROR;                                                \
-    } while (0)
-
 int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 {
-    cmp_ctx_t ctx = {0};
-    cmp_init(&ctx, db->mt.file, file_reader, file_skipper, file_writer);
-    ERET(cmp_write_str(&ctx, prof->mt.name, (uint32_t)strlen(prof->mt.name)));
-    ERET(cmp_write_str(&ctx, prof->mt.acc, (uint32_t)strlen(prof->mt.acc)));
-    db->mt.size += (uint32_t)strlen(prof->mt.name);
-    db->mt.size += (uint32_t)strlen(prof->mt.acc);
+    int status = IMM_SUCCESS;
 
-    ERET(!imm_dp_write(prof->dp.null, db->dp.file));
-    ERET(!imm_dp_write(prof->dp.alt, db->dp.file));
+    cmp_ctx_t *ctx = &db->mt.tmpfile.ctx;
+
+    uint32_t len = (uint32_t)strlen(prof->mt.name);
+    if (len > MAX_NAME_LENGTH)
+    {
+        error(IMM_ILLEGALARG, "too long name");
+        goto cleanup;
+    }
+    EWRIT(!cmp_write_str(ctx, prof->mt.name, len), status, cleanup);
+    /* +1 for null-terminated */
+    db->mt.size += len + 1;
+
+    len = (uint32_t)strlen(prof->mt.acc);
+    if (len > MAX_ACC_LENGTH)
+    {
+        error(IMM_ILLEGALARG, "too long accession");
+        goto cleanup;
+    }
+    EWRIT(!cmp_write_str(ctx, prof->mt.acc, len), status, cleanup);
+    /* +1 for null-terminated */
+    db->mt.size += len + 1;
+
+    EWRIT(imm_dp_write(prof->dp.null, db->dp.tmpfile.file), status, cleanup);
+    EWRIT(imm_dp_write(prof->dp.alt, db->dp.tmpfile.file), status, cleanup);
 
     db->nprofiles++;
-    return IMM_SUCCESS;
+
+cleanup:
+    return status;
 }
 
 static int db_closer(struct dcp_db *db);
@@ -271,46 +288,48 @@ int dcp_db_close(struct dcp_db *db)
 {
     int status = IMM_SUCCESS;
 
-    if (db->mode == OPEN_READ)
-        status = db_closer(db);
+    IMM_BUG(!(db->file.mode & (OPEN_READ | OPEN_WRIT)));
 
-    if (db->mode == OPEN_WRITE)
+    if (db->file.mode & OPEN_READ)
+        status = db_closer(db);
+    else
         status = db_closew(db);
 
+    xdel(db->mt.offset);
+    xdel(db->mt.name_length);
+    xdel(db->mt.data);
     free(db);
     return status;
 }
 
-static int db_closer(struct dcp_db *db)
-{
-    int status = IMM_SUCCESS;
-    if (fclose(db->file))
-        status = error(IMM_IOERROR, "could not close file");
-
-    return status;
-}
+static int db_closer(struct dcp_db *db) { return close_file(&db->file); }
 
 static int db_closew(struct dcp_db *db)
 {
     int status = IMM_SUCCESS;
 
-    if (db->mt.file && fclose(db->mt.file))
-        status = error(IMM_IOERROR, "could not close file");
+    EWRIT(!cmp_write_u32(&db->file.ctx, db->nprofiles), status, cleanup);
 
-    if (db->dp.file && fclose(db->dp.file))
-        status = error(IMM_IOERROR, "could not close file");
+    rewind_file(&db->mt.tmpfile);
+    if ((status = flush_metadata(db)))
+        goto cleanup;
 
-    cmp_ctx_t ctx = {0};
-    cmp_init(&ctx, db->file, file_reader, file_skipper, file_writer);
-    cmp_write_u32(&ctx, db->nprofiles);
+    if ((status = close_file(&db->mt.tmpfile)))
+        goto cleanup;
 
-    flush_metadata(db);
+    rewind_file(&db->dp.tmpfile);
+    if ((status = fcopy(db->file.file, db->dp.tmpfile.file)))
+        goto cleanup;
 
-    if (fclose(db->file))
-        status = error(IMM_IOERROR, "could not close file");
+    if ((status = close_file(&db->dp.tmpfile)))
+        goto cleanup;
 
-    xdel(db->dp.filepath);
-    xdel(db->mt.filepath);
+    status = close_file(&db->file);
+
+cleanup:
+    close_file(&db->mt.tmpfile);
+    close_file(&db->dp.tmpfile);
+    close_file(&db->file);
     return status;
 }
 

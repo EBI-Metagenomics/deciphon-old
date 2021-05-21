@@ -12,6 +12,8 @@
 
 char const *tempfile(char const *filepath);
 
+int fcopy(FILE *dst, FILE *src);
+
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
@@ -21,10 +23,10 @@ char const *tempfile(char const *filepath);
 #define error(code, ...) __imm_log(IMM_ERROR, code, __VA_ARGS__)
 #define fatal(code, ...) __imm_log(IMM_FATAL, code, __VA_ARGS__)
 
-#define fopen_error(x) error(IMM_IOERROR, "could not open file %s", (x))
-
+#define xcalloc(n, s) __calloc((n), (s), __FILE__, __LINE__)
 #define xmalloc(x) __malloc((x), __FILE__, __LINE__)
 #define xmemcpy(d, s, c) __memcpy((d), (s), (c), __FILE__, __LINE__)
+#define xmemset(d, ch, count) __memset((d), (ch), (count), __FILE__, __LINE__)
 #define xrealloc(ptr, new_size) __realloc((ptr), (new_size), __FILE__, __LINE__)
 #define xstrdup(x) __strdup((x), __FILE__, __LINE__)
 
@@ -38,18 +40,15 @@ static inline void *__memcpy(void *restrict dest, const void *restrict src,
                              size_t count, char const file[static 1], int line)
     __attribute__((nonnull(1, 2)));
 
+static inline void *__memset(void *dest, int ch, size_t count,
+                             char const file[static 1], int line)
+    __attribute__((nonnull(1)));
+
 static inline void *__realloc(void *ptr, size_t new_size,
                               char const file[static 1], int line);
 
 static inline char *__strdup(char const *str, char const file[static 1],
                              int line) __attribute__((nonnull(1)));
-
-static inline char *__strdup(char const *str, char const file[static 1],
-                             int line) __attribute__((nonnull(1)));
-
-static inline void *__growmem(void *restrict ptr, size_t count, size_t size,
-                              size_t *capacity, char const file[static 1],
-                              int line) __attribute__((nonnull(1, 4)));
 
 static inline void *del(void const *ptr)
 {
@@ -58,11 +57,20 @@ static inline void *del(void const *ptr)
     return NULL;
 }
 
+static inline void *__calloc(size_t num, size_t size, char const file[static 1],
+                             int line)
+{
+    void *ptr = calloc(num, size);
+    if (!ptr)
+        __imm_log_impl(IMM_FATAL, IMM_IOERROR, file, line, "failed to calloc");
+    return ptr;
+}
+
 static inline void *__malloc(size_t size, char const file[static 1], int line)
 {
     void *ptr = malloc(size);
     if (!ptr)
-        fatal(IMM_IOERROR, "failed to malloc");
+        __imm_log_impl(IMM_FATAL, IMM_IOERROR, file, line, "failed to malloc");
     return ptr;
 }
 
@@ -71,7 +79,16 @@ static inline void *__memcpy(void *restrict dest, const void *restrict src,
 {
     void *ptr = memcpy(dest, src, count);
     if (!ptr)
-        fatal(IMM_IOERROR, "failed to memcpy");
+        __imm_log_impl(IMM_FATAL, IMM_IOERROR, file, line, "failed to memcpy");
+    return ptr;
+}
+
+static inline void *__memset(void *dest, int ch, size_t count,
+                             char const file[static 1], int line)
+{
+    void *ptr = memset(dest, ch, count);
+    if (!ptr)
+        __imm_log_impl(IMM_FATAL, IMM_IOERROR, file, line, "failed to memset");
     return ptr;
 }
 
@@ -80,7 +97,7 @@ static inline void *__realloc(void *ptr, size_t new_size,
 {
     void *new_ptr = realloc(ptr, new_size);
     if (!new_ptr)
-        fatal(IMM_IOERROR, "failed to realloc");
+        __imm_log_impl(IMM_FATAL, IMM_IOERROR, file, line, "failed to realloc");
     return new_ptr;
 }
 
@@ -89,7 +106,7 @@ static inline char *__strdup(char const *str, char const file[static 1],
 {
     char *new = strdup(str);
     if (!new)
-        fatal(IMM_IOERROR, "failed to strdup");
+        __imm_log_impl(IMM_FATAL, IMM_IOERROR, file, line, "failed to strdup");
     return new;
 }
 

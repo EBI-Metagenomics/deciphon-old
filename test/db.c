@@ -10,7 +10,7 @@ int main(void)
 {
     test_db_openw_empty();
     test_db_openr_empty();
-    /* test_db_openw_one_mute(); */
+    test_db_openw_one_mute();
     return hope_status();
 }
 
@@ -46,17 +46,16 @@ void test_db_openw_one_mute(void)
 
     struct dcp_db *db = dcp_db_openw(TMPDIR "/one_mute.dcp", abc);
 
-    struct dcp_profile prof;
-    dcp_profile_init(&prof, abc);
+    struct dcp_profile prof = dcp_profile(abc);
     prof.idx = 0;
     prof.mt = dcp_metadata("NAME0", "ACC0");
     EQ(imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, &prof), IMM_SUCCESS);
 
-    dcp_db_close(db);
     imm_del(prof.dp.null);
     imm_del(prof.dp.alt);
     imm_del(hmm);
     imm_del(state);
+    dcp_db_close(db);
 }
