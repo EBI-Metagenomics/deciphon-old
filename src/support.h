@@ -1,7 +1,6 @@
 #ifndef SUPPORT_H
 #define SUPPORT_H
 
-#include "imm/compiler.h"
 #include "imm/log.h"
 #include <stdbool.h>
 #include <stddef.h>
