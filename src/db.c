@@ -1,9 +1,7 @@
 #include "dcp/db.h"
 #include "dcp/profile.h"
-#include "file.h"
 #include "imm/imm.h"
 #include "io.h"
-#include "rand.h"
 #include "support.h"
 #include <imm/dp.h>
 #include <imm/log.h>
@@ -16,6 +14,12 @@
 #define MAX_NAME_LENGTH 63
 #define MAX_ACC_LENGTH 31
 
+enum mode
+{
+    OPEN_READ = 0,
+    OPEN_WRIT = 1,
+};
+
 struct dcp_db
 {
     struct imm_abc abc;
@@ -26,13 +30,25 @@ struct dcp_db
         uint8_t *name_length;
         uint32_t size;
         char *data;
-        struct file tmpfile;
+        struct
+        {
+            FILE *fd;
+            cmp_ctx_t ctx;
+        } file;
     } mt;
     struct
     {
-        struct file tmpfile;
+        struct
+        {
+            FILE *fd;
+        } file;
     } dp;
-    struct file file;
+    struct
+    {
+        FILE *fd;
+        enum mode mode;
+        cmp_ctx_t ctx;
+    } file;
 };
 
 #define EREAD(expr, s)                                                         \
@@ -114,11 +130,11 @@ static int flush_metadata(struct dcp_db *db)
     for (unsigned i = 0; i < db->nprofiles; ++i)
     {
         uint32_t size = ARRAY_SIZE(name);
-        EREAD(!cmp_read_str(&db->mt.tmpfile.ctx, name, &size), err);
+        EREAD(!cmp_read_str(&db->mt.file.ctx, name, &size), err);
         EWRIT(!ctx->write(ctx, name, size + 1), err);
 
         size = ARRAY_SIZE(acc);
-        EREAD(!cmp_read_str(&db->mt.tmpfile.ctx, acc, &size), err);
+        EREAD(!cmp_read_str(&db->mt.file.ctx, acc, &size), err);
         EWRIT(!ctx->write(ctx, acc, size + 1), err);
     }
 
@@ -132,8 +148,13 @@ struct dcp_db *dcp_db_openr(char const *filepath)
 {
     struct dcp_db *db = xcalloc(1, sizeof(*db));
 
-    if (file_open(&db->file, filepath, "rb"))
+    if (!(db->file.fd = fopen(filepath, "rb")))
+    {
+        error(IMM_IOERROR, "could not open file %s for reading", filepath);
         goto cleanup;
+    }
+    io_init(&db->file.ctx, db->file.fd);
+    db->file.mode = OPEN_READ;
 
     int err = IMM_SUCCESS;
 
@@ -159,7 +180,7 @@ struct dcp_db *dcp_db_openr(char const *filepath)
     return db;
 
 cleanup:
-    file_close(&db->file);
+    fclose(db->file.fd);
     free(db);
     return NULL;
 }
@@ -167,15 +188,20 @@ cleanup:
 struct dcp_db *dcp_db_openw(char const *filepath, struct imm_abc const *abc)
 {
     struct dcp_db *db = xcalloc(1, sizeof(*db));
-    char const *tmpfiles[2] = {tempfile(filepath), tempfile(filepath)};
 
-    if (file_open(&db->file, filepath, "wb"))
+    if (!(db->file.fd = fopen(filepath, "wb")))
+    {
+        error(IMM_IOERROR, "could not open file %s for writting", filepath);
         goto cleanup;
+    }
+    io_init(&db->file.ctx, db->file.fd);
+    db->file.mode = OPEN_WRIT;
 
-    if (file_open(&db->mt.tmpfile, tmpfiles[0], "w+b"))
+    if (!(db->mt.file.fd = tmpfile()))
         goto cleanup;
+    io_init(&db->mt.file.ctx, db->mt.file.fd);
 
-    if (file_open(&db->dp.tmpfile, tmpfiles[1], "w+b"))
+    if (!(db->dp.file.fd = tmpfile()))
         goto cleanup;
 
     int err = IMM_SUCCESS;
@@ -190,11 +216,9 @@ struct dcp_db *dcp_db_openw(char const *filepath, struct imm_abc const *abc)
     return db;
 
 cleanup:
-    file_close(&db->dp.tmpfile);
-    file_close(&db->mt.tmpfile);
-    file_close(&db->file);
-    free((void *)tmpfiles[0]);
-    free((void *)tmpfiles[1]);
+    fclose(db->dp.file.fd);
+    fclose(db->mt.file.fd);
+    fclose(db->file.fd);
     free(db);
     return NULL;
 }
@@ -203,7 +227,7 @@ int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 {
     int err = IMM_SUCCESS;
 
-    cmp_ctx_t *ctx = &db->mt.tmpfile.ctx;
+    cmp_ctx_t *ctx = &db->mt.file.ctx;
 
     uint32_t len = (uint32_t)strlen(prof->mt.name);
     if (len > MAX_NAME_LENGTH)
@@ -225,8 +249,8 @@ int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
     /* +1 for null-terminated */
     db->mt.size += len + 1;
 
-    EWRIT(imm_dp_write(prof->dp.null, db->dp.tmpfile.fd), err);
-    EWRIT(imm_dp_write(prof->dp.alt, db->dp.tmpfile.fd), err);
+    EWRIT(imm_dp_write(prof->dp.null, db->dp.file.fd), err);
+    EWRIT(imm_dp_write(prof->dp.alt, db->dp.file.fd), err);
 
     db->nprofiles++;
 
@@ -241,12 +265,12 @@ int dcp_db_close(struct dcp_db *db)
 {
     int err = IMM_SUCCESS;
 
-    IMM_BUG(!(db->file.mode & (FILE_READ | FILE_WRIT)));
-
-    if (db->file.mode & FILE_READ)
+    if (db->file.mode == OPEN_READ)
         err = db_closer(db);
-    else
+    else if (db->file.mode == OPEN_WRIT)
         err = db_closew(db);
+    else
+        IMM_BUG(true);
 
     xdel(db->mt.offset);
     xdel(db->mt.name_length);
@@ -255,7 +279,12 @@ int dcp_db_close(struct dcp_db *db)
     return err;
 }
 
-static int db_closer(struct dcp_db *db) { return file_close(&db->file); }
+static int db_closer(struct dcp_db *db)
+{
+    if (fclose(db->file.fd))
+        return error(IMM_IOERROR, "could not close file");
+    return IMM_SUCCESS;
+}
 
 static int db_closew(struct dcp_db *db)
 {
@@ -263,26 +292,31 @@ static int db_closew(struct dcp_db *db)
 
     EWRIT(!cmp_write_u32(&db->file.ctx, db->nprofiles), err);
 
-    if ((err = file_rewind(&db->mt.tmpfile)))
-        goto cleanup;
+    rewind(db->mt.file.fd);
     if ((err = flush_metadata(db)))
         goto cleanup;
-    if ((err = file_close(&db->mt.tmpfile)))
+    if (fclose(db->mt.file.fd))
+    {
+        err = error(IMM_IOERROR, "could not close metadata file");
         goto cleanup;
+    }
 
-    if ((err = file_rewind(&db->dp.tmpfile)))
+    rewind(db->dp.file.fd);
+    if ((err = fcopy(db->file.fd, db->dp.file.fd)))
         goto cleanup;
-    if ((err = fcopy(db->file.fd, db->dp.tmpfile.fd)))
+    if (fclose(db->dp.file.fd))
+    {
+        err = error(IMM_IOERROR, "could not close DP file");
         goto cleanup;
-    if ((err = file_close(&db->dp.tmpfile)))
-        goto cleanup;
+    }
 
-    err = file_close(&db->file);
+    if (fclose(db->file.fd))
+        err = error(IMM_IOERROR, "could not close file");
 
 cleanup:
-    file_close(&db->mt.tmpfile);
-    file_close(&db->dp.tmpfile);
-    file_close(&db->file);
+    fclose(db->mt.file.fd);
+    fclose(db->dp.file.fd);
+    fclose(db->file.fd);
     return err;
 }
 

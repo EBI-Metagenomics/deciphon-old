@@ -24,9 +24,7 @@ add_library(dcp
     # src/clock.c
     # src/dthread.c
     src/db.c
-    src/rand.c
     src/support.c
-    src/file.c
     # src/fifo.c
     # src/fifo1.c
     # src/input.c
