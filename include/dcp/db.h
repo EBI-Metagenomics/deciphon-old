@@ -3,6 +3,7 @@
 
 #include "dcp/export.h"
 #include "dcp/metadata.h"
+#include <stdbool.h>
 
 struct dcp_profile;
 struct imm_abc;
@@ -23,5 +24,11 @@ DCP_API unsigned dcp_db_nprofiles(struct dcp_db const *db);
 
 DCP_API struct dcp_metadata dcp_db_metadata(struct dcp_db const *db,
                                             unsigned idx);
+
+DCP_API struct dcp_profile const *dcp_db_read(struct dcp_db *db);
+
+DCP_API bool dcp_db_end(struct dcp_db const *db);
+
+DCP_API int dcp_db_reset(struct dcp_db *db);
 
 #endif
