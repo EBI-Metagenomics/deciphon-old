@@ -1,6 +1,7 @@
 #ifndef SUPPORT_H
 #define SUPPORT_H
 
+#include "cmp.h"
 #include "imm/log.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -9,9 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-char const *tempfile(char const *filepath);
+int fcopy(FILE *restrict dst, FILE *restrict src);
 
-int fcopy(FILE *dst, FILE *src);
+void xcmp_init(cmp_ctx_t *cmp, FILE *file);
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))

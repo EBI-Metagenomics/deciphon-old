@@ -1,13 +1,7 @@
 #include "dcp/db.h"
 #include "dcp/profile.h"
 #include "imm/imm.h"
-#include "io.h"
 #include "support.h"
-#include <imm/dp.h>
-#include <imm/log.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B
 
@@ -38,18 +32,31 @@ struct dcp_db
     } mt;
     struct
     {
-        struct
-        {
-            FILE *fd;
-        } file;
+        FILE *fd;
     } dp;
     struct
     {
         FILE *fd;
+        char const *fp;
         enum mode mode;
         cmp_ctx_t ctx;
     } file;
 };
+
+static inline struct dcp_db *new_db(void)
+{
+    struct dcp_db *db = xcalloc(1, sizeof(*db));
+    db->abc = imm_abc_empty;
+    db->nprofiles = 0;
+    db->mt.offset = NULL;
+    db->mt.name_length = NULL;
+    db->mt.data = NULL;
+    db->mt.file.fd = NULL;
+    db->dp.fd = NULL;
+    db->file.fd = NULL;
+    db->file.fp = NULL;
+    return db;
+}
 
 #define EREAD(expr, s)                                                         \
     do                                                                         \
@@ -73,13 +80,24 @@ struct dcp_db
                                                                                \
     } while (0)
 
-static void parse_metadata(struct dcp_db *db)
+static int parse_metadata(struct dcp_db *db)
 {
-    db->mt.offset = xmalloc(sizeof(*db->mt.offset) * (db->nprofiles + 1));
-    db->mt.name_length = xmalloc(sizeof(*db->mt.name_length) * db->nprofiles);
+    int err = IMM_SUCCESS;
+    uint32_t n = db->nprofiles;
+
+    if (!(db->mt.offset = malloc(sizeof(*db->mt.offset) * (n + 1))))
+    {
+        err = error(IMM_OUTOFMEM, "failed to alloc for mt.offset");
+        goto cleanup;
+    }
+    if (!(db->mt.name_length = malloc(sizeof(*db->mt.name_length) * n)))
+    {
+        err = error(IMM_OUTOFMEM, "failed to alloc for mt.name_length");
+        goto cleanup;
+    }
 
     db->mt.offset[0] = 0;
-    for (unsigned i = 0; i < db->nprofiles; ++i)
+    for (unsigned i = 0; i < n; ++i)
     {
         unsigned offset = db->mt.offset[i];
         unsigned j = 0;
@@ -94,6 +112,13 @@ static void parse_metadata(struct dcp_db *db)
             ;
         db->mt.offset[i + 1] = offset + j;
     }
+
+    return err;
+
+cleanup:
+    xdel(db->mt.offset);
+    xdel(db->mt.name_length);
+    return err;
 }
 
 static int read_metadata(struct dcp_db *db)
@@ -106,15 +131,22 @@ static int read_metadata(struct dcp_db *db)
     EREAD(!cmp_read_u32(ctx, &db->mt.size), err);
     if (db->mt.size > 0)
     {
-        db->mt.data = xmalloc(sizeof(char) * db->mt.size);
+        if (!(db->mt.data = malloc(sizeof(char) * db->mt.size)))
+        {
+            err = error(IMM_OUTOFMEM, "failed to alloc for mt.data");
+            goto cleanup;
+        }
         EREAD(!ctx->read(ctx, db->mt.data, db->mt.size), err);
-        parse_metadata(db);
+        if ((err = parse_metadata(db)))
+            goto cleanup;
     }
 
     return err;
 
 cleanup:
     xdel(db->mt.data);
+    xdel(db->mt.offset);
+    xdel(db->mt.name_length);
     return err;
 }
 
@@ -146,14 +178,15 @@ cleanup:
 
 struct dcp_db *dcp_db_openr(char const *filepath)
 {
-    struct dcp_db *db = xcalloc(1, sizeof(*db));
+    struct dcp_db *db = new_db();
 
     if (!(db->file.fd = fopen(filepath, "rb")))
     {
-        error(IMM_IOERROR, "could not open file %s for reading", filepath);
+        error(IMM_IOERROR, "failed to open file %s for reading", filepath);
         goto cleanup;
     }
-    io_init(&db->file.ctx, db->file.fd);
+    db->file.fp = NULL;
+    xcmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = OPEN_READ;
 
     int err = IMM_SUCCESS;
@@ -187,25 +220,30 @@ cleanup:
 
 struct dcp_db *dcp_db_openw(char const *filepath, struct imm_abc const *abc)
 {
-    struct dcp_db *db = xcalloc(1, sizeof(*db));
+    struct dcp_db *db = new_db();
 
     if (!(db->file.fd = fopen(filepath, "wb")))
     {
-        error(IMM_IOERROR, "could not open file %s for writting", filepath);
-        goto cleanup;
+        free(db);
+        error(IMM_IOERROR, "failed to open %s for writting", filepath);
+        return NULL;
     }
-    io_init(&db->file.ctx, db->file.fd);
+    db->file.fp = filepath;
+    xcmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = OPEN_WRIT;
 
     if (!(db->mt.file.fd = tmpfile()))
         goto cleanup;
-    io_init(&db->mt.file.ctx, db->mt.file.fd);
+    xcmp_init(&db->mt.file.ctx, db->mt.file.fd);
 
-    if (!(db->dp.file.fd = tmpfile()))
+    if (!(db->dp.fd = tmpfile()))
         goto cleanup;
 
-    int err = IMM_SUCCESS;
-    EWRIT(!cmp_write_u64(&db->file.ctx, MAGIC_NUMBER), err);
+    if (!cmp_write_u64(&db->file.ctx, MAGIC_NUMBER))
+    {
+        error(IMM_IOERROR, "failed to write magic number");
+        goto cleanup;
+    }
 
     if (imm_abc_write(abc, db->file.fd))
     {
@@ -216,9 +254,10 @@ struct dcp_db *dcp_db_openw(char const *filepath, struct imm_abc const *abc)
     return db;
 
 cleanup:
-    fclose(db->dp.file.fd);
+    fclose(db->dp.fd);
     fclose(db->mt.file.fd);
     fclose(db->file.fd);
+    remove(filepath);
     free(db);
     return NULL;
 }
@@ -249,8 +288,8 @@ int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
     /* +1 for null-terminated */
     db->mt.size += len + 1;
 
-    EWRIT(imm_dp_write(prof->dp.null, db->dp.file.fd), err);
-    EWRIT(imm_dp_write(prof->dp.alt, db->dp.file.fd), err);
+    EWRIT(imm_dp_write(prof->dp.null, db->dp.fd), err);
+    EWRIT(imm_dp_write(prof->dp.alt, db->dp.fd), err);
 
     db->nprofiles++;
 
@@ -272,9 +311,9 @@ int dcp_db_close(struct dcp_db *db)
     else
         IMM_BUG(true);
 
-    xdel(db->mt.offset);
-    xdel(db->mt.name_length);
-    xdel(db->mt.data);
+    del(db->mt.offset);
+    del(db->mt.name_length);
+    del(db->mt.data);
     free(db);
     return err;
 }
@@ -282,7 +321,7 @@ int dcp_db_close(struct dcp_db *db)
 static int db_closer(struct dcp_db *db)
 {
     if (fclose(db->file.fd))
-        return error(IMM_IOERROR, "could not close file");
+        return error(IMM_IOERROR, "failed to close file");
     return IMM_SUCCESS;
 }
 
@@ -297,26 +336,32 @@ static int db_closew(struct dcp_db *db)
         goto cleanup;
     if (fclose(db->mt.file.fd))
     {
-        err = error(IMM_IOERROR, "could not close metadata file");
+        err = error(IMM_IOERROR, "failed to close metadata file");
         goto cleanup;
     }
 
-    rewind(db->dp.file.fd);
-    if ((err = fcopy(db->file.fd, db->dp.file.fd)))
+    rewind(db->dp.fd);
+    if ((err = fcopy(db->file.fd, db->dp.fd)))
         goto cleanup;
-    if (fclose(db->dp.file.fd))
+    if (fclose(db->dp.fd))
     {
-        err = error(IMM_IOERROR, "could not close DP file");
+        err = error(IMM_IOERROR, "failed to close DP file");
         goto cleanup;
     }
 
     if (fclose(db->file.fd))
-        err = error(IMM_IOERROR, "could not close file");
+    {
+        err = error(IMM_IOERROR, "failed to close file");
+        goto cleanup;
+    }
+
+    return err;
 
 cleanup:
     fclose(db->mt.file.fd);
-    fclose(db->dp.file.fd);
+    fclose(db->dp.fd);
     fclose(db->file.fd);
+    remove(db->file.fp);
     return err;
 }
 
