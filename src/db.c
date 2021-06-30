@@ -1,6 +1,7 @@
 #include "dcp/db.h"
 #include "dcp/profile.h"
 #include "imm/imm.h"
+#include "profile.h"
 #include "support.h"
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B
@@ -17,7 +18,11 @@ enum mode
 struct dcp_db
 {
     struct imm_abc abc;
-    uint32_t nprofiles;
+    struct
+    {
+        dcp_profile_idx_t size;
+        dcp_profile_idx_t curr_idx;
+    } profiles;
     struct
     {
         uint32_t *offset;
@@ -47,7 +52,8 @@ static inline struct dcp_db *new_db(void)
 {
     struct dcp_db *db = xcalloc(1, sizeof(*db));
     db->abc = imm_abc_empty;
-    db->nprofiles = 0;
+    db->profiles.size = 0;
+    db->profiles.curr_idx = 0;
     db->mt.offset = NULL;
     db->mt.name_length = NULL;
     db->mt.data = NULL;
@@ -83,7 +89,7 @@ static inline struct dcp_db *new_db(void)
 static int parse_metadata(struct dcp_db *db)
 {
     int err = IMM_SUCCESS;
-    uint32_t n = db->nprofiles;
+    uint32_t n = db->profiles.size;
 
     if (!(db->mt.offset = malloc(sizeof(*db->mt.offset) * (n + 1))))
     {
@@ -159,7 +165,7 @@ static int flush_metadata(struct dcp_db *db)
 
     char name[MAX_NAME_LENGTH + 1] = {0};
     char acc[MAX_ACC_LENGTH + 1] = {0};
-    for (unsigned i = 0; i < db->nprofiles; ++i)
+    for (unsigned i = 0; i < db->profiles.size; ++i)
     {
         uint32_t size = ARRAY_SIZE(name);
         EREAD(!cmp_read_str(&db->mt.file.ctx, name, &size), err);
@@ -205,7 +211,7 @@ struct dcp_db *dcp_db_openr(char const *filepath)
         goto cleanup;
     }
 
-    EREAD(!cmp_read_u32(&db->file.ctx, &db->nprofiles), err);
+    EREAD(!cmp_read_u32(&db->file.ctx, &db->profiles.size), err);
 
     if (read_metadata(db))
         goto cleanup;
@@ -291,7 +297,7 @@ int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
     EWRIT(imm_dp_write(prof->dp.null, db->dp.fd), err);
     EWRIT(imm_dp_write(prof->dp.alt, db->dp.fd), err);
 
-    db->nprofiles++;
+    db->profiles.size++;
 
 cleanup:
     return err;
@@ -329,7 +335,7 @@ static int db_closew(struct dcp_db *db)
 {
     int err = IMM_SUCCESS;
 
-    EWRIT(!cmp_write_u32(&db->file.ctx, db->nprofiles), err);
+    EWRIT(!cmp_write_u32(&db->file.ctx, db->profiles.size), err);
 
     rewind(db->mt.file.fd);
     if ((err = flush_metadata(db)))
@@ -367,7 +373,7 @@ cleanup:
 
 struct imm_abc const *dcp_db_abc(struct dcp_db const *db) { return &db->abc; }
 
-unsigned dcp_db_nprofiles(struct dcp_db const *db) { return db->nprofiles; }
+unsigned dcp_db_nprofiles(struct dcp_db const *db) { return db->profiles.size; }
 
 struct dcp_metadata dcp_db_metadata(struct dcp_db const *db, unsigned idx)
 {
@@ -376,21 +382,16 @@ struct dcp_metadata dcp_db_metadata(struct dcp_db const *db, unsigned idx)
     return dcp_metadata(db->mt.data + o, db->mt.data + o + size);
 }
 
-struct dcp_profile const *dcp_db_read(struct dcp_db *db)
+int dcp_db_read(struct dcp_db *db, struct dcp_profile *prof)
 {
-#if 0
     if (dcp_db_end(db))
-        return NULL;
-    struct dcp_metadata const *mt =
-        profile_metadata_clone(input->profile_metadatas[input->profid]);
-    return profile_create(input->profid++, nmm_input_read(input->nmm_input),
-                          mt);
-#endif
-    return NULL;
+        return error(IMM_RUNTIMEERROR, "end of profiles");
+    prof->idx = db->profiles.curr_idx++;
+    prof->mt = dcp_db_metadata(db, prof->idx);
+    return profile_read(prof, db->file.fd);
 }
 
 bool dcp_db_end(struct dcp_db const *db)
 {
-    /* return db->profid >= db->nprofiles; */
-    return false;
+    return db->profiles.curr_idx >= db->profiles.size;
 }

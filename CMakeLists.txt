@@ -153,3 +153,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-config.cmake
 
 enable_testing()
 add_subdirectory(test)
+if(FUZZ)
+    add_subdirectory(fuzz)
+endif()
