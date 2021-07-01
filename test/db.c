@@ -18,9 +18,9 @@ int main(void)
     test_db_openw_one_mute();
     test_db_openr_one_mute();
     test_db_openw_example1();
-    /* test_db_openr_example1(); */
-    /* test_db_openw_example2(); */
-    /* test_db_openr_example2(); */
+    test_db_openr_example1();
+    test_db_openw_example2();
+    test_db_openr_example2();
     return hope_status();
 }
 
@@ -116,7 +116,6 @@ void test_db_openw_example1(void)
     EQ(dcp_db_write(db, &prof), IMM_SUCCESS);
 
     /* Profile 1 */
-#if 0
     struct imm_mute_state *state = imm_mute_state_new(3, &m->abc);
     struct imm_hmm *hmm = imm_hmm_new(&m->abc);
     EQ(imm_hmm_add_state(hmm, imm_super(state)), IMM_SUCCESS);
@@ -128,7 +127,6 @@ void test_db_openw_example1(void)
     EQ(dcp_db_write(db, &prof), IMM_SUCCESS);
     imm_del(hmm);
     imm_del(state);
-#endif
 
     dcp_profile_deinit(&prof);
     EQ(dcp_db_close(db), IMM_SUCCESS);
