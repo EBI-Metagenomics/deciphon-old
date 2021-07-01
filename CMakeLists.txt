@@ -46,7 +46,7 @@ add_library(dcp
     # src/util.c
     third-party/cmp.c
 )
-add_library(DECIPHON::dcp ALIAS dcp)
+add_library(DCP::dcp ALIAS dcp)
 
 # Write out mytools_export.h to the current binary directory
 # Must include ${CMAKE_CURRENT_BINARY_DIR} in the target's
@@ -138,7 +138,7 @@ install(FILES
 )
 install(EXPORT dcp-targets
     FILE dcp-targets.cmake
-    NAMESPACE DECIPHON::
+    NAMESPACE DCP::
     DESTINATION lib/cmake/dcp
 )
 include(CMakePackageConfigHelpers)

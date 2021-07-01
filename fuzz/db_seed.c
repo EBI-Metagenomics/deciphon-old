@@ -1,36 +1,79 @@
-#include "imm/imm.h"
+#include "dcp/dcp.h"
+
+static void write_example1(void);
+static void write_example2(void);
 
 int main(void)
 {
-    struct imm_abc abc_empty = imm_abc_empty;
-    struct imm_abc *abc = &abc_empty;
-    imm_abc_init(abc, IMM_STR("ACGT"), '*');
-    FILE *file = fopen(CORPUS "/abc_acgt.imm", "wb");
-    int err = imm_abc_write(abc, file);
-    fclose(file);
-    if (err)
-        return err;
+    write_example1();
+    write_example2();
+    return 0;
+}
 
-    struct imm_dna dna = imm_dna_default;
-    file = fopen(CORPUS "/dna.imm", "wb");
-    err = imm_abc_write(imm_super(imm_super(&dna)), file);
-    fclose(file);
-    if (err)
-        return err;
+static void write_example1(void)
+{
+    imm_example1_init();
+    struct imm_example1 *m = &imm_example1;
+    FILE *fd = fopen(CORPUS "/example1.dcp", "wb");
+    struct dcp_db *db = dcp_db_openw(fd, &m->abc);
 
-    struct imm_rna rna = imm_rna_default;
-    file = fopen(CORPUS "/rna.imm", "wb");
-    err = imm_abc_write(imm_super(imm_super(&rna)), file);
-    fclose(file);
-    if (err)
-        return err;
+    /* Profile 0 */
+    struct dcp_profile prof = {0};
+    dcp_profile_init(&m->abc, &prof);
+    prof.idx = 0;
+    prof.mt = dcp_metadata("NAME0", "ACC0");
+    imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.n), prof.dp.null);
+    imm_hmm_reset_dp(m->hmm, imm_super(m->end), prof.dp.alt);
+    dcp_db_write(db, &prof);
 
-    struct imm_amino amino = imm_amino_default;
-    file = fopen(CORPUS "/amino.imm", "wb");
-    err = imm_abc_write(imm_super(&amino), file);
-    fclose(file);
-    if (err)
-        return err;
+    /* Profile 1 */
+    struct imm_mute_state *state = imm_mute_state_new(3, &m->abc);
+    struct imm_hmm *hmm = imm_hmm_new(&m->abc);
+    imm_hmm_add_state(hmm, imm_super(state));
+    imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3));
+    prof.idx = 1;
+    prof.mt = dcp_metadata("NAME1", "ACC1");
+    imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.null);
+    imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.alt);
+    dcp_db_write(db, &prof);
+    imm_del(hmm);
+    imm_del(state);
 
-    return err;
+    fclose(fd);
+}
+
+static void write_example2(void)
+{
+    imm_example2_init();
+    struct imm_example2 *m = &imm_example2;
+    struct imm_abc const *abc = imm_super(imm_super(m->dna));
+    FILE *fd = fopen(CORPUS "/example2.dcp", "wb");
+    struct dcp_db *db = dcp_db_openw(fd, abc);
+
+    /* Profile 0 */
+    struct dcp_profile prof = {0};
+    dcp_profile_init(abc, &prof);
+    prof.idx = 0;
+    prof.mt = dcp_metadata("NAME0", "ACC0");
+    imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.n), prof.dp.null);
+    imm_hmm_reset_dp(m->hmm, imm_super(m->end), prof.dp.alt);
+    dcp_db_write(db, &prof);
+
+    /* Profile 1 */
+    struct imm_mute_state *state = imm_mute_state_new(3, abc);
+    struct imm_hmm *hmm = imm_hmm_new(abc);
+    imm_hmm_add_state(hmm, imm_super(state));
+    imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3));
+    prof.idx = 1;
+    prof.mt = dcp_metadata("NAME1", "ACC1");
+    imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.null);
+    imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.alt);
+    dcp_db_write(db, &prof);
+    imm_del(hmm);
+    imm_del(state);
+
+    dcp_profile_deinit(&prof);
+    dcp_db_close(db);
+    imm_example2_deinit();
+    fclose(fd);
 }

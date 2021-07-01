@@ -4,14 +4,15 @@
 #include "dcp/export.h"
 #include "dcp/metadata.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 struct dcp_profile;
 struct imm_abc;
 struct dcp_db;
 
-DCP_API struct dcp_db *dcp_db_openr(char const *filepath);
+DCP_API struct dcp_db *dcp_db_openr(FILE *restrict fd);
 
-DCP_API struct dcp_db *dcp_db_openw(char const *filepath,
+DCP_API struct dcp_db *dcp_db_openw(FILE *restrict fd,
                                     struct imm_abc const *abc);
 
 DCP_API int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof);

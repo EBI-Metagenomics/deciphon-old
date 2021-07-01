@@ -2,12 +2,12 @@ add_custom_target(all_fuzzs)
 
 function(dcp_add_fuzz tgt seed max_len runs)
     add_executable(${tgt} ${tgt}.c)
-    target_link_libraries(${tgt} PRIVATE IMM::imm)
+    target_link_libraries(${tgt} PRIVATE DCP::dcp)
     target_compile_options(${tgt} PRIVATE ${WARNING_FLAGS})
     target_compile_features(${tgt} PRIVATE c_std_11)
 
     add_executable(${seed} ${seed}.c)
-    target_link_libraries(${seed} PRIVATE IMM::imm)
+    target_link_libraries(${seed} PRIVATE DCP::dcp)
     target_compile_options(${seed} PRIVATE ${WARNING_FLAGS})
     target_compile_features(${seed} PRIVATE c_std_11)
 
@@ -45,5 +45,6 @@ function(dcp_add_fuzz tgt seed max_len runs)
 endfunction()
 
 dcp_add_fuzz(
-    db_fuzz db_seed 512 1000000
+    db_fuzz db_seed 176160768 1000
 )
+# db_fuzz db_seed 176160768 1000000

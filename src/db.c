@@ -182,16 +182,10 @@ cleanup:
     return err;
 }
 
-struct dcp_db *dcp_db_openr(char const *filepath)
+struct dcp_db *dcp_db_openr(FILE *restrict fd)
 {
     struct dcp_db *db = new_db();
-
-    if (!(db->file.fd = fopen(filepath, "rb")))
-    {
-        error(IMM_IOERROR, "failed to open file %s for reading", filepath);
-        goto cleanup;
-    }
-    db->file.fp = NULL;
+    db->file.fd = fd;
     xcmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = OPEN_READ;
 
@@ -219,22 +213,14 @@ struct dcp_db *dcp_db_openr(char const *filepath)
     return db;
 
 cleanup:
-    fclose(db->file.fd);
     free(db);
     return NULL;
 }
 
-struct dcp_db *dcp_db_openw(char const *filepath, struct imm_abc const *abc)
+struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc)
 {
     struct dcp_db *db = new_db();
-
-    if (!(db->file.fd = fopen(filepath, "wb")))
-    {
-        free(db);
-        error(IMM_IOERROR, "failed to open %s for writting", filepath);
-        return NULL;
-    }
-    db->file.fp = filepath;
+    db->file.fd = fd;
     xcmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = OPEN_WRIT;
 
@@ -262,8 +248,6 @@ struct dcp_db *dcp_db_openw(char const *filepath, struct imm_abc const *abc)
 cleanup:
     fclose(db->dp.fd);
     fclose(db->mt.file.fd);
-    fclose(db->file.fd);
-    remove(filepath);
     free(db);
     return NULL;
 }
