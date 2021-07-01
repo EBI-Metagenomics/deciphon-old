@@ -17,13 +17,6 @@ function(dcp_add_fuzz tgt seed max_len runs)
     target_compile_definitions(${tgt} PUBLIC "CORPUS=\"${CORPUS}\"")
     target_compile_definitions(${seed} PUBLIC "CORPUS=\"${CORPUS}\"")
 
-    # set(DICT "${CMAKE_CURRENT_BINARY_DIR}/${tgt}.dict")
-    # configure_file(
-    #     ${CMAKE_CURRENT_SOURCE_DIR}/${tgt}.dict
-    #     ${DICT}
-    #     COPYONLY
-    # )
-
     add_custom_command(
         TARGET ${seed} PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CORPUS}
@@ -39,12 +32,10 @@ function(dcp_add_fuzz tgt seed max_len runs)
         COMMAND ${tgt} ${CORPUS}
             -max_len=${max_len} -runs=${runs}
             -seed=1 -verbosity=0
-            # -dict=${DICT}
         VERBATIM
     )
 endfunction()
 
 dcp_add_fuzz(
-    db_fuzz db_seed 176160768 1000
+    db_fuzz db_seed 176160768 10000
 )
-# db_fuzz db_seed 176160768 1000000

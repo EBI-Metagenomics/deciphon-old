@@ -6,6 +6,8 @@
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B
 
+#define MAX_NPROFILES (1U << 20)
+
 #define MAX_NAME_LENGTH 63
 #define MAX_ACC_LENGTH 31
 
@@ -48,6 +50,11 @@ struct dcp_db
     } file;
 };
 
+static inline uint32_t max_mt_data_size(void)
+{
+    return MAX_NPROFILES * (MAX_NAME_LENGTH + MAX_ACC_LENGTH + 2);
+}
+
 static inline struct dcp_db *new_db(void)
 {
     struct dcp_db *db = xcalloc(1, sizeof(*db));
@@ -88,17 +95,17 @@ static inline struct dcp_db *new_db(void)
 
 static int parse_metadata(struct dcp_db *db)
 {
-    int err = IMM_SUCCESS;
+    int rc = IMM_SUCCESS;
     uint32_t n = db->profiles.size;
 
     if (!(db->mt.offset = malloc(sizeof(*db->mt.offset) * (n + 1))))
     {
-        err = error(IMM_OUTOFMEM, "failed to alloc for mt.offset");
+        rc = error(IMM_OUTOFMEM, "failed to alloc for mt.offset");
         goto cleanup;
     }
     if (!(db->mt.name_length = malloc(sizeof(*db->mt.name_length) * n)))
     {
-        err = error(IMM_OUTOFMEM, "failed to alloc for mt.name_length");
+        rc = error(IMM_OUTOFMEM, "failed to alloc for mt.name_length");
         goto cleanup;
     }
 
@@ -107,11 +114,26 @@ static int parse_metadata(struct dcp_db *db)
     {
         unsigned offset = db->mt.offset[i];
         unsigned j = 0;
+        if (offset + j >= db->mt.size)
+        {
+            rc = error(IMM_RUNTIMEERROR, "mt.data index overflow");
+            goto cleanup;
+        }
 
         /* Name */
         while (db->mt.data[offset + j++])
             ;
+        if (j - 1 > MAX_NAME_LENGTH)
+        {
+            rc = error(IMM_ILLEGALARG, "name is too long");
+            goto cleanup;
+        }
         db->mt.name_length[i] = (uint8_t)(j - 1);
+        if (offset + j >= db->mt.size)
+        {
+            rc = error(IMM_RUNTIMEERROR, "mt.data index overflow");
+            goto cleanup;
+        }
 
         /* Accession */
         while (db->mt.data[offset + j++])
@@ -119,67 +141,84 @@ static int parse_metadata(struct dcp_db *db)
         db->mt.offset[i + 1] = offset + j;
     }
 
-    return err;
+    return rc;
 
 cleanup:
     xdel(db->mt.offset);
     xdel(db->mt.name_length);
-    return err;
+    return rc;
 }
 
 static int read_metadata(struct dcp_db *db)
 {
-    int err = IMM_SUCCESS;
+    int rc = IMM_SUCCESS;
     db->mt.data = NULL;
 
     cmp_ctx_t *ctx = &db->file.ctx;
 
-    EREAD(!cmp_read_u32(ctx, &db->mt.size), err);
+    EREAD(!cmp_read_u32(ctx, &db->mt.size), rc);
+    if ((db->mt.size > 0 && db->profiles.size == 0) ||
+        (db->mt.size == 0 && db->profiles.size > 0))
+    {
+        rc = error(IMM_RUNTIMEERROR, "incompatible profiles and metadata");
+        goto cleanup;
+    }
+    if (db->mt.size > max_mt_data_size())
+    {
+        rc = error(IMM_RUNTIMEERROR, "mt.data size is too big");
+        goto cleanup;
+    }
+
     if (db->mt.size > 0)
     {
         if (!(db->mt.data = malloc(sizeof(char) * db->mt.size)))
         {
-            err = error(IMM_OUTOFMEM, "failed to alloc for mt.data");
+            rc = error(IMM_OUTOFMEM, "failed to alloc for mt.data");
             goto cleanup;
         }
-        EREAD(!ctx->read(ctx, db->mt.data, db->mt.size), err);
-        if ((err = parse_metadata(db)))
+        EREAD(!ctx->read(ctx, db->mt.data, db->mt.size), rc);
+        if (db->mt.data[db->mt.size - 1])
+        {
+            rc = error(IMM_PARSEERROR, "invalid mt.data");
+            goto cleanup;
+        }
+        if ((rc = parse_metadata(db)))
             goto cleanup;
     }
 
-    return err;
+    return rc;
 
 cleanup:
     xdel(db->mt.data);
     xdel(db->mt.offset);
     xdel(db->mt.name_length);
-    return err;
+    return rc;
 }
 
 static int flush_metadata(struct dcp_db *db)
 {
-    int err = IMM_SUCCESS;
+    int rc = IMM_SUCCESS;
     cmp_ctx_t *ctx = &db->file.ctx;
 
-    EWRIT(!cmp_write_u32(ctx, db->mt.size), err);
+    EWRIT(!cmp_write_u32(ctx, db->mt.size), rc);
 
     char name[MAX_NAME_LENGTH + 1] = {0};
     char acc[MAX_ACC_LENGTH + 1] = {0};
     for (unsigned i = 0; i < db->profiles.size; ++i)
     {
         uint32_t size = ARRAY_SIZE(name);
-        EREAD(!cmp_read_str(&db->mt.file.ctx, name, &size), err);
-        EWRIT(!ctx->write(ctx, name, size + 1), err);
+        EREAD(!cmp_read_str(&db->mt.file.ctx, name, &size), rc);
+        EWRIT(!ctx->write(ctx, name, size + 1), rc);
 
         size = ARRAY_SIZE(acc);
-        EREAD(!cmp_read_str(&db->mt.file.ctx, acc, &size), err);
-        EWRIT(!ctx->write(ctx, acc, size + 1), err);
+        EREAD(!cmp_read_str(&db->mt.file.ctx, acc, &size), rc);
+        EWRIT(!ctx->write(ctx, acc, size + 1), rc);
     }
 
-    return err;
+    return rc;
 
 cleanup:
-    return err;
+    return rc;
 }
 
 struct dcp_db *dcp_db_openr(FILE *restrict fd)
@@ -189,23 +228,28 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     xcmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = OPEN_READ;
 
-    int err = IMM_SUCCESS;
+    int rc = IMM_SUCCESS;
 
     uint64_t magic_number = 0;
-    EREAD(!cmp_read_u64(&db->file.ctx, &magic_number), err);
+    EREAD(!cmp_read_u64(&db->file.ctx, &magic_number), rc);
     if (magic_number != MAGIC_NUMBER)
     {
-        err = error(IMM_PARSEERROR, "wrong file magic number");
+        rc = error(IMM_PARSEERROR, "wrong file magic number");
         goto cleanup;
     }
 
     if (imm_abc_read(&db->abc, db->file.fd))
     {
-        err = error(IMM_IOERROR, "failed to read alphabet");
+        rc = error(IMM_IOERROR, "failed to read alphabet");
         goto cleanup;
     }
 
-    EREAD(!cmp_read_u32(&db->file.ctx, &db->profiles.size), err);
+    EREAD(!cmp_read_u32(&db->file.ctx, &db->profiles.size), rc);
+    if (db->profiles.size > MAX_NPROFILES)
+    {
+        rc = error(IMM_RUNTIMEERROR, "too many profiles");
+        goto cleanup;
+    }
 
     if (read_metadata(db))
         goto cleanup;
@@ -254,37 +298,41 @@ cleanup:
 
 int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 {
-    int err = IMM_SUCCESS;
+    if (db->profiles.size == MAX_NPROFILES)
+    {
+        return error(IMM_RUNTIMEERROR, "too many profiles");
+    }
+    int rc = IMM_SUCCESS;
 
     cmp_ctx_t *ctx = &db->mt.file.ctx;
 
     uint32_t len = (uint32_t)strlen(prof->mt.name);
     if (len > MAX_NAME_LENGTH)
     {
-        err = error(IMM_ILLEGALARG, "too long name");
+        rc = error(IMM_ILLEGALARG, "name is too long");
         goto cleanup;
     }
-    EWRIT(!cmp_write_str(ctx, prof->mt.name, len), err);
+    EWRIT(!cmp_write_str(ctx, prof->mt.name, len), rc);
     /* +1 for null-terminated */
     db->mt.size += len + 1;
 
     len = (uint32_t)strlen(prof->mt.acc);
     if (len > MAX_ACC_LENGTH)
     {
-        err = error(IMM_ILLEGALARG, "too long accession");
+        rc = error(IMM_ILLEGALARG, "accession is too long");
         goto cleanup;
     }
-    EWRIT(!cmp_write_str(ctx, prof->mt.acc, len), err);
+    EWRIT(!cmp_write_str(ctx, prof->mt.acc, len), rc);
     /* +1 for null-terminated */
     db->mt.size += len + 1;
 
-    EWRIT(imm_dp_write(prof->dp.null, db->dp.fd), err);
-    EWRIT(imm_dp_write(prof->dp.alt, db->dp.fd), err);
+    EWRIT(imm_dp_write(prof->dp.null, db->dp.fd), rc);
+    EWRIT(imm_dp_write(prof->dp.alt, db->dp.fd), rc);
 
     db->profiles.size++;
 
 cleanup:
-    return err;
+    return rc;
 }
 
 static int db_closer(struct dcp_db *db);
@@ -292,12 +340,12 @@ static int db_closew(struct dcp_db *db);
 
 int dcp_db_close(struct dcp_db *db)
 {
-    int err = IMM_SUCCESS;
+    int rc = IMM_SUCCESS;
 
     if (db->file.mode == OPEN_READ)
-        err = db_closer(db);
+        rc = db_closer(db);
     else if (db->file.mode == OPEN_WRIT)
-        err = db_closew(db);
+        rc = db_closew(db);
     else
         IMM_BUG(true);
 
@@ -305,7 +353,7 @@ int dcp_db_close(struct dcp_db *db)
     del(db->mt.name_length);
     del(db->mt.data);
     free(db);
-    return err;
+    return rc;
 }
 
 static int db_closer(struct dcp_db *db)
@@ -317,42 +365,42 @@ static int db_closer(struct dcp_db *db)
 
 static int db_closew(struct dcp_db *db)
 {
-    int err = IMM_SUCCESS;
+    int rc = IMM_SUCCESS;
 
-    EWRIT(!cmp_write_u32(&db->file.ctx, db->profiles.size), err);
+    EWRIT(!cmp_write_u32(&db->file.ctx, db->profiles.size), rc);
 
     rewind(db->mt.file.fd);
-    if ((err = flush_metadata(db)))
+    if ((rc = flush_metadata(db)))
         goto cleanup;
     if (fclose(db->mt.file.fd))
     {
-        err = error(IMM_IOERROR, "failed to close metadata file");
+        rc = error(IMM_IOERROR, "failed to close metadata file");
         goto cleanup;
     }
 
     rewind(db->dp.fd);
-    if ((err = fcopy(db->file.fd, db->dp.fd)))
+    if ((rc = fcopy(db->file.fd, db->dp.fd)))
         goto cleanup;
     if (fclose(db->dp.fd))
     {
-        err = error(IMM_IOERROR, "failed to close DP file");
+        rc = error(IMM_IOERROR, "failed to close DP file");
         goto cleanup;
     }
 
     if (fclose(db->file.fd))
     {
-        err = error(IMM_IOERROR, "failed to close file");
+        rc = error(IMM_IOERROR, "failed to close file");
         goto cleanup;
     }
 
-    return err;
+    return rc;
 
 cleanup:
     fclose(db->mt.file.fd);
     fclose(db->dp.fd);
     fclose(db->file.fd);
     remove(db->file.fp);
-    return err;
+    return rc;
 }
 
 struct imm_abc const *dcp_db_abc(struct dcp_db const *db) { return &db->abc; }
