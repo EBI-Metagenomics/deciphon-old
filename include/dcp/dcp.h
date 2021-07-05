@@ -11,9 +11,10 @@ extern "C" {
 #include "dcp/model.h"
 /* #include "dcp/output.h" */
 #include "dcp/profile.h"
+#include "dcp/pp.h"
 /* #include "dcp/result.h" */
 /* #include "dcp/results.h" */
-/* #include "dcp/server.h" */
+#include "dcp/server.h"
 /* #include "dcp/sleep.h" */
 /* #include "dcp/str.h" */
 /* #include "dcp/task.h" */

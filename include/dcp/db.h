@@ -30,6 +30,6 @@ DCP_API int dcp_db_read(struct dcp_db *db, struct dcp_profile *prof);
 
 DCP_API bool dcp_db_end(struct dcp_db const *db);
 
-DCP_API int dcp_db_reset(struct dcp_db *db);
+/* DCP_API int dcp_db_reset(struct dcp_db *db); */
 
 #endif

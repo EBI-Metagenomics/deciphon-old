@@ -1,13 +1,15 @@
 #include "bus.h"
+#include "db.h"
 #include "dcp/dcp.h"
 #include "dthread.h"
 #include "fifo1.h"
 #include "imm/imm.h"
 #include "mpool.h"
-#include "results.h"
+#include "support.h"
+/* #include "results.h" */
 #include "scan.h"
 #include "seq.h"
-#include "task.h"
+/* #include "task.h" */
 #include "task_bin.h"
 #include <errno.h>
 #include <pthread.h>
@@ -19,64 +21,77 @@
 
 struct thread
 {
-    int       active;
+    int active;
     pthread_t id;
 };
 
 struct dcp_server
 {
-    struct thread     main_thread;
-    struct bus        profile_bus;
-    struct dcp_input* input;
-    struct fifo1*     tasks;
-    struct task_bin*  task_bin;
-    int               stop_signal;
-    struct mpool*     mpool;
+    struct thread main_thread;
+    struct bus profile_bus;
+    struct dcp_db *db;
+    struct fifo1 *tasks;
+    struct task_bin *task_bin;
+    int stop_signal;
+    struct mpool *mpool;
 };
 
-static inline bool         active(struct thread const* thr) { return ck_pr_load_int(&thr->active); }
-static struct dcp_results* alloc_results(struct dcp_server* server);
-bool                       collect_task(struct dcp_task* task, void* arg);
-void                       deinit_results(void* results);
-void                       init_results(void* results);
-static int                 input_processor(struct dcp_server* server);
-static void*               main_thread(void* server_addr);
-static inline bool         sigstop(struct dcp_server* server) { return ck_pr_load_int(&server->stop_signal); }
-static int                 task_processor(struct dcp_server* server, struct dcp_task* task);
-static int                 timedjoin(struct dcp_server* server);
-
-void dcp_server_add_task(struct dcp_server* server, struct dcp_task* task) { fifo1_push(server->tasks, &task->node); }
-
-struct dcp_server* dcp_server_create(char const* filepath)
+static inline bool active(struct thread const *thr)
 {
-    struct dcp_server* server = malloc(sizeof(*server));
+    return ck_pr_load_int(&thr->active);
+}
+static struct dcp_results *alloc_results(struct dcp_server *server);
+bool collect_task(struct dcp_task *task, void *arg);
+void deinit_results(void *results);
+void init_results(void *results);
+static int input_processor(struct dcp_server *server);
+static void *main_thread(void *server_addr);
+static inline bool sigstop(struct dcp_server *server)
+{
+    return ck_pr_load_int(&server->stop_signal);
+}
+static int task_processor(struct dcp_server *server, struct dcp_task *task);
+static int timedjoin(struct dcp_server *server);
+
+#if 0
+void dcp_server_add_task(struct dcp_server* server, struct dcp_task* task) { fifo1_push(server->tasks, &task->node); }
+#endif
+
+struct dcp_server *dcp_server_create(FILE *fd)
+{
+    struct dcp_server *server = xcalloc(1, sizeof(*server));
     server->main_thread.active = 0;
     bus_init(&server->profile_bus);
-    server->input = NULL;
+    server->db = NULL;
     server->task_bin = NULL;
     server->tasks = fifo1_create();
     server->stop_signal = 0;
 
-    if (!(server->input = dcp_input_create(filepath)))
-        goto err;
+    if (!(server->db = dcp_db_openr(fd)))
+        goto cleanup;
 
+#if 0
     if (!(server->task_bin = task_bin_create(collect_task, server)))
         goto err;
 
     server->mpool = mpool_create(sizeof(struct dcp_results), 8, init_results);
     return server;
+#endif
 
-err:
-    if (server->input)
-        dcp_input_destroy(server->input);
+cleanup:
+    if (server->db)
+        dcp_db_close(server->db);
+#if 0
     if (server->task_bin)
         task_bin_destroy(server->task_bin);
     if (server->tasks)
         fifo1_destroy(server->tasks);
+#endif
     free(server);
     return NULL;
 }
 
+#if 0
 int dcp_server_destroy(struct dcp_server* server)
 {
     if (active(&server->main_thread)) {
@@ -233,7 +248,7 @@ static void* main_thread(void* server_addr)
         bus_open_input(&server->profile_bus);
         task_open_results(task);
         int errors = 0;
-#pragma omp        parallel default(none) shared(server, task) reduction(+ : errors)
+#pragma omp parallel default(none) shared(server, task) reduction(+ : errors)
         {
 #pragma omp single nowait
             errors += input_processor(server);
@@ -314,3 +329,4 @@ static int timedjoin(struct dcp_server* server)
     }
     return 1;
 }
+#endif

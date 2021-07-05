@@ -25,19 +25,21 @@ add_library(dcp
     # src/dthread.c
     src/db.c
     src/support.c
+    src/model.c
     # src/fifo.c
-    # src/fifo1.c
+    src/fifo1.c
     # src/input.c
     # src/metadata.c
     # src/mpool.c
     # src/output.c
     src/profile.c
+    src/pp.c
     # src/result.c
     # src/result_ring.c
     # src/results.c
     # src/scan.c
     # src/seq_stack.c
-    # src/server.c
+    src/server.c
     # src/sleep.c
     # src/special_trans.c
     # src/str.c
@@ -116,13 +118,14 @@ check_c_source_compiles(
 )
 target_compile_definitions(dcp PRIVATE $<$<BOOL:${HAVE_ATTR_FMT}>:HAVE_ATTR_FMT>)
 
-# include(CheckTypeSize)
+include(CheckTypeSize)
 
-# check_type_size("intptr_t" SIZEOF_INTPTR_T)
-# if(NOT HAVE_SIZEOF_INTPTR_T)
-#     message(FATAL_ERROR "Could not determine the size of intptr_t.")
-# endif()
-# target_compile_definitions(dcp PRIVATE SIZEOF_INTPTR_T=${SIZEOF_INTPTR_T})
+check_type_size("int" SIZEOF_INT)
+if(NOT HAVE_SIZEOF_INT)
+    message(FATAL_ERROR "Could not determine the size of int.")
+endif()
+math(EXPR BITS_PER_INT "${SIZEOF_INT} * 8")
+target_compile_definitions(dcp PRIVATE BITS_PER_INT=${BITS_PER_INT})
 
 install(TARGETS dcp EXPORT dcp-targets
     RUNTIME DESTINATION bin
