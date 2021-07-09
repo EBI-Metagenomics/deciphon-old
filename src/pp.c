@@ -52,34 +52,34 @@ struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE])
     pp->alt.codonp = imm_codon_lprob(pp->nuclt);
     pp->alt.codonm = NULL;
 
-
     return pp;
 }
 
-void set_codonp(struct imm_amino const *amino, struct imm_amino_lprob const *aminop, struct imm_codon_lprob *codonp)
+int set_codonp(struct imm_amino const *amino,
+               struct imm_amino_lprob const *aminop,
+               struct imm_codon_lprob *codonp)
 {
+    /* TODO: We don't need 255 positions*/
+    unsigned count[255] = {0};
 
-    /* imm_codon_lprob_set(pp->codonp, codon, lprob); */
+    for (unsigned i = 0; i < imm_gc_size(); ++i)
+        count[(unsigned)imm_gc_aa(1, i)] += 1;
 
-    imm_float lprob_norm = imm_lprob_zero();
-    unsigned n = imm_abc_size(imm_super(amino));
-    for (unsigned i = 0; i < n; ++i)
+    struct imm_abc const *abc = imm_super(amino);
+    imm_float lprobs[255] = {0};
+    for (unsigned i = 0; i < imm_abc_size(abc); ++i)
     {
-        char aa = imm_abc_symbols(imm_super(amino))[i];
-        imm_float lprob = imm_amino_lprob_get(aminop, aa);
+        char aa = imm_abc_symbols(abc)[i];
+        imm_float norm = imm_log((imm_float)count[(unsigned)aa]);
+        lprobs[(unsigned)aa] = imm_amino_lprob_get(aminop, aa) - norm;
     }
 
-/* #         codons = gencode.codons(aa) */
-/* #         if len(codons) == 0: */
-/* #             continue */
-
-/* #         norm = log(len(codons)) */
-/* #         for codon in codons: */
-/* #             codon_lprobs.append((codon, lprob - norm)) */
-/* #             lprob_norm = lprob_add(lprob_norm, codon_lprobs[-1][1]) */
-
-/* #     for codon, lprob in codon_lprobs: */
-/* #         codonp.set_lprob(codon, lprob - lprob_norm) */
+    for (unsigned i = 0; i < imm_gc_size(); ++i)
+    {
+        char aa = imm_gc_aa(1, i);
+        imm_codon_lprob_set(codonp, imm_gc_codon(1, i), lprobs[(unsigned)aa]);
+    }
+    return imm_codon_lprob_normalize(codonp);
 }
 
 int dcp_pp_add_node(struct dcp_pp *pp, imm_float lodds[static 1])
@@ -89,8 +89,10 @@ int dcp_pp_add_node(struct dcp_pp *pp, imm_float lodds[static 1])
     unsigned match_state_id = MATCH_ID | idx;
     unsigned insert_state_id = INSERT_ID | idx;
     unsigned delete_state_id = DELETE_ID | idx;
-    imm_frame_state_new(match_state_id, &pp->nucltp, pp->alt.codonm, pp->epsilon);
-    imm_frame_state_new(insert_state_id, &pp->nucltp, pp->alt.codonm, pp->epsilon);
+    imm_frame_state_new(match_state_id, &pp->nucltp, pp->alt.codonm,
+                        pp->epsilon);
+    imm_frame_state_new(insert_state_id, &pp->nucltp, pp->alt.codonm,
+                        pp->epsilon);
     imm_mute_state_new(delete_state_id, abc);
 }
 
