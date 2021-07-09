@@ -19,6 +19,11 @@ void xcmp_init(cmp_ctx_t *cmp, FILE *file);
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+#define FILL(size, val)                                                        \
+    {                                                                          \
+        [0 ...(size) - 1] = val                                                \
+    }
+
 #define warn(code, ...) __imm_log(IMM_WARN, code, __VA_ARGS__)
 #define error(code, ...) __imm_log(IMM_ERROR, code, __VA_ARGS__)
 #define fatal(code, ...) __imm_log(IMM_FATAL, code, __VA_ARGS__)
