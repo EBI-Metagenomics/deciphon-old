@@ -66,7 +66,7 @@ static int setup_codonp(struct imm_amino const *amino,
                         struct imm_amino_lprob const *aminop,
                         struct imm_codon_lprob *codonp)
 {
-    /* TODO: We don't need 255 positions*/
+    /* FIXME: We don't need 255 positions*/
     unsigned count[] = FILL(255, 0);
 
     for (unsigned i = 0; i < imm_gc_size(); ++i)
