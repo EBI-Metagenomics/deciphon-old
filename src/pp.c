@@ -6,65 +6,147 @@
 #define MATCH_ID (1U << (BITS_PER_INT - 1))
 #define INSERT_ID (2U << (BITS_PER_INT - 1))
 #define DELETE_ID (3U << (BITS_PER_INT - 1))
+#define R_ID (UINT_MAX)
+
+struct node
+{
+    struct imm_frame_state *match;
+    struct imm_frame_state *insert;
+    struct imm_mute_state *delete;
+};
 
 struct dcp_pp
 {
     struct imm_amino const *amino;
     struct imm_nuclt const *nuclt;
     struct imm_hmm *hmm;
-    unsigned curr_node_idx;
-    struct imm_nuclt_lprob nucltp;
 
     struct
     {
-        struct imm_amino_lprob aminop;
-        struct imm_codon_lprob codonp;
+        struct imm_nuclt_lprob nucltp;
         struct imm_codon_marg codonm;
+        struct imm_frame_state *R;
     } null;
 
     struct
     {
-        struct imm_amino_lprob aminop;
-        struct imm_codon_lprob codonp;
-        struct imm_codon_marg codonm;
+        struct
+        {
+            struct imm_mute_state *S;
+            struct imm_frame_state *N;
+            struct imm_mute_state *B;
+            struct imm_mute_state *E;
+            struct imm_frame_state *J;
+            struct imm_frame_state *C;
+            struct imm_mute_state *T;
+        } special;
+
+        unsigned nnodes;
+        size_t capacity;
+        struct node *nodes;
+        unsigned curr_idx;
     } alt;
+
     imm_float epsilon;
 };
 
-static int setup_codonp(struct imm_amino const *amino,
-                        struct imm_amino_lprob const *aminop,
-                        struct imm_codon_lprob *codonp);
+static int setup_distributions(struct imm_amino const *amino,
+                               imm_float const lprobs[IMM_AMINO_SIZE],
+                               struct imm_nuclt_lprob *nucltp,
+                               struct imm_codon_marg *codonm);
 
-static struct imm_nuclt_lprob
-setup_nucltp(struct imm_codon_lprob const *codonp);
-
-struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE])
+struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
+                             imm_float const null_lodds[IMM_AMINO_SIZE])
 {
     struct dcp_pp *pp = xmalloc(sizeof(*pp));
     pp->amino = &imm_amino_iupac;
     pp->nuclt = imm_super(&imm_dna_default);
-    pp->hmm = imm_hmm_new(imm_super(pp->amino));
-    pp->curr_node_idx = 0;
+    if (!(pp->hmm = imm_hmm_new(imm_super(pp->amino))))
+        goto cleanup;
+    pp->alt.curr_idx = 0;
 
-    static_assert(IMM_NUCLT_SIZE == 4, "DNA or RNA letters.");
-    imm_float const lprobs[IMM_NUCLT_SIZE] = {-imm_log(4), -imm_log(4),
-                                              -imm_log(4), -imm_log(4)};
-    pp->nucltp = imm_nuclt_lprob(pp->nuclt, lprobs);
+    if (setup_distributions(pp->amino, null_lodds, &pp->null.nucltp,
+                            &pp->null.codonm))
+        goto cleanup;
 
-    pp->null.aminop = imm_amino_lprob(pp->amino, null_lprobs);
-    pp->null.codonp = imm_codon_lprob(pp->nuclt);
-    pp->null.codonm = imm_codon_marg(&pp->null.codonp);
-
-    pp->alt.aminop = imm_amino_lprob(pp->amino, null_lprobs);
-    pp->alt.codonp = imm_codon_lprob(pp->nuclt);
-    pp->alt.codonm = imm_codon_marg(&pp->null.codonp);
+    pp->alt.nnodes = 0;
+    pp->alt.capacity = 1 << 8;
+    pp->alt.nodes = xcalloc(pp->alt.capacity, sizeof(*pp->alt.nodes));
 
     return pp;
+
+cleanup:
+    if (pp->hmm)
+        imm_hmm_del(pp->hmm);
+    return NULL;
 }
 
-static int setup_codonp(struct imm_amino const *amino,
-                        struct imm_amino_lprob const *aminop,
-                        struct imm_codon_lprob *codonp)
+static struct imm_frame_state *new_match(struct dcp_pp *pp,
+                                         imm_float const lodds[IMM_AMINO_SIZE])
+{
+    struct imm_nuclt_lprob nucltp;
+    struct imm_codon_marg codonm;
+    if (setup_distributions(pp->amino, lodds, &nucltp, &codonm))
+        return NULL;
+
+    imm_float e = pp->epsilon;
+    unsigned id = MATCH_ID | pp->alt.curr_idx;
+    return imm_frame_state_new(id, &nucltp, &codonm, e);
+}
+
+static struct imm_frame_state *new_insert(struct dcp_pp *pp)
+{
+    imm_float e = pp->epsilon;
+    unsigned id = INSERT_ID | pp->alt.curr_idx;
+    return imm_frame_state_new(id, &pp->null.nucltp, &pp->null.codonm, e);
+}
+
+static struct imm_mute_state *new_delete(struct dcp_pp *pp)
+{
+    unsigned id = DELETE_ID | pp->alt.curr_idx;
+    return imm_mute_state_new(id, imm_super(pp->nuclt));
+}
+
+int dcp_pp_add_node(struct dcp_pp *pp, imm_float const lodds[static 1])
+{
+    int rc = IMM_SUCCESS;
+
+    struct imm_frame_state *match = new_match(pp, lodds);
+    if ((rc = imm_hmm_add_state(pp->hmm, imm_super(match))))
+        return rc;
+
+    struct imm_frame_state *ins = new_insert(pp);
+    if ((rc = imm_hmm_add_state(pp->hmm, imm_super(ins))))
+        return rc;
+
+    struct imm_mute_state *del = new_delete(pp);
+    if ((rc = imm_hmm_add_state(pp->hmm, imm_super(del))))
+        return rc;
+
+    pp->alt.nodes[pp->alt.curr_idx].match = match;
+    pp->alt.nodes[pp->alt.curr_idx].insert = ins;
+    pp->alt.nodes[pp->alt.curr_idx].delete = del;
+    pp->alt.curr_idx++;
+    pp->alt.nnodes++;
+
+    if (pp->alt.nnodes > pp->alt.capacity)
+    {
+        pp->alt.capacity <<= 1;
+        pp->alt.nodes =
+            xrealloc(pp->alt.nodes, pp->alt.capacity * sizeof(*pp->alt.nodes));
+    }
+    return rc;
+}
+
+void dcp_pp_destroy(struct dcp_pp *pp)
+{
+    if (pp->hmm)
+        imm_hmm_del(pp->hmm);
+    free(pp);
+}
+
+static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
+                                           struct imm_amino_lprob const *aminop)
 {
     /* FIXME: We don't need 255 positions*/
     unsigned count[] = FILL(255, 0);
@@ -82,12 +164,13 @@ static int setup_codonp(struct imm_amino const *amino,
         lprobs[(unsigned)aa] = imm_amino_lprob_get(aminop, aa) - norm;
     }
 
+    struct imm_codon_lprob codonp;
     for (unsigned i = 0; i < imm_gc_size(); ++i)
     {
         char aa = imm_gc_aa(1, i);
-        imm_codon_lprob_set(codonp, imm_gc_codon(1, i), lprobs[(unsigned)aa]);
+        imm_codon_lprob_set(&codonp, imm_gc_codon(1, i), lprobs[(unsigned)aa]);
     }
-    return imm_codon_lprob_normalize(codonp);
+    return codonp;
 }
 
 static struct imm_nuclt_lprob setup_nucltp(struct imm_codon_lprob const *codonp)
@@ -106,19 +189,18 @@ static struct imm_nuclt_lprob setup_nucltp(struct imm_codon_lprob const *codonp)
     return imm_nuclt_lprob(codonp->nuclt, lprobs);
 }
 
-int dcp_pp_add_node(struct dcp_pp *pp, imm_float lodds[static 1])
+static int setup_distributions(struct imm_amino const *amino,
+                               imm_float const lprobs[IMM_AMINO_SIZE],
+                               struct imm_nuclt_lprob *nucltp,
+                               struct imm_codon_marg *codonm)
 {
-    struct imm_abc const *abc = imm_super(pp->nuclt);
-    unsigned idx = pp->curr_node_idx;
-    unsigned match_state_id = MATCH_ID | idx;
-    unsigned insert_state_id = INSERT_ID | idx;
-    unsigned delete_state_id = DELETE_ID | idx;
-    imm_frame_state_new(match_state_id, &pp->nucltp, &pp->alt.codonm,
-                        pp->epsilon);
-    imm_frame_state_new(insert_state_id, &pp->nucltp, &pp->alt.codonm,
-                        pp->epsilon);
-    imm_mute_state_new(delete_state_id, abc);
-    return 0;
-}
+    int rc = IMM_SUCCESS;
+    struct imm_amino_lprob aminop = imm_amino_lprob(amino, lprobs);
+    struct imm_codon_lprob codonp = setup_codonp(amino, &aminop);
+    if ((rc = imm_codon_lprob_normalize(&codonp)))
+        return rc;
 
-void dcp_pp_destroy(struct dcp_pp *pp) { free(pp); }
+    *nucltp = setup_nucltp(&codonp);
+    *codonm = imm_codon_marg(&codonp);
+    return rc;
+}
