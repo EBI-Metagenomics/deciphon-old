@@ -257,6 +257,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     return db;
 
 cleanup:
+    IMM_BUG(rc != IMM_SUCCESS);
     free(db);
     return NULL;
 }

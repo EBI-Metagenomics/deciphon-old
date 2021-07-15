@@ -81,8 +81,8 @@ void test_1(void)
                                             .DM = F(-0.0),
                                             .DD = IMM_LPROB_ZERO});
 
-    char str[] =
-        "ATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGTAACGGTGCGGGC";
+    char str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC"
+                 "CATCACCATTACCACAGGTAACGGTGCGGGC";
 
     struct imm_seq seq =
         imm_seq(imm_str(str), imm_super(imm_super(imm_gc_dna())));
@@ -92,22 +92,60 @@ void test_1(void)
     bool hmmer3_compat = false;
     dcp_pp_set_target_length(pp, len, multihits, hmmer3_compat);
 
-#if 0
     struct imm_dp *ndp = dcp_pp_null_new_dp(pp);
     struct imm_task *ntask = imm_task_new(ndp);
     struct imm_result result = imm_result();
     imm_task_setup(ntask, &seq);
     imm_dp_viterbi(ndp, ntask, &result);
-    printf("NULL: %f\n", result.loglik);
-#else
 
-    /* struct imm_hmm *ahmm = dcp_pp_alt_hmm(pp); */
-    /* imm_hmm_write_dot(ahmm, stdout, dcp_pp_state_name); */
+    CLOSE(result.loglik, -87.6962203979);
+
+    EQ(imm_path_nsteps(&result.path), 21);
+
+    for (unsigned i = 0; i < 21; ++i)
+    {
+        EQ(imm_path_step(&result.path, i)->seqlen, 3);
+        EQ(imm_path_step(&result.path, i)->state_id, DCP_PP_R_ID);
+    }
+
+    imm_result_reset(&result);
+
     struct imm_dp *adp = dcp_pp_alt_new_dp(pp);
     struct imm_task *atask = imm_task_new(adp);
-    struct imm_result result = imm_result();
+    result = imm_result();
     imm_task_setup(atask, &seq);
     imm_dp_viterbi(adp, atask, &result);
-    printf("ALT: %f\n", result.loglik);
-#endif
+
+    CLOSE(result.loglik, -91.9514160156);
+
+    EQ(imm_path_nsteps(&result.path), 25);
+
+    EQ(imm_path_step(&result.path, 0)->seqlen, 0);
+    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PP_S_ID);
+
+    EQ(imm_path_step(&result.path, 1)->seqlen, 0);
+    EQ(imm_path_step(&result.path, 1)->state_id, DCP_PP_B_ID);
+
+    EQ(imm_path_step(&result.path, 2)->seqlen, 3);
+    EQ(imm_path_step(&result.path, 2)->state_id, DCP_PP_MATCH_ID | 1U);
+
+    EQ(imm_path_step(&result.path, 3)->seqlen, 3);
+    EQ(imm_path_step(&result.path, 3)->state_id, DCP_PP_MATCH_ID | 2U);
+
+    EQ(imm_path_step(&result.path, 4)->seqlen, 3);
+    EQ(imm_path_step(&result.path, 4)->state_id, DCP_PP_MATCH_ID | 3U);
+
+    EQ(imm_path_step(&result.path, 5)->seqlen, 0);
+    EQ(imm_path_step(&result.path, 5)->state_id, DCP_PP_E_ID);
+
+    for (unsigned i = 6; i < 24; ++i)
+    {
+        EQ(imm_path_step(&result.path, i)->seqlen, 3);
+        EQ(imm_path_step(&result.path, i)->state_id, DCP_PP_C_ID);
+    }
+
+    EQ(imm_path_step(&result.path, 24)->seqlen, 0);
+    EQ(imm_path_step(&result.path, 24)->state_id, DCP_PP_T_ID);
+
+    imm_result_del(&result);
 }

@@ -7,6 +7,21 @@
 #include "dcp/export.h"
 #include "imm/imm.h"
 
+#define DCP_PP_BITS_ID 16
+
+#define DCP_PP_MATCH_ID (0U << (DCP_PP_BITS_ID - 2))
+#define DCP_PP_INSERT_ID (1U << (DCP_PP_BITS_ID - 2))
+#define DCP_PP_DELETE_ID (2U << (DCP_PP_BITS_ID - 2))
+#define DCP_PP_SPECIAL_ID (3U << (DCP_PP_BITS_ID - 2))
+#define DCP_PP_R_ID (DCP_PP_SPECIAL_ID | 0U)
+#define DCP_PP_S_ID (DCP_PP_SPECIAL_ID | 1U)
+#define DCP_PP_N_ID (DCP_PP_SPECIAL_ID | 2U)
+#define DCP_PP_B_ID (DCP_PP_SPECIAL_ID | 3U)
+#define DCP_PP_E_ID (DCP_PP_SPECIAL_ID | 4U)
+#define DCP_PP_J_ID (DCP_PP_SPECIAL_ID | 5U)
+#define DCP_PP_C_ID (DCP_PP_SPECIAL_ID | 6U)
+#define DCP_PP_T_ID (DCP_PP_SPECIAL_ID | 7U)
+
 enum dcp_entry_distr
 {
     UNIFORM = 0,

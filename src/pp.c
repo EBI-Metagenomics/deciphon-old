@@ -3,57 +3,44 @@
 #include "support.h"
 #include <assert.h>
 
-#define BITS_PER_STATE_ID 16
-
-#define MATCH_ID (0U << (BITS_PER_STATE_ID - 2))
-#define INSERT_ID (1U << (BITS_PER_STATE_ID - 2))
-#define DELETE_ID (2U << (BITS_PER_STATE_ID - 2))
-#define SPECIAL_ID (3U << (BITS_PER_STATE_ID - 2))
-#define R_ID (SPECIAL_ID | 0U)
-#define S_ID (SPECIAL_ID | 1U)
-#define N_ID (SPECIAL_ID | 2U)
-#define B_ID (SPECIAL_ID | 3U)
-#define E_ID (SPECIAL_ID | 4U)
-#define J_ID (SPECIAL_ID | 5U)
-#define C_ID (SPECIAL_ID | 6U)
-#define T_ID (SPECIAL_ID | 7U)
-
 #define super(x) imm_super((x))
+
+/* static void show_frame(unsigned id, struct imm_frame_state *frame); */
 
 void dcp_pp_state_name(unsigned id, char name[8])
 {
-    unsigned msb = id & (3U << (BITS_PER_STATE_ID - 2));
-    if (msb == SPECIAL_ID)
+    unsigned msb = id & (3U << (DCP_PP_BITS_ID - 2));
+    if (msb == DCP_PP_SPECIAL_ID)
     {
-        if (id == R_ID)
+        if (id == DCP_PP_R_ID)
         {
             name[0] = 'R';
         }
-        else if (id == S_ID)
+        else if (id == DCP_PP_S_ID)
         {
             name[0] = 'S';
         }
-        else if (id == N_ID)
+        else if (id == DCP_PP_N_ID)
         {
             name[0] = 'N';
         }
-        else if (id == B_ID)
+        else if (id == DCP_PP_B_ID)
         {
             name[0] = 'B';
         }
-        else if (id == E_ID)
+        else if (id == DCP_PP_E_ID)
         {
             name[0] = 'E';
         }
-        else if (id == J_ID)
+        else if (id == DCP_PP_J_ID)
         {
             name[0] = 'J';
         }
-        else if (id == C_ID)
+        else if (id == DCP_PP_C_ID)
         {
             name[0] = 'C';
         }
-        else if (id == T_ID)
+        else if (id == DCP_PP_T_ID)
         {
             name[0] = 'T';
         }
@@ -61,15 +48,15 @@ void dcp_pp_state_name(unsigned id, char name[8])
     }
     else
     {
-        if (msb == MATCH_ID)
+        if (msb == DCP_PP_MATCH_ID)
         {
             name[0] = 'M';
         }
-        else if (msb == INSERT_ID)
+        else if (msb == DCP_PP_INSERT_ID)
         {
             name[0] = 'I';
         }
-        else if (msb == DELETE_ID)
+        else if (msb == DCP_PP_DELETE_ID)
         {
             name[0] = 'D';
         }
@@ -172,18 +159,22 @@ struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
     struct imm_nuclt_lprob const *null_nucltp = &pp->null.nucltp;
     struct imm_codon_marg const *null_codonm = &pp->null.codonm;
 
-    pp->null.R = imm_frame_state_new(R_ID, null_nucltp, null_codonm, e);
+    pp->null.R = imm_frame_state_new(DCP_PP_R_ID, null_nucltp, null_codonm, e);
 
     imm_hmm_add_state(pp->null.hmm, imm_super(pp->null.R));
     imm_hmm_set_start(pp->null.hmm, imm_super(pp->null.R), imm_log(1));
+    /* show_frame(DCP_PP_R_ID, pp->null.R); */
 
-    pp->alt.special.S = imm_mute_state_new(S_ID, imm_super(pp->nuclt));
-    pp->alt.special.N = imm_frame_state_new(N_ID, null_nucltp, null_codonm, e);
-    pp->alt.special.B = imm_mute_state_new(B_ID, imm_super(pp->nuclt));
-    pp->alt.special.E = imm_mute_state_new(E_ID, imm_super(pp->nuclt));
-    pp->alt.special.J = imm_frame_state_new(J_ID, null_nucltp, null_codonm, e);
-    pp->alt.special.C = imm_frame_state_new(C_ID, null_nucltp, null_codonm, e);
-    pp->alt.special.T = imm_mute_state_new(T_ID, imm_super(pp->nuclt));
+    pp->alt.special.S = imm_mute_state_new(DCP_PP_S_ID, imm_super(pp->nuclt));
+    pp->alt.special.N =
+        imm_frame_state_new(DCP_PP_N_ID, null_nucltp, null_codonm, e);
+    pp->alt.special.B = imm_mute_state_new(DCP_PP_B_ID, imm_super(pp->nuclt));
+    pp->alt.special.E = imm_mute_state_new(DCP_PP_E_ID, imm_super(pp->nuclt));
+    pp->alt.special.J =
+        imm_frame_state_new(DCP_PP_J_ID, null_nucltp, null_codonm, e);
+    pp->alt.special.C =
+        imm_frame_state_new(DCP_PP_C_ID, null_nucltp, null_codonm, e);
+    pp->alt.special.T = imm_mute_state_new(DCP_PP_T_ID, imm_super(pp->nuclt));
 
     imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.S));
     imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.N));
@@ -234,6 +225,7 @@ cleanup:
     return NULL;
 }
 
+#if 0
 static void show_frame(unsigned id, struct imm_frame_state *frame)
 {
     char letters[] = "ACGT";
@@ -339,32 +331,33 @@ static void show_frame(unsigned id, struct imm_frame_state *frame)
         }
     }
 }
+#endif
 
 static struct imm_frame_state *new_match(struct dcp_pp *pp,
                                          struct imm_nuclt_lprob *nucltp,
                                          struct imm_codon_marg *codonm)
 {
     imm_float e = pp->epsilon;
-    unsigned id = MATCH_ID | (pp->alt.idx + 1);
+    unsigned id = DCP_PP_MATCH_ID | (pp->alt.idx + 1);
     struct imm_frame_state *frame = imm_frame_state_new(id, nucltp, codonm, e);
-    show_frame(id, frame);
+    /* show_frame(id, frame); */
     return frame;
 }
 
 static struct imm_frame_state *new_insert(struct dcp_pp *pp)
 {
     imm_float e = pp->epsilon;
-    unsigned id = INSERT_ID | (pp->alt.idx + 1);
+    unsigned id = DCP_PP_INSERT_ID | (pp->alt.idx + 1);
     struct imm_nuclt_lprob *nucltp = &pp->alt.insert.nucltp;
     struct imm_codon_marg *codonm = &pp->alt.insert.codonm;
     struct imm_frame_state *frame = imm_frame_state_new(id, nucltp, codonm, e);
-    show_frame(id, frame);
+    /* show_frame(id, frame); */
     return frame;
 }
 
 static struct imm_mute_state *new_delete(struct dcp_pp *pp)
 {
-    unsigned id = DELETE_ID | (pp->alt.idx + 1);
+    unsigned id = DCP_PP_DELETE_ID | (pp->alt.idx + 1);
     return imm_mute_state_new(id, imm_super(pp->nuclt));
 }
 
@@ -674,9 +667,9 @@ void dcp_pp_set_target_length(struct dcp_pp *pp, unsigned target_length,
     imm_hmm_set_trans(ahmm, super(s->J), super(s->J), t->JJ);
     imm_hmm_set_trans(ahmm, super(s->J), super(s->B), t->JB);
 
-    show_frame(imm_state_id(imm_super(s->N)), s->N);
-    show_frame(imm_state_id(imm_super(s->J)), s->J);
-    show_frame(imm_state_id(imm_super(s->C)), s->C);
+    /* show_frame(imm_state_id(imm_super(s->N)), s->N); */
+    /* show_frame(imm_state_id(imm_super(s->J)), s->J); */
+    /* show_frame(imm_state_id(imm_super(s->C)), s->C); */
 
 #if 0
     struct node *nodes = pp->alt.nodes;
