@@ -3,6 +3,8 @@
 #include "support.h"
 #include <assert.h>
 
+#define super(x) imm_super((x))
+
 struct special_transitions
 {
     imm_float NN;
@@ -17,68 +19,6 @@ struct special_transitions
     imm_float BM;
     imm_float ME;
 };
-
-#define super(x) imm_super((x))
-
-/* static void show_frame(unsigned id, struct imm_frame_state *frame); */
-
-void dcp_pp_state_name(unsigned id, char name[8])
-{
-    unsigned msb = id & (3U << (DCP_PP_BITS_ID - 2));
-    if (msb == DCP_PP_SPECIAL_ID)
-    {
-        if (id == DCP_PP_R_ID)
-        {
-            name[0] = 'R';
-        }
-        else if (id == DCP_PP_S_ID)
-        {
-            name[0] = 'S';
-        }
-        else if (id == DCP_PP_N_ID)
-        {
-            name[0] = 'N';
-        }
-        else if (id == DCP_PP_B_ID)
-        {
-            name[0] = 'B';
-        }
-        else if (id == DCP_PP_E_ID)
-        {
-            name[0] = 'E';
-        }
-        else if (id == DCP_PP_J_ID)
-        {
-            name[0] = 'J';
-        }
-        else if (id == DCP_PP_C_ID)
-        {
-            name[0] = 'C';
-        }
-        else if (id == DCP_PP_T_ID)
-        {
-            name[0] = 'T';
-        }
-        name[1] = '\0';
-    }
-    else
-    {
-        if (msb == DCP_PP_MATCH_ID)
-        {
-            name[0] = 'M';
-        }
-        else if (msb == DCP_PP_INSERT_ID)
-        {
-            name[0] = 'I';
-        }
-        else if (msb == DCP_PP_DELETE_ID)
-        {
-            name[0] = 'D';
-        }
-        unsigned idx = id & (0xFFFF >> 2);
-        snprintf(name + 1, 7, "%d", idx);
-    }
-}
 
 struct node
 {
@@ -113,43 +53,91 @@ struct special_node_idx
 
 struct dcp_pp
 {
-    imm_float epsilon;
     struct imm_amino const *amino;
     struct imm_nuclt const *nuclt;
+    unsigned core_size;
+    imm_float epsilon;
+    enum dcp_pp_entry_distr edist;
+    struct special_transitions special_trans;
 
     struct
     {
-        imm_float lprobs[IMM_AMINO_SIZE];
-        struct imm_nuclt_lprob nucltp;
-        struct imm_codon_marg codonm;
-        struct imm_frame_state *R;
-        struct imm_hmm *hmm;
-        struct imm_dp *dp;
-        unsigned Ridx;
-    } null;
-
-    struct
-    {
-        struct special_node special;
-        struct special_node_idx special_idx;
-        unsigned core_size;
-        struct node *nodes;
-        struct dcp_pp_transitions *trans;
-        unsigned idx;
-
-        struct imm_hmm *hmm;
-        struct imm_dp *dp;
-        enum dcp_pp_entry_distr edist;
+        struct
+        {
+            imm_float lprobs[IMM_AMINO_SIZE];
+            struct imm_nuclt_lprob nucltp;
+            struct imm_codon_marg codonm;
+            struct imm_frame_state *R;
+            struct imm_hmm *hmm;
+        } null;
 
         struct
         {
-            struct imm_nuclt_lprob nucltp;
-            struct imm_codon_marg codonm;
-        } insert;
-    } alt;
+            struct special_node special;
+            struct node *nodes;
+            struct dcp_pp_transitions *trans;
+            unsigned idx;
+            struct imm_hmm *hmm;
 
-    struct special_transitions special_trans;
+            struct
+            {
+                struct imm_nuclt_lprob nucltp;
+                struct imm_codon_marg codonm;
+            } insert;
+        } alt;
+    } unpress;
+
+    struct
+    {
+        struct
+        {
+            struct imm_dp *dp;
+            unsigned R;
+        } null;
+
+        struct
+        {
+            struct special_node_idx special_idx;
+            struct imm_dp *dp;
+        } alt;
+    } press;
 };
+
+void dcp_pp_state_name(unsigned id, char name[8])
+{
+    unsigned msb = id & (3U << (DCP_PP_BITS_ID - 2));
+    if (msb == DCP_PP_SPECIAL_ID)
+    {
+        if (id == DCP_PP_R_ID)
+            name[0] = 'R';
+        else if (id == DCP_PP_S_ID)
+            name[0] = 'S';
+        else if (id == DCP_PP_N_ID)
+            name[0] = 'N';
+        else if (id == DCP_PP_B_ID)
+            name[0] = 'B';
+        else if (id == DCP_PP_E_ID)
+            name[0] = 'E';
+        else if (id == DCP_PP_J_ID)
+            name[0] = 'J';
+        else if (id == DCP_PP_C_ID)
+            name[0] = 'C';
+        else if (id == DCP_PP_T_ID)
+            name[0] = 'T';
+        name[1] = '\0';
+    }
+    else
+    {
+        if (msb == DCP_PP_MATCH_ID)
+            name[0] = 'M';
+        else if (msb == DCP_PP_INSERT_ID)
+            name[0] = 'I';
+        else if (msb == DCP_PP_DELETE_ID)
+            name[0] = 'D';
+        unsigned idx = id & (0xFFFF >> 2);
+        snprintf(name + 1, 7, "%d", idx);
+    }
+}
 
 static int setup_distributions(struct imm_amino const *amino,
                                imm_float const lprobs[IMM_AMINO_SIZE],
@@ -163,65 +151,72 @@ struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
     struct dcp_pp *pp = xmalloc(sizeof(*pp));
     pp->epsilon = cfg.epsilon;
     pp->amino = &imm_amino_iupac;
-    pp->nuclt = imm_super(&imm_dna_default);
+    pp->nuclt = super(&imm_dna_default);
 
-    pp->alt.hmm = NULL;
-    pp->alt.dp = NULL;
-    pp->null.hmm = NULL;
-    pp->null.dp = NULL;
+    pp->unpress.alt.hmm = NULL;
+    pp->unpress.null.hmm = NULL;
 
-    memcpy(pp->null.lprobs, null_lprobs, sizeof(*null_lprobs) * IMM_AMINO_SIZE);
+    memcpy(pp->unpress.null.lprobs, null_lprobs,
+           sizeof(*null_lprobs) * IMM_AMINO_SIZE);
 
-    if (!(pp->null.hmm = imm_hmm_new(imm_super(pp->nuclt))))
+    if (!(pp->unpress.null.hmm = imm_hmm_new(super(pp->nuclt))))
         goto cleanup;
 
-    if (setup_distributions(pp->amino, null_lprobs, &pp->null.nucltp,
-                            &pp->null.codonm))
+    if (setup_distributions(pp->amino, null_lprobs, &pp->unpress.null.nucltp,
+                            &pp->unpress.null.codonm))
         goto cleanup;
 
-    if (!(pp->alt.hmm = imm_hmm_new(imm_super(pp->nuclt))))
+    if (!(pp->unpress.alt.hmm = imm_hmm_new(super(pp->nuclt))))
         goto cleanup;
 
-    if (setup_distributions(pp->amino, null_lodds, &pp->alt.insert.nucltp,
-                            &pp->alt.insert.codonm))
+    if (setup_distributions(pp->amino, null_lodds,
+                            &pp->unpress.alt.insert.nucltp,
+                            &pp->unpress.alt.insert.codonm))
         goto cleanup;
 
     imm_float e = pp->epsilon;
-    struct imm_nuclt_lprob const *null_nucltp = &pp->null.nucltp;
-    struct imm_codon_marg const *null_codonm = &pp->null.codonm;
+    struct imm_nuclt_lprob const *null_nucltp = &pp->unpress.null.nucltp;
+    struct imm_codon_marg const *null_codonm = &pp->unpress.null.codonm;
 
-    pp->null.R = imm_frame_state_new(DCP_PP_R_ID, null_nucltp, null_codonm, e);
+    pp->unpress.null.R =
+        imm_frame_state_new(DCP_PP_R_ID, null_nucltp, null_codonm, e);
 
-    imm_hmm_add_state(pp->null.hmm, imm_super(pp->null.R));
-    imm_hmm_set_start(pp->null.hmm, imm_super(pp->null.R), imm_log(1));
-    /* show_frame(DCP_PP_R_ID, pp->null.R); */
+    imm_hmm_add_state(pp->unpress.null.hmm, super(pp->unpress.null.R));
+    imm_hmm_set_start(pp->unpress.null.hmm, super(pp->unpress.null.R),
+                      imm_log(1));
 
-    pp->alt.special.S = imm_mute_state_new(DCP_PP_S_ID, imm_super(pp->nuclt));
-    pp->alt.special.N =
+    pp->unpress.alt.special.S =
+        imm_mute_state_new(DCP_PP_S_ID, super(pp->nuclt));
+    pp->unpress.alt.special.N =
         imm_frame_state_new(DCP_PP_N_ID, null_nucltp, null_codonm, e);
-    pp->alt.special.B = imm_mute_state_new(DCP_PP_B_ID, imm_super(pp->nuclt));
-    pp->alt.special.E = imm_mute_state_new(DCP_PP_E_ID, imm_super(pp->nuclt));
-    pp->alt.special.J =
+    pp->unpress.alt.special.B =
+        imm_mute_state_new(DCP_PP_B_ID, super(pp->nuclt));
+    pp->unpress.alt.special.E =
+        imm_mute_state_new(DCP_PP_E_ID, super(pp->nuclt));
+    pp->unpress.alt.special.J =
         imm_frame_state_new(DCP_PP_J_ID, null_nucltp, null_codonm, e);
-    pp->alt.special.C =
+    pp->unpress.alt.special.C =
         imm_frame_state_new(DCP_PP_C_ID, null_nucltp, null_codonm, e);
-    pp->alt.special.T = imm_mute_state_new(DCP_PP_T_ID, imm_super(pp->nuclt));
+    pp->unpress.alt.special.T =
+        imm_mute_state_new(DCP_PP_T_ID, super(pp->nuclt));
 
-    imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.S));
-    imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.N));
-    imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.B));
-    imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.E));
-    imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.J));
-    imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.C));
-    imm_hmm_add_state(pp->alt.hmm, imm_super(pp->alt.special.T));
+    imm_hmm_add_state(pp->unpress.alt.hmm, super(pp->unpress.alt.special.S));
+    imm_hmm_add_state(pp->unpress.alt.hmm, super(pp->unpress.alt.special.N));
+    imm_hmm_add_state(pp->unpress.alt.hmm, super(pp->unpress.alt.special.B));
+    imm_hmm_add_state(pp->unpress.alt.hmm, super(pp->unpress.alt.special.E));
+    imm_hmm_add_state(pp->unpress.alt.hmm, super(pp->unpress.alt.special.J));
+    imm_hmm_add_state(pp->unpress.alt.hmm, super(pp->unpress.alt.special.C));
+    imm_hmm_add_state(pp->unpress.alt.hmm, super(pp->unpress.alt.special.T));
 
-    imm_hmm_set_start(pp->alt.hmm, imm_super(pp->alt.special.S), imm_log(1));
+    imm_hmm_set_start(pp->unpress.alt.hmm, super(pp->unpress.alt.special.S),
+                      imm_log(1));
 
-    pp->alt.core_size = core_size;
-    pp->alt.nodes = xcalloc(core_size, sizeof(*pp->alt.nodes));
-    pp->alt.trans = xcalloc(core_size + 1, sizeof(*pp->alt.trans));
-    pp->alt.idx = 0;
-    pp->alt.edist = cfg.edist;
+    pp->core_size = core_size;
+    pp->unpress.alt.nodes = xcalloc(core_size, sizeof(*pp->unpress.alt.nodes));
+    pp->unpress.alt.trans =
+        xcalloc(core_size + 1, sizeof(*pp->unpress.alt.trans));
+    pp->unpress.alt.idx = 0;
+    pp->edist = cfg.edist;
 
     pp->special_trans.NN = imm_log(1);
     pp->special_trans.NB = imm_log(1);
@@ -239,19 +234,19 @@ struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
 
 cleanup:
 
-    imm_del(pp->null.R);
-    imm_del(pp->null.hmm);
+    imm_del(pp->unpress.null.R);
+    imm_del(pp->unpress.null.hmm);
 
-    imm_del(pp->alt.special.S);
-    imm_del(pp->alt.special.N);
-    imm_del(pp->alt.special.B);
-    imm_del(pp->alt.special.E);
-    imm_del(pp->alt.special.J);
-    imm_del(pp->alt.special.C);
-    imm_del(pp->alt.special.T);
-    imm_del(pp->alt.hmm);
-    free(pp->alt.nodes);
-    free(pp->alt.trans);
+    imm_del(pp->unpress.alt.special.S);
+    imm_del(pp->unpress.alt.special.N);
+    imm_del(pp->unpress.alt.special.B);
+    imm_del(pp->unpress.alt.special.E);
+    imm_del(pp->unpress.alt.special.J);
+    imm_del(pp->unpress.alt.special.C);
+    imm_del(pp->unpress.alt.special.T);
+    imm_del(pp->unpress.alt.hmm);
+    free(pp->unpress.alt.nodes);
+    free(pp->unpress.alt.trans);
     free(pp);
     return NULL;
 }
@@ -261,27 +256,25 @@ static struct imm_frame_state *new_match(struct dcp_pp *pp,
                                          struct imm_codon_marg *codonm)
 {
     imm_float e = pp->epsilon;
-    unsigned id = DCP_PP_MATCH_ID | (pp->alt.idx + 1);
+    unsigned id = DCP_PP_MATCH_ID | (pp->unpress.alt.idx + 1);
     struct imm_frame_state *frame = imm_frame_state_new(id, nucltp, codonm, e);
-    /* show_frame(id, frame); */
     return frame;
 }
 
 static struct imm_frame_state *new_insert(struct dcp_pp *pp)
 {
     imm_float e = pp->epsilon;
-    unsigned id = DCP_PP_INSERT_ID | (pp->alt.idx + 1);
-    struct imm_nuclt_lprob *nucltp = &pp->alt.insert.nucltp;
-    struct imm_codon_marg *codonm = &pp->alt.insert.codonm;
+    unsigned id = DCP_PP_INSERT_ID | (pp->unpress.alt.idx + 1);
+    struct imm_nuclt_lprob *nucltp = &pp->unpress.alt.insert.nucltp;
+    struct imm_codon_marg *codonm = &pp->unpress.alt.insert.codonm;
     struct imm_frame_state *frame = imm_frame_state_new(id, nucltp, codonm, e);
-    /* show_frame(id, frame); */
     return frame;
 }
 
 static struct imm_mute_state *new_delete(struct dcp_pp *pp)
 {
-    unsigned id = DCP_PP_DELETE_ID | (pp->alt.idx + 1);
-    return imm_mute_state_new(id, imm_super(pp->nuclt));
+    unsigned id = DCP_PP_DELETE_ID | (pp->unpress.alt.idx + 1);
+    return imm_mute_state_new(id, super(pp->nuclt));
 }
 
 int dcp_pp_add_node(struct dcp_pp *pp, imm_float const lprobs[IMM_AMINO_SIZE])
@@ -290,9 +283,9 @@ int dcp_pp_add_node(struct dcp_pp *pp, imm_float const lprobs[IMM_AMINO_SIZE])
 
     imm_float lodds[IMM_AMINO_SIZE];
     for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
-        lodds[i] = lprobs[i] - pp->null.lprobs[i];
+        lodds[i] = lprobs[i] - pp->unpress.null.lprobs[i];
 
-    struct node *node = pp->alt.nodes + pp->alt.idx;
+    struct node *node = pp->unpress.alt.nodes + pp->unpress.alt.idx;
 
     if ((rc = setup_distributions(pp->amino, lodds, &node->nucltp,
                                   &node->codonm)))
@@ -300,24 +293,24 @@ int dcp_pp_add_node(struct dcp_pp *pp, imm_float const lprobs[IMM_AMINO_SIZE])
 
     struct imm_frame_state *M = new_match(pp, &node->nucltp, &node->codonm);
 
-    if ((rc = imm_hmm_add_state(pp->alt.hmm, imm_super(M))))
+    if ((rc = imm_hmm_add_state(pp->unpress.alt.hmm, super(M))))
         return rc;
 
     struct imm_frame_state *ins = new_insert(pp);
-    if ((rc = imm_hmm_add_state(pp->alt.hmm, imm_super(ins))))
+    if ((rc = imm_hmm_add_state(pp->unpress.alt.hmm, super(ins))))
         return rc;
 
     struct imm_mute_state *del = new_delete(pp);
-    if ((rc = imm_hmm_add_state(pp->alt.hmm, imm_super(del))))
+    if ((rc = imm_hmm_add_state(pp->unpress.alt.hmm, super(del))))
         return rc;
 
     node->M = M;
     node->I = ins;
     node->D = del;
-    pp->alt.idx++;
+    pp->unpress.alt.idx++;
 
-    if (pp->alt.idx == pp->alt.core_size)
-        pp->alt.idx = 0;
+    if (pp->unpress.alt.idx == pp->core_size)
+        pp->unpress.alt.idx = 0;
 
     return rc;
 }
@@ -330,25 +323,24 @@ static inline imm_float log1_p(imm_float logp)
 
 static void calculate_occupancy(struct dcp_pp *pp, imm_float log_occ[static 1])
 {
-    struct dcp_pp_transitions *trans = pp->alt.trans;
+    struct dcp_pp_transitions *trans = pp->unpress.alt.trans;
     log_occ[0] = imm_lprob_add(trans->MI, trans->MM);
-    for (unsigned i = 1; i < pp->alt.core_size; ++i)
+    for (unsigned i = 1; i < pp->core_size; ++i)
     {
         ++trans;
-        /* trans = pp->alt.trans + i; */
         imm_float val0 = log_occ[i - 1] + imm_lprob_add(trans->MM, trans->MI);
         imm_float val1 = log1_p(log_occ[i - 1]) + trans->DM;
         log_occ[i] = imm_lprob_add(val0, val1);
     }
 
     imm_float logZ = imm_lprob_zero();
-    unsigned n = pp->alt.core_size;
-    for (unsigned i = 0; i < pp->alt.core_size; ++i)
+    unsigned n = pp->core_size;
+    for (unsigned i = 0; i < pp->core_size; ++i)
     {
         logZ = imm_lprob_add(logZ, log_occ[i] + imm_log(n - i));
     }
 
-    for (unsigned i = 0; i < pp->alt.core_size; ++i)
+    for (unsigned i = 0; i < pp->core_size; ++i)
     {
         log_occ[i] -= logZ;
     }
@@ -356,28 +348,28 @@ static void calculate_occupancy(struct dcp_pp *pp, imm_float log_occ[static 1])
 
 static void setup_entry_transitions(struct dcp_pp *pp)
 {
-    if (pp->alt.edist == UNIFORM)
+    if (pp->edist == UNIFORM)
     {
-        imm_float M = (imm_float)pp->alt.core_size;
+        imm_float M = (imm_float)pp->core_size;
         imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;
 
-        struct imm_state *B = imm_super(pp->alt.special.B);
-        for (unsigned i = 0; i < pp->alt.core_size; ++i)
+        struct imm_state *B = super(pp->unpress.alt.special.B);
+        for (unsigned i = 0; i < pp->core_size; ++i)
         {
-            struct node node = pp->alt.nodes[i];
-            imm_hmm_set_trans(pp->alt.hmm, B, imm_super(node.M), cost);
+            struct node node = pp->unpress.alt.nodes[i];
+            imm_hmm_set_trans(pp->unpress.alt.hmm, B, super(node.M), cost);
         }
     }
     else
     {
-        IMM_BUG(pp->alt.edist != OCCUPANCY);
-        imm_float *locc = xmalloc((pp->alt.core_size) * sizeof(*locc));
+        IMM_BUG(pp->edist != OCCUPANCY);
+        imm_float *locc = xmalloc((pp->core_size) * sizeof(*locc));
         calculate_occupancy(pp, locc);
-        struct imm_state *B = imm_super(pp->alt.special.B);
-        for (unsigned i = 0; i < pp->alt.core_size; ++i)
+        struct imm_state *B = super(pp->unpress.alt.special.B);
+        for (unsigned i = 0; i < pp->core_size; ++i)
         {
-            struct node node = pp->alt.nodes[i];
-            imm_hmm_set_trans(pp->alt.hmm, B, imm_super(node.M), locc[i]);
+            struct node node = pp->unpress.alt.nodes[i];
+            imm_hmm_set_trans(pp->unpress.alt.hmm, B, super(node.M), locc[i]);
         }
         free(locc);
     }
@@ -385,34 +377,34 @@ static void setup_entry_transitions(struct dcp_pp *pp)
 
 static void set_exit_transitions(struct dcp_pp *pp)
 {
-    struct imm_state *E = imm_super(pp->alt.special.E);
+    struct imm_state *E = super(pp->unpress.alt.special.E);
 
-    for (unsigned i = 0; i < pp->alt.core_size; ++i)
+    for (unsigned i = 0; i < pp->core_size; ++i)
     {
-        struct node node = pp->alt.nodes[i];
-        imm_hmm_set_trans(pp->alt.hmm, imm_super(node.M), E, imm_log(1));
+        struct node node = pp->unpress.alt.nodes[i];
+        imm_hmm_set_trans(pp->unpress.alt.hmm, super(node.M), E, imm_log(1));
     }
-    for (unsigned i = 1; i < pp->alt.core_size; ++i)
+    for (unsigned i = 1; i < pp->core_size; ++i)
     {
-        struct node node = pp->alt.nodes[i];
-        imm_hmm_set_trans(pp->alt.hmm, imm_super(node.D), E, imm_log(1));
+        struct node node = pp->unpress.alt.nodes[i];
+        imm_hmm_set_trans(pp->unpress.alt.hmm, super(node.D), E, imm_log(1));
     }
 }
 
 static int setup_transitions(struct dcp_pp *pp)
 {
 
-    struct imm_hmm *hmm = pp->alt.hmm;
-    struct dcp_pp_transitions *trans = pp->alt.trans;
+    struct imm_hmm *hmm = pp->unpress.alt.hmm;
+    struct dcp_pp_transitions *trans = pp->unpress.alt.trans;
 
-    struct imm_state *B = super(pp->alt.special.B);
-    struct imm_state *M1 = super(pp->alt.nodes[0].M);
+    struct imm_state *B = super(pp->unpress.alt.special.B);
+    struct imm_state *M1 = super(pp->unpress.alt.nodes[0].M);
     imm_hmm_set_trans(hmm, B, M1, trans[0].MM);
 
-    for (unsigned i = 0; i + 1 < pp->alt.core_size; ++i)
+    for (unsigned i = 0; i + 1 < pp->core_size; ++i)
     {
-        struct node prev = pp->alt.nodes[i];
-        struct node next = pp->alt.nodes[i + 1];
+        struct node prev = pp->unpress.alt.nodes[i];
+        struct node next = pp->unpress.alt.nodes[i + 1];
         unsigned j = i + 1;
         imm_hmm_set_trans(hmm, super(prev.M), super(prev.I), trans[j].MI);
         imm_hmm_set_trans(hmm, super(prev.I), super(prev.I), trans[j].II);
@@ -423,9 +415,9 @@ static int setup_transitions(struct dcp_pp *pp)
         imm_hmm_set_trans(hmm, super(prev.D), super(next.M), trans[j].DM);
     }
 
-    unsigned n = pp->alt.core_size;
-    struct imm_state *Mm = super(pp->alt.nodes[n - 1].M);
-    imm_hmm_set_trans(hmm, Mm, super(pp->alt.special.E), trans[n].MM);
+    unsigned n = pp->core_size;
+    struct imm_state *Mm = super(pp->unpress.alt.nodes[n - 1].M);
+    imm_hmm_set_trans(hmm, Mm, super(pp->unpress.alt.special.E), trans[n].MM);
 
     setup_entry_transitions(pp);
     set_exit_transitions(pp);
@@ -435,26 +427,35 @@ static int setup_transitions(struct dcp_pp *pp)
 static int setup_dp(struct dcp_pp *pp)
 {
     int rc = IMM_SUCCESS;
-    pp->null.dp = imm_hmm_new_dp(pp->null.hmm, super(pp->null.R));
-    pp->alt.dp = imm_hmm_new_dp(pp->alt.hmm, super(pp->alt.special.T));
+    pp->press.null.dp =
+        imm_hmm_new_dp(pp->unpress.null.hmm, super(pp->unpress.null.R));
+    pp->press.alt.dp =
+        imm_hmm_new_dp(pp->unpress.alt.hmm, super(pp->unpress.alt.special.T));
 
-    pp->null.Ridx = imm_state_idx(super(pp->null.R));
+    pp->press.null.R = imm_state_idx(super(pp->unpress.null.R));
 
-    pp->alt.special_idx.S = imm_state_idx(super(pp->alt.special.S));
-    pp->alt.special_idx.N = imm_state_idx(super(pp->alt.special.N));
-    pp->alt.special_idx.B = imm_state_idx(super(pp->alt.special.B));
-    pp->alt.special_idx.E = imm_state_idx(super(pp->alt.special.E));
-    pp->alt.special_idx.J = imm_state_idx(super(pp->alt.special.J));
-    pp->alt.special_idx.C = imm_state_idx(super(pp->alt.special.C));
-    pp->alt.special_idx.T = imm_state_idx(super(pp->alt.special.T));
+    pp->press.alt.special_idx.S =
+        imm_state_idx(super(pp->unpress.alt.special.S));
+    pp->press.alt.special_idx.N =
+        imm_state_idx(super(pp->unpress.alt.special.N));
+    pp->press.alt.special_idx.B =
+        imm_state_idx(super(pp->unpress.alt.special.B));
+    pp->press.alt.special_idx.E =
+        imm_state_idx(super(pp->unpress.alt.special.E));
+    pp->press.alt.special_idx.J =
+        imm_state_idx(super(pp->unpress.alt.special.J));
+    pp->press.alt.special_idx.C =
+        imm_state_idx(super(pp->unpress.alt.special.C));
+    pp->press.alt.special_idx.T =
+        imm_state_idx(super(pp->unpress.alt.special.T));
     return rc;
 }
 
 int dcp_pp_add_trans(struct dcp_pp *pp, struct dcp_pp_transitions trans)
 {
     int rc = IMM_SUCCESS;
-    pp->alt.trans[pp->alt.idx++] = trans;
-    if (pp->alt.idx == pp->alt.core_size + 1)
+    pp->unpress.alt.trans[pp->unpress.alt.idx++] = trans;
+    if (pp->unpress.alt.idx == pp->core_size + 1)
     {
         if ((rc = setup_transitions(pp)))
             return rc;
@@ -467,19 +468,25 @@ int dcp_pp_add_trans(struct dcp_pp *pp, struct dcp_pp_transitions trans)
     return rc;
 }
 
-struct imm_hmm *dcp_pp_null_hmm(struct dcp_pp *pp) { return pp->null.hmm; }
+struct imm_hmm *dcp_pp_null_hmm(struct dcp_pp *pp)
+{
+    return pp->unpress.null.hmm;
+}
 
-struct imm_hmm *dcp_pp_alt_hmm(struct dcp_pp *pp) { return pp->alt.hmm; }
+struct imm_hmm *dcp_pp_alt_hmm(struct dcp_pp *pp)
+{
+    return pp->unpress.alt.hmm;
+}
 
-struct imm_dp *dcp_pp_null_dp(struct dcp_pp *pp) { return pp->null.dp; }
+struct imm_dp *dcp_pp_null_dp(struct dcp_pp *pp) { return pp->press.null.dp; }
 
-struct imm_dp *dcp_pp_alt_dp(struct dcp_pp *pp) { return pp->alt.dp; }
+struct imm_dp *dcp_pp_alt_dp(struct dcp_pp *pp) { return pp->press.alt.dp; }
 
 void dcp_pp_destroy(struct dcp_pp *pp)
 {
     if (pp)
     {
-        imm_hmm_del(pp->alt.hmm);
+        imm_hmm_del(pp->unpress.alt.hmm);
         free(pp);
     }
 }
@@ -493,7 +500,7 @@ static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
     for (unsigned i = 0; i < imm_gc_size(); ++i)
         count[(unsigned)imm_gc_aa(1, i)] += 1;
 
-    struct imm_abc const *abc = imm_super(amino);
+    struct imm_abc const *abc = super(amino);
     /* TODO: We don't need 255 positions*/
     imm_float lprobs[] = FILL(255, IMM_LPROB_ZERO);
     for (unsigned i = 0; i < imm_abc_size(abc); ++i)
@@ -503,7 +510,7 @@ static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
         lprobs[(unsigned)aa] = imm_amino_lprob_get(aminop, aa) - norm;
     }
 
-    struct imm_codon_lprob codonp = imm_codon_lprob(imm_super(imm_gc_dna()));
+    struct imm_codon_lprob codonp = imm_codon_lprob(super(imm_gc_dna()));
     for (unsigned i = 0; i < imm_gc_size(); ++i)
     {
         char aa = imm_gc_aa(1, i);
@@ -511,9 +518,9 @@ static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
 #if 0
         struct imm_codon codon = imm_gc_codon(1, i);
         printf("[%c%c%c] %f\n",
-               imm_abc_symbols(imm_super(codon.nuclt))[codon.a],
-               imm_abc_symbols(imm_super(codon.nuclt))[codon.b],
-               imm_abc_symbols(imm_super(codon.nuclt))[codon.c],
+               imm_abc_symbols(super(codon.nuclt))[codon.a],
+               imm_abc_symbols(super(codon.nuclt))[codon.b],
+               imm_abc_symbols(super(codon.nuclt))[codon.c],
                lprobs[(unsigned)aa]);
 #endif
     }
@@ -585,12 +592,12 @@ void dcp_pp_set_target_length(struct dcp_pp *pp, unsigned seq_len,
         t->NN = t->CC = t->JJ = imm_log(1);
     }
 
-    imm_hmm_set_trans(pp->null.hmm, super(pp->null.R), super(pp->null.R),
-                      t->RR);
+    imm_hmm_set_trans(pp->unpress.null.hmm, super(pp->unpress.null.R),
+                      super(pp->unpress.null.R), t->RR);
 
-    struct special_node *s = &pp->alt.special;
+    struct special_node *s = &pp->unpress.alt.special;
 
-    struct imm_hmm *ahmm = pp->alt.hmm;
+    struct imm_hmm *ahmm = pp->unpress.alt.hmm;
     imm_hmm_set_trans(ahmm, super(s->S), super(s->B), t->NB);
     imm_hmm_set_trans(ahmm, super(s->S), super(s->N), t->NN);
     imm_hmm_set_trans(ahmm, super(s->N), super(s->N), t->NN);
@@ -605,17 +612,6 @@ void dcp_pp_set_target_length(struct dcp_pp *pp, unsigned seq_len,
     imm_hmm_set_trans(ahmm, super(s->E), super(s->J), t->EJ + t->JJ);
     imm_hmm_set_trans(ahmm, super(s->J), super(s->J), t->JJ);
     imm_hmm_set_trans(ahmm, super(s->J), super(s->B), t->JB);
-
-    /* show_frame(imm_state_id(imm_super(s->N)), s->N); */
-    /* show_frame(imm_state_id(imm_super(s->J)), s->J); */
-    /* show_frame(imm_state_id(imm_super(s->C)), s->C); */
-
-#if 0
-    struct node *nodes = pp->alt.nodes;
-    /* TODO: if fails for HMM having one core state */
-    imm_hmm_set_trans(ahmm, super(s->B), super(nodes[1].D), IMM_LPROB_ZERO);
-    imm_hmm_set_trans(ahmm, super(s->B), super(nodes[0].I), IMM_LPROB_ZERO);
-#endif
 }
 
 void dcp_pp_set_target_length2(struct dcp_pp *pp, unsigned seq_len,
@@ -651,12 +647,12 @@ void dcp_pp_set_target_length2(struct dcp_pp *pp, unsigned seq_len,
         t->NN = t->CC = t->JJ = imm_log(1);
     }
 
-    struct imm_dp *dp = pp->null.dp;
-    unsigned R = pp->null.Ridx;
+    struct imm_dp *dp = pp->press.null.dp;
+    unsigned R = pp->press.null.R;
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, R, R), t->RR);
 
-    dp = pp->alt.dp;
-    struct special_node_idx *n = &pp->alt.special_idx;
+    dp = pp->press.alt.dp;
+    struct special_node_idx *n = &pp->press.alt.special_idx;
 
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->S, n->B), t->NB);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->S, n->N), t->NN);

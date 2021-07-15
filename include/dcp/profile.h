@@ -30,7 +30,7 @@ struct dcp_profile
     ({                                                                         \
         struct dcp_profile __prof = {0};                                       \
         dcp_profile_init(abc, &__prof);                                        \
-        __prof;                                                         \
+        __prof;                                                                \
     })
 
 DCP_API void dcp_profile_init(struct imm_abc const *abc,
