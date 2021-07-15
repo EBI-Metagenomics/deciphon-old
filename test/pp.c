@@ -26,12 +26,9 @@ void test_1(void)
     imm_float null_lodds[IMM_AMINO_SIZE] =
         IMM_ARR(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-    imm_float epsilon = F(0.01);
-
     unsigned core_size = 3;
-    enum dcp_entry_distr entry_distr = OCCUPANCY;
-    struct dcp_pp *pp =
-        dcp_pp_create(null_lprobs, null_lodds, epsilon, core_size, entry_distr);
+    struct dcp_pp_config cfg = {OCCUPANCY, (imm_float)0.01};
+    struct dcp_pp *pp = dcp_pp_create(null_lprobs, null_lodds, core_size, cfg);
 
     imm_float match_lprobs0[] = IMM_ARR(
         -4.25112, -5.66746, -5.45821, -5.2525, -4.2567, -4.83375, -5.7558,
@@ -52,34 +49,34 @@ void test_1(void)
         -2.89772, -2.68931, -2.71242, -3.6422, -5.6956, -4.28822);
     dcp_pp_add_node(pp, match_lprobs2);
 
-    dcp_pp_add_trans(pp, (struct dcp_trans){.MM = F(-0.01083),
-                                            .MI = F(-4.92694),
-                                            .MD = F(-5.64929),
-                                            .IM = F(-0.61958),
-                                            .II = F(-0.77255),
-                                            .DM = F(-0.0),
-                                            .DD = IMM_LPROB_ZERO});
-    dcp_pp_add_trans(pp, (struct dcp_trans){.MM = F(-0.01083),
-                                            .MI = F(-4.92694),
-                                            .MD = F(-5.64929),
-                                            .IM = F(-0.61958),
-                                            .II = F(-0.77255),
-                                            .DM = F(-0.48576),
-                                            .DD = F(-0.9551)});
-    dcp_pp_add_trans(pp, (struct dcp_trans){.MM = F(-0.01083),
-                                            .MI = F(-4.92694),
-                                            .MD = F(-5.64929),
-                                            .IM = F(-0.61958),
-                                            .II = F(-0.77255),
-                                            .DM = F(-0.48576),
-                                            .DD = F(-0.9551)});
-    dcp_pp_add_trans(pp, (struct dcp_trans){.MM = F(-0.00968),
-                                            .MI = F(-4.64203),
-                                            .MD = IMM_LPROB_ZERO,
-                                            .IM = F(-0.61958),
-                                            .II = F(-0.77255),
-                                            .DM = F(-0.0),
-                                            .DD = IMM_LPROB_ZERO});
+    dcp_pp_add_trans(pp, (struct dcp_pp_transitions){.MM = F(-0.01083),
+                                                     .MI = F(-4.92694),
+                                                     .MD = F(-5.64929),
+                                                     .IM = F(-0.61958),
+                                                     .II = F(-0.77255),
+                                                     .DM = F(-0.0),
+                                                     .DD = IMM_LPROB_ZERO});
+    dcp_pp_add_trans(pp, (struct dcp_pp_transitions){.MM = F(-0.01083),
+                                                     .MI = F(-4.92694),
+                                                     .MD = F(-5.64929),
+                                                     .IM = F(-0.61958),
+                                                     .II = F(-0.77255),
+                                                     .DM = F(-0.48576),
+                                                     .DD = F(-0.9551)});
+    dcp_pp_add_trans(pp, (struct dcp_pp_transitions){.MM = F(-0.01083),
+                                                     .MI = F(-4.92694),
+                                                     .MD = F(-5.64929),
+                                                     .IM = F(-0.61958),
+                                                     .II = F(-0.77255),
+                                                     .DM = F(-0.48576),
+                                                     .DD = F(-0.9551)});
+    dcp_pp_add_trans(pp, (struct dcp_pp_transitions){.MM = F(-0.00968),
+                                                     .MI = F(-4.64203),
+                                                     .MD = IMM_LPROB_ZERO,
+                                                     .IM = F(-0.61958),
+                                                     .II = F(-0.77255),
+                                                     .DM = F(-0.0),
+                                                     .DD = IMM_LPROB_ZERO});
 
     char str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC"
                  "CATCACCATTACCACAGGTAACGGTGCGGGC";
@@ -90,9 +87,10 @@ void test_1(void)
     unsigned len = (unsigned)strlen(str);
     bool multihits = true;
     bool hmmer3_compat = false;
-    dcp_pp_set_target_length(pp, len, multihits, hmmer3_compat);
+    /* dcp_pp_set_target_length(pp, len, multihits, hmmer3_compat); */
+    dcp_pp_set_target_length2(pp, len, multihits, hmmer3_compat);
 
-    struct imm_dp *ndp = dcp_pp_null_new_dp(pp);
+    struct imm_dp *ndp = dcp_pp_null_dp(pp);
     struct imm_task *ntask = imm_task_new(ndp);
     struct imm_result result = imm_result();
     imm_task_setup(ntask, &seq);
@@ -110,7 +108,7 @@ void test_1(void)
 
     imm_result_reset(&result);
 
-    struct imm_dp *adp = dcp_pp_alt_new_dp(pp);
+    struct imm_dp *adp = dcp_pp_alt_dp(pp);
     struct imm_task *atask = imm_task_new(adp);
     result = imm_result();
     imm_task_setup(atask, &seq);

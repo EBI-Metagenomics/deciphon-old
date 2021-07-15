@@ -3,6 +3,21 @@
 #include "support.h"
 #include <assert.h>
 
+struct special_transitions
+{
+    imm_float NN;
+    imm_float NB;
+    imm_float EC;
+    imm_float CC;
+    imm_float CT;
+    imm_float EJ;
+    imm_float JJ;
+    imm_float JB;
+    imm_float RR;
+    imm_float BM;
+    imm_float ME;
+};
+
 #define super(x) imm_super((x))
 
 /* static void show_frame(unsigned id, struct imm_frame_state *frame); */
@@ -85,6 +100,17 @@ struct special_node
     struct imm_mute_state *T;
 };
 
+struct special_node_idx
+{
+    unsigned S;
+    unsigned N;
+    unsigned B;
+    unsigned E;
+    unsigned J;
+    unsigned C;
+    unsigned T;
+};
+
 struct dcp_pp
 {
     imm_float epsilon;
@@ -98,18 +124,22 @@ struct dcp_pp
         struct imm_codon_marg codonm;
         struct imm_frame_state *R;
         struct imm_hmm *hmm;
+        struct imm_dp *dp;
+        unsigned Ridx;
     } null;
 
     struct
     {
         struct special_node special;
+        struct special_node_idx special_idx;
         unsigned core_size;
         struct node *nodes;
-        struct dcp_trans *trans;
+        struct dcp_pp_transitions *trans;
         unsigned idx;
 
         struct imm_hmm *hmm;
-        enum dcp_entry_distr entry_distr;
+        struct imm_dp *dp;
+        enum dcp_pp_entry_distr edist;
 
         struct
         {
@@ -118,7 +148,7 @@ struct dcp_pp
         } insert;
     } alt;
 
-    struct dcp_special_trans special_trans;
+    struct special_transitions special_trans;
 };
 
 static int setup_distributions(struct imm_amino const *amino,
@@ -128,16 +158,17 @@ static int setup_distributions(struct imm_amino const *amino,
 
 struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
                              imm_float const null_lodds[IMM_AMINO_SIZE],
-                             imm_float epsilon, unsigned core_size,
-                             enum dcp_entry_distr entry_distr)
+                             unsigned core_size, struct dcp_pp_config cfg)
 {
     struct dcp_pp *pp = xmalloc(sizeof(*pp));
-    pp->epsilon = epsilon;
+    pp->epsilon = cfg.epsilon;
     pp->amino = &imm_amino_iupac;
     pp->nuclt = imm_super(&imm_dna_default);
 
     pp->alt.hmm = NULL;
+    pp->alt.dp = NULL;
     pp->null.hmm = NULL;
+    pp->null.dp = NULL;
 
     memcpy(pp->null.lprobs, null_lprobs, sizeof(*null_lprobs) * IMM_AMINO_SIZE);
 
@@ -155,7 +186,7 @@ struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
                             &pp->alt.insert.codonm))
         goto cleanup;
 
-    imm_float e = epsilon;
+    imm_float e = pp->epsilon;
     struct imm_nuclt_lprob const *null_nucltp = &pp->null.nucltp;
     struct imm_codon_marg const *null_codonm = &pp->null.codonm;
 
@@ -190,7 +221,7 @@ struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
     pp->alt.nodes = xcalloc(core_size, sizeof(*pp->alt.nodes));
     pp->alt.trans = xcalloc(core_size + 1, sizeof(*pp->alt.trans));
     pp->alt.idx = 0;
-    pp->alt.entry_distr = entry_distr;
+    pp->alt.edist = cfg.edist;
 
     pp->special_trans.NN = imm_log(1);
     pp->special_trans.NB = imm_log(1);
@@ -224,114 +255,6 @@ cleanup:
     free(pp);
     return NULL;
 }
-
-#if 0
-static void show_frame(unsigned id, struct imm_frame_state *frame)
-{
-    char letters[] = "ACGT";
-    char str[8];
-    for (unsigned i0 = 0; i0 < 4; ++i0)
-    {
-        str[0] = letters[i0];
-        str[1] = '\0';
-        struct imm_seq seq =
-            imm_seq(imm_str(str), imm_super(imm_super(imm_gc_dna())));
-
-        char name[8];
-        dcp_pp_state_name(id, name);
-        printf("%s %s %f\n", name, str,
-               imm_state_lprob(imm_super(frame), &seq));
-    }
-    for (unsigned i0 = 0; i0 < 4; ++i0)
-    {
-        for (unsigned i1 = 0; i1 < 4; ++i1)
-        {
-            str[0] = letters[i0];
-            str[1] = letters[i1];
-            str[2] = '\0';
-            struct imm_seq seq =
-                imm_seq(imm_str(str), imm_super(imm_super(imm_gc_dna())));
-
-            char name[8];
-            dcp_pp_state_name(id, name);
-            printf("%s %s %f\n", name, str,
-                   imm_state_lprob(imm_super(frame), &seq));
-        }
-    }
-    for (unsigned i0 = 0; i0 < 4; ++i0)
-    {
-        for (unsigned i1 = 0; i1 < 4; ++i1)
-        {
-            for (unsigned i2 = 0; i2 < 4; ++i2)
-            {
-                str[0] = letters[i0];
-                str[1] = letters[i1];
-                str[2] = letters[i2];
-                str[3] = '\0';
-                struct imm_seq seq =
-                    imm_seq(imm_str(str), imm_super(imm_super(imm_gc_dna())));
-
-                char name[8];
-                dcp_pp_state_name(id, name);
-                printf("%s %s %f\n", name, str,
-                       imm_state_lprob(imm_super(frame), &seq));
-            }
-        }
-    }
-    for (unsigned i0 = 0; i0 < 4; ++i0)
-    {
-        for (unsigned i1 = 0; i1 < 4; ++i1)
-        {
-            for (unsigned i2 = 0; i2 < 4; ++i2)
-            {
-                for (unsigned i3 = 0; i3 < 4; ++i3)
-                {
-                    str[0] = letters[i0];
-                    str[1] = letters[i1];
-                    str[2] = letters[i2];
-                    str[3] = letters[i3];
-                    str[4] = '\0';
-                    struct imm_seq seq = imm_seq(
-                        imm_str(str), imm_super(imm_super(imm_gc_dna())));
-
-                    char name[8];
-                    dcp_pp_state_name(id, name);
-                    printf("%s %s %f\n", name, str,
-                           imm_state_lprob(imm_super(frame), &seq));
-                }
-            }
-        }
-    }
-    for (unsigned i0 = 0; i0 < 4; ++i0)
-    {
-        for (unsigned i1 = 0; i1 < 4; ++i1)
-        {
-            for (unsigned i2 = 0; i2 < 4; ++i2)
-            {
-                for (unsigned i3 = 0; i3 < 4; ++i3)
-                {
-                    for (unsigned i4 = 0; i4 < 4; ++i4)
-                    {
-                        str[0] = letters[i0];
-                        str[1] = letters[i1];
-                        str[2] = letters[i2];
-                        str[3] = letters[i3];
-                        str[4] = letters[i4];
-                        str[5] = '\0';
-                        struct imm_seq seq = imm_seq(
-                            imm_str(str), imm_super(imm_super(imm_gc_dna())));
-
-                        char name[8];
-                        dcp_pp_state_name(id, name);
-                        printf("%s %s %f\n", name, str,
-                               imm_state_lprob(imm_super(frame), &seq));
-                    }
-                }
-            }
-        }
-    }
-}
-#endif
 
 static struct imm_frame_state *new_match(struct dcp_pp *pp,
                                          struct imm_nuclt_lprob *nucltp,
@@ -407,7 +330,7 @@ static inline imm_float log1_p(imm_float logp)
 
 static void calculate_occupancy(struct dcp_pp *pp, imm_float log_occ[static 1])
 {
-    struct dcp_trans *trans = pp->alt.trans;
+    struct dcp_pp_transitions *trans = pp->alt.trans;
     log_occ[0] = imm_lprob_add(trans->MI, trans->MM);
     for (unsigned i = 1; i < pp->alt.core_size; ++i)
     {
@@ -433,7 +356,7 @@ static void calculate_occupancy(struct dcp_pp *pp, imm_float log_occ[static 1])
 
 static void setup_entry_transitions(struct dcp_pp *pp)
 {
-    if (pp->alt.entry_distr == UNIFORM)
+    if (pp->alt.edist == UNIFORM)
     {
         imm_float M = (imm_float)pp->alt.core_size;
         imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;
@@ -447,7 +370,7 @@ static void setup_entry_transitions(struct dcp_pp *pp)
     }
     else
     {
-        IMM_BUG(pp->alt.entry_distr != OCCUPANCY);
+        IMM_BUG(pp->alt.edist != OCCUPANCY);
         imm_float *locc = xmalloc((pp->alt.core_size) * sizeof(*locc));
         calculate_occupancy(pp, locc);
         struct imm_state *B = imm_super(pp->alt.special.B);
@@ -480,7 +403,7 @@ static int setup_transitions(struct dcp_pp *pp)
 {
 
     struct imm_hmm *hmm = pp->alt.hmm;
-    struct dcp_trans *trans = pp->alt.trans;
+    struct dcp_pp_transitions *trans = pp->alt.trans;
 
     struct imm_state *B = super(pp->alt.special.B);
     struct imm_state *M1 = super(pp->alt.nodes[0].M);
@@ -504,36 +427,53 @@ static int setup_transitions(struct dcp_pp *pp)
     struct imm_state *Mm = super(pp->alt.nodes[n - 1].M);
     imm_hmm_set_trans(hmm, Mm, super(pp->alt.special.E), trans[n].MM);
 
-    /* alt_model.set_entry_transitions(entry_distr, core_trans) */
-
     setup_entry_transitions(pp);
     set_exit_transitions(pp);
     return IMM_SUCCESS;
 }
 
-int dcp_pp_add_trans(struct dcp_pp *pp, struct dcp_trans trans)
+static int setup_dp(struct dcp_pp *pp)
 {
+    int rc = IMM_SUCCESS;
+    pp->null.dp = imm_hmm_new_dp(pp->null.hmm, super(pp->null.R));
+    pp->alt.dp = imm_hmm_new_dp(pp->alt.hmm, super(pp->alt.special.T));
+
+    pp->null.Ridx = imm_state_idx(super(pp->null.R));
+
+    pp->alt.special_idx.S = imm_state_idx(super(pp->alt.special.S));
+    pp->alt.special_idx.N = imm_state_idx(super(pp->alt.special.N));
+    pp->alt.special_idx.B = imm_state_idx(super(pp->alt.special.B));
+    pp->alt.special_idx.E = imm_state_idx(super(pp->alt.special.E));
+    pp->alt.special_idx.J = imm_state_idx(super(pp->alt.special.J));
+    pp->alt.special_idx.C = imm_state_idx(super(pp->alt.special.C));
+    pp->alt.special_idx.T = imm_state_idx(super(pp->alt.special.T));
+    return rc;
+}
+
+int dcp_pp_add_trans(struct dcp_pp *pp, struct dcp_pp_transitions trans)
+{
+    int rc = IMM_SUCCESS;
     pp->alt.trans[pp->alt.idx++] = trans;
     if (pp->alt.idx == pp->alt.core_size + 1)
     {
-        return setup_transitions(pp);
+        if ((rc = setup_transitions(pp)))
+            return rc;
+
+        dcp_pp_set_target_length(pp, 1, true, false);
+
+        if ((rc = setup_dp(pp)))
+            return rc;
     }
-    return IMM_SUCCESS;
+    return rc;
 }
 
 struct imm_hmm *dcp_pp_null_hmm(struct dcp_pp *pp) { return pp->null.hmm; }
 
 struct imm_hmm *dcp_pp_alt_hmm(struct dcp_pp *pp) { return pp->alt.hmm; }
 
-struct imm_dp *dcp_pp_null_new_dp(struct dcp_pp *pp)
-{
-    return imm_hmm_new_dp(pp->null.hmm, super(pp->null.R));
-}
+struct imm_dp *dcp_pp_null_dp(struct dcp_pp *pp) { return pp->null.dp; }
 
-struct imm_dp *dcp_pp_alt_new_dp(struct dcp_pp *pp)
-{
-    return imm_hmm_new_dp(pp->alt.hmm, super(pp->alt.special.T));
-}
+struct imm_dp *dcp_pp_alt_dp(struct dcp_pp *pp) { return pp->alt.dp; }
 
 void dcp_pp_destroy(struct dcp_pp *pp)
 {
@@ -612,12 +552,11 @@ static int setup_distributions(struct imm_amino const *amino,
     return rc;
 }
 
-void dcp_pp_set_target_length(struct dcp_pp *pp, unsigned target_length,
+void dcp_pp_set_target_length(struct dcp_pp *pp, unsigned seq_len,
                               bool multihits, bool hmmer3_compat)
 {
-    imm_float L = (imm_float)target_length;
-    /* if (L == 0): */
-    /*     raise ValueError("Target length cannot be zero.") */
+    IMM_BUG(seq_len == 0);
+    imm_float L = (imm_float)seq_len;
 
     imm_float q = 0.0;
     imm_float log_q = IMM_LPROB_ZERO;
@@ -633,7 +572,7 @@ void dcp_pp_set_target_length(struct dcp_pp *pp, unsigned target_length,
     imm_float lr = imm_log(L) - imm_log(L + 1);
 
     /* special_trans */
-    struct dcp_special_trans *t = &pp->special_trans;
+    struct special_transitions *t = &pp->special_trans;
 
     t->NN = t->CC = t->JJ = lp;
     t->NB = t->CT = t->JB = l1p;
@@ -643,7 +582,7 @@ void dcp_pp_set_target_length(struct dcp_pp *pp, unsigned target_length,
 
     if (hmmer3_compat)
     {
-        t->NN = t->CC = t->JJ = 0.0;
+        t->NN = t->CC = t->JJ = imm_log(1);
     }
 
     imm_hmm_set_trans(pp->null.hmm, super(pp->null.R), super(pp->null.R),
@@ -677,4 +616,60 @@ void dcp_pp_set_target_length(struct dcp_pp *pp, unsigned target_length,
     imm_hmm_set_trans(ahmm, super(s->B), super(nodes[1].D), IMM_LPROB_ZERO);
     imm_hmm_set_trans(ahmm, super(s->B), super(nodes[0].I), IMM_LPROB_ZERO);
 #endif
+}
+
+void dcp_pp_set_target_length2(struct dcp_pp *pp, unsigned seq_len,
+                               bool multihits, bool hmmer3_compat)
+{
+    IMM_BUG(seq_len == 0);
+    imm_float L = (imm_float)seq_len;
+
+    imm_float q = 0.0;
+    imm_float log_q = IMM_LPROB_ZERO;
+
+    if (multihits)
+    {
+        q = 0.5;
+        log_q = imm_log(0.5);
+    }
+
+    imm_float lp = imm_log(L) - imm_log(L + 2 + q / (1 - q));
+    imm_float l1p = imm_log(2 + q / (1 - q)) - imm_log(L + 2 + q / (1 - q));
+    imm_float lr = imm_log(L) - imm_log(L + 1);
+
+    /* special_trans */
+    struct special_transitions *t = &pp->special_trans;
+
+    t->NN = t->CC = t->JJ = lp;
+    t->NB = t->CT = t->JB = l1p;
+    t->RR = lr;
+    t->EJ = log_q;
+    t->EC = imm_log(1 - q);
+
+    if (hmmer3_compat)
+    {
+        t->NN = t->CC = t->JJ = imm_log(1);
+    }
+
+    struct imm_dp *dp = pp->null.dp;
+    unsigned R = pp->null.Ridx;
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, R, R), t->RR);
+
+    dp = pp->alt.dp;
+    struct special_node_idx *n = &pp->alt.special_idx;
+
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->S, n->B), t->NB);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->S, n->N), t->NN);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->N, n->N), t->NN);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->N, n->B), t->NB);
+
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->E, n->T), t->EC + t->CT);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->E, n->C), t->EC + t->CC);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->C, n->C), t->CC);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->C, n->T), t->CT);
+
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->E, n->B), t->EC + t->CT);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->E, n->J), t->EC + t->CC);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->J, n->J), t->CC);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, n->J, n->B), t->CT);
 }
