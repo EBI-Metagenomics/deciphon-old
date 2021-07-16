@@ -29,7 +29,8 @@ void test_db_openw_empty(void)
     struct imm_dna const *dna = &imm_dna_default;
     struct imm_abc const *abc = imm_super(imm_super(dna));
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
-    struct dcp_db *db = dcp_db_openw(fd, abc);
+    struct dcp_db_cfg cfg = {.prof_type = DCP_PROFILE_TYPE_PLAIN};
+    struct dcp_db *db = dcp_db_openw(fd, abc, cfg);
     EQ(dcp_db_close(db), IMM_SUCCESS);
     fclose(fd);
 }
@@ -38,6 +39,9 @@ void test_db_openr_empty(void)
 {
     FILE *fd = fopen(TMPDIR "/empty.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
+    struct dcp_db_cfg cfg = dcp_db_cfg(db);
+    EQ(cfg.prof_type, DCP_PROFILE_TYPE_PLAIN);
+    EQ(cfg.float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
@@ -59,7 +63,8 @@ void test_db_openw_one_mute(void)
     EQ(imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3)), IMM_SUCCESS);
 
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
-    struct dcp_db *db = dcp_db_openw(fd, abc);
+    struct dcp_db_cfg cfg = {.prof_type = DCP_PROFILE_TYPE_PLAIN};
+    struct dcp_db *db = dcp_db_openw(fd, abc, cfg);
 
     struct dcp_profile prof = {0};
     dcp_profile_init(abc, &prof);
@@ -80,6 +85,9 @@ void test_db_openr_one_mute(void)
 {
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
+    struct dcp_db_cfg cfg = dcp_db_cfg(db);
+    EQ(cfg.prof_type, DCP_PROFILE_TYPE_PLAIN);
+    EQ(cfg.float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
@@ -103,7 +111,8 @@ void test_db_openw_example1(void)
     imm_example1_init();
     struct imm_example1 *m = &imm_example1;
     FILE *fd = fopen(TMPDIR "/example1.dcp", "wb");
-    struct dcp_db *db = dcp_db_openw(fd, &m->abc);
+    struct dcp_db_cfg cfg = {.prof_type = DCP_PROFILE_TYPE_PLAIN};
+    struct dcp_db *db = dcp_db_openw(fd, &m->abc, cfg);
 
     /* Profile 0 */
     struct dcp_profile prof = {0};
@@ -138,6 +147,9 @@ void test_db_openr_example1(void)
 {
     FILE *fd = fopen(TMPDIR "/example1.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
+    struct dcp_db_cfg cfg = dcp_db_cfg(db);
+    EQ(cfg.prof_type, DCP_PROFILE_TYPE_PLAIN);
+    EQ(cfg.float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
     EQ(imm_abc_typeid(abc), IMM_ABC);
@@ -183,7 +195,8 @@ void test_db_openw_example2(void)
     struct imm_example2 *m = &imm_example2;
     struct imm_abc const *abc = imm_super(imm_super(m->dna));
     FILE *fd = fopen(TMPDIR "/example2.dcp", "wb");
-    struct dcp_db *db = dcp_db_openw(fd, abc);
+    struct dcp_db_cfg cfg = {.prof_type = DCP_PROFILE_TYPE_PLAIN};
+    struct dcp_db *db = dcp_db_openw(fd, abc, cfg);
 
     /* Profile 0 */
     struct dcp_profile prof = {0};
@@ -218,6 +231,9 @@ void test_db_openr_example2(void)
 {
     FILE *fd = fopen(TMPDIR "/example2.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
+    struct dcp_db_cfg cfg = dcp_db_cfg(db);
+    EQ(cfg.prof_type, DCP_PROFILE_TYPE_PLAIN);
+    EQ(cfg.float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
     EQ(imm_abc_typeid(abc), IMM_DNA);

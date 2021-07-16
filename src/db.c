@@ -19,6 +19,7 @@ enum mode
 
 struct dcp_db
 {
+    struct dcp_db_cfg cfg;
     struct imm_abc abc;
     struct
     {
@@ -238,6 +239,46 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
         goto cleanup;
     }
 
+    uint8_t prof_type = 0;
+    EREAD(!cmp_read_u8(&db->file.ctx, &prof_type), rc);
+    if (prof_type != DCP_PROFILE_TYPE_PLAIN &&
+        prof_type != DCP_PROFILE_TYPE_PROTEIN)
+    {
+        rc = error(IMM_PARSEERROR, "wrong prof_type");
+        goto cleanup;
+    }
+    db->cfg.prof_type = prof_type;
+
+    uint8_t float_bytes = 0;
+    EREAD(!cmp_read_u8(&db->file.ctx, &float_bytes), rc);
+    if (float_bytes != 4 && float_bytes != 8)
+    {
+        rc = error(IMM_PARSEERROR, "wrong float_bytes");
+        goto cleanup;
+    }
+    db->cfg.float_bytes = float_bytes;
+
+    if (db->cfg.float_bytes == DCP_PROFILE_TYPE_PROTEIN)
+    {
+        if (float_bytes != 4)
+        {
+            float e = 0;
+            EREAD(!cmp_read_float(&db->file.ctx, &e), rc);
+            db->cfg.protein.epsilon = (imm_float)e;
+        }
+        else
+        {
+            double e = 0;
+            EREAD(!cmp_read_double(&db->file.ctx, &e), rc);
+            db->cfg.protein.epsilon = (imm_float)e;
+        }
+        if (db->cfg.protein.epsilon < 0 || db->cfg.protein.epsilon > 1)
+        {
+            rc = error(IMM_PARSEERROR, "wrong epsilon");
+            goto cleanup;
+        }
+    }
+
     if (imm_abc_read(&db->abc, db->file.fd))
     {
         rc = error(IMM_IOERROR, "failed to read alphabet");
@@ -262,7 +303,11 @@ cleanup:
     return NULL;
 }
 
-struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc)
+#define write_imm_float(ctx, v)                                                \
+    _Generic((v), float : cmp_write_float, double : cmp_write_double)(ctx, v)
+
+struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
+                            struct dcp_db_cfg cfg)
 {
     struct dcp_db *db = new_db();
     db->file.fd = fd;
@@ -282,6 +327,29 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc)
         goto cleanup;
     }
 
+    if (!cmp_write_u8(&db->file.ctx, (uint8_t)cfg.prof_type))
+    {
+        error(IMM_IOERROR, "failed to write prof_type");
+        goto cleanup;
+    }
+
+    unsigned float_bytes = IMM_FLOAT_BYTES;
+    IMM_BUG(!(float_bytes == 4 || float_bytes == 8));
+    if (!cmp_write_u8(&db->file.ctx, (uint8_t)float_bytes))
+    {
+        error(IMM_IOERROR, "failed to write float_bytes");
+        goto cleanup;
+    }
+
+    if (cfg.prof_type == DCP_PROFILE_TYPE_PROTEIN)
+    {
+        if (!write_imm_float(&db->file.ctx, cfg.protein.epsilon))
+        {
+            error(IMM_IOERROR, "failed to write epsilon");
+            goto cleanup;
+        }
+    }
+
     if (imm_abc_write(abc, db->file.fd))
     {
         error(IMM_IOERROR, "failed to write alphabet");
@@ -296,6 +364,8 @@ cleanup:
     free(db);
     return NULL;
 }
+
+struct dcp_db_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
 
 int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 {

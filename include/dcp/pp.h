@@ -26,8 +26,8 @@ static_assert(sizeof(imm_state_id_t) == 2, "16 bits state_id.");
 
 enum dcp_pp_entry_distr
 {
-    UNIFORM = 0,
-    OCCUPANCY = 1,
+    DCP_PP_ENTRY_DISTR_UNIFORM = 0,
+    DCP_PP_ENTRY_DISTR_OCCUPANCY = 1,
 };
 
 struct dcp_pp_transitions
@@ -39,6 +39,24 @@ struct dcp_pp_transitions
     imm_float II;
     imm_float DM;
     imm_float DD;
+};
+
+struct dcp_pp_special_states
+{
+    struct
+    {
+        unsigned R;
+    } null;
+    struct
+    {
+        unsigned S;
+        unsigned N;
+        unsigned B;
+        unsigned E;
+        unsigned J;
+        unsigned C;
+        unsigned T;
+    } alt;
 };
 
 struct dcp_pp_config

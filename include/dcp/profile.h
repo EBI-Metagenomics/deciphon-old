@@ -3,6 +3,7 @@
 
 #include "dcp/export.h"
 #include "dcp/metadata.h"
+#include "dcp/pp.h"
 #include "imm/imm.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -11,8 +12,6 @@
 #define DCP_PROFILE_NULL_IDX UINT32_MAX
 
 typedef uint32_t dcp_profile_idx_t;
-
-struct imm_dp;
 
 struct dcp_profile
 {
@@ -24,6 +23,11 @@ struct dcp_profile
         struct imm_dp *null;
         struct imm_dp *alt;
     } dp;
+    struct
+    {
+        imm_float epsilon;
+        struct dcp_pp_special_states states;
+    } protein;
 };
 
 #define DCP_PROFILE_INIT(abc)                                                  \

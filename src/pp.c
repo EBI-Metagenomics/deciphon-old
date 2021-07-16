@@ -348,7 +348,7 @@ static void calculate_occupancy(struct dcp_pp *pp, imm_float log_occ[static 1])
 
 static void setup_entry_transitions(struct dcp_pp *pp)
 {
-    if (pp->edist == UNIFORM)
+    if (pp->edist == DCP_PP_ENTRY_DISTR_UNIFORM)
     {
         imm_float M = (imm_float)pp->core_size;
         imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;

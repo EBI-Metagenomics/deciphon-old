@@ -27,7 +27,7 @@ void test_1(void)
         IMM_ARR(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     unsigned core_size = 3;
-    struct dcp_pp_config cfg = {OCCUPANCY, (imm_float)0.01};
+    struct dcp_pp_config cfg = {DCP_PP_ENTRY_DISTR_OCCUPANCY, (imm_float)0.01};
     struct dcp_pp *pp = dcp_pp_create(null_lprobs, null_lodds, core_size, cfg);
 
     imm_float match_lprobs0[] = IMM_ARR(
