@@ -264,15 +264,15 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
         {
             float e = 0;
             EREAD(!cmp_read_float(&db->file.ctx, &e), rc);
-            db->cfg.protein.epsilon = (imm_float)e;
+            db->cfg.pp.epsilon = (imm_float)e;
         }
         else
         {
             double e = 0;
             EREAD(!cmp_read_double(&db->file.ctx, &e), rc);
-            db->cfg.protein.epsilon = (imm_float)e;
+            db->cfg.pp.epsilon = (imm_float)e;
         }
-        if (db->cfg.protein.epsilon < 0 || db->cfg.protein.epsilon > 1)
+        if (db->cfg.pp.epsilon < 0 || db->cfg.pp.epsilon > 1)
         {
             rc = error(IMM_PARSEERROR, "wrong epsilon");
             goto cleanup;
@@ -343,7 +343,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
 
     if (cfg.prof_type == DCP_PROFILE_TYPE_PROTEIN)
     {
-        if (!write_imm_float(&db->file.ctx, cfg.protein.epsilon))
+        if (!write_imm_float(&db->file.ctx, cfg.pp.epsilon))
         {
             error(IMM_IOERROR, "failed to write epsilon");
             goto cleanup;

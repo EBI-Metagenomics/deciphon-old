@@ -59,8 +59,9 @@ struct dcp_pp_special_states
     } alt;
 };
 
-struct dcp_pp_config
+struct dcp_pp_cfg
 {
+    unsigned core_size;
     enum dcp_pp_entry_distr edist;
     imm_float epsilon;
 };
@@ -71,8 +72,8 @@ DCP_API void dcp_pp_state_name(unsigned id, char name[8]);
 
 DCP_API struct dcp_pp *
 dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
-              imm_float const null_lodds[IMM_AMINO_SIZE], unsigned core_size,
-              struct dcp_pp_config cfg);
+              imm_float const null_lodds[IMM_AMINO_SIZE],
+              struct dcp_pp_cfg cfg);
 
 DCP_API int dcp_pp_add_node(struct dcp_pp *pp,
                             imm_float const lprobs[IMM_AMINO_SIZE]);

@@ -36,6 +36,6 @@ endfunction()
 
 dcp_add_test(db db.c)
 dcp_add_test(server server.c)
-dcp_add_test(pp pp.c)
+dcp_add_test(pp "pp.c;data.c")
 # dcp_add_test(metadata metadata.c) dcp_add_test(tasks
 # "tasks.c;pfam24_results.c") dcp_add_test(very_long_seq "very_long_seq.c")

@@ -22,11 +22,7 @@ struct dcp_db_cfg
 {
     enum dcp_profile_type prof_type;
     unsigned float_bytes;
-    struct
-    {
-        imm_float epsilon;
-        enum dcp_pp_entry_distr edist;
-    } protein;
+    struct dcp_pp_cfg pp;
 };
 
 DCP_API struct dcp_db *dcp_db_openr(FILE *restrict fd);

@@ -146,7 +146,7 @@ static int setup_distributions(struct imm_amino const *amino,
 
 struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
                              imm_float const null_lodds[IMM_AMINO_SIZE],
-                             unsigned core_size, struct dcp_pp_config cfg)
+                             struct dcp_pp_cfg cfg)
 {
     struct dcp_pp *pp = xmalloc(sizeof(*pp));
     pp->epsilon = cfg.epsilon;
@@ -211,10 +211,11 @@ struct dcp_pp *dcp_pp_create(imm_float const null_lprobs[IMM_AMINO_SIZE],
     imm_hmm_set_start(pp->unpress.alt.hmm, super(pp->unpress.alt.special.S),
                       imm_log(1));
 
-    pp->core_size = core_size;
-    pp->unpress.alt.nodes = xcalloc(core_size, sizeof(*pp->unpress.alt.nodes));
+    pp->core_size = cfg.core_size;
+    pp->unpress.alt.nodes =
+        xcalloc(cfg.core_size, sizeof(*pp->unpress.alt.nodes));
     pp->unpress.alt.trans =
-        xcalloc(core_size + 1, sizeof(*pp->unpress.alt.trans));
+        xcalloc(cfg.core_size + 1, sizeof(*pp->unpress.alt.trans));
     pp->unpress.alt.idx = 0;
     pp->edist = cfg.edist;
 
