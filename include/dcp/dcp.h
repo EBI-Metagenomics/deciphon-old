@@ -7,11 +7,14 @@ extern "C" {
 
 #include "dcp/db.h"
 /* #include "dcp/input.h" */
+#include "dcp/entry_distr.h"
 #include "dcp/metadata.h"
 #include "dcp/model.h"
 /* #include "dcp/output.h" */
+#include "dcp/normal_profile.h"
+#include "dcp/pro_model.h"
+#include "dcp/pro_profile.h"
 #include "dcp/profile.h"
-#include "dcp/pp.h"
 /* #include "dcp/result.h" */
 /* #include "dcp/results.h" */
 #include "dcp/server.h"

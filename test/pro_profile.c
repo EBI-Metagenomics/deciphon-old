@@ -14,8 +14,7 @@ int main(void)
 void test_3core_nodes(void)
 {
     struct pp_3core_nodes data = pp_3core_nodes_data();
-    struct dcp_pp *pp =
-        dcp_pp_create(data.null_lprobs, data.null_lodds, data.cfg);
+    struct dcp_pp *pp = dcp_pp_new(data.null_lprobs, data.null_lodds, data.cfg);
 
     dcp_pp_add_node(pp, data.match_lprobs1);
     dcp_pp_add_node(pp, data.match_lprobs2);

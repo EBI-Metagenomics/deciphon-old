@@ -241,13 +241,12 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
 
     uint8_t prof_type = 0;
     EREAD(!cmp_read_u8(&db->file.ctx, &prof_type), rc);
-    if (prof_type != DCP_PROFILE_TYPE_PLAIN &&
-        prof_type != DCP_PROFILE_TYPE_PROTEIN)
+    if (prof_type != DCP_NORMAL_PROFILE && prof_type != DCP_PROTEIN_PROFILE)
     {
         rc = error(IMM_PARSEERROR, "wrong prof_type");
         goto cleanup;
     }
-    db->cfg.prof_type = prof_type;
+    db->cfg.prof_typeid = prof_type;
 
     uint8_t float_bytes = 0;
     EREAD(!cmp_read_u8(&db->file.ctx, &float_bytes), rc);
@@ -258,21 +257,23 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     }
     db->cfg.float_bytes = float_bytes;
 
-    if (db->cfg.float_bytes == DCP_PROFILE_TYPE_PROTEIN)
+    if (db->cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
+        struct dcp_pro_profile_cfg *c =
+            (struct dcp_pro_profile_cfg *)(&db->cfg);
         if (float_bytes != 4)
         {
             float e = 0;
             EREAD(!cmp_read_float(&db->file.ctx, &e), rc);
-            db->cfg.pp.epsilon = (imm_float)e;
+            c->epsilon = (imm_float)e;
         }
         else
         {
             double e = 0;
             EREAD(!cmp_read_double(&db->file.ctx, &e), rc);
-            db->cfg.pp.epsilon = (imm_float)e;
+            c->epsilon = (imm_float)e;
         }
-        if (db->cfg.pp.epsilon < 0 || db->cfg.pp.epsilon > 1)
+        if (c->epsilon < 0 || c->epsilon > 1)
         {
             rc = error(IMM_PARSEERROR, "wrong epsilon");
             goto cleanup;
@@ -327,7 +328,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
         goto cleanup;
     }
 
-    if (!cmp_write_u8(&db->file.ctx, (uint8_t)cfg.prof_type))
+    if (!cmp_write_u8(&db->file.ctx, (uint8_t)cfg.prof_typeid))
     {
         error(IMM_IOERROR, "failed to write prof_type");
         goto cleanup;
@@ -341,11 +342,18 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
         goto cleanup;
     }
 
-    if (cfg.prof_type == DCP_PROFILE_TYPE_PROTEIN)
+    if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        if (!write_imm_float(&db->file.ctx, cfg.pp.epsilon))
+        struct dcp_pro_profile_cfg *c = (struct dcp_pro_profile_cfg *)(&cfg);
+        if (!write_imm_float(&db->file.ctx, c->epsilon))
         {
             error(IMM_IOERROR, "failed to write epsilon");
+            goto cleanup;
+        }
+
+        if (!cmp_write_u8(&db->file.ctx, (uint8_t)c->entry_distr))
+        {
+            error(IMM_IOERROR, "failed to write entry_distr");
             goto cleanup;
         }
     }
@@ -354,6 +362,16 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
     {
         error(IMM_IOERROR, "failed to write alphabet");
         goto cleanup;
+    }
+
+    if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
+    {
+        struct dcp_pro_profile_cfg *c = (struct dcp_pro_profile_cfg *)(&cfg);
+        if (imm_abc_write(imm_super(c->amino), db->file.fd))
+        {
+            error(IMM_IOERROR, "failed to write amino alphabet");
+            goto cleanup;
+        }
     }
 
     return db;
@@ -365,7 +383,10 @@ cleanup:
     return NULL;
 }
 
-struct dcp_db_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
+struct dcp_db_cfg const *dcp_db_cfg(struct dcp_db const *db)
+{
+    return &db->cfg;
+}
 
 int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 {
@@ -397,8 +418,25 @@ int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
     /* +1 for null-terminated */
     db->mt.size += len + 1;
 
+    if ((rc = prof->vtable.write(prof, db->dp.fd)))
+        goto cleanup;
+
+#if 0
     EWRIT(imm_dp_write(prof->dp.null, db->dp.fd), rc);
     EWRIT(imm_dp_write(prof->dp.alt, db->dp.fd), rc);
+
+    if (db->cfg.prof_type == DCP_PROFILE_TYPE_PROTEIN)
+    {
+        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.null.R), rc);
+        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.S), rc);
+        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.N), rc);
+        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.B), rc);
+        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.E), rc);
+        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.J), rc);
+        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.C), rc);
+        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.T), rc);
+    }
+#endif
 
     db->profiles.size++;
 
@@ -420,9 +458,9 @@ int dcp_db_close(struct dcp_db *db)
     else
         IMM_BUG(true);
 
-    del(db->mt.offset);
-    del(db->mt.name_length);
-    del(db->mt.data);
+    xdel(db->mt.offset);
+    xdel(db->mt.name_length);
+    xdel(db->mt.data);
     free(db);
     return rc;
 }
@@ -491,7 +529,7 @@ int dcp_db_read(struct dcp_db *db, struct dcp_profile *prof)
         return error(IMM_RUNTIMEERROR, "end of profiles");
     prof->idx = db->profiles.curr_idx++;
     prof->mt = dcp_db_metadata(db, prof->idx);
-    return profile_read(prof, db->file.fd);
+    return prof->vtable.read(prof, db->dp.fd);
 }
 
 bool dcp_db_end(struct dcp_db const *db)
