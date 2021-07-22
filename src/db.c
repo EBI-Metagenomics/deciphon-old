@@ -1,4 +1,5 @@
 #include "dcp/db.h"
+#include "dcp/generics.h"
 #include "dcp/profile.h"
 #include "imm/imm.h"
 #include "profile.h"
@@ -21,6 +22,7 @@ struct dcp_db
 {
     struct dcp_db_cfg cfg;
     struct imm_abc abc;
+    struct dcp_profile *prof;
     struct
     {
         dcp_profile_idx_t size;
@@ -45,7 +47,6 @@ struct dcp_db
     struct
     {
         FILE *fd;
-        char const *fp;
         enum mode mode;
         cmp_ctx_t ctx;
     } file;
@@ -60,6 +61,7 @@ static inline struct dcp_db *new_db(void)
 {
     struct dcp_db *db = xcalloc(1, sizeof(*db));
     db->abc = imm_abc_empty;
+    db->prof = NULL;
     db->profiles.size = 0;
     db->profiles.curr_idx = 0;
     db->mt.offset = NULL;
@@ -68,7 +70,6 @@ static inline struct dcp_db *new_db(void)
     db->mt.file.fd = NULL;
     db->dp.fd = NULL;
     db->file.fd = NULL;
-    db->file.fp = NULL;
     return db;
 }
 
@@ -222,6 +223,8 @@ cleanup:
     return rc;
 }
 
+struct dcp_profile *dcp_db_profile(struct dcp_db *db) { return db->prof; }
+
 struct dcp_db *dcp_db_openr(FILE *restrict fd)
 {
     struct dcp_db *db = new_db();
@@ -259,21 +262,19 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
 
     if (db->cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        struct dcp_pro_profile_cfg *c =
-            (struct dcp_pro_profile_cfg *)(&db->cfg);
         if (float_bytes != 4)
         {
             float e = 0;
             EREAD(!cmp_read_float(&db->file.ctx, &e), rc);
-            c->epsilon = (imm_float)e;
+            db->cfg.epsilon = (imm_float)e;
         }
         else
         {
             double e = 0;
             EREAD(!cmp_read_double(&db->file.ctx, &e), rc);
-            c->epsilon = (imm_float)e;
+            db->cfg.epsilon = (imm_float)e;
         }
-        if (c->epsilon < 0 || c->epsilon > 1)
+        if (db->cfg.epsilon < 0 || db->cfg.epsilon > 1)
         {
             rc = error(IMM_PARSEERROR, "wrong epsilon");
             goto cleanup;
@@ -296,6 +297,9 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     if (read_metadata(db))
         goto cleanup;
 
+    db->prof =
+        dcp_super(dcp_normal_profile_new(&db->abc, dcp_meta(NULL, NULL)));
+
     return db;
 
 cleanup:
@@ -311,6 +315,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
                             struct dcp_db_cfg cfg)
 {
     struct dcp_db *db = new_db();
+    db->abc = *abc;
     db->file.fd = fd;
     xcmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = OPEN_WRIT;
@@ -344,14 +349,13 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
 
     if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        struct dcp_pro_profile_cfg *c = (struct dcp_pro_profile_cfg *)(&cfg);
-        if (!write_imm_float(&db->file.ctx, c->epsilon))
+        if (!write_imm_float(&db->file.ctx, db->cfg.epsilon))
         {
             error(IMM_IOERROR, "failed to write epsilon");
             goto cleanup;
         }
 
-        if (!cmp_write_u8(&db->file.ctx, (uint8_t)c->entry_distr))
+        if (!cmp_write_u8(&db->file.ctx, (uint8_t)db->cfg.entry_distr))
         {
             error(IMM_IOERROR, "failed to write entry_distr");
             goto cleanup;
@@ -366,8 +370,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
 
     if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        struct dcp_pro_profile_cfg *c = (struct dcp_pro_profile_cfg *)(&cfg);
-        if (imm_abc_write(imm_super(c->amino), db->file.fd))
+        if (imm_abc_write(imm_super(db->cfg.amino), db->file.fd))
         {
             error(IMM_IOERROR, "failed to write amino alphabet");
             goto cleanup;
@@ -461,16 +464,12 @@ int dcp_db_close(struct dcp_db *db)
     xdel(db->mt.offset);
     xdel(db->mt.name_length);
     xdel(db->mt.data);
+    dcp_del(db->prof);
     free(db);
     return rc;
 }
 
-static int db_closer(struct dcp_db *db)
-{
-    if (fclose(db->file.fd))
-        return error(IMM_IOERROR, "failed to close file");
-    return IMM_SUCCESS;
-}
+static int db_closer(struct dcp_db *db) { return IMM_SUCCESS; }
 
 static int db_closew(struct dcp_db *db)
 {
@@ -496,19 +495,11 @@ static int db_closew(struct dcp_db *db)
         goto cleanup;
     }
 
-    if (fclose(db->file.fd))
-    {
-        rc = error(IMM_IOERROR, "failed to close file");
-        goto cleanup;
-    }
-
     return rc;
 
 cleanup:
     fclose(db->mt.file.fd);
     fclose(db->dp.fd);
-    fclose(db->file.fd);
-    remove(db->file.fp);
     return rc;
 }
 
@@ -516,11 +507,11 @@ struct imm_abc const *dcp_db_abc(struct dcp_db const *db) { return &db->abc; }
 
 unsigned dcp_db_nprofiles(struct dcp_db const *db) { return db->profiles.size; }
 
-struct dcp_metadata dcp_db_metadata(struct dcp_db const *db, unsigned idx)
+struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
 {
     unsigned o = db->mt.offset[idx];
     unsigned size = db->mt.name_length[idx] + 1;
-    return dcp_metadata(db->mt.data + o, db->mt.data + o + size);
+    return dcp_meta(db->mt.data + o, db->mt.data + o + size);
 }
 
 int dcp_db_read(struct dcp_db *db, struct dcp_profile *prof)
@@ -528,8 +519,8 @@ int dcp_db_read(struct dcp_db *db, struct dcp_profile *prof)
     if (dcp_db_end(db))
         return error(IMM_RUNTIMEERROR, "end of profiles");
     prof->idx = db->profiles.curr_idx++;
-    prof->mt = dcp_db_metadata(db, prof->idx);
-    return prof->vtable.read(prof, db->dp.fd);
+    prof->mt = dcp_db_meta(db, prof->idx);
+    return prof->vtable.read(prof, db->file.fd);
 }
 
 bool dcp_db_end(struct dcp_db const *db)

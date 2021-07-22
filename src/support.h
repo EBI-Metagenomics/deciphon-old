@@ -38,7 +38,7 @@ void xcmp_init(cmp_ctx_t *cmp, FILE *file);
 #define xdel(x)                                                                \
     do                                                                         \
     {                                                                          \
-        x = del(x);                                                            \
+        x = __xdel(x);                                                         \
     } while (0);
 
 static inline void *__memcpy(void *restrict dest, const void *restrict src,
@@ -55,7 +55,7 @@ static inline void *__realloc(void *ptr, size_t new_size,
 static inline char *__strdup(char const *str, char const file[static 1],
                              int line) __attribute__((nonnull(1)));
 
-static inline void *del(void const *ptr)
+static inline void *__xdel(void const *ptr)
 {
     if (ptr)
         free((void *)ptr);

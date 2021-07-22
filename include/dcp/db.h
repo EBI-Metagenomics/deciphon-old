@@ -2,7 +2,7 @@
 #define DCP_DB_H
 
 #include "dcp/export.h"
-#include "dcp/metadata.h"
+#include "dcp/meta.h"
 #include "dcp/profile_types.h"
 #include "imm/imm.h"
 #include <stdbool.h>
@@ -15,8 +15,36 @@ struct dcp_db_cfg
 {
     enum dcp_profile_typeid prof_typeid;
     unsigned float_bytes;
-    struct dcp_profile_cfg *cfg;
+    imm_float epsilon;
+    enum dcp_entry_distr entry_distr;
+    struct imm_nuclt const *nuclt;
+    struct imm_amino const *amino;
 };
+
+static inline struct dcp_db_cfg dcp_db_normal(void)
+{
+    return (struct dcp_db_cfg){DCP_NORMAL_PROFILE,
+                               sizeof(imm_float),
+                               IMM_LPROB_NAN,
+                               DCP_ENTRY_DISTR_NULL,
+                               NULL,
+                               NULL};
+}
+
+static inline struct dcp_db_cfg dcp_db_protein(imm_float epsilon,
+                                               enum dcp_entry_distr entry_distr,
+                                               struct imm_nuclt *nuclt,
+                                               struct imm_amino *amino)
+{
+    return (struct dcp_db_cfg){DCP_PROTEIN_PROFILE,
+                               sizeof(imm_float),
+                               epsilon,
+                               entry_distr,
+                               nuclt,
+                               amino};
+}
+
+DCP_API struct dcp_profile *dcp_db_profile(struct dcp_db *db);
 
 DCP_API struct dcp_db *dcp_db_openr(FILE *restrict fd);
 
@@ -34,8 +62,7 @@ DCP_API struct imm_abc const *dcp_db_abc(struct dcp_db const *db);
 
 DCP_API unsigned dcp_db_nprofiles(struct dcp_db const *db);
 
-DCP_API struct dcp_metadata dcp_db_metadata(struct dcp_db const *db,
-                                            unsigned idx);
+DCP_API struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx);
 
 DCP_API int dcp_db_read(struct dcp_db *db, struct dcp_profile *prof);
 

@@ -27,8 +27,8 @@ struct dcp_pro_profile *dcp_pro_profile_new(struct imm_amino const *amino,
     struct dcp_pro_profile *p = xmalloc(sizeof(*p));
     struct dcp_profile_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE,
                                         p};
-    p->super = profile_new(imm_super(nuclt), (struct dcp_metadata){NULL, NULL},
-                           vtable);
+    p->super =
+        profile_new(imm_super(nuclt), (struct dcp_meta){NULL, NULL}, vtable);
     p->amino = amino;
     p->nuclt = nuclt;
     p->edist = edist;
@@ -108,6 +108,11 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, J), t.EC + t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, J), t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
+}
+
+struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro)
+{
+    return pro->super;
 }
 
 void state_name(unsigned id, char name[8])

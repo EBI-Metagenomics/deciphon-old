@@ -35,6 +35,7 @@ endfunction()
 # TLS_VERIFY ON) endif() endfunction(download_file)
 
 dcp_add_test(normal_profile normal_profile.c)
+dcp_add_test(db_normal db_normal.c)
 # dcp_add_test(db db.c) dcp_add_test(server server.c) dcp_add_test(pp
 # "pp.c;data.c") dcp_add_test(db_pp "db_pp.c;data.c") dcp_add_test(metadata
 # metadata.c) dcp_add_test(tasks "tasks.c;pfam24_results.c")

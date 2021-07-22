@@ -17,8 +17,10 @@ struct dcp_normal_profile
 };
 
 DCP_API struct dcp_normal_profile *
-dcp_normal_profile_new(struct imm_abc const *abc, struct dcp_metadata mt,
-                       struct imm_dp *null, struct imm_dp *alt);
+dcp_normal_profile_new(struct imm_abc const *abc, struct dcp_meta mt);
+
+DCP_API void dcp_normal_profile_reset(struct dcp_normal_profile *p,
+                                      struct dcp_meta mt);
 
 static inline void dcp_normal_profile_del(struct dcp_normal_profile const *prof)
 {
@@ -26,6 +28,12 @@ static inline void dcp_normal_profile_del(struct dcp_normal_profile const *prof)
     {
         prof->super->vtable.del(prof->super);
     }
+}
+
+static inline struct dcp_profile *
+dcp_normal_profile_super(struct dcp_normal_profile *normal)
+{
+    return normal->super;
 }
 
 #endif

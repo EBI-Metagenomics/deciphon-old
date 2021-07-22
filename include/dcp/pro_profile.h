@@ -19,4 +19,6 @@ DCP_API void dcp_pro_profile_del(struct dcp_pro_profile const *p);
 DCP_API void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
                                    bool multihits, bool hmmer3_compat);
 
+DCP_API struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro);
+
 #endif

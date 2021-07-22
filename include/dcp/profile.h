@@ -2,7 +2,7 @@
 #define DCP_PROFILE_H
 
 #include "dcp/export.h"
-#include "dcp/metadata.h"
+#include "dcp/meta.h"
 #include "dcp/profile_types.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -14,13 +14,25 @@ struct dcp_profile
 {
     unsigned idx;
     struct imm_abc const *abc;
-    struct dcp_metadata mt;
+    struct dcp_meta mt;
     struct dcp_profile_vtable vtable;
 };
 
 static inline void dcp_profile_del(struct dcp_profile const *prof)
 {
-    prof->vtable.del(prof);
+    if (prof)
+        prof->vtable.del(prof);
+}
+
+static inline enum dcp_profile_typeid
+dcp_profile_typeid(struct dcp_profile const *prof)
+{
+    return prof->vtable.typeid;
+}
+
+static inline void *dcp_profile_derived(struct dcp_profile *prof)
+{
+    return prof->vtable.derived;
 }
 
 #endif

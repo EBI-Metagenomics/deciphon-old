@@ -10,16 +10,20 @@ static int write(struct dcp_profile const *prof, FILE *restrict fd);
 static void del(struct dcp_profile const *prof);
 
 DCP_API struct dcp_normal_profile *
-dcp_normal_profile_new(struct imm_abc const *abc, struct dcp_metadata mt,
-                       struct imm_dp *null, struct imm_dp *alt)
+dcp_normal_profile_new(struct imm_abc const *abc, struct dcp_meta mt)
 {
     struct dcp_normal_profile *prof = xmalloc(sizeof(*prof));
-    prof->dp.null = null;
-    prof->dp.alt = alt;
+    prof->dp.null = imm_dp_new(abc);
+    prof->dp.alt = imm_dp_new(abc);
     struct dcp_profile_vtable vtable = {read, write, del, DCP_NORMAL_PROFILE,
                                         prof};
     prof->super = profile_new(abc, mt, vtable);
     return prof;
+}
+
+void dcp_normal_profile_reset(struct dcp_normal_profile *p, struct dcp_meta mt)
+{
+    p->super->mt = mt;
 }
 
 static int read(struct dcp_profile *prof, FILE *restrict fd)

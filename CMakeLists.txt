@@ -34,7 +34,6 @@ add_library(
   # src/fifo.c
   src/fifo1.c
   # src/input.c
-  # src/metadata.c
   # src/mpool.c
   # src/output.c
   src/profile.c

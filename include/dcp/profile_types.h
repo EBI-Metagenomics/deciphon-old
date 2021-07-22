@@ -33,22 +33,4 @@ struct dcp_profile_vtable
     void *derived;
 };
 
-struct dcp_profile_cfg
-{
-};
-
-struct dcp_pro_profile_cfg
-{
-    struct dcp_profile_cfg super;
-    imm_float epsilon;
-    enum dcp_entry_distr entry_distr;
-    struct imm_nuclt *nuclt;
-    struct imm_amino *amino;
-};
-
-struct dcp_normal_profile_cfg
-{
-    struct dcp_profile_cfg super;
-};
-
 #endif
