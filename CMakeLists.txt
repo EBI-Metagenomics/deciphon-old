@@ -37,7 +37,7 @@ add_library(
   # src/mpool.c
   # src/output.c
   src/profile.c
-  src/normal_profile.c
+  src/std_profile.c
   src/pro_profile.c
   # src/result.c
   # src/result_ring.c
