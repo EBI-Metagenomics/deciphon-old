@@ -244,7 +244,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
 
     uint8_t prof_type = 0;
     EREAD(!cmp_read_u8(&db->file.ctx, &prof_type), rc);
-    if (prof_type != DCP_NORMAL_PROFILE && prof_type != DCP_PROTEIN_PROFILE)
+    if (prof_type != DCP_STD_PROFILE && prof_type != DCP_PROTEIN_PROFILE)
     {
         rc = error(IMM_PARSEERROR, "wrong prof_type");
         goto cleanup;
@@ -297,8 +297,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     if (read_metadata(db))
         goto cleanup;
 
-    db->prof =
-        dcp_super(dcp_normal_profile_new(&db->abc, dcp_meta(NULL, NULL)));
+    db->prof = dcp_super(dcp_std_profile_new(&db->abc, dcp_meta(NULL, NULL)));
 
     return db;
 

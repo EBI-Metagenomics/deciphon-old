@@ -13,10 +13,10 @@ extern "C" {
 #include "dcp/model.h"
 #include "dcp/profile_types.h"
 /* #include "dcp/output.h" */
-#include "dcp/normal_profile.h"
 #include "dcp/pro_model.h"
 #include "dcp/pro_profile.h"
 #include "dcp/profile.h"
+#include "dcp/std_profile.h"
 /* #include "dcp/result.h" */
 /* #include "dcp/results.h" */
 #include "dcp/server.h"

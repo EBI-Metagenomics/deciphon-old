@@ -29,7 +29,7 @@ void test_db_openw_empty(void)
     struct imm_dna const *dna = &imm_dna_default;
     struct imm_abc const *abc = imm_super(imm_super(dna));
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
-    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_normal());
+    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_std());
     EQ(dcp_db_close(db), IMM_SUCCESS);
     fclose(fd);
 }
@@ -39,7 +39,7 @@ void test_db_openr_empty(void)
     FILE *fd = fopen(TMPDIR "/empty.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
     struct dcp_db_cfg const *cfg = dcp_db_cfg(db);
-    EQ(cfg->prof_typeid, DCP_NORMAL_PROFILE);
+    EQ(cfg->prof_typeid, DCP_STD_PROFILE);
     EQ(cfg->float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
@@ -62,10 +62,10 @@ void test_db_openw_one_mute(void)
     EQ(imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3)), IMM_SUCCESS);
 
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
-    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_normal());
+    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_std());
 
-    struct dcp_normal_profile *p =
-        dcp_normal_profile_new(abc, dcp_meta("NAME0", "ACC0"));
+    struct dcp_std_profile *p =
+        dcp_std_profile_new(abc, dcp_meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
@@ -82,7 +82,7 @@ void test_db_openr_one_mute(void)
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
     struct dcp_db_cfg const *cfg = dcp_db_cfg(db);
-    EQ(cfg->prof_typeid, DCP_NORMAL_PROFILE);
+    EQ(cfg->prof_typeid, DCP_STD_PROFILE);
     EQ(cfg->float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
@@ -107,11 +107,11 @@ void test_db_openw_example1(void)
     imm_example1_init();
     struct imm_example1 *m = &imm_example1;
     FILE *fd = fopen(TMPDIR "/example1.dcp", "wb");
-    struct dcp_db *db = dcp_db_openw(fd, &m->abc, dcp_db_normal());
+    struct dcp_db *db = dcp_db_openw(fd, &m->abc, dcp_db_std());
 
     /* Profile 0 */
-    struct dcp_normal_profile *p =
-        dcp_normal_profile_new(&m->abc, dcp_meta("NAME0", "ACC0"));
+    struct dcp_std_profile *p =
+        dcp_std_profile_new(&m->abc, dcp_meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.n), p->dp.null),
        IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(m->hmm, imm_super(m->end), p->dp.alt), IMM_SUCCESS);
@@ -122,7 +122,7 @@ void test_db_openw_example1(void)
     struct imm_hmm *hmm = imm_hmm_new(&m->abc);
     EQ(imm_hmm_add_state(hmm, imm_super(state)), IMM_SUCCESS);
     EQ(imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3)), IMM_SUCCESS);
-    dcp_normal_profile_reset(p, dcp_meta("NAME1", "ACC1"));
+    dcp_std_profile_reset(p, dcp_meta("NAME1", "ACC1"));
     EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
@@ -140,7 +140,7 @@ void test_db_openr_example1(void)
     FILE *fd = fopen(TMPDIR "/example1.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
     struct dcp_db_cfg const *cfg = dcp_db_cfg(db);
-    EQ(cfg->prof_typeid, DCP_NORMAL_PROFILE);
+    EQ(cfg->prof_typeid, DCP_STD_PROFILE);
     EQ(cfg->float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     EQ(imm_abc_typeid(dcp_db_abc(db)), IMM_ABC);
@@ -159,10 +159,10 @@ void test_db_openr_example1(void)
     while (!dcp_db_end(db))
     {
         EQ(dcp_db_read(db, p), IMM_SUCCESS);
-        EQ(dcp_profile_typeid(p), DCP_NORMAL_PROFILE);
+        EQ(dcp_profile_typeid(p), DCP_STD_PROFILE);
         if (p->idx == 0)
         {
-            struct dcp_normal_profile *prof = dcp_profile_derived(p);
+            struct dcp_std_profile *prof = dcp_profile_derived(p);
             struct imm_task *task = imm_task_new(prof->dp.alt);
             struct imm_seq seq = imm_seq(imm_str(imm_example1_seq), p->abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
@@ -185,18 +185,18 @@ void test_db_openw_example2(void)
     struct imm_example2 *m = &imm_example2;
     struct imm_abc const *abc = imm_super(imm_super(m->dna));
     FILE *fd = fopen(TMPDIR "/example2.dcp", "wb");
-    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_normal());
+    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_std());
 
     /* Profile 0 */
-    struct dcp_normal_profile *p =
-        dcp_normal_profile_new(abc, dcp_meta("NAME0", "ACC0"));
+    struct dcp_std_profile *p =
+        dcp_std_profile_new(abc, dcp_meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.n), p->dp.null),
        IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(m->hmm, imm_super(m->end), p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
     /* Profile 1 */
-    dcp_normal_profile_reset(p, dcp_meta("NAME1", "ACC1"));
+    dcp_std_profile_reset(p, dcp_meta("NAME1", "ACC1"));
     struct imm_mute_state *state = imm_mute_state_new(3, abc);
     struct imm_hmm *hmm = imm_hmm_new(abc);
     EQ(imm_hmm_add_state(hmm, imm_super(state)), IMM_SUCCESS);
@@ -218,7 +218,7 @@ void test_db_openr_example2(void)
     FILE *fd = fopen(TMPDIR "/example2.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
     struct dcp_db_cfg const *cfg = dcp_db_cfg(db);
-    EQ(cfg->prof_typeid, DCP_NORMAL_PROFILE);
+    EQ(cfg->prof_typeid, DCP_STD_PROFILE);
     EQ(cfg->float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
@@ -238,10 +238,10 @@ void test_db_openr_example2(void)
     while (!dcp_db_end(db))
     {
         EQ(dcp_db_read(db, p), IMM_SUCCESS);
-        EQ(dcp_profile_typeid(p), DCP_NORMAL_PROFILE);
+        EQ(dcp_profile_typeid(p), DCP_STD_PROFILE);
         if (p->idx == 0)
         {
-            struct dcp_normal_profile *prof = dcp_profile_derived(p);
+            struct dcp_std_profile *prof = dcp_profile_derived(p);
             struct imm_task *task = imm_task_new(prof->dp.alt);
             struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), p->abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);

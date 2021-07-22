@@ -21,9 +21,9 @@ struct dcp_db_cfg
     struct imm_amino const *amino;
 };
 
-static inline struct dcp_db_cfg dcp_db_normal(void)
+static inline struct dcp_db_cfg dcp_db_std(void)
 {
-    return (struct dcp_db_cfg){DCP_NORMAL_PROFILE,
+    return (struct dcp_db_cfg){DCP_STD_PROFILE,
                                sizeof(imm_float),
                                IMM_LPROB_NAN,
                                DCP_ENTRY_DISTR_NULL,
