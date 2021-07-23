@@ -4,7 +4,7 @@
 #include "pro_model.h"
 #include "support.h"
 
-struct dcp_pro_model_node
+struct node
 {
     struct imm_frame_state *M;
     struct imm_frame_state *I;
@@ -13,15 +13,23 @@ struct dcp_pro_model_node
     struct imm_codon_marg codonm;
 };
 
-struct dcp_pro_model_special_node
+struct special_node
 {
-    struct imm_mute_state *S;
-    struct imm_frame_state *N;
-    struct imm_mute_state *B;
-    struct imm_mute_state *E;
-    struct imm_frame_state *J;
-    struct imm_frame_state *C;
-    struct imm_mute_state *T;
+    struct
+    {
+        struct imm_frame_state *R;
+    } null;
+
+    struct
+    {
+        struct imm_mute_state *S;
+        struct imm_frame_state *N;
+        struct imm_mute_state *B;
+        struct imm_mute_state *E;
+        struct imm_frame_state *J;
+        struct imm_frame_state *C;
+        struct imm_mute_state *T;
+    } alt;
 };
 
 struct dcp_pro_model
@@ -31,6 +39,7 @@ struct dcp_pro_model
     unsigned core_size;
     imm_float epsilon;
     enum dcp_entry_distr edist;
+    struct special_node special;
     struct pro_model_special_trans special_trans;
 
     struct
@@ -38,14 +47,12 @@ struct dcp_pro_model
         imm_float lprobs[IMM_AMINO_SIZE];
         struct imm_nuclt_lprob nucltp;
         struct imm_codon_marg codonm;
-        struct imm_frame_state *R;
         struct imm_hmm *hmm;
     } null;
 
     struct
     {
-        struct dcp_pro_model_special_node special;
-        struct dcp_pro_model_node *nodes;
+        struct node *nodes;
         struct dcp_pro_model_trans *trans;
         struct imm_hmm *hmm;
         unsigned idx;
@@ -124,36 +131,36 @@ dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
     struct imm_nuclt_lprob const *null_nucltp = &m->null.nucltp;
     struct imm_codon_marg const *null_codonm = &m->null.codonm;
 
-    m->null.R =
+    m->special.null.R =
         imm_frame_state_new(DCP_PRO_MODEL_R_ID, null_nucltp, null_codonm, e);
 
-    imm_hmm_add_state(m->null.hmm, imm_super(m->null.R));
-    imm_hmm_set_start(m->null.hmm, imm_super(m->null.R), imm_log(1));
+    imm_hmm_add_state(m->null.hmm, imm_super(m->special.null.R));
+    imm_hmm_set_start(m->null.hmm, imm_super(m->special.null.R), imm_log(1));
 
-    m->alt.special.S =
+    m->special.alt.S =
         imm_mute_state_new(DCP_PRO_MODEL_S_ID, imm_super(m->nuclt));
-    m->alt.special.N =
+    m->special.alt.N =
         imm_frame_state_new(DCP_PRO_MODEL_N_ID, null_nucltp, null_codonm, e);
-    m->alt.special.B =
+    m->special.alt.B =
         imm_mute_state_new(DCP_PRO_MODEL_B_ID, imm_super(m->nuclt));
-    m->alt.special.E =
+    m->special.alt.E =
         imm_mute_state_new(DCP_PRO_MODEL_E_ID, imm_super(m->nuclt));
-    m->alt.special.J =
+    m->special.alt.J =
         imm_frame_state_new(DCP_PRO_MODEL_J_ID, null_nucltp, null_codonm, e);
-    m->alt.special.C =
+    m->special.alt.C =
         imm_frame_state_new(DCP_PRO_MODEL_C_ID, null_nucltp, null_codonm, e);
-    m->alt.special.T =
+    m->special.alt.T =
         imm_mute_state_new(DCP_PRO_MODEL_T_ID, imm_super(m->nuclt));
 
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->alt.special.S));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->alt.special.N));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->alt.special.B));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->alt.special.E));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->alt.special.J));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->alt.special.C));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->alt.special.T));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.S));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.N));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.B));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.E));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.J));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.C));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.T));
 
-    imm_hmm_set_start(m->alt.hmm, imm_super(m->alt.special.S), imm_log(1));
+    imm_hmm_set_start(m->alt.hmm, imm_super(m->special.alt.S), imm_log(1));
 
     m->core_size = core_size;
     m->alt.nodes = xcalloc(core_size, sizeof(*m->alt.nodes));
@@ -174,16 +181,15 @@ dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
 
 cleanup:
 
-    imm_del(m->null.R);
+    imm_del(m->special.null.R);
+    imm_del(m->special.alt.S);
+    imm_del(m->special.alt.N);
+    imm_del(m->special.alt.B);
+    imm_del(m->special.alt.E);
+    imm_del(m->special.alt.J);
+    imm_del(m->special.alt.C);
+    imm_del(m->special.alt.T);
     imm_del(m->null.hmm);
-
-    imm_del(m->alt.special.S);
-    imm_del(m->alt.special.N);
-    imm_del(m->alt.special.B);
-    imm_del(m->alt.special.E);
-    imm_del(m->alt.special.J);
-    imm_del(m->alt.special.C);
-    imm_del(m->alt.special.T);
     imm_del(m->alt.hmm);
     free(m->alt.nodes);
     free(m->alt.trans);
@@ -241,7 +247,7 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
     for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
         lodds[i] = lprobs[i] - m->null.lprobs[i];
 
-    struct dcp_pro_model_node *n = m->alt.nodes + m->alt.idx;
+    struct node *n = m->alt.nodes + m->alt.idx;
 
     if ((rc = setup_distrs(m->amino, m->nuclt, lodds, &n->nucltp, &n->codonm)))
         return rc;
@@ -273,16 +279,16 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
 struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
 {
     return (struct pro_model_summary){
-        .null = {.hmm = m->null.hmm, .R = m->null.R},
+        .null = {.hmm = m->null.hmm, .R = m->special.null.R},
         .alt = {
             .hmm = m->alt.hmm,
-            .S = m->alt.special.S,
-            .N = m->alt.special.N,
-            .B = m->alt.special.B,
-            .E = m->alt.special.E,
-            .J = m->alt.special.J,
-            .C = m->alt.special.C,
-            .T = m->alt.special.T,
+            .S = m->special.alt.S,
+            .N = m->special.alt.N,
+            .B = m->special.alt.B,
+            .E = m->special.alt.E,
+            .J = m->special.alt.J,
+            .C = m->special.alt.C,
+            .T = m->special.alt.T,
         }};
 }
 
@@ -364,14 +370,14 @@ static int setup_transitions(struct dcp_pro_model *m)
     struct imm_hmm *hmm = m->alt.hmm;
     struct dcp_pro_model_trans *trans = m->alt.trans;
 
-    struct imm_state *B = imm_super(m->alt.special.B);
+    struct imm_state *B = imm_super(m->special.alt.B);
     struct imm_state *M1 = imm_super(m->alt.nodes[0].M);
     imm_hmm_set_trans(hmm, B, M1, trans[0].MM);
 
     for (unsigned i = 0; i + 1 < m->core_size; ++i)
     {
-        struct dcp_pro_model_node prev = m->alt.nodes[i];
-        struct dcp_pro_model_node next = m->alt.nodes[i + 1];
+        struct node prev = m->alt.nodes[i];
+        struct node next = m->alt.nodes[i + 1];
         unsigned j = i + 1;
         imm_hmm_set_trans(hmm, imm_super(prev.M), imm_super(prev.I),
                           trans[j].MI);
@@ -391,7 +397,7 @@ static int setup_transitions(struct dcp_pro_model *m)
 
     unsigned n = m->core_size;
     struct imm_state *Mm = imm_super(m->alt.nodes[n - 1].M);
-    imm_hmm_set_trans(hmm, Mm, imm_super(m->alt.special.E), trans[n].MM);
+    imm_hmm_set_trans(hmm, Mm, imm_super(m->special.alt.E), trans[n].MM);
 
     setup_entry_transitions(m);
     set_exit_transitions(m);
@@ -405,10 +411,10 @@ static void setup_entry_transitions(struct dcp_pro_model *m)
         imm_float M = (imm_float)m->core_size;
         imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;
 
-        struct imm_state *B = imm_super(m->alt.special.B);
+        struct imm_state *B = imm_super(m->special.alt.B);
         for (unsigned i = 0; i < m->core_size; ++i)
         {
-            struct dcp_pro_model_node *node = m->alt.nodes + i;
+            struct node *node = m->alt.nodes + i;
             imm_hmm_set_trans(m->alt.hmm, B, imm_super(node->M), cost);
         }
     }
@@ -417,10 +423,10 @@ static void setup_entry_transitions(struct dcp_pro_model *m)
         IMM_BUG(m->edist != DCP_ENTRY_DISTR_OCCUPANCY);
         imm_float *locc = xmalloc((m->core_size) * sizeof(*locc));
         calculate_occupancy(m, locc);
-        struct imm_state *B = imm_super(m->alt.special.B);
+        struct imm_state *B = imm_super(m->special.alt.B);
         for (unsigned i = 0; i < m->core_size; ++i)
         {
-            struct dcp_pro_model_node *node = m->alt.nodes + i;
+            struct node *node = m->alt.nodes + i;
             imm_hmm_set_trans(m->alt.hmm, B, imm_super(node->M), locc[i]);
         }
         free(locc);
@@ -429,16 +435,16 @@ static void setup_entry_transitions(struct dcp_pro_model *m)
 
 static void set_exit_transitions(struct dcp_pro_model *m)
 {
-    struct imm_state *E = imm_super(m->alt.special.E);
+    struct imm_state *E = imm_super(m->special.alt.E);
 
     for (unsigned i = 0; i < m->core_size; ++i)
     {
-        struct dcp_pro_model_node *node = m->alt.nodes + i;
+        struct node *node = m->alt.nodes + i;
         imm_hmm_set_trans(m->alt.hmm, imm_super(node->M), E, imm_log(1));
     }
     for (unsigned i = 1; i < m->core_size; ++i)
     {
-        struct dcp_pro_model_node *node = m->alt.nodes + i;
+        struct node *node = m->alt.nodes + i;
         imm_hmm_set_trans(m->alt.hmm, imm_super(node->D), E, imm_log(1));
     }
 }
@@ -478,24 +484,24 @@ static void calculate_occupancy(struct dcp_pro_model *m,
 static void init_special_trans(struct dcp_pro_model *m)
 {
     imm_float const one = imm_log(1.0);
-    struct dcp_pro_model_special_node *n = &m->alt.special;
+    struct special_node *n = &m->special;
 
     struct imm_hmm *hmm = m->null.hmm;
-    imm_hmm_set_trans(hmm, imm_super(m->null.R), imm_super(m->null.R), one);
+    imm_hmm_set_trans(hmm, imm_super(n->null.R), imm_super(n->null.R), one);
 
     hmm = m->alt.hmm;
-    imm_hmm_set_trans(hmm, imm_super(n->S), imm_super(n->B), one);
-    imm_hmm_set_trans(hmm, imm_super(n->S), imm_super(n->N), one);
-    imm_hmm_set_trans(hmm, imm_super(n->N), imm_super(n->N), one);
-    imm_hmm_set_trans(hmm, imm_super(n->N), imm_super(n->B), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.S), imm_super(n->alt.B), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.S), imm_super(n->alt.N), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.N), imm_super(n->alt.N), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.N), imm_super(n->alt.B), one);
 
-    imm_hmm_set_trans(hmm, imm_super(n->E), imm_super(n->T), one);
-    imm_hmm_set_trans(hmm, imm_super(n->E), imm_super(n->C), one);
-    imm_hmm_set_trans(hmm, imm_super(n->C), imm_super(n->C), one);
-    imm_hmm_set_trans(hmm, imm_super(n->C), imm_super(n->T), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.E), imm_super(n->alt.T), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.E), imm_super(n->alt.C), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.C), imm_super(n->alt.C), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.C), imm_super(n->alt.T), one);
 
-    imm_hmm_set_trans(hmm, imm_super(n->E), imm_super(n->B), one);
-    imm_hmm_set_trans(hmm, imm_super(n->E), imm_super(n->J), one);
-    imm_hmm_set_trans(hmm, imm_super(n->J), imm_super(n->J), one);
-    imm_hmm_set_trans(hmm, imm_super(n->J), imm_super(n->B), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.E), imm_super(n->alt.B), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.E), imm_super(n->alt.J), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.J), imm_super(n->alt.J), one);
+    imm_hmm_set_trans(hmm, imm_super(n->alt.J), imm_super(n->alt.B), one);
 }

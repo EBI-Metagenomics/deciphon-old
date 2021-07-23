@@ -30,7 +30,6 @@ struct dcp_pro_model_trans
 };
 
 struct dcp_pro_model;
-struct dcp_pro_model_node;
 struct dcp_pro_profile;
 
 DCP_API struct dcp_pro_model *

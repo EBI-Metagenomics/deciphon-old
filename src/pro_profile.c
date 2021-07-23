@@ -1,10 +1,36 @@
 #include "dcp/pro_profile.h"
 #include "imm/imm.h"
 #include "pro_model.h"
-#include "pro_profile.h"
 #include "profile.h"
 #include "support.h"
 #include <assert.h>
+
+struct dcp_pro_profile
+{
+    struct dcp_profile *super;
+    struct imm_amino const *amino;
+    struct imm_nuclt const *nuclt;
+    enum dcp_entry_distr edist;
+    imm_float epsilon;
+
+    struct
+    {
+        struct imm_dp *dp;
+        unsigned R;
+    } null;
+
+    struct
+    {
+        struct imm_dp *dp;
+        unsigned S;
+        unsigned N;
+        unsigned B;
+        unsigned E;
+        unsigned J;
+        unsigned C;
+        unsigned T;
+    } alt;
+};
 
 static int read(struct dcp_profile *prof, FILE *restrict fd);
 
