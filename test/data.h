@@ -6,7 +6,7 @@
 
 struct pro_profile_3core_nodes
 {
-    struct imm_amino amino;
+    struct imm_amino const *amino;
     struct imm_dna const *dna;
     unsigned core_size;
     enum dcp_entry_distr edistr;

@@ -314,6 +314,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
                             struct dcp_db_cfg cfg)
 {
     struct dcp_db *db = new_db();
+    db->cfg = cfg;
     db->abc = *abc;
     db->file.fd = fd;
     xcmp_init(&db->file.ctx, db->file.fd);
@@ -369,7 +370,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
 
     if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        if (imm_abc_write(imm_super(db->cfg.amino), db->file.fd))
+        if (imm_abc_write(imm_super(cfg.amino), db->file.fd))
         {
             error(IMM_IOERROR, "failed to write amino alphabet");
             goto cleanup;

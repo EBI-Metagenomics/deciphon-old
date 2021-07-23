@@ -3,7 +3,7 @@
 struct pro_profile_3core_nodes pro_profile_with_3cores_data(void)
 {
     struct pro_profile_3core_nodes data = {
-        .amino = imm_amino_iupac,
+        .amino = &imm_amino_iupac,
         .dna = imm_gc_dna(),
         .core_size = 3,
         .edistr = DCP_ENTRY_DISTR_OCCUPANCY,
@@ -65,7 +65,7 @@ struct dcp_pro_profile *pro_profile_with_3cores(void)
 {
     struct pro_profile_3core_nodes data = pro_profile_with_3cores_data();
     struct dcp_pro_model *model = dcp_pro_model_new(
-        &data.amino, imm_super(data.dna), data.null_lprobs, data.null_lodds,
+        data.amino, imm_super(data.dna), data.null_lprobs, data.null_lodds,
         data.epsilon, data.core_size, data.edistr);
 
     dcp_pro_model_add_node(model, data.match_lprobs1);
@@ -78,8 +78,8 @@ struct dcp_pro_profile *pro_profile_with_3cores(void)
     dcp_pro_model_add_trans(model, data.trans3);
 
     struct dcp_pro_profile *p = dcp_pro_profile_new(
-        &data.amino, imm_super(data.dna), dcp_meta("NAME0", "ACC0"),
-        data.edistr, data.epsilon);
+        data.amino, imm_super(data.dna), dcp_meta("NAME0", "ACC0"), data.edistr,
+        data.epsilon);
 
     dcp_pro_profile_init(p, model);
     return p;
