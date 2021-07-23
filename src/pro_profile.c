@@ -65,16 +65,6 @@ struct dcp_pro_profile *dcp_pro_profile_new(struct imm_amino const *amino,
     return p;
 }
 
-void dcp_pro_profile_del(struct dcp_pro_profile const *p)
-{
-    if (p)
-    {
-        imm_dp_del(p->null.dp);
-        imm_dp_del(p->alt.dp);
-        free((void *)p);
-    }
-}
-
 void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
                            bool multihits, bool hmmer3_compat)
 {
@@ -163,7 +153,7 @@ int dcp_pro_profile_init(struct dcp_pro_profile *p,
     return rc;
 }
 
-struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro)
+struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile const *pro)
 {
     return pro->super;
 }

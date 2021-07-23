@@ -44,4 +44,6 @@ DCP_API int dcp_pro_model_add_node(struct dcp_pro_model *m,
 DCP_API int dcp_pro_model_add_trans(struct dcp_pro_model *m,
                                     struct dcp_pro_model_trans trans);
 
+DCP_API void dcp_pro_model_del(struct dcp_pro_model const *model);
+
 #endif

@@ -46,7 +46,6 @@ void test_3core_nodes(void)
 
     struct imm_dp const *adp = dcp_pro_profile_alt_dp(p);
     struct imm_task *atask = imm_task_new(adp);
-    result = imm_result();
     imm_task_setup(atask, &seq);
     imm_dp_viterbi(adp, atask, &result);
 
@@ -81,5 +80,7 @@ void test_3core_nodes(void)
     EQ(imm_path_step(&result.path, 24)->seqlen, 0);
     EQ(imm_path_step(&result.path, 24)->state_id, DCP_PRO_MODEL_T_ID);
 
-    imm_result_del(&result);
+    imm_del(&result);
+    imm_del(ntask);
+    imm_del(atask);
 }

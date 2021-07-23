@@ -82,5 +82,6 @@ struct dcp_pro_profile *pro_profile_with_3cores(void)
         data.epsilon);
 
     dcp_pro_profile_init(p, model);
+    dcp_del(model);
     return p;
 }

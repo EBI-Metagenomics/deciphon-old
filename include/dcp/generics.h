@@ -13,6 +13,7 @@
     _Generic((x), struct dcp_profile *                                         \
              : dcp_profile_del, struct dcp_std_profile *                       \
              : dcp_std_profile_del, struct dcp_pro_profile *                   \
-             : dcp_pro_profile_del)(x)
+             : dcp_pro_profile_del, struct dcp_pro_model *                     \
+             : dcp_pro_model_del)(x)
 
 #endif

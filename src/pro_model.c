@@ -276,6 +276,34 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
     return rc;
 }
 
+void dcp_pro_model_del(struct dcp_pro_model const *model)
+{
+    if (model)
+    {
+        imm_del(model->special.null.R);
+        imm_del(model->special.alt.S);
+        imm_del(model->special.alt.N);
+        imm_del(model->special.alt.B);
+        imm_del(model->special.alt.E);
+        imm_del(model->special.alt.J);
+        imm_del(model->special.alt.C);
+        imm_del(model->special.alt.T);
+        imm_del(model->null.hmm);
+        imm_del(model->alt.hmm);
+
+        for (unsigned i = 0; i < model->core_size; ++i)
+        {
+            imm_del(model->alt.nodes[i].M);
+            imm_del(model->alt.nodes[i].I);
+            imm_del(model->alt.nodes[i].D);
+        }
+
+        free(model->alt.nodes);
+        free(model->alt.trans);
+        free((void *)model);
+    }
+}
+
 struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
 {
     return (struct pro_model_summary){
