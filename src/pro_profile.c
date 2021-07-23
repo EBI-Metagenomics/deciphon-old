@@ -47,14 +47,14 @@ static int setup_distributions(struct imm_amino const *amino,
 
 struct dcp_pro_profile *dcp_pro_profile_new(struct imm_amino const *amino,
                                             struct imm_nuclt const *nuclt,
+                                            struct dcp_meta mt,
                                             enum dcp_entry_distr edist,
                                             imm_float epsilon)
 {
     struct dcp_pro_profile *p = xmalloc(sizeof(*p));
     struct dcp_profile_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE,
                                         p};
-    p->super =
-        profile_new(imm_super(nuclt), (struct dcp_meta){NULL, NULL}, vtable);
+    p->super = profile_new(imm_super(nuclt), mt, vtable);
     p->amino = amino;
     p->nuclt = nuclt;
     p->edist = edist;
@@ -176,6 +176,16 @@ struct imm_dp const *dcp_pro_profile_null_dp(struct dcp_pro_profile *pro)
 struct imm_dp const *dcp_pro_profile_alt_dp(struct dcp_pro_profile *pro)
 {
     return pro->alt.dp;
+}
+
+struct imm_amino const *dcp_pro_profile_amino(struct dcp_pro_profile *pro)
+{
+    return pro->amino;
+}
+
+struct imm_nuclt const *dcp_pro_profile_nuclt(struct dcp_pro_profile *pro)
+{
+    return pro->nuclt;
 }
 
 void state_name(unsigned id, char name[8])

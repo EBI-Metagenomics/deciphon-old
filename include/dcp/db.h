@@ -16,7 +16,7 @@ struct dcp_db_cfg
     enum dcp_profile_typeid prof_typeid;
     unsigned float_bytes;
     imm_float epsilon;
-    enum dcp_entry_distr entry_distr;
+    enum dcp_entry_distr edistr;
     struct imm_nuclt const *nuclt;
     struct imm_amino const *amino;
 };
@@ -24,24 +24,20 @@ struct dcp_db_cfg
 static inline struct dcp_db_cfg dcp_db_std(void)
 {
     return (struct dcp_db_cfg){DCP_STD_PROFILE,
-                               sizeof(imm_float),
+                               IMM_FLOAT_BYTES,
                                IMM_LPROB_NAN,
                                DCP_ENTRY_DISTR_NULL,
                                NULL,
                                NULL};
 }
 
-static inline struct dcp_db_cfg dcp_db_protein(imm_float epsilon,
-                                               enum dcp_entry_distr entry_distr,
-                                               struct imm_nuclt *nuclt,
-                                               struct imm_amino *amino)
+static inline struct dcp_db_cfg dcp_db_pro(imm_float epsilon,
+                                           enum dcp_entry_distr edistr,
+                                           struct imm_nuclt const *nuclt,
+                                           struct imm_amino const *amino)
 {
-    return (struct dcp_db_cfg){DCP_PROTEIN_PROFILE,
-                               sizeof(imm_float),
-                               epsilon,
-                               entry_distr,
-                               nuclt,
-                               amino};
+    return (struct dcp_db_cfg){
+        DCP_PROTEIN_PROFILE, IMM_FLOAT_BYTES, epsilon, edistr, nuclt, amino};
 }
 
 DCP_API struct dcp_profile *dcp_db_profile(struct dcp_db *db);

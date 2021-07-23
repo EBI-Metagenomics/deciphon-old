@@ -108,6 +108,7 @@ void test_db_openw_example1(void)
     struct imm_example1 *m = &imm_example1;
     FILE *fd = fopen(TMPDIR "/example1.dcp", "wb");
     struct dcp_db *db = dcp_db_openw(fd, &m->abc, dcp_db_std());
+    NOTNULL(db);
 
     /* Profile 0 */
     struct dcp_std_profile *p =

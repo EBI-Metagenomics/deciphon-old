@@ -13,32 +13,17 @@ int main(void)
 
 void test_3core_nodes(void)
 {
-    struct pp_3core_nodes data = pp_3core_nodes_data();
-    struct dcp_pro_model *model = dcp_pro_model_new(
-        &data.amino, imm_super(data.dna), data.null_lprobs, data.null_lodds,
-        data.epsilon, data.core_size, data.edistr);
-
-    dcp_pro_model_add_node(model, data.match_lprobs1);
-    dcp_pro_model_add_node(model, data.match_lprobs2);
-    dcp_pro_model_add_node(model, data.match_lprobs3);
-
-    dcp_pro_model_add_trans(model, data.trans0);
-    dcp_pro_model_add_trans(model, data.trans1);
-    dcp_pro_model_add_trans(model, data.trans2);
-    dcp_pro_model_add_trans(model, data.trans3);
-
-    struct dcp_pro_profile *p = dcp_pro_profile_new(
-        &data.amino, imm_super(data.dna), data.edistr, data.epsilon);
+    struct dcp_pro_profile *p = pro_profile_with_3cores();
+    struct dcp_profile *prof = dcp_super(p);
 
     char str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC"
                  "CATCACCATTACCACAGGTAACGGTGCGGGC";
 
-    struct imm_seq seq = imm_seq(imm_str(str), imm_super(imm_super(data.dna)));
+    struct imm_seq seq = imm_seq(imm_str(str), prof->abc);
 
     unsigned len = (unsigned)strlen(str);
     bool multihits = true;
     bool hmmer3_compat = false;
-    dcp_pro_profile_init(p, model);
     dcp_pro_profile_setup(p, len, multihits, hmmer3_compat);
 
     struct imm_dp const *ndp = dcp_pro_profile_null_dp(p);

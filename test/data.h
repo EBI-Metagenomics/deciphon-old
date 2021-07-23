@@ -4,7 +4,7 @@
 #include "dcp/dcp.h"
 #include "imm/imm.h"
 
-struct pp_3core_nodes
+struct pro_profile_3core_nodes
 {
     struct imm_amino amino;
     struct imm_dna const *dna;
@@ -22,6 +22,7 @@ struct pp_3core_nodes
     struct dcp_pro_model_trans trans3;
 };
 
-struct pp_3core_nodes pp_3core_nodes_data(void);
+struct pro_profile_3core_nodes pro_profile_with_3cores_data(void);
+struct dcp_pro_profile *pro_profile_with_3cores(void);
 
 #endif
