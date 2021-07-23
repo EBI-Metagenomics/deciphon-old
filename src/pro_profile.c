@@ -110,9 +110,46 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
 }
 
+int dcp_pro_profile_init(struct dcp_pro_profile *p,
+                         struct dcp_pro_model const *m)
+{
+    int rc = IMM_SUCCESS;
+
+    if (p->nuclt != pro_model_nuclt(m))
+        return error(IMM_ILLEGALARG, "Different nucleotide alphabets.");
+
+    if (p->amino != pro_model_amino(m))
+        return error(IMM_ILLEGALARG, "Different amino alphabets.");
+
+    struct pro_model_summary s = pro_model_summary(m);
+    imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), p->null.dp);
+    imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), p->alt.dp);
+
+    p->null.R = imm_state_idx(imm_super(s.null.R));
+
+    p->alt.S = imm_state_idx(imm_super(s.alt.S));
+    p->alt.N = imm_state_idx(imm_super(s.alt.N));
+    p->alt.B = imm_state_idx(imm_super(s.alt.B));
+    p->alt.E = imm_state_idx(imm_super(s.alt.E));
+    p->alt.J = imm_state_idx(imm_super(s.alt.J));
+    p->alt.C = imm_state_idx(imm_super(s.alt.C));
+    p->alt.T = imm_state_idx(imm_super(s.alt.T));
+    return rc;
+}
+
 struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro)
 {
     return pro->super;
+}
+
+struct imm_dp const *dcp_pro_profile_null_dp(struct dcp_pro_profile *pro)
+{
+    return pro->null.dp;
+}
+
+struct imm_dp const *dcp_pro_profile_alt_dp(struct dcp_pro_profile *pro)
+{
+    return pro->alt.dp;
 }
 
 void state_name(unsigned id, char name[8])

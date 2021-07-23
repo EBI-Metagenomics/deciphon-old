@@ -39,6 +39,7 @@ add_library(
   src/profile.c
   src/std_profile.c
   src/pro_profile.c
+  src/pro_model.c
   # src/result.c
   # src/result_ring.c
   # src/results.c

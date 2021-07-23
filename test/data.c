@@ -3,7 +3,11 @@
 struct pp_3core_nodes pp_3core_nodes_data(void)
 {
     struct pp_3core_nodes data = {
-        .cfg = {3, DCP_PP_ENTRY_DISTR_OCCUPANCY, 0.01f},
+        .amino = imm_amino_iupac,
+        .dna = imm_gc_dna(),
+        .core_size = 3,
+        .edistr = DCP_ENTRY_DISTR_OCCUPANCY,
+        .epsilon = 0.01f,
         .null_lprobs = {-2.54091f, -4.18909f, -2.92766f, -2.70561f, -3.22625f,
                         -2.66633f, -3.77575f, -2.83006f, -2.82275f, -2.33953f,
                         -3.73926f, -3.18354f, -3.03052f, -3.22984f, -2.91696f,

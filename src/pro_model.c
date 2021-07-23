@@ -2,7 +2,6 @@
 #include "dcp/pro_model.h"
 #include "imm/imm.h"
 #include "pro_model.h"
-#include "pro_profile.h"
 #include "support.h"
 
 struct dcp_pro_model_node
@@ -59,14 +58,21 @@ struct dcp_pro_model
     } alt;
 };
 
+/* log(1./4.) */
+#define LOGN2 (imm_float)(-1.3862943611198906)
+
+static imm_float const uniform_nuclt_lprobs[IMM_NUCLT_SIZE] = {LOGN2, LOGN2,
+                                                               LOGN2, LOGN2};
+
 static int setup_distrs(struct imm_amino const *amino,
+                        struct imm_nuclt const *nuclt,
                         imm_float const lprobs[IMM_AMINO_SIZE],
                         struct imm_nuclt_lprob *nucltp,
                         struct imm_codon_marg *codonm);
 
-static struct imm_codon_lprob
-setup_codonp(struct imm_amino const *amino,
-             struct imm_amino_lprob const *aminop);
+static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
+                                           struct imm_amino_lprob const *aminop,
+                                           struct imm_nuclt const *nuclt);
 
 static struct imm_nuclt_lprob
 setup_nucltp(struct imm_codon_lprob const *codonp);
@@ -95,6 +101,7 @@ dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
     m->nuclt = nuclt;
 
     m->alt.hmm = NULL;
+    m->alt.idx = 0;
     m->null.hmm = NULL;
 
     memcpy(m->null.lprobs, null_lprobs, sizeof(*null_lprobs) * IMM_AMINO_SIZE);
@@ -102,13 +109,14 @@ dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
     if (!(m->null.hmm = imm_hmm_new(imm_super(m->nuclt))))
         goto cleanup;
 
-    if (setup_distrs(m->amino, null_lprobs, &m->null.nucltp, &m->null.codonm))
+    if (setup_distrs(amino, nuclt, null_lprobs, &m->null.nucltp,
+                     &m->null.codonm))
         goto cleanup;
 
     if (!(m->alt.hmm = imm_hmm_new(imm_super(m->nuclt))))
         goto cleanup;
 
-    if (setup_distrs(m->amino, null_lodds, &m->alt.insert.nucltp,
+    if (setup_distrs(amino, nuclt, null_lodds, &m->alt.insert.nucltp,
                      &m->alt.insert.codonm))
         goto cleanup;
 
@@ -198,24 +206,6 @@ int dcp_pro_model_add_trans(struct dcp_pro_model *m,
     return rc;
 }
 
-int dcp_pro_model_set(struct dcp_pro_model *m, struct dcp_pro_profile *p)
-{
-    int rc = IMM_SUCCESS;
-    imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.R), p->null.dp);
-    imm_hmm_reset_dp(m->alt.hmm, imm_super(m->alt.special.T), p->alt.dp);
-
-    p->null.R = imm_state_idx(imm_super(m->null.R));
-
-    p->alt.S = imm_state_idx(imm_super(m->alt.special.S));
-    p->alt.N = imm_state_idx(imm_super(m->alt.special.N));
-    p->alt.B = imm_state_idx(imm_super(m->alt.special.B));
-    p->alt.E = imm_state_idx(imm_super(m->alt.special.E));
-    p->alt.J = imm_state_idx(imm_super(m->alt.special.J));
-    p->alt.C = imm_state_idx(imm_super(m->alt.special.C));
-    p->alt.T = imm_state_idx(imm_super(m->alt.special.T));
-    return rc;
-}
-
 static struct imm_frame_state *new_match(struct dcp_pro_model *m,
                                          struct imm_nuclt_lprob *nucltp,
                                          struct imm_codon_marg *codonm)
@@ -251,12 +241,12 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
     for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
         lodds[i] = lprobs[i] - m->null.lprobs[i];
 
-    struct dcp_pro_model_node *node = m->alt.nodes + m->alt.idx;
+    struct dcp_pro_model_node *n = m->alt.nodes + m->alt.idx;
 
-    if ((rc = setup_distrs(m->amino, lodds, &node->nucltp, &node->codonm)))
+    if ((rc = setup_distrs(m->amino, m->nuclt, lodds, &n->nucltp, &n->codonm)))
         return rc;
 
-    struct imm_frame_state *M = new_match(m, &node->nucltp, &node->codonm);
+    struct imm_frame_state *M = new_match(m, &n->nucltp, &n->codonm);
 
     if ((rc = imm_hmm_add_state(m->alt.hmm, imm_super(M))))
         return rc;
@@ -269,9 +259,9 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
     if ((rc = imm_hmm_add_state(m->alt.hmm, imm_super(del))))
         return rc;
 
-    node->M = M;
-    node->I = ins;
-    node->D = del;
+    n->M = M;
+    n->I = ins;
+    n->D = del;
     m->alt.idx++;
 
     if (m->alt.idx == m->core_size)
@@ -280,14 +270,42 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
     return rc;
 }
 
+struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
+{
+    return (struct pro_model_summary){
+        .null = {.hmm = m->null.hmm, .R = m->null.R},
+        .alt = {
+            .hmm = m->alt.hmm,
+            .S = m->alt.special.S,
+            .N = m->alt.special.N,
+            .B = m->alt.special.B,
+            .E = m->alt.special.E,
+            .J = m->alt.special.J,
+            .C = m->alt.special.C,
+            .T = m->alt.special.T,
+        }};
+}
+
+struct imm_amino const *pro_model_amino(struct dcp_pro_model const *m)
+{
+    return m->amino;
+}
+
+struct imm_nuclt const *pro_model_nuclt(struct dcp_pro_model const *m)
+{
+    return m->nuclt;
+}
+
 static int setup_distrs(struct imm_amino const *amino,
+                        struct imm_nuclt const *nuclt,
                         imm_float const lprobs[IMM_AMINO_SIZE],
                         struct imm_nuclt_lprob *nucltp,
                         struct imm_codon_marg *codonm)
 {
     int rc = IMM_SUCCESS;
+    *nucltp = imm_nuclt_lprob(nuclt, uniform_nuclt_lprobs);
     struct imm_amino_lprob aminop = imm_amino_lprob(amino, lprobs);
-    struct imm_codon_lprob codonp = setup_codonp(amino, &aminop);
+    struct imm_codon_lprob codonp = setup_codonp(amino, &aminop, nucltp->nuclt);
     if ((rc = imm_codon_lprob_normalize(&codonp)))
         return rc;
 
@@ -297,7 +315,8 @@ static int setup_distrs(struct imm_amino const *amino,
 }
 
 static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
-                                           struct imm_amino_lprob const *aminop)
+                                           struct imm_amino_lprob const *aminop,
+                                           struct imm_nuclt const *nuclt)
 {
     /* FIXME: We don't need 255 positions*/
     unsigned count[] = FILL(255, 0);
@@ -315,19 +334,11 @@ static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
         lprobs[(unsigned)aa] = imm_amino_lprob_get(aminop, aa) - norm;
     }
 
-    struct imm_codon_lprob codonp = imm_codon_lprob(imm_super(imm_gc_dna()));
+    struct imm_codon_lprob codonp = imm_codon_lprob(nuclt);
     for (unsigned i = 0; i < imm_gc_size(); ++i)
     {
         char aa = imm_gc_aa(1, i);
         imm_codon_lprob_set(&codonp, imm_gc_codon(1, i), lprobs[(unsigned)aa]);
-#if 0
-        struct imm_codon codon = imm_gc_codon(1, i);
-        printf("[%c%c%c] %f\n",
-               imm_abc_symbols(imm_super(codon.nuclt))[codon.a],
-               imm_abc_symbols(imm_super(codon.nuclt))[codon.b],
-               imm_abc_symbols(imm_super(codon.nuclt))[codon.c],
-               lprobs[(unsigned)aa]);
-#endif
     }
     return codonp;
 }
@@ -466,11 +477,13 @@ static void calculate_occupancy(struct dcp_pro_model *m,
 
 static void init_special_trans(struct dcp_pro_model *m)
 {
-    struct imm_hmm *hmm = m->alt.hmm;
     imm_float const one = imm_log(1.0);
-
     struct dcp_pro_model_special_node *n = &m->alt.special;
 
+    struct imm_hmm *hmm = m->null.hmm;
+    imm_hmm_set_trans(hmm, imm_super(m->null.R), imm_super(m->null.R), one);
+
+    hmm = m->alt.hmm;
     imm_hmm_set_trans(hmm, imm_super(n->S), imm_super(n->B), one);
     imm_hmm_set_trans(hmm, imm_super(n->S), imm_super(n->N), one);
     imm_hmm_set_trans(hmm, imm_super(n->N), imm_super(n->N), one);
