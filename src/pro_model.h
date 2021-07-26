@@ -16,6 +16,19 @@ struct pro_model_special_trans
     imm_float EC;
 };
 
+static inline struct pro_model_special_trans pro_model_special_trans_init(void)
+{
+    return (struct pro_model_special_trans){.NN = IMM_LPROB_ONE,
+                                            .NB = IMM_LPROB_ONE,
+                                            .EC = IMM_LPROB_ONE,
+                                            .CC = IMM_LPROB_ONE,
+                                            .CT = IMM_LPROB_ONE,
+                                            .EJ = IMM_LPROB_ONE,
+                                            .JJ = IMM_LPROB_ONE,
+                                            .JB = IMM_LPROB_ONE,
+                                            .RR = IMM_LPROB_ONE};
+}
+
 struct pro_model_summary
 {
     struct

@@ -41,6 +41,7 @@ struct dcp_pro_model
     enum dcp_entry_distr edist;
     struct special_node special;
     struct pro_model_special_trans special_trans;
+    bool ready;
 
     struct
     {
@@ -93,20 +94,26 @@ static void set_exit_transitions(struct dcp_pro_model *model);
 static void calculate_occupancy(struct dcp_pro_model *m,
                                 imm_float log_occ[static 1]);
 
+static void create_special_node(struct dcp_pro_model *m);
+
+static void add_special_node(struct dcp_pro_model *m);
+
 static void init_special_trans(struct dcp_pro_model *m);
 
 struct dcp_pro_model *
 dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
                   imm_float const null_lprobs[IMM_AMINO_SIZE],
                   imm_float const null_lodds[IMM_AMINO_SIZE], imm_float epsilon,
-                  unsigned core_size, enum dcp_entry_distr entry_distr)
+                  unsigned core_size, enum dcp_entry_distr edistr)
 
 {
     struct dcp_pro_model *m = xmalloc(sizeof(*m));
-    m->epsilon = epsilon;
     m->amino = amino;
     m->nuclt = nuclt;
-
+    m->core_size = core_size;
+    m->epsilon = epsilon;
+    m->edist = edistr;
+    m->ready = false;
     m->alt.hmm = NULL;
     m->alt.idx = 0;
     m->null.hmm = NULL;
@@ -127,55 +134,12 @@ dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
                      &m->alt.insert.codonm))
         goto cleanup;
 
-    imm_float e = m->epsilon;
-    struct imm_nuclt_lprob const *null_nucltp = &m->null.nucltp;
-    struct imm_codon_marg const *null_codonm = &m->null.codonm;
+    create_special_node(m);
+    add_special_node(m);
 
-    m->special.null.R =
-        imm_frame_state_new(DCP_PRO_MODEL_R_ID, null_nucltp, null_codonm, e);
-
-    imm_hmm_add_state(m->null.hmm, imm_super(m->special.null.R));
-    imm_hmm_set_start(m->null.hmm, imm_super(m->special.null.R), imm_log(1));
-
-    m->special.alt.S =
-        imm_mute_state_new(DCP_PRO_MODEL_S_ID, imm_super(m->nuclt));
-    m->special.alt.N =
-        imm_frame_state_new(DCP_PRO_MODEL_N_ID, null_nucltp, null_codonm, e);
-    m->special.alt.B =
-        imm_mute_state_new(DCP_PRO_MODEL_B_ID, imm_super(m->nuclt));
-    m->special.alt.E =
-        imm_mute_state_new(DCP_PRO_MODEL_E_ID, imm_super(m->nuclt));
-    m->special.alt.J =
-        imm_frame_state_new(DCP_PRO_MODEL_J_ID, null_nucltp, null_codonm, e);
-    m->special.alt.C =
-        imm_frame_state_new(DCP_PRO_MODEL_C_ID, null_nucltp, null_codonm, e);
-    m->special.alt.T =
-        imm_mute_state_new(DCP_PRO_MODEL_T_ID, imm_super(m->nuclt));
-
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.S));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.N));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.B));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.E));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.J));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.C));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.T));
-
-    imm_hmm_set_start(m->alt.hmm, imm_super(m->special.alt.S), imm_log(1));
-
-    m->core_size = core_size;
     m->alt.nodes = xcalloc(core_size, sizeof(*m->alt.nodes));
     m->alt.trans = xcalloc(core_size + 1, sizeof(*m->alt.trans));
-    m->edist = entry_distr;
-
-    m->special_trans.NN = imm_log(1);
-    m->special_trans.NB = imm_log(1);
-    m->special_trans.EC = imm_log(1);
-    m->special_trans.CC = imm_log(1);
-    m->special_trans.CT = imm_log(1);
-    m->special_trans.EJ = imm_log(1);
-    m->special_trans.JJ = imm_log(1);
-    m->special_trans.JB = imm_log(1);
-    m->special_trans.RR = imm_log(1);
+    m->special_trans = pro_model_special_trans_init();
 
     return m;
 
@@ -208,6 +172,7 @@ int dcp_pro_model_add_trans(struct dcp_pro_model *m,
             return rc;
 
         init_special_trans(m);
+        m->ready = true;
     }
     return rc;
 }
@@ -306,6 +271,7 @@ void dcp_pro_model_del(struct dcp_pro_model const *model)
 
 struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
 {
+    IMM_BUG(!m->ready);
     return (struct pro_model_summary){
         .null = {.hmm = m->null.hmm, .R = m->special.null.R},
         .alt = {
@@ -507,6 +473,39 @@ static void calculate_occupancy(struct dcp_pro_model *m,
     {
         log_occ[i] -= logZ;
     }
+}
+
+static void create_special_node(struct dcp_pro_model *m)
+{
+    imm_float e = m->epsilon;
+    struct imm_nuclt_lprob const *nucltp = &m->null.nucltp;
+    struct imm_codon_marg const *codonm = &m->null.codonm;
+    struct special_node *n = &m->special;
+
+    n->null.R = imm_frame_state_new(DCP_PRO_MODEL_R_ID, nucltp, codonm, e);
+
+    n->alt.S = imm_mute_state_new(DCP_PRO_MODEL_S_ID, imm_super(m->nuclt));
+    n->alt.N = imm_frame_state_new(DCP_PRO_MODEL_N_ID, nucltp, codonm, e);
+    n->alt.B = imm_mute_state_new(DCP_PRO_MODEL_B_ID, imm_super(m->nuclt));
+    n->alt.E = imm_mute_state_new(DCP_PRO_MODEL_E_ID, imm_super(m->nuclt));
+    n->alt.J = imm_frame_state_new(DCP_PRO_MODEL_J_ID, nucltp, codonm, e);
+    n->alt.C = imm_frame_state_new(DCP_PRO_MODEL_C_ID, nucltp, codonm, e);
+    n->alt.T = imm_mute_state_new(DCP_PRO_MODEL_T_ID, imm_super(m->nuclt));
+}
+
+static void add_special_node(struct dcp_pro_model *m)
+{
+    imm_hmm_add_state(m->null.hmm, imm_super(m->special.null.R));
+    imm_hmm_set_start(m->null.hmm, imm_super(m->special.null.R), imm_log(1));
+
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.S));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.N));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.B));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.E));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.J));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.C));
+    imm_hmm_add_state(m->alt.hmm, imm_super(m->special.alt.T));
+    imm_hmm_set_start(m->alt.hmm, imm_super(m->special.alt.S), imm_log(1));
 }
 
 static void init_special_trans(struct dcp_pro_model *m)
