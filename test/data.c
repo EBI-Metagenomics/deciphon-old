@@ -6,7 +6,7 @@ struct pro_profile_3core_nodes pro_profile_with_3cores_data(void)
         {
             .amino = &imm_amino_iupac,
             .nuclt = imm_super(imm_gc_dna()),
-            .edist = DCP_ENTRY_DISTR_OCCUPANCY,
+            .edist = DCP_ENTRY_DIST_OCCUPANCY,
             .epsilon = 0.01f,
         },
         .core_size = 3,

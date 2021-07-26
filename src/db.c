@@ -357,7 +357,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
 
         if (!cmp_write_u8(&db->file.ctx, (uint8_t)db->cfg.pro.edist))
         {
-            error(IMM_IOERROR, "failed to write entry_distr");
+            error(IMM_IOERROR, "failed to write entry_dist");
             goto cleanup;
         }
     }

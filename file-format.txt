@@ -10,7 +10,7 @@ Deciphon file
 |-------------------------------------------------------|
 | epsilon: mp-f4 or mp-f8 (active on protein prof_type) |
 |-------------------------------------------------------|
-| entry_distr: mp-u8 (active on protein prof_type)      |
+| entry_dist: mp-u8 (active on protein prof_type)       |
 |-------------------------------------------------------|
 | abc: imm_abc (nuclt on protein prof_type)             |
 |-------------------------------------------------------|

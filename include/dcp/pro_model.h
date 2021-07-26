@@ -1,7 +1,7 @@
 #ifndef DCP_PRO_MODEL_H
 #define DCP_PRO_MODEL_H
 
-#include "dcp/entry_distr.h"
+#include "dcp/entry_dist.h"
 #include "dcp/export.h"
 #include "dcp/pro_cfg.h"
 #include "dcp/profile_types.h"

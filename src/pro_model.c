@@ -1,5 +1,5 @@
 #include "dcp/pro_model.h"
-#include "dcp/entry_distr.h"
+#include "dcp/entry_dist.h"
 #include "pro_model.h"
 #include "support.h"
 #include <limits.h>
@@ -489,7 +489,7 @@ static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
 static void setup_entry_trans(struct dcp_pro_model *m)
 {
     int rc = IMM_SUCCESS;
-    if (m->cfg.edist == DCP_ENTRY_DISTR_UNIFORM)
+    if (m->cfg.edist == DCP_ENTRY_DIST_UNIFORM)
     {
         imm_float M = (imm_float)m->core_size;
         imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;
@@ -503,7 +503,7 @@ static void setup_entry_trans(struct dcp_pro_model *m)
     }
     else
     {
-        IMM_BUG(m->cfg.edist != DCP_ENTRY_DISTR_OCCUPANCY);
+        IMM_BUG(m->cfg.edist != DCP_ENTRY_DIST_OCCUPANCY);
         imm_float *locc = xmalloc((m->core_size) * sizeof(*locc));
         calc_occupancy(m, locc);
         struct imm_state *B = imm_super(m->special_node.alt.B);

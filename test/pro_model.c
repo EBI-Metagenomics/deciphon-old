@@ -10,7 +10,7 @@ void test_pro_model(void)
 {
     unsigned core_size = 3;
     struct dcp_pro_cfg cfg = {&imm_amino_iupac, imm_super(imm_gc_dna()),
-                              DCP_ENTRY_DISTR_OCCUPANCY, 0.01f};
+                              DCP_ENTRY_DIST_OCCUPANCY, 0.01f};
     imm_float null_lprobs[IMM_AMINO_SIZE] = {
         -2.540f, -4.189f, -2.927f, -2.705f, -3.226f, -2.666f, -3.775f,
         -2.830f, -2.822f, -2.339f, -3.739f, -3.183f, -3.030f, -3.229f,

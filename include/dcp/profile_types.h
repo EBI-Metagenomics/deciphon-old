@@ -1,7 +1,7 @@
 #ifndef DCP_PROFILE_TYPES_H
 #define DCP_PROFILE_TYPES_H
 
-#include "dcp/entry_distr.h"
+#include "dcp/entry_dist.h"
 #include "imm/imm.h"
 #include <stdint.h>
 #include <stdio.h>
