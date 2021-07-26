@@ -30,13 +30,6 @@ struct dcp_pro_model_trans
 };
 
 struct dcp_pro_model;
-struct dcp_pro_profile;
-
-DCP_API struct dcp_pro_model *
-dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
-                  imm_float const null_lprobs[IMM_AMINO_SIZE],
-                  imm_float const null_lodds[IMM_AMINO_SIZE], imm_float epsilon,
-                  unsigned core_size, enum dcp_entry_distr edistr);
 
 DCP_API int dcp_pro_model_add_node(struct dcp_pro_model *m,
                                    imm_float const lprobs[IMM_AMINO_SIZE]);
@@ -45,5 +38,11 @@ DCP_API int dcp_pro_model_add_trans(struct dcp_pro_model *m,
                                     struct dcp_pro_model_trans trans);
 
 DCP_API void dcp_pro_model_del(struct dcp_pro_model const *model);
+
+DCP_API struct dcp_pro_model *
+dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
+                  imm_float const null_lprobs[IMM_AMINO_SIZE],
+                  imm_float const null_lodds[IMM_AMINO_SIZE], imm_float epsilon,
+                  unsigned core_size, enum dcp_entry_distr edistr);
 
 #endif
