@@ -2,6 +2,7 @@
 #include "dcp/pro_model.h"
 #include "pro_model.h"
 #include "support.h"
+#include <limits.h>
 
 struct node
 {
@@ -76,6 +77,15 @@ static void add_special_node(struct dcp_pro_model *m);
 static void calc_occupancy(struct dcp_pro_model *m,
                            imm_float log_occ[static 1]);
 
+static void del_nodes(struct node *const nodes, unsigned n);
+
+static void del_special_node(struct special_node const *node);
+
+static inline bool is_setup(struct dcp_pro_model *m)
+{
+    return m->core_size > 0;
+}
+
 static void init_special_trans(struct dcp_pro_model *m);
 
 static inline bool is_ready(struct dcp_pro_model const *m)
@@ -119,6 +129,9 @@ static void setup_trans(struct dcp_pro_model *model);
 int dcp_pro_model_add_node(struct dcp_pro_model *m,
                            imm_float const lprobs[IMM_AMINO_SIZE])
 {
+    if (!is_setup(m))
+        return error(IMM_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
+
     if (m->alt.node_idx == m->core_size)
         return error(IMM_RUNTIMEERROR, "Reached limit of nodes.");
 
@@ -159,8 +172,12 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
 int dcp_pro_model_add_trans(struct dcp_pro_model *m,
                             struct dcp_pro_model_trans trans)
 {
+    if (!is_setup(m))
+        return error(IMM_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
+
     if (m->alt.trans_idx == m->core_size + 1)
         return error(IMM_RUNTIMEERROR, "Reached limit of transitions.");
+
     m->alt.trans[m->alt.trans_idx++] = trans;
     if (is_ready(m))
         setup_trans(m);
@@ -171,24 +188,10 @@ void dcp_pro_model_del(struct dcp_pro_model const *model)
 {
     if (model)
     {
-        imm_del(model->special_node.null.R);
-        imm_del(model->special_node.alt.S);
-        imm_del(model->special_node.alt.N);
-        imm_del(model->special_node.alt.B);
-        imm_del(model->special_node.alt.E);
-        imm_del(model->special_node.alt.J);
-        imm_del(model->special_node.alt.C);
-        imm_del(model->special_node.alt.T);
+        del_special_node(&model->special_node);
         imm_del(model->null.hmm);
         imm_del(model->alt.hmm);
-
-        for (unsigned i = 0; i < model->core_size; ++i)
-        {
-            imm_del(model->alt.nodes[i].M);
-            imm_del(model->alt.nodes[i].I);
-            imm_del(model->alt.nodes[i].D);
-        }
-
+        del_nodes(model->alt.nodes, model->core_size);
         free(model->alt.nodes);
         free(model->alt.trans);
         free((void *)model);
@@ -199,13 +202,13 @@ struct dcp_pro_model *
 dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
                   imm_float const null_lprobs[IMM_AMINO_SIZE],
                   imm_float const null_lodds[IMM_AMINO_SIZE], imm_float epsilon,
-                  unsigned core_size, enum dcp_entry_distr edistr)
+                  enum dcp_entry_distr edistr)
 
 {
     struct dcp_pro_model *m = xmalloc(sizeof(*m));
     m->amino = amino;
     m->nuclt = nuclt;
-    m->core_size = core_size;
+    m->core_size = 0;
     m->epsilon = epsilon;
     m->edist = edistr;
     m->alt.hmm = NULL;
@@ -228,12 +231,11 @@ dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
         goto cleanup;
 
     new_special_node(m);
-    add_special_node(m);
 
-    m->alt.node_idx = 0;
-    m->alt.nodes = xcalloc(core_size, sizeof(*m->alt.nodes));
-    m->alt.trans_idx = 0;
-    m->alt.trans = xcalloc(core_size + 1, sizeof(*m->alt.trans));
+    m->alt.node_idx = UINT_MAX;
+    m->alt.nodes = NULL;
+    m->alt.trans_idx = UINT_MAX;
+    m->alt.trans = NULL;
     m->special_trans = pro_model_special_trans_init();
 
     return m;
@@ -254,6 +256,24 @@ cleanup:
     free(m->alt.trans);
     free(m);
     return NULL;
+}
+
+int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
+{
+    if (core_size == 0)
+        return error(IMM_ILLEGALARG, "`core_size` cannot be zero.");
+    del_nodes(m->alt.nodes, m->core_size);
+
+    m->core_size = core_size;
+    unsigned n = m->core_size;
+    m->alt.node_idx = 0;
+    m->alt.nodes = xrealloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
+    m->alt.trans_idx = 0;
+    m->alt.trans = xrealloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
+    imm_hmm_reset(m->alt.hmm);
+    imm_hmm_reset(m->null.hmm);
+    add_special_node(m);
+    return IMM_SUCCESS;
 }
 
 struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
@@ -303,18 +323,22 @@ static int setup_distrs(struct imm_amino const *amino,
 
 static void add_special_node(struct dcp_pro_model *m)
 {
-    imm_hmm_add_state(m->null.hmm, imm_super(m->special_node.null.R));
-    imm_hmm_set_start(m->null.hmm, imm_super(m->special_node.null.R),
-                      imm_log(1));
+    int rc = IMM_SUCCESS;
+    struct special_node *n = &m->special_node;
 
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special_node.alt.S));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special_node.alt.N));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special_node.alt.B));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special_node.alt.E));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special_node.alt.J));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special_node.alt.C));
-    imm_hmm_add_state(m->alt.hmm, imm_super(m->special_node.alt.T));
-    imm_hmm_set_start(m->alt.hmm, imm_super(m->special_node.alt.S), imm_log(1));
+    rc += imm_hmm_add_state(m->null.hmm, imm_super(n->null.R));
+    rc += imm_hmm_set_start(m->null.hmm, imm_super(n->null.R), IMM_LPROB_ONE);
+
+    rc += imm_hmm_add_state(m->alt.hmm, imm_super(n->alt.S));
+    rc += imm_hmm_add_state(m->alt.hmm, imm_super(n->alt.N));
+    rc += imm_hmm_add_state(m->alt.hmm, imm_super(n->alt.B));
+    rc += imm_hmm_add_state(m->alt.hmm, imm_super(n->alt.E));
+    rc += imm_hmm_add_state(m->alt.hmm, imm_super(n->alt.J));
+    rc += imm_hmm_add_state(m->alt.hmm, imm_super(n->alt.C));
+    rc += imm_hmm_add_state(m->alt.hmm, imm_super(n->alt.T));
+    rc += imm_hmm_set_start(m->alt.hmm, imm_super(n->alt.S), IMM_LPROB_ONE);
+
+    IMM_BUG(rc != IMM_SUCCESS);
 }
 
 static void calc_occupancy(struct dcp_pro_model *m, imm_float log_occ[static 1])
@@ -342,6 +366,28 @@ static void calc_occupancy(struct dcp_pro_model *m, imm_float log_occ[static 1])
     }
 
     IMM_BUG(imm_lprob_is_nan(logZ));
+}
+
+static void del_special_node(struct special_node const *node)
+{
+    imm_del(node->null.R);
+    imm_del(node->alt.S);
+    imm_del(node->alt.N);
+    imm_del(node->alt.B);
+    imm_del(node->alt.E);
+    imm_del(node->alt.J);
+    imm_del(node->alt.C);
+    imm_del(node->alt.T);
+}
+
+static void del_nodes(struct node *const nodes, unsigned n)
+{
+    for (unsigned i = 0; i < n; ++i)
+    {
+        imm_del(nodes[i].M);
+        imm_del(nodes[i].I);
+        imm_del(nodes[i].D);
+    }
 }
 
 static void init_special_trans(struct dcp_pro_model *m)
