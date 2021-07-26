@@ -3,11 +3,13 @@
 struct pro_profile_3core_nodes pro_profile_with_3cores_data(void)
 {
     struct pro_profile_3core_nodes data = {
-        .amino = &imm_amino_iupac,
-        .dna = imm_gc_dna(),
+        {
+            .amino = &imm_amino_iupac,
+            .nuclt = imm_super(imm_gc_dna()),
+            .edist = DCP_ENTRY_DISTR_OCCUPANCY,
+            .epsilon = 0.01f,
+        },
         .core_size = 3,
-        .edistr = DCP_ENTRY_DISTR_OCCUPANCY,
-        .epsilon = 0.01f,
         .null_lprobs = {-2.54091f, -4.18909f, -2.92766f, -2.70561f, -3.22625f,
                         -2.66633f, -3.77575f, -2.83006f, -2.82275f, -2.33953f,
                         -3.73926f, -3.18354f, -3.03052f, -3.22984f, -2.91696f,
@@ -65,8 +67,7 @@ struct dcp_pro_profile *pro_profile_with_3cores(void)
 {
     struct pro_profile_3core_nodes data = pro_profile_with_3cores_data();
     struct dcp_pro_model *model =
-        dcp_pro_model_new(data.amino, imm_super(data.dna), data.null_lprobs,
-                          data.null_lodds, data.epsilon, data.edistr);
+        dcp_pro_model_new(data.cfg, data.null_lprobs, data.null_lodds);
 
     IMM_BUG(dcp_pro_model_setup(model, data.core_size));
 
@@ -79,9 +80,8 @@ struct dcp_pro_profile *pro_profile_with_3cores(void)
     IMM_BUG(dcp_pro_model_add_trans(model, data.trans2));
     IMM_BUG(dcp_pro_model_add_trans(model, data.trans3));
 
-    struct dcp_pro_profile *p = dcp_pro_profile_new(
-        data.amino, imm_super(data.dna), dcp_meta("NAME0", "ACC0"), data.edistr,
-        data.epsilon);
+    struct dcp_pro_profile *p =
+        dcp_pro_profile_new(data.cfg, dcp_meta("NAME0", "ACC0"));
 
     dcp_pro_profile_init(p, model);
     dcp_del(model);

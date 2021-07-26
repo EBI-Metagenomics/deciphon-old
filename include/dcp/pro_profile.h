@@ -10,10 +10,8 @@
 
 struct dcp_pro_profile;
 
-DCP_API struct dcp_pro_profile *
-dcp_pro_profile_new(struct imm_amino const *amino,
-                    struct imm_nuclt const *nuclt, struct dcp_meta mt,
-                    enum dcp_entry_distr edist, imm_float epsilon);
+DCP_API struct dcp_pro_profile *dcp_pro_profile_new(struct dcp_pro_cfg cfg,
+                                                    struct dcp_meta mt);
 
 DCP_API void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
                                    bool multihits, bool hmmer3_compat);
@@ -30,11 +28,8 @@ dcp_pro_profile_null_dp(struct dcp_pro_profile *pro);
 DCP_API struct imm_dp const *
 dcp_pro_profile_alt_dp(struct dcp_pro_profile *pro);
 
-DCP_API struct imm_amino const *
-dcp_pro_profile_amino(struct dcp_pro_profile *pro);
-
-DCP_API struct imm_nuclt const *
-dcp_pro_profile_nuclt(struct dcp_pro_profile *pro);
+DCP_API struct dcp_pro_cfg
+dcp_pro_profile_cfg(struct dcp_pro_profile const *pro);
 
 static inline void dcp_pro_profile_del(struct dcp_pro_profile const *pro)
 {

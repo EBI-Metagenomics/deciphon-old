@@ -8,10 +8,7 @@
 struct dcp_pro_profile
 {
     struct dcp_profile *super;
-    struct imm_amino const *amino;
-    struct imm_nuclt const *nuclt;
-    enum dcp_entry_distr edist;
-    imm_float epsilon;
+    struct dcp_pro_cfg cfg;
 
     struct
     {
@@ -45,23 +42,16 @@ static int setup_distributions(struct imm_amino const *amino,
                                struct imm_nuclt_lprob *nucltp,
                                struct imm_codon_marg *codonm);
 
-struct dcp_pro_profile *dcp_pro_profile_new(struct imm_amino const *amino,
-                                            struct imm_nuclt const *nuclt,
-                                            struct dcp_meta mt,
-                                            enum dcp_entry_distr edist,
-                                            imm_float epsilon)
+struct dcp_pro_profile *dcp_pro_profile_new(struct dcp_pro_cfg cfg,
+                                            struct dcp_meta mt)
 {
     struct dcp_pro_profile *p = xmalloc(sizeof(*p));
     struct dcp_profile_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE,
                                         p};
-    p->super = profile_new(imm_super(nuclt), mt, vtable);
-    p->amino = amino;
-    p->nuclt = nuclt;
-    p->edist = edist;
-    p->epsilon = epsilon;
-
-    p->null.dp = imm_dp_new(imm_super(nuclt));
-    p->alt.dp = imm_dp_new(imm_super(nuclt));
+    p->super = profile_new(imm_super(cfg.nuclt), mt, vtable);
+    p->cfg = cfg;
+    p->null.dp = imm_dp_new(imm_super(cfg.nuclt));
+    p->alt.dp = imm_dp_new(imm_super(cfg.nuclt));
     return p;
 }
 
@@ -131,10 +121,10 @@ int dcp_pro_profile_init(struct dcp_pro_profile *p,
 {
     int rc = IMM_SUCCESS;
 
-    if (p->nuclt != pro_model_nuclt(m))
+    if (p->cfg.nuclt != pro_model_nuclt(m))
         return error(IMM_ILLEGALARG, "Different nucleotide alphabets.");
 
-    if (p->amino != pro_model_amino(m))
+    if (p->cfg.amino != pro_model_amino(m))
         return error(IMM_ILLEGALARG, "Different amino alphabets.");
 
     struct pro_model_summary s = pro_model_summary(m);
@@ -168,14 +158,9 @@ struct imm_dp const *dcp_pro_profile_alt_dp(struct dcp_pro_profile *pro)
     return pro->alt.dp;
 }
 
-struct imm_amino const *dcp_pro_profile_amino(struct dcp_pro_profile *pro)
+struct dcp_pro_cfg dcp_pro_profile_cfg(struct dcp_pro_profile const *pro)
 {
-    return pro->amino;
-}
-
-struct imm_nuclt const *dcp_pro_profile_nuclt(struct dcp_pro_profile *pro)
-{
-    return pro->nuclt;
+    return pro->cfg;
 }
 
 void state_name(unsigned id, char name[8])

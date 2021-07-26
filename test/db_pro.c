@@ -17,12 +17,8 @@ void test_db_openw_3core_nodes(void)
     struct imm_abc const *abc = dcp_super(p)->abc;
     FILE *fd = fopen(TMPDIR "/3core_nodes.dcp", "wb");
 
-    enum dcp_entry_distr edistr = DCP_ENTRY_DISTR_OCCUPANCY;
-    struct imm_nuclt const *nuclt = dcp_pro_profile_nuclt(p);
-    struct imm_amino const *amino = dcp_pro_profile_amino(p);
-
-    struct dcp_db *db =
-        dcp_db_openw(fd, abc, dcp_db_pro(0.01f, edistr, nuclt, amino));
+    struct dcp_pro_cfg cfg = dcp_pro_profile_cfg(p);
+    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_pro(cfg));
     NOTNULL(db);
 
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);

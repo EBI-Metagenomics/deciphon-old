@@ -38,9 +38,9 @@ void test_db_openr_empty(void)
 {
     FILE *fd = fopen(TMPDIR "/empty.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
-    struct dcp_db_cfg const *cfg = dcp_db_cfg(db);
-    EQ(cfg->prof_typeid, DCP_STD_PROFILE);
-    EQ(cfg->float_bytes, IMM_FLOAT_BYTES);
+    struct dcp_db_cfg cfg = dcp_db_cfg(db);
+    EQ(cfg.prof_typeid, DCP_STD_PROFILE);
+    EQ(cfg.float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
@@ -81,9 +81,9 @@ void test_db_openr_one_mute(void)
 {
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
-    struct dcp_db_cfg const *cfg = dcp_db_cfg(db);
-    EQ(cfg->prof_typeid, DCP_STD_PROFILE);
-    EQ(cfg->float_bytes, IMM_FLOAT_BYTES);
+    struct dcp_db_cfg cfg = dcp_db_cfg(db);
+    EQ(cfg.prof_typeid, DCP_STD_PROFILE);
+    EQ(cfg.float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
@@ -140,9 +140,9 @@ void test_db_openr_example1(void)
 {
     FILE *fd = fopen(TMPDIR "/example1.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
-    struct dcp_db_cfg const *cfg = dcp_db_cfg(db);
-    EQ(cfg->prof_typeid, DCP_STD_PROFILE);
-    EQ(cfg->float_bytes, IMM_FLOAT_BYTES);
+    struct dcp_db_cfg cfg = dcp_db_cfg(db);
+    EQ(cfg.prof_typeid, DCP_STD_PROFILE);
+    EQ(cfg.float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     EQ(imm_abc_typeid(dcp_db_abc(db)), IMM_ABC);
 
@@ -218,9 +218,9 @@ void test_db_openr_example2(void)
 {
     FILE *fd = fopen(TMPDIR "/example2.dcp", "rb");
     struct dcp_db *db = dcp_db_openr(fd);
-    struct dcp_db_cfg const *cfg = dcp_db_cfg(db);
-    EQ(cfg->prof_typeid, DCP_STD_PROFILE);
-    EQ(cfg->float_bytes, IMM_FLOAT_BYTES);
+    struct dcp_db_cfg cfg = dcp_db_cfg(db);
+    EQ(cfg.prof_typeid, DCP_STD_PROFILE);
+    EQ(cfg.float_bytes, IMM_FLOAT_BYTES);
     NOTNULL(db);
     struct imm_abc const *abc = dcp_db_abc(db);
     EQ(imm_abc_typeid(abc), IMM_DNA);

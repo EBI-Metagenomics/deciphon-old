@@ -3,6 +3,7 @@
 
 #include "dcp/entry_distr.h"
 #include "dcp/export.h"
+#include "dcp/pro_cfg.h"
 #include "dcp/profile_types.h"
 
 #define DCP_PRO_MODEL_MATCH_ID (0U << (DCP_PROFILE_BITS_ID - 2))
@@ -40,10 +41,9 @@ DCP_API int dcp_pro_model_add_trans(struct dcp_pro_model *m,
 DCP_API void dcp_pro_model_del(struct dcp_pro_model const *model);
 
 DCP_API struct dcp_pro_model *
-dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
+dcp_pro_model_new(struct dcp_pro_cfg cfg,
                   imm_float const null_lprobs[IMM_AMINO_SIZE],
-                  imm_float const null_lodds[IMM_AMINO_SIZE], imm_float epsilon,
-                  enum dcp_entry_distr edistr);
+                  imm_float const ins_lodds[IMM_AMINO_SIZE]);
 
 DCP_API int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size);
 

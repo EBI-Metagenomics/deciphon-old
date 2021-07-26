@@ -1,5 +1,5 @@
-#include "dcp/entry_distr.h"
 #include "dcp/pro_model.h"
+#include "dcp/entry_distr.h"
 #include "pro_model.h"
 #include "support.h"
 #include <limits.h>
@@ -34,11 +34,8 @@ struct special_node
 
 struct dcp_pro_model
 {
-    struct imm_amino const *amino;
-    struct imm_nuclt const *nuclt;
+    struct dcp_pro_cfg cfg;
     unsigned core_size;
-    imm_float epsilon;
-    enum dcp_entry_distr edist;
     struct special_node special_node;
     struct pro_model_special_trans special_trans;
 
@@ -142,7 +139,8 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
     int rc = IMM_SUCCESS;
     struct node *n = m->alt.nodes + m->alt.node_idx;
 
-    if ((rc = setup_distrs(m->amino, m->nuclt, lodds, &n->nucltp, &n->codonm)))
+    if ((rc = setup_distrs(m->cfg.amino, m->cfg.nuclt, lodds, &n->nucltp,
+                           &n->codonm)))
         return rc;
 
     struct imm_frame_state *M = new_match(m, &n->nucltp, &n->codonm);
@@ -199,34 +197,30 @@ void dcp_pro_model_del(struct dcp_pro_model const *model)
 }
 
 struct dcp_pro_model *
-dcp_pro_model_new(struct imm_amino const *amino, struct imm_nuclt const *nuclt,
+dcp_pro_model_new(struct dcp_pro_cfg cfg,
                   imm_float const null_lprobs[IMM_AMINO_SIZE],
-                  imm_float const null_lodds[IMM_AMINO_SIZE], imm_float epsilon,
-                  enum dcp_entry_distr edistr)
+                  imm_float const ins_lodds[IMM_AMINO_SIZE])
 
 {
     struct dcp_pro_model *m = xmalloc(sizeof(*m));
-    m->amino = amino;
-    m->nuclt = nuclt;
+    m->cfg = cfg;
     m->core_size = 0;
-    m->epsilon = epsilon;
-    m->edist = edistr;
     m->alt.hmm = NULL;
     m->null.hmm = NULL;
 
     xmemcpy(m->null.lprobs, null_lprobs, sizeof(*null_lprobs) * IMM_AMINO_SIZE);
 
-    if (!(m->null.hmm = imm_hmm_new(imm_super(m->nuclt))))
+    if (!(m->null.hmm = imm_hmm_new(imm_super(m->cfg.nuclt))))
         goto cleanup;
 
-    if (setup_distrs(amino, nuclt, null_lprobs, &m->null.nucltp,
+    if (setup_distrs(cfg.amino, cfg.nuclt, null_lprobs, &m->null.nucltp,
                      &m->null.codonm))
         goto cleanup;
 
-    if (!(m->alt.hmm = imm_hmm_new(imm_super(m->nuclt))))
+    if (!(m->alt.hmm = imm_hmm_new(imm_super(m->cfg.nuclt))))
         goto cleanup;
 
-    if (setup_distrs(amino, nuclt, null_lodds, &m->alt.insert.nucltp,
+    if (setup_distrs(cfg.amino, cfg.nuclt, ins_lodds, &m->alt.insert.nucltp,
                      &m->alt.insert.codonm))
         goto cleanup;
 
@@ -295,12 +289,12 @@ struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
 
 struct imm_amino const *pro_model_amino(struct dcp_pro_model const *m)
 {
-    return m->amino;
+    return m->cfg.amino;
 }
 
 struct imm_nuclt const *pro_model_nuclt(struct dcp_pro_model const *m)
 {
-    return m->nuclt;
+    return m->cfg.nuclt;
 }
 
 static int setup_distrs(struct imm_amino const *amino,
@@ -421,12 +415,12 @@ static void init_special_trans(struct dcp_pro_model *m)
 static struct imm_mute_state *new_delete(struct dcp_pro_model *m)
 {
     unsigned id = DCP_PRO_MODEL_DELETE_ID | (m->alt.node_idx + 1);
-    return imm_mute_state_new(id, imm_super(m->nuclt));
+    return imm_mute_state_new(id, imm_super(m->cfg.nuclt));
 }
 
 static struct imm_frame_state *new_insert(struct dcp_pro_model *m)
 {
-    imm_float e = m->epsilon;
+    imm_float e = m->cfg.epsilon;
     unsigned id = DCP_PRO_MODEL_INSERT_ID | (m->alt.node_idx + 1);
     struct imm_nuclt_lprob *nucltp = &m->alt.insert.nucltp;
     struct imm_codon_marg *codonm = &m->alt.insert.codonm;
@@ -438,7 +432,7 @@ static struct imm_frame_state *new_match(struct dcp_pro_model *m,
                                          struct imm_nuclt_lprob *nucltp,
                                          struct imm_codon_marg *codonm)
 {
-    imm_float e = m->epsilon;
+    imm_float e = m->cfg.epsilon;
     unsigned id = DCP_PRO_MODEL_MATCH_ID | (m->alt.node_idx + 1);
     struct imm_frame_state *frame = imm_frame_state_new(id, nucltp, codonm, e);
     return frame;
@@ -446,20 +440,21 @@ static struct imm_frame_state *new_match(struct dcp_pro_model *m,
 
 static void new_special_node(struct dcp_pro_model *m)
 {
-    imm_float e = m->epsilon;
+    imm_float e = m->cfg.epsilon;
     struct imm_nuclt_lprob const *nucltp = &m->null.nucltp;
     struct imm_codon_marg const *codonm = &m->null.codonm;
     struct special_node *n = &m->special_node;
+    struct imm_nuclt const *nuclt = m->cfg.nuclt;
 
     n->null.R = imm_frame_state_new(DCP_PRO_MODEL_R_ID, nucltp, codonm, e);
 
-    n->alt.S = imm_mute_state_new(DCP_PRO_MODEL_S_ID, imm_super(m->nuclt));
+    n->alt.S = imm_mute_state_new(DCP_PRO_MODEL_S_ID, imm_super(nuclt));
     n->alt.N = imm_frame_state_new(DCP_PRO_MODEL_N_ID, nucltp, codonm, e);
-    n->alt.B = imm_mute_state_new(DCP_PRO_MODEL_B_ID, imm_super(m->nuclt));
-    n->alt.E = imm_mute_state_new(DCP_PRO_MODEL_E_ID, imm_super(m->nuclt));
+    n->alt.B = imm_mute_state_new(DCP_PRO_MODEL_B_ID, imm_super(nuclt));
+    n->alt.E = imm_mute_state_new(DCP_PRO_MODEL_E_ID, imm_super(nuclt));
     n->alt.J = imm_frame_state_new(DCP_PRO_MODEL_J_ID, nucltp, codonm, e);
     n->alt.C = imm_frame_state_new(DCP_PRO_MODEL_C_ID, nucltp, codonm, e);
-    n->alt.T = imm_mute_state_new(DCP_PRO_MODEL_T_ID, imm_super(m->nuclt));
+    n->alt.T = imm_mute_state_new(DCP_PRO_MODEL_T_ID, imm_super(nuclt));
 }
 
 static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
@@ -494,7 +489,7 @@ static struct imm_codon_lprob setup_codonp(struct imm_amino const *amino,
 static void setup_entry_trans(struct dcp_pro_model *m)
 {
     int rc = IMM_SUCCESS;
-    if (m->edist == DCP_ENTRY_DISTR_UNIFORM)
+    if (m->cfg.edist == DCP_ENTRY_DISTR_UNIFORM)
     {
         imm_float M = (imm_float)m->core_size;
         imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;
@@ -508,7 +503,7 @@ static void setup_entry_trans(struct dcp_pro_model *m)
     }
     else
     {
-        IMM_BUG(m->edist != DCP_ENTRY_DISTR_OCCUPANCY);
+        IMM_BUG(m->cfg.edist != DCP_ENTRY_DISTR_OCCUPANCY);
         imm_float *locc = xmalloc((m->core_size) * sizeof(*locc));
         calc_occupancy(m, locc);
         struct imm_state *B = imm_super(m->special_node.alt.B);

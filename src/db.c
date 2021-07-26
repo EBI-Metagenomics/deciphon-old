@@ -266,15 +266,15 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
         {
             float e = 0;
             EREAD(!cmp_read_float(&db->file.ctx, &e), rc);
-            db->cfg.epsilon = (imm_float)e;
+            db->cfg.pro.epsilon = (imm_float)e;
         }
         else
         {
             double e = 0;
             EREAD(!cmp_read_double(&db->file.ctx, &e), rc);
-            db->cfg.epsilon = (imm_float)e;
+            db->cfg.pro.epsilon = (imm_float)e;
         }
-        if (db->cfg.epsilon < 0 || db->cfg.epsilon > 1)
+        if (db->cfg.pro.epsilon < 0 || db->cfg.pro.epsilon > 1)
         {
             rc = error(IMM_PARSEERROR, "wrong epsilon");
             goto cleanup;
@@ -349,13 +349,13 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
 
     if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        if (!write_imm_float(&db->file.ctx, db->cfg.epsilon))
+        if (!write_imm_float(&db->file.ctx, db->cfg.pro.epsilon))
         {
             error(IMM_IOERROR, "failed to write epsilon");
             goto cleanup;
         }
 
-        if (!cmp_write_u8(&db->file.ctx, (uint8_t)db->cfg.edistr))
+        if (!cmp_write_u8(&db->file.ctx, (uint8_t)db->cfg.pro.edist))
         {
             error(IMM_IOERROR, "failed to write entry_distr");
             goto cleanup;
@@ -370,7 +370,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
 
     if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        if (imm_abc_write(imm_super(cfg.amino), db->file.fd))
+        if (imm_abc_write(imm_super(cfg.pro.amino), db->file.fd))
         {
             error(IMM_IOERROR, "failed to write amino alphabet");
             goto cleanup;
@@ -386,10 +386,7 @@ cleanup:
     return NULL;
 }
 
-struct dcp_db_cfg const *dcp_db_cfg(struct dcp_db const *db)
-{
-    return &db->cfg;
-}
+struct dcp_db_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
 
 int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 {
