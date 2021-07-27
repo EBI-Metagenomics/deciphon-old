@@ -7,7 +7,7 @@
 
 struct dcp_pro_profile
 {
-    struct dcp_profile *super;
+    struct dcp_profile super;
     struct dcp_pro_cfg cfg;
 
     struct
@@ -48,7 +48,7 @@ struct dcp_pro_profile *dcp_pro_profile_new(struct dcp_pro_cfg cfg,
     struct dcp_pro_profile *p = xmalloc(sizeof(*p));
     struct dcp_profile_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE,
                                         p};
-    p->super = profile_new(imm_super(cfg.nuclt), mt, vtable);
+    profile_init(&p->super, imm_super(cfg.nuclt), mt, vtable);
     p->cfg = cfg;
     p->null.dp = imm_dp_new(imm_super(cfg.nuclt));
     p->alt.dp = imm_dp_new(imm_super(cfg.nuclt));
@@ -143,9 +143,9 @@ int dcp_pro_profile_init(struct dcp_pro_profile *p,
     return rc;
 }
 
-struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile const *pro)
+struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro)
 {
-    return pro->super;
+    return &pro->super;
 }
 
 struct imm_dp const *dcp_pro_profile_null_dp(struct dcp_pro_profile *pro)
@@ -235,6 +235,5 @@ static void del(struct dcp_profile const *prof)
         imm_dp_del(p->null.dp);
         imm_dp_del(p->alt.dp);
         free((void *)p);
-        profile_del(prof);
     }
 }

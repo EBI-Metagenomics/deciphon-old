@@ -19,8 +19,7 @@ DCP_API void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
 DCP_API int dcp_pro_profile_init(struct dcp_pro_profile *p,
                                  struct dcp_pro_model const *m);
 
-DCP_API struct dcp_profile *
-dcp_pro_profile_super(struct dcp_pro_profile const *pro);
+DCP_API struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro);
 
 DCP_API struct imm_dp const *
 dcp_pro_profile_null_dp(struct dcp_pro_profile *pro);
@@ -34,9 +33,7 @@ dcp_pro_profile_cfg(struct dcp_pro_profile const *pro);
 static inline void dcp_pro_profile_del(struct dcp_pro_profile const *pro)
 {
     if (pro)
-    {
-        dcp_profile_del(dcp_pro_profile_super(pro));
-    }
+        dcp_profile_del(dcp_pro_profile_super((struct dcp_pro_profile *)pro));
 }
 
 #endif

@@ -17,13 +17,13 @@ DCP_API struct dcp_std_profile *dcp_std_profile_new(struct imm_abc const *abc,
     prof->dp.alt = imm_dp_new(abc);
     struct dcp_profile_vtable vtable = {read, write, del, DCP_STD_PROFILE,
                                         prof};
-    prof->super = profile_new(abc, mt, vtable);
+    profile_init(&prof->super, abc, mt, vtable);
     return prof;
 }
 
 void dcp_std_profile_reset(struct dcp_std_profile *p, struct dcp_meta mt)
 {
-    p->super->mt = mt;
+    p->super.mt = mt;
 }
 
 static int read(struct dcp_profile *prof, FILE *restrict fd)
@@ -62,6 +62,5 @@ static void del(struct dcp_profile const *prof)
         imm_dp_del(p->dp.null);
         imm_dp_del(p->dp.alt);
         free((void *)p);
-        profile_del(prof);
     }
 }

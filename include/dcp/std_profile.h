@@ -8,7 +8,7 @@ struct imm_dcp;
 
 struct dcp_std_profile
 {
-    struct dcp_profile *super;
+    struct dcp_profile super;
     struct
     {
         struct imm_dp *null;
@@ -25,15 +25,13 @@ DCP_API void dcp_std_profile_reset(struct dcp_std_profile *p,
 static inline void dcp_std_profile_del(struct dcp_std_profile const *prof)
 {
     if (prof)
-    {
-        prof->super->vtable.del(prof->super);
-    }
+        prof->super.vtable.del((struct dcp_profile *)&prof->super);
 }
 
 static inline struct dcp_profile *
 dcp_std_profile_super(struct dcp_std_profile *std)
 {
-    return std->super;
+    return &std->super;
 }
 
 #endif

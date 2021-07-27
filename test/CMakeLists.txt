@@ -36,6 +36,7 @@ endfunction()
 
 dcp_add_test(std_profile std_profile.c)
 dcp_add_test(pro_profile "pro_profile.c;data.c")
+dcp_add_test(pro_model pro_model.c)
 dcp_add_test(db_std db_std.c)
 dcp_add_test(db_pro "db_pro.c;data.c")
 # dcp_add_test(db db.c) dcp_add_test(server server.c) dcp_add_test(pp

@@ -3,9 +3,7 @@
 
 #include "dcp/profile.h"
 
-struct dcp_profile *profile_new(struct imm_abc const *abc, struct dcp_meta mt,
-                                struct dcp_profile_vtable vtable);
-
-void profile_del(struct dcp_profile const *prof);
+void profile_init(struct dcp_profile *p, struct imm_abc const *abc,
+                  struct dcp_meta mt, struct dcp_profile_vtable vtable);
 
 #endif
