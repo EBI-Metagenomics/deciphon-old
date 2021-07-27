@@ -30,6 +30,8 @@ dcp_pro_profile_alt_dp(struct dcp_pro_profile *pro);
 DCP_API struct dcp_pro_cfg
 dcp_pro_profile_cfg(struct dcp_pro_profile const *pro);
 
+DCP_API void dcp_pro_profile_state_name(unsigned id, char name[8]);
+
 static inline void dcp_pro_profile_del(struct dcp_pro_profile const *pro)
 {
     if (pro)

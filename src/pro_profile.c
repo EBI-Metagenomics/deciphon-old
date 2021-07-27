@@ -35,13 +35,6 @@ static int write(struct dcp_profile const *prof, FILE *restrict fd);
 
 static void del(struct dcp_profile const *prof);
 
-static void state_name(unsigned id, char name[8]);
-
-static int setup_distributions(struct imm_amino const *amino,
-                               imm_float const lprobs[IMM_AMINO_SIZE],
-                               struct imm_nuclt_lprob *nucltp,
-                               struct imm_codon_marg *codonm);
-
 struct dcp_pro_profile *dcp_pro_profile_new(struct dcp_pro_cfg cfg,
                                             struct dcp_meta mt)
 {
@@ -163,7 +156,7 @@ struct dcp_pro_cfg dcp_pro_profile_cfg(struct dcp_pro_profile const *pro)
     return pro->cfg;
 }
 
-void state_name(unsigned id, char name[8])
+void dcp_pro_profile_state_name(unsigned id, char name[8])
 {
     unsigned msb = id & (3U << (DCP_PROFILE_BITS_ID - 2));
     if (msb == DCP_PRO_MODEL_SPECIAL_ID)
