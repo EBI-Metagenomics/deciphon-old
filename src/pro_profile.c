@@ -1,4 +1,5 @@
 #include "dcp/pro_profile.h"
+#include "dcp/profile.h"
 #include "imm/imm.h"
 #include "pro_model.h"
 #include "profile.h"

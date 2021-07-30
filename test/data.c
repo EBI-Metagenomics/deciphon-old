@@ -69,16 +69,18 @@ struct dcp_pro_profile *pro_profile_with_3cores(void)
     struct dcp_pro_model *model =
         dcp_pro_model_new(data.cfg, data.null_lprobs, data.null_lodds);
 
-    IMM_BUG(dcp_pro_model_setup(model, data.core_size));
+    int rc = dcp_pro_model_setup(model, data.core_size);
 
-    IMM_BUG(dcp_pro_model_add_node(model, data.match_lprobs1));
-    IMM_BUG(dcp_pro_model_add_node(model, data.match_lprobs2));
-    IMM_BUG(dcp_pro_model_add_node(model, data.match_lprobs3));
+    rc += dcp_pro_model_add_node(model, data.match_lprobs1);
+    rc += dcp_pro_model_add_node(model, data.match_lprobs2);
+    rc += dcp_pro_model_add_node(model, data.match_lprobs3);
 
-    IMM_BUG(dcp_pro_model_add_trans(model, data.trans0));
-    IMM_BUG(dcp_pro_model_add_trans(model, data.trans1));
-    IMM_BUG(dcp_pro_model_add_trans(model, data.trans2));
-    IMM_BUG(dcp_pro_model_add_trans(model, data.trans3));
+    rc += dcp_pro_model_add_trans(model, data.trans0);
+    rc += dcp_pro_model_add_trans(model, data.trans1);
+    rc += dcp_pro_model_add_trans(model, data.trans2);
+    rc += dcp_pro_model_add_trans(model, data.trans3);
+
+    IMM_BUG(rc);
 
     struct dcp_pro_profile *p =
         dcp_pro_profile_new(data.cfg, dcp_meta("NAME0", "ACC0"));

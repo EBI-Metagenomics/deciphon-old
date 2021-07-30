@@ -33,20 +33,20 @@ struct pro_model_summary
 {
     struct
     {
-        struct imm_hmm *hmm;
-        struct imm_frame_state *R;
+        struct imm_hmm const *hmm;
+        struct imm_frame_state const *R;
     } null;
 
     struct
     {
-        struct imm_hmm *hmm;
-        struct imm_mute_state *S;
-        struct imm_frame_state *N;
-        struct imm_mute_state *B;
-        struct imm_mute_state *E;
-        struct imm_frame_state *J;
-        struct imm_frame_state *C;
-        struct imm_mute_state *T;
+        struct imm_hmm const *hmm;
+        struct imm_mute_state const *S;
+        struct imm_frame_state const *N;
+        struct imm_mute_state const *B;
+        struct imm_mute_state const *E;
+        struct imm_frame_state const *J;
+        struct imm_frame_state const *C;
+        struct imm_mute_state const *T;
     } alt;
 };
 

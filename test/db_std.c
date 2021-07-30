@@ -56,22 +56,22 @@ void test_db_openw_one_mute(void)
     struct imm_dna const *dna = &imm_dna_default;
     struct imm_abc const *abc = imm_super(imm_super(dna));
 
-    struct imm_mute_state *state = imm_mute_state_new(3, abc);
-    struct imm_hmm *hmm = imm_hmm_new(abc);
-    EQ(imm_hmm_add_state(hmm, imm_super(state)), IMM_SUCCESS);
-    EQ(imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3)), IMM_SUCCESS);
+    struct imm_mute_state state;
+    imm_mute_state_init(&state, 3, abc);
+    struct imm_hmm hmm;
+    imm_hmm_init(&hmm, abc);
+    EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
+    EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
 
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
     struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_std());
 
     struct dcp_std_profile *p =
         dcp_std_profile_new(abc, dcp_meta("NAME0", "ACC0"));
-    EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.null), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
-    imm_del(hmm);
-    imm_del(state);
     dcp_del(p);
     EQ(dcp_db_close(db), IMM_SUCCESS);
     fclose(fd);
@@ -113,26 +113,25 @@ void test_db_openw_example1(void)
     /* Profile 0 */
     struct dcp_std_profile *p =
         dcp_std_profile_new(&m->abc, dcp_meta("NAME0", "ACC0"));
-    EQ(imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.n), p->dp.null),
+    EQ(imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), p->dp.null),
        IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(m->hmm, imm_super(m->end), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
     /* Profile 1 */
-    struct imm_mute_state *state = imm_mute_state_new(3, &m->abc);
-    struct imm_hmm *hmm = imm_hmm_new(&m->abc);
-    EQ(imm_hmm_add_state(hmm, imm_super(state)), IMM_SUCCESS);
-    EQ(imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3)), IMM_SUCCESS);
+    struct imm_mute_state state;
+    imm_mute_state_init(&state, 3, &m->abc);
+    struct imm_hmm hmm;
+    imm_hmm_init(&hmm, &m->abc);
+    EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
+    EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
     dcp_std_profile_reset(p, dcp_meta("NAME1", "ACC1"));
-    EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.null), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
-    imm_del(hmm);
-    imm_del(state);
 
     dcp_del(p);
     EQ(dcp_db_close(db), IMM_SUCCESS);
-    imm_example1_deinit();
     fclose(fd);
 }
 
@@ -191,26 +190,25 @@ void test_db_openw_example2(void)
     /* Profile 0 */
     struct dcp_std_profile *p =
         dcp_std_profile_new(abc, dcp_meta("NAME0", "ACC0"));
-    EQ(imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.n), p->dp.null),
+    EQ(imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), p->dp.null),
        IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(m->hmm, imm_super(m->end), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
     /* Profile 1 */
     dcp_std_profile_reset(p, dcp_meta("NAME1", "ACC1"));
-    struct imm_mute_state *state = imm_mute_state_new(3, abc);
-    struct imm_hmm *hmm = imm_hmm_new(abc);
-    EQ(imm_hmm_add_state(hmm, imm_super(state)), IMM_SUCCESS);
-    EQ(imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3)), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.null), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(hmm, imm_super(state), p->dp.alt), IMM_SUCCESS);
+    struct imm_mute_state state;
+    imm_mute_state_init(&state, 3, abc);
+    struct imm_hmm hmm;
+    imm_hmm_init(&hmm, abc);
+    EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
+    EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
-    imm_del(hmm);
-    imm_del(state);
 
     dcp_del(p);
     EQ(dcp_db_close(db), IMM_SUCCESS);
-    imm_example2_deinit();
     fclose(fd);
 }
 
