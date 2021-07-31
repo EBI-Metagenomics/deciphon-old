@@ -34,6 +34,15 @@ jobs:
     - name: Install imm
       run: sudo /bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/imm
 
+    - name: Install ck
+      run: |
+        git clone https://github.com/concurrencykit/ck.git
+        cd ck
+        ./configure
+        make
+        sudo make install
+        cd ${{runner.workspace}}
+
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
 

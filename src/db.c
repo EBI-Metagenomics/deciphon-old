@@ -73,23 +73,45 @@ static inline struct dcp_db *new_db(void)
     return db;
 }
 
-#define EREAD(expr, s)                                                         \
+#define EREAD(expr)                                                            \
     do                                                                         \
     {                                                                          \
         if (!!(expr))                                                          \
         {                                                                      \
-            s = error(IMM_IOERROR, "failed to read");                          \
+            error(IMM_IOERROR, "failed to read");                              \
             goto cleanup;                                                      \
         }                                                                      \
                                                                                \
     } while (0)
 
-#define EWRIT(expr, s)                                                         \
+#define EREAD_RC(expr)                                                         \
     do                                                                         \
     {                                                                          \
         if (!!(expr))                                                          \
         {                                                                      \
-            s = error(IMM_IOERROR, "failed to write");                         \
+            rc = error(IMM_IOERROR, "failed to read");                         \
+            goto cleanup;                                                      \
+        }                                                                      \
+                                                                               \
+    } while (0)
+
+#define EWRIT(expr)                                                            \
+    do                                                                         \
+    {                                                                          \
+        if (!!(expr))                                                          \
+        {                                                                      \
+            error(IMM_IOERROR, "failed to write");                             \
+            goto cleanup;                                                      \
+        }                                                                      \
+                                                                               \
+    } while (0)
+
+#define EWRIT_RC(expr)                                                         \
+    do                                                                         \
+    {                                                                          \
+        if (!!(expr))                                                          \
+        {                                                                      \
+            rc = error(IMM_IOERROR, "failed to write");                        \
             goto cleanup;                                                      \
         }                                                                      \
                                                                                \
@@ -158,7 +180,7 @@ static int read_metadata(struct dcp_db *db)
 
     cmp_ctx_t *ctx = &db->file.ctx;
 
-    EREAD(!cmp_read_u32(ctx, &db->mt.size), rc);
+    EREAD_RC(!cmp_read_u32(ctx, &db->mt.size));
     if ((db->mt.size > 0 && db->profiles.size == 0) ||
         (db->mt.size == 0 && db->profiles.size > 0))
     {
@@ -178,7 +200,7 @@ static int read_metadata(struct dcp_db *db)
             rc = error(IMM_OUTOFMEM, "failed to alloc for mt.data");
             goto cleanup;
         }
-        EREAD(!ctx->read(ctx, db->mt.data, db->mt.size), rc);
+        EREAD_RC(!ctx->read(ctx, db->mt.data, db->mt.size));
         if (db->mt.data[db->mt.size - 1])
         {
             rc = error(IMM_PARSEERROR, "invalid mt.data");
@@ -202,19 +224,19 @@ static int flush_metadata(struct dcp_db *db)
     int rc = IMM_SUCCESS;
     cmp_ctx_t *ctx = &db->file.ctx;
 
-    EWRIT(!cmp_write_u32(ctx, db->mt.size), rc);
+    EWRIT_RC(!cmp_write_u32(ctx, db->mt.size));
 
     char name[MAX_NAME_LENGTH + 1] = {0};
     char acc[MAX_ACC_LENGTH + 1] = {0};
     for (unsigned i = 0; i < db->profiles.size; ++i)
     {
         uint32_t size = ARRAY_SIZE(name);
-        EREAD(!cmp_read_str(&db->mt.file.ctx, name, &size), rc);
-        EWRIT(!ctx->write(ctx, name, size + 1), rc);
+        EREAD_RC(!cmp_read_str(&db->mt.file.ctx, name, &size));
+        EWRIT_RC(!ctx->write(ctx, name, size + 1));
 
         size = ARRAY_SIZE(acc);
-        EREAD(!cmp_read_str(&db->mt.file.ctx, acc, &size), rc);
-        EWRIT(!ctx->write(ctx, acc, size + 1), rc);
+        EREAD_RC(!cmp_read_str(&db->mt.file.ctx, acc, &size));
+        EWRIT_RC(!ctx->write(ctx, acc, size + 1));
     }
 
     return rc;
@@ -232,30 +254,28 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     xcmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = OPEN_READ;
 
-    int rc = IMM_SUCCESS;
-
     uint64_t magic_number = 0;
-    EREAD(!cmp_read_u64(&db->file.ctx, &magic_number), rc);
+    EREAD(!cmp_read_u64(&db->file.ctx, &magic_number));
     if (magic_number != MAGIC_NUMBER)
     {
-        rc = error(IMM_PARSEERROR, "wrong file magic number");
+        error(IMM_PARSEERROR, "wrong file magic number");
         goto cleanup;
     }
 
     uint8_t prof_type = 0;
-    EREAD(!cmp_read_u8(&db->file.ctx, &prof_type), rc);
+    EREAD(!cmp_read_u8(&db->file.ctx, &prof_type));
     if (prof_type != DCP_STD_PROFILE && prof_type != DCP_PROTEIN_PROFILE)
     {
-        rc = error(IMM_PARSEERROR, "wrong prof_type");
+        error(IMM_PARSEERROR, "wrong prof_type");
         goto cleanup;
     }
     db->cfg.prof_typeid = prof_type;
 
     uint8_t float_bytes = 0;
-    EREAD(!cmp_read_u8(&db->file.ctx, &float_bytes), rc);
+    EREAD(!cmp_read_u8(&db->file.ctx, &float_bytes));
     if (float_bytes != 4 && float_bytes != 8)
     {
-        rc = error(IMM_PARSEERROR, "wrong float_bytes");
+        error(IMM_PARSEERROR, "wrong float_bytes");
         goto cleanup;
     }
     db->cfg.float_bytes = float_bytes;
@@ -265,32 +285,32 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
         if (float_bytes != 4)
         {
             float e = 0;
-            EREAD(!cmp_read_float(&db->file.ctx, &e), rc);
+            EREAD(!cmp_read_float(&db->file.ctx, &e));
             db->cfg.pro.epsilon = (imm_float)e;
         }
         else
         {
             double e = 0;
-            EREAD(!cmp_read_double(&db->file.ctx, &e), rc);
+            EREAD(!cmp_read_double(&db->file.ctx, &e));
             db->cfg.pro.epsilon = (imm_float)e;
         }
         if (db->cfg.pro.epsilon < 0 || db->cfg.pro.epsilon > 1)
         {
-            rc = error(IMM_PARSEERROR, "wrong epsilon");
+            error(IMM_PARSEERROR, "wrong epsilon");
             goto cleanup;
         }
     }
 
     if (imm_abc_read(&db->abc, db->file.fd))
     {
-        rc = error(IMM_IOERROR, "failed to read alphabet");
+        error(IMM_IOERROR, "failed to read alphabet");
         goto cleanup;
     }
 
-    EREAD(!cmp_read_u32(&db->file.ctx, &db->profiles.size), rc);
+    EREAD(!cmp_read_u32(&db->file.ctx, &db->profiles.size));
     if (db->profiles.size > MAX_NPROFILES)
     {
-        rc = error(IMM_RUNTIMEERROR, "too many profiles");
+        error(IMM_RUNTIMEERROR, "too many profiles");
         goto cleanup;
     }
 
@@ -302,7 +322,6 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     return db;
 
 cleanup:
-    IMM_BUG(rc != IMM_SUCCESS);
     free(db);
     return NULL;
 }
@@ -404,7 +423,7 @@ int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
         rc = error(IMM_ILLEGALARG, "name is too long");
         goto cleanup;
     }
-    EWRIT(!cmp_write_str(ctx, prof->mt.name, len), rc);
+    EWRIT_RC(!cmp_write_str(ctx, prof->mt.name, len));
     /* +1 for null-terminated */
     db->mt.size += len + 1;
 
@@ -414,29 +433,12 @@ int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
         rc = error(IMM_ILLEGALARG, "accession is too long");
         goto cleanup;
     }
-    EWRIT(!cmp_write_str(ctx, prof->mt.acc, len), rc);
+    EWRIT_RC(!cmp_write_str(ctx, prof->mt.acc, len));
     /* +1 for null-terminated */
     db->mt.size += len + 1;
 
     if ((rc = prof->vtable.write(prof, db->dp.fd)))
         goto cleanup;
-
-#if 0
-    EWRIT(imm_dp_write(prof->dp.null, db->dp.fd), rc);
-    EWRIT(imm_dp_write(prof->dp.alt, db->dp.fd), rc);
-
-    if (db->cfg.prof_type == DCP_PROFILE_TYPE_PROTEIN)
-    {
-        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.null.R), rc);
-        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.S), rc);
-        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.N), rc);
-        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.B), rc);
-        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.E), rc);
-        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.J), rc);
-        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.C), rc);
-        EWRIT(!cmp_write_u16(ctx, (uint16_t)prof->pp.states.alt.T), rc);
-    }
-#endif
 
     db->profiles.size++;
 
@@ -472,7 +474,7 @@ static int db_closew(struct dcp_db *db)
 {
     int rc = IMM_SUCCESS;
 
-    EWRIT(!cmp_write_u32(&db->file.ctx, db->profiles.size), rc);
+    EWRIT_RC(!cmp_write_u32(&db->file.ctx, db->profiles.size));
 
     rewind(db->mt.file.fd);
     if ((rc = flush_metadata(db)))
