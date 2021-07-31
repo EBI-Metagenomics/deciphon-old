@@ -15,9 +15,12 @@ if("${isSystemDir}" STREQUAL "-1")
   set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 find_package(elapsed REQUIRED)
 find_package(imm REQUIRED)
 find_package(Threads REQUIRED)
+find_package(CK REQUIRED)
 
 option(OPENMP "Enable OpenMP" On)
 if(OPENMP)
@@ -107,7 +110,7 @@ target_include_directories(
 target_link_libraries(dcp PUBLIC IMM::imm)
 target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
 target_link_libraries(dcp PRIVATE Threads::Threads)
-target_link_libraries(dcp PUBLIC ck)
+target_link_libraries(dcp PUBLIC CK::ck)
 target_link_libraries(dcp PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 set_target_properties(dcp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(dcp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
