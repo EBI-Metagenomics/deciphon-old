@@ -45,7 +45,7 @@ add_library(
   # src/results.c
   # src/scan.c
   # src/seq_stack.c
-  src/server.c
+  # src/server.c
   # src/sleep.c
   # src/special_trans.c
   # src/str.c

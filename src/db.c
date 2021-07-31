@@ -457,8 +457,6 @@ int dcp_db_close(struct dcp_db *db)
         rc = db_closer(db);
     else if (db->file.mode == OPEN_WRIT)
         rc = db_closew(db);
-    else
-        IMM_BUG(true);
 
     xdel(db->mt.offset);
     xdel(db->mt.name_length);
@@ -509,7 +507,7 @@ unsigned dcp_db_nprofiles(struct dcp_db const *db) { return db->profiles.size; }
 struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
 {
     unsigned o = db->mt.offset[idx];
-    unsigned size = db->mt.name_length[idx] + 1;
+    unsigned size = (unsigned)(db->mt.name_length[idx] + 1);
     return dcp_meta(db->mt.data + o, db->mt.data + o + size);
 }
 
