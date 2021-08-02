@@ -13,8 +13,9 @@ int main(void)
 
 void test_3core_nodes(void)
 {
-    struct dcp_pro_profile *p = pro_profile_with_3cores();
-    struct dcp_profile *prof = dcp_super(p);
+    struct dcp_pro_profile p;
+    pro_profile_with_3cores(&p);
+    struct dcp_profile *prof = dcp_super(&p);
 
     char str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC"
                  "CATCACCATTACCACAGGTAACGGTGCGGGC";
@@ -24,10 +25,10 @@ void test_3core_nodes(void)
     unsigned len = (unsigned)strlen(str);
     bool multihits = true;
     bool hmmer3_compat = false;
-    dcp_pro_profile_setup(p, len, multihits, hmmer3_compat);
+    dcp_pro_profile_setup(&p, len, multihits, hmmer3_compat);
 
     struct imm_result result = imm_result();
-    struct imm_dp const *ndp = &p->null.dp;
+    struct imm_dp const *ndp = &p.null.dp;
     struct imm_task *ntask = imm_task_new(ndp);
     imm_task_setup(ntask, &seq);
     imm_dp_viterbi(ndp, ntask, &result);
@@ -44,7 +45,7 @@ void test_3core_nodes(void)
 
     imm_result_reset(&result);
 
-    struct imm_dp const *adp = &p->alt.dp;
+    struct imm_dp const *adp = &p.alt.dp;
     struct imm_task *atask = imm_task_new(adp);
     imm_task_setup(atask, &seq);
     imm_dp_viterbi(adp, atask, &result);

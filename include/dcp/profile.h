@@ -24,6 +24,12 @@ static inline void dcp_profile_del(struct dcp_profile *prof)
         prof->vtable.del(prof);
 }
 
+static inline void dcp_profile_nameit(struct dcp_profile *prof,
+                                      struct dcp_meta mt)
+{
+    prof->mt = mt;
+}
+
 static inline enum dcp_profile_typeid
 dcp_profile_typeid(struct dcp_profile const *prof)
 {

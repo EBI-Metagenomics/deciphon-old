@@ -32,8 +32,8 @@ struct dcp_pro_profile
     } alt;
 };
 
-DCP_API struct dcp_pro_profile *dcp_pro_profile_new(struct dcp_pro_cfg cfg,
-                                                    struct dcp_meta mt);
+DCP_API void dcp_pro_profile_init(struct dcp_pro_profile *p,
+                                  struct dcp_pro_cfg cfg);
 
 DCP_API void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
                                    bool multihits, bool hmmer3_compat);

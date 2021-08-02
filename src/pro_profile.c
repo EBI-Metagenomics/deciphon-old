@@ -12,17 +12,14 @@ static int write(struct dcp_profile const *prof, FILE *restrict fd);
 
 static void del(struct dcp_profile *prof);
 
-struct dcp_pro_profile *dcp_pro_profile_new(struct dcp_pro_cfg cfg,
-                                            struct dcp_meta mt)
+void dcp_pro_profile_init(struct dcp_pro_profile *p, struct dcp_pro_cfg cfg)
 {
-    struct dcp_pro_profile *p = xmalloc(sizeof(*p));
     struct dcp_profile_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE,
                                         p};
-    profile_init(&p->super, imm_super(cfg.nuclt), mt, vtable);
+    profile_init(&p->super, imm_super(cfg.nuclt), dcp_meta(NULL, NULL), vtable);
     p->cfg = cfg;
     imm_dp_init(&p->null.dp, imm_super(cfg.nuclt));
     imm_dp_init(&p->alt.dp, imm_super(cfg.nuclt));
-    return p;
 }
 
 void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,

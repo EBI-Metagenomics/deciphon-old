@@ -63,7 +63,7 @@ struct pro_profile_3core_nodes pro_profile_with_3cores_data(void)
     return data;
 }
 
-struct dcp_pro_profile *pro_profile_with_3cores(void)
+void pro_profile_with_3cores(struct dcp_pro_profile *p)
 {
     struct pro_profile_3core_nodes data = pro_profile_with_3cores_data();
     struct dcp_pro_model *model =
@@ -82,10 +82,9 @@ struct dcp_pro_profile *pro_profile_with_3cores(void)
 
     IMM_BUG(rc);
 
-    struct dcp_pro_profile *p =
-        dcp_pro_profile_new(data.cfg, dcp_meta("NAME0", "ACC0"));
+    dcp_pro_profile_init(p, data.cfg);
 
+    dcp_profile_nameit(dcp_super(p), dcp_meta("NAME0", "ACC0"));
     dcp_pro_profile_absorb(p, model);
     dcp_del(model);
-    return p;
 }

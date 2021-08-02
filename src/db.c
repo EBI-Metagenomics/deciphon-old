@@ -22,7 +22,11 @@ struct dcp_db
 {
     struct dcp_db_cfg cfg;
     struct imm_abc abc;
-    struct dcp_profile *prof;
+    union
+    {
+        struct dcp_std_profile std;
+        struct dcp_pro_profile pro;
+    } prof;
     struct
     {
         dcp_profile_idx_t size;
@@ -61,7 +65,6 @@ static inline struct dcp_db *new_db(void)
 {
     struct dcp_db *db = xcalloc(1, sizeof(*db));
     db->abc = imm_abc_empty;
-    db->prof = NULL;
     db->profiles.size = 0;
     db->profiles.curr_idx = 0;
     db->mt.offset = NULL;
@@ -245,7 +248,10 @@ cleanup:
     return rc;
 }
 
-struct dcp_profile *dcp_db_profile(struct dcp_db *db) { return db->prof; }
+struct dcp_profile *dcp_db_profile(struct dcp_db *db)
+{
+    return &db->prof.std.super;
+}
 
 struct dcp_db *dcp_db_openr(FILE *restrict fd)
 {
@@ -317,7 +323,13 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     if (read_metadata(db))
         goto cleanup;
 
-    db->prof = dcp_super(dcp_std_profile_new(&db->abc, dcp_meta(NULL, NULL)));
+    if (db->cfg.prof_typeid == DCP_STD_PROFILE)
+        dcp_std_profile_init(&db->prof.std, &db->abc);
+
+#if 0
+    if (db->cfg.prof_typeid == DCP_PROTEIN_PROFILE)
+        dcp_pro_profile_init(&db->prof.pro, &db->abc);
+#endif
 
     return db;
 
@@ -366,8 +378,12 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
         goto cleanup;
     }
 
+    if (cfg.prof_typeid == DCP_STD_PROFILE)
+        dcp_std_profile_init(&db->prof.std, abc);
+
     if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
+        dcp_pro_profile_init(&db->prof.pro, cfg.pro);
         if (!write_imm_float(&db->file.ctx, db->cfg.pro.epsilon))
         {
             error(IMM_IOERROR, "failed to write epsilon");
@@ -461,7 +477,7 @@ int dcp_db_close(struct dcp_db *db)
     xdel(db->mt.offset);
     xdel(db->mt.name_length);
     xdel(db->mt.data);
-    dcp_del(db->prof);
+    dcp_del(&db->prof.std.super);
     free(db);
     return rc;
 }

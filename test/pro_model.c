@@ -54,10 +54,11 @@ void test_pro_model(void)
     EQ(dcp_pro_model_add_trans(model, trans2), IMM_SUCCESS);
     EQ(dcp_pro_model_add_trans(model, trans3), IMM_SUCCESS);
 
-    struct dcp_pro_profile *p =
-        dcp_pro_profile_new(cfg, dcp_meta("NAME0", "ACC0"));
+    struct dcp_pro_profile p;
+    dcp_pro_profile_init(&p, cfg);
 
-    dcp_pro_profile_absorb(p, model);
+    dcp_profile_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
+    dcp_pro_profile_absorb(&p, model);
 
     dcp_del(model);
 }

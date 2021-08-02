@@ -16,11 +16,8 @@ struct dcp_std_profile
     } dp;
 };
 
-DCP_API struct dcp_std_profile *dcp_std_profile_new(struct imm_abc const *abc,
-                                                    struct dcp_meta mt);
-
-DCP_API void dcp_std_profile_reset(struct dcp_std_profile *p,
-                                   struct dcp_meta mt);
+DCP_API void dcp_std_profile_init(struct dcp_std_profile *p,
+                                  struct imm_abc const *abc);
 
 static inline void dcp_std_profile_del(struct dcp_std_profile *prof)
 {

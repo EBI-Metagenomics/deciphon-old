@@ -20,6 +20,6 @@ struct pro_profile_3core_nodes
 };
 
 struct pro_profile_3core_nodes pro_profile_with_3cores_data(void);
-struct dcp_pro_profile *pro_profile_with_3cores(void);
+void pro_profile_with_3cores(struct dcp_pro_profile *p);
 
 #endif

@@ -9,21 +9,13 @@ static int write(struct dcp_profile const *prof, FILE *restrict fd);
 
 static void del(struct dcp_profile *prof);
 
-DCP_API struct dcp_std_profile *dcp_std_profile_new(struct imm_abc const *abc,
-                                                    struct dcp_meta mt)
+DCP_API void dcp_std_profile_init(struct dcp_std_profile *p,
+                                  struct imm_abc const *abc)
 {
-    struct dcp_std_profile *prof = xmalloc(sizeof(*prof));
-    imm_dp_init(&prof->dp.null, abc);
-    imm_dp_init(&prof->dp.alt, abc);
-    struct dcp_profile_vtable vtable = {read, write, del, DCP_STD_PROFILE,
-                                        prof};
-    profile_init(&prof->super, abc, mt, vtable);
-    return prof;
-}
-
-void dcp_std_profile_reset(struct dcp_std_profile *p, struct dcp_meta mt)
-{
-    p->super.mt = mt;
+    imm_dp_init(&p->dp.null, abc);
+    imm_dp_init(&p->dp.alt, abc);
+    struct dcp_profile_vtable vtable = {read, write, del, DCP_STD_PROFILE, p};
+    profile_init(&p->super, abc, dcp_meta(NULL, NULL), vtable);
 }
 
 static int read(struct dcp_profile *prof, FILE *restrict fd)
