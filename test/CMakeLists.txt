@@ -30,16 +30,12 @@ function(dcp_add_test name srcs)
                              PUBLIC "PFAM24_FILEPATH=\"${PFAM24_FILEPATH}\"")
 endfunction()
 
-# function(download_file url filename hash_type hash) if(NOT EXISTS ${filename})
-# file(DOWNLOAD ${url} ${filename} TIMEOUT 60 EXPECTED_HASH ${hash_type}=${hash}
-# TLS_VERIFY ON) endif() endfunction(download_file)
-
 dcp_add_test(std_profile std_profile.c)
 dcp_add_test(pro_profile "pro_profile.c;data.c")
 dcp_add_test(pro_model pro_model.c)
 dcp_add_test(db_std db_std.c)
 dcp_add_test(db_pro "db_pro.c;data.c")
-# dcp_add_test(db db.c) dcp_add_test(server server.c) dcp_add_test(pp
-# "pp.c;data.c") dcp_add_test(db_pp "db_pp.c;data.c") dcp_add_test(metadata
-# metadata.c) dcp_add_test(tasks "tasks.c;pfam24_results.c")
-# dcp_add_test(very_long_seq "very_long_seq.c")
+# dcp_add_test(server server.c) dcp_add_test(pp "pp.c;data.c")
+# dcp_add_test(db_pp "db_pp.c;data.c") dcp_add_test(metadata metadata.c)
+# dcp_add_test(tasks "tasks.c;pfam24_results.c") dcp_add_test(very_long_seq
+# "very_long_seq.c")

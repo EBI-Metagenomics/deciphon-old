@@ -25,7 +25,6 @@ void test_3core_nodes(void)
     bool multihits = true;
     bool hmmer3_compat = false;
     dcp_pro_profile_setup(p, len, multihits, hmmer3_compat);
-    return;
 
     struct imm_result result = imm_result();
     struct imm_dp const *ndp = dcp_pro_profile_null_dp(p);
