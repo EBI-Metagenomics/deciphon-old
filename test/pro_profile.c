@@ -97,4 +97,5 @@ void test_3core_nodes(void)
     imm_del(&result);
     imm_del(ntask);
     imm_del(atask);
+    dcp_del(&p);
 }

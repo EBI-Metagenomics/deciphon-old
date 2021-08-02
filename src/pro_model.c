@@ -51,6 +51,7 @@ struct dcp_pro_model
     {
         unsigned node_idx;
         struct node *nodes;
+        imm_float *locc;
         unsigned trans_idx;
         struct dcp_pro_model_trans *trans;
         struct imm_hmm hmm;
@@ -71,8 +72,7 @@ static imm_float const uniform_nuclt_lprobs[IMM_NUCLT_SIZE] = {LOGN2, LOGN2,
 
 static void add_special_node(struct dcp_pro_model *m);
 
-static void calc_occupancy(struct dcp_pro_model *m,
-                           imm_float log_occ[static 1]);
+static void calc_occupancy(struct dcp_pro_model *m);
 
 static inline bool is_setup(struct dcp_pro_model *m)
 {
@@ -179,6 +179,7 @@ void dcp_pro_model_del(struct dcp_pro_model const *model)
     if (model)
     {
         free(model->alt.nodes);
+        free(model->alt.locc);
         free(model->alt.trans);
         free((void *)model);
     }
@@ -212,6 +213,7 @@ dcp_pro_model_new(struct dcp_pro_cfg cfg,
 
     m->alt.node_idx = UINT_MAX;
     m->alt.nodes = NULL;
+    m->alt.locc = NULL;
     m->alt.trans_idx = UINT_MAX;
     m->alt.trans = NULL;
     m->special_trans = pro_model_special_trans_init();
@@ -235,6 +237,8 @@ int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
     unsigned n = m->core_size;
     m->alt.node_idx = 0;
     m->alt.nodes = xrealloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
+    if (m->cfg.edist == DCP_ENTRY_DIST_OCCUPANCY)
+        m->alt.locc = xrealloc(m->alt.locc, n * sizeof(*m->alt.locc));
     m->alt.trans_idx = 0;
     m->alt.trans = xrealloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
     imm_hmm_reset(&m->alt.hmm);
@@ -308,28 +312,28 @@ static void add_special_node(struct dcp_pro_model *m)
     IMM_BUG(rc != IMM_SUCCESS);
 }
 
-static void calc_occupancy(struct dcp_pro_model *m, imm_float log_occ[static 1])
+static void calc_occupancy(struct dcp_pro_model *m)
 {
     struct dcp_pro_model_trans *trans = m->alt.trans;
-    log_occ[0] = imm_lprob_add(trans->MI, trans->MM);
+    m->alt.locc[0] = imm_lprob_add(trans->MI, trans->MM);
     for (unsigned i = 1; i < m->core_size; ++i)
     {
         ++trans;
-        imm_float val0 = log_occ[i - 1] + imm_lprob_add(trans->MM, trans->MI);
-        imm_float val1 = log1_p(log_occ[i - 1]) + trans->DM;
-        log_occ[i] = imm_lprob_add(val0, val1);
+        imm_float v0 = m->alt.locc[i - 1] + imm_lprob_add(trans->MM, trans->MI);
+        imm_float v1 = log1_p(m->alt.locc[i - 1]) + trans->DM;
+        m->alt.locc[i] = imm_lprob_add(v0, v1);
     }
 
     imm_float logZ = imm_lprob_zero();
     unsigned n = m->core_size;
     for (unsigned i = 0; i < m->core_size; ++i)
     {
-        logZ = imm_lprob_add(logZ, log_occ[i] + imm_log(n - i));
+        logZ = imm_lprob_add(logZ, m->alt.locc[i] + imm_log(n - i));
     }
 
     for (unsigned i = 0; i < m->core_size; ++i)
     {
-        log_occ[i] -= logZ;
+        m->alt.locc[i] -= logZ;
     }
 
     IMM_BUG(imm_lprob_is_nan(logZ));
@@ -453,16 +457,14 @@ static void setup_entry_trans(struct dcp_pro_model *m)
     else
     {
         IMM_BUG(m->cfg.edist != DCP_ENTRY_DIST_OCCUPANCY);
-        imm_float *locc = xmalloc((m->core_size) * sizeof(*locc));
-        calc_occupancy(m, locc);
+        calc_occupancy(m);
         struct imm_state *B = imm_super(&m->special_node.alt.B);
         for (unsigned i = 0; i < m->core_size; ++i)
         {
             struct node *node = m->alt.nodes + i;
-            rc +=
-                imm_hmm_set_trans(&m->alt.hmm, B, imm_super(&node->M), locc[i]);
+            rc += imm_hmm_set_trans(&m->alt.hmm, B, imm_super(&node->M),
+                                    m->alt.locc[i]);
         }
-        free(locc);
     }
     IMM_BUG(rc != IMM_SUCCESS);
 }
