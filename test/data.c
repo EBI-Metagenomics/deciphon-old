@@ -1,4 +1,5 @@
 #include "data.h"
+#include "third-party/random.h"
 
 struct pro_profile_3core_nodes pro_profile_with_3cores_data(void)
 {

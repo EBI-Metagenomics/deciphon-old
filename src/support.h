@@ -1,8 +1,8 @@
 #ifndef SUPPORT_H
 #define SUPPORT_H
 
-#include "cmp.h"
 #include "imm/log.h"
+#include "third-party/cmp.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

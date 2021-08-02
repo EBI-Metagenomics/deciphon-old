@@ -55,7 +55,7 @@ add_library(
   # src/task.c
   # src/task_bin.c
   # src/util.c
-  third-party/cmp.c)
+  src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 
 # Write out mytools_export.h to the current binary directory Must include
@@ -105,8 +105,7 @@ target_include_directories(
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
-          ${CMAKE_CURRENT_SOURCE_DIR}/third-party)
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(dcp PUBLIC IMM::imm)
 target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
 target_link_libraries(dcp PRIVATE Threads::Threads)
