@@ -31,7 +31,7 @@ struct random
  * significant binary digits. */
 static inline double __random_u64_to_dbl(uint64_t x)
 {
-    return (x >> 11) * 0x1.0p-53;
+    return (double)(x >> 11) * 0x1.0p-53;
 }
 
 static inline uint64_t __random_rotl(const uint64_t x, int k)
