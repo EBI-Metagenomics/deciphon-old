@@ -6,35 +6,11 @@
 #include "support.h"
 #include <assert.h>
 
-struct dcp_pro_profile
-{
-    struct dcp_profile super;
-    struct dcp_pro_cfg cfg;
-
-    struct
-    {
-        struct imm_dp *dp;
-        unsigned R;
-    } null;
-
-    struct
-    {
-        struct imm_dp *dp;
-        unsigned S;
-        unsigned N;
-        unsigned B;
-        unsigned E;
-        unsigned J;
-        unsigned C;
-        unsigned T;
-    } alt;
-};
-
 static int read(struct dcp_profile *prof, FILE *restrict fd);
 
 static int write(struct dcp_profile const *prof, FILE *restrict fd);
 
-static void del(struct dcp_profile const *prof);
+static void del(struct dcp_profile *prof);
 
 struct dcp_pro_profile *dcp_pro_profile_new(struct dcp_pro_cfg cfg,
                                             struct dcp_meta mt)
@@ -44,8 +20,8 @@ struct dcp_pro_profile *dcp_pro_profile_new(struct dcp_pro_cfg cfg,
                                         p};
     profile_init(&p->super, imm_super(cfg.nuclt), mt, vtable);
     p->cfg = cfg;
-    p->null.dp = imm_dp_new(imm_super(cfg.nuclt));
-    p->alt.dp = imm_dp_new(imm_super(cfg.nuclt));
+    imm_dp_init(&p->null.dp, imm_super(cfg.nuclt));
+    imm_dp_init(&p->alt.dp, imm_super(cfg.nuclt));
     return p;
 }
 
@@ -81,11 +57,11 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
         t.NN = t.CC = t.JJ = imm_log(1);
     }
 
-    struct imm_dp *dp = p->null.dp;
+    struct imm_dp *dp = &p->null.dp;
     unsigned R = p->null.R;
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, R, R), t.RR);
 
-    dp = p->alt.dp;
+    dp = &p->alt.dp;
     unsigned S = p->alt.S;
     unsigned N = p->alt.N;
     unsigned B = p->alt.B;
@@ -110,8 +86,8 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
 }
 
-int dcp_pro_profile_init(struct dcp_pro_profile *p,
-                         struct dcp_pro_model const *m)
+int dcp_pro_profile_absorb(struct dcp_pro_profile *p,
+                           struct dcp_pro_model const *m)
 {
     int rc = IMM_SUCCESS;
 
@@ -122,8 +98,8 @@ int dcp_pro_profile_init(struct dcp_pro_profile *p,
         return error(IMM_ILLEGALARG, "Different amino alphabets.");
 
     struct pro_model_summary s = pro_model_summary(m);
-    imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), p->null.dp);
-    imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), p->alt.dp);
+    imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp);
+    imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp);
 
     p->null.R = imm_state_idx(imm_super(s.null.R));
 
@@ -140,21 +116,6 @@ int dcp_pro_profile_init(struct dcp_pro_profile *p,
 struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro)
 {
     return &pro->super;
-}
-
-struct imm_dp const *dcp_pro_profile_null_dp(struct dcp_pro_profile *pro)
-{
-    return pro->null.dp;
-}
-
-struct imm_dp const *dcp_pro_profile_alt_dp(struct dcp_pro_profile *pro)
-{
-    return pro->alt.dp;
-}
-
-struct dcp_pro_cfg dcp_pro_profile_cfg(struct dcp_pro_profile const *pro)
-{
-    return pro->cfg;
 }
 
 void dcp_pro_profile_state_name(unsigned id, char name[8])
@@ -198,10 +159,10 @@ static int read(struct dcp_profile *prof, FILE *restrict fd)
     int rc = IMM_SUCCESS;
     struct dcp_pro_profile *p = prof->vtable.derived;
 
-    if ((rc = imm_dp_read(p->null.dp, fd)))
+    if ((rc = imm_dp_read(&p->null.dp, fd)))
         return rc;
 
-    if ((rc = imm_dp_read(p->alt.dp, fd)))
+    if ((rc = imm_dp_read(&p->alt.dp, fd)))
         return rc;
 
     return rc;
@@ -212,22 +173,21 @@ static int write(struct dcp_profile const *prof, FILE *restrict fd)
     int rc = IMM_SUCCESS;
     struct dcp_pro_profile const *p = prof->vtable.derived;
 
-    if ((rc = imm_dp_write(p->null.dp, fd)))
+    if ((rc = imm_dp_write(&p->null.dp, fd)))
         return rc;
 
-    if ((rc = imm_dp_write(p->alt.dp, fd)))
+    if ((rc = imm_dp_write(&p->alt.dp, fd)))
         return rc;
 
     return rc;
 }
 
-static void del(struct dcp_profile const *prof)
+static void del(struct dcp_profile *prof)
 {
     if (prof)
     {
-        struct dcp_pro_profile const *p = prof->vtable.derived;
-        imm_dp_del(p->null.dp);
-        imm_dp_del(p->alt.dp);
-        free((void *)p);
+        struct dcp_pro_profile *p = prof->vtable.derived;
+        imm_del(&p->null.dp);
+        imm_del(&p->alt.dp);
     }
 }

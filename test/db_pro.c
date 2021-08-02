@@ -17,8 +17,7 @@ void test_db_openw_3core_nodes(void)
     struct imm_abc const *abc = dcp_super(p)->abc;
     FILE *fd = fopen(TMPDIR "/3core_nodes.dcp", "wb");
 
-    struct dcp_pro_cfg cfg = dcp_pro_profile_cfg(p);
-    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_pro(cfg));
+    struct dcp_db *db = dcp_db_openw(fd, abc, dcp_db_pro(p->cfg));
     NOTNULL(db);
 
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);

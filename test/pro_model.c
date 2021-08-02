@@ -57,7 +57,7 @@ void test_pro_model(void)
     struct dcp_pro_profile *p =
         dcp_pro_profile_new(cfg, dcp_meta("NAME0", "ACC0"));
 
-    dcp_pro_profile_init(p, model);
+    dcp_pro_profile_absorb(p, model);
 
     dcp_del(model);
 }

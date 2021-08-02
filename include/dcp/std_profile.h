@@ -11,8 +11,8 @@ struct dcp_std_profile
     struct dcp_profile super;
     struct
     {
-        struct imm_dp *null;
-        struct imm_dp *alt;
+        struct imm_dp null;
+        struct imm_dp alt;
     } dp;
 };
 
@@ -22,10 +22,10 @@ DCP_API struct dcp_std_profile *dcp_std_profile_new(struct imm_abc const *abc,
 DCP_API void dcp_std_profile_reset(struct dcp_std_profile *p,
                                    struct dcp_meta mt);
 
-static inline void dcp_std_profile_del(struct dcp_std_profile const *prof)
+static inline void dcp_std_profile_del(struct dcp_std_profile *prof)
 {
     if (prof)
-        prof->super.vtable.del((struct dcp_profile *)&prof->super);
+        prof->super.vtable.del(&prof->super);
 }
 
 static inline struct dcp_profile *

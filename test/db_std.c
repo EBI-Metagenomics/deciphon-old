@@ -68,8 +68,8 @@ void test_db_openw_one_mute(void)
 
     struct dcp_std_profile *p =
         dcp_std_profile_new(abc, dcp_meta("NAME0", "ACC0"));
-    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.null), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p->dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
     dcp_del(p);
@@ -113,9 +113,9 @@ void test_db_openw_example1(void)
     /* Profile 0 */
     struct dcp_std_profile *p =
         dcp_std_profile_new(&m->abc, dcp_meta("NAME0", "ACC0"));
-    EQ(imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), p->dp.null),
+    EQ(imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), &p->dp.null),
        IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), &p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
     /* Profile 1 */
@@ -126,8 +126,8 @@ void test_db_openw_example1(void)
     EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
     dcp_std_profile_reset(p, dcp_meta("NAME1", "ACC1"));
-    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.null), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p->dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
     dcp_del(p);
@@ -163,10 +163,10 @@ void test_db_openr_example1(void)
         if (p->idx == 0)
         {
             struct dcp_std_profile *prof = dcp_profile_derived(p);
-            struct imm_task *task = imm_task_new(prof->dp.alt);
+            struct imm_task *task = imm_task_new(&prof->dp.alt);
             struct imm_seq seq = imm_seq(imm_str(imm_example1_seq), p->abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-            EQ(imm_dp_viterbi(prof->dp.alt, task, &result), IMM_SUCCESS);
+            EQ(imm_dp_viterbi(&prof->dp.alt, task, &result), IMM_SUCCESS);
             CLOSE(result.loglik, -65826.0106185297);
             imm_del(task);
         }
@@ -190,9 +190,9 @@ void test_db_openw_example2(void)
     /* Profile 0 */
     struct dcp_std_profile *p =
         dcp_std_profile_new(abc, dcp_meta("NAME0", "ACC0"));
-    EQ(imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), p->dp.null),
+    EQ(imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), &p->dp.null),
        IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), &p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
     /* Profile 1 */
@@ -203,8 +203,8 @@ void test_db_openw_example2(void)
     imm_hmm_init(&hmm, abc);
     EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.null), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), p->dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p->dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p->dp.alt), IMM_SUCCESS);
     EQ(dcp_db_write(db, dcp_super(p)), IMM_SUCCESS);
 
     dcp_del(p);
@@ -241,10 +241,10 @@ void test_db_openr_example2(void)
         if (p->idx == 0)
         {
             struct dcp_std_profile *prof = dcp_profile_derived(p);
-            struct imm_task *task = imm_task_new(prof->dp.alt);
+            struct imm_task *task = imm_task_new(&prof->dp.alt);
             struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), p->abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-            EQ(imm_dp_viterbi(prof->dp.alt, task, &result), IMM_SUCCESS);
+            EQ(imm_dp_viterbi(&prof->dp.alt, task, &result), IMM_SUCCESS);
             CLOSE(result.loglik, -1622.8488101101);
             imm_del(task);
         }

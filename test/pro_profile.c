@@ -27,7 +27,7 @@ void test_3core_nodes(void)
     dcp_pro_profile_setup(p, len, multihits, hmmer3_compat);
 
     struct imm_result result = imm_result();
-    struct imm_dp const *ndp = dcp_pro_profile_null_dp(p);
+    struct imm_dp const *ndp = &p->null.dp;
     struct imm_task *ntask = imm_task_new(ndp);
     imm_task_setup(ntask, &seq);
     imm_dp_viterbi(ndp, ntask, &result);
@@ -44,7 +44,7 @@ void test_3core_nodes(void)
 
     imm_result_reset(&result);
 
-    struct imm_dp const *adp = dcp_pro_profile_alt_dp(p);
+    struct imm_dp const *adp = &p->alt.dp;
     struct imm_task *atask = imm_task_new(adp);
     imm_task_setup(atask, &seq);
     imm_dp_viterbi(adp, atask, &result);

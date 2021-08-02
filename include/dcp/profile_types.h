@@ -28,7 +28,7 @@ struct dcp_profile_vtable
 {
     int (*read)(struct dcp_profile *prof, FILE *restrict fd);
     int (*write)(struct dcp_profile const *prof, FILE *restrict fd);
-    void (*del)(struct dcp_profile const *prof);
+    void (*del)(struct dcp_profile *prof);
     enum dcp_profile_typeid typeid;
     void *derived;
 };

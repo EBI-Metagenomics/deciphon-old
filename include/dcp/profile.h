@@ -18,7 +18,7 @@ struct dcp_profile
     struct dcp_profile_vtable vtable;
 };
 
-static inline void dcp_profile_del(struct dcp_profile const *prof)
+static inline void dcp_profile_del(struct dcp_profile *prof)
 {
     if (prof)
         prof->vtable.del(prof);
