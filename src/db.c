@@ -426,11 +426,21 @@ struct dcp_db_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
 int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 {
     if (db->profiles.size == MAX_NPROFILES)
-    {
         return error(IMM_RUNTIMEERROR, "too many profiles");
-    }
-    int rc = IMM_SUCCESS;
 
+    if (prof->mt.name == NULL)
+        return error(IMM_ILLEGALARG, "metadata not set");
+
+    if (prof->vtable.typeid == DCP_PROTEIN_PROFILE)
+    {
+        struct dcp_pro_profile const *p = dcp_profile_derived_c(prof);
+        if (p->cfg.epsilon != db->cfg.pro.epsilon)
+            return error(IMM_ILLEGALARG, "different epsilons");
+        if (p->cfg.edist != db->cfg.pro.edist)
+            return error(IMM_ILLEGALARG, "different entry distrs");
+    }
+
+    int rc = IMM_SUCCESS;
     cmp_ctx_t *ctx = &db->mt.file.ctx;
 
     uint32_t len = (uint32_t)strlen(prof->mt.name);

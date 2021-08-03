@@ -41,4 +41,9 @@ static inline void *dcp_profile_derived(struct dcp_profile *prof)
     return prof->vtable.derived;
 }
 
+static inline void const *dcp_profile_derived_c(struct dcp_profile const *prof)
+{
+    return prof->vtable.derived;
+}
+
 #endif

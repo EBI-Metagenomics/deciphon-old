@@ -31,10 +31,10 @@ function(dcp_add_test name srcs)
 endfunction()
 
 dcp_add_test(std_profile std_profile.c)
-dcp_add_test(pro_profile "pro_profile.c;data.c")
+dcp_add_test(pro_profile pro_profile.c)
 dcp_add_test(pro_model pro_model.c)
 dcp_add_test(db_std db_std.c)
-dcp_add_test(db_pro "db_pro.c;data.c")
+dcp_add_test(db_pro db_pro.c)
 # dcp_add_test(server server.c) dcp_add_test(pp "pp.c;data.c")
 # dcp_add_test(db_pp "db_pp.c;data.c") dcp_add_test(metadata metadata.c)
 # dcp_add_test(tasks "tasks.c;pfam24_results.c") dcp_add_test(very_long_seq
