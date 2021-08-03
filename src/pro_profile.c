@@ -1,9 +1,11 @@
 #include "dcp/pro_profile.h"
+#include "dcp/generics.h"
 #include "dcp/profile.h"
 #include "imm/imm.h"
 #include "pro_model.h"
 #include "profile.h"
 #include "support.h"
+#include "third-party/xrandom.h"
 #include <assert.h>
 
 static int read(struct dcp_profile *prof, FILE *restrict fd);
@@ -11,6 +13,8 @@ static int read(struct dcp_profile *prof, FILE *restrict fd);
 static int write(struct dcp_profile const *prof, FILE *restrict fd);
 
 static void del(struct dcp_profile *prof);
+
+static void sample_lprobs(struct xrandom *rnd, unsigned n, imm_float *lprobs);
 
 void dcp_pro_profile_init(struct dcp_pro_profile *p, struct dcp_pro_cfg cfg)
 {
@@ -151,6 +155,56 @@ void dcp_pro_profile_state_name(unsigned id, char name[8])
     }
 }
 
+void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
+                            unsigned core_size, enum dcp_entry_dist edist,
+                            imm_float epsilon)
+{
+    IMM_BUG(core_size < 2);
+    struct xrandom rnd = xrandom(seed);
+    struct dcp_pro_cfg cfg = {
+        .amino = &imm_amino_iupac,
+        .nuclt = imm_super(imm_gc_dna()),
+        .edist = edist,
+        .epsilon = epsilon,
+    };
+
+    imm_float lprobs[IMM_AMINO_SIZE];
+    imm_float lodds[IMM_AMINO_SIZE];
+
+    sample_lprobs(&rnd, IMM_AMINO_SIZE, lprobs);
+    sample_lprobs(&rnd, IMM_AMINO_SIZE, lodds);
+
+    struct dcp_pro_model *model = dcp_pro_model_new(cfg, lprobs, lodds);
+
+    int rc = dcp_pro_model_setup(model, core_size);
+
+    for (unsigned i = 0; i < core_size; ++i)
+    {
+        sample_lprobs(&rnd, IMM_AMINO_SIZE, lprobs);
+        rc += dcp_pro_model_add_node(model, lprobs);
+    }
+
+    for (unsigned i = 0; i < core_size + 1; ++i)
+    {
+        struct dcp_pro_model_trans t;
+        sample_lprobs(&rnd, DCP_PRO_MODEL_TRANS_SIZE, t.data);
+        if (i == 0)
+            t.DD = IMM_LPROB_ZERO;
+        if (i == core_size)
+        {
+            t.MD = IMM_LPROB_ZERO;
+            t.DD = IMM_LPROB_ZERO;
+        }
+        rc += dcp_pro_model_add_trans(model, t);
+    }
+
+    dcp_pro_profile_init(p, cfg);
+    rc += dcp_pro_profile_absorb(p, model);
+    dcp_del(model);
+
+    IMM_BUG(rc);
+}
+
 static int read(struct dcp_profile *prof, FILE *restrict fd)
 {
     int rc = IMM_SUCCESS;
@@ -187,4 +241,10 @@ static void del(struct dcp_profile *prof)
         imm_del(&p->null.dp);
         imm_del(&p->alt.dp);
     }
+}
+
+static void sample_lprobs(struct xrandom *rnd, unsigned n, imm_float *lprobs)
+{
+    for (unsigned i = 0; i < n; ++i)
+        lprobs[i] = imm_log(random_dbl(rnd));
 }

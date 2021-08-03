@@ -45,6 +45,11 @@ DCP_API struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro);
 
 DCP_API void dcp_pro_profile_state_name(unsigned id, char name[8]);
 
+DCP_API void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
+                                    unsigned core_size,
+                                    enum dcp_entry_dist edist,
+                                    imm_float epsilon);
+
 static inline void dcp_pro_profile_del(struct dcp_pro_profile *pro)
 {
     if (pro)

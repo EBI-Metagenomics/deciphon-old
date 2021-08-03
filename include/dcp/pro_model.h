@@ -19,15 +19,27 @@
 #define DCP_PRO_MODEL_C_ID (DCP_PRO_MODEL_SPECIAL_ID | 6U)
 #define DCP_PRO_MODEL_T_ID (DCP_PRO_MODEL_SPECIAL_ID | 7U)
 
+#define DCP_PRO_MODEL_TRANS_SIZE 7
+
 struct dcp_pro_model_trans
 {
-    imm_float MM;
-    imm_float MI;
-    imm_float MD;
-    imm_float IM;
-    imm_float II;
-    imm_float DM;
-    imm_float DD;
+    union
+    {
+        struct
+        {
+            imm_float MM;
+            imm_float MI;
+            imm_float MD;
+            imm_float IM;
+            imm_float II;
+            imm_float DM;
+            imm_float DD;
+        } __attribute__((packed));
+        struct
+        {
+            imm_float data[DCP_PRO_MODEL_TRANS_SIZE];
+        };
+    };
 };
 
 struct dcp_pro_model;
