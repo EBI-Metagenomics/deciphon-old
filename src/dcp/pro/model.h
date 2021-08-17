@@ -1,0 +1,62 @@
+#ifndef DCP_PRO_MODEL_H
+#define DCP_PRO_MODEL_H
+
+#include "dcp/entry_dist.h"
+#include "dcp/export.h"
+#include "dcp/pro/cfg.h"
+#include "dcp/pro/id.h"
+#include "dcp/pro/special_node.h"
+#include "dcp/pro/special_trans.h"
+#include "dcp/pro/trans.h"
+
+struct dcp_pro_model
+{
+    struct dcp_pro_cfg cfg;
+    unsigned core_size;
+    struct dcp_pro_special_node special_node;
+    struct dcp_pro_special_trans special_trans;
+
+    struct
+    {
+        imm_float lprobs[IMM_AMINO_SIZE];
+        struct imm_nuclt_lprob nucltp;
+        struct imm_codon_marg codonm;
+        struct imm_hmm hmm;
+    } null;
+
+    struct
+    {
+        unsigned node_idx;
+        struct dcp_pro_node *nodes;
+        imm_float *locc;
+        unsigned trans_idx;
+        struct dcp_pro_trans *trans;
+        struct imm_hmm hmm;
+
+        struct
+        {
+            struct imm_nuclt_lprob nucltp;
+            struct imm_codon_marg codonm;
+        } insert;
+    } alt;
+};
+
+DCP_API int dcp_pro_model_add_node(struct dcp_pro_model *m,
+                                   imm_float const lprobs[IMM_AMINO_SIZE]);
+
+DCP_API int dcp_pro_model_add_trans(struct dcp_pro_model *m,
+                                    struct dcp_pro_trans trans);
+
+DCP_API void dcp_pro_model_del(struct dcp_pro_model const *model);
+
+DCP_API struct dcp_pro_model *
+dcp_pro_model_new(struct dcp_pro_cfg cfg,
+                  imm_float const null_lprobs[IMM_AMINO_SIZE],
+                  imm_float const ins_lodds[IMM_AMINO_SIZE]);
+
+DCP_API int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size);
+
+DCP_API void dcp_pro_model_write_dot(struct dcp_pro_model const *m,
+                                     FILE *restrict fp);
+
+#endif

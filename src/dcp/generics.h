@@ -1,7 +1,7 @@
 #ifndef DCP_GENERICS_H
 #define DCP_GENERICS_H
 
-#include "dcp/pro_profile.h"
+#include "dcp/pro/profile.h"
 #include "dcp/std_profile.h"
 
 #define dcp_super(x)                                                           \

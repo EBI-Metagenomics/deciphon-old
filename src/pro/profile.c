@@ -1,8 +1,8 @@
-#include "dcp/pro_profile.h"
+#include "dcp/pro/profile.h"
 #include "dcp/generics.h"
 #include "dcp/profile.h"
 #include "imm/imm.h"
-#include "pro_model.h"
+#include "pro/model.h"
 #include "profile.h"
 #include "support.h"
 #include "third-party/xrandom.h"
@@ -43,7 +43,7 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     imm_float l1p = imm_log(2 + q / (1 - q)) - imm_log(L + 2 + q / (1 - q));
     imm_float lr = imm_log(L) - imm_log(L + 1);
 
-    struct pro_model_special_trans t;
+    struct dcp_pro_special_trans t;
 
     t.NN = t.CC = t.JJ = lp;
     t.NB = t.CT = t.JB = l1p;
@@ -155,8 +155,8 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
 
     for (unsigned i = 0; i < core_size + 1; ++i)
     {
-        struct dcp_pro_model_trans t;
-        imm_lprob_sample(&rnd, DCP_PRO_MODEL_TRANS_SIZE, t.data);
+        struct dcp_pro_trans t;
+        imm_lprob_sample(&rnd, DCP_PRO_TRANS_SIZE, t.data);
         if (i == 0)
             t.DD = IMM_LPROB_ZERO;
         if (i == core_size)
@@ -164,7 +164,7 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
             t.MD = IMM_LPROB_ZERO;
             t.DD = IMM_LPROB_ZERO;
         }
-        imm_lprob_normalize(DCP_PRO_MODEL_TRANS_SIZE, t.data);
+        imm_lprob_normalize(DCP_PRO_TRANS_SIZE, t.data);
         rc += dcp_pro_model_add_trans(model, t);
     }
 

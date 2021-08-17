@@ -3,10 +3,9 @@
 
 #include "dcp/export.h"
 #include "dcp/meta.h"
-#include "dcp/pro_model.h"
+#include "dcp/pro/model.h"
 #include "dcp/profile.h"
 #include "imm/imm.h"
-#include <assert.h>
 
 struct dcp_pro_profile
 {

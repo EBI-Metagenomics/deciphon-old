@@ -2,7 +2,7 @@
 #define DCP_PRO_READER_H
 
 #include "dcp/export.h"
-#include "dcp/pro_cfg.h"
+#include "dcp/pro/cfg.h"
 #include <stdio.h>
 
 struct dcp_pro_model;

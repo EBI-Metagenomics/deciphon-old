@@ -1,0 +1,19 @@
+#ifndef DCP_PRO_ID_H
+#define DCP_PRO_ID_H
+
+#include "dcp/profile_types.h"
+
+#define DCP_PRO_ID_MATCH (0U << (DCP_PROFILE_BITS_ID - 2))
+#define DCP_PRO_ID_INSERT (1U << (DCP_PROFILE_BITS_ID - 2))
+#define DCP_PRO_ID_DELETE (2U << (DCP_PROFILE_BITS_ID - 2))
+#define DCP_PRO_ID_SPECIAL (3U << (DCP_PROFILE_BITS_ID - 2))
+#define DCP_PRO_ID_R (DCP_PRO_ID_SPECIAL | 0U)
+#define DCP_PRO_ID_S (DCP_PRO_ID_SPECIAL | 1U)
+#define DCP_PRO_ID_N (DCP_PRO_ID_SPECIAL | 2U)
+#define DCP_PRO_ID_B (DCP_PRO_ID_SPECIAL | 3U)
+#define DCP_PRO_ID_E (DCP_PRO_ID_SPECIAL | 4U)
+#define DCP_PRO_ID_J (DCP_PRO_ID_SPECIAL | 5U)
+#define DCP_PRO_ID_C (DCP_PRO_ID_SPECIAL | 6U)
+#define DCP_PRO_ID_T (DCP_PRO_ID_SPECIAL | 7U)
+
+#endif

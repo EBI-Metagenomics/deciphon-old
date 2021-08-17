@@ -23,7 +23,7 @@ void test_pro_model(void)
     imm_float match_lprobs1[IMM_AMINO_SIZE];
     imm_float match_lprobs2[IMM_AMINO_SIZE];
     imm_float match_lprobs3[IMM_AMINO_SIZE];
-    struct dcp_pro_model_trans t[4];
+    struct dcp_pro_trans t[4];
 
     struct imm_rnd rnd = imm_rnd(942);
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, null_lprobs);
@@ -34,8 +34,8 @@ void test_pro_model(void)
 
     for (unsigned i = 0; i < 4; ++i)
     {
-        imm_lprob_sample(&rnd, DCP_PRO_MODEL_TRANS_SIZE, t[i].data);
-        imm_lprob_normalize(DCP_PRO_MODEL_TRANS_SIZE, t[i].data);
+        imm_lprob_sample(&rnd, DCP_PRO_TRANS_SIZE, t[i].data);
+        imm_lprob_normalize(DCP_PRO_TRANS_SIZE, t[i].data);
     }
 
     struct dcp_pro_model *model =
@@ -116,7 +116,7 @@ void test_pro_model_from_hmmfile(void)
         rc = hmr_next_node(&hmr, &prof);
         EQ(rc, IMM_SUCCESS);
 
-        struct dcp_pro_model_trans t = {
+        struct dcp_pro_trans t = {
             .MM = (imm_float)prof.node.trans[HMR_TRANS_MM],
             .MI = (imm_float)prof.node.trans[HMR_TRANS_MI],
             .MD = (imm_float)prof.node.trans[HMR_TRANS_MD],
@@ -138,7 +138,7 @@ void test_pro_model_from_hmmfile(void)
 
             EQ(dcp_pro_model_add_node(model, match_lprobs), IMM_SUCCESS);
 
-            struct dcp_pro_model_trans t2 = {
+            struct dcp_pro_trans t2 = {
                 .MM = (imm_float)prof.node.trans[HMR_TRANS_MM],
                 .MI = (imm_float)prof.node.trans[HMR_TRANS_MI],
                 .MD = (imm_float)prof.node.trans[HMR_TRANS_MD],

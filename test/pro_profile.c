@@ -37,12 +37,12 @@ void test_pro_profile_uniform(void)
     char name[8];
 
     EQ(imm_path_step(&result.path, 0)->seqlen, 3);
-    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_MODEL_R_ID);
+    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_ID_R);
     dcp_pro_profile_state_name(imm_path_step(&result.path, 0)->state_id, name);
     EQ(name, "R");
 
     EQ(imm_path_step(&result.path, 10)->seqlen, 2);
-    EQ(imm_path_step(&result.path, 10)->state_id, DCP_PRO_MODEL_R_ID);
+    EQ(imm_path_step(&result.path, 10)->state_id, DCP_PRO_ID_R);
     dcp_pro_profile_state_name(imm_path_step(&result.path, 10)->state_id, name);
     EQ(name, "R");
 
@@ -59,12 +59,12 @@ void test_pro_profile_uniform(void)
     EQ(imm_path_nsteps(&result.path), 14);
 
     EQ(imm_path_step(&result.path, 0)->seqlen, 0);
-    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_MODEL_S_ID);
+    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_ID_S);
     dcp_pro_profile_state_name(imm_path_step(&result.path, 0)->state_id, name);
     EQ(name, "S");
 
     EQ(imm_path_step(&result.path, 13)->seqlen, 0);
-    EQ(imm_path_step(&result.path, 13)->state_id, DCP_PRO_MODEL_T_ID);
+    EQ(imm_path_step(&result.path, 13)->state_id, DCP_PRO_ID_T);
     dcp_pro_profile_state_name(imm_path_step(&result.path, 13)->state_id, name);
     EQ(name, "T");
 
@@ -98,12 +98,12 @@ void test_pro_profile_occupancy(void)
     char name[8];
 
     EQ(imm_path_step(&result.path, 0)->seqlen, 3);
-    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_MODEL_R_ID);
+    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_ID_R);
     dcp_pro_profile_state_name(imm_path_step(&result.path, 0)->state_id, name);
     EQ(name, "R");
 
     EQ(imm_path_step(&result.path, 10)->seqlen, 2);
-    EQ(imm_path_step(&result.path, 10)->state_id, DCP_PRO_MODEL_R_ID);
+    EQ(imm_path_step(&result.path, 10)->state_id, DCP_PRO_ID_R);
     dcp_pro_profile_state_name(imm_path_step(&result.path, 10)->state_id, name);
     EQ(name, "R");
 
@@ -120,12 +120,12 @@ void test_pro_profile_occupancy(void)
     EQ(imm_path_nsteps(&result.path), 14);
 
     EQ(imm_path_step(&result.path, 0)->seqlen, 0);
-    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_MODEL_S_ID);
+    EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_ID_S);
     dcp_pro_profile_state_name(imm_path_step(&result.path, 0)->state_id, name);
     EQ(name, "S");
 
     EQ(imm_path_step(&result.path, 13)->seqlen, 0);
-    EQ(imm_path_step(&result.path, 13)->state_id, DCP_PRO_MODEL_T_ID);
+    EQ(imm_path_step(&result.path, 13)->state_id, DCP_PRO_ID_T);
     dcp_pro_profile_state_name(imm_path_step(&result.path, 13)->state_id, name);
     EQ(name, "T");
 
