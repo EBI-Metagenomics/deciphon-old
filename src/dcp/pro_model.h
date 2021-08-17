@@ -59,4 +59,7 @@ dcp_pro_model_new(struct dcp_pro_cfg cfg,
 
 DCP_API int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size);
 
+DCP_API void dcp_pro_model_write_dot(struct dcp_pro_model const *m,
+                                     FILE *restrict fp);
+
 #endif

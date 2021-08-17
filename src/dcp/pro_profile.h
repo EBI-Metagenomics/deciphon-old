@@ -43,7 +43,8 @@ DCP_API int dcp_pro_profile_absorb(struct dcp_pro_profile *p,
 
 DCP_API struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro);
 
-DCP_API void dcp_pro_profile_state_name(unsigned id, char name[8]);
+DCP_API void dcp_pro_profile_state_name(unsigned id,
+                                        char name[IMM_STATE_NAME_SIZE]);
 
 DCP_API void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
                                     unsigned core_size,

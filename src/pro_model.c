@@ -247,6 +247,11 @@ int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
     return IMM_SUCCESS;
 }
 
+void dcp_pro_model_write_dot(struct dcp_pro_model const *m, FILE *restrict fp)
+{
+    imm_hmm_write_dot(&m->alt.hmm, fp, pro_model_state_name);
+}
+
 struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
 {
     IMM_BUG(!is_ready(m));
@@ -262,6 +267,42 @@ struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
             .C = &m->special_node.alt.C,
             .T = &m->special_node.alt.T,
         }};
+}
+
+void pro_model_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
+{
+    unsigned msb = id & (3U << (DCP_PROFILE_BITS_ID - 2));
+    if (msb == DCP_PRO_MODEL_SPECIAL_ID)
+    {
+        if (id == DCP_PRO_MODEL_R_ID)
+            name[0] = 'R';
+        else if (id == DCP_PRO_MODEL_S_ID)
+            name[0] = 'S';
+        else if (id == DCP_PRO_MODEL_N_ID)
+            name[0] = 'N';
+        else if (id == DCP_PRO_MODEL_B_ID)
+            name[0] = 'B';
+        else if (id == DCP_PRO_MODEL_E_ID)
+            name[0] = 'E';
+        else if (id == DCP_PRO_MODEL_J_ID)
+            name[0] = 'J';
+        else if (id == DCP_PRO_MODEL_C_ID)
+            name[0] = 'C';
+        else if (id == DCP_PRO_MODEL_T_ID)
+            name[0] = 'T';
+        name[1] = '\0';
+    }
+    else
+    {
+        if (msb == DCP_PRO_MODEL_MATCH_ID)
+            name[0] = 'M';
+        else if (msb == DCP_PRO_MODEL_INSERT_ID)
+            name[0] = 'I';
+        else if (msb == DCP_PRO_MODEL_DELETE_ID)
+            name[0] = 'D';
+        unsigned idx = id & (0xFFFF >> 2);
+        snprintf(name + 1, 7, "%d", idx);
+    }
 }
 
 struct imm_amino const *pro_model_amino(struct dcp_pro_model const *m)

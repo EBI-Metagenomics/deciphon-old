@@ -55,5 +55,6 @@ struct dcp_pro_model;
 struct imm_amino const *pro_model_amino(struct dcp_pro_model const *m);
 struct imm_nuclt const *pro_model_nuclt(struct dcp_pro_model const *m);
 struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m);
+void pro_model_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE]);
 
 #endif

@@ -17,6 +17,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+find_package(hmr REQUIRED)
 find_package(elapsed REQUIRED)
 find_package(imm REQUIRED)
 find_package(Threads REQUIRED)
@@ -103,10 +104,11 @@ endif()
 target_include_directories(
   dcp
   PUBLIC $<INSTALL_INTERFACE:include>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(dcp PUBLIC IMM::imm)
+target_link_libraries(dcp PUBLIC HMR::hmr)
 target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
 target_link_libraries(dcp PRIVATE Threads::Threads)
 target_link_libraries(dcp PUBLIC CK::ck)
@@ -120,8 +122,6 @@ target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/dcp/config.h.in
-               ${CMAKE_CURRENT_BINARY_DIR}/dcp/config.h @ONLY)
 
 include(CheckCSourceCompiles)
 check_c_source_compiles(
@@ -149,9 +149,8 @@ install(
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   PUBLIC_HEADER DESTINATION include)
-install(DIRECTORY include/ DESTINATION include)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h
-              ${CMAKE_CURRENT_BINARY_DIR}/dcp/config.h DESTINATION include/dcp)
+install(DIRECTORY src/dcp/ DESTINATION include/dcp)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h DESTINATION include/dcp)
 install(
   EXPORT dcp-targets
   FILE dcp-targets.cmake

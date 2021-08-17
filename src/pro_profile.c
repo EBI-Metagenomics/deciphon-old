@@ -117,40 +117,9 @@ struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro)
     return &pro->super;
 }
 
-void dcp_pro_profile_state_name(unsigned id, char name[8])
+void dcp_pro_profile_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
-    unsigned msb = id & (3U << (DCP_PROFILE_BITS_ID - 2));
-    if (msb == DCP_PRO_MODEL_SPECIAL_ID)
-    {
-        if (id == DCP_PRO_MODEL_R_ID)
-            name[0] = 'R';
-        else if (id == DCP_PRO_MODEL_S_ID)
-            name[0] = 'S';
-        else if (id == DCP_PRO_MODEL_N_ID)
-            name[0] = 'N';
-        else if (id == DCP_PRO_MODEL_B_ID)
-            name[0] = 'B';
-        else if (id == DCP_PRO_MODEL_E_ID)
-            name[0] = 'E';
-        else if (id == DCP_PRO_MODEL_J_ID)
-            name[0] = 'J';
-        else if (id == DCP_PRO_MODEL_C_ID)
-            name[0] = 'C';
-        else if (id == DCP_PRO_MODEL_T_ID)
-            name[0] = 'T';
-        name[1] = '\0';
-    }
-    else
-    {
-        if (msb == DCP_PRO_MODEL_MATCH_ID)
-            name[0] = 'M';
-        else if (msb == DCP_PRO_MODEL_INSERT_ID)
-            name[0] = 'I';
-        else if (msb == DCP_PRO_MODEL_DELETE_ID)
-            name[0] = 'D';
-        unsigned idx = id & (0xFFFF >> 2);
-        snprintf(name + 1, 7, "%d", idx);
-    }
+    pro_model_state_name(id, name);
 }
 
 void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
