@@ -5,16 +5,16 @@
 #include "dcp/export.h"
 #include "dcp/pro/cfg.h"
 #include "dcp/pro/id.h"
-#include "dcp/pro/special_node.h"
-#include "dcp/pro/special_trans.h"
 #include "dcp/pro/trans.h"
+#include "dcp/pro/xnode.h"
+#include "dcp/pro/xtrans.h"
 
 struct dcp_pro_model
 {
     struct dcp_pro_cfg cfg;
     unsigned core_size;
-    struct dcp_pro_special_node special_node;
-    struct dcp_pro_special_trans special_trans;
+    struct dcp_pro_enode ext_node;
+    struct dcp_pro_xtrans ext_trans;
 
     struct
     {

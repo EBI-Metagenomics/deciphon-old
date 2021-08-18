@@ -43,7 +43,7 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     imm_float l1p = imm_log(2 + q / (1 - q)) - imm_log(L + 2 + q / (1 - q));
     imm_float lr = imm_log(L) - imm_log(L + 1);
 
-    struct dcp_pro_special_trans t;
+    struct dcp_pro_xtrans t;
 
     t.NN = t.CC = t.JJ = lp;
     t.NB = t.CT = t.JB = l1p;

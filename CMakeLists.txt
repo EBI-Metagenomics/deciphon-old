@@ -51,7 +51,6 @@ add_library(
   # src/seq_stack.c
   # src/server.c
   # src/sleep.c
-  # src/special_trans.c
   # src/str.c
   # src/task.c
   # src/task_bin.c
