@@ -38,28 +38,29 @@ void test_pro_model(void)
         imm_lprob_normalize(DCP_PRO_TRANS_SIZE, t[i].data);
     }
 
-    struct dcp_pro_model *model =
-        dcp_pro_model_new(cfg, null_lprobs, null_lodds);
+    struct dcp_pro_model model;
+    int rc = dcp_pro_model_init(&model, cfg, null_lprobs, null_lodds);
+    EQ(rc, IMM_SUCCESS);
 
-    EQ(dcp_pro_model_setup(model, core_size), IMM_SUCCESS);
+    EQ(dcp_pro_model_setup(&model, core_size), IMM_SUCCESS);
 
-    EQ(dcp_pro_model_add_node(model, match_lprobs1), IMM_SUCCESS);
-    EQ(dcp_pro_model_add_node(model, match_lprobs2), IMM_SUCCESS);
-    EQ(dcp_pro_model_add_node(model, match_lprobs3), IMM_SUCCESS);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs1), IMM_SUCCESS);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs2), IMM_SUCCESS);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs3), IMM_SUCCESS);
 
-    EQ(dcp_pro_model_add_trans(model, t[0]), IMM_SUCCESS);
-    EQ(dcp_pro_model_add_trans(model, t[1]), IMM_SUCCESS);
-    EQ(dcp_pro_model_add_trans(model, t[2]), IMM_SUCCESS);
-    EQ(dcp_pro_model_add_trans(model, t[3]), IMM_SUCCESS);
+    EQ(dcp_pro_model_add_trans(&model, t[0]), IMM_SUCCESS);
+    EQ(dcp_pro_model_add_trans(&model, t[1]), IMM_SUCCESS);
+    EQ(dcp_pro_model_add_trans(&model, t[2]), IMM_SUCCESS);
+    EQ(dcp_pro_model_add_trans(&model, t[3]), IMM_SUCCESS);
 
     struct dcp_pro_profile p;
     dcp_pro_profile_init(&p, cfg);
 
     dcp_profile_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
-    EQ(dcp_pro_profile_absorb(&p, model), IMM_SUCCESS);
+    EQ(dcp_pro_profile_absorb(&p, &model), IMM_SUCCESS);
 
     dcp_del(&p);
-    dcp_del(model);
+    dcp_del(&model);
 }
 
 void test_pro_model_from_hmmfile(void)
@@ -107,11 +108,12 @@ void test_pro_model_from_hmmfile(void)
     enum hmr_rc rc = HMR_SUCCESS;
     while (!(rc = hmr_next_prof(&hmr, &prof)))
     {
-        struct dcp_pro_model *model =
-            dcp_pro_model_new(cfg, null_lprobs, null_lodds);
+        struct dcp_pro_model model;
+        EQ(dcp_pro_model_init(&model, cfg, null_lprobs, null_lodds),
+           IMM_SUCCESS);
 
         unsigned core_size = hmr_prof_length(&prof);
-        EQ(dcp_pro_model_setup(model, core_size), IMM_SUCCESS);
+        EQ(dcp_pro_model_setup(&model, core_size), IMM_SUCCESS);
 
         rc = hmr_next_node(&hmr, &prof);
         EQ(rc, IMM_SUCCESS);
@@ -125,7 +127,7 @@ void test_pro_model_from_hmmfile(void)
             .DM = (imm_float)prof.node.trans[HMR_TRANS_DM],
             .DD = (imm_float)prof.node.trans[HMR_TRANS_DD],
         };
-        EQ(dcp_pro_model_add_trans(model, t), IMM_SUCCESS);
+        EQ(dcp_pro_model_add_trans(&model, t), IMM_SUCCESS);
         /* prof->node.trans[] */
         /* double trans[HMR_TRANS_SIZE]; */
 
@@ -136,7 +138,7 @@ void test_pro_model_from_hmmfile(void)
             for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
                 match_lprobs[i] = (imm_float)prof.node.match[i];
 
-            EQ(dcp_pro_model_add_node(model, match_lprobs), IMM_SUCCESS);
+            EQ(dcp_pro_model_add_node(&model, match_lprobs), IMM_SUCCESS);
 
             struct dcp_pro_trans t2 = {
                 .MM = (imm_float)prof.node.trans[HMR_TRANS_MM],
@@ -147,9 +149,7 @@ void test_pro_model_from_hmmfile(void)
                 .DM = (imm_float)prof.node.trans[HMR_TRANS_DM],
                 .DD = (imm_float)prof.node.trans[HMR_TRANS_DD],
             };
-            if (node_idx == 166)
-                printf("");
-            EQ(dcp_pro_model_add_trans(model, t2), IMM_SUCCESS);
+            EQ(dcp_pro_model_add_trans(&model, t2), IMM_SUCCESS);
 
             node_idx++;
         }
@@ -160,7 +160,7 @@ void test_pro_model_from_hmmfile(void)
 
         dcp_profile_nameit(dcp_super(&p),
                            dcp_meta(prof.meta.name, prof.meta.acc));
-        EQ(dcp_pro_profile_absorb(&p, model), IMM_SUCCESS);
+        EQ(dcp_pro_profile_absorb(&p, &model), IMM_SUCCESS);
 
         char const str[] = "CCTGGTAAAGAAGATAATAACAAA";
         struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&p)->abc);
@@ -176,7 +176,7 @@ void test_pro_model_from_hmmfile(void)
         CLOSE(result.loglik, -43.40209579468);
 
         dcp_del(&p);
-        dcp_del(model);
+        dcp_del(&model);
 
         prof_idx++;
     }

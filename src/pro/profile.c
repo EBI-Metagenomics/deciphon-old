@@ -140,15 +140,16 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lodds);
 
-    struct dcp_pro_model *model = dcp_pro_model_new(cfg, lprobs, lodds);
+    struct dcp_pro_model model;
+    int rc = dcp_pro_model_init(&model, cfg, lprobs, lodds);
 
-    int rc = dcp_pro_model_setup(model, core_size);
+    rc = dcp_pro_model_setup(&model, core_size);
 
     for (unsigned i = 0; i < core_size; ++i)
     {
         imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
         imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
-        rc += dcp_pro_model_add_node(model, lprobs);
+        rc += dcp_pro_model_add_node(&model, lprobs);
     }
 
     for (unsigned i = 0; i < core_size + 1; ++i)
@@ -163,12 +164,12 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
             t.DD = IMM_LPROB_ZERO;
         }
         imm_lprob_normalize(DCP_PRO_TRANS_SIZE, t.data);
-        rc += dcp_pro_model_add_trans(model, t);
+        rc += dcp_pro_model_add_trans(&model, t);
     }
 
     dcp_pro_profile_init(p, cfg);
-    rc += dcp_pro_profile_absorb(p, model);
-    dcp_del(model);
+    rc += dcp_pro_profile_absorb(p, &model);
+    dcp_del(&model);
 
     IMM_BUG(rc);
 }

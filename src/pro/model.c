@@ -104,22 +104,17 @@ int dcp_pro_model_add_trans(struct dcp_pro_model *m, struct dcp_pro_trans trans)
 
 void dcp_pro_model_del(struct dcp_pro_model const *model)
 {
-    if (model)
-    {
-        free(model->alt.nodes);
-        free(model->alt.locc);
-        free(model->alt.trans);
-        free((void *)model);
-    }
+    free(model->alt.nodes);
+    free(model->alt.locc);
+    free(model->alt.trans);
 }
 
-struct dcp_pro_model *
-dcp_pro_model_new(struct dcp_pro_cfg cfg,
-                  imm_float const null_lprobs[IMM_AMINO_SIZE],
-                  imm_float const ins_lodds[IMM_AMINO_SIZE])
+int dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
+                       imm_float const null_lprobs[IMM_AMINO_SIZE],
+                       imm_float const ins_lodds[IMM_AMINO_SIZE])
 
 {
-    struct dcp_pro_model *m = xmalloc(sizeof(*m));
+    int rc = IMM_SUCCESS;
     m->cfg = cfg;
     m->core_size = 0;
 
@@ -128,14 +123,14 @@ dcp_pro_model_new(struct dcp_pro_cfg cfg,
     imm_hmm_init(&m->null.hmm, imm_super(m->cfg.nuclt));
 
     struct nuclt_dist null_dist = {&m->null.nucltp, &m->null.codonm};
-    if (setup_nuclt_dist(&null_dist, cfg.amino, cfg.nuclt, null_lprobs))
-        goto cleanup;
+    if ((rc = setup_nuclt_dist(&null_dist, cfg.amino, cfg.nuclt, null_lprobs)))
+        return rc;
 
     imm_hmm_init(&m->alt.hmm, imm_super(m->cfg.nuclt));
 
     struct nuclt_dist alt_dist = {&m->alt.insert.nucltp, &m->alt.insert.codonm};
-    if (setup_nuclt_dist(&alt_dist, cfg.amino, cfg.nuclt, ins_lodds))
-        goto cleanup;
+    if ((rc = setup_nuclt_dist(&alt_dist, cfg.amino, cfg.nuclt, ins_lodds)))
+        return rc;
 
     init_xnodes(m);
 
@@ -144,16 +139,8 @@ dcp_pro_model_new(struct dcp_pro_cfg cfg,
     m->alt.locc = NULL;
     m->alt.trans_idx = UINT_MAX;
     m->alt.trans = NULL;
-    m->ext_trans = dcp_pro_xtrans_init();
-
-    return m;
-
-cleanup:
-
-    free(m->alt.nodes);
-    free(m->alt.trans);
-    free(m);
-    return NULL;
+    dcp_pro_xtrans_init(&m->ext_trans);
+    return rc;
 }
 
 int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)

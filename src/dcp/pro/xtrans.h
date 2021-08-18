@@ -16,17 +16,17 @@ struct dcp_pro_xtrans
     imm_float EC;
 };
 
-static inline struct dcp_pro_xtrans dcp_pro_xtrans_init(void)
+static inline void dcp_pro_xtrans_init(struct dcp_pro_xtrans *t)
 {
-    return (struct dcp_pro_xtrans){.NN = IMM_LPROB_ONE,
-                                   .NB = IMM_LPROB_ONE,
-                                   .EC = IMM_LPROB_ONE,
-                                   .CC = IMM_LPROB_ONE,
-                                   .CT = IMM_LPROB_ONE,
-                                   .EJ = IMM_LPROB_ONE,
-                                   .JJ = IMM_LPROB_ONE,
-                                   .JB = IMM_LPROB_ONE,
-                                   .RR = IMM_LPROB_ONE};
+    t->NN = IMM_LPROB_ONE;
+    t->NB = IMM_LPROB_ONE;
+    t->EC = IMM_LPROB_ONE;
+    t->CC = IMM_LPROB_ONE;
+    t->CT = IMM_LPROB_ONE;
+    t->EJ = IMM_LPROB_ONE;
+    t->JJ = IMM_LPROB_ONE;
+    t->JB = IMM_LPROB_ONE;
+    t->RR = IMM_LPROB_ONE;
 }
 
 #endif

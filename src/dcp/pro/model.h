@@ -49,10 +49,9 @@ DCP_API int dcp_pro_model_add_trans(struct dcp_pro_model *m,
 
 DCP_API void dcp_pro_model_del(struct dcp_pro_model const *model);
 
-DCP_API struct dcp_pro_model *
-dcp_pro_model_new(struct dcp_pro_cfg cfg,
-                  imm_float const null_lprobs[IMM_AMINO_SIZE],
-                  imm_float const ins_lodds[IMM_AMINO_SIZE]);
+DCP_API int dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
+                               imm_float const null_lprobs[IMM_AMINO_SIZE],
+                               imm_float const ins_lodds[IMM_AMINO_SIZE]);
 
 DCP_API int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size);
 
