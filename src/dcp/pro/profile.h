@@ -35,7 +35,7 @@ DCP_API void dcp_pro_profile_init(struct dcp_pro_profile *p,
                                   struct dcp_pro_cfg cfg);
 
 DCP_API void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
-                                   bool multihits, bool hmmer3_compat);
+                                   bool multi_hits, bool hmmer3_compat);
 
 DCP_API int dcp_pro_profile_absorb(struct dcp_pro_profile *p,
                                    struct dcp_pro_model const *m);

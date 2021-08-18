@@ -21,9 +21,9 @@ void test_pro_profile_uniform(void)
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&p)->abc);
 
     unsigned len = (unsigned)strlen(str);
-    bool multihits = true;
+    bool multi_hits = true;
     bool hmmer3_compat = false;
-    dcp_pro_profile_setup(&p, len, multihits, hmmer3_compat);
+    dcp_pro_profile_setup(&p, len, multi_hits, hmmer3_compat);
 
     struct imm_result result = imm_result();
     struct imm_dp *dp = &p.null.dp;
@@ -82,9 +82,9 @@ void test_pro_profile_occupancy(void)
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&p)->abc);
 
     unsigned len = (unsigned)strlen(str);
-    bool multihits = true;
+    bool multi_hits = true;
     bool hmmer3_compat = false;
-    dcp_pro_profile_setup(&p, len, multihits, hmmer3_compat);
+    dcp_pro_profile_setup(&p, len, multi_hits, hmmer3_compat);
 
     struct imm_result result = imm_result();
     struct imm_dp *dp = &p.null.dp;

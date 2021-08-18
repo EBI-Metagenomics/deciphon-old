@@ -8,11 +8,9 @@
 #include "third-party/xrandom.h"
 #include <assert.h>
 
-static int read(struct dcp_profile *prof, FILE *restrict fd);
-
-static int write(struct dcp_profile const *prof, FILE *restrict fd);
-
 static void del(struct dcp_profile *prof);
+static int read(struct dcp_profile *prof, FILE *restrict fd);
+static int write(struct dcp_profile const *prof, FILE *restrict fd);
 
 void dcp_pro_profile_init(struct dcp_pro_profile *p, struct dcp_pro_cfg cfg)
 {
@@ -25,7 +23,7 @@ void dcp_pro_profile_init(struct dcp_pro_profile *p, struct dcp_pro_cfg cfg)
 }
 
 void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
-                           bool multihits, bool hmmer3_compat)
+                           bool multi_hits, bool hmmer3_compat)
 {
     IMM_BUG(seq_len == 0);
     imm_float L = (imm_float)seq_len;
@@ -33,7 +31,7 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     imm_float q = 0.0;
     imm_float log_q = IMM_LPROB_ZERO;
 
-    if (multihits)
+    if (multi_hits)
     {
         q = 0.5;
         log_q = imm_log(0.5);
@@ -175,6 +173,16 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
     IMM_BUG(rc);
 }
 
+static void del(struct dcp_profile *prof)
+{
+    if (prof)
+    {
+        struct dcp_pro_profile *p = prof->vtable.derived;
+        imm_del(&p->null.dp);
+        imm_del(&p->alt.dp);
+    }
+}
+
 static int read(struct dcp_profile *prof, FILE *restrict fd)
 {
     int rc = IMM_SUCCESS;
@@ -201,20 +209,4 @@ static int write(struct dcp_profile const *prof, FILE *restrict fd)
         return rc;
 
     return rc;
-}
-
-static void del(struct dcp_profile *prof)
-{
-    if (prof)
-    {
-        struct dcp_pro_profile *p = prof->vtable.derived;
-        imm_del(&p->null.dp);
-        imm_del(&p->alt.dp);
-    }
-}
-
-static void sample_lprobs(struct xrandom *rnd, unsigned n, imm_float *lprobs)
-{
-    for (unsigned i = 0; i < n; ++i)
-        lprobs[i] = imm_log(random_dbl(rnd));
 }
