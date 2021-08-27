@@ -8,6 +8,7 @@
 #include "dcp/pro/trans.h"
 #include "dcp/pro/xnode.h"
 #include "dcp/pro/xtrans.h"
+#include "dcp/rc.h"
 
 struct dcp_pro_model
 {
@@ -41,19 +42,22 @@ struct dcp_pro_model
     } alt;
 };
 
-DCP_API int dcp_pro_model_add_node(struct dcp_pro_model *m,
-                                   imm_float const lprobs[IMM_AMINO_SIZE]);
+DCP_API enum dcp_rc
+dcp_pro_model_add_node(struct dcp_pro_model *m,
+                       imm_float const lprobs[IMM_AMINO_SIZE]);
 
-DCP_API int dcp_pro_model_add_trans(struct dcp_pro_model *m,
-                                    struct dcp_pro_trans trans);
+DCP_API enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *m,
+                                            struct dcp_pro_trans trans);
 
 DCP_API void dcp_pro_model_del(struct dcp_pro_model const *model);
 
-DCP_API int dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
-                               imm_float const null_lprobs[IMM_AMINO_SIZE],
-                               imm_float const ins_lodds[IMM_AMINO_SIZE]);
+DCP_API enum dcp_rc
+dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
+                   imm_float const null_lprobs[IMM_AMINO_SIZE],
+                   imm_float const ins_lodds[IMM_AMINO_SIZE]);
 
-DCP_API int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size);
+DCP_API enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m,
+                                        unsigned core_size);
 
 DCP_API void dcp_pro_model_write_dot(struct dcp_pro_model const *m,
                                      FILE *restrict fp);

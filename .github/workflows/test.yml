@@ -18,7 +18,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
+
     - name: Install containers
       run: sudo /bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/c-containers
 
@@ -30,6 +30,9 @@ jobs:
 
     - name: Install hope
       run: sudo /bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/hope
+
+    - name: Install log
+      run: sudo /bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/log
 
     - name: Install imm
       run: sudo /bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/imm

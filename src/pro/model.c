@@ -48,8 +48,8 @@ static void setup_entry_trans(struct dcp_pro_model *);
 static void setup_exit_trans(struct dcp_pro_model *);
 static void setup_transitions(struct dcp_pro_model *);
 
-int dcp_pro_model_add_node(struct dcp_pro_model *m,
-                           imm_float const lprobs[IMM_AMINO_SIZE])
+enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
+                                   imm_float const lprobs[IMM_AMINO_SIZE])
 {
     if (!have_called_setup(m))
         return error(IMM_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
@@ -88,7 +88,8 @@ int dcp_pro_model_add_node(struct dcp_pro_model *m,
     return rc;
 }
 
-int dcp_pro_model_add_trans(struct dcp_pro_model *m, struct dcp_pro_trans trans)
+enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *m,
+                                    struct dcp_pro_trans trans)
 {
     if (!have_called_setup(m))
         return error(IMM_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
@@ -109,9 +110,9 @@ void dcp_pro_model_del(struct dcp_pro_model const *model)
     free(model->alt.trans);
 }
 
-int dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
-                       imm_float const null_lprobs[IMM_AMINO_SIZE],
-                       imm_float const ins_lodds[IMM_AMINO_SIZE])
+enum dcp_rc dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
+                               imm_float const null_lprobs[IMM_AMINO_SIZE],
+                               imm_float const ins_lodds[IMM_AMINO_SIZE])
 
 {
     int rc = IMM_SUCCESS;
@@ -143,7 +144,7 @@ int dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
     return rc;
 }
 
-int dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
+enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
 {
     if (core_size == 0)
         return error(IMM_ILLEGALARG, "`core_size` cannot be zero.");
