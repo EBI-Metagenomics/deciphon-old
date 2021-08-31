@@ -17,6 +17,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+find_package(far REQUIRED)
 find_package(hmr REQUIRED)
 find_package(elapsed REQUIRED)
 find_package(imm REQUIRED)
@@ -33,6 +34,8 @@ add_library(
   # src/clock.c
   # src/dthread.c
   src/db.c
+  src/log.c
+  src/error.c
   src/support.c
   src/model.c
   # src/fifo.c
@@ -108,8 +111,9 @@ target_include_directories(
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(dcp PUBLIC IMM::imm)
 target_link_libraries(dcp PUBLIC HMR::hmr)
+target_link_libraries(dcp PUBLIC FAR::far)
 target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
-target_link_libraries(dcp PRIVATE Threads::Threads)
+target_link_libraries(dcp PUBLIC Threads::Threads)
 target_link_libraries(dcp PUBLIC CK::ck)
 target_link_libraries(dcp PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 set_target_properties(dcp PROPERTIES VERSION ${PROJECT_VERSION})

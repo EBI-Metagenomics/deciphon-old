@@ -1,9 +1,12 @@
 #include "dcp/pro/model.h"
 #include "dcp/entry_dist.h"
 #include "dcp/pro/node.h"
+#include "error.h"
 #include "pro/model.h"
 #include "support.h"
+#include <assert.h>
 #include <limits.h>
+#include <stdlib.h>
 
 struct nuclt_dist
 {
@@ -52,55 +55,54 @@ enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
                                    imm_float const lprobs[IMM_AMINO_SIZE])
 {
     if (!have_called_setup(m))
-        return error(IMM_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
+        return error(DCP_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
 
     if (m->alt.node_idx == m->core_size)
-        return error(IMM_RUNTIMEERROR, "Reached limit of nodes.");
+        return error(DCP_RUNTIMEERROR, "Reached limit of nodes.");
 
     imm_float lodds[IMM_AMINO_SIZE];
     for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
         lodds[i] = lprobs[i] - m->null.lprobs[i];
 
-    int rc = IMM_SUCCESS;
     struct dcp_pro_node *n = m->alt.nodes + m->alt.node_idx;
 
     struct nuclt_dist dist = {&n->match.nucltp, &n->match.codonm};
-    if ((rc = setup_nuclt_dist(&dist, m->cfg.amino, m->cfg.nuclt, lodds)))
-        return rc;
+    if (setup_nuclt_dist(&dist, m->cfg.amino, m->cfg.nuclt, lodds))
+        return DCP_RUNTIMEERROR;
 
     init_match(&n->M, m, &dist);
-    if ((rc = imm_hmm_add_state(&m->alt.hmm, imm_super(&n->M))))
-        return rc;
+    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->M)))
+        return DCP_RUNTIMEERROR;
 
     init_insert(&n->I, m);
-    if ((rc = imm_hmm_add_state(&m->alt.hmm, imm_super(&n->I))))
-        return rc;
+    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->I)))
+        return DCP_RUNTIMEERROR;
 
     init_delete(&n->D, m);
-    if ((rc = imm_hmm_add_state(&m->alt.hmm, imm_super(&n->D))))
-        return rc;
+    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->D)))
+        return DCP_RUNTIMEERROR;
 
     m->alt.node_idx++;
 
     if (have_finished_add(m))
         setup_transitions(m);
 
-    return rc;
+    return DCP_SUCCESS;
 }
 
 enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *m,
                                     struct dcp_pro_trans trans)
 {
     if (!have_called_setup(m))
-        return error(IMM_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
+        return error(DCP_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
 
     if (m->alt.trans_idx == m->core_size + 1)
-        return error(IMM_RUNTIMEERROR, "Reached limit of transitions.");
+        return error(DCP_RUNTIMEERROR, "Reached limit of transitions.");
 
     m->alt.trans[m->alt.trans_idx++] = trans;
     if (have_finished_add(m))
         setup_transitions(m);
-    return IMM_SUCCESS;
+    return DCP_SUCCESS;
 }
 
 void dcp_pro_model_del(struct dcp_pro_model const *model)
@@ -115,23 +117,22 @@ enum dcp_rc dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
                                imm_float const ins_lodds[IMM_AMINO_SIZE])
 
 {
-    int rc = IMM_SUCCESS;
     m->cfg = cfg;
     m->core_size = 0;
 
-    xmemcpy(m->null.lprobs, null_lprobs, sizeof(*null_lprobs) * IMM_AMINO_SIZE);
+    memcpy(m->null.lprobs, null_lprobs, sizeof(*null_lprobs) * IMM_AMINO_SIZE);
 
     imm_hmm_init(&m->null.hmm, imm_super(m->cfg.nuclt));
 
     struct nuclt_dist null_dist = {&m->null.nucltp, &m->null.codonm};
-    if ((rc = setup_nuclt_dist(&null_dist, cfg.amino, cfg.nuclt, null_lprobs)))
-        return rc;
+    if (setup_nuclt_dist(&null_dist, cfg.amino, cfg.nuclt, null_lprobs))
+        return DCP_RUNTIMEERROR;
 
     imm_hmm_init(&m->alt.hmm, imm_super(m->cfg.nuclt));
 
     struct nuclt_dist alt_dist = {&m->alt.insert.nucltp, &m->alt.insert.codonm};
-    if ((rc = setup_nuclt_dist(&alt_dist, cfg.amino, cfg.nuclt, ins_lodds)))
-        return rc;
+    if (setup_nuclt_dist(&alt_dist, cfg.amino, cfg.nuclt, ins_lodds))
+        return DCP_RUNTIMEERROR;
 
     init_xnodes(m);
 
@@ -141,26 +142,26 @@ enum dcp_rc dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
     m->alt.trans_idx = UINT_MAX;
     m->alt.trans = NULL;
     dcp_pro_xtrans_init(&m->ext_trans);
-    return rc;
+    return DCP_SUCCESS;
 }
 
 enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
 {
     if (core_size == 0)
-        return error(IMM_ILLEGALARG, "`core_size` cannot be zero.");
+        return error(DCP_ILLEGALARG, "`core_size` cannot be zero.");
 
     m->core_size = core_size;
     unsigned n = m->core_size;
     m->alt.node_idx = 0;
-    m->alt.nodes = xrealloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
+    m->alt.nodes = realloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
     if (m->cfg.edist == DCP_ENTRY_DIST_OCCUPANCY)
-        m->alt.locc = xrealloc(m->alt.locc, n * sizeof(*m->alt.locc));
+        m->alt.locc = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
     m->alt.trans_idx = 0;
-    m->alt.trans = xrealloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
+    m->alt.trans = realloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
     imm_hmm_reset(&m->alt.hmm);
     imm_hmm_reset(&m->null.hmm);
     add_xnodes(m);
-    return IMM_SUCCESS;
+    return DCP_SUCCESS;
 }
 
 void dcp_pro_model_write_dot(struct dcp_pro_model const *m, FILE *restrict fp)
@@ -216,7 +217,7 @@ void pro_model_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 
 struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
 {
-    IMM_BUG(!have_finished_add(m));
+    assert(have_finished_add(m));
     return (struct pro_model_summary){
         .null = {.hmm = &m->null.hmm, .R = &m->ext_node.null.R},
         .alt = {
@@ -233,7 +234,7 @@ struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
 
 static void add_xnodes(struct dcp_pro_model *m)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     struct dcp_pro_enode *n = &m->ext_node;
 
     rc += imm_hmm_add_state(&m->null.hmm, imm_super(&n->null.R));
@@ -248,7 +249,7 @@ static void add_xnodes(struct dcp_pro_model *m)
     rc += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.T));
     rc += imm_hmm_set_start(&m->alt.hmm, imm_super(&n->alt.S), IMM_LPROB_ONE);
 
-    IMM_BUG(rc != IMM_SUCCESS);
+    assert(rc == DCP_SUCCESS);
 }
 
 static void init_xnodes(struct dcp_pro_model *m)
@@ -294,7 +295,7 @@ static void calculate_occupancy(struct dcp_pro_model *m)
         m->alt.locc[i] -= logZ;
     }
 
-    IMM_BUG(imm_lprob_is_nan(logZ));
+    assert(!imm_lprob_is_nan(logZ));
 }
 
 static bool have_called_setup(struct dcp_pro_model *m)
@@ -334,15 +335,15 @@ static void init_match(struct imm_frame_state *state, struct dcp_pro_model *m,
 static void init_null_xtrans(struct imm_hmm *hmm,
                              struct dcp_pro_xnode_null *node)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     imm_float const o = IMM_LPROB_ONE;
     rc += imm_hmm_set_trans(hmm, imm_super(&node->R), imm_super(&node->R), o);
-    IMM_BUG(rc != IMM_SUCCESS);
+    assert(rc == DCP_SUCCESS);
 }
 
 static void init_alt_xtrans(struct imm_hmm *hmm, struct dcp_pro_xnode_alt *node)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     imm_float const o = IMM_LPROB_ONE;
     rc += imm_hmm_set_trans(hmm, imm_super(&node->S), imm_super(&node->B), o);
     rc += imm_hmm_set_trans(hmm, imm_super(&node->S), imm_super(&node->N), o);
@@ -359,7 +360,7 @@ static void init_alt_xtrans(struct imm_hmm *hmm, struct dcp_pro_xnode_alt *node)
     rc += imm_hmm_set_trans(hmm, imm_super(&node->J), imm_super(&node->J), o);
     rc += imm_hmm_set_trans(hmm, imm_super(&node->J), imm_super(&node->B), o);
 
-    IMM_BUG(rc != IMM_SUCCESS);
+    assert(rc == DCP_SUCCESS);
 }
 
 static struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
@@ -412,22 +413,21 @@ static int setup_nuclt_dist(struct nuclt_dist *dist,
                             struct imm_nuclt const *nuclt,
                             imm_float const lprobs[IMM_AMINO_SIZE])
 {
-    int rc = IMM_SUCCESS;
     *dist->nucltp = imm_nuclt_lprob(nuclt, uniform_lprobs);
     struct imm_amino_lprob aminop = imm_amino_lprob(amino, lprobs);
     struct imm_codon_lprob codonp =
         codon_lprob(amino, &aminop, dist->nucltp->nuclt);
-    if ((rc = imm_codon_lprob_normalize(&codonp)))
-        return rc;
+    if (imm_codon_lprob_normalize(&codonp))
+        return DCP_RUNTIMEERROR;
 
     *dist->nucltp = nuclt_lprob(&codonp);
     *dist->codonm = imm_codon_marg(&codonp);
-    return rc;
+    return DCP_SUCCESS;
 }
 
 static void setup_entry_trans(struct dcp_pro_model *m)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     if (m->cfg.edist == DCP_ENTRY_DIST_UNIFORM)
     {
         imm_float M = (imm_float)m->core_size;
@@ -442,7 +442,7 @@ static void setup_entry_trans(struct dcp_pro_model *m)
     }
     else
     {
-        IMM_BUG(m->cfg.edist != DCP_ENTRY_DIST_OCCUPANCY);
+        assert(m->cfg.edist == DCP_ENTRY_DIST_OCCUPANCY);
         calculate_occupancy(m);
         struct imm_state *B = imm_super(&m->ext_node.alt.B);
         for (unsigned i = 0; i < m->core_size; ++i)
@@ -452,12 +452,12 @@ static void setup_entry_trans(struct dcp_pro_model *m)
                                     m->alt.locc[i]);
         }
     }
-    IMM_BUG(rc != IMM_SUCCESS);
+    assert(rc == DCP_SUCCESS);
 }
 
 static void setup_exit_trans(struct dcp_pro_model *m)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     struct imm_state *E = imm_super(&m->ext_node.alt.E);
 
     for (unsigned i = 0; i < m->core_size; ++i)
@@ -472,7 +472,7 @@ static void setup_exit_trans(struct dcp_pro_model *m)
         rc +=
             imm_hmm_set_trans(&m->alt.hmm, imm_super(&node->D), E, imm_log(1));
     }
-    IMM_BUG(rc != IMM_SUCCESS);
+    assert(rc == DCP_SUCCESS);
 }
 
 static void setup_transitions(struct dcp_pro_model *m)
@@ -482,7 +482,7 @@ static void setup_transitions(struct dcp_pro_model *m)
 
     struct imm_state *B = imm_super(&m->ext_node.alt.B);
     struct imm_state *M1 = imm_super(&m->alt.nodes[0].M);
-    int rc = imm_hmm_set_trans(h, B, M1, trans[0].MM);
+    int rc = (int)imm_hmm_set_trans(h, B, M1, trans[0].MM);
 
     for (unsigned i = 0; i + 1 < m->core_size; ++i)
     {
@@ -504,7 +504,7 @@ static void setup_transitions(struct dcp_pro_model *m)
     struct imm_state *E = imm_super(&m->ext_node.alt.E);
     rc += imm_hmm_set_trans(h, Mm, E, trans[n].MM);
 
-    IMM_BUG(rc != IMM_SUCCESS);
+    assert(rc == DCP_SUCCESS);
 
     setup_entry_trans(m);
     setup_exit_trans(m);

@@ -1,11 +1,12 @@
 #include "dcp/std_profile.h"
+#include "dcp/rc.h"
 #include "imm/imm.h"
 #include "profile.h"
 #include "support.h"
 
-static int read(struct dcp_profile *prof, FILE *restrict fd);
+static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd);
 
-static int write(struct dcp_profile const *prof, FILE *restrict fd);
+static enum dcp_rc write(struct dcp_profile const *prof, FILE *restrict fd);
 
 static void del(struct dcp_profile *prof);
 
@@ -18,32 +19,30 @@ DCP_API void dcp_std_profile_init(struct dcp_std_profile *p,
     profile_init(&p->super, abc, dcp_meta(NULL, NULL), vtable);
 }
 
-static int read(struct dcp_profile *prof, FILE *restrict fd)
+static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd)
 {
-    int rc = IMM_SUCCESS;
     struct dcp_std_profile *p = prof->vtable.derived;
 
-    if ((rc = imm_dp_read(&p->dp.null, fd)))
-        return rc;
+    if (imm_dp_read(&p->dp.null, fd))
+        return DCP_RUNTIMEERROR;
 
-    if ((rc = imm_dp_read(&p->dp.alt, fd)))
-        return rc;
+    if (imm_dp_read(&p->dp.alt, fd))
+        return DCP_RUNTIMEERROR;
 
-    return rc;
+    return DCP_SUCCESS;
 }
 
-static int write(struct dcp_profile const *prof, FILE *restrict fd)
+static enum dcp_rc write(struct dcp_profile const *prof, FILE *restrict fd)
 {
-    int rc = IMM_SUCCESS;
     struct dcp_std_profile const *p = prof->vtable.derived;
 
-    if ((rc = imm_dp_write(&p->dp.null, fd)))
-        return rc;
+    if (imm_dp_write(&p->dp.null, fd))
+        return DCP_RUNTIMEERROR;
 
-    if ((rc = imm_dp_write(&p->dp.alt, fd)))
-        return rc;
+    if (imm_dp_write(&p->dp.alt, fd))
+        return DCP_RUNTIMEERROR;
 
-    return rc;
+    return DCP_SUCCESS;
 }
 
 static void del(struct dcp_profile *prof)

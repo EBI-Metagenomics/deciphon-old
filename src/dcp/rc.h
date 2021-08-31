@@ -3,9 +3,14 @@
 
 enum dcp_rc
 {
-    DCP_SUCCESS = 0,
+    DCP_SUCCESS,
     DCP_ENDFILE,
-    DCP_RUNTIMERROR,
+    DCP_FAILURE,
+    DCP_OUTOFMEM,
+    DCP_ILLEGALARG,
+    DCP_IOERROR,
+    DCP_RUNTIMEERROR,
+    DCP_PARSEERROR,
 };
 
 #endif

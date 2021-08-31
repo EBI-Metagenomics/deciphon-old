@@ -1,9 +1,11 @@
 #include "dcp/db.h"
 #include "dcp/generics.h"
 #include "dcp/profile.h"
+#include "error.h"
 #include "imm/imm.h"
 #include "profile.h"
 #include "support.h"
+#include <assert.h>
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B
 
@@ -63,7 +65,7 @@ static inline uint32_t max_mt_data_size(void)
 
 static inline struct dcp_db *new_db(void)
 {
-    struct dcp_db *db = xcalloc(1, sizeof(*db));
+    struct dcp_db *db = calloc(1, sizeof(*db));
     db->abc = imm_abc_empty;
     db->profiles.size = 0;
     db->profiles.curr_idx = 0;
@@ -81,7 +83,7 @@ static inline struct dcp_db *new_db(void)
     {                                                                          \
         if (!!(expr))                                                          \
         {                                                                      \
-            error(IMM_IOERROR, "failed to read");                              \
+            error(DCP_IOERROR, "failed to read");                              \
             goto cleanup;                                                      \
         }                                                                      \
                                                                                \
@@ -92,7 +94,7 @@ static inline struct dcp_db *new_db(void)
     {                                                                          \
         if (!!(expr))                                                          \
         {                                                                      \
-            rc = error(IMM_IOERROR, "failed to read");                         \
+            rc = error(DCP_IOERROR, "failed to read");                         \
             goto cleanup;                                                      \
         }                                                                      \
                                                                                \
@@ -103,7 +105,7 @@ static inline struct dcp_db *new_db(void)
     {                                                                          \
         if (!!(expr))                                                          \
         {                                                                      \
-            error(IMM_IOERROR, "failed to write");                             \
+            error(DCP_IOERROR, "failed to write");                             \
             goto cleanup;                                                      \
         }                                                                      \
                                                                                \
@@ -114,25 +116,25 @@ static inline struct dcp_db *new_db(void)
     {                                                                          \
         if (!!(expr))                                                          \
         {                                                                      \
-            rc = error(IMM_IOERROR, "failed to write");                        \
+            rc = error(DCP_IOERROR, "failed to write");                        \
             goto cleanup;                                                      \
         }                                                                      \
                                                                                \
     } while (0)
 
-static int parse_metadata(struct dcp_db *db)
+static enum dcp_rc parse_metadata(struct dcp_db *db)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     uint32_t n = db->profiles.size;
 
     if (!(db->mt.offset = malloc(sizeof(*db->mt.offset) * (n + 1))))
     {
-        rc = error(IMM_OUTOFMEM, "failed to alloc for mt.offset");
+        rc = error(DCP_OUTOFMEM, "failed to alloc for mt.offset");
         goto cleanup;
     }
     if (!(db->mt.name_length = malloc(sizeof(*db->mt.name_length) * n)))
     {
-        rc = error(IMM_OUTOFMEM, "failed to alloc for mt.name_length");
+        rc = error(DCP_OUTOFMEM, "failed to alloc for mt.name_length");
         goto cleanup;
     }
 
@@ -143,7 +145,7 @@ static int parse_metadata(struct dcp_db *db)
         unsigned j = 0;
         if (offset + j >= db->mt.size)
         {
-            rc = error(IMM_RUNTIMEERROR, "mt.data index overflow");
+            rc = error(DCP_RUNTIMEERROR, "mt.data index overflow");
             goto cleanup;
         }
 
@@ -152,13 +154,13 @@ static int parse_metadata(struct dcp_db *db)
             ;
         if (j - 1 > MAX_NAME_LENGTH)
         {
-            rc = error(IMM_ILLEGALARG, "name is too long");
+            rc = error(DCP_ILLEGALARG, "name is too long");
             goto cleanup;
         }
         db->mt.name_length[i] = (uint8_t)(j - 1);
         if (offset + j >= db->mt.size)
         {
-            rc = error(IMM_RUNTIMEERROR, "mt.data index overflow");
+            rc = error(DCP_RUNTIMEERROR, "mt.data index overflow");
             goto cleanup;
         }
 
@@ -176,9 +178,9 @@ cleanup:
     return rc;
 }
 
-static int read_metadata(struct dcp_db *db)
+static enum dcp_rc read_metadata(struct dcp_db *db)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     db->mt.data = NULL;
 
     cmp_ctx_t *ctx = &db->file.ctx;
@@ -187,12 +189,12 @@ static int read_metadata(struct dcp_db *db)
     if ((db->mt.size > 0 && db->profiles.size == 0) ||
         (db->mt.size == 0 && db->profiles.size > 0))
     {
-        rc = error(IMM_RUNTIMEERROR, "incompatible profiles and metadata");
+        rc = error(DCP_RUNTIMEERROR, "incompatible profiles and metadata");
         goto cleanup;
     }
     if (db->mt.size > max_mt_data_size())
     {
-        rc = error(IMM_RUNTIMEERROR, "mt.data size is too big");
+        rc = error(DCP_RUNTIMEERROR, "mt.data size is too big");
         goto cleanup;
     }
 
@@ -200,13 +202,13 @@ static int read_metadata(struct dcp_db *db)
     {
         if (!(db->mt.data = malloc(sizeof(char) * db->mt.size)))
         {
-            rc = error(IMM_OUTOFMEM, "failed to alloc for mt.data");
+            rc = error(DCP_OUTOFMEM, "failed to alloc for mt.data");
             goto cleanup;
         }
         EREAD_RC(!ctx->read(ctx, db->mt.data, db->mt.size));
         if (db->mt.data[db->mt.size - 1])
         {
-            rc = error(IMM_PARSEERROR, "invalid mt.data");
+            rc = error(DCP_PARSEERROR, "invalid mt.data");
             goto cleanup;
         }
         if ((rc = parse_metadata(db)))
@@ -222,9 +224,9 @@ cleanup:
     return rc;
 }
 
-static int flush_metadata(struct dcp_db *db)
+static enum dcp_rc flush_metadata(struct dcp_db *db)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     cmp_ctx_t *ctx = &db->file.ctx;
 
     EWRIT_RC(!cmp_write_u32(ctx, db->mt.size));
@@ -264,7 +266,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     EREAD(!cmp_read_u64(&db->file.ctx, &magic_number));
     if (magic_number != MAGIC_NUMBER)
     {
-        error(IMM_PARSEERROR, "wrong file magic number");
+        error(DCP_PARSEERROR, "wrong file magic number");
         goto cleanup;
     }
 
@@ -272,7 +274,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     EREAD(!cmp_read_u8(&db->file.ctx, &prof_type));
     if (prof_type != DCP_STD_PROFILE && prof_type != DCP_PROTEIN_PROFILE)
     {
-        error(IMM_PARSEERROR, "wrong prof_type");
+        error(DCP_PARSEERROR, "wrong prof_type");
         goto cleanup;
     }
     db->cfg.prof_typeid = prof_type;
@@ -281,7 +283,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     EREAD(!cmp_read_u8(&db->file.ctx, &float_bytes));
     if (float_bytes != 4 && float_bytes != 8)
     {
-        error(IMM_PARSEERROR, "wrong float_bytes");
+        error(DCP_PARSEERROR, "wrong float_bytes");
         goto cleanup;
     }
     db->cfg.float_bytes = float_bytes;
@@ -302,21 +304,21 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
         }
         if (db->cfg.pro.epsilon < 0 || db->cfg.pro.epsilon > 1)
         {
-            error(IMM_PARSEERROR, "wrong epsilon");
+            error(DCP_PARSEERROR, "wrong epsilon");
             goto cleanup;
         }
     }
 
     if (imm_abc_read(&db->abc, db->file.fd))
     {
-        error(IMM_IOERROR, "failed to read alphabet");
+        error(DCP_IOERROR, "failed to read alphabet");
         goto cleanup;
     }
 
     EREAD(!cmp_read_u32(&db->file.ctx, &db->profiles.size));
     if (db->profiles.size > MAX_NPROFILES)
     {
-        error(IMM_RUNTIMEERROR, "too many profiles");
+        error(DCP_RUNTIMEERROR, "too many profiles");
         goto cleanup;
     }
 
@@ -360,21 +362,21 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
 
     if (!cmp_write_u64(&db->file.ctx, MAGIC_NUMBER))
     {
-        error(IMM_IOERROR, "failed to write magic number");
+        error(DCP_IOERROR, "failed to write magic number");
         goto cleanup;
     }
 
     if (!cmp_write_u8(&db->file.ctx, (uint8_t)cfg.prof_typeid))
     {
-        error(IMM_IOERROR, "failed to write prof_type");
+        error(DCP_IOERROR, "failed to write prof_type");
         goto cleanup;
     }
 
     unsigned float_bytes = IMM_FLOAT_BYTES;
-    IMM_BUG(!(float_bytes == 4 || float_bytes == 8));
+    assert(float_bytes == 4 || float_bytes == 8);
     if (!cmp_write_u8(&db->file.ctx, (uint8_t)float_bytes))
     {
-        error(IMM_IOERROR, "failed to write float_bytes");
+        error(DCP_IOERROR, "failed to write float_bytes");
         goto cleanup;
     }
 
@@ -386,20 +388,20 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
         dcp_pro_profile_init(&db->prof.pro, cfg.pro);
         if (!write_imm_float(&db->file.ctx, db->cfg.pro.epsilon))
         {
-            error(IMM_IOERROR, "failed to write epsilon");
+            error(DCP_IOERROR, "failed to write epsilon");
             goto cleanup;
         }
 
         if (!cmp_write_u8(&db->file.ctx, (uint8_t)db->cfg.pro.edist))
         {
-            error(IMM_IOERROR, "failed to write entry_dist");
+            error(DCP_IOERROR, "failed to write entry_dist");
             goto cleanup;
         }
     }
 
     if (imm_abc_write(abc, db->file.fd))
     {
-        error(IMM_IOERROR, "failed to write alphabet");
+        error(DCP_IOERROR, "failed to write alphabet");
         goto cleanup;
     }
 
@@ -407,7 +409,7 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
     {
         if (imm_abc_write(imm_super(cfg.pro.amino), db->file.fd))
         {
-            error(IMM_IOERROR, "failed to write amino alphabet");
+            error(DCP_IOERROR, "failed to write amino alphabet");
             goto cleanup;
         }
     }
@@ -423,30 +425,30 @@ cleanup:
 
 struct dcp_db_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
 
-int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
+enum dcp_rc dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 {
     if (db->profiles.size == MAX_NPROFILES)
-        return error(IMM_RUNTIMEERROR, "too many profiles");
+        return error(DCP_RUNTIMEERROR, "too many profiles");
 
     if (prof->mt.name == NULL)
-        return error(IMM_ILLEGALARG, "metadata not set");
+        return error(DCP_ILLEGALARG, "metadata not set");
 
     if (prof->vtable.typeid == DCP_PROTEIN_PROFILE)
     {
         struct dcp_pro_profile const *p = dcp_profile_derived_c(prof);
         if (p->cfg.epsilon != db->cfg.pro.epsilon)
-            return error(IMM_ILLEGALARG, "different epsilons");
+            return error(DCP_ILLEGALARG, "different epsilons");
         if (p->cfg.edist != db->cfg.pro.edist)
-            return error(IMM_ILLEGALARG, "different entry distrs");
+            return error(DCP_ILLEGALARG, "different entry distrs");
     }
 
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
     cmp_ctx_t *ctx = &db->mt.file.ctx;
 
     uint32_t len = (uint32_t)strlen(prof->mt.name);
     if (len > MAX_NAME_LENGTH)
     {
-        rc = error(IMM_ILLEGALARG, "name is too long");
+        rc = error(DCP_ILLEGALARG, "name is too long");
         goto cleanup;
     }
     EWRIT_RC(!cmp_write_str(ctx, prof->mt.name, len));
@@ -456,7 +458,7 @@ int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
     len = (uint32_t)strlen(prof->mt.acc);
     if (len > MAX_ACC_LENGTH)
     {
-        rc = error(IMM_ILLEGALARG, "accession is too long");
+        rc = error(DCP_ILLEGALARG, "accession is too long");
         goto cleanup;
     }
     EWRIT_RC(!cmp_write_str(ctx, prof->mt.acc, len));
@@ -472,12 +474,12 @@ cleanup:
     return rc;
 }
 
-static int db_closer(struct dcp_db *db);
-static int db_closew(struct dcp_db *db);
+static enum dcp_rc db_closer(struct dcp_db *db);
+static enum dcp_rc db_closew(struct dcp_db *db);
 
-int dcp_db_close(struct dcp_db *db)
+enum dcp_rc dcp_db_close(struct dcp_db *db)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
 
     if (db->file.mode == OPEN_READ)
         rc = db_closer(db);
@@ -492,11 +494,11 @@ int dcp_db_close(struct dcp_db *db)
     return rc;
 }
 
-static int db_closer(struct dcp_db *db) { return IMM_SUCCESS; }
+static enum dcp_rc db_closer(struct dcp_db *db) { return DCP_SUCCESS; }
 
-static int db_closew(struct dcp_db *db)
+static enum dcp_rc db_closew(struct dcp_db *db)
 {
-    int rc = IMM_SUCCESS;
+    enum dcp_rc rc = DCP_SUCCESS;
 
     EWRIT_RC(!cmp_write_u32(&db->file.ctx, db->profiles.size));
 
@@ -505,7 +507,7 @@ static int db_closew(struct dcp_db *db)
         goto cleanup;
     if (fclose(db->mt.file.fd))
     {
-        rc = error(IMM_IOERROR, "failed to close metadata file");
+        rc = error(DCP_IOERROR, "failed to close metadata file");
         goto cleanup;
     }
 
@@ -514,7 +516,7 @@ static int db_closew(struct dcp_db *db)
         goto cleanup;
     if (fclose(db->dp.fd))
     {
-        rc = error(IMM_IOERROR, "failed to close DP file");
+        rc = error(DCP_IOERROR, "failed to close DP file");
         goto cleanup;
     }
 
@@ -537,10 +539,10 @@ struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
     return dcp_meta(db->mt.data + o, db->mt.data + o + size);
 }
 
-int dcp_db_read(struct dcp_db *db, struct dcp_profile *prof)
+enum dcp_rc dcp_db_read(struct dcp_db *db, struct dcp_profile *prof)
 {
     if (dcp_db_end(db))
-        return error(IMM_RUNTIMEERROR, "end of profiles");
+        return error(DCP_RUNTIMEERROR, "end of profiles");
     prof->idx = db->profiles.curr_idx++;
     prof->mt = dcp_db_meta(db, prof->idx);
     return prof->vtable.read(prof, db->file.fd);

@@ -1,6 +1,8 @@
 #include "dcp/pro/profile.h"
 #include "dcp/generics.h"
 #include "dcp/profile.h"
+#include "dcp/rc.h"
+#include "error.h"
 #include "imm/imm.h"
 #include "pro/model.h"
 #include "profile.h"
@@ -9,8 +11,8 @@
 #include <assert.h>
 
 static void del(struct dcp_profile *prof);
-static int read(struct dcp_profile *prof, FILE *restrict fd);
-static int write(struct dcp_profile const *prof, FILE *restrict fd);
+static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd);
+static enum dcp_rc write(struct dcp_profile const *prof, FILE *restrict fd);
 
 void dcp_pro_profile_init(struct dcp_pro_profile *p, struct dcp_pro_cfg cfg)
 {
@@ -25,7 +27,7 @@ void dcp_pro_profile_init(struct dcp_pro_profile *p, struct dcp_pro_cfg cfg)
 void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
                            bool multi_hits, bool hmmer3_compat)
 {
-    IMM_BUG(seq_len == 0);
+    assert(seq_len > 0);
     imm_float L = (imm_float)seq_len;
 
     imm_float q = 0.0;
@@ -83,16 +85,14 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
 }
 
-int dcp_pro_profile_absorb(struct dcp_pro_profile *p,
-                           struct dcp_pro_model const *m)
+enum dcp_rc dcp_pro_profile_absorb(struct dcp_pro_profile *p,
+                                   struct dcp_pro_model const *m)
 {
-    int rc = IMM_SUCCESS;
-
     if (p->cfg.nuclt != pro_model_nuclt(m))
-        return error(IMM_ILLEGALARG, "Different nucleotide alphabets.");
+        return error(DCP_ILLEGALARG, "Different nucleotide alphabets.");
 
     if (p->cfg.amino != pro_model_amino(m))
-        return error(IMM_ILLEGALARG, "Different amino alphabets.");
+        return error(DCP_ILLEGALARG, "Different amino alphabets.");
 
     struct pro_model_summary s = pro_model_summary(m);
     imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp);
@@ -107,7 +107,7 @@ int dcp_pro_profile_absorb(struct dcp_pro_profile *p,
     p->alt.J = imm_state_idx(imm_super(s.alt.J));
     p->alt.C = imm_state_idx(imm_super(s.alt.C));
     p->alt.T = imm_state_idx(imm_super(s.alt.T));
-    return rc;
+    return DCP_SUCCESS;
 }
 
 struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro)
@@ -124,7 +124,7 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
                             unsigned core_size, enum dcp_entry_dist edist,
                             imm_float epsilon)
 {
-    IMM_BUG(core_size < 2);
+    assert(core_size >= 2);
     struct imm_rnd rnd = imm_rnd(seed);
     struct dcp_pro_cfg cfg = {
         .amino = &imm_amino_iupac,
@@ -141,9 +141,9 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lodds);
 
     struct dcp_pro_model model;
-    int rc = dcp_pro_model_init(&model, cfg, lprobs, lodds);
+    int rc = (int)dcp_pro_model_init(&model, cfg, lprobs, lodds);
 
-    rc = dcp_pro_model_setup(&model, core_size);
+    rc = (int)dcp_pro_model_setup(&model, core_size);
 
     for (unsigned i = 0; i < core_size; ++i)
     {
@@ -171,7 +171,7 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
     rc += dcp_pro_profile_absorb(p, &model);
     dcp_del(&model);
 
-    IMM_BUG(rc);
+    assert(!rc);
 }
 
 static void del(struct dcp_profile *prof)
@@ -184,30 +184,28 @@ static void del(struct dcp_profile *prof)
     }
 }
 
-static int read(struct dcp_profile *prof, FILE *restrict fd)
+static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd)
 {
-    int rc = IMM_SUCCESS;
     struct dcp_pro_profile *p = prof->vtable.derived;
 
-    if ((rc = imm_dp_read(&p->null.dp, fd)))
-        return rc;
+    if (imm_dp_read(&p->null.dp, fd))
+        return DCP_RUNTIMEERROR;
 
-    if ((rc = imm_dp_read(&p->alt.dp, fd)))
-        return rc;
+    if (imm_dp_read(&p->alt.dp, fd))
+        return DCP_RUNTIMEERROR;
 
-    return rc;
+    return DCP_SUCCESS;
 }
 
-static int write(struct dcp_profile const *prof, FILE *restrict fd)
+static enum dcp_rc write(struct dcp_profile const *prof, FILE *restrict fd)
 {
-    int rc = IMM_SUCCESS;
     struct dcp_pro_profile const *p = prof->vtable.derived;
 
-    if ((rc = imm_dp_write(&p->null.dp, fd)))
-        return rc;
+    if (imm_dp_write(&p->null.dp, fd))
+        return DCP_RUNTIMEERROR;
 
-    if ((rc = imm_dp_write(&p->alt.dp, fd)))
-        return rc;
+    if (imm_dp_write(&p->alt.dp, fd))
+        return DCP_RUNTIMEERROR;
 
-    return rc;
+    return DCP_SUCCESS;
 }

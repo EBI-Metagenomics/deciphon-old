@@ -24,7 +24,7 @@ extern "C" {
 #include "dcp/server.h"
 /* #include "dcp/sleep.h" */
 /* #include "dcp/str.h" */
-/* #include "dcp/task.h" */
+#include "dcp/task.h"
 
 #ifdef __cplusplus
 }

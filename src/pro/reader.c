@@ -1,4 +1,5 @@
 #include "dcp/pro/reader.h"
+#include "dcp/rc.h"
 #include "support.h"
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
@@ -23,7 +24,7 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader,
         return DCP_ENDFILE;
 
     if (hmr_rc)
-        return DCP_RUNTIMERROR;
+        return DCP_RUNTIMEERROR;
 
     enum dcp_rc rc = dcp_pro_model_init(
         &reader->model, reader->cfg, reader->null_lprobs, reader->null_lodds);
@@ -63,4 +64,3 @@ static void init_null_lprobs(imm_float lprobs[IMM_AMINO_SIZE])
     *(lprobs++) = imm_log(0.0114135); /*"W":*/
     *(lprobs++) = imm_log(0.0304133); /*"Y":*/
 };
-}

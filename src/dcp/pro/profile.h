@@ -5,6 +5,7 @@
 #include "dcp/meta.h"
 #include "dcp/pro/model.h"
 #include "dcp/profile.h"
+#include "dcp/rc.h"
 #include "imm/imm.h"
 
 struct dcp_pro_profile
@@ -37,8 +38,8 @@ DCP_API void dcp_pro_profile_init(struct dcp_pro_profile *p,
 DCP_API void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
                                    bool multi_hits, bool hmmer3_compat);
 
-DCP_API int dcp_pro_profile_absorb(struct dcp_pro_profile *p,
-                                   struct dcp_pro_model const *m);
+DCP_API enum dcp_rc dcp_pro_profile_absorb(struct dcp_pro_profile *p,
+                                           struct dcp_pro_model const *m);
 
 DCP_API struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro);
 

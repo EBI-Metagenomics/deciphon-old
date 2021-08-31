@@ -40,9 +40,10 @@ DCP_API struct dcp_db *dcp_db_openw(FILE *restrict fd,
 
 DCP_API struct dcp_db_cfg dcp_db_cfg(struct dcp_db const *db);
 
-DCP_API int dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof);
+DCP_API enum dcp_rc dcp_db_write(struct dcp_db *db,
+                                 struct dcp_profile const *prof);
 
-DCP_API int dcp_db_close(struct dcp_db *db);
+DCP_API enum dcp_rc dcp_db_close(struct dcp_db *db);
 
 DCP_API struct imm_abc const *dcp_db_abc(struct dcp_db const *db);
 
@@ -50,7 +51,7 @@ DCP_API unsigned dcp_db_nprofiles(struct dcp_db const *db);
 
 DCP_API struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx);
 
-DCP_API int dcp_db_read(struct dcp_db *db, struct dcp_profile *prof);
+DCP_API enum dcp_rc dcp_db_read(struct dcp_db *db, struct dcp_profile *prof);
 
 DCP_API bool dcp_db_end(struct dcp_db const *db);
 

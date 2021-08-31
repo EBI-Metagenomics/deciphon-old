@@ -39,7 +39,7 @@ void test_pro_model(void)
     }
 
     struct dcp_pro_model model;
-    int rc = dcp_pro_model_init(&model, cfg, null_lprobs, null_lodds);
+    enum dcp_rc rc = dcp_pro_model_init(&model, cfg, null_lprobs, null_lodds);
     EQ(rc, IMM_SUCCESS);
 
     EQ(dcp_pro_model_setup(&model, core_size), IMM_SUCCESS);
