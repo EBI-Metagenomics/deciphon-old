@@ -69,6 +69,21 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     unsigned C = p->alt.C;
     unsigned T = p->alt.T;
 
+    printf("S, B %f\n", t.NB);
+    printf("S, N %f\n", t.NN);
+    printf("N, N %f\n", t.NN);
+    printf("N, B %f\n", t.NB);
+
+    printf("E, T %f\n", t.EC + t.CT);
+    printf("E, C %f\n", t.EC + t.CC);
+    printf("C, C %f\n", t.CC);
+    printf("C, T %f\n", t.CT);
+
+    printf("E, B %f\n", t.EC + t.CT);
+    printf("E, J %f\n", t.EC + t.CC);
+    printf("J, J %f\n", t.CC);
+    printf("J, B %f\n", t.CT);
+
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, S, B), t.NB);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, S, N), t.NN);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, N, N), t.NN);
@@ -156,8 +171,7 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
     {
         struct dcp_pro_trans t;
         imm_lprob_sample(&rnd, DCP_PRO_TRANS_SIZE, t.data);
-        if (i == 0)
-            t.DD = IMM_LPROB_ZERO;
+        if (i == 0) t.DD = IMM_LPROB_ZERO;
         if (i == core_size)
         {
             t.MD = IMM_LPROB_ZERO;
@@ -188,11 +202,9 @@ static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd)
 {
     struct dcp_pro_profile *p = prof->vtable.derived;
 
-    if (imm_dp_read(&p->null.dp, fd))
-        return DCP_RUNTIMEERROR;
+    if (imm_dp_read(&p->null.dp, fd)) return DCP_RUNTIMEERROR;
 
-    if (imm_dp_read(&p->alt.dp, fd))
-        return DCP_RUNTIMEERROR;
+    if (imm_dp_read(&p->alt.dp, fd)) return DCP_RUNTIMEERROR;
 
     return DCP_SUCCESS;
 }
@@ -201,11 +213,9 @@ static enum dcp_rc write(struct dcp_profile const *prof, FILE *restrict fd)
 {
     struct dcp_pro_profile const *p = prof->vtable.derived;
 
-    if (imm_dp_write(&p->null.dp, fd))
-        return DCP_RUNTIMEERROR;
+    if (imm_dp_write(&p->null.dp, fd)) return DCP_RUNTIMEERROR;
 
-    if (imm_dp_write(&p->alt.dp, fd))
-        return DCP_RUNTIMEERROR;
+    if (imm_dp_write(&p->alt.dp, fd)) return DCP_RUNTIMEERROR;
 
     return DCP_SUCCESS;
 }

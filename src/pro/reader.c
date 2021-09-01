@@ -16,25 +16,58 @@ void dcp_pro_reader_init(struct dcp_pro_reader *reader, struct dcp_pro_cfg cfg,
         reader->null_lodds[i] = 0.0f;
 }
 
-enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader,
-                                struct dcp_pro_model *model)
+enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
 {
     enum hmr_rc hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
-    if (hmr_rc == HMR_ENDFILE)
-        return DCP_ENDFILE;
+    if (hmr_rc == HMR_ENDFILE) return DCP_ENDFILE;
 
-    if (hmr_rc)
-        return DCP_RUNTIMEERROR;
+    if (hmr_rc) return DCP_RUNTIMEERROR;
 
     enum dcp_rc rc = dcp_pro_model_init(
         &reader->model, reader->cfg, reader->null_lprobs, reader->null_lodds);
 
-    if (rc)
-        return rc;
+    if (rc) return rc;
 
     unsigned core_size = hmr_prof_length(&reader->prof);
-    if ((rc = dcp_pro_model_setup(&reader->model, core_size)))
-        return rc;
+    if ((rc = dcp_pro_model_setup(&reader->model, core_size))) return rc;
+
+    hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);
+    assert(hmr_rc != HMR_ENDFILE);
+
+    struct dcp_pro_trans t = {
+        .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
+        .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
+        .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
+        .IM = (imm_float)reader->prof.node.trans[HMR_TRANS_IM],
+        .II = (imm_float)reader->prof.node.trans[HMR_TRANS_II],
+        .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
+        .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
+    };
+    rc = dcp_pro_model_add_trans(&reader->model, t);
+    assert(!rc);
+
+    while (!(hmr_rc = hmr_next_node(&reader->hmr, &reader->prof)))
+    {
+        imm_float match_lprobs[IMM_AMINO_SIZE];
+        for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
+            match_lprobs[i] = (imm_float)reader->prof.node.match[i];
+
+        rc = dcp_pro_model_add_node(&reader->model, match_lprobs);
+        assert(!rc);
+
+        struct dcp_pro_trans t2 = {
+            .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
+            .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
+            .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
+            .IM = (imm_float)reader->prof.node.trans[HMR_TRANS_IM],
+            .II = (imm_float)reader->prof.node.trans[HMR_TRANS_II],
+            .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
+            .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
+        };
+        rc = dcp_pro_model_add_trans(&reader->model, t2);
+        assert(!rc);
+    }
+    assert(hmr_rc == HMR_ENDNODE);
 
     return DCP_SUCCESS;
 }

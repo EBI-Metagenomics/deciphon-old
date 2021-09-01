@@ -84,8 +84,7 @@ enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
 
     m->alt.node_idx++;
 
-    if (have_finished_add(m))
-        setup_transitions(m);
+    if (have_finished_add(m)) setup_transitions(m);
 
     return DCP_SUCCESS;
 }
@@ -100,8 +99,7 @@ enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *m,
         return error(DCP_RUNTIMEERROR, "Reached limit of transitions.");
 
     m->alt.trans[m->alt.trans_idx++] = trans;
-    if (have_finished_add(m))
-        setup_transitions(m);
+    if (have_finished_add(m)) setup_transitions(m);
     return DCP_SUCCESS;
 }
 
@@ -417,8 +415,7 @@ static int setup_nuclt_dist(struct nuclt_dist *dist,
     struct imm_amino_lprob aminop = imm_amino_lprob(amino, lprobs);
     struct imm_codon_lprob codonp =
         codon_lprob(amino, &aminop, dist->nucltp->nuclt);
-    if (imm_codon_lprob_normalize(&codonp))
-        return DCP_RUNTIMEERROR;
+    if (imm_codon_lprob_normalize(&codonp)) return DCP_RUNTIMEERROR;
 
     *dist->nucltp = nuclt_lprob(&codonp);
     *dist->codonm = imm_codon_marg(&codonp);
@@ -504,7 +501,7 @@ static void setup_transitions(struct dcp_pro_model *m)
     struct imm_state *E = imm_super(&m->ext_node.alt.E);
     rc += imm_hmm_set_trans(h, Mm, E, trans[n].MM);
 
-    assert(rc == DCP_SUCCESS);
+    assert(!rc);
 
     setup_entry_trans(m);
     setup_exit_trans(m);

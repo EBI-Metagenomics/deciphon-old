@@ -5,6 +5,7 @@
 #include "dcp/export.h"
 #include "dcp/pro/cfg.h"
 #include "dcp/pro/id.h"
+#include "dcp/pro/node.h"
 #include "dcp/pro/trans.h"
 #include "dcp/pro/xnode.h"
 #include "dcp/pro/xtrans.h"

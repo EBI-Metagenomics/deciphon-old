@@ -17,6 +17,7 @@ extern "C" {
 #include "dcp/pro/cfg.h"
 #include "dcp/pro/model.h"
 #include "dcp/pro/profile.h"
+#include "dcp/pro/reader.h"
 #include "dcp/profile.h"
 #include "dcp/std_profile.h"
 /* #include "dcp/result.h" */
