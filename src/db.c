@@ -2,6 +2,7 @@
 #include "dcp/generics.h"
 #include "dcp/profile.h"
 #include "error.h"
+#include "fcopy.h"
 #include "imm/imm.h"
 #include "profile.h"
 #include "support.h"
@@ -211,8 +212,7 @@ static enum dcp_rc read_metadata(struct dcp_db *db)
             rc = error(DCP_PARSEERROR, "invalid mt.data");
             goto cleanup;
         }
-        if ((rc = parse_metadata(db)))
-            goto cleanup;
+        if ((rc = parse_metadata(db))) goto cleanup;
     }
 
     return rc;
@@ -322,8 +322,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
         goto cleanup;
     }
 
-    if (read_metadata(db))
-        goto cleanup;
+    if (read_metadata(db)) goto cleanup;
 
     if (db->cfg.prof_typeid == DCP_STD_PROFILE)
         dcp_std_profile_init(&db->prof.std, &db->abc);
@@ -353,12 +352,10 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
     xcmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = OPEN_WRIT;
 
-    if (!(db->mt.file.fd = tmpfile()))
-        goto cleanup;
+    if (!(db->mt.file.fd = tmpfile())) goto cleanup;
     xcmp_init(&db->mt.file.ctx, db->mt.file.fd);
 
-    if (!(db->dp.fd = tmpfile()))
-        goto cleanup;
+    if (!(db->dp.fd = tmpfile())) goto cleanup;
 
     if (!cmp_write_u64(&db->file.ctx, MAGIC_NUMBER))
     {
@@ -430,8 +427,7 @@ enum dcp_rc dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
     if (db->profiles.size == MAX_NPROFILES)
         return error(DCP_RUNTIMEERROR, "too many profiles");
 
-    if (prof->mt.name == NULL)
-        return error(DCP_ILLEGALARG, "metadata not set");
+    if (prof->mt.name == NULL) return error(DCP_ILLEGALARG, "metadata not set");
 
     if (prof->vtable.typeid == DCP_PROTEIN_PROFILE)
     {
@@ -465,8 +461,7 @@ enum dcp_rc dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
     /* +1 for null-terminated */
     db->mt.size += len + 1;
 
-    if ((rc = prof->vtable.write(prof, db->dp.fd)))
-        goto cleanup;
+    if ((rc = prof->vtable.write(prof, db->dp.fd))) goto cleanup;
 
     db->profiles.size++;
 
@@ -503,8 +498,7 @@ static enum dcp_rc db_closew(struct dcp_db *db)
     EWRIT_RC(!cmp_write_u32(&db->file.ctx, db->profiles.size));
 
     rewind(db->mt.file.fd);
-    if ((rc = flush_metadata(db)))
-        goto cleanup;
+    if ((rc = flush_metadata(db))) goto cleanup;
     if (fclose(db->mt.file.fd))
     {
         rc = error(DCP_IOERROR, "failed to close metadata file");
@@ -512,8 +506,7 @@ static enum dcp_rc db_closew(struct dcp_db *db)
     }
 
     rewind(db->dp.fd);
-    if ((rc = fcopy(db->file.fd, db->dp.fd)))
-        goto cleanup;
+    if ((rc = fcopy(db->file.fd, db->dp.fd))) goto cleanup;
     if (fclose(db->dp.fd))
     {
         rc = error(DCP_IOERROR, "failed to close DP file");
@@ -541,8 +534,7 @@ struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
 
 enum dcp_rc dcp_db_read(struct dcp_db *db, struct dcp_profile *prof)
 {
-    if (dcp_db_end(db))
-        return error(DCP_RUNTIMEERROR, "end of profiles");
+    if (dcp_db_end(db)) return error(DCP_RUNTIMEERROR, "end of profiles");
     prof->idx = db->profiles.curr_idx++;
     prof->mt = dcp_db_meta(db, prof->idx);
     return prof->vtable.read(prof, db->file.fd);

@@ -10,8 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum dcp_rc fcopy(FILE *restrict dst, FILE *restrict src);
-
 void xcmp_init(cmp_ctx_t *cmp, FILE *file);
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
@@ -32,8 +30,7 @@ void xcmp_init(cmp_ctx_t *cmp, FILE *file);
 
 static inline void *__xdel(void const *ptr)
 {
-    if (ptr)
-        free((void *)ptr);
+    if (ptr) free((void *)ptr);
     return NULL;
 }
 
