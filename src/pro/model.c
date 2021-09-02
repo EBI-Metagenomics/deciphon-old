@@ -483,17 +483,17 @@ static void setup_transitions(struct dcp_pro_model *m)
 
     for (unsigned i = 0; i + 1 < m->core_size; ++i)
     {
-        struct dcp_pro_node prv = m->alt.nodes[i];
-        struct dcp_pro_node nxt = m->alt.nodes[i + 1];
+        struct dcp_pro_node *pr = m->alt.nodes + i;
+        struct dcp_pro_node *nx = m->alt.nodes + i + 1;
         unsigned j = i + 1;
         struct dcp_pro_trans t = trans[j];
-        rc += imm_hmm_set_trans(h, imm_super(&prv.M), imm_super(&prv.I), t.MI);
-        rc += imm_hmm_set_trans(h, imm_super(&prv.I), imm_super(&prv.I), t.II);
-        rc += imm_hmm_set_trans(h, imm_super(&prv.M), imm_super(&nxt.M), t.MM);
-        rc += imm_hmm_set_trans(h, imm_super(&prv.I), imm_super(&nxt.M), t.IM);
-        rc += imm_hmm_set_trans(h, imm_super(&prv.M), imm_super(&nxt.D), t.MD);
-        rc += imm_hmm_set_trans(h, imm_super(&prv.D), imm_super(&nxt.D), t.DD);
-        rc += imm_hmm_set_trans(h, imm_super(&prv.D), imm_super(&nxt.M), t.DM);
+        rc += imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&pr->I), t.MI);
+        rc += imm_hmm_set_trans(h, imm_super(&pr->I), imm_super(&pr->I), t.II);
+        rc += imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&nx->M), t.MM);
+        rc += imm_hmm_set_trans(h, imm_super(&pr->I), imm_super(&nx->M), t.IM);
+        rc += imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&nx->D), t.MD);
+        rc += imm_hmm_set_trans(h, imm_super(&pr->D), imm_super(&nx->D), t.DD);
+        rc += imm_hmm_set_trans(h, imm_super(&pr->D), imm_super(&nx->M), t.DM);
     }
 
     unsigned n = m->core_size;

@@ -188,6 +188,12 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
     assert(!rc);
 }
 
+void dcp_pro_profile_write_dot(struct dcp_pro_profile const *p,
+                               FILE *restrict fp)
+{
+    imm_dp_write_dot(&p->alt.dp, fp, pro_model_state_name);
+}
+
 static void del(struct dcp_profile *prof)
 {
     if (prof)

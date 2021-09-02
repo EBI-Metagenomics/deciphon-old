@@ -53,8 +53,10 @@ DCP_API void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
 
 static inline void dcp_pro_profile_del(struct dcp_pro_profile *pro)
 {
-    if (pro)
-        dcp_profile_del(&pro->super);
+    if (pro) dcp_profile_del(&pro->super);
 }
+
+DCP_API void dcp_pro_profile_write_dot(struct dcp_pro_profile const *p,
+                                       FILE *restrict fp);
 
 #endif
