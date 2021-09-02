@@ -115,7 +115,7 @@ void dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
     m->cfg = cfg;
     m->core_size = 0;
 
-    memcpy(m->null.lprobs, null_lprobs, sizeof(*null_lprobs) * IMM_AMINO_SIZE);
+    memcpy(m->null.lprobs, null_lprobs, sizeof *null_lprobs * IMM_AMINO_SIZE);
 
     imm_hmm_init(&m->null.hmm, imm_super(m->cfg.nuclt));
 

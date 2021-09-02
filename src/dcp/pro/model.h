@@ -43,22 +43,21 @@ struct dcp_pro_model
     } alt;
 };
 
-DCP_API enum dcp_rc
-dcp_pro_model_add_node(struct dcp_pro_model *m,
-                       imm_float const lprobs[IMM_AMINO_SIZE]);
+DCP_API enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *,
+                                           imm_float const lp[IMM_AMINO_SIZE]);
 
-DCP_API enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *m,
+DCP_API enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *,
                                             struct dcp_pro_trans trans);
 
-DCP_API void dcp_pro_model_del(struct dcp_pro_model const *model);
+DCP_API void dcp_pro_model_del(struct dcp_pro_model const *);
 
-DCP_API void dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
+DCP_API void dcp_pro_model_init(struct dcp_pro_model *, struct dcp_pro_cfg cfg,
                                 imm_float const null_lprobs[IMM_AMINO_SIZE]);
 
-DCP_API enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m,
+DCP_API enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *,
                                         unsigned core_size);
 
-DCP_API void dcp_pro_model_write_dot(struct dcp_pro_model const *m,
+DCP_API void dcp_pro_model_write_dot(struct dcp_pro_model const *,
                                      FILE *restrict fp);
 
 #endif
