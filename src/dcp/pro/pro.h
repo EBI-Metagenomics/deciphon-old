@@ -2,8 +2,6 @@
 #define DCP_PRO_PRO_H
 
 #include "dcp/pro/cfg.h"
-#include "dcp/pro/enode.h"
-#include "dcp/pro/etrans.h"
 #include "dcp/pro/id.h"
 #include "dcp/pro/model.h"
 #include "dcp/pro/node.h"
