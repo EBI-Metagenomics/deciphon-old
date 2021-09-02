@@ -12,8 +12,6 @@ void dcp_pro_reader_init(struct dcp_pro_reader *reader, struct dcp_pro_cfg cfg,
     hmr_prof_init(&reader->prof, &reader->hmr);
 
     init_null_lprobs(reader->null_lprobs);
-    for (unsigned i = 0; i < ARRAY_SIZE(reader->null_lodds); ++i)
-        reader->null_lodds[i] = 0.0f;
 }
 
 enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
@@ -23,12 +21,10 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
 
     if (hmr_rc) return DCP_RUNTIMEERROR;
 
-    enum dcp_rc rc = dcp_pro_model_init(
-        &reader->model, reader->cfg, reader->null_lprobs, reader->null_lodds);
-
-    if (rc) return rc;
+    dcp_pro_model_init(&reader->model, reader->cfg, reader->null_lprobs);
 
     unsigned core_size = hmr_prof_length(&reader->prof);
+    enum dcp_rc rc = DCP_SUCCESS;
     if ((rc = dcp_pro_model_setup(&reader->model, core_size))) return rc;
 
     hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);

@@ -147,16 +147,14 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     };
 
     imm_float lprobs[IMM_AMINO_SIZE];
-    imm_float lodds[IMM_AMINO_SIZE];
 
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
-    imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lodds);
 
     struct dcp_pro_model model;
-    int rc = (int)dcp_pro_model_init(&model, cfg, lprobs, lodds);
+    dcp_pro_model_init(&model, cfg, lprobs);
 
-    rc = (int)dcp_pro_model_setup(&model, core_size);
+    int rc = (int)dcp_pro_model_setup(&model, core_size);
 
     for (unsigned i = 0; i < core_size; ++i)
     {

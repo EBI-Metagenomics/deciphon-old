@@ -19,7 +19,7 @@ struct dcp_pro_xnode_alt
     struct imm_mute_state T;
 };
 
-struct dcp_pro_enode
+struct dcp_pro_xnode
 {
     struct dcp_pro_xnode_null null;
     struct dcp_pro_xnode_alt alt;

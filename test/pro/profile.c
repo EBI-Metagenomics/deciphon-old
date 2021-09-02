@@ -54,7 +54,7 @@ void test_pro_profile_uniform(void)
     imm_task_setup(task, &seq);
     imm_dp_viterbi(dp, task, &result);
 
-    CLOSE(result.loglik, -55.5597178224);
+    CLOSE(result.loglik, -55.59428405762);
 
     EQ(imm_path_nsteps(&result.path), 14);
 
@@ -115,7 +115,7 @@ void test_pro_profile_occupancy(void)
     imm_task_setup(task, &seq);
     imm_dp_viterbi(dp, task, &result);
 
-    CLOSE(result.loglik, -54.3628743048);
+    CLOSE(result.loglik, -54.35543441772);
 
     EQ(imm_path_nsteps(&result.path), 14);
 

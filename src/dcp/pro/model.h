@@ -15,8 +15,8 @@ struct dcp_pro_model
 {
     struct dcp_pro_cfg cfg;
     unsigned core_size;
-    struct dcp_pro_enode ext_node;
-    struct dcp_pro_xtrans ext_trans;
+    struct dcp_pro_xnode xnode;
+    struct dcp_pro_xtrans xtrans;
 
     struct
     {
@@ -52,10 +52,8 @@ DCP_API enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *m,
 
 DCP_API void dcp_pro_model_del(struct dcp_pro_model const *model);
 
-DCP_API enum dcp_rc
-dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
-                   imm_float const null_lprobs[IMM_AMINO_SIZE],
-                   imm_float const ins_lodds[IMM_AMINO_SIZE]);
+DCP_API void dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
+                                imm_float const null_lprobs[IMM_AMINO_SIZE]);
 
 DCP_API enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m,
                                         unsigned core_size);

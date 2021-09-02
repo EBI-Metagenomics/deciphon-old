@@ -17,7 +17,6 @@ struct dcp_pro_reader
     struct hmr hmr;
     struct hmr_prof prof;
     imm_float null_lprobs[IMM_AMINO_SIZE];
-    imm_float null_lodds[IMM_AMINO_SIZE];
     struct dcp_pro_model model;
 };
 
