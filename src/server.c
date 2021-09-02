@@ -67,8 +67,7 @@ struct dcp_server *dcp_server_create(FILE *fd)
     server->tasks = fifo1_create();
     server->stop_signal = 0;
 
-    if (!(server->db = dcp_db_openr(fd)))
-        goto cleanup;
+    if (!(server->db = dcp_db_openr(fd))) goto cleanup;
 
 #if 0
     if (!(server->task_bin = task_bin_create(collect_task, server)))
@@ -79,8 +78,7 @@ struct dcp_server *dcp_server_create(FILE *fd)
 #endif
 
 cleanup:
-    if (server->db)
-        dcp_db_close(server->db);
+    if (server->db) dcp_db_close(server->db);
 #if 0
     if (server->task_bin)
         task_bin_destroy(server->task_bin);
@@ -207,7 +205,7 @@ static int input_processor(struct dcp_server* server)
 
     while (!dcp_input_end(server->input)) {
 
-        struct dcp_profile const* prof = dcp_input_read(server->input);
+        struct dcp_prof const* prof = dcp_input_read(server->input);
         if (!prof) {
             err = 1;
             goto cleanup;
@@ -278,7 +276,7 @@ static int task_processor(struct dcp_server* server, struct dcp_task* task)
     }
     while (!bus_end(&server->profile_bus) && !sigstop(server)) {
 
-        struct dcp_profile const* prof = NULL;
+        struct dcp_prof const* prof = NULL;
         if (!(prof = bus_recv(&server->profile_bus))) {
             ck_pr_stall();
             continue;

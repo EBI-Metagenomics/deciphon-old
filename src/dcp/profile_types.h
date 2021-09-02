@@ -15,21 +15,21 @@ typedef uint32_t dcp_profile_idx_t;
 static_assert(sizeof(imm_state_id_t) == 2, "16 bits state_id.");
 #define DCP_PROFILE_BITS_ID 16
 
-enum dcp_profile_typeid
+enum dcp_prof_typeid
 {
     DCP_NULL_PROFILE = 0,
     DCP_STD_PROFILE = 1,
     DCP_PROTEIN_PROFILE = 2,
 };
 
-struct dcp_profile;
+struct dcp_prof;
 
-struct dcp_profile_vtable
+struct dcp_prof_vtable
 {
-    enum dcp_rc (*read)(struct dcp_profile *prof, FILE *restrict fd);
-    enum dcp_rc (*write)(struct dcp_profile const *prof, FILE *restrict fd);
-    void (*del)(struct dcp_profile *prof);
-    enum dcp_profile_typeid typeid;
+    enum dcp_rc (*read)(struct dcp_prof *prof, FILE *restrict fd);
+    enum dcp_rc (*write)(struct dcp_prof const *prof, FILE *restrict fd);
+    void (*del)(struct dcp_prof *prof);
+    enum dcp_prof_typeid typeid;
     void *derived;
 };
 

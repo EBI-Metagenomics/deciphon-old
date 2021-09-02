@@ -9,22 +9,21 @@
 #include "third-party/xrandom.h"
 #include <assert.h>
 
-static void del(struct dcp_profile *prof);
-static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd);
-static enum dcp_rc write(struct dcp_profile const *prof, FILE *restrict fd);
+static void del(struct dcp_prof *prof);
+static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd);
+static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd);
 
-void dcp_pro_profile_init(struct dcp_pro_profile *p, struct dcp_pro_cfg cfg)
+void dcp_pro_prof_init(struct dcp_pro_prof *p, struct dcp_pro_cfg cfg)
 {
-    struct dcp_profile_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE,
-                                        p};
+    struct dcp_prof_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE, p};
     profile_init(&p->super, imm_super(cfg.nuclt), dcp_meta(NULL, NULL), vtable);
     p->cfg = cfg;
     imm_dp_init(&p->null.dp, imm_super(cfg.nuclt));
     imm_dp_init(&p->alt.dp, imm_super(cfg.nuclt));
 }
 
-void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
-                           bool multi_hits, bool hmmer3_compat)
+void dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_len,
+                        bool multi_hits, bool hmmer3_compat)
 {
     assert(seq_len > 0);
     imm_float L = (imm_float)seq_len;
@@ -99,8 +98,8 @@ void dcp_pro_profile_setup(struct dcp_pro_profile *p, unsigned seq_len,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
 }
 
-enum dcp_rc dcp_pro_profile_absorb(struct dcp_pro_profile *p,
-                                   struct dcp_pro_model const *m)
+enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
+                                struct dcp_pro_model const *m)
 {
     if (p->cfg.nuclt != pro_model_nuclt(m))
         return error(DCP_ILLEGALARG, "Different nucleotide alphabets.");
@@ -124,19 +123,19 @@ enum dcp_rc dcp_pro_profile_absorb(struct dcp_pro_profile *p,
     return DCP_SUCCESS;
 }
 
-struct dcp_profile *dcp_pro_profile_super(struct dcp_pro_profile *pro)
+struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro)
 {
     return &pro->super;
 }
 
-void dcp_pro_profile_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
+void dcp_pro_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
     pro_model_state_name(id, name);
 }
 
-void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
-                            unsigned core_size, enum dcp_entry_dist edist,
-                            imm_float epsilon)
+void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
+                         unsigned core_size, enum dcp_entry_dist edist,
+                         imm_float epsilon)
 {
     assert(core_size >= 2);
     struct imm_rnd rnd = imm_rnd(seed);
@@ -180,32 +179,31 @@ void dcp_pro_profile_sample(struct dcp_pro_profile *p, unsigned seed,
         rc += dcp_pro_model_add_trans(&model, t);
     }
 
-    dcp_pro_profile_init(p, cfg);
-    rc += dcp_pro_profile_absorb(p, &model);
+    dcp_pro_prof_init(p, cfg);
+    rc += dcp_pro_prof_absorb(p, &model);
     dcp_del(&model);
 
     assert(!rc);
 }
 
-void dcp_pro_profile_write_dot(struct dcp_pro_profile const *p,
-                               FILE *restrict fp)
+void dcp_pro_profile_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, pro_model_state_name);
 }
 
-static void del(struct dcp_profile *prof)
+static void del(struct dcp_prof *prof)
 {
     if (prof)
     {
-        struct dcp_pro_profile *p = prof->vtable.derived;
+        struct dcp_pro_prof *p = prof->vtable.derived;
         imm_del(&p->null.dp);
         imm_del(&p->alt.dp);
     }
 }
 
-static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd)
+static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd)
 {
-    struct dcp_pro_profile *p = prof->vtable.derived;
+    struct dcp_pro_prof *p = prof->vtable.derived;
 
     if (imm_dp_read(&p->null.dp, fd)) return DCP_RUNTIMEERROR;
 
@@ -214,9 +212,9 @@ static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd)
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc write(struct dcp_profile const *prof, FILE *restrict fd)
+static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd)
 {
-    struct dcp_pro_profile const *p = prof->vtable.derived;
+    struct dcp_pro_prof const *p = prof->vtable.derived;
 
     if (imm_dp_write(&p->null.dp, fd)) return DCP_RUNTIMEERROR;
 

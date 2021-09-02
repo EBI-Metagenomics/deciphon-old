@@ -53,11 +53,11 @@ void test_pro_model(void)
     EQ(dcp_pro_model_add_trans(&model, t[2]), DCP_SUCCESS);
     EQ(dcp_pro_model_add_trans(&model, t[3]), DCP_SUCCESS);
 
-    struct dcp_pro_profile p;
-    dcp_pro_profile_init(&p, cfg);
+    struct dcp_pro_prof p;
+    dcp_pro_prof_init(&p, cfg);
 
-    dcp_profile_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
-    EQ(dcp_pro_profile_absorb(&p, &model), DCP_SUCCESS);
+    dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
+    EQ(dcp_pro_prof_absorb(&p, &model), DCP_SUCCESS);
 
     dcp_del(&p);
     dcp_del(&model);
@@ -155,17 +155,16 @@ void test_pro_model_from_hmmfile(void)
         }
         /* dcp_pro_model_write_dot(model, stdout); */
 
-        struct dcp_pro_profile p;
-        dcp_pro_profile_init(&p, cfg);
+        struct dcp_pro_prof p;
+        dcp_pro_prof_init(&p, cfg);
 
-        dcp_profile_nameit(dcp_super(&p),
-                           dcp_meta(prof.meta.name, prof.meta.acc));
-        EQ(dcp_pro_profile_absorb(&p, &model), DCP_SUCCESS);
+        dcp_prof_nameit(dcp_super(&p), dcp_meta(prof.meta.name, prof.meta.acc));
+        EQ(dcp_pro_prof_absorb(&p, &model), DCP_SUCCESS);
 
         char const str[] = "CCTGGTAAAGAAGATAATAACAAA";
         struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&p)->abc);
 
-        dcp_pro_profile_setup(&p, imm_seq_size(&seq), true, false);
+        dcp_pro_prof_setup(&p, imm_seq_size(&seq), true, false);
 
         struct imm_result result = imm_result();
         struct imm_dp *dp = &p.alt.dp;
@@ -207,7 +206,7 @@ void test_pro_model_from_hmmfile(void)
     struct dcp_pro_profile p;
     dcp_pro_profile_init(&p, cfg);
 
-    dcp_profile_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
+    dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
     EQ(dcp_pro_profile_absorb(&p, model), DCP_SUCCESS);
 
     dcp_del(&p);

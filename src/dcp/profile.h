@@ -10,38 +10,35 @@
 
 struct imm_abc;
 
-struct dcp_profile
+struct dcp_prof
 {
     unsigned idx;
     struct imm_abc const *abc;
     struct dcp_meta mt;
-    struct dcp_profile_vtable vtable;
+    struct dcp_prof_vtable vtable;
 };
 
-static inline void dcp_profile_del(struct dcp_profile *prof)
+static inline void dcp_prof_del(struct dcp_prof *prof)
 {
-    if (prof)
-        prof->vtable.del(prof);
+    if (prof) prof->vtable.del(prof);
 }
 
-static inline void dcp_profile_nameit(struct dcp_profile *prof,
-                                      struct dcp_meta mt)
+static inline void dcp_prof_nameit(struct dcp_prof *prof, struct dcp_meta mt)
 {
     prof->mt = mt;
 }
 
-static inline enum dcp_profile_typeid
-dcp_profile_typeid(struct dcp_profile const *prof)
+static inline enum dcp_prof_typeid dcp_prof_typeid(struct dcp_prof const *prof)
 {
     return prof->vtable.typeid;
 }
 
-static inline void *dcp_profile_derived(struct dcp_profile *prof)
+static inline void *dcp_prof_derived(struct dcp_prof *prof)
 {
     return prof->vtable.derived;
 }
 
-static inline void const *dcp_profile_derived_c(struct dcp_profile const *prof)
+static inline void const *dcp_prof_derived_c(struct dcp_prof const *prof)
 {
     return prof->vtable.derived;
 }

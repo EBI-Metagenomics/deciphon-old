@@ -28,8 +28,8 @@ struct dcp_db
     struct imm_abc abc;
     union
     {
-        struct dcp_std_profile std;
-        struct dcp_pro_profile pro;
+        struct dcp_std_prof std;
+        struct dcp_pro_prof pro;
     } prof;
     struct
     {
@@ -256,7 +256,7 @@ cleanup:
     return rc;
 }
 
-struct dcp_profile *dcp_db_profile(struct dcp_db *db)
+struct dcp_prof *dcp_db_profile(struct dcp_db *db)
 {
     return &db->prof.std.super;
 }
@@ -331,7 +331,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
     if (read_metadata(db)) goto cleanup;
 
     if (db->cfg.prof_typeid == DCP_STD_PROFILE)
-        dcp_std_profile_init(&db->prof.std, &db->abc);
+        dcp_std_prof_init(&db->prof.std, &db->abc);
 
 #if 0
     if (db->cfg.prof_typeid == DCP_PROTEIN_PROFILE)
@@ -384,11 +384,11 @@ struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
     }
 
     if (cfg.prof_typeid == DCP_STD_PROFILE)
-        dcp_std_profile_init(&db->prof.std, abc);
+        dcp_std_prof_init(&db->prof.std, abc);
 
     if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        dcp_pro_profile_init(&db->prof.pro, cfg.pro);
+        dcp_pro_prof_init(&db->prof.pro, cfg.pro);
         if (!write_imm_float(&db->file.ctx, db->cfg.pro.epsilon))
         {
             error(DCP_IOERROR, "failed to write epsilon");
@@ -428,7 +428,7 @@ cleanup:
 
 struct dcp_db_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
 
-enum dcp_rc dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
+enum dcp_rc dcp_db_write(struct dcp_db *db, struct dcp_prof const *prof)
 {
     if (db->profiles.size == MAX_NPROFILES)
         return error(DCP_RUNTIMEERROR, "too many profiles");
@@ -437,7 +437,7 @@ enum dcp_rc dcp_db_write(struct dcp_db *db, struct dcp_profile const *prof)
 
     if (prof->vtable.typeid == DCP_PROTEIN_PROFILE)
     {
-        struct dcp_pro_profile const *p = dcp_profile_derived_c(prof);
+        struct dcp_pro_prof const *p = dcp_prof_derived_c(prof);
         if (p->cfg.epsilon != db->cfg.pro.epsilon)
             return error(DCP_ILLEGALARG, "different epsilons");
         if (p->cfg.edist != db->cfg.pro.edist)
@@ -541,7 +541,7 @@ struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
     return dcp_meta(db->mt.data + o, db->mt.data + o + size);
 }
 
-enum dcp_rc dcp_db_read(struct dcp_db *db, struct dcp_profile *prof)
+enum dcp_rc dcp_db_read(struct dcp_db *db, struct dcp_prof *prof)
 {
     if (dcp_db_end(db)) return error(DCP_RUNTIMEERROR, "end of profiles");
     prof->idx = db->profiles.curr_idx++;

@@ -12,8 +12,8 @@ int main(void)
 
 void test_db_pro_openw(void)
 {
-    struct dcp_pro_profile p;
-    dcp_pro_profile_sample(&p, 1, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    struct dcp_pro_prof p;
+    dcp_pro_prof_sample(&p, 1, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
     struct imm_abc const *abc = dcp_super(&p)->abc;
     FILE *fd = fopen(TMPDIR "/db.dcp", "wb");
 
@@ -21,22 +21,22 @@ void test_db_pro_openw(void)
     NOTNULL(db);
     EQ(dcp_db_write(db, dcp_super(&p)), DCP_ILLEGALARG);
 
-    dcp_profile_nameit(dcp_super(&p), dcp_meta("Name0", "Acc0"));
+    dcp_prof_nameit(dcp_super(&p), dcp_meta("Name0", "Acc0"));
     EQ(dcp_db_write(db, dcp_super(&p)), DCP_SUCCESS);
     dcp_del(&p);
 
-    dcp_pro_profile_sample(&p, 2, 2, DCP_ENTRY_DIST_UNIFORM, 0.2f);
-    dcp_profile_nameit(dcp_super(&p), dcp_meta("Name1", "Acc1"));
+    dcp_pro_prof_sample(&p, 2, 2, DCP_ENTRY_DIST_UNIFORM, 0.2f);
+    dcp_prof_nameit(dcp_super(&p), dcp_meta("Name1", "Acc1"));
     EQ(dcp_db_write(db, dcp_super(&p)), DCP_ILLEGALARG);
     dcp_del(&p);
 
-    dcp_pro_profile_sample(&p, 2, 2, DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
-    dcp_profile_nameit(dcp_super(&p), dcp_meta("Name1", "Acc1"));
+    dcp_pro_prof_sample(&p, 2, 2, DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
+    dcp_prof_nameit(dcp_super(&p), dcp_meta("Name1", "Acc1"));
     EQ(dcp_db_write(db, dcp_super(&p)), DCP_ILLEGALARG);
     dcp_del(&p);
 
-    dcp_pro_profile_sample(&p, 2, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
-    dcp_profile_nameit(dcp_super(&p), dcp_meta("Name1", "Acc1"));
+    dcp_pro_prof_sample(&p, 2, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    dcp_prof_nameit(dcp_super(&p), dcp_meta("Name1", "Acc1"));
     EQ(dcp_db_write(db, dcp_super(&p)), DCP_SUCCESS);
     dcp_del(&p);
 

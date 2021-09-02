@@ -14,8 +14,8 @@ int main(void)
 
 void test_pro_profile_uniform(void)
 {
-    struct dcp_pro_profile p;
-    dcp_pro_profile_sample(&p, 1, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    struct dcp_pro_prof p;
+    dcp_pro_prof_sample(&p, 1, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&p)->abc);
@@ -23,7 +23,7 @@ void test_pro_profile_uniform(void)
     unsigned len = (unsigned)strlen(str);
     bool multi_hits = true;
     bool hmmer3_compat = false;
-    dcp_pro_profile_setup(&p, len, multi_hits, hmmer3_compat);
+    dcp_pro_prof_setup(&p, len, multi_hits, hmmer3_compat);
 
     struct imm_result result = imm_result();
     struct imm_dp *dp = &p.null.dp;
@@ -38,12 +38,12 @@ void test_pro_profile_uniform(void)
 
     EQ(imm_path_step(&result.path, 0)->seqlen, 3);
     EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_ID_R);
-    dcp_pro_profile_state_name(imm_path_step(&result.path, 0)->state_id, name);
+    dcp_pro_prof_state_name(imm_path_step(&result.path, 0)->state_id, name);
     EQ(name, "R");
 
     EQ(imm_path_step(&result.path, 10)->seqlen, 2);
     EQ(imm_path_step(&result.path, 10)->state_id, DCP_PRO_ID_R);
-    dcp_pro_profile_state_name(imm_path_step(&result.path, 10)->state_id, name);
+    dcp_pro_prof_state_name(imm_path_step(&result.path, 10)->state_id, name);
     EQ(name, "R");
 
     imm_result_reset(&result);
@@ -60,12 +60,12 @@ void test_pro_profile_uniform(void)
 
     EQ(imm_path_step(&result.path, 0)->seqlen, 0);
     EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_ID_S);
-    dcp_pro_profile_state_name(imm_path_step(&result.path, 0)->state_id, name);
+    dcp_pro_prof_state_name(imm_path_step(&result.path, 0)->state_id, name);
     EQ(name, "S");
 
     EQ(imm_path_step(&result.path, 13)->seqlen, 0);
     EQ(imm_path_step(&result.path, 13)->state_id, DCP_PRO_ID_T);
-    dcp_pro_profile_state_name(imm_path_step(&result.path, 13)->state_id, name);
+    dcp_pro_prof_state_name(imm_path_step(&result.path, 13)->state_id, name);
     EQ(name, "T");
 
     dcp_del(&p);
@@ -75,8 +75,8 @@ void test_pro_profile_uniform(void)
 
 void test_pro_profile_occupancy(void)
 {
-    struct dcp_pro_profile p;
-    dcp_pro_profile_sample(&p, 1, 2, DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
+    struct dcp_pro_prof p;
+    dcp_pro_prof_sample(&p, 1, 2, DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&p)->abc);
@@ -84,7 +84,7 @@ void test_pro_profile_occupancy(void)
     unsigned len = (unsigned)strlen(str);
     bool multi_hits = true;
     bool hmmer3_compat = false;
-    dcp_pro_profile_setup(&p, len, multi_hits, hmmer3_compat);
+    dcp_pro_prof_setup(&p, len, multi_hits, hmmer3_compat);
 
     struct imm_result result = imm_result();
     struct imm_dp *dp = &p.null.dp;
@@ -99,12 +99,12 @@ void test_pro_profile_occupancy(void)
 
     EQ(imm_path_step(&result.path, 0)->seqlen, 3);
     EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_ID_R);
-    dcp_pro_profile_state_name(imm_path_step(&result.path, 0)->state_id, name);
+    dcp_pro_prof_state_name(imm_path_step(&result.path, 0)->state_id, name);
     EQ(name, "R");
 
     EQ(imm_path_step(&result.path, 10)->seqlen, 2);
     EQ(imm_path_step(&result.path, 10)->state_id, DCP_PRO_ID_R);
-    dcp_pro_profile_state_name(imm_path_step(&result.path, 10)->state_id, name);
+    dcp_pro_prof_state_name(imm_path_step(&result.path, 10)->state_id, name);
     EQ(name, "R");
 
     imm_result_reset(&result);
@@ -121,12 +121,12 @@ void test_pro_profile_occupancy(void)
 
     EQ(imm_path_step(&result.path, 0)->seqlen, 0);
     EQ(imm_path_step(&result.path, 0)->state_id, DCP_PRO_ID_S);
-    dcp_pro_profile_state_name(imm_path_step(&result.path, 0)->state_id, name);
+    dcp_pro_prof_state_name(imm_path_step(&result.path, 0)->state_id, name);
     EQ(name, "S");
 
     EQ(imm_path_step(&result.path, 13)->seqlen, 0);
     EQ(imm_path_step(&result.path, 13)->state_id, DCP_PRO_ID_T);
-    dcp_pro_profile_state_name(imm_path_step(&result.path, 13)->state_id, name);
+    dcp_pro_prof_state_name(imm_path_step(&result.path, 13)->state_id, name);
     EQ(name, "T");
 
     dcp_del(&p);

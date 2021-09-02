@@ -5,15 +5,15 @@
 #include "dcp/std/profile.h"
 
 #define dcp_super(x)                                                           \
-    _Generic((x), struct dcp_std_profile *                                     \
-             : dcp_std_profile_super, struct dcp_pro_profile *                 \
-             : dcp_pro_profile_super)(x)
+    _Generic((x), struct dcp_std_prof *                                        \
+             : dcp_std_prof_super, struct dcp_pro_prof *                       \
+             : dcp_pro_prof_super)(x)
 
 #define dcp_del(x)                                                             \
-    _Generic((x), struct dcp_profile *                                         \
-             : dcp_profile_del, struct dcp_std_profile *                       \
-             : dcp_std_profile_del, struct dcp_pro_profile *                   \
-             : dcp_pro_profile_del, struct dcp_pro_model *                     \
+    _Generic((x), struct dcp_prof *                                            \
+             : dcp_prof_del, struct dcp_std_prof *                             \
+             : dcp_std_prof_del, struct dcp_pro_prof *                         \
+             : dcp_pro_prof_del, struct dcp_pro_model *                        \
              : dcp_pro_model_del)(x)
 
 #endif

@@ -42,15 +42,15 @@ void test_pro_reader(void)
     enum dcp_rc rc = dcp_pro_reader_next(&reader);
     EQ(rc, DCP_SUCCESS);
 
-    struct dcp_pro_profile p;
-    dcp_pro_profile_init(&p, cfg);
+    struct dcp_pro_prof p;
+    dcp_pro_prof_init(&p, cfg);
 
-    dcp_profile_nameit(dcp_super(&p), dcp_meta("name", "acc"));
-    EQ(dcp_pro_profile_absorb(&p, &reader.model), DCP_SUCCESS);
+    dcp_prof_nameit(dcp_super(&p), dcp_meta("name", "acc"));
+    EQ(dcp_pro_prof_absorb(&p, &reader.model), DCP_SUCCESS);
 
     struct imm_seq seq = imm_seq(imm_str(sequence), dcp_super(&p)->abc);
 
-    dcp_pro_profile_setup(&p, imm_seq_size(&seq), true, false);
+    dcp_pro_prof_setup(&p, imm_seq_size(&seq), true, false);
 
     struct imm_result result = imm_result();
     struct imm_dp *dp = &p.alt.dp;

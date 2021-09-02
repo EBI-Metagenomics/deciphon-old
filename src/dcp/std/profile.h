@@ -6,9 +6,9 @@
 
 struct imm_dcp;
 
-struct dcp_std_profile
+struct dcp_std_prof
 {
-    struct dcp_profile super;
+    struct dcp_prof super;
     struct
     {
         struct imm_dp null;
@@ -16,17 +16,15 @@ struct dcp_std_profile
     } dp;
 };
 
-DCP_API void dcp_std_profile_init(struct dcp_std_profile *p,
-                                  struct imm_abc const *abc);
+DCP_API void dcp_std_prof_init(struct dcp_std_prof *p,
+                               struct imm_abc const *abc);
 
-static inline void dcp_std_profile_del(struct dcp_std_profile *prof)
+static inline void dcp_std_prof_del(struct dcp_std_prof *prof)
 {
-    if (prof)
-        prof->super.vtable.del(&prof->super);
+    if (prof) prof->super.vtable.del(&prof->super);
 }
 
-static inline struct dcp_profile *
-dcp_std_profile_super(struct dcp_std_profile *std)
+static inline struct dcp_prof *dcp_std_prof_super(struct dcp_std_prof *std)
 {
     return &std->super;
 }
