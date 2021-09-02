@@ -9,8 +9,6 @@
 #include "imm/imm.h"
 #include <stdio.h>
 
-struct dcp_pro_model;
-
 struct dcp_pro_reader
 {
     struct dcp_pro_cfg cfg;

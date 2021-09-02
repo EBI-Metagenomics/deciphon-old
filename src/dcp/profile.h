@@ -4,9 +4,6 @@
 #include "dcp/export.h"
 #include "dcp/meta.h"
 #include "dcp/profile_types.h"
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
 
 struct imm_abc;
 

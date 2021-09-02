@@ -1,7 +1,5 @@
 #include "dcp/dcp.h"
-#include "hmr/hmr.h"
 #include "hope/hope.h"
-#include "imm/imm.h"
 
 int main(void)
 {
@@ -42,13 +40,13 @@ int main(void)
     EQ(dcp_pro_model_add_trans(&model, t[2]), DCP_SUCCESS);
     EQ(dcp_pro_model_add_trans(&model, t[3]), DCP_SUCCESS);
 
-    struct dcp_pro_prof p;
-    dcp_pro_prof_init(&p, cfg);
+    struct dcp_pro_prof prof;
+    dcp_pro_prof_init(&prof, cfg);
 
-    dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
-    EQ(dcp_pro_prof_absorb(&p, &model), DCP_SUCCESS);
+    dcp_prof_nameit(dcp_super(&prof), dcp_meta("NAME0", "ACC0"));
+    EQ(dcp_pro_prof_absorb(&prof, &model), DCP_SUCCESS);
 
-    dcp_del(&p);
+    dcp_del(&prof);
     dcp_del(&model);
     return hope_status();
 }

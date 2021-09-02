@@ -16,8 +16,7 @@ struct dcp_std_prof
     } dp;
 };
 
-DCP_API void dcp_std_prof_init(struct dcp_std_prof *p,
-                               struct imm_abc const *abc);
+DCP_API void dcp_std_prof_init(struct dcp_std_prof *, struct imm_abc const *);
 
 static inline void dcp_std_prof_del(struct dcp_std_prof *prof)
 {

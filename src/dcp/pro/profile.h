@@ -32,29 +32,28 @@ struct dcp_pro_prof
     } alt;
 };
 
-DCP_API void dcp_pro_prof_init(struct dcp_pro_prof *p, struct dcp_pro_cfg cfg);
+DCP_API void dcp_pro_prof_init(struct dcp_pro_prof *prof, struct dcp_pro_cfg);
 
-DCP_API void dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_len,
+DCP_API void dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_len,
                                 bool multi_hits, bool hmmer3_compat);
 
-DCP_API enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
-                                        struct dcp_pro_model const *m);
+DCP_API enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *prof,
+                                        struct dcp_pro_model const *model);
 
 DCP_API struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro);
 
-DCP_API void dcp_pro_prof_state_name(unsigned id,
-                                     char name[IMM_STATE_NAME_SIZE]);
+DCP_API void dcp_pro_prof_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
 
-DCP_API void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
+DCP_API void dcp_pro_prof_sample(struct dcp_pro_prof *prof, unsigned seed,
                                  unsigned core_size, enum dcp_entry_dist edist,
                                  imm_float epsilon);
 
-static inline void dcp_pro_prof_del(struct dcp_pro_prof *pro)
+static inline void dcp_pro_prof_del(struct dcp_pro_prof *prof)
 {
-    if (pro) dcp_prof_del(&pro->super);
+    if (prof) dcp_prof_del(&prof->super);
 }
 
-DCP_API void dcp_pro_profile_write_dot(struct dcp_pro_prof const *p,
+DCP_API void dcp_pro_profile_write_dot(struct dcp_pro_prof const *prof,
                                        FILE *restrict fp);
 
 #endif

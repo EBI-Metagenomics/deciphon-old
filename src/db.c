@@ -25,7 +25,18 @@ enum mode
 struct dcp_db
 {
     struct dcp_db_cfg cfg;
-    struct imm_abc abc;
+    union
+    {
+        struct
+        {
+            struct imm_abc abc;
+        };
+        struct
+        {
+            struct imm_nuclt nuclt;
+            struct imm_amino amino;
+        };
+    };
     union
     {
         struct dcp_std_prof std;
@@ -296,7 +307,7 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
 
     if (db->cfg.prof_typeid == DCP_PROTEIN_PROFILE)
     {
-        if (float_bytes != 4)
+        if (float_bytes == 4)
         {
             float e = 0;
             EREAD(!cmp_read_float(&db->file.ctx, &e));
@@ -313,12 +324,30 @@ struct dcp_db *dcp_db_openr(FILE *restrict fd)
             error(DCP_PARSEERROR, "wrong epsilon");
             goto cleanup;
         }
-    }
 
-    if (imm_abc_read(&db->abc, db->file.fd))
+        uint8_t edist = 0;
+        EREAD(!cmp_read_u8(&db->file.ctx, &edist));
+        db->cfg.pro.edist = edist;
+
+        if (imm_abc_read(&db->nuclt.super, db->file.fd))
+        {
+            error(DCP_IOERROR, "failed to read nuclt alphabet");
+            goto cleanup;
+        }
+
+        if (imm_abc_read(&db->amino.super, db->file.fd))
+        {
+            error(DCP_IOERROR, "failed to read amino alphabet");
+            goto cleanup;
+        }
+    }
+    else
     {
-        error(DCP_IOERROR, "failed to read alphabet");
-        goto cleanup;
+        if (imm_abc_read(&db->abc, db->file.fd))
+        {
+            error(DCP_IOERROR, "failed to read alphabet");
+            goto cleanup;
+        }
     }
 
     EREAD(!cmp_read_u32(&db->file.ctx, &db->profiles.size));

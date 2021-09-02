@@ -9,13 +9,13 @@ static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd);
 
 static void del(struct dcp_prof *prof);
 
-DCP_API void dcp_std_prof_init(struct dcp_std_prof *p,
+DCP_API void dcp_std_prof_init(struct dcp_std_prof *prof,
                                struct imm_abc const *abc)
 {
-    imm_dp_init(&p->dp.null, abc);
-    imm_dp_init(&p->dp.alt, abc);
-    struct dcp_prof_vtable vtable = {read, write, del, DCP_STD_PROFILE, p};
-    profile_init(&p->super, abc, dcp_meta(NULL, NULL), vtable);
+    imm_dp_init(&prof->dp.null, abc);
+    imm_dp_init(&prof->dp.alt, abc);
+    struct dcp_prof_vtable vtable = {read, write, del, DCP_STD_PROFILE, prof};
+    profile_init(&prof->super, abc, dcp_meta(NULL, NULL), vtable);
 }
 
 static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd)
