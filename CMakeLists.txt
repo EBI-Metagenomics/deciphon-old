@@ -34,9 +34,9 @@ add_library(
   src/db.c
   src/log.c
   src/error.c
-  src/support.c
   src/model.c
   src/fcopy.c
+  src/xcmp.c
   src/profile.c
   src/std/profile.c
   src/pro/profile.c

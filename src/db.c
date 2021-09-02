@@ -6,6 +6,7 @@
 #include "imm/imm.h"
 #include "profile.h"
 #include "support.h"
+#include "xcmp.h"
 #include <assert.h>
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B

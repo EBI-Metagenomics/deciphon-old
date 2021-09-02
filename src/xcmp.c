@@ -1,7 +1,7 @@
-#include "support.h"
-#include "error.h"
+#include "xcmp.h"
 #include <assert.h>
 #include <limits.h>
+#include <stdbool.h>
 
 static bool file_reader(cmp_ctx_t *ctx, void *data, size_t limit)
 {

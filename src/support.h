@@ -1,16 +1,7 @@
 #ifndef SUPPORT_H
 #define SUPPORT_H
 
-#include "imm/log.h"
-#include "third-party/cmp.h"
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-void xcmp_init(cmp_ctx_t *cmp, FILE *file);
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
