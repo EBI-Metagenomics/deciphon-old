@@ -2,7 +2,6 @@
 #include "dcp/rc.h"
 #include "dcp/std/profile.h"
 #include "imm/imm.h"
-#include "support.h"
 
 static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd);
 

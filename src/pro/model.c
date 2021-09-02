@@ -3,7 +3,6 @@
 #include "dcp/pro/node.h"
 #include "error.h"
 #include "pro/model.h"
-#include "support.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -363,7 +362,7 @@ static void init_alt_xtrans(struct imm_hmm *hmm, struct dcp_pro_xnode_alt *node)
 
 static struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
 {
-    imm_float lprobs[] = FILL(IMM_NUCLT_SIZE, IMM_LPROB_ZERO);
+    imm_float lprobs[] = {[0 ... IMM_NUCLT_SIZE - 1] = IMM_LPROB_ZERO};
 
     imm_float const norm = imm_log((imm_float)3);
     for (unsigned i = 0; i < imm_gc_size(); ++i)
@@ -382,14 +381,14 @@ static struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
                                           struct imm_nuclt const *nuclt)
 {
     /* FIXME: We don't need 255 positions*/
-    unsigned count[] = FILL(255, 0);
+    unsigned count[] = {[0 ... 254] = 0};
 
     for (unsigned i = 0; i < imm_gc_size(); ++i)
         count[(unsigned)imm_gc_aa(1, i)] += 1;
 
     struct imm_abc const *abc = imm_super(amino);
     /* TODO: We don't need 255 positions*/
-    imm_float lprobs[] = FILL(255, IMM_LPROB_ZERO);
+    imm_float lprobs[] = {[0 ... 254] = IMM_LPROB_ZERO};
     for (unsigned i = 0; i < imm_abc_size(abc); ++i)
     {
         char aa = imm_abc_symbols(abc)[i];

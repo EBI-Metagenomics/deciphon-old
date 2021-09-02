@@ -1,6 +1,6 @@
 #include "dcp/pro/reader.h"
+#include "dcp.h"
 #include "dcp/rc.h"
-#include "support.h"
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 

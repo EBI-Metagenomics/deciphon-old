@@ -1,11 +1,11 @@
 #include "dcp/db.h"
+#include "dcp.h"
 #include "dcp/generics.h"
 #include "dcp/profile.h"
 #include "error.h"
 #include "fcopy.h"
 #include "imm/imm.h"
 #include "profile.h"
-#include "support.h"
 #include "xcmp.h"
 #include <assert.h>
 
@@ -175,8 +175,10 @@ static enum dcp_rc parse_metadata(struct dcp_db *db)
     return rc;
 
 cleanup:
-    xdel(db->mt.offset);
-    xdel(db->mt.name_length);
+    free(db->mt.offset);
+    free(db->mt.name_length);
+    db->mt.offset = NULL;
+    db->mt.name_length = NULL;
     return rc;
 }
 
@@ -219,9 +221,12 @@ static enum dcp_rc read_metadata(struct dcp_db *db)
     return rc;
 
 cleanup:
-    xdel(db->mt.data);
-    xdel(db->mt.offset);
-    xdel(db->mt.name_length);
+    free(db->mt.data);
+    free(db->mt.offset);
+    free(db->mt.name_length);
+    db->mt.data = NULL;
+    db->mt.offset = NULL;
+    db->mt.name_length = NULL;
     return rc;
 }
 
@@ -482,9 +487,12 @@ enum dcp_rc dcp_db_close(struct dcp_db *db)
     else if (db->file.mode == OPEN_WRIT)
         rc = db_closew(db);
 
-    xdel(db->mt.offset);
-    xdel(db->mt.name_length);
-    xdel(db->mt.data);
+    free(db->mt.offset);
+    free(db->mt.name_length);
+    free(db->mt.data);
+    db->mt.offset = NULL;
+    db->mt.name_length = NULL;
+    db->mt.data = NULL;
     dcp_del(&db->prof.std.super);
     free(db);
     return rc;
