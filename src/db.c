@@ -16,7 +16,7 @@
 #define MAX_NAME_LENGTH 63
 #define MAX_ACC_LENGTH 31
 
-enum mode
+enum db_mode
 {
     OPEN_READ = 0,
     OPEN_WRIT = 1,
@@ -24,7 +24,7 @@ enum mode
 
 struct dcp_db
 {
-    struct dcp_db_cfg cfg;
+    struct dcp_cfg cfg;
     union
     {
         struct
@@ -66,7 +66,7 @@ struct dcp_db
     struct
     {
         FILE *fd;
-        enum mode mode;
+        enum db_mode mode;
         cmp_ctx_t ctx;
     } file;
 };
@@ -378,7 +378,7 @@ cleanup:
     _Generic((v), float : cmp_write_float, double : cmp_write_double)(ctx, v)
 
 struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
-                            struct dcp_db_cfg cfg)
+                            struct dcp_cfg cfg)
 {
     struct dcp_db *db = new_db();
     db->cfg = cfg;
@@ -455,7 +455,7 @@ cleanup:
     return NULL;
 }
 
-struct dcp_db_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
+struct dcp_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
 
 enum dcp_rc dcp_db_write(struct dcp_db *db, struct dcp_prof const *prof)
 {
