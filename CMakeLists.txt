@@ -31,34 +31,17 @@ endif()
 
 add_library(
   dcp
-  # src/clock.c
-  # src/dthread.c
   src/db.c
   src/log.c
   src/error.c
   src/support.c
   src/model.c
-  # src/fifo.c
   src/fifo1.c
-  # src/input.c
-  # src/mpool.c
-  # src/output.c
   src/profile.c
   src/std/profile.c
   src/pro/profile.c
   src/pro/model.c
   src/pro/reader.c
-  # src/result.c
-  # src/result_ring.c
-  # src/results.c
-  # src/scan.c
-  # src/seq_stack.c
-  # src/server.c
-  # src/sleep.c
-  # src/str.c
-  # src/task.c
-  # src/task_bin.c
-  # src/util.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 
