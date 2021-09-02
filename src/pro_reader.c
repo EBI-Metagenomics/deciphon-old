@@ -1,4 +1,4 @@
-#include "dcp/pro/reader.h"
+#include "dcp/pro_reader.h"
 #include "dcp.h"
 #include "dcp/rc.h"
 

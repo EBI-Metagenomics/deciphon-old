@@ -1,10 +1,10 @@
-#include "dcp/pro/profile.h"
+#include "dcp/pro_profile.h"
 #include "dcp/generics.h"
 #include "dcp/profile.h"
 #include "dcp/rc.h"
 #include "error.h"
 #include "imm/imm.h"
-#include "pro/model.h"
+#include "pro_model.h"
 #include "profile.h"
 #include "third-party/xrandom.h"
 #include <assert.h>

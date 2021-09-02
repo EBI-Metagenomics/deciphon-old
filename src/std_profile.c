@@ -1,7 +1,7 @@
-#include "profile.h"
+#include "dcp/std_profile.h"
 #include "dcp/rc.h"
-#include "dcp/std/profile.h"
 #include "imm/imm.h"
+#include "profile.h"
 
 static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd);
 

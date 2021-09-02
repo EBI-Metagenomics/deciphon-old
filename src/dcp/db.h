@@ -3,7 +3,7 @@
 
 #include "dcp/export.h"
 #include "dcp/meta.h"
-#include "dcp/pro/cfg.h"
+#include "dcp/pro_cfg.h"
 #include "dcp/profile_types.h"
 #include "imm/imm.h"
 #include <stdbool.h>

@@ -3,7 +3,7 @@
 
 #include "dcp/export.h"
 #include "dcp/meta.h"
-#include "dcp/pro/model.h"
+#include "dcp/pro_model.h"
 #include "dcp/profile.h"
 #include "dcp/rc.h"
 #include "imm/imm.h"

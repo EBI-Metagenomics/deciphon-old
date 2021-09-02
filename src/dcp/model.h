@@ -5,8 +5,8 @@
 
 enum dcp_model
 {
-    DCP_MODEL_ALT = 0,
-    DCP_MODEL_NULL = 1
+    DCP_MODEL_ALT,
+    DCP_MODEL_NULL
 };
 
 extern enum dcp_model const dcp_models[2];

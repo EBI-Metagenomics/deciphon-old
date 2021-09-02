@@ -32,16 +32,16 @@ endif()
 add_library(
   dcp
   src/db.c
-  src/log.c
   src/error.c
-  src/model.c
   src/fcopy.c
-  src/xcmp.c
+  src/log.c
+  src/model.c
+  src/pro_model.c
+  src/pro_profile.c
+  src/pro_reader.c
   src/profile.c
-  src/std/profile.c
-  src/pro/profile.c
-  src/pro/model.c
-  src/pro/reader.c
+  src/std_profile.c
+  src/xcmp.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 

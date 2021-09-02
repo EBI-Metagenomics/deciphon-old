@@ -1,8 +1,8 @@
-#include "dcp/pro/model.h"
+#include "dcp/pro_model.h"
 #include "dcp/entry_dist.h"
-#include "dcp/pro/node.h"
+#include "dcp/pro_node.h"
 #include "error.h"
-#include "pro/model.h"
+#include "pro_model.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>

@@ -3,12 +3,12 @@
 
 #include "dcp/entry_dist.h"
 #include "dcp/export.h"
-#include "dcp/pro/cfg.h"
-#include "dcp/pro/id.h"
-#include "dcp/pro/node.h"
-#include "dcp/pro/trans.h"
-#include "dcp/pro/xnode.h"
-#include "dcp/pro/xtrans.h"
+#include "dcp/pro_cfg.h"
+#include "dcp/pro_id.h"
+#include "dcp/pro_node.h"
+#include "dcp/pro_trans.h"
+#include "dcp/pro_xnode.h"
+#include "dcp/pro_xtrans.h"
 #include "dcp/rc.h"
 
 struct dcp_pro_model

@@ -2,8 +2,8 @@
 #define DCP_PRO_READER_H
 
 #include "dcp/export.h"
-#include "dcp/pro/cfg.h"
-#include "dcp/pro/model.h"
+#include "dcp/pro_cfg.h"
+#include "dcp/pro_model.h"
 #include "dcp/rc.h"
 #include "hmr/hmr.h"
 #include "imm/imm.h"
