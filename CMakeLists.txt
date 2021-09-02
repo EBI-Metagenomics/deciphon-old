@@ -44,7 +44,7 @@ add_library(
   # src/mpool.c
   # src/output.c
   src/profile.c
-  src/std_profile.c
+  src/std/profile.c
   src/pro/profile.c
   src/pro/model.c
   src/pro/reader.c

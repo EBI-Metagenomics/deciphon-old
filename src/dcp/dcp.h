@@ -19,7 +19,7 @@ extern "C" {
 #include "dcp/pro/profile.h"
 #include "dcp/pro/reader.h"
 #include "dcp/profile.h"
-#include "dcp/std_profile.h"
+#include "dcp/std/profile.h"
 /* #include "dcp/result.h" */
 /* #include "dcp/results.h" */
 #include "dcp/server.h"

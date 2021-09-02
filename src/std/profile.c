@@ -1,7 +1,7 @@
-#include "dcp/std_profile.h"
-#include "dcp/rc.h"
-#include "imm/imm.h"
 #include "profile.h"
+#include "dcp/rc.h"
+#include "dcp/std/profile.h"
+#include "imm/imm.h"
 #include "support.h"
 
 static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd);
@@ -23,11 +23,9 @@ static enum dcp_rc read(struct dcp_profile *prof, FILE *restrict fd)
 {
     struct dcp_std_profile *p = prof->vtable.derived;
 
-    if (imm_dp_read(&p->dp.null, fd))
-        return DCP_RUNTIMEERROR;
+    if (imm_dp_read(&p->dp.null, fd)) return DCP_RUNTIMEERROR;
 
-    if (imm_dp_read(&p->dp.alt, fd))
-        return DCP_RUNTIMEERROR;
+    if (imm_dp_read(&p->dp.alt, fd)) return DCP_RUNTIMEERROR;
 
     return DCP_SUCCESS;
 }
@@ -36,11 +34,9 @@ static enum dcp_rc write(struct dcp_profile const *prof, FILE *restrict fd)
 {
     struct dcp_std_profile const *p = prof->vtable.derived;
 
-    if (imm_dp_write(&p->dp.null, fd))
-        return DCP_RUNTIMEERROR;
+    if (imm_dp_write(&p->dp.null, fd)) return DCP_RUNTIMEERROR;
 
-    if (imm_dp_write(&p->dp.alt, fd))
-        return DCP_RUNTIMEERROR;
+    if (imm_dp_write(&p->dp.alt, fd)) return DCP_RUNTIMEERROR;
 
     return DCP_SUCCESS;
 }
