@@ -12,24 +12,6 @@
 struct dcp_db;
 struct dcp_prof;
 
-struct dcp_cfg
-{
-    enum dcp_prof_typeid prof_typeid;
-    unsigned float_bytes;
-    struct dcp_pro_cfg pro;
-};
-
-static inline struct dcp_cfg dcp_db_std(void)
-{
-    return (struct dcp_cfg){DCP_STD_PROFILE, IMM_FLOAT_BYTES,
-                            DCP_PRO_CFG_NULL()};
-}
-
-static inline struct dcp_cfg dcp_db_pro(struct dcp_pro_cfg cfg)
-{
-    return (struct dcp_cfg){DCP_PROTEIN_PROFILE, IMM_FLOAT_BYTES, cfg};
-}
-
 DCP_API struct dcp_prof *dcp_db_profile(struct dcp_db *db);
 
 DCP_API struct dcp_db *dcp_db_openr(FILE *restrict fd);

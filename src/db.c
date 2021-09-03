@@ -1,4 +1,5 @@
 #include "dcp/db.h"
+#include "db.h"
 #include "dcp.h"
 #include "dcp/generics.h"
 #include "dcp/profile.h"
@@ -16,70 +17,21 @@
 #define MAX_NAME_LENGTH 63
 #define MAX_ACC_LENGTH 31
 
-enum db_mode
+void db_openr(struct dcp_db *db, FILE *restrict fd)
 {
-    OPEN_READ = 0,
-    OPEN_WRIT = 1,
-};
 
-struct dcp_db
-{
-    struct dcp_cfg cfg;
-    union
-    {
-        struct
-        {
-            struct imm_abc abc;
-        };
-        struct
-        {
-            struct imm_nuclt nuclt;
-            struct imm_amino amino;
-        };
-    };
-    union
-    {
-        struct dcp_std_prof std;
-        struct dcp_pro_prof pro;
-    } prof;
-    struct
-    {
-        dcp_profile_idx_t size;
-        dcp_profile_idx_t curr_idx;
-    } profiles;
-    struct
-    {
-        uint32_t *offset;
-        uint8_t *name_length;
-        uint32_t size;
-        char *data;
-        struct
-        {
-            FILE *fd;
-            cmp_ctx_t ctx;
-        } file;
-    } mt;
-    struct
-    {
-        FILE *fd;
-    } dp;
-    struct
-    {
-        FILE *fd;
-        enum db_mode mode;
-        cmp_ctx_t ctx;
-    } file;
-};
+    db->file.fd = fd;
+    xcmp_init(&db->file.ctx, db->file.fd);
+    db->file.mode = DB_OPEN_READ;
+}
 
 static inline uint32_t max_mt_data_size(void)
 {
     return MAX_NPROFILES * (MAX_NAME_LENGTH + MAX_ACC_LENGTH + 2);
 }
 
-static inline struct dcp_db *new_db(void)
+void db_init(struct dcp_db *db)
 {
-    struct dcp_db *db = calloc(1, sizeof(*db));
-    db->abc = imm_abc_empty;
     db->profiles.size = 0;
     db->profiles.curr_idx = 0;
     db->mt.offset = NULL;
@@ -88,7 +40,6 @@ static inline struct dcp_db *new_db(void)
     db->mt.file.fd = NULL;
     db->dp.fd = NULL;
     db->file.fd = NULL;
-    return db;
 }
 
 #define EREAD(expr)                                                            \
@@ -134,6 +85,44 @@ static inline struct dcp_db *new_db(void)
         }                                                                      \
                                                                                \
     } while (0)
+
+enum dcp_rc db_read_magic_number(struct dcp_db *db)
+{
+    uint64_t magic_number = 0;
+    if (!cmp_read_u64(&db->file.ctx, &magic_number))
+        return error(DCP_IOERROR, "failed to read magic number");
+
+    if (magic_number != MAGIC_NUMBER)
+        return error(DCP_PARSEERROR, "wrong file magic number");
+
+    return DCP_SUCCESS;
+}
+
+enum dcp_rc db_read_prof_type(struct dcp_db *db)
+{
+    uint8_t prof_type = 0;
+    if (!cmp_read_u8(&db->file.ctx, &prof_type))
+        return error(DCP_IOERROR, "failed to read profile type");
+
+    if (prof_type != DCP_STD_PROFILE && prof_type != DCP_PROTEIN_PROFILE)
+        return error(DCP_PARSEERROR, "wrong prof_type");
+
+    db->prof_typeid = prof_type;
+    return DCP_SUCCESS;
+}
+
+enum dcp_rc db_read_float_bytes(struct dcp_db *db)
+{
+    uint8_t float_bytes = 0;
+    if (!cmp_read_u8(&db->file.ctx, &float_bytes))
+        return error(DCP_IOERROR, "failed to read float bytes");
+
+    if (float_bytes != 4 && float_bytes != 8)
+        return error(DCP_PARSEERROR, "wrong float_bytes");
+
+    db->float_bytes = float_bytes;
+    return DCP_SUCCESS;
+}
 
 static enum dcp_rc parse_metadata(struct dcp_db *db)
 {
@@ -267,10 +256,10 @@ cleanup:
     return rc;
 }
 
-struct dcp_prof *dcp_db_profile(struct dcp_db *db)
-{
-    return &db->prof.std.super;
-}
+/* struct dcp_prof *dcp_db_profile(struct dcp_db *db) */
+/* { */
+/*     return &db->prof.std.super; */
+/* } */
 
 struct dcp_db *dcp_db_openr(FILE *restrict fd)
 {
