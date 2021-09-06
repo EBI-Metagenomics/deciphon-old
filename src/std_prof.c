@@ -1,7 +1,7 @@
-#include "dcp/std_profile.h"
+#include "dcp/std_prof.h"
 #include "dcp/rc.h"
 #include "imm/imm.h"
-#include "profile.h"
+#include "prof.h"
 #include "std_prof.h"
 
 static void del(struct dcp_prof *prof);

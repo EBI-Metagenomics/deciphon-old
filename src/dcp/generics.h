@@ -1,8 +1,8 @@
 #ifndef DCP_GENERICS_H
 #define DCP_GENERICS_H
 
-#include "dcp/pro_profile.h"
-#include "dcp/std_profile.h"
+#include "dcp/pro_prof.h"
+#include "dcp/std_prof.h"
 
 #define dcp_super(x)                                                           \
     _Generic((x), struct dcp_std_prof *                                        \

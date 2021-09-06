@@ -38,11 +38,10 @@ add_library(
   src/model.c
   src/pro_db.c
   src/pro_model.c
-  src/pro_profile.c
+  src/pro_prof.c
   src/pro_reader.c
-  src/profile.c
   src/std_db.c
-  src/std_profile.c
+  src/std_prof.c
   src/xcmp.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)

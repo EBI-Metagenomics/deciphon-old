@@ -14,7 +14,7 @@ int main(void)
 void test_db_pro_openw(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
-    struct imm_nuclt const *nuclt = imm_super(imm_gc_dna());
+    struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
 
     FILE *fd = fopen(TMPDIR "/db.dcp", "wb");
     NOTNULL(fd);

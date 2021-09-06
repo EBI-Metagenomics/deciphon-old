@@ -2,7 +2,7 @@
 #include "db.h"
 #include "dcp/entry_dist.h"
 #include "dcp/pro_cfg.h"
-#include "dcp/pro_profile.h"
+#include "dcp/pro_prof.h"
 #include "dcp/rc.h"
 #include "error.h"
 

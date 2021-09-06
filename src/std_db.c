@@ -1,8 +1,7 @@
 #include "dcp/std_db.h"
 #include "db.h"
 #include "dcp/rc.h"
-#include "dcp/std_cfg.h"
-#include "dcp/std_profile.h"
+#include "dcp/std_prof.h"
 #include "error.h"
 #include "std_prof.h"
 
@@ -54,7 +53,8 @@ cleanup:
     return NULL;
 }
 
-struct dcp_std_db *dcp_std_db_openw(FILE *restrict fd, struct dcp_std_cfg cfg)
+struct dcp_std_db *dcp_std_db_openw(FILE *restrict fd,
+                                    struct imm_abc const *abc)
 {
     struct dcp_std_db *db = malloc(sizeof *db);
     if (!db)
@@ -63,7 +63,7 @@ struct dcp_std_db *dcp_std_db_openw(FILE *restrict fd, struct dcp_std_cfg cfg)
         return NULL;
     }
     db_init(&db->super, DCP_STD_PROFILE);
-    db->abc = *cfg.abc;
+    db->abc = *abc;
     dcp_std_prof_init(&db->prof, &db->abc);
 
     if (db_openw(&db->super, fd)) goto cleanup;

@@ -2,11 +2,11 @@
 #include "dcp.h"
 #include "dcp/db.h"
 #include "dcp/generics.h"
-#include "dcp/profile.h"
+#include "dcp/prof.h"
 #include "error.h"
 #include "fcopy.h"
 #include "imm/imm.h"
-#include "profile.h"
+#include "prof.h"
 #include "xcmp.h"
 #include <assert.h>
 

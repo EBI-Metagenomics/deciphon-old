@@ -1,9 +1,9 @@
-#ifndef DCP_PROFILE_H
-#define DCP_PROFILE_H
+#ifndef DCP_PROF_H
+#define DCP_PROF_H
 
 #include "dcp/export.h"
 #include "dcp/meta.h"
-#include "dcp/profile_types.h"
+#include "dcp/prof_types.h"
 
 struct imm_abc;
 

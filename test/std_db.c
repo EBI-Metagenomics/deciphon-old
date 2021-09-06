@@ -29,7 +29,7 @@ void test_db_openw_empty(void)
     struct imm_abc const *abc = imm_super(imm_super(dna));
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
     NOTNULL(fd);
-    struct dcp_std_db *db = dcp_std_db_openw(fd, dcp_std_cfg(abc));
+    struct dcp_std_db *db = dcp_std_db_openw(fd, abc);
     EQ(dcp_std_db_close(db), DCP_SUCCESS);
     fclose(fd);
 }
@@ -65,7 +65,7 @@ void test_db_openw_one_mute(void)
 
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
     NOTNULL(fd);
-    struct dcp_std_db *db = dcp_std_db_openw(fd, dcp_std_cfg(abc));
+    struct dcp_std_db *db = dcp_std_db_openw(fd, abc);
 
     struct dcp_std_prof p;
     dcp_std_prof_init(&p, abc);
@@ -110,7 +110,7 @@ void test_db_openw_example1(void)
     struct imm_example1 *m = &imm_example1;
     FILE *fd = fopen(TMPDIR "/example1.dcp", "wb");
     NOTNULL(fd);
-    struct dcp_std_db *db = dcp_std_db_openw(fd, dcp_std_cfg(&m->abc));
+    struct dcp_std_db *db = dcp_std_db_openw(fd, &m->abc);
     NOTNULL(db);
 
     /* Profile 0 */
@@ -192,7 +192,7 @@ void test_db_openw_example2(void)
     struct imm_abc const *abc = imm_super(imm_super(m->dna));
     FILE *fd = fopen(TMPDIR "/example2.dcp", "wb");
     NOTNULL(fd);
-    struct dcp_std_db *db = dcp_std_db_openw(fd, dcp_std_cfg(abc));
+    struct dcp_std_db *db = dcp_std_db_openw(fd, abc);
     NOTNULL(db);
 
     /* Profile 0 */

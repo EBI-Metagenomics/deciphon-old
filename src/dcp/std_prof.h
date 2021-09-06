@@ -1,8 +1,8 @@
-#ifndef DCP_STD_PROFILE_H
-#define DCP_STD_PROFILE_H
+#ifndef DCP_STD_PROF_H
+#define DCP_STD_PROF_H
 
 #include "dcp/export.h"
-#include "dcp/profile.h"
+#include "dcp/prof.h"
 
 struct imm_dcp;
 

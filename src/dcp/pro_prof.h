@@ -1,11 +1,11 @@
-#ifndef DCP_PRO_PROFILE_H
-#define DCP_PRO_PROFILE_H
+#ifndef DCP_PRO_PROF_H
+#define DCP_PRO_PROF_H
 
 #include "dcp/export.h"
 #include "dcp/meta.h"
 #include "dcp/pro_cfg.h"
 #include "dcp/pro_model.h"
-#include "dcp/profile.h"
+#include "dcp/prof.h"
 #include "dcp/rc.h"
 #include "imm/imm.h"
 

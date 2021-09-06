@@ -1,7 +1,7 @@
 #ifndef DCP_PRO_ID_H
 #define DCP_PRO_ID_H
 
-#include "dcp/profile_types.h"
+#include "dcp/prof_types.h"
 
 #define DCP_PRO_ID_MATCH (0U << (DCP_PROFILE_BITS_ID - 2))
 #define DCP_PRO_ID_INSERT (1U << (DCP_PROFILE_BITS_ID - 2))

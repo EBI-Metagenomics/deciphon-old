@@ -3,7 +3,7 @@
 
 #include "dcp/export.h"
 #include "dcp/meta.h"
-#include "dcp/profile_types.h"
+#include "dcp/prof_types.h"
 
 struct dcp_db;
 

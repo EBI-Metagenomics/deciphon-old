@@ -3,7 +3,6 @@
 
 #include "dcp/export.h"
 #include "dcp/meta.h"
-#include "dcp/std_cfg.h"
 #include <stdio.h>
 
 struct dcp_db;
@@ -14,7 +13,7 @@ struct imm_abc;
 DCP_API struct dcp_std_db *dcp_std_db_openr(FILE *restrict fd);
 
 DCP_API struct dcp_std_db *dcp_std_db_openw(FILE *restrict fd,
-                                            struct dcp_std_cfg cfg);
+                                            struct imm_abc const *abc);
 
 DCP_API enum dcp_rc dcp_std_db_close(struct dcp_std_db *db);
 

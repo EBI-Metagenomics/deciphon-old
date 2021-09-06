@@ -1,5 +1,5 @@
-#ifndef DCP_PROFILE_TYPES_H
-#define DCP_PROFILE_TYPES_H
+#ifndef DCP_PROF_TYPES_H
+#define DCP_PROF_TYPES_H
 
 #include "dcp/entry_dist.h"
 #include "imm/imm.h"

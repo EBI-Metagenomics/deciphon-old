@@ -1,7 +1,7 @@
 #ifndef DB_H
 #define DB_H
 
-#include "dcp/profile.h"
+#include "dcp/prof.h"
 #include "xcmp.h"
 
 enum db_mode
