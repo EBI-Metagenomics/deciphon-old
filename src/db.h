@@ -56,7 +56,7 @@ enum dcp_rc db_write_magic_number(struct dcp_db *db);
 enum dcp_rc db_read_prof_type(struct dcp_db *db);
 enum dcp_rc db_write_prof_type(struct dcp_db *db);
 
-enum dcp_rc db_read_float_bytes(struct dcp_db *db);
+enum dcp_rc db_read_float_size(struct dcp_db *db);
 enum dcp_rc db_write_float_size(struct dcp_db *db);
 
 enum dcp_rc db_read_nprofiles(struct dcp_db *db);

@@ -98,12 +98,11 @@ static enum dcp_rc closew(struct dcp_db *db)
 {
     assert(db->file.mode == DB_OPEN_WRITE);
 
-    enum dcp_rc rc = DCP_SUCCESS;
-
     if (!cmp_write_u32(&db->file.ctx, db->profiles.size))
         return error(DCP_IOERROR, "failed to write number of profiles");
 
     rewind(db->mt.file.fd);
+    enum dcp_rc rc = DCP_SUCCESS;
     if ((rc = flush_metadata(db))) goto cleanup;
     if (fclose(db->mt.file.fd))
     {
@@ -185,7 +184,7 @@ enum dcp_rc db_write_prof_type(struct dcp_db *db)
     return DCP_SUCCESS;
 }
 
-enum dcp_rc db_read_float_bytes(struct dcp_db *db)
+enum dcp_rc db_read_float_size(struct dcp_db *db)
 {
     uint8_t float_bytes = 0;
     if (!cmp_read_u8(&db->file.ctx, &float_bytes))
@@ -333,12 +332,12 @@ enum dcp_rc db_read_metadata(struct dcp_db *db)
 {
     enum dcp_rc rc = DCP_SUCCESS;
 
-    if (!(rc = read_metadata_size(db))) goto cleanup;
+    if ((rc = read_metadata_size(db))) goto cleanup;
 
     if (db->mt.size > 0)
     {
-        if (!(rc = read_metadata_data(db))) goto cleanup;
-        if (!(rc = alloc_metadata_parsing(db))) goto cleanup;
+        if ((rc = read_metadata_data(db))) goto cleanup;
+        if ((rc = alloc_metadata_parsing(db))) goto cleanup;
         if ((rc = parse_metadata(db))) goto cleanup;
     }
 

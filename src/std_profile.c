@@ -2,10 +2,7 @@
 #include "dcp/rc.h"
 #include "imm/imm.h"
 #include "profile.h"
-
-static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd);
-
-static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd);
+#include "std_prof.h"
 
 static void del(struct dcp_prof *prof);
 
@@ -13,11 +10,12 @@ void dcp_std_prof_init(struct dcp_std_prof *prof, struct imm_abc const *abc)
 {
     imm_dp_init(&prof->dp.null, abc);
     imm_dp_init(&prof->dp.alt, abc);
-    struct dcp_prof_vtable vtable = {read, write, del, DCP_STD_PROFILE, prof};
+    struct dcp_prof_vtable vtable = {std_prof_read, std_prof_write, del,
+                                     DCP_STD_PROFILE, prof};
     profile_init(&prof->super, abc, dcp_meta(NULL, NULL), vtable);
 }
 
-static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd)
+enum dcp_rc std_prof_read(struct dcp_prof *prof, FILE *restrict fd)
 {
     struct dcp_std_prof *p = prof->vtable.derived;
 
@@ -28,7 +26,7 @@ static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd)
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd)
+enum dcp_rc std_prof_write(struct dcp_prof const *prof, FILE *restrict fd)
 {
     struct dcp_std_prof const *p = prof->vtable.derived;
 

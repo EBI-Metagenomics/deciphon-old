@@ -120,7 +120,7 @@ struct dcp_pro_db *dcp_pro_db_openr(FILE *restrict fd)
 
     if (db_read_magic_number(&db->super)) goto cleanup;
     if (db_read_prof_type(&db->super)) goto cleanup;
-    if (db_read_float_bytes(&db->super)) goto cleanup;
+    if (db_read_float_size(&db->super)) goto cleanup;
     if (read_epsilon(ctx, db->super.float_size, &db->epsilon)) goto cleanup;
     if (read_entry_dist(ctx, &db->entry_dist)) goto cleanup;
     if (read_nuclt(db->super.file.fd, &db->nuclt)) goto cleanup;
@@ -149,7 +149,7 @@ struct dcp_pro_db *dcp_pro_db_openw(FILE *restrict fd, struct dcp_pro_cfg cfg)
     if (db_write_prof_type(&db->super)) goto cleanup;
     if (db_write_float_size(&db->super)) goto cleanup;
     if (write_epsilon(ctx, db->super.float_size, db->epsilon)) goto cleanup;
-    if (write_entry_dist(ctx, &db->entry_dist)) goto cleanup;
+    if (write_entry_dist(ctx, db->entry_dist)) goto cleanup;
     if (write_nuclt(db->super.file.fd, &db->nuclt)) goto cleanup;
     if (write_amino(db->super.file.fd, &db->amino)) goto cleanup;
 
