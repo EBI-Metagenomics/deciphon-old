@@ -6,6 +6,7 @@
 #include "dcp/std_cfg.h"
 #include <stdio.h>
 
+struct dcp_db;
 struct dcp_std_db;
 struct dcp_std_prof;
 struct imm_abc;
@@ -27,11 +28,6 @@ DCP_API enum dcp_rc dcp_std_db_write(struct dcp_std_db *db,
 
 DCP_API struct dcp_std_prof *dcp_std_db_profile(struct dcp_std_db *db);
 
-DCP_API unsigned dcp_std_db_nprofiles(struct dcp_std_db const *db);
-
-DCP_API struct dcp_meta dcp_std_db_meta(struct dcp_std_db const *db,
-                                        unsigned idx);
-
-DCP_API bool dcp_std_db_end(struct dcp_std_db const *db);
+DCP_API struct dcp_db *dcp_std_db_super(struct dcp_std_db *db);
 
 #endif

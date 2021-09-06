@@ -177,7 +177,7 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
         rc += dcp_pro_model_add_trans(&model, t);
     }
 
-    dcp_pro_prof_init(p, cfg);
+    dcp_pro_prof_init(p, cfg.amino, cfg.nuclt);
     rc += dcp_pro_prof_absorb(p, &model);
     dcp_del(&model);
 

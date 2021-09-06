@@ -1,5 +1,6 @@
 #include "db.h"
 #include "dcp.h"
+#include "dcp/db.h"
 #include "dcp/generics.h"
 #include "dcp/profile.h"
 #include "error.h"
@@ -36,7 +37,7 @@ static enum dcp_rc init_meta_file(struct dcp_db *db, FILE *restrict fd)
 void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
 {
     db->prof_typeid = prof_typeid;
-    db->float_bytes = IMM_FLOAT_BYTES;
+    db->float_size = IMM_FLOAT_BYTES;
     db->profiles.size = 0;
     db->profiles.curr_idx = 0;
     db->mt.offset = NULL;
@@ -193,7 +194,7 @@ enum dcp_rc db_read_float_bytes(struct dcp_db *db)
     if (float_bytes != 4 && float_bytes != 8)
         return error(DCP_PARSEERROR, "invalid float size");
 
-    db->float_bytes = float_bytes;
+    db->float_size = float_bytes;
     return DCP_SUCCESS;
 }
 
@@ -410,207 +411,18 @@ struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx)
     return dcp_meta(db->mt.data + o, db->mt.data + o + size);
 }
 
-#if 0
+unsigned dcp_db_float_size(struct dcp_db const *db) { return db->float_size; }
 
-#define write_imm_float(ctx, v)                                                \
-    _Generic((v), float : cmp_write_float, double : cmp_write_double)(ctx, v)
-
-struct dcp_db *dcp_db_openw(FILE *restrict fd, struct imm_abc const *abc,
-                            struct dcp_cfg cfg)
+enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db)
 {
-    struct dcp_db *db = new_db();
-    db->cfg = cfg;
-    db->abc = *abc;
-    db->file.fd = fd;
-    xcmp_init(&db->file.ctx, db->file.fd);
-    db->file.mode = OPEN_WRIT;
-
-    if (!(db->mt.file.fd = tmpfile())) goto cleanup;
-    xcmp_init(&db->mt.file.ctx, db->mt.file.fd);
-
-    if (!(db->dp.fd = tmpfile())) goto cleanup;
-
-    if (!cmp_write_u64(&db->file.ctx, MAGIC_NUMBER))
-    {
-        error(DCP_IOERROR, "failed to write magic number");
-        goto cleanup;
-    }
-
-    if (!cmp_write_u8(&db->file.ctx, (uint8_t)cfg.prof_typeid))
-    {
-        error(DCP_IOERROR, "failed to write prof_type");
-        goto cleanup;
-    }
-
-    unsigned float_bytes = IMM_FLOAT_BYTES;
-    assert(float_bytes == 4 || float_bytes == 8);
-    if (!cmp_write_u8(&db->file.ctx, (uint8_t)float_bytes))
-    {
-        error(DCP_IOERROR, "failed to write float_bytes");
-        goto cleanup;
-    }
-
-    if (cfg.prof_typeid == DCP_STD_PROFILE)
-        dcp_std_prof_init(&db->prof.std, abc);
-
-    if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
-    {
-        dcp_pro_prof_init(&db->prof.pro, cfg.pro);
-        if (!write_imm_float(&db->file.ctx, db->cfg.pro.epsilon))
-        {
-            error(DCP_IOERROR, "failed to write epsilon");
-            goto cleanup;
-        }
-
-        if (!cmp_write_u8(&db->file.ctx, (uint8_t)db->cfg.pro.edist))
-        {
-            error(DCP_IOERROR, "failed to write entry_dist");
-            goto cleanup;
-        }
-    }
-
-    if (imm_abc_write(abc, db->file.fd))
-    {
-        error(DCP_IOERROR, "failed to write alphabet");
-        goto cleanup;
-    }
-
-    if (cfg.prof_typeid == DCP_PROTEIN_PROFILE)
-    {
-        if (imm_abc_write(imm_super(cfg.pro.amino), db->file.fd))
-        {
-            error(DCP_IOERROR, "failed to write amino alphabet");
-            goto cleanup;
-        }
-    }
-
-    return db;
-
-cleanup:
-    fclose(db->dp.fd);
-    fclose(db->mt.file.fd);
-    free(db);
-    return NULL;
-}
-
-struct dcp_cfg dcp_db_cfg(struct dcp_db const *db) { return db->cfg; }
-
-enum dcp_rc dcp_db_write(struct dcp_db *db, struct dcp_prof const *prof)
-{
-    if (db->profiles.size == MAX_NPROFILES)
-        return error(DCP_RUNTIMEERROR, "too many profiles");
-
-    if (prof->mt.name == NULL) return error(DCP_ILLEGALARG, "metadata not set");
-
-    if (prof->vtable.typeid == DCP_PROTEIN_PROFILE)
-    {
-        struct dcp_pro_prof const *p = dcp_prof_derived_c(prof);
-        if (p->cfg.epsilon != db->cfg.pro.epsilon)
-            return error(DCP_ILLEGALARG, "different epsilons");
-        if (p->cfg.edist != db->cfg.pro.edist)
-            return error(DCP_ILLEGALARG, "different entry distrs");
-    }
-
-    enum dcp_rc rc = DCP_SUCCESS;
-    cmp_ctx_t *ctx = &db->mt.file.ctx;
-
-    uint32_t len = (uint32_t)strlen(prof->mt.name);
-    if (len > MAX_NAME_SIZE)
-    {
-        rc = error(DCP_ILLEGALARG, "name is too long");
-        goto cleanup;
-    }
-    EWRIT_RC(!cmp_write_str(ctx, prof->mt.name, len));
-    /* +1 for null-terminated */
-    db->mt.size += len + 1;
-
-    len = (uint32_t)strlen(prof->mt.acc);
-    if (len > MAX_ACC_SIZE)
-    {
-        rc = error(DCP_ILLEGALARG, "accession is too long");
-        goto cleanup;
-    }
-    EWRIT_RC(!cmp_write_str(ctx, prof->mt.acc, len));
-    /* +1 for null-terminated */
-    db->mt.size += len + 1;
-
-    if ((rc = prof->vtable.write(prof, db->dp.fd))) goto cleanup;
-
-    db->profiles.size++;
-
-cleanup:
-    return rc;
-}
-
-static enum dcp_rc db_closer(struct dcp_db *db);
-static enum dcp_rc db_closew(struct dcp_db *db);
-
-enum dcp_rc dcp_db_close(struct dcp_db *db)
-{
-    enum dcp_rc rc = DCP_SUCCESS;
-
-    if (db->file.mode == DB_OPEN_READ)
-        rc = db_closer(db);
-    else if (db->file.mode == DB_OPEN_WRITE)
-        rc = db_closew(db);
-
-    free(db->mt.offset);
-    free(db->mt.name_length);
-    free(db->mt.data);
-    db->mt.offset = NULL;
-    db->mt.name_length = NULL;
-    db->mt.data = NULL;
-    dcp_del(&db->prof.std.super);
-    free(db);
-    return rc;
-}
-
-static enum dcp_rc db_closer(struct dcp_db *db) { return DCP_SUCCESS; }
-
-static enum dcp_rc db_closew(struct dcp_db *db)
-{
-    enum dcp_rc rc = DCP_SUCCESS;
-
-    EWRIT_RC(!cmp_write_u32(&db->file.ctx, db->profiles.size));
-
-    rewind(db->mt.file.fd);
-    if ((rc = flush_metadata(db))) goto cleanup;
-    if (fclose(db->mt.file.fd))
-    {
-        rc = error(DCP_IOERROR, "failed to close metadata file");
-        goto cleanup;
-    }
-
-    rewind(db->dp.fd);
-    if ((rc = fcopy(db->file.fd, db->dp.fd))) goto cleanup;
-    if (fclose(db->dp.fd))
-    {
-        rc = error(DCP_IOERROR, "failed to close DP file");
-        goto cleanup;
-    }
-
-    return rc;
-
-cleanup:
-    fclose(db->mt.file.fd);
-    fclose(db->dp.fd);
-    return rc;
+    return db->prof_typeid;
 }
 
 unsigned dcp_db_nprofiles(struct dcp_db const *db) { return db->profiles.size; }
 
 struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
 {
-    unsigned o = db->mt.offset[idx];
-    unsigned size = (unsigned)(db->mt.name_length[idx] + 1);
-    return dcp_meta(db->mt.data + o, db->mt.data + o + size);
+    return db_meta(db, idx);
 }
 
-enum dcp_rc dcp_db_read(struct dcp_db *db, struct dcp_prof *prof)
-{
-    if (dcp_db_end(db)) return error(DCP_RUNTIMEERROR, "end of profiles");
-    prof->idx = db->profiles.curr_idx++;
-    prof->mt = dcp_db_meta(db, prof->idx);
-    return prof->vtable.read(prof, db->file.fd);
-}
-#endif
+bool dcp_db_end(struct dcp_db const *db) { return db_end(db); }

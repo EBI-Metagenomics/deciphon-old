@@ -6,6 +6,7 @@
 #include "dcp/pro_cfg.h"
 #include <stdio.h>
 
+struct dcp_db;
 struct dcp_pro_db;
 struct dcp_pro_prof;
 struct imm_amino;
@@ -30,11 +31,6 @@ DCP_API enum dcp_rc dcp_pro_db_write(struct dcp_pro_db *db,
 
 DCP_API struct dcp_pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db);
 
-DCP_API unsigned dcp_pro_db_nprofiles(struct dcp_pro_db const *db);
-
-DCP_API struct dcp_meta dcp_pro_db_meta(struct dcp_pro_db const *db,
-                                        unsigned idx);
-
-DCP_API bool dcp_pro_db_end(struct dcp_pro_db const *db);
+DCP_API struct dcp_db *dcp_pro_db_super(struct dcp_pro_db *db);
 
 #endif

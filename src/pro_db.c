@@ -12,7 +12,7 @@ struct dcp_pro_db
     struct imm_amino amino;
     struct imm_nuclt nuclt;
     imm_float epsilon;
-    enum entry_dist entry_dist;
+    enum dcp_entry_dist entry_dist;
     struct dcp_pro_prof prof;
 };
 
@@ -121,7 +121,7 @@ struct dcp_pro_db *dcp_pro_db_openr(FILE *restrict fd)
     if (db_read_magic_number(&db->super)) goto cleanup;
     if (db_read_prof_type(&db->super)) goto cleanup;
     if (db_read_float_bytes(&db->super)) goto cleanup;
-    if (read_epsilon(ctx, db->super.float_bytes, &db->epsilon)) goto cleanup;
+    if (read_epsilon(ctx, db->super.float_size, &db->epsilon)) goto cleanup;
     if (read_entry_dist(ctx, &db->entry_dist)) goto cleanup;
     if (read_nuclt(db->super.file.fd, &db->nuclt)) goto cleanup;
     if (read_amino(db->super.file.fd, &db->amino)) goto cleanup;
@@ -148,7 +148,7 @@ struct dcp_pro_db *dcp_pro_db_openw(FILE *restrict fd, struct dcp_pro_cfg cfg)
     if (db_write_magic_number(&db->super)) goto cleanup;
     if (db_write_prof_type(&db->super)) goto cleanup;
     if (db_write_float_size(&db->super)) goto cleanup;
-    if (write_epsilon(ctx, db->super.float_bytes, db->epsilon)) goto cleanup;
+    if (write_epsilon(ctx, db->super.float_size, db->epsilon)) goto cleanup;
     if (write_entry_dist(ctx, &db->entry_dist)) goto cleanup;
     if (write_nuclt(db->super.file.fd, &db->nuclt)) goto cleanup;
     if (write_amino(db->super.file.fd, &db->amino)) goto cleanup;
@@ -212,14 +212,4 @@ struct dcp_pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db)
     return &db->prof;
 }
 
-unsigned dcp_pro_db_nprofiles(struct dcp_pro_db const *db)
-{
-    return db->super.profiles.size;
-}
-
-struct dcp_meta dcp_pro_db_meta(struct dcp_pro_db const *db, unsigned idx)
-{
-    return db_meta(&db->super, idx);
-}
-
-bool dcp_pro_db_end(struct dcp_pro_db const *db) { return db_end(&db->super); }
+struct dcp_db *dcp_pro_db_super(struct dcp_pro_db *db) { return &db->super; }

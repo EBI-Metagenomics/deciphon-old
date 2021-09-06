@@ -41,7 +41,7 @@ int main(void)
     EQ(dcp_pro_model_add_trans(&model, t[3]), DCP_SUCCESS);
 
     struct dcp_pro_prof prof;
-    dcp_pro_prof_init(&prof, cfg);
+    dcp_pro_prof_init(&prof, cfg.amino, cfg.nuclt);
 
     dcp_prof_nameit(dcp_super(&prof), dcp_meta("NAME0", "ACC0"));
     EQ(dcp_pro_prof_absorb(&prof, &model), DCP_SUCCESS);

@@ -34,7 +34,7 @@ int main(void)
     EQ(dcp_pro_reader_next(&reader), DCP_SUCCESS);
 
     struct dcp_pro_prof p;
-    dcp_pro_prof_init(&p, cfg);
+    dcp_pro_prof_init(&p, cfg.amino, cfg.nuclt);
 
     dcp_prof_nameit(dcp_super(&p), dcp_meta("name", "acc"));
     EQ(dcp_pro_prof_absorb(&p, &reader.model), DCP_SUCCESS);

@@ -7,7 +7,9 @@
 #define dcp_super(x)                                                           \
     _Generic((x), struct dcp_std_prof *                                        \
              : dcp_std_prof_super, struct dcp_pro_prof *                       \
-             : dcp_pro_prof_super)(x)
+             : dcp_pro_prof_super, struct dcp_std_db *                         \
+             : dcp_std_db_super, struct dcp_pro_db *                           \
+             : dcp_pro_db_super)(x)
 
 #define dcp_del(x)                                                             \
     _Generic((x), struct dcp_prof *                                            \

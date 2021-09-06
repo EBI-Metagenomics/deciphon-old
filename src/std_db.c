@@ -120,14 +120,4 @@ struct dcp_std_prof *dcp_std_db_profile(struct dcp_std_db *db)
     return &db->prof;
 }
 
-unsigned dcp_std_db_nprofiles(struct dcp_std_db const *db)
-{
-    return db->super.profiles.size;
-}
-
-struct dcp_meta dcp_std_db_meta(struct dcp_std_db const *db, unsigned idx)
-{
-    return db_meta(&db->super, idx);
-}
-
-bool dcp_std_db_end(struct dcp_std_db const *db) { return db_end(&db->super); }
+struct dcp_db *dcp_std_db_super(struct dcp_std_db *db) { return &db->super; }
