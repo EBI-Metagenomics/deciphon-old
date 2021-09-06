@@ -5,18 +5,17 @@
 #include "error.h"
 #include "imm/imm.h"
 #include "pro_model.h"
+#include "pro_prof.h"
 #include "prof.h"
 #include "third-party/xrandom.h"
 #include <assert.h>
 
 static void del(struct dcp_prof *prof);
-static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd);
-static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd);
 
 void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
                        struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg)
 {
-    struct dcp_prof_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE, p};
+    struct dcp_prof_vtable vtable = {del, DCP_PROTEIN_PROFILE};
     profile_init(&p->super, imm_super(nuclt), dcp_meta(NULL, NULL), vtable);
     p->nuclt = nuclt;
     p->amino = amino;
@@ -177,30 +176,22 @@ static void del(struct dcp_prof *prof)
 {
     if (prof)
     {
-        struct dcp_pro_prof *p = prof->vtable.derived;
+        struct dcp_pro_prof *p = (struct dcp_pro_prof *)prof;
         imm_del(&p->null.dp);
         imm_del(&p->alt.dp);
     }
 }
 
-static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd)
+enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, FILE *restrict fd)
 {
-    struct dcp_pro_prof *p = prof->vtable.derived;
-
-    if (imm_dp_read(&p->null.dp, fd)) return DCP_RUNTIMEERROR;
-
-    if (imm_dp_read(&p->alt.dp, fd)) return DCP_RUNTIMEERROR;
-
+    if (imm_dp_read(&prof->null.dp, fd)) return DCP_RUNTIMEERROR;
+    if (imm_dp_read(&prof->alt.dp, fd)) return DCP_RUNTIMEERROR;
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd)
+enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, FILE *restrict fd)
 {
-    struct dcp_pro_prof const *p = prof->vtable.derived;
-
-    if (imm_dp_write(&p->null.dp, fd)) return DCP_RUNTIMEERROR;
-
-    if (imm_dp_write(&p->alt.dp, fd)) return DCP_RUNTIMEERROR;
-
+    if (imm_dp_write(&prof->null.dp, fd)) return DCP_RUNTIMEERROR;
+    if (imm_dp_write(&prof->alt.dp, fd)) return DCP_RUNTIMEERROR;
     return DCP_SUCCESS;
 }

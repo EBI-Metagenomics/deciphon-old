@@ -9,10 +9,10 @@ struct imm_abc;
 
 struct dcp_prof
 {
+    struct dcp_prof_vtable vtable;
     unsigned idx;
     struct imm_abc const *abc;
     struct dcp_meta mt;
-    struct dcp_prof_vtable vtable;
 };
 
 static inline void dcp_prof_del(struct dcp_prof *prof)
@@ -28,16 +28,6 @@ static inline void dcp_prof_nameit(struct dcp_prof *prof, struct dcp_meta mt)
 static inline enum dcp_prof_typeid dcp_prof_typeid(struct dcp_prof const *prof)
 {
     return prof->vtable.typeid;
-}
-
-static inline void *dcp_prof_derived(struct dcp_prof *prof)
-{
-    return prof->vtable.derived;
-}
-
-static inline void const *dcp_prof_derived_c(struct dcp_prof const *prof)
-{
-    return prof->vtable.derived;
 }
 
 #endif

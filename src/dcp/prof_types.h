@@ -26,11 +26,8 @@ struct dcp_prof;
 
 struct dcp_prof_vtable
 {
-    enum dcp_rc (*read)(struct dcp_prof *prof, FILE *restrict fd);
-    enum dcp_rc (*write)(struct dcp_prof const *prof, FILE *restrict fd);
     void (*del)(struct dcp_prof *prof);
     enum dcp_prof_typeid typeid;
-    void *derived;
 };
 
 #endif

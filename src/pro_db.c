@@ -5,6 +5,7 @@
 #include "dcp/pro_prof.h"
 #include "dcp/rc.h"
 #include "error.h"
+#include "pro_prof.h"
 
 struct dcp_pro_db
 {
@@ -194,12 +195,9 @@ struct dcp_pro_cfg dcp_pro_db_cfg(struct dcp_pro_db const *db)
 enum dcp_rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof)
 {
     if (db_end(&db->super)) return error(DCP_RUNTIMEERROR, "end of profiles");
-
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
-
-    /* TODO: Call std_prof functions directly */
-    return prof->super.vtable.read(&prof->super, db->super.file.fd);
+    return pro_prof_read(prof, db->super.file.fd);
 }
 
 enum dcp_rc dcp_pro_db_write(struct dcp_pro_db *db,
@@ -207,17 +205,10 @@ enum dcp_rc dcp_pro_db_write(struct dcp_pro_db *db,
 {
     /* if ((rc = db_check_write_prof_ready(&db->super, &prof->super))) return
      * rc; */
-
     enum dcp_rc rc = DCP_SUCCESS;
     db_write_prof_meta(&db->super, &prof->super);
-
-    /* TODO: Call std_prof functions directly */
-    if ((rc = prof->super.vtable.write(&prof->super, db->super.dp.fd)))
-        goto cleanup;
-
-    /* db->profiles.size++; */
-
-cleanup:
+    if ((rc = pro_prof_write(prof, db->super.dp.fd))) return rc;
+    db->super.profiles.size++;
     return rc;
 }
 
