@@ -18,7 +18,7 @@ void test_db_pro_openw(void)
     FILE *fd = fopen(TMPDIR "/db.dcp", "wb");
     NOTNULL(fd);
 
-    struct dcp_pro_db *db = dcp_pro_db_openw(fd, prof.cfg);
+    struct dcp_pro_db *db = dcp_pro_db_openw(fd, dcp_pro_profile_cfg(&prof));
     NOTNULL(db);
     EQ(dcp_pro_db_write(db, &prof), DCP_ILLEGALARG);
 

@@ -18,6 +18,8 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
 {
     struct dcp_prof_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE, p};
     profile_init(&p->super, imm_super(nuclt), dcp_meta(NULL, NULL), vtable);
+    p->nuclt = nuclt;
+    p->amino = amino;
     imm_dp_init(&p->null.dp, imm_super(nuclt));
     imm_dp_init(&p->alt.dp, imm_super(nuclt));
 }
@@ -67,21 +69,6 @@ void dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_len,
     unsigned C = p->alt.C;
     unsigned T = p->alt.T;
 
-    printf("S, B %f\n", t.NB);
-    printf("S, N %f\n", t.NN);
-    printf("N, N %f\n", t.NN);
-    printf("N, B %f\n", t.NB);
-
-    printf("E, T %f\n", t.EC + t.CT);
-    printf("E, C %f\n", t.EC + t.CC);
-    printf("C, C %f\n", t.CC);
-    printf("C, T %f\n", t.CT);
-
-    printf("E, B %f\n", t.EC + t.CT);
-    printf("E, J %f\n", t.EC + t.CC);
-    printf("J, J %f\n", t.CC);
-    printf("J, B %f\n", t.CT);
-
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, S, B), t.NB);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, S, N), t.NN);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, N, N), t.NN);
@@ -101,10 +88,10 @@ void dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_len,
 enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
                                 struct dcp_pro_model const *m)
 {
-    if (p->cfg.nuclt != pro_model_nuclt(m))
+    if (p->nuclt != pro_model_nuclt(m))
         return error(DCP_ILLEGALARG, "Different nucleotide alphabets.");
 
-    if (p->cfg.amino != pro_model_amino(m))
+    if (p->amino != pro_model_amino(m))
         return error(DCP_ILLEGALARG, "Different amino alphabets.");
 
     struct pro_model_summary s = pro_model_summary(m);
@@ -139,17 +126,13 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
 {
     assert(core_size >= 2);
     struct imm_rnd rnd = imm_rnd(seed);
-    struct dcp_pro_cfg cfg = {
-        .amino = &imm_amino_iupac,
-        .nuclt = imm_super(imm_gc_dna()),
-        .edist = edist,
-        .epsilon = epsilon,
-    };
 
     imm_float lprobs[IMM_AMINO_SIZE];
 
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
+
+    struct dcp_pro_cfg cfg = dcp_pro_cfg(p->amino, p->nuclt, edist, epsilon);
 
     struct dcp_pro_model model;
     dcp_pro_model_init(&model, cfg, lprobs);
@@ -177,7 +160,6 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
         rc += dcp_pro_model_add_trans(&model, t);
     }
 
-    dcp_pro_prof_init(p, cfg.amino, cfg.nuclt);
     rc += dcp_pro_prof_absorb(p, &model);
     dcp_del(&model);
 
@@ -187,6 +169,11 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
 void dcp_pro_profile_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, pro_model_state_name);
+}
+
+struct dcp_pro_cfg dcp_pro_profile_cfg(struct dcp_pro_prof const *p)
+{
+    return dcp_pro_cfg(p->amino, p->nuclt, p->edist, p->epsilon);
 }
 
 static void del(struct dcp_prof *prof)

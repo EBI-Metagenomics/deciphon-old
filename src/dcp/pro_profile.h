@@ -3,6 +3,7 @@
 
 #include "dcp/export.h"
 #include "dcp/meta.h"
+#include "dcp/pro_cfg.h"
 #include "dcp/pro_model.h"
 #include "dcp/profile.h"
 #include "dcp/rc.h"
@@ -11,7 +12,11 @@
 struct dcp_pro_prof
 {
     struct dcp_prof super;
-    struct dcp_pro_cfg cfg;
+
+    struct imm_amino const *amino;
+    struct imm_nuclt const *nuclt;
+    enum dcp_entry_dist edist;
+    imm_float epsilon;
 
     struct
     {
@@ -57,5 +62,7 @@ static inline void dcp_pro_prof_del(struct dcp_pro_prof *prof)
 
 DCP_API void dcp_pro_profile_write_dot(struct dcp_pro_prof const *prof,
                                        FILE *restrict fp);
+
+DCP_API struct dcp_pro_cfg dcp_pro_profile_cfg(struct dcp_pro_prof const *prof);
 
 #endif
