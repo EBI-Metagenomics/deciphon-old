@@ -64,6 +64,7 @@ void test_db_openw_one_mute(void)
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
 
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
+    NOTNULL(fd);
     struct dcp_std_db *db = dcp_std_db_openw(fd, dcp_std_cfg(abc));
 
     struct dcp_std_prof p;
@@ -108,6 +109,7 @@ void test_db_openw_example1(void)
     imm_example1_init();
     struct imm_example1 *m = &imm_example1;
     FILE *fd = fopen(TMPDIR "/example1.dcp", "wb");
+    NOTNULL(fd);
     struct dcp_std_db *db = dcp_std_db_openw(fd, dcp_std_cfg(&m->abc));
     NOTNULL(db);
 
@@ -189,6 +191,7 @@ void test_db_openw_example2(void)
     struct imm_example2 *m = &imm_example2;
     struct imm_abc const *abc = imm_super(imm_super(m->dna));
     FILE *fd = fopen(TMPDIR "/example2.dcp", "wb");
+    NOTNULL(fd);
     struct dcp_std_db *db = dcp_std_db_openw(fd, dcp_std_cfg(abc));
     NOTNULL(db);
 

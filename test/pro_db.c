@@ -13,13 +13,24 @@ int main(void)
 
 void test_db_pro_openw(void)
 {
-    struct dcp_pro_prof prof;
-    dcp_pro_prof_sample(&prof, 1, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    struct imm_amino const *amino = &imm_amino_iupac;
+    struct imm_nuclt const *nuclt = imm_super(imm_gc_dna());
+
     FILE *fd = fopen(TMPDIR "/db.dcp", "wb");
     NOTNULL(fd);
 
-    struct dcp_pro_db *db = dcp_pro_db_openw(fd, dcp_pro_profile_cfg(&prof));
+    struct dcp_pro_db *db = dcp_pro_db_openw(
+        fd, dcp_pro_cfg(amino, nuclt, DCP_ENTRY_DIST_UNIFORM, 0.1f));
     NOTNULL(db);
+
+    struct dcp_pro_cfg cfg =
+        dcp_pro_cfg(dcp_pro_db_amino(db), dcp_pro_db_nuclt(db),
+                    DCP_ENTRY_DIST_UNIFORM, 0.1f);
+
+    struct dcp_pro_prof prof;
+    dcp_pro_prof_init(&prof, dcp_pro_db_amino(db), dcp_pro_db_nuclt(db));
+    dcp_pro_prof_sample(&prof, 1, 2, cfg.edist, cfg.epsilon);
+
     EQ(dcp_pro_db_write(db, &prof), DCP_ILLEGALARG);
 
     dcp_prof_nameit(dcp_super(&prof), dcp_meta("Name0", "Acc0"));
