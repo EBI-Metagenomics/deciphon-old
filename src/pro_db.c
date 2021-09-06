@@ -206,7 +206,7 @@ enum dcp_rc dcp_pro_db_write(struct dcp_pro_db *db,
     /* if ((rc = db_check_write_prof_ready(&db->super, &prof->super))) return
      * rc; */
     enum dcp_rc rc = DCP_SUCCESS;
-    db_write_prof_meta(&db->super, &prof->super);
+    if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
     if ((rc = pro_prof_write(prof, db->super.dp.fd))) return rc;
     db->super.profiles.size++;
     return rc;

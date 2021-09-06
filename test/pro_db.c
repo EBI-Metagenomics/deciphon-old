@@ -24,20 +24,12 @@ void test_db_pro_openw(void)
     NOTNULL(db);
 
     struct dcp_pro_prof *prof = dcp_pro_db_profile(db);
-    dcp_pro_prof_sample(prof, 1, 2);
 
+    dcp_pro_prof_sample(prof, 1, 2);
     EQ(dcp_pro_db_write(db, prof), DCP_ILLEGALARG);
 
     dcp_prof_nameit(dcp_super(prof), dcp_meta("Name0", "Acc0"));
     EQ(dcp_pro_db_write(db, prof), DCP_SUCCESS);
-
-    dcp_pro_prof_sample(prof, 2, 2);
-    dcp_prof_nameit(dcp_super(prof), dcp_meta("Name1", "Acc1"));
-    EQ(dcp_pro_db_write(db, prof), DCP_ILLEGALARG);
-
-    dcp_pro_prof_sample(prof, 2, 2);
-    dcp_prof_nameit(dcp_super(prof), dcp_meta("Name1", "Acc1"));
-    EQ(dcp_pro_db_write(db, prof), DCP_ILLEGALARG);
 
     dcp_pro_prof_sample(prof, 2, 2);
     dcp_prof_nameit(dcp_super(prof), dcp_meta("Name1", "Acc1"));

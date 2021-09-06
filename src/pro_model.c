@@ -367,6 +367,9 @@ static struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
     for (unsigned i = 0; i < imm_gc_size(); ++i)
     {
         struct imm_codon codon = imm_gc_codon(1, i);
+        /* Check for FIXME-1 for an explanation of this
+         * temporary hacky */
+        codon.nuclt = codonp->nuclt;
         imm_float lprob = imm_codon_lprob_get(codonp, codon);
         lprobs[codon.a] = imm_lprob_add(lprobs[codon.a], lprob - norm);
         lprobs[codon.b] = imm_lprob_add(lprobs[codon.b], lprob - norm);
@@ -395,12 +398,18 @@ static struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
         lprobs[(unsigned)aa] = imm_amino_lprob_get(aminop, aa) - norm;
     }
 
-    struct imm_codon_lprob codonp = imm_codon_lprob(nuclt);
+    /* FIXME-1: imm_gc module assumes imm_dna_iupac as alphabet, we have to make
+     * it configurable. For now I will assume that the calle of this
+     * function is using imm_nuclt base of an imm_dna_iupac compatible alphabet
+     */
+    /* struct imm_codon_lprob codonp = imm_codon_lprob(nuclt); */
+    struct imm_codon_lprob codonp = imm_codon_lprob(imm_super(imm_gc_dna()));
     for (unsigned i = 0; i < imm_gc_size(); ++i)
     {
         char aa = imm_gc_aa(1, i);
         imm_codon_lprob_set(&codonp, imm_gc_codon(1, i), lprobs[(unsigned)aa]);
     }
+    codonp.nuclt = nuclt;
     return codonp;
 }
 
