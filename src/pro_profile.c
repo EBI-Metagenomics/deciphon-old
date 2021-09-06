@@ -13,13 +13,13 @@ static void del(struct dcp_prof *prof);
 static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd);
 static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd);
 
-void dcp_pro_prof_init(struct dcp_pro_prof *p, struct dcp_pro_cfg cfg)
+void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
+                       struct imm_nuclt const *nuclt)
 {
     struct dcp_prof_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE, p};
-    profile_init(&p->super, imm_super(cfg.nuclt), dcp_meta(NULL, NULL), vtable);
-    p->cfg = cfg;
-    imm_dp_init(&p->null.dp, imm_super(cfg.nuclt));
-    imm_dp_init(&p->alt.dp, imm_super(cfg.nuclt));
+    profile_init(&p->super, imm_super(nuclt), dcp_meta(NULL, NULL), vtable);
+    imm_dp_init(&p->null.dp, imm_super(nuclt));
+    imm_dp_init(&p->alt.dp, imm_super(nuclt));
 }
 
 void dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_len,

@@ -1,6 +1,5 @@
 #include "dcp/std_db.h"
 #include "db.h"
-#include "dcp/db.h"
 #include "dcp/rc.h"
 #include "dcp/std_cfg.h"
 #include "dcp/std_profile.h"
@@ -26,7 +25,13 @@ static enum dcp_rc read_abc(FILE *restrict fd, struct imm_abc *abc)
 {
     if (imm_abc_read(abc, fd))
         return error(DCP_IOERROR, "failed to read alphabet");
+    return DCP_SUCCESS;
+}
 
+static enum dcp_rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
+{
+    if (imm_abc_write(abc, fd))
+        return error(DCP_IOERROR, "failed to write alphabet");
     return DCP_SUCCESS;
 }
 
@@ -48,13 +53,6 @@ struct dcp_std_db *dcp_std_db_openr(FILE *restrict fd)
 cleanup:
     free(db);
     return NULL;
-}
-
-static enum dcp_rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
-{
-    if (imm_abc_write(abc, fd))
-        return error(DCP_IOERROR, "failed to write alphabet");
-    return DCP_SUCCESS;
 }
 
 struct dcp_std_db *dcp_std_db_openw(FILE *restrict fd, struct dcp_std_cfg cfg)
@@ -101,7 +99,6 @@ enum dcp_rc dcp_std_db_read(struct dcp_std_db *db, struct dcp_std_prof *prof)
 enum dcp_rc dcp_std_db_write(struct dcp_std_db *db,
                              struct dcp_std_prof const *prof)
 {
-
     /* if ((rc = db_check_write_prof_ready(&db->super, &prof->super))) return
      * rc; */
 

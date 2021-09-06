@@ -5,12 +5,12 @@
 extern "C" {
 #endif
 
-#include "dcp/db.h"
 #include "dcp/entry_dist.h"
 #include "dcp/generics.h"
 #include "dcp/meta.h"
 #include "dcp/model.h"
 #include "dcp/pro_cfg.h"
+#include "dcp/pro_db.h"
 #include "dcp/pro_id.h"
 #include "dcp/pro_model.h"
 #include "dcp/pro_node.h"
@@ -22,6 +22,7 @@ extern "C" {
 #include "dcp/profile_types.h"
 #include "dcp/rc.h"
 #include "dcp/server.h"
+#include "dcp/std_db.h"
 #include "dcp/std_profile.h"
 #include "dcp/task.h"
 

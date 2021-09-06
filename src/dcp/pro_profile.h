@@ -32,7 +32,9 @@ struct dcp_pro_prof
     } alt;
 };
 
-DCP_API void dcp_pro_prof_init(struct dcp_pro_prof *prof, struct dcp_pro_cfg);
+DCP_API void dcp_pro_prof_init(struct dcp_pro_prof *prof,
+                               struct imm_amino const *amino,
+                               struct imm_nuclt const *nuclt);
 
 DCP_API void dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_len,
                                 bool multi_hits, bool hmmer3_compat);

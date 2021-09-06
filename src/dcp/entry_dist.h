@@ -3,9 +3,9 @@
 
 enum dcp_entry_dist
 {
-    DCP_ENTRY_DIST_NULL = 0,
-    DCP_ENTRY_DIST_UNIFORM = 1,
-    DCP_ENTRY_DIST_OCCUPANCY = 2,
+    DCP_ENTRY_DIST_NULL,
+    DCP_ENTRY_DIST_UNIFORM,
+    DCP_ENTRY_DIST_OCCUPANCY,
 };
 
 #endif
