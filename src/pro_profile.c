@@ -14,12 +14,13 @@ static enum dcp_rc read(struct dcp_prof *prof, FILE *restrict fd);
 static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd);
 
 void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
-                       struct imm_nuclt const *nuclt)
+                       struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg)
 {
     struct dcp_prof_vtable vtable = {read, write, del, DCP_PROTEIN_PROFILE, p};
     profile_init(&p->super, imm_super(nuclt), dcp_meta(NULL, NULL), vtable);
     p->nuclt = nuclt;
     p->amino = amino;
+    p->cfg = cfg;
     imm_dp_init(&p->null.dp, imm_super(nuclt));
     imm_dp_init(&p->alt.dp, imm_super(nuclt));
 }
@@ -95,8 +96,12 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
         return error(DCP_ILLEGALARG, "Different amino alphabets.");
 
     struct pro_model_summary s = pro_model_summary(m);
-    imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp);
-    imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp);
+
+    if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
+        return error(DCP_RUNTIMEERROR, "failed to hmm_reset");
+
+    if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
+        return error(DCP_RUNTIMEERROR, "failed to hmm_reset");
 
     p->null.R = imm_state_idx(imm_super(s.null.R));
 
@@ -121,8 +126,7 @@ void dcp_pro_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 }
 
 void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
-                         unsigned core_size, enum dcp_entry_dist edist,
-                         imm_float epsilon)
+                         unsigned core_size)
 {
     assert(core_size >= 2);
     struct imm_rnd rnd = imm_rnd(seed);
@@ -132,10 +136,8 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
 
-    struct dcp_pro_cfg cfg = dcp_pro_cfg(p->amino, p->nuclt, edist, epsilon);
-
     struct dcp_pro_model model;
-    dcp_pro_model_init(&model, cfg, lprobs);
+    dcp_pro_model_init(&model, p->amino, p->nuclt, p->cfg, lprobs);
 
     int rc = (int)dcp_pro_model_setup(&model, core_size);
 
@@ -166,14 +168,9 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     assert(!rc);
 }
 
-void dcp_pro_profile_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
+void dcp_pro_prof_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, pro_model_state_name);
-}
-
-struct dcp_pro_cfg dcp_pro_profile_cfg(struct dcp_pro_prof const *p)
-{
-    return dcp_pro_cfg(p->amino, p->nuclt, p->edist, p->epsilon);
 }
 
 static void del(struct dcp_prof *prof)

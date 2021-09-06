@@ -66,7 +66,7 @@ enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
     struct dcp_pro_node *n = m->alt.nodes + m->alt.node_idx;
 
     struct nuclt_dist dist = {&n->match.nucltp, &n->match.codonm};
-    setup_nuclt_dist(&dist, m->cfg.amino, m->cfg.nuclt, lodds);
+    setup_nuclt_dist(&dist, m->amino, m->nuclt, lodds);
 
     init_match(&n->M, m, &dist);
     if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->M)))
@@ -108,25 +108,28 @@ void dcp_pro_model_del(struct dcp_pro_model const *model)
     free(model->alt.trans);
 }
 
-void dcp_pro_model_init(struct dcp_pro_model *m, struct dcp_pro_cfg cfg,
+void dcp_pro_model_init(struct dcp_pro_model *m, struct imm_amino const *amino,
+                        struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg,
                         imm_float const null_lprobs[IMM_AMINO_SIZE])
 
 {
+    m->amino = amino;
+    m->nuclt = nuclt;
     m->cfg = cfg;
     m->core_size = 0;
 
     memcpy(m->null.lprobs, null_lprobs, sizeof *null_lprobs * IMM_AMINO_SIZE);
 
-    imm_hmm_init(&m->null.hmm, imm_super(m->cfg.nuclt));
+    imm_hmm_init(&m->null.hmm, imm_super(m->nuclt));
 
     struct nuclt_dist null_dist = {&m->null.nucltp, &m->null.codonm};
-    setup_nuclt_dist(&null_dist, cfg.amino, cfg.nuclt, null_lprobs);
+    setup_nuclt_dist(&null_dist, amino, nuclt, null_lprobs);
 
-    imm_hmm_init(&m->alt.hmm, imm_super(m->cfg.nuclt));
+    imm_hmm_init(&m->alt.hmm, imm_super(m->nuclt));
 
     struct nuclt_dist alt_dist = {&m->alt.insert.nucltp, &m->alt.insert.codonm};
-    imm_float const lodds[IMM_AMINO_SIZE] = {0.0f};
-    setup_nuclt_dist(&alt_dist, cfg.amino, cfg.nuclt, lodds);
+    imm_float const lodds[IMM_AMINO_SIZE] = {0};
+    setup_nuclt_dist(&alt_dist, amino, nuclt, lodds);
 
     init_xnodes(m);
 
@@ -147,7 +150,7 @@ enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
     unsigned n = m->core_size;
     m->alt.node_idx = 0;
     m->alt.nodes = realloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
-    if (m->cfg.edist == DCP_ENTRY_DIST_OCCUPANCY)
+    if (m->cfg.entry_dist == DCP_ENTRY_DIST_OCCUPANCY)
         m->alt.locc = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
     m->alt.trans_idx = 0;
     m->alt.trans = realloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
@@ -164,12 +167,12 @@ void dcp_pro_model_write_dot(struct dcp_pro_model const *m, FILE *restrict fp)
 
 struct imm_amino const *pro_model_amino(struct dcp_pro_model const *m)
 {
-    return m->cfg.amino;
+    return m->amino;
 }
 
 struct imm_nuclt const *pro_model_nuclt(struct dcp_pro_model const *m)
 {
-    return m->cfg.nuclt;
+    return m->nuclt;
 }
 
 void pro_model_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
@@ -251,7 +254,7 @@ static void init_xnodes(struct dcp_pro_model *m)
     struct imm_nuclt_lprob const *nucltp = &m->null.nucltp;
     struct imm_codon_marg const *codonm = &m->null.codonm;
     struct dcp_pro_xnode *n = &m->xnode;
-    struct imm_nuclt const *nuclt = m->cfg.nuclt;
+    struct imm_nuclt const *nuclt = m->nuclt;
 
     imm_frame_state_init(&n->null.R, DCP_PRO_ID_R, nucltp, codonm, e);
 
@@ -305,7 +308,7 @@ static bool have_finished_add(struct dcp_pro_model const *m)
 static void init_delete(struct imm_mute_state *state, struct dcp_pro_model *m)
 {
     unsigned id = DCP_PRO_ID_DELETE | (m->alt.node_idx + 1);
-    imm_mute_state_init(state, id, imm_super(m->cfg.nuclt));
+    imm_mute_state_init(state, id, imm_super(m->nuclt));
 }
 
 static void init_insert(struct imm_frame_state *state, struct dcp_pro_model *m)
@@ -419,7 +422,7 @@ static void setup_nuclt_dist(struct nuclt_dist *dist,
 static void setup_entry_trans(struct dcp_pro_model *m)
 {
     enum dcp_rc rc = DCP_SUCCESS;
-    if (m->cfg.edist == DCP_ENTRY_DIST_UNIFORM)
+    if (m->cfg.entry_dist == DCP_ENTRY_DIST_UNIFORM)
     {
         imm_float M = (imm_float)m->core_size;
         imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;
@@ -433,7 +436,7 @@ static void setup_entry_trans(struct dcp_pro_model *m)
     }
     else
     {
-        assert(m->cfg.edist == DCP_ENTRY_DIST_OCCUPANCY);
+        assert(m->cfg.entry_dist == DCP_ENTRY_DIST_OCCUPANCY);
         calculate_occupancy(m);
         struct imm_state *B = imm_super(&m->xnode.alt.B);
         for (unsigned i = 0; i < m->core_size; ++i)

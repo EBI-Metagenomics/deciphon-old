@@ -25,7 +25,7 @@ int main(void)
 
 void test_db_openw_empty(void)
 {
-    struct imm_dna const *dna = &imm_dna_default;
+    struct imm_dna const *dna = &imm_dna_iupac;
     struct imm_abc const *abc = imm_super(imm_super(dna));
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
     NOTNULL(fd);
@@ -53,7 +53,7 @@ void test_db_openr_empty(void)
 
 void test_db_openw_one_mute(void)
 {
-    struct imm_dna const *dna = &imm_dna_default;
+    struct imm_dna const *dna = &imm_dna_iupac;
     struct imm_abc const *abc = imm_super(imm_super(dna));
 
     struct imm_mute_state state;

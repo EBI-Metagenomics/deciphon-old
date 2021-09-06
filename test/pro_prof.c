@@ -14,11 +14,12 @@ int main(void)
 void test_pro_profile_uniform(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
-    struct imm_nuclt const *nuclt = imm_super(imm_gc_dna());
+    struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+    struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
 
     struct dcp_pro_prof prof;
-    dcp_pro_prof_init(&prof, amino, nuclt);
-    dcp_pro_prof_sample(&prof, 1, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    dcp_pro_prof_init(&prof, amino, nuclt, cfg);
+    dcp_pro_prof_sample(&prof, 1, 2);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);
@@ -80,11 +81,12 @@ void test_pro_profile_uniform(void)
 void test_pro_profile_occupancy(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
-    struct imm_nuclt const *nuclt = imm_super(imm_gc_dna());
+    struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+    struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
 
     struct dcp_pro_prof p;
-    dcp_pro_prof_init(&p, amino, nuclt);
-    dcp_pro_prof_sample(&p, 1, 2, DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
+    dcp_pro_prof_init(&p, amino, nuclt, cfg);
+    dcp_pro_prof_sample(&p, 1, 2);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&p)->abc);

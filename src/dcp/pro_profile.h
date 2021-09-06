@@ -15,8 +15,7 @@ struct dcp_pro_prof
 
     struct imm_amino const *amino;
     struct imm_nuclt const *nuclt;
-    enum dcp_entry_dist edist;
-    imm_float epsilon;
+    struct dcp_pro_cfg cfg;
 
     struct
     {
@@ -39,7 +38,8 @@ struct dcp_pro_prof
 
 DCP_API void dcp_pro_prof_init(struct dcp_pro_prof *prof,
                                struct imm_amino const *amino,
-                               struct imm_nuclt const *nuclt);
+                               struct imm_nuclt const *nuclt,
+                               struct dcp_pro_cfg cfg);
 
 DCP_API void dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_len,
                                 bool multi_hits, bool hmmer3_compat);
@@ -52,17 +52,14 @@ DCP_API struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro);
 DCP_API void dcp_pro_prof_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
 
 DCP_API void dcp_pro_prof_sample(struct dcp_pro_prof *prof, unsigned seed,
-                                 unsigned core_size, enum dcp_entry_dist edist,
-                                 imm_float epsilon);
+                                 unsigned core_size);
 
 static inline void dcp_pro_prof_del(struct dcp_pro_prof *prof)
 {
     if (prof) dcp_prof_del(&prof->super);
 }
 
-DCP_API void dcp_pro_profile_write_dot(struct dcp_pro_prof const *prof,
-                                       FILE *restrict fp);
-
-DCP_API struct dcp_pro_cfg dcp_pro_profile_cfg(struct dcp_pro_prof const *prof);
+DCP_API void dcp_pro_prof_write_dot(struct dcp_pro_prof const *prof,
+                                    FILE *restrict fp);
 
 #endif

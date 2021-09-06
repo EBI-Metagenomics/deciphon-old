@@ -1,9 +1,11 @@
 #ifndef DCP_PRO_DB_H
 #define DCP_PRO_DB_H
 
+#include "dcp/entry_dist.h"
 #include "dcp/export.h"
 #include "dcp/meta.h"
 #include "dcp/pro_cfg.h"
+#include "imm/imm.h"
 #include <stdio.h>
 
 struct dcp_db;
@@ -15,6 +17,8 @@ struct imm_nuclt;
 DCP_API struct dcp_pro_db *dcp_pro_db_openr(FILE *restrict fd);
 
 DCP_API struct dcp_pro_db *dcp_pro_db_openw(FILE *restrict fd,
+                                            struct imm_amino const *amino,
+                                            struct imm_nuclt const *nuclt,
                                             struct dcp_pro_cfg cfg);
 
 DCP_API enum dcp_rc dcp_pro_db_close(struct dcp_pro_db *db);
@@ -22,6 +26,8 @@ DCP_API enum dcp_rc dcp_pro_db_close(struct dcp_pro_db *db);
 DCP_API struct imm_amino const *dcp_pro_db_amino(struct dcp_pro_db const *db);
 
 DCP_API struct imm_nuclt const *dcp_pro_db_nuclt(struct dcp_pro_db const *db);
+
+DCP_API struct dcp_pro_cfg dcp_pro_db_cfg(struct dcp_pro_db const *db);
 
 DCP_API enum dcp_rc dcp_pro_db_read(struct dcp_pro_db *db,
                                     struct dcp_pro_prof *prof);

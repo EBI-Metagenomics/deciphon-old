@@ -19,38 +19,29 @@ void test_db_pro_openw(void)
     FILE *fd = fopen(TMPDIR "/db.dcp", "wb");
     NOTNULL(fd);
 
-    struct dcp_pro_db *db = dcp_pro_db_openw(
-        fd, dcp_pro_cfg(amino, nuclt, DCP_ENTRY_DIST_UNIFORM, 0.1f));
+    struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    struct dcp_pro_db *db = dcp_pro_db_openw(fd, amino, nuclt, cfg);
     NOTNULL(db);
 
-    struct dcp_pro_cfg cfg =
-        dcp_pro_cfg(dcp_pro_db_amino(db), dcp_pro_db_nuclt(db),
-                    DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    struct dcp_pro_prof *prof = dcp_pro_db_profile(db);
+    dcp_pro_prof_sample(prof, 1, 2);
 
-    struct dcp_pro_prof prof;
-    dcp_pro_prof_init(&prof, dcp_pro_db_amino(db), dcp_pro_db_nuclt(db));
-    dcp_pro_prof_sample(&prof, 1, 2, cfg.edist, cfg.epsilon);
+    EQ(dcp_pro_db_write(db, prof), DCP_ILLEGALARG);
 
-    EQ(dcp_pro_db_write(db, &prof), DCP_ILLEGALARG);
+    dcp_prof_nameit(dcp_super(prof), dcp_meta("Name0", "Acc0"));
+    EQ(dcp_pro_db_write(db, prof), DCP_SUCCESS);
 
-    dcp_prof_nameit(dcp_super(&prof), dcp_meta("Name0", "Acc0"));
-    EQ(dcp_pro_db_write(db, &prof), DCP_SUCCESS);
-    dcp_del(&prof);
+    dcp_pro_prof_sample(prof, 2, 2);
+    dcp_prof_nameit(dcp_super(prof), dcp_meta("Name1", "Acc1"));
+    EQ(dcp_pro_db_write(db, prof), DCP_ILLEGALARG);
 
-    dcp_pro_prof_sample(&prof, 2, 2, DCP_ENTRY_DIST_UNIFORM, 0.2f);
-    dcp_prof_nameit(dcp_super(&prof), dcp_meta("Name1", "Acc1"));
-    EQ(dcp_pro_db_write(db, &prof), DCP_ILLEGALARG);
-    dcp_del(&prof);
+    dcp_pro_prof_sample(prof, 2, 2);
+    dcp_prof_nameit(dcp_super(prof), dcp_meta("Name1", "Acc1"));
+    EQ(dcp_pro_db_write(db, prof), DCP_ILLEGALARG);
 
-    dcp_pro_prof_sample(&prof, 2, 2, DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
-    dcp_prof_nameit(dcp_super(&prof), dcp_meta("Name1", "Acc1"));
-    EQ(dcp_pro_db_write(db, &prof), DCP_ILLEGALARG);
-    dcp_del(&prof);
-
-    dcp_pro_prof_sample(&prof, 2, 2, DCP_ENTRY_DIST_UNIFORM, 0.1f);
-    dcp_prof_nameit(dcp_super(&prof), dcp_meta("Name1", "Acc1"));
-    EQ(dcp_pro_db_write(db, &prof), DCP_SUCCESS);
-    dcp_del(&prof);
+    dcp_pro_prof_sample(prof, 2, 2);
+    dcp_prof_nameit(dcp_super(prof), dcp_meta("Name1", "Acc1"));
+    EQ(dcp_pro_db_write(db, prof), DCP_SUCCESS);
 
     EQ(dcp_pro_db_close(db), DCP_SUCCESS);
     fclose(fd);

@@ -13,6 +13,8 @@
 
 struct dcp_pro_model
 {
+    struct imm_amino const *amino;
+    struct imm_nuclt const *nuclt;
     struct dcp_pro_cfg cfg;
     unsigned core_size;
     struct dcp_pro_xnode xnode;
@@ -51,7 +53,10 @@ DCP_API enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *,
 
 DCP_API void dcp_pro_model_del(struct dcp_pro_model const *);
 
-DCP_API void dcp_pro_model_init(struct dcp_pro_model *, struct dcp_pro_cfg cfg,
+DCP_API void dcp_pro_model_init(struct dcp_pro_model *,
+                                struct imm_amino const *amino,
+                                struct imm_nuclt const *nuclt,
+                                struct dcp_pro_cfg cfg,
                                 imm_float const null_lprobs[IMM_AMINO_SIZE]);
 
 DCP_API enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *,

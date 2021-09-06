@@ -23,28 +23,30 @@ static char const sequence[] =
 
 int main(void)
 {
+    struct imm_amino const *amino = &imm_amino_iupac;
+    struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+
     FILE *fd = fopen(ASSETS "/PF02545.hmm", "r");
     NOTNULL(fd);
-    struct dcp_pro_cfg cfg = {&imm_amino_iupac, imm_super(imm_gc_dna()),
-                              DCP_ENTRY_DIST_OCCUPANCY, 0.01f};
+    struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.01f);
 
     struct dcp_pro_reader reader;
-    dcp_pro_reader_init(&reader, cfg, fd);
+    dcp_pro_reader_init(&reader, amino, nuclt, cfg, fd);
 
     EQ(dcp_pro_reader_next(&reader), DCP_SUCCESS);
 
-    struct dcp_pro_prof p;
-    dcp_pro_prof_init(&p, cfg.amino, cfg.nuclt);
+    struct dcp_pro_prof prof;
+    dcp_pro_prof_init(&prof, amino, nuclt, cfg);
 
-    dcp_prof_nameit(dcp_super(&p), dcp_meta("name", "acc"));
-    EQ(dcp_pro_prof_absorb(&p, &reader.model), DCP_SUCCESS);
+    dcp_prof_nameit(dcp_super(&prof), dcp_meta("name", "acc"));
+    EQ(dcp_pro_prof_absorb(&prof, &reader.model), DCP_SUCCESS);
 
-    struct imm_seq seq = imm_seq(imm_str(sequence), dcp_super(&p)->abc);
+    struct imm_seq seq = imm_seq(imm_str(sequence), dcp_super(&prof)->abc);
 
-    dcp_pro_prof_setup(&p, imm_seq_size(&seq), true, false);
+    dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false);
 
     struct imm_result result = imm_result();
-    struct imm_dp *dp = &p.alt.dp;
+    struct imm_dp *dp = &prof.alt.dp;
     struct imm_task *task = imm_task_new(dp);
     NOTNULL(task);
     EQ(imm_task_setup(task, &seq), IMM_SUCCESS);

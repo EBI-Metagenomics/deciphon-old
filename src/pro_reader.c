@@ -4,14 +4,15 @@
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 
-void dcp_pro_reader_init(struct dcp_pro_reader *reader, struct dcp_pro_cfg cfg,
+void dcp_pro_reader_init(struct dcp_pro_reader *reader,
+                         struct imm_amino const *amino,
+                         struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg,
                          FILE *restrict fd)
 {
-    reader->cfg = cfg;
     hmr_init(&reader->hmr, fd);
     hmr_prof_init(&reader->prof, &reader->hmr);
-
     init_null_lprobs(reader->null_lprobs);
+    dcp_pro_model_init(&reader->model, amino, nuclt, cfg, reader->null_lprobs);
 }
 
 enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
@@ -20,8 +21,7 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
     if (hmr_rc == HMR_ENDFILE) return DCP_ENDFILE;
 
     if (hmr_rc) return DCP_RUNTIMEERROR;
-
-    dcp_pro_model_init(&reader->model, reader->cfg, reader->null_lprobs);
+    /* dcp_pro_model_init(&reader->model, reader->cfg, reader->null_lprobs); */
 
     unsigned core_size = hmr_prof_length(&reader->prof);
     enum dcp_rc rc = DCP_SUCCESS;

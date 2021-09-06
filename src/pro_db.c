@@ -11,18 +11,8 @@ struct dcp_pro_db
     struct dcp_db super;
     struct imm_amino amino;
     struct imm_nuclt nuclt;
-    imm_float epsilon;
-    enum dcp_entry_dist entry_dist;
     struct dcp_pro_prof prof;
 };
-
-static inline struct dcp_pro_db *new_db(void)
-{
-    struct dcp_pro_db *db = malloc(sizeof *db);
-    db_init(&db->super, DCP_PROTEIN_PROFILE);
-    dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt);
-    return db;
-}
 
 static enum dcp_rc read_epsilon(cmp_ctx_t *ctx, unsigned float_bytes,
                                 imm_float *epsilon)
@@ -113,16 +103,24 @@ static enum dcp_rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
 
 struct dcp_pro_db *dcp_pro_db_openr(FILE *restrict fd)
 {
-    struct dcp_pro_db *db = new_db();
+    struct dcp_pro_db *db = malloc(sizeof *db);
+    if (!db)
+    {
+        error(DCP_OUTOFMEM, "failed to alloc db");
+        return NULL;
+    }
+    db_init(&db->super, DCP_PROTEIN_PROFILE);
+    dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt, DCP_PRO_CFG_DEFAULT);
     db_openr(&db->super, fd);
 
     cmp_ctx_t *ctx = &db->super.file.ctx;
+    unsigned float_size = db->super.float_size;
 
     if (db_read_magic_number(&db->super)) goto cleanup;
     if (db_read_prof_type(&db->super)) goto cleanup;
     if (db_read_float_size(&db->super)) goto cleanup;
-    if (read_epsilon(ctx, db->super.float_size, &db->epsilon)) goto cleanup;
-    if (read_entry_dist(ctx, &db->entry_dist)) goto cleanup;
+    if (read_entry_dist(ctx, &db->prof.cfg.entry_dist)) goto cleanup;
+    if (read_epsilon(ctx, float_size, &db->prof.cfg.epsilon)) goto cleanup;
     if (read_nuclt(db->super.file.fd, &db->nuclt)) goto cleanup;
     if (read_amino(db->super.file.fd, &db->amino)) goto cleanup;
     if (db_read_nprofiles(&db->super)) goto cleanup;
@@ -136,20 +134,31 @@ cleanup:
     return NULL;
 }
 
-struct dcp_pro_db *dcp_pro_db_openw(FILE *restrict fd, struct dcp_pro_cfg cfg)
+struct dcp_pro_db *dcp_pro_db_openw(FILE *restrict fd,
+                                    struct imm_amino const *amino,
+                                    struct imm_nuclt const *nuclt,
+                                    struct dcp_pro_cfg cfg)
 {
-    struct dcp_pro_db *db = new_db();
-    db->amino = *cfg.amino;
-    db->nuclt = *cfg.nuclt;
+    struct dcp_pro_db *db = malloc(sizeof *db);
+    if (!db)
+    {
+        error(DCP_OUTOFMEM, "failed to alloc db");
+        return NULL;
+    }
+    db->amino = *amino;
+    db->nuclt = *nuclt;
+    db_init(&db->super, DCP_PROTEIN_PROFILE);
+    dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt, cfg);
     if (db_openw(&db->super, fd)) goto cleanup;
 
     cmp_ctx_t *ctx = &db->super.file.ctx;
+    unsigned float_size = db->super.float_size;
 
     if (db_write_magic_number(&db->super)) goto cleanup;
     if (db_write_prof_type(&db->super)) goto cleanup;
     if (db_write_float_size(&db->super)) goto cleanup;
-    if (write_epsilon(ctx, db->super.float_size, db->epsilon)) goto cleanup;
-    if (write_entry_dist(ctx, db->entry_dist)) goto cleanup;
+    if (write_entry_dist(ctx, db->prof.cfg.entry_dist)) goto cleanup;
+    if (write_epsilon(ctx, float_size, db->prof.cfg.epsilon)) goto cleanup;
     if (write_nuclt(db->super.file.fd, &db->nuclt)) goto cleanup;
     if (write_amino(db->super.file.fd, &db->amino)) goto cleanup;
 
@@ -175,6 +184,11 @@ struct imm_amino const *dcp_pro_db_amino(struct dcp_pro_db const *db)
 struct imm_nuclt const *dcp_pro_db_nuclt(struct dcp_pro_db const *db)
 {
     return &db->nuclt;
+}
+
+struct dcp_pro_cfg dcp_pro_db_cfg(struct dcp_pro_db const *db)
+{
+    return db->prof.cfg;
 }
 
 enum dcp_rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof)
