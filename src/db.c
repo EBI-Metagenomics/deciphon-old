@@ -33,8 +33,10 @@ static enum dcp_rc init_meta_file(struct dcp_db *db, FILE *restrict fd)
     return DCP_SUCCESS;
 }
 
-void db_init(struct dcp_db *db)
+void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
 {
+    db->prof_typeid = prof_typeid;
+    db->float_bytes = IMM_FLOAT_BYTES;
     db->profiles.size = 0;
     db->profiles.curr_idx = 0;
     db->mt.offset = NULL;
@@ -399,6 +401,13 @@ enum dcp_rc db_check_write_prof_ready(struct dcp_db const *db,
     if (prof->mt.name == NULL) return error(DCP_ILLEGALARG, "metadata not set");
 
     return DCP_SUCCESS;
+}
+
+struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx)
+{
+    unsigned o = db->mt.offset[idx];
+    unsigned size = (unsigned)(db->mt.name_length[idx] + 1);
+    return dcp_meta(db->mt.data + o, db->mt.data + o + size);
 }
 
 #if 0

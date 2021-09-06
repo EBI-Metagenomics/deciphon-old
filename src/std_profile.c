@@ -9,8 +9,7 @@ static enum dcp_rc write(struct dcp_prof const *prof, FILE *restrict fd);
 
 static void del(struct dcp_prof *prof);
 
-DCP_API void dcp_std_prof_init(struct dcp_std_prof *prof,
-                               struct imm_abc const *abc)
+void dcp_std_prof_init(struct dcp_std_prof *prof, struct imm_abc const *abc)
 {
     imm_dp_init(&prof->dp.null, abc);
     imm_dp_init(&prof->dp.alt, abc);
