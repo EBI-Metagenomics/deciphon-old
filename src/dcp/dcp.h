@@ -9,6 +9,7 @@ extern "C" {
 #include "dcp/db.h"
 #include "dcp/entry_dist.h"
 #include "dcp/generics.h"
+#include "dcp/log.h"
 #include "dcp/meta.h"
 #include "dcp/model.h"
 #include "dcp/pro_cfg.h"
@@ -27,6 +28,7 @@ extern "C" {
 #include "dcp/std_db.h"
 #include "dcp/std_prof.h"
 #include "dcp/task.h"
+#include "dcp/version.h"
 
 #ifdef __cplusplus
 }

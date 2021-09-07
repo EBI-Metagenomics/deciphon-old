@@ -1,5 +1,5 @@
 #include "dcp/log.h"
-#include "log.h"
+#include "error.h"
 #include <stdio.h>
 
 static void default_print(char const *msg, void *arg)
@@ -16,4 +16,10 @@ void dcp_log_setup(dcp_log_print_t *print, void *arg)
     __log_arg = arg;
 }
 
-void log_print(char const *msg) { __log_print(msg, __log_arg); }
+static void log_print(char const *msg) { __log_print(msg, __log_arg); }
+
+enum dcp_rc __error(enum dcp_rc rc, char const *msg)
+{
+    log_print(msg);
+    return rc;
+}

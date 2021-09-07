@@ -17,9 +17,7 @@
 # Result Variables
 # ^^^^^^^^^^^^^^^^
 #
-# This module defines the following variables:
-#
-# ::
+# This module defines the following variables::
 #
 #   CK_INCLUDE_DIR - Where to find the header files.
 #   CK_LIBRARY     - Library when using ck.

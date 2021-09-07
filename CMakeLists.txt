@@ -22,7 +22,10 @@ find_package(hmr REQUIRED)
 find_package(elapsed REQUIRED)
 find_package(imm REQUIRED)
 find_package(Threads REQUIRED)
-find_package(CK REQUIRED)
+# find_package(CK REQUIRED)
+find_package(Argp REQUIRED)
+find_package(log REQUIRED)
+find_package(athr REQUIRED)
 
 option(OPENMP "Enable OpenMP" On)
 if(OPENMP)
@@ -32,7 +35,6 @@ endif()
 add_library(
   dcp
   src/db.c
-  src/error.c
   src/fcopy.c
   src/log.c
   src/meta.c
@@ -47,8 +49,11 @@ add_library(
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 
-# Write out mytools_export.h to the current binary directory Must include
-# ${CMAKE_CURRENT_BINARY_DIR} in the target's search path.
+# Hide functions by default.
+set_property(TARGET dcp PROPERTY C_VISIBILITY_PRESET hidden)
+set_property(TARGET dcp PROPERTY VISIBILITY_INLINES_HIDDEN ON)
+
+# Write out dcp/export.h to the current binary directory.
 include(GenerateExportHeader)
 generate_export_header(
   dcp
@@ -111,6 +116,8 @@ target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h @ONLY)
 
 include(CheckCSourceCompiles)
 check_c_source_compiles(
@@ -131,6 +138,14 @@ endif()
 math(EXPR BITS_PER_INT "${SIZEOF_INT} * 8")
 target_compile_definitions(dcp PRIVATE BITS_PER_INT=${BITS_PER_INT})
 
+# Command line interface programs
+add_executable(dcp-press src/cli/press.c)
+target_link_libraries(dcp-press PUBLIC dcp)
+target_link_libraries(dcp-press PUBLIC Argp::argp)
+target_link_libraries(dcp-press PUBLIC LOG::log)
+target_link_libraries(dcp-press PUBLIC ATHR::athr)
+
+# Installation
 install(
   TARGETS dcp
   EXPORT dcp-targets
@@ -139,7 +154,7 @@ install(
   ARCHIVE DESTINATION lib
   PUBLIC_HEADER DESTINATION include)
 install(DIRECTORY src/dcp/ DESTINATION include/dcp)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h DESTINATION include/dcp)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h DESTINATION include/dcp)
 install(
   EXPORT dcp-targets
   FILE dcp-targets.cmake

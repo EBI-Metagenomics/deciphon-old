@@ -21,7 +21,6 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
     if (hmr_rc == HMR_ENDFILE) return DCP_ENDFILE;
 
     if (hmr_rc) return DCP_RUNTIMEERROR;
-    /* dcp_pro_model_init(&reader->model, reader->cfg, reader->null_lprobs); */
 
     unsigned core_size = hmr_prof_length(&reader->prof);
     enum dcp_rc rc = DCP_SUCCESS;

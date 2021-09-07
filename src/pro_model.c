@@ -141,6 +141,22 @@ void dcp_pro_model_init(struct dcp_pro_model *m, struct imm_amino const *amino,
     dcp_pro_xtrans_init(&m->xtrans);
 }
 
+static void model_reset(struct dcp_pro_model *model)
+{
+    imm_hmm_reset(&model->null.hmm);
+    imm_hmm_reset(&model->alt.hmm);
+
+    imm_state_detach(imm_super(&model->xnode.null.R));
+
+    imm_state_detach(imm_super(&model->xnode.alt.S));
+    imm_state_detach(imm_super(&model->xnode.alt.N));
+    imm_state_detach(imm_super(&model->xnode.alt.B));
+    imm_state_detach(imm_super(&model->xnode.alt.E));
+    imm_state_detach(imm_super(&model->xnode.alt.J));
+    imm_state_detach(imm_super(&model->xnode.alt.C));
+    imm_state_detach(imm_super(&model->xnode.alt.T));
+}
+
 enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
 {
     if (core_size == 0)
@@ -154,8 +170,7 @@ enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
         m->alt.locc = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
     m->alt.trans_idx = 0;
     m->alt.trans = realloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
-    imm_hmm_reset(&m->alt.hmm);
-    imm_hmm_reset(&m->null.hmm);
+    model_reset(m);
     add_xnodes(m);
     return DCP_SUCCESS;
 }
