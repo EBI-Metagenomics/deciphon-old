@@ -8,14 +8,6 @@
 #include "pro_prof.h"
 #include "third-party/cmp.h"
 
-struct dcp_pro_db
-{
-    struct dcp_db super;
-    struct imm_amino amino;
-    struct imm_nuclt nuclt;
-    struct dcp_pro_prof prof;
-};
-
 static enum dcp_rc read_epsilon(struct dcp_cmp_ctx *ctx, unsigned float_bytes,
                                 imm_float *epsilon)
 {

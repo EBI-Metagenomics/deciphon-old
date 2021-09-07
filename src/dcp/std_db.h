@@ -1,19 +1,27 @@
 #ifndef DCP_STD_DB_H
 #define DCP_STD_DB_H
 
+#include "dcp/db.h"
 #include "dcp/export.h"
 #include "dcp/meta.h"
+#include "dcp/std_prof.h"
 #include <stdio.h>
 
-struct dcp_db;
-struct dcp_std_db;
-struct dcp_std_prof;
 struct imm_abc;
 
-DCP_API struct dcp_std_db *dcp_std_db_openr(FILE *restrict fd);
+struct dcp_std_db
+{
+    struct dcp_db super;
+    struct imm_abc abc;
+    struct dcp_std_prof prof;
+};
 
-DCP_API struct dcp_std_db *dcp_std_db_openw(FILE *restrict fd,
-                                            struct imm_abc const *abc);
+DCP_API void dcp_std_db_init(struct dcp_std_db *db);
+
+DCP_API enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd);
+
+DCP_API enum dcp_rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
+                                     struct imm_abc const *abc);
 
 DCP_API enum dcp_rc dcp_std_db_close(struct dcp_std_db *db);
 

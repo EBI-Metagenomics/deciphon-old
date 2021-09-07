@@ -5,13 +5,6 @@
 #include "error.h"
 #include "std_prof.h"
 
-struct dcp_std_db
-{
-    struct dcp_db super;
-    struct imm_abc abc;
-    struct dcp_std_prof prof;
-};
-
 static enum dcp_rc read_abc(FILE *restrict fd, struct imm_abc *abc)
 {
     if (imm_abc_read(abc, fd))
@@ -26,59 +19,48 @@ static enum dcp_rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
     return DCP_SUCCESS;
 }
 
-struct dcp_std_db *dcp_std_db_openr(FILE *restrict fd)
+void dcp_std_db_init(struct dcp_std_db *db)
 {
-    struct dcp_std_db *db = malloc(sizeof *db);
-    if (!db)
-    {
-        error(DCP_OUTOFMEM, "failed to alloc db");
-        return NULL;
-    }
     db_init(&db->super, DCP_STD_PROFILE);
+    db->abc = imm_abc_empty;
+}
+
+enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
+{
     db_openr(&db->super, fd);
 
-    if (db_read_magic_number(&db->super)) goto cleanup;
-    if (db_read_prof_type(&db->super)) goto cleanup;
-    if (db_read_float_size(&db->super)) goto cleanup;
-    if (read_abc(db->super.file.fd, &db->abc)) goto cleanup;
-    if (db_read_nprofiles(&db->super)) goto cleanup;
-    if (db_read_metadata(&db->super)) goto cleanup;
+    enum dcp_rc rc = DCP_SUCCESS;
+    if ((rc = db_read_magic_number(&db->super))) return rc;
+    if ((rc = db_read_prof_type(&db->super))) return rc;
+    if ((rc = db_read_float_size(&db->super))) return rc;
+    if ((rc = read_abc(db->super.file.fd, &db->abc))) return rc;
+    if ((rc = db_read_nprofiles(&db->super))) return rc;
+    if ((rc = db_read_metadata(&db->super))) return rc;
 
     dcp_std_prof_init(&db->prof, &db->abc);
     assert(db->super.prof_typeid == DCP_STD_PROFILE);
-    return db;
-
-cleanup:
-    free(db);
-    return NULL;
+    return rc;
 }
 
-struct dcp_std_db *dcp_std_db_openw(FILE *restrict fd,
-                                    struct imm_abc const *abc)
+enum dcp_rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
+                             struct imm_abc const *abc)
 {
-    struct dcp_std_db *db = malloc(sizeof *db);
-    if (!db)
-    {
-        error(DCP_OUTOFMEM, "failed to alloc db");
-        return NULL;
-    }
-    db_init(&db->super, DCP_STD_PROFILE);
     db->abc = *abc;
     dcp_std_prof_init(&db->prof, &db->abc);
 
-    if (db_openw(&db->super, fd)) goto cleanup;
-    if (db_write_magic_number(&db->super)) goto cleanup;
-    if (db_write_prof_type(&db->super)) goto cleanup;
-    if (db_write_float_size(&db->super)) goto cleanup;
-    if (write_abc(db->super.file.fd, &db->abc)) goto cleanup;
+    enum dcp_rc rc = DCP_SUCCESS;
+    if ((rc = db_openw(&db->super, fd))) goto cleanup;
+    if ((rc = db_write_magic_number(&db->super))) goto cleanup;
+    if ((rc = db_write_prof_type(&db->super))) goto cleanup;
+    if ((rc = db_write_float_size(&db->super))) goto cleanup;
+    if ((rc = write_abc(db->super.file.fd, &db->abc))) goto cleanup;
 
-    return db;
+    return rc;
 
 cleanup:
     fclose(db->super.dp.fd);
     fclose(db->super.mt.file.fd);
-    free(db);
-    return NULL;
+    return rc;
 }
 
 enum dcp_rc dcp_std_db_close(struct dcp_std_db *db)

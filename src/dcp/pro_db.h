@@ -1,18 +1,21 @@
 #ifndef DCP_PRO_DB_H
 #define DCP_PRO_DB_H
 
+#include "dcp/db.h"
 #include "dcp/entry_dist.h"
 #include "dcp/export.h"
 #include "dcp/meta.h"
 #include "dcp/pro_cfg.h"
-#include "imm/imm.h"
+#include "dcp/pro_prof.h"
 #include <stdio.h>
 
-struct dcp_db;
-struct dcp_pro_db;
-struct dcp_pro_prof;
-struct imm_amino;
-struct imm_nuclt;
+struct dcp_pro_db
+{
+    struct dcp_db super;
+    struct imm_amino amino;
+    struct imm_nuclt nuclt;
+    struct dcp_pro_prof prof;
+};
 
 DCP_API struct dcp_pro_db *dcp_pro_db_openr(FILE *restrict fd);
 
