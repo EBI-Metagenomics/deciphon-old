@@ -66,6 +66,7 @@ void test_db_openw_one_mute(void)
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
     NOTNULL(fd);
     struct dcp_std_db *db = dcp_std_db_openw(fd, abc);
+    NOTNULL(db);
 
     struct dcp_std_prof p;
     dcp_std_prof_init(&p, abc);
@@ -107,6 +108,10 @@ void test_db_openr_one_mute(void)
 void test_db_openw_example1(void)
 {
     imm_example1_init();
+
+    struct imm_hmm *null = &imm_example1.null.hmm;
+    struct imm_hmm *alt = &imm_example1.hmm;
+
     struct imm_example1 *m = &imm_example1;
     FILE *fd = fopen(TMPDIR "/example1.dcp", "wb");
     NOTNULL(fd);
@@ -117,9 +122,8 @@ void test_db_openw_example1(void)
     struct dcp_std_prof p;
     dcp_std_prof_init(&p, &m->abc);
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
-    EQ(imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), &p.dp.null),
-       IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
     EQ(dcp_std_db_write(db, &p), DCP_SUCCESS);
 
     /* Profile 1 */
@@ -188,6 +192,10 @@ void test_db_openr_example1(void)
 void test_db_openw_example2(void)
 {
     imm_example2_init();
+
+    struct imm_hmm *null = &imm_example2.null.hmm;
+    struct imm_hmm *alt = &imm_example2.hmm;
+
     struct imm_example2 *m = &imm_example2;
     struct imm_abc const *abc = imm_super(imm_super(m->dna));
     FILE *fd = fopen(TMPDIR "/example2.dcp", "wb");
@@ -199,9 +207,8 @@ void test_db_openw_example2(void)
     struct dcp_std_prof p;
     dcp_std_prof_init(&p, abc);
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
-    EQ(imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), &p.dp.null),
-       IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
     EQ(dcp_std_db_write(db, &p), DCP_SUCCESS);
 
     /* Profile 1 */

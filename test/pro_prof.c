@@ -1,17 +1,17 @@
 #include "dcp/dcp.h"
 #include "hope/hope.h"
 
-void test_pro_profile_uniform(void);
-void test_pro_profile_occupancy(void);
+void test_pro_prof_uniform(void);
+void test_pro_prof_occupancy(void);
 
 int main(void)
 {
-    test_pro_profile_uniform();
-    test_pro_profile_occupancy();
+    test_pro_prof_uniform();
+    test_pro_prof_occupancy();
     return hope_status();
 }
 
-void test_pro_profile_uniform(void)
+void test_pro_prof_uniform(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
@@ -24,16 +24,15 @@ void test_pro_profile_uniform(void)
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);
 
-    bool multi_hits = true;
-    bool hmmer3_compat = false;
-    dcp_pro_prof_setup(&prof, imm_seq_size(&seq), multi_hits, hmmer3_compat);
+    EQ(dcp_pro_prof_setup(&prof, 0, true, false), DCP_ILLEGALARG);
+    EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_SUCCESS);
 
     struct imm_result result = imm_result();
     struct imm_dp *dp = &prof.null.dp;
     struct imm_task *task = imm_task_new(dp);
     NOTNULL(task);
-    imm_task_setup(task, &seq);
-    imm_dp_viterbi(dp, task, &result);
+    EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
+    EQ(imm_dp_viterbi(dp, task, &result), IMM_SUCCESS);
 
     CLOSE(result.loglik, -48.9272687711);
 
@@ -59,7 +58,7 @@ void test_pro_profile_uniform(void)
     EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
     EQ(imm_dp_viterbi(dp, task, &result), IMM_SUCCESS);
 
-    CLOSE(result.loglik, -55.59428405762);
+    CLOSE(result.loglik, -55.59428153448);
 
     EQ(imm_path_nsteps(&result.path), 14);
 
@@ -78,25 +77,23 @@ void test_pro_profile_uniform(void)
     imm_del(task);
 }
 
-void test_pro_profile_occupancy(void)
+void test_pro_prof_occupancy(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
     struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
 
-    struct dcp_pro_prof p;
-    dcp_pro_prof_init(&p, amino, nuclt, cfg);
-    dcp_pro_prof_sample(&p, 1, 2);
+    struct dcp_pro_prof prof;
+    dcp_pro_prof_init(&prof, amino, nuclt, cfg);
+    dcp_pro_prof_sample(&prof, 1, 2);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-    struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&p)->abc);
+    struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);
 
-    bool multi_hits = true;
-    bool hmmer3_compat = false;
-    dcp_pro_prof_setup(&p, imm_seq_size(&seq), multi_hits, hmmer3_compat);
+    EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_SUCCESS);
 
     struct imm_result result = imm_result();
-    struct imm_dp *dp = &p.null.dp;
+    struct imm_dp *dp = &prof.null.dp;
     struct imm_task *task = imm_task_new(dp);
     NOTNULL(task);
     EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
@@ -120,13 +117,13 @@ void test_pro_profile_occupancy(void)
     imm_result_reset(&result);
     imm_del(task);
 
-    dp = &p.alt.dp;
+    dp = &prof.alt.dp;
     task = imm_task_new(dp);
     NOTNULL(task);
     EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
     EQ(imm_dp_viterbi(dp, task, &result), IMM_SUCCESS);
 
-    CLOSE(result.loglik, -54.35543441772);
+    CLOSE(result.loglik, -54.35543421312);
 
     EQ(imm_path_nsteps(&result.path), 14);
 
@@ -140,7 +137,7 @@ void test_pro_profile_occupancy(void)
     dcp_pro_prof_state_name(imm_path_step(&result.path, 13)->state_id, name);
     EQ(name, "T");
 
-    dcp_del(&p);
+    dcp_del(&prof);
     imm_del(&result);
     imm_del(task);
 }

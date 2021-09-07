@@ -25,11 +25,12 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
     imm_dp_init(&p->alt.dp, imm_super(nuclt));
 }
 
-void dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_len,
-                        bool multi_hits, bool hmmer3_compat)
+enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_size,
+                               bool multi_hits, bool hmmer3_compat)
 {
-    assert(seq_len > 0);
-    imm_float L = (imm_float)seq_len;
+    if (seq_size == 0) return error(DCP_ILLEGALARG, "sequence cannot be empty");
+
+    imm_float L = (imm_float)seq_size;
 
     imm_float q = 0.0;
     imm_float log_q = IMM_LPROB_ZERO;
@@ -84,6 +85,7 @@ void dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_len,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, J), t.EC + t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, J), t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
+    return DCP_SUCCESS;
 }
 
 enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
