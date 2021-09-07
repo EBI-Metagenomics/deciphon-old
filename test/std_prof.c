@@ -1,42 +1,31 @@
 #include "dcp/dcp.h"
 #include "hope/hope.h"
-#include "imm/imm.h"
-
-void test_std_profile(void);
 
 int main(void)
 {
-    test_std_profile();
-    return hope_status();
-}
-
-void test_std_profile(void)
-{
     imm_example1_init();
-    struct imm_example1 *m = &imm_example1;
 
-    /* Profile 0 */
-    struct dcp_meta mt0 = dcp_meta("NAME0", "ACC0");
-    struct dcp_std_prof p0;
-    dcp_std_prof_init(&p0, &m->abc);
-    dcp_prof_nameit(dcp_super(&p0), mt0);
-    imm_hmm_reset_dp(&m->null.hmm, imm_super(&m->null.n), &p0.dp.null);
-    imm_hmm_reset_dp(&m->hmm, imm_super(&m->end), &p0.dp.alt);
+    struct imm_abc const *abc = &imm_example1.abc;
+    struct imm_hmm *null = &imm_example1.null.hmm;
+    struct imm_hmm *alt = &imm_example1.hmm;
 
-    /* Profile 1 */
-    struct imm_mute_state state;
-    imm_mute_state_init(&state, 3, &m->abc);
-    struct imm_hmm hmm;
-    imm_hmm_init(&hmm, &m->abc);
-    EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
-    EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
-    struct dcp_meta mt1 = dcp_meta("NAME1", "ACC1");
-    struct dcp_std_prof p1;
-    dcp_std_prof_init(&p1, &m->abc);
-    dcp_prof_nameit(dcp_super(&p1), mt1);
-    imm_hmm_reset_dp(&m->null.hmm, imm_super(&state), &p1.dp.null);
-    imm_hmm_reset_dp(&m->hmm, imm_super(&state), &p1.dp.alt);
+    struct imm_mute_state state0;
+    imm_mute_state_init(&state0, 3, abc);
+    EQ(imm_hmm_add_state(null, imm_super(&state0)), IMM_SUCCESS);
+    EQ(imm_hmm_set_start(null, imm_super(&state0), imm_log(0.3)), IMM_SUCCESS);
 
-    dcp_del(&p0);
-    dcp_del(&p1);
+    imm_float lprobs[IMM_NUCLT_SIZE] = {0};
+    struct imm_normal_state state1;
+    imm_normal_state_init(&state1, 1, abc, lprobs);
+    EQ(imm_hmm_add_state(alt, imm_super(&state1)), IMM_SUCCESS);
+    EQ(imm_hmm_set_start(alt, imm_super(&state1), imm_log(0.1)), IMM_SUCCESS);
+
+    struct dcp_std_prof prof;
+    dcp_std_prof_init(&prof, abc);
+    dcp_prof_nameit(dcp_super(&prof), dcp_meta("NAME1", "ACC1"));
+    EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_SUCCESS);
+
+    dcp_del(&prof);
+    return hope_status();
 }

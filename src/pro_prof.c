@@ -4,6 +4,7 @@
 #include "dcp/rc.h"
 #include "error.h"
 #include "imm/imm.h"
+#include "meta.h"
 #include "pro_model.h"
 #include "pro_prof.h"
 #include "prof.h"
@@ -16,7 +17,7 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
                        struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg)
 {
     struct dcp_prof_vtable vtable = {del, DCP_PROTEIN_PROFILE};
-    profile_init(&p->super, imm_super(nuclt), dcp_meta(NULL, NULL), vtable);
+    profile_init(&p->super, imm_super(nuclt), meta_unset, vtable);
     p->nuclt = nuclt;
     p->amino = amino;
     p->cfg = cfg;

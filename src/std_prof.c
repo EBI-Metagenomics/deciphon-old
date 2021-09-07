@@ -1,6 +1,7 @@
 #include "dcp/std_prof.h"
 #include "dcp/rc.h"
 #include "imm/imm.h"
+#include "meta.h"
 #include "prof.h"
 #include "std_prof.h"
 
@@ -11,7 +12,7 @@ void dcp_std_prof_init(struct dcp_std_prof *prof, struct imm_abc const *abc)
     imm_dp_init(&prof->dp.null, abc);
     imm_dp_init(&prof->dp.alt, abc);
     struct dcp_prof_vtable vtable = {del, DCP_STD_PROFILE};
-    profile_init(&prof->super, abc, dcp_meta(NULL, NULL), vtable);
+    profile_init(&prof->super, abc, meta_unset, vtable);
 }
 
 enum dcp_rc std_prof_read(struct dcp_std_prof *prof, FILE *restrict fd)

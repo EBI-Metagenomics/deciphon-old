@@ -35,6 +35,7 @@ add_library(
   src/error.c
   src/fcopy.c
   src/log.c
+  src/meta.c
   src/model.c
   src/pro_db.c
   src/pro_model.c
