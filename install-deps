@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 /bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/c-containers
 /bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/logaddexp
 /bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/elapsed
