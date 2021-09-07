@@ -17,12 +17,14 @@ struct dcp_pro_db
     struct dcp_pro_prof prof;
 };
 
-DCP_API struct dcp_pro_db *dcp_pro_db_openr(FILE *restrict fd);
+DCP_API void dcp_pro_db_init(struct dcp_pro_db *db);
 
-DCP_API struct dcp_pro_db *dcp_pro_db_openw(FILE *restrict fd,
-                                            struct imm_amino const *amino,
-                                            struct imm_nuclt const *nuclt,
-                                            struct dcp_pro_cfg cfg);
+DCP_API enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd);
+
+DCP_API enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
+                                     struct imm_amino const *amino,
+                                     struct imm_nuclt const *nuclt,
+                                     struct dcp_pro_cfg cfg);
 
 DCP_API enum dcp_rc dcp_pro_db_close(struct dcp_pro_db *db);
 

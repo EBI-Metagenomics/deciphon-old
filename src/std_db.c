@@ -23,6 +23,7 @@ void dcp_std_db_init(struct dcp_std_db *db)
 {
     db_init(&db->super, DCP_STD_PROFILE);
     db->abc = imm_abc_empty;
+    dcp_std_prof_init(&db->prof, &db->abc);
 }
 
 enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
@@ -37,7 +38,6 @@ enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
     if ((rc = db_read_nprofiles(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
-    dcp_std_prof_init(&db->prof, &db->abc);
     assert(db->super.prof_typeid == DCP_STD_PROFILE);
     return rc;
 }
@@ -46,7 +46,6 @@ enum dcp_rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
                              struct imm_abc const *abc)
 {
     db->abc = *abc;
-    dcp_std_prof_init(&db->prof, &db->abc);
 
     enum dcp_rc rc = DCP_SUCCESS;
     if ((rc = db_openw(&db->super, fd))) goto cleanup;

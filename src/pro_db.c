@@ -97,74 +97,64 @@ static enum dcp_rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
     return DCP_SUCCESS;
 }
 
-struct dcp_pro_db *dcp_pro_db_openr(FILE *restrict fd)
+void dcp_pro_db_init(struct dcp_pro_db *db)
 {
-    struct dcp_pro_db *db = malloc(sizeof *db);
-    if (!db)
-    {
-        error(DCP_OUTOFMEM, "failed to alloc db");
-        return NULL;
-    }
     db_init(&db->super, DCP_PROTEIN_PROFILE);
+    db->amino = imm_amino_empty;
+    db->nuclt = imm_nuclt_empty;
     dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt, DCP_PRO_CFG_DEFAULT);
+}
+
+enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
+{
     db_openr(&db->super, fd);
 
     struct dcp_cmp_ctx *ctx = &db->super.file.ctx;
     imm_float *epsilon = &db->prof.cfg.epsilon;
 
-    if (db_read_magic_number(&db->super)) goto cleanup;
-    if (db_read_prof_type(&db->super)) goto cleanup;
-    if (db_read_float_size(&db->super)) goto cleanup;
-    if (read_entry_dist(ctx, &db->prof.cfg.entry_dist)) goto cleanup;
-    if (read_epsilon(ctx, db->super.float_size, epsilon)) goto cleanup;
-    if (read_nuclt(db->super.file.fd, &db->nuclt)) goto cleanup;
-    if (read_amino(db->super.file.fd, &db->amino)) goto cleanup;
-    if (db_read_nprofiles(&db->super)) goto cleanup;
-    if (db_read_metadata(&db->super)) goto cleanup;
+    enum dcp_rc rc = DCP_SUCCESS;
+    if ((rc = db_read_magic_number(&db->super))) return rc;
+    if ((rc = db_read_prof_type(&db->super))) return rc;
+    if ((rc = db_read_float_size(&db->super))) return rc;
+    if ((rc = read_entry_dist(ctx, &db->prof.cfg.entry_dist))) return rc;
+    if ((rc = read_epsilon(ctx, db->super.float_size, epsilon))) return rc;
+    if ((rc = read_nuclt(db->super.file.fd, &db->nuclt))) return rc;
+    if ((rc = read_amino(db->super.file.fd, &db->amino))) return rc;
+    if ((rc = db_read_nprofiles(&db->super))) return rc;
+    if ((rc = db_read_metadata(&db->super))) return rc;
 
     assert(db->super.prof_typeid == DCP_PROTEIN_PROFILE);
-    return db;
-
-cleanup:
-    free(db);
-    return NULL;
+    return rc;
 }
 
-struct dcp_pro_db *dcp_pro_db_openw(FILE *restrict fd,
-                                    struct imm_amino const *amino,
-                                    struct imm_nuclt const *nuclt,
-                                    struct dcp_pro_cfg cfg)
+enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
+                             struct imm_amino const *amino,
+                             struct imm_nuclt const *nuclt,
+                             struct dcp_pro_cfg cfg)
 {
-    struct dcp_pro_db *db = malloc(sizeof *db);
-    if (!db)
-    {
-        error(DCP_OUTOFMEM, "failed to alloc db");
-        return NULL;
-    }
     db->amino = *amino;
     db->nuclt = *nuclt;
-    db_init(&db->super, DCP_PROTEIN_PROFILE);
-    dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt, cfg);
-    if (db_openw(&db->super, fd)) goto cleanup;
 
     struct dcp_cmp_ctx *ctx = &db->super.file.ctx;
     unsigned float_size = db->super.float_size;
+    imm_float epsilon = db->prof.cfg.epsilon;
 
-    if (db_write_magic_number(&db->super)) goto cleanup;
-    if (db_write_prof_type(&db->super)) goto cleanup;
-    if (db_write_float_size(&db->super)) goto cleanup;
-    if (write_entry_dist(ctx, db->prof.cfg.entry_dist)) goto cleanup;
-    if (write_epsilon(ctx, float_size, db->prof.cfg.epsilon)) goto cleanup;
-    if (write_nuclt(db->super.file.fd, &db->nuclt)) goto cleanup;
-    if (write_amino(db->super.file.fd, &db->amino)) goto cleanup;
+    enum dcp_rc rc = DCP_SUCCESS;
+    if ((rc = db_openw(&db->super, fd))) goto cleanup;
+    if ((rc = db_write_magic_number(&db->super))) goto cleanup;
+    if ((rc = db_write_prof_type(&db->super))) goto cleanup;
+    if ((rc = db_write_float_size(&db->super))) goto cleanup;
+    if ((rc = write_entry_dist(ctx, db->prof.cfg.entry_dist))) goto cleanup;
+    if ((rc = write_epsilon(ctx, float_size, epsilon))) goto cleanup;
+    if ((rc = write_nuclt(db->super.file.fd, &db->nuclt))) goto cleanup;
+    if ((rc = write_amino(db->super.file.fd, &db->amino))) goto cleanup;
 
-    return db;
+    return rc;
 
 cleanup:
     fclose(db->super.dp.fd);
     fclose(db->super.mt.file.fd);
-    free(db);
-    return NULL;
+    return rc;
 }
 
 enum dcp_rc dcp_pro_db_close(struct dcp_pro_db *db)
