@@ -356,7 +356,7 @@ static enum dcp_rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
     if (!cmp_write_str(ctx, prof->mt.name, (uint32_t)strlen(prof->mt.name)))
         return error(DCP_IOERROR, "failed to write profile name");
     /* +1 for null-terminated */
-    db->mt.size += strlen(prof->mt.name) + 1;
+    db->mt.size += (uint32_t)strlen(prof->mt.name) + 1;
 
     return DCP_SUCCESS;
 }
@@ -369,7 +369,7 @@ static enum dcp_rc write_accession(struct dcp_db *db,
     if (!cmp_write_str(ctx, prof->mt.acc, (uint32_t)strlen(prof->mt.acc)))
         return error(DCP_IOERROR, "failed to write profile accession");
     /* +1 for null-terminated */
-    db->mt.size += strlen(prof->mt.acc) + 1;
+    db->mt.size += (uint32_t)strlen(prof->mt.acc) + 1;
 
     return DCP_SUCCESS;
 }

@@ -141,7 +141,7 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     struct dcp_pro_model model;
     dcp_pro_model_init(&model, p->amino, p->nuclt, p->cfg, lprobs);
 
-    int rc = (int)dcp_pro_model_setup(&model, core_size);
+    enum dcp_rc rc = dcp_pro_model_setup(&model, core_size);
 
     for (unsigned i = 0; i < core_size; ++i)
     {
@@ -165,9 +165,8 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     }
 
     rc += dcp_pro_prof_absorb(p, &model);
-    dcp_del(&model);
-
     assert(!rc);
+    dcp_del(&model);
 }
 
 void dcp_pro_prof_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)

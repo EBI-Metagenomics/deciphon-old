@@ -485,7 +485,7 @@ static void setup_transitions(struct dcp_pro_model *m)
 
     struct imm_state *B = imm_super(&m->xnode.alt.B);
     struct imm_state *M1 = imm_super(&m->alt.nodes[0].M);
-    int rc = (int)imm_hmm_set_trans(h, B, M1, trans[0].MM);
+    enum imm_rc rc = imm_hmm_set_trans(h, B, M1, trans[0].MM);
 
     for (unsigned i = 0; i + 1 < m->core_size; ++i)
     {
