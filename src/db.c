@@ -95,9 +95,25 @@ static enum dcp_rc flush_metadata(struct dcp_db *db)
     return DCP_SUCCESS;
 }
 
-static void closer(struct dcp_db const *db)
+static void cleanup_metadata_data(struct dcp_db *db)
+{
+    free(db->mt.data);
+    db->mt.data = NULL;
+}
+
+static void cleanup_metadata_parsing(struct dcp_db *db)
+{
+    free(db->mt.offset);
+    free(db->mt.name_length);
+    db->mt.offset = NULL;
+    db->mt.name_length = NULL;
+}
+
+static void closer(struct dcp_db *db)
 {
     assert(db->file.mode == DB_OPEN_READ);
+    cleanup_metadata_data(db);
+    cleanup_metadata_parsing(db);
 }
 
 static enum dcp_rc closew(struct dcp_db *db)
@@ -246,12 +262,6 @@ static enum dcp_rc check_metadata_profile_compatibility(struct dcp_db const *db)
     return DCP_SUCCESS;
 }
 
-static void cleanup_metadata_data(struct dcp_db *db)
-{
-    free(db->mt.data);
-    db->mt.data = NULL;
-}
-
 static enum dcp_rc read_metadata_data(struct dcp_db *db)
 {
     assert(db->mt.size > 0);
@@ -273,14 +283,6 @@ static enum dcp_rc read_metadata_data(struct dcp_db *db)
     }
 
     return DCP_SUCCESS;
-}
-
-static void cleanup_metadata_parsing(struct dcp_db *db)
-{
-    free(db->mt.offset);
-    free(db->mt.name_length);
-    db->mt.offset = NULL;
-    db->mt.name_length = NULL;
 }
 
 static enum dcp_rc alloc_metadata_parsing(struct dcp_db *db)

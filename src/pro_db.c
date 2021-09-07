@@ -159,7 +159,9 @@ cleanup:
 
 enum dcp_rc dcp_pro_db_close(struct dcp_pro_db *db)
 {
-    return db_close(&db->super);
+    enum dcp_rc rc = db_close(&db->super);
+    dcp_pro_prof_del(&db->prof);
+    return rc;
 }
 
 struct imm_amino const *dcp_pro_db_amino(struct dcp_pro_db const *db)

@@ -64,7 +64,9 @@ cleanup:
 
 enum dcp_rc dcp_std_db_close(struct dcp_std_db *db)
 {
-    return db_close(&db->super);
+    enum dcp_rc rc = db_close(&db->super);
+    dcp_std_prof_del(&db->prof);
+    return rc;
 }
 
 struct imm_abc const *dcp_std_db_abc(struct dcp_std_db const *db)

@@ -51,9 +51,10 @@ int main(void)
     NOTNULL(task);
     EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
     EQ(imm_dp_viterbi(dp, task, &result), IMM_SUCCESS);
-
     CLOSE(result.loglik, -1430.9281381240353);
+    imm_del(&result);
 
     fclose(fd);
+    dcp_del(&prof);
     return hope_status();
 }
