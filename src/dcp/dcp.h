@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include "dcp/cmp.h"
 #include "dcp/db.h"
 #include "dcp/entry_dist.h"
 #include "dcp/generics.h"

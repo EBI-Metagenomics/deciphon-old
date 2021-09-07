@@ -7,7 +7,7 @@
 #include "fcopy.h"
 #include "imm/imm.h"
 #include "prof.h"
-#include "xcmp.h"
+#include "third-party/cmp.h"
 #include <assert.h>
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B
@@ -18,10 +18,10 @@
 #define MAX_ACC_SIZE 31
 
 static void init_db_file(struct dcp_db *db, FILE *restrict fd,
-                         enum db_mode mode)
+                         enum dcp_db_mode mode)
 {
     db->file.fd = fd;
-    xcmp_init(&db->file.ctx, db->file.fd);
+    dcp_cmp_init(&db->file.ctx, db->file.fd);
     db->file.mode = mode;
 }
 
@@ -30,8 +30,17 @@ static enum dcp_rc init_meta_file(struct dcp_db *db, FILE *restrict fd)
     if (!(db->mt.file.fd = tmpfile()))
         return error(DCP_IOERROR, "tmpfile() failed");
 
-    xcmp_init(&db->mt.file.ctx, db->mt.file.fd);
+    dcp_cmp_init(&db->mt.file.ctx, db->mt.file.fd);
     return DCP_SUCCESS;
+}
+
+static void init_db_mt(struct dcp_db *db)
+{
+    db->mt.offset = NULL;
+    db->mt.name_length = NULL;
+    db->mt.size = 0;
+    db->mt.data = NULL;
+    db->mt.file.fd = NULL;
 }
 
 void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
@@ -40,10 +49,7 @@ void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
     db->float_size = IMM_FLOAT_BYTES;
     db->profiles.size = 0;
     db->profiles.curr_idx = 0;
-    db->mt.offset = NULL;
-    db->mt.name_length = NULL;
-    db->mt.data = NULL;
-    db->mt.file.fd = NULL;
+    init_db_mt(db);
     db->dp.fd = NULL;
     db->file.fd = NULL;
 }
@@ -62,7 +68,7 @@ enum dcp_rc db_openw(struct dcp_db *db, FILE *restrict fd)
 
 static enum dcp_rc flush_metadata(struct dcp_db *db)
 {
-    cmp_ctx_t *ctx = &db->file.ctx;
+    struct dcp_cmp_ctx *ctx = &db->file.ctx;
 
     if (!cmp_write_u32(ctx, db->mt.size))
         return error(DCP_IOERROR, "failed to write metadata size");
@@ -253,7 +259,7 @@ static enum dcp_rc read_metadata_data(struct dcp_db *db)
     if (!(db->mt.data = malloc(sizeof(char) * db->mt.size)))
         return error(DCP_OUTOFMEM, "failed to alloc for mt.data");
 
-    cmp_ctx_t *ctx = &db->file.ctx;
+    struct dcp_cmp_ctx *ctx = &db->file.ctx;
     if (!ctx->read(ctx, db->mt.data, db->mt.size))
     {
         cleanup_metadata_data(db);
@@ -351,7 +357,7 @@ cleanup:
 
 static enum dcp_rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
 {
-    cmp_ctx_t *ctx = &db->mt.file.ctx;
+    struct dcp_cmp_ctx *ctx = &db->mt.file.ctx;
 
     if (!cmp_write_str(ctx, prof->mt.name, (uint32_t)strlen(prof->mt.name)))
         return error(DCP_IOERROR, "failed to write profile name");
@@ -364,7 +370,7 @@ static enum dcp_rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
 static enum dcp_rc write_accession(struct dcp_db *db,
                                    struct dcp_prof const *prof)
 {
-    cmp_ctx_t *ctx = &db->mt.file.ctx;
+    struct dcp_cmp_ctx *ctx = &db->mt.file.ctx;
 
     if (!cmp_write_str(ctx, prof->mt.acc, (uint32_t)strlen(prof->mt.acc)))
         return error(DCP_IOERROR, "failed to write profile accession");

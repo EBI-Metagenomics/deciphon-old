@@ -3534,4 +3534,3 @@ bool cmp_object_to_bin(cmp_ctx_t *ctx, const cmp_object_t *obj, void *data,
 }
 
 /* vi: set et ts=2 sw=2: */
-

@@ -6,6 +6,7 @@
 #include "dcp/rc.h"
 #include "error.h"
 #include "pro_prof.h"
+#include "third-party/cmp.h"
 
 struct dcp_pro_db
 {
@@ -15,7 +16,7 @@ struct dcp_pro_db
     struct dcp_pro_prof prof;
 };
 
-static enum dcp_rc read_epsilon(cmp_ctx_t *ctx, unsigned float_bytes,
+static enum dcp_rc read_epsilon(struct dcp_cmp_ctx *ctx, unsigned float_bytes,
                                 imm_float *epsilon)
 {
     if (float_bytes == 4)
@@ -39,7 +40,7 @@ static enum dcp_rc read_epsilon(cmp_ctx_t *ctx, unsigned float_bytes,
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc write_epsilon(cmp_ctx_t *ctx, unsigned float_bytes,
+static enum dcp_rc write_epsilon(struct dcp_cmp_ctx *ctx, unsigned float_bytes,
                                  imm_float epsilon)
 {
     if (float_bytes == 4)
@@ -58,7 +59,8 @@ static enum dcp_rc write_epsilon(cmp_ctx_t *ctx, unsigned float_bytes,
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc read_entry_dist(cmp_ctx_t *ctx, enum dcp_entry_dist *edist)
+static enum dcp_rc read_entry_dist(struct dcp_cmp_ctx *ctx,
+                                   enum dcp_entry_dist *edist)
 {
     uint8_t val = 0;
     if (!cmp_read_u8(ctx, &val))
@@ -67,7 +69,8 @@ static enum dcp_rc read_entry_dist(cmp_ctx_t *ctx, enum dcp_entry_dist *edist)
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc write_entry_dist(cmp_ctx_t *ctx, enum dcp_entry_dist edist)
+static enum dcp_rc write_entry_dist(struct dcp_cmp_ctx *ctx,
+                                    enum dcp_entry_dist edist)
 {
     if (!cmp_write_u8(ctx, (uint8_t)edist))
         return error(DCP_IOERROR, "failed to write entry distribution");
@@ -114,7 +117,7 @@ struct dcp_pro_db *dcp_pro_db_openr(FILE *restrict fd)
     dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt, DCP_PRO_CFG_DEFAULT);
     db_openr(&db->super, fd);
 
-    cmp_ctx_t *ctx = &db->super.file.ctx;
+    struct dcp_cmp_ctx *ctx = &db->super.file.ctx;
     imm_float *epsilon = &db->prof.cfg.epsilon;
 
     if (db_read_magic_number(&db->super)) goto cleanup;
@@ -152,7 +155,7 @@ struct dcp_pro_db *dcp_pro_db_openw(FILE *restrict fd,
     dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt, cfg);
     if (db_openw(&db->super, fd)) goto cleanup;
 
-    cmp_ctx_t *ctx = &db->super.file.ctx;
+    struct dcp_cmp_ctx *ctx = &db->super.file.ctx;
     unsigned float_size = db->super.float_size;
 
     if (db_write_magic_number(&db->super)) goto cleanup;

@@ -43,7 +43,7 @@ add_library(
   src/pro_reader.c
   src/std_db.c
   src/std_prof.c
-  src/xcmp.c
+  src/cmp.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 

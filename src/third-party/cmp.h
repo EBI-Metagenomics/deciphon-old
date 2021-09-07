@@ -29,13 +29,11 @@ THE SOFTWARE.
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "dcp/cmp.h"
 
-struct cmp_ctx_s;
-
-typedef bool   (*cmp_reader)(struct cmp_ctx_s *ctx, void *data, size_t limit);
-typedef bool   (*cmp_skipper)(struct cmp_ctx_s *ctx, size_t count);
-typedef size_t (*cmp_writer)(struct cmp_ctx_s *ctx, const void *data,
-                                                    size_t count);
+typedef dcp_cmp_reader cmp_reader;
+typedef dcp_cmp_skipper cmp_skipper;
+typedef dcp_cmp_writer cmp_writer;
 
 enum {
   CMP_TYPE_POSITIVE_FIXNUM, /*  0 */
@@ -101,13 +99,7 @@ union cmp_object_data_u {
   cmp_ext_t ext;
 };
 
-typedef struct cmp_ctx_s {
-  uint8_t      error;
-  void        *buf;
-  cmp_reader   read;
-  cmp_skipper  skip;
-  cmp_writer   write;
-} cmp_ctx_t;
+typedef struct dcp_cmp_ctx cmp_ctx_t;
 
 typedef struct cmp_object_s {
   uint8_t type;

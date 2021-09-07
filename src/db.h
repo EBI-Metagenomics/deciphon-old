@@ -1,47 +1,8 @@
 #ifndef DB_H
 #define DB_H
 
+#include "dcp/db.h"
 #include "dcp/prof.h"
-#include "xcmp.h"
-
-enum db_mode
-{
-    DB_OPEN_READ,
-    DB_OPEN_WRITE,
-};
-
-struct dcp_db
-{
-    enum dcp_prof_typeid prof_typeid;
-    unsigned float_size;
-    struct
-    {
-        dcp_profile_idx_t size;
-        dcp_profile_idx_t curr_idx;
-    } profiles;
-    struct
-    {
-        uint32_t *offset;
-        uint8_t *name_length;
-        uint32_t size;
-        char *data;
-        struct
-        {
-            FILE *fd;
-            cmp_ctx_t ctx;
-        } file;
-    } mt;
-    struct
-    {
-        FILE *fd;
-    } dp;
-    struct
-    {
-        FILE *fd;
-        enum db_mode mode;
-        cmp_ctx_t ctx;
-    } file;
-};
 
 void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid);
 
