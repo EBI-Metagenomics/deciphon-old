@@ -4,6 +4,7 @@
 #include "dcp/pro_db.h"
 #include "dcp/pro_reader.h"
 #include "error.h"
+#include "far/far.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -69,18 +70,34 @@ static off_t filesize(FILE *restrict f)
     return st.st_size;
 }
 
-static enum dcp_rc scan_targets(struct imm_result *result, struct imm_dp *dp,
-                                struct imm_abc const *abc)
+static struct far far;
+static struct far_tgt tgt;
+
+static enum dcp_rc scan_targets(FILE *fd, struct imm_result *result,
+                                struct imm_dp *dp, struct imm_abc const *abc)
 {
     struct imm_task *task = imm_task_new(dp);
-    struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
-    if (imm_task_setup(task, &seq))
-        return error(DCP_RUNTIMEERROR, "failed to create task");
+    assert(fd);
 
-    if (imm_dp_viterbi(dp, task, result))
-        return error(DCP_RUNTIMEERROR, "failed to run viterbi");
+    far_init(&far, fd);
+    far_tgt_init(&tgt, &far);
 
-    printf("%.f\n", result->loglik);
+    enum far_rc rc = FAR_SUCCESS;
+    unsigned i = 0;
+    while (!(rc = far_next_tgt(&far, &tgt)))
+    {
+        struct imm_seq seq = imm_seq(imm_str(tgt.seq), abc);
+        if (imm_task_setup(task, &seq))
+            return error(DCP_RUNTIMEERROR, "failed to create task");
+
+        if (imm_dp_viterbi(dp, task, result))
+            return error(DCP_RUNTIMEERROR, "failed to run viterbi");
+
+        printf("%s: %f\n", tgt.id, result->loglik);
+
+        i++;
+    }
+
     imm_del(task);
     return DCP_SUCCESS;
 }
@@ -96,11 +113,13 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
     struct dcp dcp = {arguments.args[1], NULL};
 
     faa.fd = fopen(faa.filepath, "r");
-    dcp.fd = fopen(dcp.filepath, "wb");
+    dcp.fd = fopen(dcp.filepath, "rb");
 
     enum dcp_rc rc = DCP_SUCCESS;
 
     struct dcp_pro_db db;
+    dcp_pro_db_init(&db);
+
     if ((rc = dcp_pro_db_openr(&db, dcp.fd))) goto cleanup;
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&db);
 
@@ -108,24 +127,26 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
     struct imm_abc const *abc = imm_super(nuclt);
     assert(imm_abc_typeid(abc) == IMM_DNA);
 
-    long pos = ftell(dcp.fd);
-    struct athr *at = athr_create(filesize(dcp.fd) - pos, "Scan", ATHR_BAR);
+    /* long pos = ftell(dcp.fd); */
+    /* struct athr *at = athr_create(filesize(dcp.fd) - pos, "Scan", ATHR_BAR);
+     */
     struct imm_result result = imm_result();
     while (!(rc = dcp_db_end(dcp_super(&db))))
     {
-        athr_consume(at, ftell(dcp.fd) - pos);
+        /* athr_consume(at, ftell(dcp.fd) - pos); */
         if ((rc = dcp_pro_db_read(&db, prof))) goto cleanup;
         assert(dcp_prof_typeid(dcp_super(prof)) == DCP_PROTEIN_PROFILE);
 
-        if ((rc = scan_targets(&result, &prof->alt.dp, abc))) goto cleanup;
+        if ((rc = scan_targets(faa.fd, &result, &prof->alt.dp, abc)))
+            goto cleanup;
 
-        pos = ftell(dcp.fd);
+        /* pos = ftell(dcp.fd); */
     }
     if (rc != DCP_ENDFILE) goto cleanup;
 
     rc = dcp_pro_db_close(&db);
     imm_del(&result);
-    athr_finish(at);
+    /* athr_finish(at); */
 
 cleanup:
     fclose(faa.fd);

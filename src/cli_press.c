@@ -92,6 +92,8 @@ enum dcp_rc dcp_cli_press(int argc, char **argv)
     enum dcp_rc rc = DCP_SUCCESS;
 
     struct dcp_pro_db db;
+    dcp_pro_db_init(&db);
+
     if ((rc = openw_db(&db, oput.fd, DCP_PRO_CFG_DEFAULT))) goto cleanup;
 
     struct dcp_pro_reader reader;
