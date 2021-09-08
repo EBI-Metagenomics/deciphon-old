@@ -166,9 +166,7 @@ enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
         if ((rc = dcp_pro_model_add_trans(&model, t))) goto cleanup;
     }
 
-    if ((rc = dcp_pro_prof_absorb(p, &model))) goto cleanup;
-
-    return DCP_SUCCESS;
+    rc = dcp_pro_prof_absorb(p, &model);
 
 cleanup:
     dcp_del(&model);
