@@ -1,7 +1,10 @@
 #ifndef DCP_GENERICS_H
 #define DCP_GENERICS_H
 
+#include "dcp/pro_db.h"
+#include "dcp/pro_model.h"
 #include "dcp/pro_prof.h"
+#include "dcp/std_db.h"
 #include "dcp/std_prof.h"
 
 #define dcp_super(x)                                                           \

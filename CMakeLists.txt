@@ -34,6 +34,8 @@ endif()
 
 add_library(
   dcp
+  src/cli_press.c
+  src/cmp.c
   src/db.c
   src/fcopy.c
   src/log.c
@@ -45,7 +47,6 @@ add_library(
   src/pro_reader.c
   src/std_db.c
   src/std_prof.c
-  src/cmp.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 
@@ -103,9 +104,10 @@ target_include_directories(
 target_link_libraries(dcp PUBLIC IMM::imm)
 target_link_libraries(dcp PUBLIC HMR::hmr)
 target_link_libraries(dcp PUBLIC FAR::far)
-# target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
 target_link_libraries(dcp PUBLIC Threads::Threads)
-# target_link_libraries(dcp PUBLIC CK::ck)
+target_link_libraries(dcp PUBLIC Argp::argp)
+target_link_libraries(dcp PUBLIC LOG::log)
+target_link_libraries(dcp PUBLIC ATHR::athr)
 target_link_libraries(dcp PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 set_target_properties(dcp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(dcp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
@@ -139,11 +141,8 @@ math(EXPR BITS_PER_INT "${SIZEOF_INT} * 8")
 target_compile_definitions(dcp PRIVATE BITS_PER_INT=${BITS_PER_INT})
 
 # Command line interface programs
-add_executable(dcp-press src/cli/press.c)
+add_executable(dcp-press src/bin_press.c)
 target_link_libraries(dcp-press PUBLIC dcp)
-target_link_libraries(dcp-press PUBLIC Argp::argp)
-target_link_libraries(dcp-press PUBLIC LOG::log)
-target_link_libraries(dcp-press PUBLIC ATHR::athr)
 
 # Installation
 install(

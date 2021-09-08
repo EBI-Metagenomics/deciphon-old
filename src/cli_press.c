@@ -1,5 +1,10 @@
+#include "dcp/cli_press.h"
 #include "athr/athr.h"
-#include "dcp/dcp.h"
+#include "dcp/generics.h"
+#include "dcp/log.h"
+#include "dcp/pro_db.h"
+#include "dcp/pro_reader.h"
+#include "dcp/version.h"
 #include "log/log.h"
 #include <argp.h>
 #include <stdlib.h>
@@ -47,7 +52,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-static struct argp argp = {options, parse_opt, args_doc, doc};
+static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 struct input
 {
@@ -86,7 +91,7 @@ static void wrap_fprintf(char const *msg, void *arg)
     fprintf(stderr, "%s\n", msg);
 }
 
-off_t filesize(FILE *restrict f)
+static off_t filesize(FILE *restrict f)
 {
     int fd = fileno(f);
     struct stat st;
@@ -94,7 +99,7 @@ off_t filesize(FILE *restrict f)
     return st.st_size;
 }
 
-int main(int argc, char **argv)
+enum dcp_rc dcp_cli_press(int argc, char **argv)
 {
     struct arguments arguments;
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
@@ -111,34 +116,35 @@ int main(int argc, char **argv)
 
     struct dcp_pro_db db;
     if (openw_db(&db, oput.fd, dcp_pro_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f)))
-        exit(1);
+        return 1;
 
     struct dcp_pro_reader reader;
     dcp_pro_reader_init(&reader, &db.amino, &db.nuclt, db.prof.cfg, iput.fd);
 
     long pos = ftell(iput.fd);
-    struct athr *at = athr_create(filesize(iput.fd) - pos);
-    unsigned i = 0;
-    while (!dcp_pro_reader_next(&reader))
+    struct athr *at = athr_create(filesize(iput.fd) - pos, "Press", ATHR_BAR);
+    enum dcp_rc rc = DCP_SUCCESS;
+    while (!(rc = dcp_pro_reader_next(&reader)))
     {
         athr_consume(at, ftell(iput.fd) - pos);
         dcp_prof_nameit(dcp_super(&db.prof), dcp_pro_reader_meta(&reader));
-        if (dcp_pro_prof_absorb(&db.prof, &reader.model)) exit(1);
-        if (dcp_pro_db_write(&db, &db.prof)) exit(1);
+        if ((rc = dcp_pro_prof_absorb(&db.prof, &reader.model))) goto cleanup;
+        if ((rc = dcp_pro_db_write(&db, &db.prof))) goto cleanup;
         pos = ftell(iput.fd);
-        ++i;
-        /* if (i == 289) */
-        /* { */
-        /*     printf(""); */
-        /*     printf(""); */
-        /* } */
     }
+    if (rc != DCP_ENDFILE) goto cleanup;
     athr_finish(at);
 
-    dcp_pro_db_close(&db);
+    rc = dcp_pro_db_close(&db);
     fclose(iput.fd);
     fclose(oput.fd);
 
     log_flush();
-    exit(0);
+    return rc;
+
+cleanup:
+    athr_finish(at);
+    fclose(iput.fd);
+    fclose(oput.fd);
+    return rc;
 }
