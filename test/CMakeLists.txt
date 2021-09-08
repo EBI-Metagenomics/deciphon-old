@@ -9,12 +9,18 @@ file(DOWNLOAD ${URL}/PF02545.hmm.7z ${ASSETS}/PF02545.hmm.7z
      EXPECTED_HASH SHA1=2b27ec36086e5c424b719437a924728801bb8277)
 file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.hmm.7z DESTINATION ${ASSETS})
 
+file(DOWNLOAD ${URL}/Pfam-A.5.hmm.7z ${ASSETS}/Pfam-A.5.hmm.7z
+     EXPECTED_HASH SHA1=1dcdd145730f2a9e2314132972775ec284fb02e1)
+file(ARCHIVE_EXTRACT INPUT ${ASSETS}/Pfam-A.5.hmm.7z DESTINATION ${ASSETS})
+
 # include(FetchContent) FetchContent_Declare( pfam24 URL
 # https://deciphon.s3.eu-west-2.amazonaws.com/pfam24.dcp.7z URL_HASH
 # SHA1=1d52d936292c3b572efe73ef6830476aa416ced9)
 
 # FetchContent_MakeAvailable(pfam24) FetchContent_GetProperties(pfam24
 # SOURCE_DIR srcdir) set(PFAM24_FILEPATH ${srcdir}/pfam24.dcp)
+
+# .7z
 
 function(dcp_add_test name srcs)
   add_executable(${name} ${srcs})

@@ -14,7 +14,7 @@ int main(void)
 void test_cli_press_write(void)
 {
     int argc = 3;
-    char *argv[256] = {"dcp-press", "/Users/horta/data/Pfam-A.5.hmm",
+    char *argv[256] = {"dcp-press", ASSETS "/Pfam-A.5.hmm",
                        TMPDIR "Pfam-A.5.dcp"};
     EQ(dcp_cli_press(argc, argv), DCP_SUCCESS);
 }
