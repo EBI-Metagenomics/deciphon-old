@@ -1,3 +1,3 @@
-#include "dcp/cli_press.h"
+#include "dcp/cli.h"
 
 int main(int argc, char **argv) { return dcp_cli_press(argc, argv); }

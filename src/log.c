@@ -18,7 +18,7 @@ void dcp_log_setup(dcp_log_print_t *print, void *arg)
 
 static void log_print(char const *msg) { __log_print(msg, __log_arg); }
 
-enum dcp_rc __error(enum dcp_rc rc, char const *msg)
+enum dcp_rc __dcp_error(enum dcp_rc rc, char const *msg)
 {
     log_print(msg);
     return rc;

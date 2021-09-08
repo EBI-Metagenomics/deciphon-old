@@ -32,8 +32,10 @@ endif()
 
 add_library(
   dcp
+  src/cli.c
   src/cli_info.c
   src/cli_press.c
+  src/cli_scan.c
   src/cmp.c
   src/db.c
   src/fcopy.c
@@ -146,6 +148,9 @@ target_link_libraries(dcp-press PUBLIC dcp)
 add_executable(dcp-info src/bin/info.c)
 target_link_libraries(dcp-info PUBLIC dcp)
 
+add_executable(dcp-scan src/bin/scan.c)
+target_link_libraries(dcp-scan PUBLIC dcp)
+
 # Installation
 install(
   TARGETS dcp
@@ -171,8 +176,9 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-config.cmake
         DESTINATION lib/cmake/dcp)
 
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
-        ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
+        ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
+        ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
   PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
   DESTINATION bin)
 

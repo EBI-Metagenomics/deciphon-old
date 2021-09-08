@@ -1,12 +1,10 @@
-#include "dcp/cli_info.h"
-#include "dcp/version.h"
+#include "cli.h"
+#include "dcp/cli.h"
 #include "imm/imm.h"
-#include <argp.h>
 #include <stdio.h>
 
 const char *argp_program_version = "dcp-info " DCP_VERSION;
-const char *argp_program_bug_address =
-    "<https://github.com/EBI-Metagenomics/deciphon>";
+const char *argp_program_bug_address = CLI_BUG_ADDRESS;
 
 static char doc[] = "Show information -- dcp-info";
 
@@ -21,8 +19,6 @@ struct arguments
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-    /* Get the input argument from argp_parse, which we
-       know is a pointer to our arguments structure. */
     struct arguments *arguments = state->input;
 
     switch (key)
