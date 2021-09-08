@@ -32,6 +32,7 @@ endif()
 
 add_library(
   dcp
+  src/cli_info.c
   src/cli_press.c
   src/cmp.c
   src/db.c
@@ -139,8 +140,11 @@ math(EXPR BITS_PER_INT "${SIZEOF_INT} * 8")
 target_compile_definitions(dcp PRIVATE BITS_PER_INT=${BITS_PER_INT})
 
 # Command line interface programs
-add_executable(dcp-press src/bin_press.c)
+add_executable(dcp-press src/bin/press.c)
 target_link_libraries(dcp-press PUBLIC dcp)
+
+add_executable(dcp-info src/bin/info.c)
+target_link_libraries(dcp-info PUBLIC dcp)
 
 # Installation
 install(
@@ -151,7 +155,8 @@ install(
   ARCHIVE DESTINATION lib
   PUBLIC_HEADER DESTINATION include)
 install(DIRECTORY src/dcp/ DESTINATION include/dcp)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h DESTINATION include/dcp)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h
+              ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h DESTINATION include/dcp)
 install(
   EXPORT dcp-targets
   FILE dcp-targets.cmake
@@ -164,6 +169,12 @@ configure_package_config_file(
   NO_SET_AND_CHECK_MACRO)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-config.cmake
         DESTINATION lib/cmake/dcp)
+
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
+        ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
+  PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+  DESTINATION bin)
 
 enable_testing()
 add_subdirectory(test)
