@@ -52,8 +52,8 @@ DCP_API struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro);
 
 DCP_API void dcp_pro_prof_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
 
-DCP_API void dcp_pro_prof_sample(struct dcp_pro_prof *prof, unsigned seed,
-                                 unsigned core_size);
+DCP_API enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *prof,
+                                        unsigned seed, unsigned core_size);
 
 static inline void dcp_pro_prof_del(struct dcp_pro_prof *prof)
 {

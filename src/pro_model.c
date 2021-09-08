@@ -165,11 +165,22 @@ enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
     m->core_size = core_size;
     unsigned n = m->core_size;
     m->alt.node_idx = 0;
-    m->alt.nodes = realloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
+
+    void *ptr = realloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
+    if (!ptr && n > 0) return error(DCP_OUTOFMEM, "failed to alloc nodes");
+    m->alt.nodes = ptr;
+
     if (m->cfg.entry_dist == DCP_ENTRY_DIST_OCCUPANCY)
-        m->alt.locc = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
+    {
+        ptr = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
+        if (!ptr && n > 0) return error(DCP_OUTOFMEM, "failed to alloc locc");
+        m->alt.locc = ptr;
+    }
     m->alt.trans_idx = 0;
-    m->alt.trans = realloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
+    ptr = realloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
+    if (!ptr) return error(DCP_OUTOFMEM, "failed to alloc trans");
+    m->alt.trans = ptr;
+
     model_reset(m);
     add_xnodes(m);
     return DCP_SUCCESS;

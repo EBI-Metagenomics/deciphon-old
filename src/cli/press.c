@@ -110,22 +110,32 @@ int main(int argc, char **argv)
     oput.fd = fopen(oput.filepath, "wb");
 
     struct dcp_pro_db db;
-    openw_db(&db, oput.fd, dcp_pro_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f));
+    if (openw_db(&db, oput.fd, dcp_pro_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f)))
+        exit(1);
 
     struct dcp_pro_reader reader;
     dcp_pro_reader_init(&reader, &db.amino, &db.nuclt, db.prof.cfg, iput.fd);
 
     long pos = ftell(iput.fd);
     struct athr *at = athr_create(filesize(iput.fd) - pos);
+    unsigned i = 0;
     while (!dcp_pro_reader_next(&reader))
     {
         athr_consume(at, ftell(iput.fd) - pos);
-        dcp_pro_prof_absorb(&db.prof, &reader.model);
-        dcp_pro_db_write(&db, &db.prof);
+        dcp_prof_nameit(dcp_super(&db.prof), dcp_pro_reader_meta(&reader));
+        if (dcp_pro_prof_absorb(&db.prof, &reader.model)) exit(1);
+        if (dcp_pro_db_write(&db, &db.prof)) exit(1);
         pos = ftell(iput.fd);
+        ++i;
+        /* if (i == 289) */
+        /* { */
+        /*     printf(""); */
+        /*     printf(""); */
+        /* } */
     }
     athr_finish(at);
 
+    dcp_pro_db_close(&db);
     fclose(iput.fd);
     fclose(oput.fd);
 

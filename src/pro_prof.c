@@ -127,8 +127,8 @@ void dcp_pro_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
     pro_model_state_name(id, name);
 }
 
-void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
-                         unsigned core_size)
+enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
+                                unsigned core_size)
 {
     assert(core_size >= 2);
     struct imm_rnd rnd = imm_rnd(seed);
@@ -141,13 +141,15 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     struct dcp_pro_model model;
     dcp_pro_model_init(&model, p->amino, p->nuclt, p->cfg, lprobs);
 
-    enum dcp_rc rc = dcp_pro_model_setup(&model, core_size);
+    enum dcp_rc rc = DCP_SUCCESS;
+
+    if ((rc = dcp_pro_model_setup(&model, core_size))) goto cleanup;
 
     for (unsigned i = 0; i < core_size; ++i)
     {
         imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
         imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
-        rc += dcp_pro_model_add_node(&model, lprobs);
+        if ((rc = dcp_pro_model_add_node(&model, lprobs))) goto cleanup;
     }
 
     for (unsigned i = 0; i < core_size + 1; ++i)
@@ -161,12 +163,16 @@ void dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
             t.DD = IMM_LPROB_ZERO;
         }
         imm_lprob_normalize(DCP_PRO_TRANS_SIZE, t.data);
-        rc += dcp_pro_model_add_trans(&model, t);
+        if ((rc = dcp_pro_model_add_trans(&model, t))) goto cleanup;
     }
 
-    rc += dcp_pro_prof_absorb(p, &model);
-    assert(!rc);
+    if ((rc = dcp_pro_prof_absorb(p, &model))) goto cleanup;
+
+    return DCP_SUCCESS;
+
+cleanup:
     dcp_del(&model);
+    return rc;
 }
 
 void dcp_pro_prof_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)

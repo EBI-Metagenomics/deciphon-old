@@ -41,6 +41,7 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
     rc = dcp_pro_model_add_trans(&reader->model, t);
     assert(!rc);
 
+    unsigned node_idx = 0;
     while (!(hmr_rc = hmr_next_node(&reader->hmr, &reader->prof)))
     {
         imm_float match_lprobs[IMM_AMINO_SIZE];
@@ -61,10 +62,17 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
         };
         rc = dcp_pro_model_add_trans(&reader->model, t2);
         assert(!rc);
+        ++node_idx;
     }
+    assert(node_idx == core_size);
     assert(hmr_rc == HMR_ENDNODE);
 
     return DCP_SUCCESS;
+}
+
+struct dcp_meta dcp_pro_reader_meta(struct dcp_pro_reader const *reader)
+{
+    return dcp_meta(reader->prof.meta.name, reader->prof.meta.acc);
 }
 
 static void init_null_lprobs(imm_float lprobs[IMM_AMINO_SIZE])
