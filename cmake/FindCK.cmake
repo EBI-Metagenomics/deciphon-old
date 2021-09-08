@@ -52,9 +52,6 @@ find_package_handle_standard_args(CK DEFAULT_MSG
 
 mark_as_advanced(CK_INCLUDE_DIR CK_LIBRARY CK_FOUND)
 
-set(CK_LIBRARIES ${CK_LIBRARY})
-set(CK_INCLUDE_DIRS ${CK_INCLUDE_DIR})
-
 if(CK_FOUND)
     if(NOT TARGET CK::ck)
         add_library(CK::ck UNKNOWN IMPORTED)

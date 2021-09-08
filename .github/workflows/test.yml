@@ -22,14 +22,14 @@ jobs:
     - name: Install dependencies
       run: sudo ./install-deps
 
-    - name: Install ck
-      run: |
-        git clone https://github.com/concurrencykit/ck.git
-        cd ck
-        ./configure
-        make
-        sudo make install
-        cd ${{runner.workspace}}
+    # - name: Install ck
+    #   run: |
+    #     git clone https://github.com/concurrencykit/ck.git
+    #     cd ck
+    #     ./configure
+    #     make
+    #     sudo make install
+    #     cd ${{runner.workspace}}
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build

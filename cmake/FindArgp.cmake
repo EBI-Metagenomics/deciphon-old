@@ -23,6 +23,7 @@
 #   ARGP_LIBRARY     - Library when using argp.
 #   ARGP_FOUND       - True if argp library is found.
 
+include(CheckFunctionExists)
 
 set(argp_incl_dirs "/usr/include" "/usr/local/include")
 if(ARGP_INCLUDEDIR)
@@ -40,20 +41,25 @@ if(ARGP_LIBRARYDIR)
     list(APPEND argp_lib_dirs ${ARGP_LIBRARYDIR})
 endif()
 
-find_library(
-    ARGP_LIBRARY
-    NAMES argp argplib libargp
-    HINTS ${argp_lib_dirs}
-)
+# First check if argp is shipped together with libc. The required
+# argp_parse function should be available after linking to libc,
+# otherwise libc doesn't ship it.
+check_function_exists("argp_parse" ARGP_IN_LIBC)
+if (ARGP_IN_LIBC)
+	set(ARGP_LIBRARY "c")
+else()
+    find_library(
+        ARGP_LIBRARY
+        NAMES argp argplib libargp
+        HINTS ${argp_lib_dirs}
+    )
+endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Argp DEFAULT_MSG
                                   ARGP_LIBRARY ARGP_INCLUDE_DIR)
 
 mark_as_advanced(ARGP_INCLUDE_DIR ARGP_LIBRARY ARGP_FOUND)
-
-set(ARGP_LIBRARIES ${ARGP_LIBRARY})
-set(ARGP_INCLUDE_DIRS ${ARGP_INCLUDE_DIR})
 
 if(ARGP_FOUND)
     if(NOT TARGET Argp::argp)
