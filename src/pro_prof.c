@@ -124,7 +124,7 @@ struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro)
 
 void dcp_pro_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
-    pro_model_state_name(id, name);
+    dcp_pro_state_name(id, name);
 }
 
 enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
@@ -175,7 +175,7 @@ cleanup:
 
 void dcp_pro_prof_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
 {
-    imm_dp_write_dot(&p->alt.dp, fp, pro_model_state_name);
+    imm_dp_write_dot(&p->alt.dp, fp, dcp_pro_state_name);
 }
 
 static void del(struct dcp_prof *prof)

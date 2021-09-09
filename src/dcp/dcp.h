@@ -20,6 +20,7 @@ extern "C" {
 #include "dcp/pro_node.h"
 #include "dcp/pro_prof.h"
 #include "dcp/pro_reader.h"
+#include "dcp/pro_state.h"
 #include "dcp/pro_trans.h"
 #include "dcp/pro_xnode.h"
 #include "dcp/pro_xtrans.h"

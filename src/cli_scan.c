@@ -3,6 +3,7 @@
 #include "dcp/generics.h"
 #include "dcp/pro_db.h"
 #include "dcp/pro_reader.h"
+#include "dcp/pro_state.h"
 #include "error.h"
 #include "far/far.h"
 #include <assert.h>
@@ -93,7 +94,38 @@ static enum dcp_rc scan_targets(FILE *fd, struct imm_result *result,
         if (imm_dp_viterbi(dp, task, result))
             return error(DCP_RUNTIMEERROR, "failed to run viterbi");
 
+        struct imm_path const *path = &result->path;
+        for (unsigned j = 0; j < imm_path_nsteps(path); ++j)
+        {
+            struct imm_step const *step = imm_path_step(path, j);
+            unsigned id = step->state_id;
+            char name[IMM_STATE_NAME_SIZE] = {0};
+            dcp_pro_state_name(id, name);
+            printf("%s ", name);
+        }
+        printf("\n");
+
+        path = &result->path;
+        for (unsigned j = 0; j < imm_path_nsteps(path); ++j)
+        {
+            struct imm_step const *step = imm_path_step(path, j);
+            unsigned id = step->state_id;
+            char name[IMM_STATE_NAME_SIZE] = {0};
+            dcp_pro_state_name(id, name);
+            imm_frame_state_decode(state, seq, codon);
+            printf("%s ", name);
+        }
+
         printf("%s: %f\n", tgt.id, result->loglik);
+
+#if 0
+    def decode(self, seq: Sequence) -> Tuple[float, Codon]:
+        state = self._nmm_frame_state
+        any_symbol = self.alphabet.any_symbol
+        codon = Codon.create(any_symbol * 3, self.alphabet)
+        lprob = lib.nmm_frame_state_decode(state, seq.imm_seq, codon.nmm_codon)
+        return lprob, codon
+#endif
 
         i++;
     }

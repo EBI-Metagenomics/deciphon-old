@@ -46,6 +46,7 @@ add_library(
   src/pro_model.c
   src/pro_prof.c
   src/pro_reader.c
+  src/pro_state.c
   src/std_db.c
   src/std_prof.c
   src/third-party/cmp.c)
