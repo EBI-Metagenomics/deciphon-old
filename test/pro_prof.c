@@ -19,7 +19,7 @@ void test_pro_prof_uniform(void)
 
     struct dcp_pro_prof prof;
     dcp_pro_prof_init(&prof, amino, nuclt, cfg);
-    dcp_pro_prof_sample(&prof, 1, 2);
+    EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_SUCCESS);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);
@@ -85,7 +85,7 @@ void test_pro_prof_occupancy(void)
 
     struct dcp_pro_prof prof;
     dcp_pro_prof_init(&prof, amino, nuclt, cfg);
-    dcp_pro_prof_sample(&prof, 1, 2);
+    EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_SUCCESS);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);

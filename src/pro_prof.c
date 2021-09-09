@@ -21,11 +21,27 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
     p->nuclt = nuclt;
     p->amino = amino;
     p->cfg = cfg;
+    p->eps = imm_frame_epsilon(cfg.epsilon);
     imm_dp_init(&p->null.dp, imm_super(nuclt));
     imm_dp_init(&p->alt.dp, imm_super(nuclt));
+    p->alt.match_ndists = NULL;
 }
 
-enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_size,
+static enum dcp_rc setup_nuclt_dists(struct dcp_pro_prof *prof,
+                                     unsigned core_size)
+{
+    size_t size = core_size * sizeof *prof->alt.match_ndists;
+    void *ptr = realloc(prof->alt.match_ndists, size);
+    if (!ptr && size > 0)
+    {
+        free(prof->alt.match_ndists);
+        return error(DCP_OUTOFMEM, "failed to alloc nuclt dists");
+    }
+    prof->alt.match_ndists = ptr;
+    return DCP_SUCCESS;
+}
+
+enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
                                bool multi_hits, bool hmmer3_compat)
 {
     if (seq_size == 0) return error(DCP_ILLEGALARG, "sequence cannot be empty");
@@ -58,18 +74,18 @@ enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *p, unsigned seq_size,
         t.NN = t.CC = t.JJ = imm_log(1);
     }
 
-    struct imm_dp *dp = &p->null.dp;
-    unsigned R = p->null.R;
+    struct imm_dp *dp = &prof->null.dp;
+    unsigned R = prof->null.R;
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, R, R), t.RR);
 
-    dp = &p->alt.dp;
-    unsigned S = p->alt.S;
-    unsigned N = p->alt.N;
-    unsigned B = p->alt.B;
-    unsigned E = p->alt.E;
-    unsigned J = p->alt.J;
-    unsigned C = p->alt.C;
-    unsigned T = p->alt.T;
+    dp = &prof->alt.dp;
+    unsigned S = prof->alt.S;
+    unsigned N = prof->alt.N;
+    unsigned B = prof->alt.B;
+    unsigned E = prof->alt.E;
+    unsigned J = prof->alt.J;
+    unsigned C = prof->alt.C;
+    unsigned T = prof->alt.T;
 
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, S, B), t.NB);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, S, N), t.NN);
@@ -104,6 +120,12 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
 
     if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
         return error(DCP_RUNTIMEERROR, "failed to hmm_reset");
+
+    enum dcp_rc rc = setup_nuclt_dists(p, m->core_size);
+    if (rc) return rc;
+
+    for (unsigned i = 0; i < m->core_size; ++i)
+        p->alt.match_ndists[i] = m->alt.nodes[i].match.nucltd;
 
     p->null.R = imm_state_idx(imm_super(s.null.R));
 
@@ -173,6 +195,19 @@ cleanup:
     return rc;
 }
 
+enum dcp_rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
+                                struct imm_seq const *seq, unsigned state_id,
+                                struct imm_codon *codon)
+{
+    unsigned idx = dcp_pro_state_idx(state_id);
+    struct dcp_nuclt_dist const *nuclt_dist = prof->alt.match_ndists + idx;
+    struct imm_frame_cond cond = {prof->eps, &nuclt_dist->nucltp,
+                                  &nuclt_dist->codonm};
+    if (imm_lprob_is_nan(imm_frame_cond_decode(&cond, seq, codon)))
+        return error(DCP_ILLEGALARG, "failed to decode sequence");
+    return DCP_SUCCESS;
+}
+
 void dcp_pro_prof_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, dcp_pro_state_name);
@@ -183,6 +218,7 @@ static void del(struct dcp_prof *prof)
     if (prof)
     {
         struct dcp_pro_prof *p = (struct dcp_pro_prof *)prof;
+        free(p->alt.match_ndists);
         imm_del(&p->null.dp);
         imm_del(&p->alt.dp);
     }

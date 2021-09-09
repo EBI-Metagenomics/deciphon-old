@@ -32,7 +32,6 @@ void dcp_pro_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
             name[0] = 'I';
         else if (msb == DCP_PRO_ID_DELETE)
             name[0] = 'D';
-        unsigned idx = id & (0xFFFF >> 2);
-        snprintf(name + 1, 7, "%d", idx);
+        snprintf(name + 1, 7, "%d", dcp_pro_state_idx(id));
     }
 }
