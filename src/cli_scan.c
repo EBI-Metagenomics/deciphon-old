@@ -112,7 +112,7 @@ static enum dcp_rc scan_targets(FILE *fd, struct imm_result *result,
             unsigned id = step->state_id;
             char name[IMM_STATE_NAME_SIZE] = {0};
             dcp_pro_state_name(id, name);
-            imm_frame_state_decode(state, seq, codon);
+            /* imm_frame_state_decode(state, seq, codon); */
             printf("%s ", name);
         }
 
