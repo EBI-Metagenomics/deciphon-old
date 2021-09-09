@@ -1,6 +1,7 @@
 #ifndef DCP_PRO_NODE_H
 #define DCP_PRO_NODE_H
 
+#include "dcp/nuclt_dist.h"
 #include "imm/imm.h"
 
 struct dcp_pro_node
@@ -11,8 +12,7 @@ struct dcp_pro_node
         struct
         {
             struct imm_frame_state state;
-            struct imm_nuclt_lprob nucltp;
-            struct imm_codon_marg codonm;
+            struct dcp_nuclt_dist nucltd;
         } match;
     };
     struct imm_frame_state I;

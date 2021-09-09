@@ -13,6 +13,7 @@ extern "C" {
 #include "dcp/log.h"
 #include "dcp/meta.h"
 #include "dcp/model.h"
+#include "dcp/nuclt_dist.h"
 #include "dcp/pro_cfg.h"
 #include "dcp/pro_db.h"
 #include "dcp/pro_id.h"

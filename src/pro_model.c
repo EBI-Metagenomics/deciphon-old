@@ -1,17 +1,12 @@
 #include "dcp/pro_model.h"
 #include "dcp/entry_dist.h"
+#include "dcp/nuclt_dist.h"
 #include "dcp/pro_node.h"
 #include "error.h"
 #include "pro_model.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
-
-struct nuclt_dist
-{
-    struct imm_nuclt_lprob *nucltp;
-    struct imm_codon_marg *codonm;
-};
 
 #define LOGN2 (imm_float)(-1.3862943611198906) /* log(1./4.) */
 
@@ -32,7 +27,7 @@ static bool have_finished_add(struct dcp_pro_model const *);
 static void init_delete(struct imm_mute_state *, struct dcp_pro_model *);
 static void init_insert(struct imm_frame_state *, struct dcp_pro_model *);
 static void init_match(struct imm_frame_state *, struct dcp_pro_model *,
-                       struct nuclt_dist *);
+                       struct dcp_nuclt_dist *);
 
 static void init_null_xtrans(struct imm_hmm *, struct dcp_pro_xnode_null *);
 static void init_alt_xtrans(struct imm_hmm *, struct dcp_pro_xnode_alt *);
@@ -42,7 +37,7 @@ static struct imm_codon_lprob codon_lprob(struct imm_amino const *,
                                           struct imm_amino_lprob const *,
                                           struct imm_nuclt const *);
 
-static void setup_nuclt_dist(struct nuclt_dist *, struct imm_amino const *,
+static void setup_nuclt_dist(struct dcp_nuclt_dist *, struct imm_amino const *,
                              struct imm_nuclt const *,
                              imm_float const[IMM_AMINO_SIZE]);
 
@@ -65,10 +60,9 @@ enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
 
     struct dcp_pro_node *n = m->alt.nodes + m->alt.node_idx;
 
-    struct nuclt_dist dist = {&n->match.nucltp, &n->match.codonm};
-    setup_nuclt_dist(&dist, m->amino, m->nuclt, lodds);
+    setup_nuclt_dist(&n->match.nucltd, m->amino, m->nuclt, lodds);
 
-    init_match(&n->M, m, &dist);
+    init_match(&n->M, m, &n->match.nucltd);
     if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->M)))
         return DCP_RUNTIMEERROR;
 
@@ -122,14 +116,12 @@ void dcp_pro_model_init(struct dcp_pro_model *m, struct imm_amino const *amino,
 
     imm_hmm_init(&m->null.hmm, imm_super(m->nuclt));
 
-    struct nuclt_dist null_dist = {&m->null.nucltp, &m->null.codonm};
-    setup_nuclt_dist(&null_dist, amino, nuclt, null_lprobs);
+    setup_nuclt_dist(&m->null.nucltd, amino, nuclt, null_lprobs);
 
     imm_hmm_init(&m->alt.hmm, imm_super(m->nuclt));
 
-    struct nuclt_dist alt_dist = {&m->alt.insert.nucltp, &m->alt.insert.codonm};
     imm_float const lodds[IMM_AMINO_SIZE] = {0};
-    setup_nuclt_dist(&alt_dist, amino, nuclt, lodds);
+    setup_nuclt_dist(&m->alt.insert.nucltd, amino, nuclt, lodds);
 
     init_xnodes(m);
 
@@ -241,8 +233,8 @@ static void add_xnodes(struct dcp_pro_model *m)
 static void init_xnodes(struct dcp_pro_model *m)
 {
     imm_float e = m->cfg.epsilon;
-    struct imm_nuclt_lprob const *nucltp = &m->null.nucltp;
-    struct imm_codon_marg const *codonm = &m->null.codonm;
+    struct imm_nuclt_lprob const *nucltp = &m->null.nucltd.nucltp;
+    struct imm_codon_marg const *codonm = &m->null.nucltd.codonm;
     struct dcp_pro_xnode *n = &m->xnode;
     struct imm_nuclt const *nuclt = m->nuclt;
 
@@ -305,17 +297,17 @@ static void init_insert(struct imm_frame_state *state, struct dcp_pro_model *m)
 {
     imm_float e = m->cfg.epsilon;
     unsigned id = DCP_PRO_ID_INSERT | (m->alt.node_idx + 1);
-    struct imm_nuclt_lprob *nucltp = &m->alt.insert.nucltp;
-    struct imm_codon_marg *codonm = &m->alt.insert.codonm;
+    struct imm_nuclt_lprob *nucltp = &m->alt.insert.nucltd.nucltp;
+    struct imm_codon_marg *codonm = &m->alt.insert.nucltd.codonm;
     imm_frame_state_init(state, id, nucltp, codonm, e);
 }
 
 static void init_match(struct imm_frame_state *state, struct dcp_pro_model *m,
-                       struct nuclt_dist *d)
+                       struct dcp_nuclt_dist *d)
 {
     imm_float e = m->cfg.epsilon;
     unsigned id = DCP_PRO_ID_MATCH | (m->alt.node_idx + 1);
-    imm_frame_state_init(state, id, d->nucltp, d->codonm, e);
+    imm_frame_state_init(state, id, &d->nucltp, &d->codonm, e);
 }
 
 static void init_null_xtrans(struct imm_hmm *hmm,
@@ -403,19 +395,19 @@ static struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
     return codonp;
 }
 
-static void setup_nuclt_dist(struct nuclt_dist *dist,
+static void setup_nuclt_dist(struct dcp_nuclt_dist *dist,
                              struct imm_amino const *amino,
                              struct imm_nuclt const *nuclt,
                              imm_float const lprobs[IMM_AMINO_SIZE])
 {
-    *dist->nucltp = imm_nuclt_lprob(nuclt, uniform_lprobs);
+    dist->nucltp = imm_nuclt_lprob(nuclt, uniform_lprobs);
     struct imm_amino_lprob aminop = imm_amino_lprob(amino, lprobs);
     struct imm_codon_lprob codonp =
-        codon_lprob(amino, &aminop, dist->nucltp->nuclt);
+        codon_lprob(amino, &aminop, dist->nucltp.nuclt);
     imm_codon_lprob_normalize(&codonp);
 
-    *dist->nucltp = nuclt_lprob(&codonp);
-    *dist->codonm = imm_codon_marg(&codonp);
+    dist->nucltp = nuclt_lprob(&codonp);
+    dist->codonm = imm_codon_marg(&codonp);
 }
 
 static void setup_entry_trans(struct dcp_pro_model *m)

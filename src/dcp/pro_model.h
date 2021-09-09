@@ -3,6 +3,7 @@
 
 #include "dcp/entry_dist.h"
 #include "dcp/export.h"
+#include "dcp/nuclt_dist.h"
 #include "dcp/pro_cfg.h"
 #include "dcp/pro_id.h"
 #include "dcp/pro_node.h"
@@ -23,8 +24,7 @@ struct dcp_pro_model
     struct
     {
         imm_float lprobs[IMM_AMINO_SIZE];
-        struct imm_nuclt_lprob nucltp;
-        struct imm_codon_marg codonm;
+        struct dcp_nuclt_dist nucltd;
         struct imm_hmm hmm;
     } null;
 
@@ -39,8 +39,7 @@ struct dcp_pro_model
 
         struct
         {
-            struct imm_nuclt_lprob nucltp;
-            struct imm_codon_marg codonm;
+            struct dcp_nuclt_dist nucltd;
         } insert;
     } alt;
 };
