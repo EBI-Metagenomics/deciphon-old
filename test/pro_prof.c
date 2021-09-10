@@ -72,6 +72,36 @@ void test_pro_prof_uniform(void)
     dcp_pro_prof_state_name(imm_path_step(&result.path, 13)->state_id, name);
     EQ(name, "T");
 
+    struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &result.path);
+    enum dcp_rc rc = DCP_SUCCESS;
+
+    struct imm_codon codons[10] = {__imm_codon_from_str(prof.nuclt, "ATG"),
+                                   __imm_codon_from_str(prof.nuclt, "AAA"),
+                                   __imm_codon_from_str(prof.nuclt, "CGC"),
+                                   __imm_codon_from_str(prof.nuclt, "ATA"),
+                                   __imm_codon_from_str(prof.nuclt, "GCA"),
+                                   __imm_codon_from_str(prof.nuclt, "TGA"),
+                                   __imm_codon_from_str(prof.nuclt, "CAT"),
+                                   __imm_codon_from_str(prof.nuclt, "TGA"),
+                                   __imm_codon_from_str(prof.nuclt, "TGA"),
+                                   __imm_codon_from_str(prof.nuclt, "TGA")};
+
+    char any = imm_abc_any_symbol(imm_super(prof.nuclt));
+    struct imm_codon codon = imm_codon(prof.nuclt, any, any, any);
+    unsigned i = 0;
+    while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
+    {
+        printf("%d: codon(%c%c%c)\n", i, imm_codon_asym(&codon),
+               imm_codon_bsym(&codon), imm_codon_csym(&codon));
+        fflush(stdout);
+        EQ(codons[i].a, codon.a);
+        EQ(codons[i].b, codon.b);
+        EQ(codons[i].c, codon.c);
+        ++i;
+    }
+    EQ(rc, DCP_END);
+    EQ(i, 10);
+
     dcp_del(&prof);
     imm_del(&result);
     imm_del(task);

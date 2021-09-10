@@ -109,7 +109,7 @@ enum dcp_rc dcp_cli_press(int argc, char **argv)
         if ((rc = dcp_pro_db_write(&db, &db.prof))) goto cleanup;
         pos = ftell(iput.fd);
     }
-    if (rc != DCP_ENDFILE) goto cleanup;
+    if (rc != DCP_END) goto cleanup;
 
     rc = dcp_pro_db_close(&db);
     athr_finish(at);

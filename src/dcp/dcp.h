@@ -15,6 +15,7 @@ extern "C" {
 #include "dcp/model.h"
 #include "dcp/nuclt_dist.h"
 #include "dcp/pro_cfg.h"
+#include "dcp/pro_codec.h"
 #include "dcp/pro_db.h"
 #include "dcp/pro_id.h"
 #include "dcp/pro_model.h"

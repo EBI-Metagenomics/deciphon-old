@@ -18,7 +18,7 @@ void dcp_pro_reader_init(struct dcp_pro_reader *reader,
 enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
 {
     enum hmr_rc hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
-    if (hmr_rc == HMR_ENDFILE) return DCP_ENDFILE;
+    if (hmr_rc == HMR_ENDFILE) return DCP_END;
 
     if (hmr_rc) return DCP_RUNTIMEERROR;
 

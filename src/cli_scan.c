@@ -174,7 +174,7 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
 
         /* pos = ftell(dcp.fd); */
     }
-    if (rc != DCP_ENDFILE) goto cleanup;
+    if (rc != DCP_END) goto cleanup;
 
     rc = dcp_pro_db_close(&db);
     imm_del(&result);

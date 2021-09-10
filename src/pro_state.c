@@ -3,7 +3,7 @@
 
 void dcp_pro_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
-    unsigned msb = id & (3U << (DCP_PROFILE_BITS_ID - 2));
+    unsigned msb = __dcp_pro_state_id_msb(id);
     if (msb == DCP_PRO_ID_EXT)
     {
         if (id == DCP_PRO_ID_R)
