@@ -15,6 +15,9 @@ struct dcp_nuclt_dist
 struct dcp_cmp;
 
 DCP_API enum dcp_rc dcp_nuclt_dist_write(struct dcp_nuclt_dist const *ndist,
-                                         struct dcp_cmp *ctx);
+                                         struct dcp_cmp *cmp);
+
+DCP_API enum dcp_rc dcp_nuclt_dist_read(struct dcp_nuclt_dist *ndist,
+                                        struct dcp_cmp *cmp);
 
 #endif

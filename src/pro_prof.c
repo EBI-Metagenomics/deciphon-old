@@ -9,6 +9,7 @@
 #include "pro_model.h"
 #include "pro_prof.h"
 #include "prof.h"
+#include "third-party/cmp.h"
 #include "third-party/xrandom.h"
 #include <assert.h>
 
@@ -227,24 +228,43 @@ static void del(struct dcp_prof *prof)
     }
 }
 
-enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *ctx)
+enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
 {
-    FILE *fd = dcp_cmp_fd(ctx);
+    FILE *fd = dcp_cmp_fd(cmp);
     if (imm_dp_read(&prof->null.dp, fd)) return DCP_RUNTIMEERROR;
     if (imm_dp_read(&prof->alt.dp, fd)) return DCP_RUNTIMEERROR;
+
+    uint16_t core_size = 0;
+    if (!cmp_read_u16(cmp, &core_size))
+        return error(DCP_IOERROR, "failed to read core size");
+    prof->core_size = core_size;
+
+    enum dcp_rc rc = setup_nuclt_dists(prof);
+    if (rc) return rc;
+
+    for (unsigned i = 0; i < prof->core_size; ++i)
+    {
+        if ((rc = dcp_nuclt_dist_read(prof->alt.match_ndists + i, cmp)))
+            return rc;
+        prof->alt.match_ndists[i].nucltp.nuclt = prof->nuclt;
+        prof->alt.match_ndists[i].codonm.nuclt = prof->nuclt;
+    }
     return DCP_SUCCESS;
 }
 
-enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, struct dcp_cmp *ctx)
+enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, struct dcp_cmp *cmp)
 {
-    FILE *fd = dcp_cmp_fd(ctx);
+    FILE *fd = dcp_cmp_fd(cmp);
     if (imm_dp_write(&prof->null.dp, fd)) return DCP_RUNTIMEERROR;
     if (imm_dp_write(&prof->alt.dp, fd)) return DCP_RUNTIMEERROR;
-#if 0
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->core_size))
+        return error(DCP_IOERROR, "failed to write core size");
+
     for (unsigned i = 0; i < prof->core_size; ++i)
     {
-        dcp_nuclt_dist_write(prof->alt.match_ndists + i);
+        enum dcp_rc rc = dcp_nuclt_dist_write(prof->alt.match_ndists + i, cmp);
+        if (rc) return rc;
     }
-#endif
     return DCP_SUCCESS;
 }

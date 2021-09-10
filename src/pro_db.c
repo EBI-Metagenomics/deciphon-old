@@ -190,8 +190,7 @@ enum dcp_rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof)
 enum dcp_rc dcp_pro_db_write(struct dcp_pro_db *db,
                              struct dcp_pro_prof const *prof)
 {
-    /* TODO: if ((rc = db_check_write_prof_ready(&db->super, &prof->super)))
-     * return rc; */
+    /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum dcp_rc rc = DCP_SUCCESS;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
     if ((rc = pro_prof_write(prof, &db->super.dp.cmp))) return rc;

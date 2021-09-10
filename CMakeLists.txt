@@ -42,6 +42,7 @@ add_library(
   src/log.c
   src/meta.c
   src/model.c
+  src/nuclt_dist.c
   src/pro_db.c
   src/pro_model.c
   src/pro_prof.c
