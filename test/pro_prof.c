@@ -75,18 +75,14 @@ void test_pro_prof_uniform(void)
     struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &result.path);
     enum dcp_rc rc = DCP_SUCCESS;
 
-    struct imm_codon codons[10] = {__imm_codon_from_str(prof.nuclt, "ATG"),
-                                   __imm_codon_from_str(prof.nuclt, "AAA"),
-                                   __imm_codon_from_str(prof.nuclt, "CGC"),
-                                   __imm_codon_from_str(prof.nuclt, "ATA"),
-                                   __imm_codon_from_str(prof.nuclt, "GCA"),
-                                   __imm_codon_from_str(prof.nuclt, "TGA"),
-                                   __imm_codon_from_str(prof.nuclt, "CAT"),
-                                   __imm_codon_from_str(prof.nuclt, "TGA"),
-                                   __imm_codon_from_str(prof.nuclt, "TGA"),
-                                   __imm_codon_from_str(prof.nuclt, "TGA")};
+    struct imm_codon codons[10] = {
+        IMM_CODON(prof.nuclt, "ATG"), IMM_CODON(prof.nuclt, "AAA"),
+        IMM_CODON(prof.nuclt, "CGC"), IMM_CODON(prof.nuclt, "ATA"),
+        IMM_CODON(prof.nuclt, "GCA"), IMM_CODON(prof.nuclt, "TGA"),
+        IMM_CODON(prof.nuclt, "CAT"), IMM_CODON(prof.nuclt, "TGA"),
+        IMM_CODON(prof.nuclt, "TGA"), IMM_CODON(prof.nuclt, "TGA")};
 
-    char any = imm_abc_any_symbol(imm_super(prof.nuclt));
+    unsigned any = imm_abc_any_symbol_id(imm_super(prof.nuclt));
     struct imm_codon codon = imm_codon(prof.nuclt, any, any, any);
     unsigned i = 0;
     while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
