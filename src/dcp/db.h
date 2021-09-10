@@ -8,6 +8,7 @@
 
 enum dcp_db_mode
 {
+    DB_OPEN_NULL,
     DB_OPEN_READ,
     DB_OPEN_WRITE,
 };
@@ -29,19 +30,17 @@ struct dcp_db
         char *data;
         struct
         {
-            FILE *fd;
-            struct dcp_cmp_ctx ctx;
+            struct dcp_cmp cmp;
         } file;
     } mt;
     struct
     {
-        FILE *fd;
+        struct dcp_cmp cmp;
     } dp;
     struct
     {
-        FILE *fd;
+        struct dcp_cmp cmp;
         enum dcp_db_mode mode;
-        struct dcp_cmp_ctx ctx;
     } file;
 };
 

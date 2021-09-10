@@ -34,7 +34,7 @@ enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_prof_type(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
-    if ((rc = read_abc(db->super.file.fd, &db->abc))) return rc;
+    if ((rc = read_abc(fd, &db->abc))) return rc;
     if ((rc = db_read_nprofiles(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
@@ -52,13 +52,13 @@ enum dcp_rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_prof_type(&db->super))) goto cleanup;
     if ((rc = db_write_float_size(&db->super))) goto cleanup;
-    if ((rc = write_abc(db->super.file.fd, &db->abc))) goto cleanup;
+    if ((rc = write_abc(fd, &db->abc))) goto cleanup;
 
     return rc;
 
 cleanup:
-    fclose(db->super.dp.fd);
-    fclose(db->super.mt.file.fd);
+    dcp_cmp_close(&db->super.mt.file.cmp);
+    dcp_cmp_close(&db->super.dp.cmp);
     return rc;
 }
 
@@ -79,17 +79,16 @@ enum dcp_rc dcp_std_db_read(struct dcp_std_db *db, struct dcp_std_prof *prof)
     if (db_end(&db->super)) return error(DCP_RUNTIMEERROR, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
-    return std_prof_read(prof, db->super.file.fd);
+    return std_prof_read(prof, dcp_cmp_fd(&db->super.file.cmp));
 }
 
 enum dcp_rc dcp_std_db_write(struct dcp_std_db *db,
                              struct dcp_std_prof const *prof)
 {
-    /* if ((rc = db_check_write_prof_ready(&db->super, &prof->super))) return
-     * rc; */
+    /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum dcp_rc rc = DCP_SUCCESS;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
-    if ((rc = std_prof_write(prof, db->super.dp.fd))) return rc;
+    if ((rc = std_prof_write(prof, dcp_cmp_fd(&db->super.dp.cmp)))) return rc;
     db->super.profiles.size++;
     return rc;
 }

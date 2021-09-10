@@ -99,7 +99,7 @@ union cmp_object_data_u {
   cmp_ext_t ext;
 };
 
-typedef struct dcp_cmp_ctx cmp_ctx_t;
+typedef struct dcp_cmp cmp_ctx_t;
 
 typedef struct cmp_object_s {
   uint8_t type;

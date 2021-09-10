@@ -1,4 +1,5 @@
 #include "dcp/pro_prof.h"
+#include "dcp/cmp.h"
 #include "dcp/generics.h"
 #include "dcp/prof.h"
 #include "dcp/rc.h"
@@ -22,15 +23,15 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
     p->amino = amino;
     p->cfg = cfg;
     p->eps = imm_frame_epsilon(cfg.epsilon);
+    p->core_size = 0;
     imm_dp_init(&p->null.dp, imm_super(nuclt));
     imm_dp_init(&p->alt.dp, imm_super(nuclt));
     p->alt.match_ndists = NULL;
 }
 
-static enum dcp_rc setup_nuclt_dists(struct dcp_pro_prof *prof,
-                                     unsigned core_size)
+static enum dcp_rc setup_nuclt_dists(struct dcp_pro_prof *prof)
 {
-    size_t size = core_size * sizeof *prof->alt.match_ndists;
+    size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
     void *ptr = realloc(prof->alt.match_ndists, size);
     if (!ptr && size > 0)
     {
@@ -121,7 +122,8 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
     if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
         return error(DCP_RUNTIMEERROR, "failed to hmm_reset");
 
-    enum dcp_rc rc = setup_nuclt_dists(p, m->core_size);
+    p->core_size = m->core_size;
+    enum dcp_rc rc = setup_nuclt_dists(p);
     if (rc) return rc;
 
     for (unsigned i = 0; i < m->core_size; ++i)
@@ -153,6 +155,7 @@ enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
                                 unsigned core_size)
 {
     assert(core_size >= 2);
+    p->core_size = core_size;
     struct imm_rnd rnd = imm_rnd(seed);
 
     imm_float lprobs[IMM_AMINO_SIZE];
@@ -224,16 +227,24 @@ static void del(struct dcp_prof *prof)
     }
 }
 
-enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, FILE *restrict fd)
+enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *ctx)
 {
+    FILE *fd = dcp_cmp_fd(ctx);
     if (imm_dp_read(&prof->null.dp, fd)) return DCP_RUNTIMEERROR;
     if (imm_dp_read(&prof->alt.dp, fd)) return DCP_RUNTIMEERROR;
     return DCP_SUCCESS;
 }
 
-enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, FILE *restrict fd)
+enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, struct dcp_cmp *ctx)
 {
+    FILE *fd = dcp_cmp_fd(ctx);
     if (imm_dp_write(&prof->null.dp, fd)) return DCP_RUNTIMEERROR;
     if (imm_dp_write(&prof->alt.dp, fd)) return DCP_RUNTIMEERROR;
+#if 0
+    for (unsigned i = 0; i < prof->core_size; ++i)
+    {
+        dcp_nuclt_dist_write(prof->alt.match_ndists + i);
+    }
+#endif
     return DCP_SUCCESS;
 }

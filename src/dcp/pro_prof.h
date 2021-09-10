@@ -17,6 +17,7 @@ struct dcp_pro_prof
     struct imm_nuclt const *nuclt;
     struct dcp_pro_cfg cfg;
     struct imm_frame_epsilon eps;
+    unsigned core_size;
 
     struct
     {
