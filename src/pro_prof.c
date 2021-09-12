@@ -30,7 +30,7 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
     p->alt.match_ndists = NULL;
 }
 
-static enum dcp_rc setup_nuclt_dists(struct dcp_pro_prof *prof)
+static enum dcp_rc alloc_match_nuclt_dists(struct dcp_pro_prof *prof)
 {
     size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
     void *ptr = realloc(prof->alt.match_ndists, size);
@@ -124,11 +124,15 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
         return error(DCP_RUNTIMEERROR, "failed to hmm_reset");
 
     p->core_size = m->core_size;
-    enum dcp_rc rc = setup_nuclt_dists(p);
+    enum dcp_rc rc = alloc_match_nuclt_dists(p);
     if (rc) return rc;
+
+    p->null.ndist = m->null.nucltd;
 
     for (unsigned i = 0; i < m->core_size; ++i)
         p->alt.match_ndists[i] = m->alt.nodes[i].match.nucltd;
+
+    p->alt.insert_ndist = m->alt.insert.nucltd;
 
     p->null.R = imm_state_idx(imm_super(s.null.R));
 
@@ -203,12 +207,26 @@ enum dcp_rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
                                 struct imm_seq const *seq, unsigned state_id,
                                 struct imm_codon *codon)
 {
-    unsigned idx = dcp_pro_state_idx(state_id);
-    struct dcp_nuclt_dist const *nuclt_dist = prof->alt.match_ndists + idx;
-    struct imm_frame_cond cond = {prof->eps, &nuclt_dist->nucltp,
-                                  &nuclt_dist->codonm};
+    assert(!dcp_pro_state_is_mute(state_id));
+
+    struct dcp_nuclt_dist const *nucltd = NULL;
+    if (dcp_pro_state_is_insert(state_id))
+    {
+        nucltd = &prof->alt.insert_ndist;
+    }
+    else if (dcp_pro_state_is_match(state_id))
+    {
+        unsigned idx = dcp_pro_state_idx(state_id);
+        nucltd = prof->alt.match_ndists + idx;
+    }
+    else
+        nucltd = &prof->null.ndist;
+
+    struct imm_frame_cond cond = {prof->eps, &nucltd->nucltp, &nucltd->codonm};
+
     if (imm_lprob_is_nan(imm_frame_cond_decode(&cond, seq, codon)))
         return error(DCP_ILLEGALARG, "failed to decode sequence");
+
     return DCP_SUCCESS;
 }
 
@@ -239,8 +257,12 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
         return error(DCP_IOERROR, "failed to read core size");
     prof->core_size = core_size;
 
-    enum dcp_rc rc = setup_nuclt_dists(prof);
+    enum dcp_rc rc = alloc_match_nuclt_dists(prof);
     if (rc) return rc;
+
+    if ((rc = dcp_nuclt_dist_read(&prof->null.ndist, cmp))) return rc;
+
+    if ((rc = dcp_nuclt_dist_read(&prof->alt.insert_ndist, cmp))) return rc;
 
     for (unsigned i = 0; i < prof->core_size; ++i)
     {
@@ -261,10 +283,15 @@ enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, struct dcp_cmp *cmp)
     if (!cmp_write_u16(cmp, (uint16_t)prof->core_size))
         return error(DCP_IOERROR, "failed to write core size");
 
+    enum dcp_rc rc = dcp_nuclt_dist_write(&prof->null.ndist, cmp);
+    if (rc) return rc;
+
+    if ((rc = dcp_nuclt_dist_write(&prof->alt.insert_ndist, cmp))) return rc;
+
     for (unsigned i = 0; i < prof->core_size; ++i)
     {
-        enum dcp_rc rc = dcp_nuclt_dist_write(prof->alt.match_ndists + i, cmp);
-        if (rc) return rc;
+        if ((rc = dcp_nuclt_dist_write(prof->alt.match_ndists + i, cmp)))
+            return rc;
     }
     return DCP_SUCCESS;
 }

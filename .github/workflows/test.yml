@@ -26,15 +26,6 @@ jobs:
     - name: Install dependencies
       run: sudo ./install-deps
 
-    # - name: Install ck
-    #   run: |
-    #     git clone https://github.com/concurrencykit/ck.git
-    #     cd ck
-    #     ./configure
-    #     make
-    #     sudo make install
-    #     cd ${{runner.workspace}}
-
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
 
@@ -51,7 +42,7 @@ jobs:
     - name: Test
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: ctest -C $BUILD_TYPE
+      run: ctest -C $BUILD_TYPE --output-on-failure
 
     - name: Install
       working-directory: ${{runner.workspace}}/build

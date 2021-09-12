@@ -36,7 +36,7 @@ static inline bool dcp_pro_state_is_mute(unsigned id)
 
 static inline unsigned dcp_pro_state_idx(unsigned id)
 {
-    return id & (0xFFFF >> 2);
+    return (id & (0xFFFF >> 2)) - 1;
 }
 
 DCP_API void dcp_pro_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE]);

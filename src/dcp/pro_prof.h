@@ -21,6 +21,7 @@ struct dcp_pro_prof
 
     struct
     {
+        struct dcp_nuclt_dist ndist;
         struct imm_dp dp;
         unsigned R;
     } null;
@@ -28,6 +29,7 @@ struct dcp_pro_prof
     struct
     {
         struct dcp_nuclt_dist *match_ndists;
+        struct dcp_nuclt_dist insert_ndist;
         struct imm_dp dp;
         unsigned S;
         unsigned N;

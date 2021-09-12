@@ -78,18 +78,16 @@ void test_pro_prof_uniform(void)
     struct imm_codon codons[10] = {
         IMM_CODON(prof.nuclt, "ATG"), IMM_CODON(prof.nuclt, "AAA"),
         IMM_CODON(prof.nuclt, "CGC"), IMM_CODON(prof.nuclt, "ATA"),
-        IMM_CODON(prof.nuclt, "GCA"), IMM_CODON(prof.nuclt, "TGA"),
-        IMM_CODON(prof.nuclt, "CAT"), IMM_CODON(prof.nuclt, "TGA"),
-        IMM_CODON(prof.nuclt, "TGA"), IMM_CODON(prof.nuclt, "TGA")};
+        IMM_CODON(prof.nuclt, "GCA"), IMM_CODON(prof.nuclt, "CCA"),
+        IMM_CODON(prof.nuclt, "CCT"), IMM_CODON(prof.nuclt, "TAC"),
+        IMM_CODON(prof.nuclt, "CAC"), IMM_CODON(prof.nuclt, "CAC"),
+    };
 
     unsigned any = imm_abc_any_symbol_id(imm_super(prof.nuclt));
     struct imm_codon codon = imm_codon(prof.nuclt, any, any, any);
     unsigned i = 0;
     while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
     {
-        printf("%d: codon(%c%c%c)\n", i, imm_codon_asym(&codon),
-               imm_codon_bsym(&codon), imm_codon_csym(&codon));
-        fflush(stdout);
         EQ(codons[i].a, codon.a);
         EQ(codons[i].b, codon.b);
         EQ(codons[i].c, codon.c);
@@ -162,6 +160,30 @@ void test_pro_prof_occupancy(void)
     EQ(imm_path_step(&result.path, 13)->state_id, DCP_PRO_ID_T);
     dcp_pro_prof_state_name(imm_path_step(&result.path, 13)->state_id, name);
     EQ(name, "T");
+
+    struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &result.path);
+    enum dcp_rc rc = DCP_SUCCESS;
+
+    struct imm_codon codons[10] = {
+        IMM_CODON(prof.nuclt, "ATG"), IMM_CODON(prof.nuclt, "AAA"),
+        IMM_CODON(prof.nuclt, "CGC"), IMM_CODON(prof.nuclt, "ATA"),
+        IMM_CODON(prof.nuclt, "GCA"), IMM_CODON(prof.nuclt, "CCA"),
+        IMM_CODON(prof.nuclt, "CCT"), IMM_CODON(prof.nuclt, "TAC"),
+        IMM_CODON(prof.nuclt, "CAC"), IMM_CODON(prof.nuclt, "CAC"),
+    };
+
+    unsigned any = imm_abc_any_symbol_id(imm_super(prof.nuclt));
+    struct imm_codon codon = imm_codon(prof.nuclt, any, any, any);
+    unsigned i = 0;
+    while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
+    {
+        EQ(codons[i].a, codon.a);
+        EQ(codons[i].b, codon.b);
+        EQ(codons[i].c, codon.c);
+        ++i;
+    }
+    EQ(rc, DCP_END);
+    EQ(i, 10);
 
     dcp_del(&prof);
     imm_del(&result);
