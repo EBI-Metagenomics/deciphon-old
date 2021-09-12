@@ -27,6 +27,8 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
     p->core_size = 0;
     imm_dp_init(&p->null.dp, imm_super(nuclt));
     imm_dp_init(&p->alt.dp, imm_super(nuclt));
+    dcp_nuclt_dist_init(&p->null.ndist, nuclt);
+    dcp_nuclt_dist_init(&p->alt.insert_ndist, nuclt);
     p->alt.match_ndists = NULL;
 }
 
@@ -268,8 +270,7 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
     {
         if ((rc = dcp_nuclt_dist_read(prof->alt.match_ndists + i, cmp)))
             return rc;
-        prof->alt.match_ndists[i].nucltp.nuclt = prof->nuclt;
-        prof->alt.match_ndists[i].codonm.nuclt = prof->nuclt;
+        dcp_nuclt_dist_init(prof->alt.match_ndists + i, prof->nuclt);
     }
     return DCP_SUCCESS;
 }

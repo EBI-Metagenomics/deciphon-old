@@ -14,6 +14,13 @@ struct dcp_nuclt_dist
 
 struct dcp_cmp;
 
+static inline void dcp_nuclt_dist_init(struct dcp_nuclt_dist *nucltd,
+                                       struct imm_nuclt const *nuclt)
+{
+    nucltd->nucltp.nuclt = nuclt;
+    nucltd->codonm.nuclt = nuclt;
+}
+
 DCP_API enum dcp_rc dcp_nuclt_dist_write(struct dcp_nuclt_dist const *ndist,
                                          struct dcp_cmp *cmp);
 

@@ -1,6 +1,7 @@
 #include "cli.h"
 #include "dcp/cli.h"
 #include "dcp/generics.h"
+#include "dcp/pro_codec.h"
 #include "dcp/pro_db.h"
 #include "dcp/pro_reader.h"
 #include "dcp/pro_state.h"
@@ -75,7 +76,7 @@ static struct far far;
 static struct far_tgt tgt;
 
 static enum dcp_rc scan_targets(FILE *fd, struct imm_result *result,
-                                struct imm_dp *dp, struct imm_abc const *abc)
+                                struct imm_dp *dp, struct dcp_pro_prof *prof)
 {
     struct imm_task *task = imm_task_new(dp);
     assert(fd);
@@ -83,11 +84,10 @@ static enum dcp_rc scan_targets(FILE *fd, struct imm_result *result,
     far_init(&far, fd);
     far_tgt_init(&tgt, &far);
 
-    enum far_rc rc = FAR_SUCCESS;
-    unsigned i = 0;
-    while (!(rc = far_next_tgt(&far, &tgt)))
+    enum far_rc far_rc = FAR_SUCCESS;
+    while (!(far_rc = far_next_tgt(&far, &tgt)))
     {
-        struct imm_seq seq = imm_seq(imm_str(tgt.seq), abc);
+        struct imm_seq seq = imm_seq(imm_str(tgt.seq), &prof->nuclt->super);
         if (imm_task_setup(task, &seq))
             return error(DCP_RUNTIMEERROR, "failed to create task");
 
@@ -95,39 +95,18 @@ static enum dcp_rc scan_targets(FILE *fd, struct imm_result *result,
             return error(DCP_RUNTIMEERROR, "failed to run viterbi");
 
         struct imm_path const *path = &result->path;
-        for (unsigned j = 0; j < imm_path_nsteps(path); ++j)
+        struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
+        unsigned any = imm_abc_any_symbol_id(&prof->nuclt->super);
+        struct imm_codon codon = imm_codon(prof->nuclt, any, any, any);
+        enum dcp_rc rc = DCP_SUCCESS;
+        while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
         {
-            struct imm_step const *step = imm_path_step(path, j);
-            unsigned id = step->state_id;
-            char name[IMM_STATE_NAME_SIZE] = {0};
-            dcp_pro_state_name(id, name);
-            printf("%s ", name);
+            printf("%c%c%c", imm_codon_asym(&codon), imm_codon_bsym(&codon),
+                   imm_codon_csym(&codon));
         }
         printf("\n");
 
-        path = &result->path;
-        for (unsigned j = 0; j < imm_path_nsteps(path); ++j)
-        {
-            struct imm_step const *step = imm_path_step(path, j);
-            unsigned id = step->state_id;
-            char name[IMM_STATE_NAME_SIZE] = {0};
-            dcp_pro_state_name(id, name);
-            /* imm_frame_state_decode(state, seq, codon); */
-            printf("%s ", name);
-        }
-
         printf("%s: %f\n", tgt.id, result->loglik);
-
-#if 0
-    def decode(self, seq: Sequence) -> Tuple[float, Codon]:
-        state = self._nmm_frame_state
-        any_symbol = self.alphabet.any_symbol
-        codon = Codon.create(any_symbol * 3, self.alphabet)
-        lprob = lib.nmm_frame_state_decode(state, seq.imm_seq, codon.nmm_codon)
-        return lprob, codon
-#endif
-
-        i++;
     }
 
     imm_del(task);
@@ -156,8 +135,7 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&db);
 
     struct imm_nuclt const *nuclt = dcp_pro_db_nuclt(&db);
-    struct imm_abc const *abc = imm_super(nuclt);
-    assert(imm_abc_typeid(abc) == IMM_DNA);
+    assert(imm_abc_typeid(imm_super(nuclt)) == IMM_DNA);
 
     /* long pos = ftell(dcp.fd); */
     /* struct athr *at = athr_create(filesize(dcp.fd) - pos, "Scan", ATHR_BAR);
@@ -169,7 +147,7 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
         if ((rc = dcp_pro_db_read(&db, prof))) goto cleanup;
         assert(dcp_prof_typeid(dcp_super(prof)) == DCP_PROTEIN_PROFILE);
 
-        if ((rc = scan_targets(faa.fd, &result, &prof->alt.dp, abc)))
+        if ((rc = scan_targets(faa.fd, &result, &prof->alt.dp, prof)))
             goto cleanup;
 
         /* pos = ftell(dcp.fd); */
