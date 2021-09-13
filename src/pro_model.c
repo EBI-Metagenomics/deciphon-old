@@ -385,7 +385,7 @@ static struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
      * function is using imm_nuclt base of an imm_dna_iupac compatible alphabet
      */
     /* struct imm_codon_lprob codonp = imm_codon_lprob(nuclt); */
-    struct imm_codon_lprob codonp = imm_codon_lprob(imm_super(imm_gc_dna()));
+    struct imm_codon_lprob codonp = imm_codon_lprob(imm_super(imm_gc_dna));
     for (unsigned i = 0; i < imm_gc_size(); ++i)
     {
         char aa = imm_gc_aa(1, i);
