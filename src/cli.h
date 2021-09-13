@@ -5,8 +5,8 @@
 #include "dcp/version.h"
 #include <argp.h>
 
-void cli_setup(void);
-void cli_end(void);
+void cli_log_setup(void);
+void cli_log_flush(void);
 
 #define CLI_BUG_ADDRESS "<https://github.com/EBI-Metagenomics/deciphon>"
 

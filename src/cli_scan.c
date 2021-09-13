@@ -13,31 +13,23 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-const char *argp_program_version = "dcp-scan " DCP_VERSION;
-const char *argp_program_bug_address = CLI_BUG_ADDRESS;
-
-static char doc[] = "Scan a target -- dcp-scan targets.faa db.dcp";
-
-static char args_doc[] = "FAA DCP";
-
-static struct argp_option options[] = {{0}};
+char const *argp_program_version = "dcp-scan " DCP_VERSION;
+char const *argp_program_bug_address = CLI_BUG_ADDRESS;
 
 struct arguments
 {
     char *args[2];
-};
+} arguments;
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-    struct arguments *arguments = state->input;
+    struct arguments *args = state->input;
 
     switch (key)
     {
     case ARGP_KEY_ARG:
         if (state->arg_num >= 2) argp_usage(state);
-
-        arguments->args[state->arg_num] = arg;
-
+        args->args[state->arg_num] = arg;
         break;
 
     case ARGP_KEY_END:
@@ -50,6 +42,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
+static char doc[] = "Scan a target -- dcp-scan targets.faa db.dcp";
+static char args_doc[] = "FAA DCP";
+static struct argp_option options[] = {{0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 static struct
@@ -85,7 +80,7 @@ static struct
         FILE *fd;
     } db;
 
-} cli;
+} cli = {0};
 
 static char const default_ocodon[] = "ocodon.fa";
 static char const default_oamino[] = "oamino.fa";
@@ -130,11 +125,14 @@ static enum dcp_rc scan_targets(struct imm_result *result,
     return DCP_SUCCESS;
 }
 
-static void setup_files(struct arguments const *arguments)
+static void setup_arguments(void)
 {
-    cli.targets.file = arguments->args[0];
-    cli.db.file = arguments->args[1];
+    cli.targets.file = arguments.args[0];
+    cli.db.file = arguments.args[1];
+}
 
+static void setup_files(void)
+{
     cli.targets.fd = fopen(cli.targets.file, "r");
     cli.db.fd = fopen(cli.db.file, "rb");
 
@@ -153,22 +151,21 @@ static void setup_files(struct arguments const *arguments)
 
 enum dcp_rc dcp_cli_scan(int argc, char **argv)
 {
-    struct arguments arguments;
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 
-    cli_setup();
-    setup_files(&arguments);
+    cli_log_setup();
+    setup_arguments();
+    setup_files();
 
     enum dcp_rc rc = DCP_SUCCESS;
 
-    struct dcp_pro_db db;
-    dcp_pro_db_init(&db);
+    struct dcp_pro_db db = dcp_pro_db_default;
 
     if ((rc = dcp_pro_db_openr(&db, cli.db.fd))) goto cleanup;
+
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&db);
 
-    struct imm_nuclt const *nuclt = dcp_pro_db_nuclt(&db);
-    assert(imm_abc_typeid(imm_super(nuclt)) == IMM_DNA);
+    assert(imm_abc_typeid(&db.nuclt.super) == IMM_DNA);
 
     struct imm_result result = imm_result();
     while (!(rc = dcp_db_end(dcp_super(&db))))
@@ -190,6 +187,6 @@ cleanup:
     fclose(cli.db.fd);
     fclose(cli.output.codon.fd);
     fclose(cli.output.amino.fd);
-    cli_end();
+    cli_log_flush();
     return rc;
 }

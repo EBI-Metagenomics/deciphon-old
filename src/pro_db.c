@@ -8,6 +8,8 @@
 #include "pro_prof.h"
 #include "third-party/cmp.h"
 
+struct dcp_pro_db const dcp_pro_db_default = {0};
+
 static enum dcp_rc read_epsilon(struct dcp_cmp *cmp, unsigned float_bytes,
                                 imm_float *epsilon)
 {
@@ -97,7 +99,7 @@ static enum dcp_rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
     return DCP_SUCCESS;
 }
 
-void dcp_pro_db_init(struct dcp_pro_db *db)
+static void pro_db_init(struct dcp_pro_db *db)
 {
     db_init(&db->super, DCP_PROTEIN_PROFILE);
     db->amino = imm_amino_empty;
@@ -107,6 +109,7 @@ void dcp_pro_db_init(struct dcp_pro_db *db)
 
 enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
 {
+    pro_db_init(db);
     db_openr(&db->super, fd);
 
     struct dcp_cmp *cmp = &db->super.file.cmp;
@@ -132,6 +135,7 @@ enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
                              struct imm_nuclt const *nuclt,
                              struct dcp_pro_cfg cfg)
 {
+    pro_db_init(db);
     db->amino = *amino;
     db->nuclt = *nuclt;
 

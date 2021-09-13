@@ -20,8 +20,7 @@ void test_db_pro_openw(void)
     NOTNULL(fd);
 
     struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
-    struct dcp_pro_db db;
-    dcp_pro_db_init(&db);
+    struct dcp_pro_db db = dcp_pro_db_default;
     EQ(dcp_pro_db_openw(&db, fd, amino, nuclt, cfg), DCP_SUCCESS);
 
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&db);
@@ -42,8 +41,7 @@ void test_db_pro_openr(void)
 {
     FILE *fd = fopen(TMPDIR "/db.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_pro_db db;
-    dcp_pro_db_init(&db);
+    struct dcp_pro_db db = dcp_pro_db_default;
     EQ(dcp_pro_db_openr(&db, fd), DCP_SUCCESS);
 
     EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);

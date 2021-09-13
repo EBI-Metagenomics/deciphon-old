@@ -25,7 +25,12 @@ struct dcp_cmp
     dcp_cmp_writer write;
 };
 
-DCP_API void dcp_cmp_init(struct dcp_cmp *cmp, FILE *file);
+static inline void dcp_cmp_setup(struct dcp_cmp *cmp, FILE *fd)
+{
+    cmp->buf = fd;
+}
+
+DCP_API struct dcp_cmp dcp_cmp_init(FILE *fd);
 
 static inline FILE *dcp_cmp_fd(struct dcp_cmp *cmp) { return (FILE *)cmp->buf; }
 

@@ -24,8 +24,7 @@ void test_cli_press_read(void)
 
     FILE *fd = fopen(TMPDIR "Pfam-A.5.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_pro_db db;
-    dcp_pro_db_init(&db);
+    struct dcp_pro_db db = dcp_pro_db_default;
     EQ(dcp_pro_db_openr(&db, fd), DCP_SUCCESS);
 
     EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);

@@ -21,7 +21,9 @@ static size_t file_writer(struct dcp_cmp *cmp, const void *data, size_t count)
     return fwrite(data, sizeof(uint8_t), count, (FILE *)cmp->buf);
 }
 
-void dcp_cmp_init(struct dcp_cmp *cmp, FILE *file)
+struct dcp_cmp dcp_cmp_init(FILE *fd)
 {
-    cmp_init(cmp, file, file_reader, file_skipper, file_writer);
+    struct dcp_cmp cmp = {0};
+    cmp_init(&cmp, fd, file_reader, file_skipper, file_writer);
+    return cmp;
 }

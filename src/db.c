@@ -17,11 +17,13 @@
 #define MAX_NAME_SIZE 63
 #define MAX_ACC_SIZE 31
 
+struct dcp_db const dcp_db_default = {0};
+
 static enum dcp_rc init_tmpmeta(struct dcp_db *db)
 {
     FILE *fd = tmpfile();
     if (!fd) return error(DCP_IOERROR, "tmpfile() failed");
-    dcp_cmp_init(&db->mt.file.cmp, fd);
+    dcp_cmp_setup(&db->mt.file.cmp, fd);
     return DCP_SUCCESS;
 }
 
@@ -29,7 +31,7 @@ static enum dcp_rc init_tmpdp(struct dcp_db *db)
 {
     FILE *fd = tmpfile();
     if (!fd) return error(DCP_IOERROR, "tmpfile() failed");
-    dcp_cmp_init(&db->dp.cmp, fd);
+    dcp_cmp_setup(&db->dp.cmp, fd);
     return DCP_SUCCESS;
 }
 
@@ -43,15 +45,15 @@ void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
     db->mt.name_length = NULL;
     db->mt.size = 0;
     db->mt.data = NULL;
-    dcp_cmp_init(&db->mt.file.cmp, NULL);
-    dcp_cmp_init(&db->dp.cmp, NULL);
-    dcp_cmp_init(&db->file.cmp, NULL);
+    db->mt.file.cmp = dcp_cmp_init(NULL);
+    db->dp.cmp = dcp_cmp_init(NULL);
+    db->file.cmp = dcp_cmp_init(NULL);
     db->file.mode = DB_OPEN_NULL;
 }
 
 void db_openr(struct dcp_db *db, FILE *restrict fd)
 {
-    dcp_cmp_init(&db->file.cmp, fd);
+    dcp_cmp_setup(&db->file.cmp, fd);
     db->file.mode = DB_OPEN_READ;
 }
 
@@ -60,7 +62,7 @@ enum dcp_rc db_openw(struct dcp_db *db, FILE *restrict fd)
     enum dcp_rc rc = init_tmpdp(db);
     if (rc) return rc;
 
-    dcp_cmp_init(&db->file.cmp, fd);
+    dcp_cmp_setup(&db->file.cmp, fd);
     db->file.mode = DB_OPEN_WRITE;
 
     return init_tmpmeta(db);

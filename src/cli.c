@@ -20,11 +20,11 @@ static void wrap_fprintf(char const *msg, void *arg)
     fprintf(stderr, "%s\n", msg);
 }
 
-void cli_setup(void)
+void cli_log_setup(void)
 {
     imm_log_setup(wrap_log_put, NULL);
     dcp_log_setup(wrap_log_put, NULL);
     log_setup(LOG_ERROR, wrap_fprintf, wrap_fflush, NULL);
 }
 
-void cli_end(void) { log_flush(); }
+void cli_log_flush(void) { log_flush(); }

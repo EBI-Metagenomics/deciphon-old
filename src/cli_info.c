@@ -6,12 +6,6 @@
 const char *argp_program_version = "dcp-info " DCP_VERSION;
 const char *argp_program_bug_address = CLI_BUG_ADDRESS;
 
-static char doc[] = "Show information -- dcp-info";
-
-static char args_doc[] = "";
-
-static struct argp_option options[] = {{0}};
-
 struct arguments
 {
     char *args[0];
@@ -19,14 +13,14 @@ struct arguments
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-    struct arguments *arguments = state->input;
+    struct arguments *args = state->input;
 
     switch (key)
     {
     case ARGP_KEY_ARG:
         if (state->arg_num >= 0) argp_usage(state);
 
-        arguments->args[state->arg_num] = arg;
+        args->args[state->arg_num] = arg;
 
         break;
 
@@ -40,6 +34,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
+static char doc[] = "Show information -- dcp-info";
+static char args_doc[] = "";
+static struct argp_option options[] = {{0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 enum dcp_rc dcp_cli_info(int argc, char **argv)
