@@ -17,7 +17,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-find_package(far REQUIRED)
+find_package(fasta REQUIRED)
 find_package(hmr REQUIRED)
 find_package(imm REQUIRED)
 find_package(Threads REQUIRED)
@@ -107,7 +107,7 @@ target_include_directories(
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(dcp PUBLIC IMM::imm)
 target_link_libraries(dcp PUBLIC HMR::hmr)
-target_link_libraries(dcp PUBLIC FAR::far)
+target_link_libraries(dcp PUBLIC FASTA::fasta)
 target_link_libraries(dcp PUBLIC Threads::Threads)
 target_link_libraries(dcp PUBLIC $<$<NOT:$<BOOL:${ARGP_BUILTIN}>>:Argp::argp>)
 target_link_libraries(dcp PUBLIC LOG::log)

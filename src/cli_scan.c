@@ -6,7 +6,7 @@
 #include "dcp/pro_reader.h"
 #include "dcp/pro_state.h"
 #include "error.h"
-#include "far/far.h"
+#include "fasta/fasta.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -52,65 +52,103 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
-struct faa
+static struct
 {
-    char const *filepath;
-    FILE *fd;
-};
-
-struct dcp
-{
-    char const *filepath;
-    FILE *fd;
-};
-
-static off_t filesize(FILE *restrict f)
-{
-    int fd = fileno(f);
-    struct stat st;
-    fstat(fd, &st);
-    return st.st_size;
-}
-
-static struct far far;
-static struct far_tgt tgt;
-
-static enum dcp_rc scan_targets(FILE *fd, struct imm_result *result,
-                                struct imm_dp *dp, struct dcp_pro_prof *prof)
-{
-    struct imm_task *task = imm_task_new(dp);
-    assert(fd);
-
-    far_init(&far, fd);
-    far_tgt_init(&tgt, &far);
-
-    enum far_rc far_rc = FAR_SUCCESS;
-    while (!(far_rc = far_next_tgt(&far, &tgt)))
+    struct
     {
-        struct imm_seq seq = imm_seq(imm_str(tgt.seq), &prof->nuclt->super);
+        char const *file;
+        FILE *fd;
+        struct fasta fa;
+    } targets;
+
+    struct
+    {
+        struct
+        {
+            char const *file;
+            FILE *fd;
+            struct fasta fa;
+            char seq[FASTA_SEQ_MAX];
+        } codon;
+        struct
+        {
+            char const *file;
+            FILE *fd;
+            struct fasta fa;
+            char seq[FASTA_SEQ_MAX];
+        } amino;
+    } output;
+
+    struct
+    {
+        char const *file;
+        FILE *fd;
+    } db;
+
+} cli;
+
+static char const default_ocodon[] = "ocodon.fa";
+static char const default_oamino[] = "oamino.fa";
+
+static enum dcp_rc scan_targets(struct imm_result *result,
+                                struct dcp_pro_prof *prof)
+{
+    struct imm_task *task = imm_task_new(&prof->alt.dp);
+    struct imm_abc const *abc = &prof->nuclt->super;
+
+    enum fasta_rc fasta_rc = FASTA_SUCCESS;
+    while (!(fasta_rc = fasta_read(&cli.targets.fa)))
+    {
+        char const *tgt = cli.targets.fa.target.seq;
+        struct imm_seq seq = imm_seq(imm_str(tgt), abc);
         if (imm_task_setup(task, &seq))
             return error(DCP_RUNTIMEERROR, "failed to create task");
 
-        if (imm_dp_viterbi(dp, task, result))
+        if (imm_dp_viterbi(&prof->alt.dp, task, result))
             return error(DCP_RUNTIMEERROR, "failed to run viterbi");
 
         struct imm_path const *path = &result->path;
         struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
-        unsigned any = imm_abc_any_symbol_id(&prof->nuclt->super);
+        unsigned any = imm_abc_any_symbol_id(abc);
         struct imm_codon codon = imm_codon(prof->nuclt, any, any, any);
         enum dcp_rc rc = DCP_SUCCESS;
+        char *ocodon = cli.output.codon.seq;
+        struct fasta_target tcodon = {cli.targets.fa.target.id,
+                                      cli.targets.fa.target.desc, ocodon};
         while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
         {
-            printf("%c%c%c", imm_codon_asym(&codon), imm_codon_bsym(&codon),
-                   imm_codon_csym(&codon));
+            *(ocodon++) = imm_codon_asym(&codon);
+            *(ocodon++) = imm_codon_bsym(&codon);
+            *(ocodon++) = imm_codon_csym(&codon);
         }
-        printf("\n");
-
-        printf("%s: %f\n", tgt.id, result->loglik);
+        *ocodon = '\0';
+        fasta_write(&cli.output.codon.fa, tcodon, 60);
+        /* printf("%s: %f\n", cli.targets.fa.target.id, result->loglik); */
     }
 
     imm_del(task);
     return DCP_SUCCESS;
+}
+
+static void setup_files(struct arguments const *arguments)
+{
+    cli.targets.file = arguments->args[0];
+    cli.db.file = arguments->args[1];
+
+    cli.targets.fd = fopen(cli.targets.file, "r");
+    cli.db.fd = fopen(cli.db.file, "rb");
+
+    cli.output.codon.file = default_ocodon;
+    cli.output.amino.file = default_oamino;
+
+    cli.output.codon.fd = fopen(cli.output.codon.file, "w");
+    cli.output.amino.fd = fopen(cli.output.amino.file, "w");
+
+    fasta_init(&cli.output.codon.fa, cli.output.codon.fd, FASTA_WRITE);
+    fasta_init(&cli.output.amino.fa, cli.output.amino.fd, FASTA_WRITE);
+
+    cli.output.codon.seq[0] = '\0';
+    cli.output.amino.seq[0] = '\0';
 }
 
 enum dcp_rc dcp_cli_scan(int argc, char **argv)
@@ -119,48 +157,39 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 
     cli_setup();
-
-    struct faa faa = {arguments.args[0], NULL};
-    struct dcp dcp = {arguments.args[1], NULL};
-
-    faa.fd = fopen(faa.filepath, "r");
-    dcp.fd = fopen(dcp.filepath, "rb");
+    setup_files(&arguments);
 
     enum dcp_rc rc = DCP_SUCCESS;
 
     struct dcp_pro_db db;
     dcp_pro_db_init(&db);
 
-    if ((rc = dcp_pro_db_openr(&db, dcp.fd))) goto cleanup;
+    if ((rc = dcp_pro_db_openr(&db, cli.db.fd))) goto cleanup;
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&db);
 
     struct imm_nuclt const *nuclt = dcp_pro_db_nuclt(&db);
     assert(imm_abc_typeid(imm_super(nuclt)) == IMM_DNA);
 
-    /* long pos = ftell(dcp.fd); */
-    /* struct athr *at = athr_create(filesize(dcp.fd) - pos, "Scan", ATHR_BAR);
-     */
     struct imm_result result = imm_result();
     while (!(rc = dcp_db_end(dcp_super(&db))))
     {
-        /* athr_consume(at, ftell(dcp.fd) - pos); */
         if ((rc = dcp_pro_db_read(&db, prof))) goto cleanup;
         assert(dcp_prof_typeid(dcp_super(prof)) == DCP_PROTEIN_PROFILE);
 
-        if ((rc = scan_targets(faa.fd, &result, &prof->alt.dp, prof)))
-            goto cleanup;
-
-        /* pos = ftell(dcp.fd); */
+        fasta_init(&cli.targets.fa, cli.targets.fd, FASTA_READ);
+        rewind(cli.targets.fd);
+        if ((rc = scan_targets(&result, prof))) goto cleanup;
     }
     if (rc != DCP_END) goto cleanup;
 
     rc = dcp_pro_db_close(&db);
     imm_del(&result);
-    /* athr_finish(at); */
 
 cleanup:
-    fclose(faa.fd);
-    fclose(dcp.fd);
+    fclose(cli.targets.fd);
+    fclose(cli.db.fd);
+    fclose(cli.output.codon.fd);
+    fclose(cli.output.amino.fd);
     cli_end();
     return rc;
 }
