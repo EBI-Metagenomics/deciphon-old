@@ -51,9 +51,9 @@ void test_cli_press_read(void)
     EQ(mt[4].name, "17kDa_Anti_2");
     EQ(mt[4].acc, "PF16998.7");
 
-    double logliks[5] = {-2967.11435289075, -2966.91205898787,
-                         -2972.89402078870, -2965.50604875180,
-                         -2967.65040608050};
+    double logliks[5] = {-2809.46254227552, -2811.42242382613,
+                         -2814.51230144228, -2810.78946074378,
+                         -2808.72185153672};
 
     unsigned nprofs = 0;
     struct imm_result result = imm_result();

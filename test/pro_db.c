@@ -72,7 +72,7 @@ void test_db_pro_openr(void)
             struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
             EQ(imm_dp_viterbi(&p->alt.dp, task, &result), IMM_SUCCESS);
-            CLOSE(result.loglik, -2851.18599975367);
+            CLOSE(result.loglik, -2720.38142805010);
             imm_del(task);
         }
         ++nprofs;

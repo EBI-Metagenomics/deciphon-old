@@ -10,7 +10,7 @@ struct dcp_pro_cfg
     imm_float epsilon;
 };
 
-#define DCP_DEFAULT_EPSILON ((imm_float)0.1)
+#define DCP_DEFAULT_EPSILON ((imm_float)0.01)
 
 static inline struct dcp_pro_cfg dcp_pro_cfg(enum dcp_entry_dist entry_dist,
                                              imm_float epsilon)
