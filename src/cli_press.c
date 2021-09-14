@@ -3,6 +3,7 @@
 #include "dcp/generics.h"
 #include "dcp/pro_db.h"
 #include "dcp/pro_reader.h"
+#include "error.h"
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -72,6 +73,12 @@ static off_t filesize(void)
     return st.st_size;
 }
 
+static void progress_init(void)
+{
+    cli.progress.pos = 0;
+    cli.progress.at = NULL;
+}
+
 static void progress_start(void)
 {
     cli.progress.pos = ftell(cli.input.fd);
@@ -85,17 +92,24 @@ static void progress_update(void)
     cli.progress.pos = ftell(cli.input.fd);
 }
 
-static void progress_end(void) { athr_finish(cli.progress.at); }
+static void progress_end(void)
+{
+    if (cli.progress.at) athr_finish(cli.progress.at);
+}
 
 static enum dcp_rc cli_setup(void)
 {
     cli_log_setup();
     cli.input.file = arguments.args[0];
     cli.output.file = arguments.args[1];
-    cli.input.fd = fopen(cli.input.file, "r");
-    cli.output.fd = fopen(cli.output.file, "wb");
 
-    progress_start();
+    if (!(cli.input.fd = fopen(cli.input.file, "r")))
+        return error(DCP_IOERROR, "failed to open the hmm file");
+
+    if (!(cli.output.fd = fopen(cli.output.file, "wb")))
+        return error(DCP_IOERROR, "failed to open the output file");
+
+    progress_init();
 
     cli.db = dcp_pro_db_default;
 
@@ -110,9 +124,9 @@ static enum dcp_rc cli_setup(void)
     return DCP_SUCCESS;
 }
 
-static void cli_end(void)
+static void cli_end(enum dcp_rc rc)
 {
-    progress_end();
+    if (!rc) progress_end();
     fclose(cli.input.fd);
     fclose(cli.output.fd);
     cli_log_flush();
@@ -133,16 +147,23 @@ enum dcp_rc dcp_cli_press(int argc, char **argv)
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 
     enum dcp_rc rc = cli_setup();
+    if (rc) goto cleanup;
+
+    progress_start();
     while (!(rc = dcp_pro_reader_next(&cli.reader)))
     {
         progress_update();
         rc = profile_write();
     }
-    if (rc != DCP_END) goto cleanup;
+    if (rc != DCP_END)
+    {
+        error(rc, "failed to parse HMM file");
+        goto cleanup;
+    }
 
     rc = dcp_pro_db_close(&cli.db);
 
 cleanup:
-    cli_end();
+    cli_end(rc);
     return rc;
 }
