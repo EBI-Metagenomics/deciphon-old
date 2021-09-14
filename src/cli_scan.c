@@ -217,7 +217,7 @@ static enum dcp_rc cli_setup(void)
     return DCP_SUCCESS;
 }
 
-static void targets_setup()
+static void targets_setup(void)
 {
     fasta_init(&cli.targets.fa, cli.targets.fd, FASTA_READ);
     rewind(cli.targets.fd);

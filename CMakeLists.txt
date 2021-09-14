@@ -104,7 +104,11 @@ target_include_directories(
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+         $<BUILD_INTERFACE:/code/hmmer/src>
+         $<BUILD_INTERFACE:/code/hmmer/easel>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(dcp PUBLIC hmmer)
+target_link_libraries(dcp PUBLIC easel)
 target_link_libraries(dcp PUBLIC IMM::imm)
 target_link_libraries(dcp PUBLIC HMR::hmr)
 target_link_libraries(dcp PUBLIC FASTA::fasta)
@@ -154,6 +158,9 @@ target_link_libraries(dcp-info PUBLIC dcp)
 add_executable(dcp-scan src/bin/scan.c)
 target_link_libraries(dcp-scan PUBLIC dcp)
 
+add_executable(hmmer3 src/hmmer3.c)
+target_link_libraries(hmmer3 PUBLIC dcp)
+
 # Installation
 install(
   TARGETS dcp
@@ -182,6 +189,7 @@ install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
         ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
         ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
+        ${CMAKE_CURRENT_BINARY_DIR}/hmmer3
   PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
   DESTINATION bin)
 
