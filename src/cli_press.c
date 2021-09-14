@@ -17,6 +17,31 @@ struct arguments
     char *args[2];
 } arguments;
 
+static char *replace_ext(char *str)
+{
+    size_t n = strlen(str);
+    char *dst = realloc(strdup(str), n + 5);
+    dst[n] = '\0';
+    dst[n + 1] = '\0';
+    dst[n + 2] = '\0';
+    dst[n + 3] = '\0';
+    dst[n + 4] = '\0';
+    dst[n + 5] = '\0';
+
+    char *j = &dst[n];
+    while (j > dst && *j != '.')
+    {
+        --j;
+    }
+    if (j == dst) j = &dst[n];
+    *(j++) = '.';
+    *(j++) = 'd';
+    *(j++) = 'c';
+    *(j++) = 'p';
+    *j = '\0';
+    return dst;
+}
+
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
     struct arguments *args = state->input;
@@ -29,7 +54,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         break;
 
     case ARGP_KEY_END:
-        if (state->arg_num < 2) argp_usage(state);
+        if (state->arg_num < 1)
+            argp_usage(state);
+        else
+            args->args[1] = replace_ext(args->args[0]);
         break;
 
     default:
@@ -38,8 +66,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-static char doc[] = "Press a HMMER3 file -- dcp-press file.hmm file.dcp";
-static char args_doc[] = "HMM DCP";
+static char doc[] = "Press a HMMER3 file -- dcp-press file.hmm";
+static char args_doc[] = "HMM [DCP]";
 static struct argp_option options[] = {{0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
