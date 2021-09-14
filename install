@@ -159,10 +159,6 @@ echo -n "[4/7] Compiling... "
 silent_run cmake --build . --config Release
 [ $? == 0 ] && echo "done." || failed
 
-echo -n "[5/7] Testing... "
-silent_run ctest --output-on-failure -C Release
-[ $? == 0 ] && echo "done." || failed
-
 echo "[6/7] Installing..."
 $DO_CMD cmake --build . --config Release --target install
 [ $? == 0 ] && echo "done." || failed
