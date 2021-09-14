@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/c-containers
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/logaddexp
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/elapsed
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/hope
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/log
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/hmmer-reader
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/fasta
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/imm
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/almosthere
+/bin/bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/deciphon
