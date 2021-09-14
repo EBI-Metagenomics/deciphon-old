@@ -104,8 +104,8 @@ target_include_directories(
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-         $<BUILD_INTERFACE:/code/hmmer/src>
-         $<BUILD_INTERFACE:/code/hmmer/easel>
+         $<BUILD_INTERFACE:/Users/horta/code/hmmer-eddy/src>
+         $<BUILD_INTERFACE:/Users/horta/code/hmmer-eddy/easel>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(dcp PUBLIC hmmer)
 target_link_libraries(dcp PUBLIC easel)

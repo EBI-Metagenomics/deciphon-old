@@ -104,10 +104,20 @@ int main(int argc, char **argv)
     FILE *ofp = stdout; /* output file for results (default stdout)        */
 
     ESL_GETOPTS go;
-    go.opt = malloc(sizeof(ESL_OPTIONS) * 1);
+    go.nopts = 3;
+    go.opt = malloc(sizeof(ESL_OPTIONS) * go.nopts);
     ESL_OPTIONS *opt = (ESL_OPTIONS *)go.opt;
     opt[0].name = "--seed";
     opt[0].type = eslARG_INT;
+    opt[1].name = "-E";
+    opt[1].type = eslARG_REAL;
+    opt[1].defval = "10.0";
+    opt[2].name = "--domE";
+    opt[2].type = eslARG_REAL;
+    opt[2].defval = "10.0";
+    opt[3].name = "-T";
+    opt[3].type = eslARG_REAL;
+    opt[3].defval = FALSE;
 
     /* Outside loop: over each query sequence in <seqfile>. */
     while ((sstatus = esl_sqio_Read(sqfp, qsq)) == eslOK)
