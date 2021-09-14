@@ -42,8 +42,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-static char doc[] = "Scan a target -- dcp-scan targets.faa db.dcp";
-static char args_doc[] = "FAA DCP";
+static char doc[] = "Scan targets -- dcp-scan targets.fna pfam.dcp";
+static char args_doc[] = "FNA DCP";
 static struct argp_option options[] = {{0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
@@ -80,12 +80,20 @@ static struct
             struct fasta fa;
             char seq[FASTA_SEQ_MAX];
         } amino;
+
+        unsigned nmatches;
     } output;
+
+    struct
+    {
+        struct athr *at;
+        long pos;
+    } progress;
 
 } cli = {0};
 
-static char const default_ocodon[] = "ocodon.fa";
-static char const default_oamino[] = "oamino.fa";
+static char const default_ocodon[] = "codon.fna";
+static char const default_oamino[] = "amino.fa";
 
 static struct imm_seq target_seq(void)
 {
@@ -152,6 +160,7 @@ static enum dcp_rc write_aminos(char const *oamino)
 
 static enum dcp_rc targets_scan(void)
 {
+    struct imm_result null = imm_result();
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
     struct imm_task *task = imm_task_new(&prof->alt.dp);
     if (!task) return error(DCP_RUNTIMEERROR, "failed to create task");
@@ -166,6 +175,12 @@ static enum dcp_rc targets_scan(void)
         if (imm_dp_viterbi(&prof->alt.dp, task, &cli.pro.result))
             return error(DCP_RUNTIMEERROR, "failed to run viterbi");
 
+        if (imm_dp_viterbi(&prof->null.dp, task, &null))
+            return error(DCP_RUNTIMEERROR, "failed to run viterbi");
+
+        imm_float lrt = -2 * (null.loglik - cli.pro.result.loglik);
+        if (lrt < 100.0f) continue;
+
         enum dcp_rc rc = predict_codons(&seq);
         if (rc) return rc;
 
@@ -175,9 +190,11 @@ static enum dcp_rc targets_scan(void)
 
         if ((rc = write_codons(ocodon))) return rc;
         if ((rc = write_aminos(oamino))) return rc;
+        cli.output.nmatches++;
     }
 
     imm_del(task);
+    imm_del(&null);
     return DCP_SUCCESS;
 }
 
@@ -187,6 +204,7 @@ static enum dcp_rc cli_setup(void)
     cli.targets.file = arguments.args[0];
     cli.pro.file = arguments.args[1];
     cli.pro.result = imm_result();
+    cli.output.nmatches = 0;
 
     if (!(cli.targets.fd = fopen(cli.targets.file, "r")))
         return error(DCP_IOERROR, "failed to open targets file");
@@ -221,7 +239,31 @@ static void targets_setup(void)
 {
     fasta_init(&cli.targets.fa, cli.targets.fd, FASTA_READ);
     rewind(cli.targets.fd);
+    cli.targets.fa.target.desc = cli.pro.db.prof.super.mt.acc;
 }
+
+static off_t filesize(FILE *restrict fd)
+{
+    int no = fileno(fd);
+    struct stat st;
+    fstat(no, &st);
+    return st.st_size;
+}
+
+static void progress_start(void)
+{
+    cli.progress.pos = ftell(cli.pro.fd);
+    cli.progress.at =
+        athr_create(filesize(cli.pro.fd) - cli.progress.pos, "Scan", ATHR_BAR);
+}
+
+static void progress_update(void)
+{
+    athr_consume(cli.progress.at, ftell(cli.pro.fd) - cli.progress.pos);
+    cli.progress.pos = ftell(cli.pro.fd);
+}
+
+static void progress_end(void) { athr_finish(cli.progress.at); }
 
 enum dcp_rc dcp_cli_scan(int argc, char **argv)
 {
@@ -232,6 +274,7 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
 
     assert(imm_abc_typeid(&cli.pro.db.nuclt.super) == IMM_DNA);
 
+    progress_start();
     while (!(rc = dcp_db_end(dcp_super(&cli.pro.db))))
     {
         struct dcp_pro_prof *prof = dcp_pro_db_profile(&cli.pro.db);
@@ -239,17 +282,35 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
 
         targets_setup();
         if ((rc = targets_scan())) goto cleanup;
+
+        progress_update();
     }
     if (rc != DCP_END) goto cleanup;
 
     rc = dcp_pro_db_close(&cli.pro.db);
 
 cleanup:
+    progress_end();
     imm_del(&cli.pro.result);
     fclose(cli.targets.fd);
     fclose(cli.pro.fd);
     fclose(cli.output.codon.fd);
     fclose(cli.output.amino.fd);
     cli_log_flush();
+    if (!rc)
+    {
+        if (cli.output.nmatches == 0)
+        {
+            printf("I'm sorry but no significant match has been found.\n");
+        }
+        else
+        {
+            printf(
+                "I've found %d significant matches and saved them in <%s> and "
+                "<%s>\n",
+                cli.output.nmatches, cli.output.amino.file,
+                cli.output.codon.file);
+        }
+    }
     return rc;
 }
