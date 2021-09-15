@@ -13,15 +13,14 @@ int main(void)
 
 void test_cli_press_write(void)
 {
-    int argc = 3;
-    char *argv[256] = {"dcp-press", ASSETS "/Pfam-A.5.hmm",
-                       TMPDIR "Pfam-A.5.dcp"};
+    int argc = 4;
+    char *argv[1024] = {"dcp-press", ASSETS "/Pfam-A.5.hmm", "-o",
+                        TMPDIR "Pfam-A.5.dcp"};
     EQ(dcp_cli_press(argc, argv), DCP_SUCCESS);
 }
 
 void test_cli_press_read(void)
 {
-
     FILE *fd = fopen(TMPDIR "Pfam-A.5.dcp", "rb");
     NOTNULL(fd);
     struct dcp_pro_db db = dcp_pro_db_default;

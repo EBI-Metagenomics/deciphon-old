@@ -1,10 +1,6 @@
 #include "cli.h"
 #include "dcp/cli.h"
 #include "imm/imm.h"
-#include <stdio.h>
-
-const char *argp_program_version = "dcp-info " DCP_VERSION;
-const char *argp_program_bug_address = CLI_BUG_ADDRESS;
 
 struct arguments
 {

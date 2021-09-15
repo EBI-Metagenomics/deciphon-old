@@ -13,9 +13,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-char const *argp_program_version = "dcp-scan " DCP_VERSION;
-char const *argp_program_bug_address = CLI_BUG_ADDRESS;
-
 struct arguments
 {
     char *args[2];

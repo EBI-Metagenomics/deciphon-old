@@ -8,38 +8,22 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-char const *argp_program_version = "dcp-press " DCP_VERSION;
-char const *argp_program_bug_address = CLI_BUG_ADDRESS;
+#define _POSIX_C_SOURCE 1
+#include <limits.h>
 
 struct arguments
 {
-    char *args[2];
-} arguments;
+    char *args[1];
+    int quiet;
+    char const *input_file;
+    char output_file[PATH_MAX];
+};
 
-static char *replace_ext(char *str)
+static bool infer_output_file(struct arguments *args)
 {
-    size_t n = strlen(str);
-    char *dst = realloc(strdup(str), n + 5);
-    dst[n] = '\0';
-    dst[n + 1] = '\0';
-    dst[n + 2] = '\0';
-    dst[n + 3] = '\0';
-    dst[n + 4] = '\0';
-    dst[n + 5] = '\0';
-
-    char *j = &dst[n];
-    while (j > dst && *j != '.')
-    {
-        --j;
-    }
-    if (j == dst) j = &dst[n];
-    *(j++) = '.';
-    *(j++) = 'd';
-    *(j++) = 'c';
-    *(j++) = 'p';
-    *j = '\0';
-    return dst;
+    size_t n = strlcpy(args->output_file, args->input_file, PATH_MAX);
+    if (n >= PATH_MAX) return false;
+    return cli_change_or_add_ext(args->output_file, PATH_MAX, ".dcp");
 }
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
@@ -48,16 +32,41 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
     switch (key)
     {
+    case 'q':
+        args->quiet = 1;
+        break;
+
+    case 'o':
+        if (strlcpy(args->output_file, arg, PATH_MAX) >= PATH_MAX)
+        {
+            error(DCP_ILLEGALARG, "output path is too long");
+            return ENAMETOOLONG;
+        }
+        break;
+
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 2) argp_usage(state);
+        if (state->arg_num >= 1) argp_usage(state);
         args->args[state->arg_num] = arg;
+        args->input_file = arg;
         break;
 
     case ARGP_KEY_END:
         if (state->arg_num < 1)
+        {
             argp_usage(state);
+        }
         else
-            args->args[1] = replace_ext(args->args[0]);
+        {
+            if (!args->output_file[0] && !infer_output_file(args))
+            {
+                error(DCP_ILLEGALARG, "output path would be too long");
+                return ENAMETOOLONG;
+            }
+        }
+        break;
+
+    case ARGP_KEY_FINI:
+    case ARGP_KEY_SUCCESS:
         break;
 
     default:
@@ -67,8 +76,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 }
 
 static char doc[] = "Press a HMMER3 file -- dcp-press file.hmm";
-static char args_doc[] = "HMM [DCP]";
-static struct argp_option options[] = {{0}};
+static char args_doc[] = "HMM";
+static struct argp_option options[] = {
+    {"quiet", 'q', 0, 0, "Disable output", 0},
+    {"output", 'o', "FILE", 0, "Output to FILE instead of standard output", 0},
+    {0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 static struct
@@ -125,11 +137,11 @@ static void progress_end(void)
     if (cli.progress.at) athr_finish(cli.progress.at);
 }
 
-static enum dcp_rc cli_setup(void)
+static enum dcp_rc cli_setup(struct arguments const *args)
 {
     cli_log_setup();
-    cli.input.file = arguments.args[0];
-    cli.output.file = arguments.args[1];
+    cli.input.file = args->input_file;
+    cli.output.file = args->output_file;
 
     if (!(cli.input.fd = fopen(cli.input.file, "r")))
         return error(DCP_IOERROR, "failed to open the hmm file");
@@ -172,9 +184,10 @@ static enum dcp_rc profile_write(void)
 
 enum dcp_rc dcp_cli_press(int argc, char **argv)
 {
+    struct arguments arguments = {0};
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 
-    enum dcp_rc rc = cli_setup();
+    enum dcp_rc rc = cli_setup(&arguments);
     if (rc) goto cleanup;
 
     progress_start();
