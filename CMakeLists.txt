@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 project(
   deciphon
-  VERSION 0.0.3
+  VERSION 0.0.4
   LANGUAGES C)
 
 # Generate compile_commands.json file
@@ -16,61 +16,6 @@ if("${isSystemDir}" STREQUAL "-1")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
-find_package(fasta REQUIRED)
-find_package(hmr REQUIRED)
-find_package(imm REQUIRED)
-find_package(Threads REQUIRED)
-find_package(Argp REQUIRED)
-find_package(log REQUIRED)
-find_package(athr REQUIRED)
-
-option(OPENMP "Enable OpenMP" On)
-if(OPENMP)
-  find_package(OpenMP)
-endif()
-
-add_library(
-  dcp
-  src/cli.c
-  src/cli_info.c
-  src/cli_press.c
-  src/cli_scan.c
-  src/cmp.c
-  src/db.c
-  src/fcopy.c
-  src/log.c
-  src/meta.c
-  src/model.c
-  src/nuclt_dist.c
-  src/path.c
-  src/pro_codec.c
-  src/pro_db.c
-  src/pro_model.c
-  src/pro_prof.c
-  src/pro_reader.c
-  src/pro_state.c
-  src/std_db.c
-  src/std_prof.c
-  src/third-party/cmp.c)
-add_library(DCP::dcp ALIAS dcp)
-
-# Hide functions by default.
-set_property(TARGET dcp PROPERTY C_VISIBILITY_PRESET hidden)
-set_property(TARGET dcp PROPERTY VISIBILITY_INLINES_HIDDEN ON)
-
-# Write out dcp/export.h to the current binary directory.
-include(GenerateExportHeader)
-generate_export_header(
-  dcp
-  BASE_NAME
-  DCP
-  INCLUDE_GUARD_NAME
-  DCP_EXPORT_H
-  EXPORT_MACRO_NAME
-  DCP_API
-  EXPORT_FILE_NAME
-  ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h)
 
 if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
   # /wd5105:
@@ -97,8 +42,68 @@ endif()
 option(CI_BUILD "CI, extra flags will be set" OFF)
 if(CI_BUILD)
   message(STATUS "CI build enabled")
-  add_compile_options(-Werror)
+  if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/WX)
+  else()
+    add_compile_options(-Werror)
+  endif()
 endif()
+
+find_package(Argp REQUIRED)
+find_package(Threads REQUIRED)
+find_package(athr REQUIRED)
+find_package(fasta REQUIRED)
+find_package(hmr REQUIRED)
+find_package(imm REQUIRED)
+find_package(log REQUIRED)
+
+option(OPENMP "Enable OpenMP" On)
+if(OPENMP)
+  find_package(OpenMP)
+endif()
+
+add_library(
+  dcp
+  src/cli.c
+  src/cli_info.c
+  src/cli_press.c
+  src/cli_scan.c
+  src/cmp.c
+  src/db.c
+  src/fcopy.c
+  src/log.c
+  src/meta.c
+  src/model.c
+  src/nuclt_dist.c
+  src/path.c
+  src/pro_codec.c
+  src/pro_db.c
+  src/pro_model.c
+  src/pro_prof.c
+  src/pro_reader.c
+  src/pro_state.c
+  src/progress_file.c
+  src/std_db.c
+  src/std_prof.c
+  src/third-party/cmp.c)
+add_library(DCP::dcp ALIAS dcp)
+
+# Hide functions by default.
+set_property(TARGET dcp PROPERTY C_VISIBILITY_PRESET hidden)
+set_property(TARGET dcp PROPERTY VISIBILITY_INLINES_HIDDEN ON)
+
+# Write out dcp/export.h to the current binary directory.
+include(GenerateExportHeader)
+generate_export_header(
+  dcp
+  BASE_NAME
+  DCP
+  INCLUDE_GUARD_NAME
+  DCP_EXPORT_H
+  EXPORT_MACRO_NAME
+  DCP_API
+  EXPORT_FILE_NAME
+  ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h)
 
 target_include_directories(
   dcp
@@ -108,15 +113,15 @@ target_include_directories(
          # $<BUILD_INTERFACE:/Users/horta/code/hmmer-eddy/src>
          # $<BUILD_INTERFACE:/Users/horta/code/hmmer-eddy/easel>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-# target_link_libraries(dcp PUBLIC hmmer)
-# target_link_libraries(dcp PUBLIC easel)
-target_link_libraries(dcp PUBLIC IMM::imm)
-target_link_libraries(dcp PUBLIC HMR::hmr)
-target_link_libraries(dcp PUBLIC FASTA::fasta)
-target_link_libraries(dcp PUBLIC Threads::Threads)
+# target_link_libraries(dcp PUBLIC hmmer) target_link_libraries(dcp PUBLIC
+# easel)
 target_link_libraries(dcp PUBLIC $<$<NOT:$<BOOL:${ARGP_BUILTIN}>>:Argp::argp>)
-target_link_libraries(dcp PUBLIC LOG::log)
+target_link_libraries(dcp PUBLIC Threads::Threads)
 target_link_libraries(dcp PUBLIC ATHR::athr)
+target_link_libraries(dcp PUBLIC FASTA::fasta)
+target_link_libraries(dcp PUBLIC HMR::hmr)
+target_link_libraries(dcp PUBLIC IMM::imm)
+target_link_libraries(dcp PUBLIC LOG::log)
 target_link_libraries(dcp PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 set_target_properties(dcp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(dcp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
@@ -131,6 +136,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h @ONLY)
 
 include(CheckCSourceCompiles)
+include(CheckTypeSize)
+
 check_c_source_compiles(
   "
         static void f(char const* err, ...) __attribute__((format(printf, 1, 2)));
@@ -139,8 +146,6 @@ check_c_source_compiles(
   HAVE_ATTR_FMT)
 target_compile_definitions(dcp
                            PRIVATE $<$<BOOL:${HAVE_ATTR_FMT}>:HAVE_ATTR_FMT>)
-
-include(CheckTypeSize)
 
 check_type_size("int" SIZEOF_INT)
 if(NOT HAVE_SIZEOF_INT)
@@ -159,8 +164,7 @@ target_link_libraries(dcp-info PUBLIC dcp)
 add_executable(dcp-scan src/bin/scan.c)
 target_link_libraries(dcp-scan PUBLIC dcp)
 
-# add_executable(hmmer3 src/hmmer3.c)
-# target_link_libraries(hmmer3 PUBLIC dcp)
+# add_executable(hmmer3 src/hmmer3.c) target_link_libraries(hmmer3 PUBLIC dcp)
 
 # Installation
 install(

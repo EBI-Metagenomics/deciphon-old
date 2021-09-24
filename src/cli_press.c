@@ -5,8 +5,8 @@
 #include "dcp/pro_reader.h"
 #include "error.h"
 #include "path.h"
+#include "progress_file.h"
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -94,47 +94,10 @@ static struct
         char const *file;
         FILE *fd;
     } output;
-
-    struct
-    {
-        struct athr *at;
-        long pos;
-    } progress;
+    struct progress_file progress;
     struct dcp_pro_db db;
     struct dcp_pro_reader reader;
 } cli = {0};
-
-static off_t filesize(void)
-{
-    int fd = fileno(cli.input.fd);
-    struct stat st;
-    fstat(fd, &st);
-    return st.st_size;
-}
-
-static void progress_init(void)
-{
-    cli.progress.pos = 0;
-    cli.progress.at = NULL;
-}
-
-static void progress_start(void)
-{
-    cli.progress.pos = ftell(cli.input.fd);
-    cli.progress.at =
-        athr_create(filesize() - cli.progress.pos, "Press", ATHR_BAR);
-}
-
-static void progress_update(void)
-{
-    athr_consume(cli.progress.at, ftell(cli.input.fd) - cli.progress.pos);
-    cli.progress.pos = ftell(cli.input.fd);
-}
-
-static void progress_end(void)
-{
-    if (cli.progress.at) athr_finish(cli.progress.at);
-}
 
 static enum dcp_rc cli_setup(struct arguments const *args)
 {
@@ -148,7 +111,7 @@ static enum dcp_rc cli_setup(struct arguments const *args)
     if (!(cli.output.fd = fopen(cli.output.file, "wb")))
         return error(DCP_IOERROR, "failed to open the output file");
 
-    progress_init();
+    progress_file_init(&cli.progress, cli.input.fd);
 
     cli.db = dcp_pro_db_default;
 
@@ -161,14 +124,6 @@ static enum dcp_rc cli_setup(struct arguments const *args)
                         cli.db.prof.cfg, cli.input.fd);
 
     return DCP_SUCCESS;
-}
-
-static void cli_end(enum dcp_rc rc)
-{
-    if (!rc) progress_end();
-    fclose(cli.input.fd);
-    fclose(cli.output.fd);
-    cli_log_flush();
 }
 
 static enum dcp_rc profile_write(void)
@@ -189,12 +144,13 @@ enum dcp_rc dcp_cli_press(int argc, char **argv)
     enum dcp_rc rc = cli_setup(&arguments);
     if (rc) goto cleanup;
 
-    progress_start();
+    progress_file_start(&cli.progress, !arguments.quiet);
     while (!(rc = dcp_pro_reader_next(&cli.reader)))
     {
-        progress_update();
+        progress_file_update(&cli.progress);
         rc = profile_write();
     }
+
     if (rc != DCP_END)
     {
         error(rc, "failed to parse HMM file");
@@ -204,6 +160,9 @@ enum dcp_rc dcp_cli_press(int argc, char **argv)
     rc = dcp_pro_db_close(&cli.db);
 
 cleanup:
-    cli_end(rc);
+    progress_file_stop(&cli.progress);
+    fclose(cli.input.fd);
+    fclose(cli.output.fd);
+    cli_log_flush();
     return rc;
 }
