@@ -1,8 +1,8 @@
 #!/bin/bash
 
 set -e
-echo "vamos la"
 export DEBUG=1
+echo "vamos la"
 
 bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/hope
 bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/logaddexp
