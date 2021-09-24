@@ -1,15 +1,14 @@
 #!/bin/bash
 
 export DEBUG=1
-export DEBUG=1
 echo "vamos la: leak not supported, and asan"
 
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/hope
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/logaddexp
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/elapsed
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/almosthere
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/c-containers
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/log
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/hmmer-reader
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/fasta
-bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/imm
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/hope || exit 1
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/logaddexp || exit 1
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/elapsed || exit 1
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/almosthere || exit 1
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/c-containers || exit 1
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/log || exit 1
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/hmmer-reader || exit 1
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/fasta || exit 1
+bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s EBI-Metagenomics/imm || exit 1
