@@ -1,7 +1,9 @@
 #!/bin/bash
 
 set -e
-echo "Try to debug please"
+echo "Try to debug 1, please: $DEBUG"
+export DEBUG=1
+echo "Try to debug 2, please: $DEBUG"
 
 bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/hope
 bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/logaddexp
