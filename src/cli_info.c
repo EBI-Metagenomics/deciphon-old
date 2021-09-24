@@ -9,19 +9,13 @@ struct arguments
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
-    struct arguments *args = state->input;
-
     switch (key)
     {
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 0) argp_usage(state);
-
-        args->args[state->arg_num] = arg;
-
+        argp_usage(state);
         break;
 
     case ARGP_KEY_END:
-        if (state->arg_num < 0) argp_usage(state);
         break;
 
     default:
