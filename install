@@ -3,8 +3,8 @@
 set -e
 
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/hope
-bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/elapsed
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/logaddexp
+bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/elapsed
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/almosthere
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/c-containers
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/log
