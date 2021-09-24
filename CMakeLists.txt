@@ -70,6 +70,7 @@ add_library(
   src/cli_scan.c
   src/cmp.c
   src/db.c
+  src/dcp_strlcpy.c
   src/fcopy.c
   src/log.c
   src/meta.c
@@ -134,6 +135,11 @@ target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h @ONLY)
+# If you define this macro to a value greater than or equal to 200809L,
+# then the functionality from the 2008 edition of the POSIX standard
+# (IEEE Standard 1003.1-2008) is made available.
+target_compile_definitions(dcp PRIVATE _POSIX_C_SOURCE=200809L)
+set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS};-D_POSIX_C_SOURCE=200112L)
 
 include(CheckCSourceCompiles)
 include(CheckTypeSize)

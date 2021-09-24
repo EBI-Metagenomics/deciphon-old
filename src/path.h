@@ -1,10 +1,9 @@
 #ifndef PATH_H
 #define PATH_H
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
-#define _POSIX_C_SOURCE 1
-#include <limits.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
