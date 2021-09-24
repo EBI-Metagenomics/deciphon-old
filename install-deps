@@ -9,5 +9,5 @@ bash -c "$(curl -fsSL https://git.io/JerYI)" -s horta/almosthere
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/c-containers
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/log
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/hmmer-reader
-bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/fasta-reader
+bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/fasta
 bash -c "$(curl -fsSL https://git.io/JerYI)" -s EBI-Metagenomics/imm
