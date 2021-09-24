@@ -3,7 +3,7 @@
 set -e
 export DEBUG=1
 export DEBUG=1
-echo "vamos la: leak not supported"
+echo "vamos la: leak not supported, and asan"
 
 bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/hope
 bash -c "$(curl -H 'Cache-Control: no-cache' -fsSL https://git.io/JerYI?$(date +%s))" -s horta/logaddexp
