@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set -e
 export DEBUG=1
 export DEBUG=1
 echo "vamos la: leak not supported, and asan"
