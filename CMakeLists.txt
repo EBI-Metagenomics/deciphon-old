@@ -135,11 +135,12 @@ target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h @ONLY)
-# If you define this macro to a value greater than or equal to 200809L,
-# then the functionality from the 2008 edition of the POSIX standard
-# (IEEE Standard 1003.1-2008) is made available.
-target_compile_definitions(dcp PRIVATE _POSIX_C_SOURCE=200809L)
-set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS};-D_POSIX_C_SOURCE=200112L)
+# If you define this macro, functionality described in the X/Open
+# Guide is included. This is a superset of the POSIX.1 and POSIX.2
+# functionality and in fact _POSIX_SOURCE and _POSIX_C_SOURCE
+# automatically defined.
+target_compile_definitions(dcp PRIVATE _XOPEN_SOURCE=1)
+set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS};-D_XOPEN_SOURCE=1)
 
 include(CheckCSourceCompiles)
 include(CheckTypeSize)
