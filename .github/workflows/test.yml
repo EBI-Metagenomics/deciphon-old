@@ -26,16 +26,6 @@ jobs:
       if: runner.os == 'macOS'
       run: brew install argp-standalone
 
-    - name: Sudo mktemp
-      shell: bash
-      run: sudo echo $(mktemp -d 2>/dev/null || mktemp -d -t hope)
-
-    - name: Sudo mktemp-d
-      run: sudo mktemp -d
-
-    - name: Sudo mktemp-d-t-hope
-      run: sudo mktemp -d -t hope
-
     - name: Install dependencies
       run: sudo ./install-deps
 
