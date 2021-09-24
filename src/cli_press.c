@@ -4,12 +4,11 @@
 #include "dcp/pro_db.h"
 #include "dcp/pro_reader.h"
 #include "error.h"
+#include "path.h"
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#define _POSIX_C_SOURCE 1
-#include <limits.h>
 
 struct arguments
 {
@@ -23,7 +22,7 @@ static bool infer_output_file(struct arguments *args)
 {
     size_t n = strlcpy(args->output_file, args->input_file, PATH_MAX);
     if (n >= PATH_MAX) return false;
-    return cli_change_or_add_ext(args->output_file, PATH_MAX, ".dcp");
+    return path_change_or_add_ext(args->output_file, PATH_MAX, ".dcp");
 }
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
