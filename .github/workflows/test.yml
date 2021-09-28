@@ -13,10 +13,8 @@ jobs:
       IMM_DOUBLE_PRECISION: ${{ matrix.double_precision }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        double_precision: ['Off']
-        # os: [ubuntu-latest, macos-latest]
-        # double_precision: ['On', 'Off']
+        os: [ubuntu-latest, macos-latest]
+        double_precision: ['On', 'Off']
 
     steps:
     - uses: actions/checkout@v2
