@@ -7,6 +7,7 @@
 #include "dcp/pro_state.h"
 #include "error.h"
 #include "fasta/fasta.h"
+#include "gff/gff.h"
 #include "progress_file.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -85,6 +86,10 @@ static struct
             char seq[FASTA_SEQ_MAX];
         } amino;
 
+        char const *file;
+        FILE *fd;
+        struct gff gff;
+
         unsigned nmatches;
     } output;
 
@@ -93,6 +98,7 @@ static struct
 
 static char const default_ocodon[] = "codon.fna";
 static char const default_oamino[] = "amino.fa";
+static char const default_output[] = "output.gff";
 
 static struct imm_seq target_seq(void)
 {
@@ -187,6 +193,20 @@ static enum dcp_rc targets_scan(void)
         decode_codons();
         char const *oamino = cli.output.amino.seq;
 
+        /* start = frag.interval.start; */
+        /* stop = frag.interval.stop; */
+        struct gff_feature *f = gff_set_feature(&cli.output.gff);
+        gff_feature_set_seqid(f, cli.targets.fa.target.id);
+        gff_feature_set_source(f, "deciphon");
+        gff_feature_set_type(f, ".");
+        gff_feature_set_start(f, ".");
+        gff_feature_set_end(f, ".");
+        gff_feature_set_score(f, "0.0");
+        gff_feature_set_strand(f, "+");
+        gff_feature_set_phase(f, ".");
+        gff_feature_set_attrs(f, "wqwq");
+        gff_write(&cli.output.gff);
+
         if ((rc = write_codons(ocodon))) return rc;
         if ((rc = write_aminos(oamino))) return rc;
         cli.output.nmatches++;
@@ -215,6 +235,7 @@ static enum dcp_rc cli_setup(void)
 
     cli.output.codon.file = default_ocodon;
     cli.output.amino.file = default_oamino;
+    cli.output.file = default_output;
 
     if (!(cli.output.codon.fd = fopen(cli.output.codon.file, "w")))
         return error(DCP_IOERROR, "failed to open codon file");
@@ -222,11 +243,15 @@ static enum dcp_rc cli_setup(void)
     if (!(cli.output.amino.fd = fopen(cli.output.amino.file, "w")))
         return error(DCP_IOERROR, "failed to open amino file");
 
+    if (!(cli.output.fd = fopen(cli.output.file, "w")))
+        return error(DCP_IOERROR, "failed to open output file");
+
     fasta_init(&cli.output.codon.fa, cli.output.codon.fd, FASTA_WRITE);
     fasta_init(&cli.output.amino.fa, cli.output.amino.fd, FASTA_WRITE);
 
     cli.output.codon.seq[0] = '\0';
     cli.output.amino.seq[0] = '\0';
+    gff_init(&cli.output.gff, cli.output.fd, GFF_WRITE);
 
     cli.pro.db = dcp_pro_db_default;
 
@@ -243,14 +268,6 @@ static void targets_setup(void)
     cli.targets.fa.target.desc = cli.pro.db.prof.super.mt.acc;
 }
 
-static off_t filesize(FILE *restrict fd)
-{
-    int no = fileno(fd);
-    struct stat st;
-    fstat(no, &st);
-    return st.st_size;
-}
-
 enum dcp_rc dcp_cli_scan(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
@@ -259,6 +276,8 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
     if (rc) goto cleanup;
 
     assert(imm_abc_typeid(&cli.pro.db.nuclt.super) == IMM_DNA);
+    gff_set_version(&cli.output.gff, NULL);
+    gff_write(&cli.output.gff);
 
     progress_file_start(&cli.progress, !arguments.quiet);
     while (!(rc = dcp_db_end(dcp_super(&cli.pro.db))))
@@ -281,6 +300,7 @@ cleanup:
     fclose(cli.pro.fd);
     fclose(cli.output.codon.fd);
     fclose(cli.output.amino.fd);
+    fclose(cli.output.fd);
     cli_log_flush();
     if (!rc)
     {
@@ -295,6 +315,7 @@ cleanup:
                 "<%s>\n",
                 cli.output.nmatches, cli.output.amino.file,
                 cli.output.codon.file);
+            printf("Annotation saved in <%s>.\n", cli.output.file);
         }
     }
     return rc;
