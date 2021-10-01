@@ -9,6 +9,7 @@
 #include "fasta/fasta.h"
 #include "gff/gff.h"
 #include "progress_file.h"
+#include "stream.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -134,47 +135,17 @@ def create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
         frag_stop += step.seq_len
 #endif
 
-#define STREAM_SIZE 89
-
-struct stream
-{
-    char data[STREAM_SIZE];
-    unsigned pos;
-};
-
-static struct stream seq_row = {{0}, 0};
-static struct stream state_row = {{0}, 0};
-
-static void stream_init(struct stream *stream)
-{
-    stream->pos = 0;
-    stream->data[0] = '\0';
-}
-
-static void stream_print(struct stream *stream, char const *src, unsigned size)
-{
-    memcpy(stream->data + stream->pos, src, size);
-    stream->pos += size;
-}
-
-static void stream_flush(struct stream *stream, FILE *restrict fd)
-{
-    stream->data[stream->pos] = '\0';
-    fprintf(fd, "%s", stream->data);
-    stream_init(stream);
-}
-
-static unsigned stream_size(struct stream const *stream)
-{
-    assert(stream->pos < STREAM_SIZE);
-    return STREAM_SIZE - stream->pos - 1;
-}
+static struct stream seq_row = STREAM_INIT(88);
+static struct stream state_row = STREAM_INIT(88);
 
 static void annotate(struct imm_seq const *sequence)
 {
+    unsigned const cell_size = 5;
     char const *seq = sequence->str;
     struct imm_path const *path = &cli.pro.result.path;
     char name[IMM_STATE_NAME_SIZE] = {0};
+
+    if (imm_path_nsteps(path) == 0) return;
 
     unsigned i = 0;
     struct imm_step const *step = NULL;
@@ -196,8 +167,7 @@ static void annotate(struct imm_seq const *sequence)
         step = imm_path_step(path, i);
         dcp_pro_state_name(step->state_id, name);
 
-        unsigned n = (unsigned)strlen(name);
-        if (stream_size(&state_row) < n)
+        if (stream_size(&state_row) < cell_size)
         {
             stream_flush(&seq_row, stdout);
             fprintf(stdout, "\n");
@@ -206,11 +176,22 @@ static void annotate(struct imm_seq const *sequence)
             fprintf(stdout, "\n");
         }
 
+        unsigned n = (unsigned)strlen(name);
         stream_print(&state_row, name, n);
-        stream_print(&seq_row, seq++, 1);
-        for (unsigned k = 1; k < n; ++k)
+        for (unsigned k = 0; k < cell_size - n; ++k)
+            stream_print(&state_row, " ", 1);
+
+        stream_print(&seq_row, seq, step->seqlen);
+        seq += step->seqlen;
+        for (unsigned k = 0; k < cell_size - step->seqlen; ++k)
             stream_print(&seq_row, " ", 1);
     }
+
+    stream_flush(&seq_row, stdout);
+    fprintf(stdout, "\n");
+    stream_flush(&state_row, stdout);
+    fprintf(stdout, "\n");
+    fprintf(stdout, "\n");
 }
 
 static enum dcp_rc predict_codons(struct imm_seq const *seq)
@@ -268,7 +249,7 @@ static enum dcp_rc write_aminos(char const *oamino)
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc targets_scan(void)
+static enum dcp_rc targets_scan(struct dcp_meta const *mt)
 {
     struct imm_result null = imm_result();
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
@@ -312,6 +293,8 @@ static enum dcp_rc targets_scan(void)
         gff_feature_set_attrs(f, "wqwq");
         gff_write(&cli.output.gff);
 
+        printf("Name: %s\n", mt->name);
+        printf("ACC: %s\n", mt->acc);
         annotate(&seq);
 
         if ((rc = write_codons(ocodon))) return rc;
@@ -393,7 +376,8 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
         if ((rc = dcp_pro_db_read(&cli.pro.db, prof))) goto cleanup;
 
         targets_setup();
-        if ((rc = targets_scan())) goto cleanup;
+        struct dcp_meta const *mt = &cli.pro.db.prof.super.mt;
+        if ((rc = targets_scan(mt))) goto cleanup;
         progress_file_update(&cli.progress);
     }
     if (rc != DCP_END) goto cleanup;
