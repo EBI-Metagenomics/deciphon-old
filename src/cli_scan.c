@@ -108,6 +108,111 @@ static struct imm_seq target_seq(void)
     return imm_seq(imm_str(tgt), abc);
 }
 
+#if 0
+def create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
+
+    frag_start = frag_stop = 0
+    step_start = step_stop = 0
+    homologous = False
+
+    for step_stop, step in enumerate(path):
+
+        change = not homologous and step.state.name.startswith(b"M")
+        change = change or homologous and step.state.name.startswith(b"E")
+        change = change or not homologous and step.state.name.startswith(b"T")
+
+        if change:
+            if frag_start < frag_stop:
+                fragi = Interval(frag_start, frag_stop)
+                stepi = Interval(step_start, step_stop)
+                yield (fragi, stepi, homologous)
+
+            frag_start = frag_stop
+            step_start = step_stop
+            homologous = not homologous
+
+        frag_stop += step.seq_len
+#endif
+
+#define STREAM_SIZE 89
+
+struct stream
+{
+    char data[STREAM_SIZE];
+    unsigned pos;
+};
+
+static struct stream seq_row = {{0}, 0};
+static struct stream state_row = {{0}, 0};
+
+static void stream_init(struct stream *stream)
+{
+    stream->pos = 0;
+    stream->data[0] = '\0';
+}
+
+static void stream_print(struct stream *stream, char const *src, unsigned size)
+{
+    memcpy(stream->data + stream->pos, src, size);
+    stream->pos += size;
+}
+
+static void stream_flush(struct stream *stream, FILE *restrict fd)
+{
+    stream->data[stream->pos] = '\0';
+    fprintf(fd, "%s", stream->data);
+    stream_init(stream);
+}
+
+static unsigned stream_size(struct stream const *stream)
+{
+    assert(stream->pos < STREAM_SIZE);
+    return STREAM_SIZE - stream->pos - 1;
+}
+
+static void annotate(struct imm_seq const *sequence)
+{
+    char const *seq = sequence->str;
+    struct imm_path const *path = &cli.pro.result.path;
+    char name[IMM_STATE_NAME_SIZE] = {0};
+
+    unsigned i = 0;
+    struct imm_step const *step = NULL;
+    goto enter;
+    for (; i < imm_path_nsteps(path); ++i)
+    {
+        if (stream_size(&state_row) == 0)
+        {
+            stream_flush(&seq_row, stdout);
+            fprintf(stdout, "\n");
+            stream_flush(&state_row, stdout);
+            fprintf(stdout, "\n");
+            fprintf(stdout, "\n");
+        }
+        stream_print(&state_row, " ", 1);
+        stream_print(&seq_row, " ", 1);
+
+    enter:
+        step = imm_path_step(path, i);
+        dcp_pro_state_name(step->state_id, name);
+
+        unsigned n = (unsigned)strlen(name);
+        if (stream_size(&state_row) < n)
+        {
+            stream_flush(&seq_row, stdout);
+            fprintf(stdout, "\n");
+            stream_flush(&state_row, stdout);
+            fprintf(stdout, "\n");
+            fprintf(stdout, "\n");
+        }
+
+        stream_print(&state_row, name, n);
+        stream_print(&seq_row, seq++, 1);
+        for (unsigned k = 1; k < n; ++k)
+            stream_print(&seq_row, " ", 1);
+    }
+}
+
 static enum dcp_rc predict_codons(struct imm_seq const *seq)
 {
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
@@ -206,6 +311,8 @@ static enum dcp_rc targets_scan(void)
         gff_feature_set_phase(f, ".");
         gff_feature_set_attrs(f, "wqwq");
         gff_write(&cli.output.gff);
+
+        annotate(&seq);
 
         if ((rc = write_codons(ocodon))) return rc;
         if ((rc = write_aminos(oamino))) return rc;
