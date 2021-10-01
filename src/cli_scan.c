@@ -7,6 +7,7 @@
 #include "dcp/pro_state.h"
 #include "error.h"
 #include "fasta/fasta.h"
+#include "progress_file.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -16,6 +17,7 @@
 struct arguments
 {
     char *args[2];
+    int quiet;
 } arguments;
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
@@ -24,6 +26,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
     switch (key)
     {
+    case 'q':
+        args->quiet = 1;
+        break;
+
     case ARGP_KEY_ARG:
         if (state->arg_num >= 2) argp_usage(state);
         args->args[state->arg_num] = arg;
@@ -41,7 +47,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 
 static char doc[] = "Scan targets -- dcp-scan targets.fna pfam.dcp";
 static char args_doc[] = "FNA DCP";
-static struct argp_option options[] = {{0}};
+static struct argp_option options[] = {
+    {"quiet", 'q', 0, 0, "Disable output", 0}, {0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 static struct
@@ -81,12 +88,7 @@ static struct
         unsigned nmatches;
     } output;
 
-    struct
-    {
-        struct athr *at;
-        long pos;
-    } progress;
-
+    struct progress_file progress;
 } cli = {0};
 
 static char const default_ocodon[] = "codon.fna";
@@ -206,6 +208,8 @@ static enum dcp_rc cli_setup(void)
     if (!(cli.targets.fd = fopen(cli.targets.file, "r")))
         return error(DCP_IOERROR, "failed to open targets file");
 
+    progress_file_init(&cli.progress, cli.targets.fd);
+
     if (!(cli.pro.fd = fopen(cli.pro.file, "rb")))
         return error(DCP_IOERROR, "failed to open db file");
 
@@ -247,21 +251,6 @@ static off_t filesize(FILE *restrict fd)
     return st.st_size;
 }
 
-static void progress_start(void)
-{
-    cli.progress.pos = ftell(cli.pro.fd);
-    cli.progress.at =
-        athr_create(filesize(cli.pro.fd) - cli.progress.pos, "Scan", ATHR_BAR);
-}
-
-static void progress_update(void)
-{
-    athr_consume(cli.progress.at, ftell(cli.pro.fd) - cli.progress.pos);
-    cli.progress.pos = ftell(cli.pro.fd);
-}
-
-static void progress_end(void) { athr_finish(cli.progress.at); }
-
 enum dcp_rc dcp_cli_scan(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
@@ -271,7 +260,7 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
 
     assert(imm_abc_typeid(&cli.pro.db.nuclt.super) == IMM_DNA);
 
-    progress_start();
+    progress_file_start(&cli.progress, !arguments.quiet);
     while (!(rc = dcp_db_end(dcp_super(&cli.pro.db))))
     {
         struct dcp_pro_prof *prof = dcp_pro_db_profile(&cli.pro.db);
@@ -279,15 +268,14 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
 
         targets_setup();
         if ((rc = targets_scan())) goto cleanup;
-
-        progress_update();
+        progress_file_update(&cli.progress);
     }
     if (rc != DCP_END) goto cleanup;
 
     rc = dcp_pro_db_close(&cli.pro.db);
 
 cleanup:
-    progress_end();
+    progress_file_stop(&cli.progress);
     imm_del(&cli.pro.result);
     fclose(cli.targets.fd);
     fclose(cli.pro.fd);

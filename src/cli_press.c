@@ -148,8 +148,8 @@ enum dcp_rc dcp_cli_press(int argc, char **argv)
     progress_file_start(&cli.progress, !arguments.quiet);
     while (!(rc = dcp_pro_reader_next(&cli.reader)))
     {
-        progress_file_update(&cli.progress);
         rc = profile_write();
+        progress_file_update(&cli.progress);
     }
 
     if (rc != DCP_END)

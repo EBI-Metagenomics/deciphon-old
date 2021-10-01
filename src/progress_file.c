@@ -45,7 +45,7 @@ void progress_file_start(struct progress_file *p, bool enabled)
     assert(fs >= p->pos);
     uint64_t total = (uint64_t)(fs - p->pos);
 
-    if (athr_start(&p->at, total, "Press", ATHR_BAR | ATHR_PERC))
+    if (athr_start(&p->at, total, "Press", ATHR_BAR | ATHR_PERC | ATHR_ETA))
     {
         error(DCP_IOERROR, "failed to athr_start for progress display");
         p->enabled = false;
