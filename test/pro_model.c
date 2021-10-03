@@ -32,9 +32,9 @@ int main(void)
 
     EQ(dcp_pro_model_setup(&model, core_size), DCP_SUCCESS);
 
-    EQ(dcp_pro_model_add_node(&model, match_lprobs1), DCP_SUCCESS);
-    EQ(dcp_pro_model_add_node(&model, match_lprobs2), DCP_SUCCESS);
-    EQ(dcp_pro_model_add_node(&model, match_lprobs3), DCP_SUCCESS);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs1, '-'), DCP_SUCCESS);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs2, '-'), DCP_SUCCESS);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs3, '-'), DCP_SUCCESS);
 
     EQ(dcp_pro_model_add_trans(&model, t[0]), DCP_SUCCESS);
     EQ(dcp_pro_model_add_trans(&model, t[1]), DCP_SUCCESS);

@@ -12,6 +12,8 @@
 #include "dcp/pro_xtrans.h"
 #include "dcp/rc.h"
 
+#define DCP_PRO_MODEL_CORE_SIZE_MAX 2047
+
 struct dcp_pro_model
 {
     struct imm_amino const *amino;
@@ -20,6 +22,7 @@ struct dcp_pro_model
     unsigned core_size;
     struct dcp_pro_xnode xnode;
     struct dcp_pro_xtrans xtrans;
+    char consensus[DCP_PRO_MODEL_CORE_SIZE_MAX + 1];
 
     struct
     {
@@ -45,7 +48,8 @@ struct dcp_pro_model
 };
 
 DCP_API enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *,
-                                           imm_float const lp[IMM_AMINO_SIZE]);
+                                           imm_float const lp[IMM_AMINO_SIZE],
+                                           char consensus);
 
 DCP_API enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *,
                                             struct dcp_pro_trans trans);

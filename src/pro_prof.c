@@ -25,6 +25,7 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
     p->cfg = cfg;
     p->eps = imm_frame_epsilon(cfg.epsilon);
     p->core_size = 0;
+    p->consensus[0] = '\0';
     imm_dp_init(&p->null.dp, imm_super(nuclt));
     imm_dp_init(&p->alt.dp, imm_super(nuclt));
     dcp_nuclt_dist_init(&p->null.ndist, nuclt);
@@ -126,6 +127,7 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
         return error(DCP_RUNTIMEERROR, "failed to hmm_reset");
 
     p->core_size = m->core_size;
+    memcpy(p->consensus, m->consensus, m->core_size + 1);
     enum dcp_rc rc = alloc_match_nuclt_dists(p);
     if (rc) return rc;
 
@@ -181,7 +183,7 @@ enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     {
         imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
         imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
-        if ((rc = dcp_pro_model_add_node(&model, lprobs))) goto cleanup;
+        if ((rc = dcp_pro_model_add_node(&model, lprobs, '-'))) goto cleanup;
     }
 
     for (unsigned i = 0; i < core_size + 1; ++i)
@@ -257,7 +259,13 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
     uint16_t core_size = 0;
     if (!cmp_read_u16(cmp, &core_size))
         return error(DCP_IOERROR, "failed to read core size");
+    if (core_size > DCP_PRO_MODEL_CORE_SIZE_MAX)
+        return error(DCP_PARSEERROR, "profile is too long");
     prof->core_size = core_size;
+
+    uint32_t u32 = core_size + 1;
+    if (!cmp_read_str(cmp, prof->consensus, &u32))
+        return error(DCP_IOERROR, "failed to read consensus");
 
     enum dcp_rc rc = alloc_match_nuclt_dists(prof);
     if (rc) return rc;
@@ -283,6 +291,9 @@ enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, struct dcp_cmp *cmp)
 
     if (!cmp_write_u16(cmp, (uint16_t)prof->core_size))
         return error(DCP_IOERROR, "failed to write core size");
+
+    if (!cmp_write_str(cmp, prof->consensus, prof->core_size))
+        return error(DCP_IOERROR, "failed to write consensus");
 
     enum dcp_rc rc = dcp_nuclt_dist_write(&prof->null.ndist, cmp);
     if (rc) return rc;

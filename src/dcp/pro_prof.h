@@ -18,6 +18,7 @@ struct dcp_pro_prof
     struct dcp_pro_cfg cfg;
     struct imm_frame_epsilon eps;
     unsigned core_size;
+    char consensus[DCP_PRO_MODEL_CORE_SIZE_MAX + 1];
 
     struct
     {

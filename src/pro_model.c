@@ -46,13 +46,16 @@ static void setup_exit_trans(struct dcp_pro_model *);
 static void setup_transitions(struct dcp_pro_model *);
 
 enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
-                                   imm_float const lprobs[IMM_AMINO_SIZE])
+                                   imm_float const lprobs[IMM_AMINO_SIZE],
+                                   char consensus)
 {
     if (!have_called_setup(m))
         return error(DCP_RUNTIMEERROR, "Must call dcp_pro_model_setup first.");
 
     if (m->alt.node_idx == m->core_size)
         return error(DCP_RUNTIMEERROR, "Reached limit of nodes.");
+
+    m->consensus[m->alt.node_idx] = consensus;
 
     imm_float lodds[IMM_AMINO_SIZE];
     for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
@@ -111,6 +114,7 @@ void dcp_pro_model_init(struct dcp_pro_model *m, struct imm_amino const *amino,
     m->nuclt = nuclt;
     m->cfg = cfg;
     m->core_size = 0;
+    m->consensus[0] = '\0';
 
     memcpy(m->null.lprobs, null_lprobs, sizeof *null_lprobs * IMM_AMINO_SIZE);
 
@@ -154,7 +158,11 @@ enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
     if (core_size == 0)
         return error(DCP_ILLEGALARG, "`core_size` cannot be zero.");
 
+    if (core_size > DCP_PRO_MODEL_CORE_SIZE_MAX)
+        return error(DCP_ILLEGALARG, "`core_size` is too big.");
+
     m->core_size = core_size;
+    m->consensus[core_size] = '\0';
     unsigned n = m->core_size;
     m->alt.node_idx = 0;
 

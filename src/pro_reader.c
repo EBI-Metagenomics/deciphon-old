@@ -48,7 +48,8 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
         for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
             match_lprobs[i] = (imm_float)reader->prof.node.match[i];
 
-        rc = dcp_pro_model_add_node(&reader->model, match_lprobs);
+        char consensus = reader->prof.node.excess.cons;
+        rc = dcp_pro_model_add_node(&reader->model, match_lprobs, consensus);
         assert(!rc);
 
         struct dcp_pro_trans t2 = {
