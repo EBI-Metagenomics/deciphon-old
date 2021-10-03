@@ -294,7 +294,7 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
         gff_write(&cli.output.gff);
 
         printf("Name: %s\n", mt->name);
-        printf("ACC: %s\n", mt->acc);
+        /* printf("ACC: %s\n", mt->acc); */
         annotate(&seq);
 
         if ((rc = write_codons(ocodon))) return rc;

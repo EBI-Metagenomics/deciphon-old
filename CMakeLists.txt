@@ -7,47 +7,10 @@ project(
 # Generate compile_commands.json file
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-# Set RPATH only if it's not a system directory
-list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
-     "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-if("${isSystemDir}" STREQUAL "-1")
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-endif()
+include(external/cmake-boilerplate/cpb.cmake)
+cbp_set_rpath()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-
-if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-  # /wd5105:
-  # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/c5105?view=msvc-160
-  set(WARNING_FLAGS /W3 /wd5105)
-else()
-  set(WARNING_FLAGS
-      -Wall
-      -Wextra
-      -Wstrict-prototypes
-      -Wshadow
-      -Wconversion
-      -Wmissing-prototypes
-      -Wno-unused-parameter
-      -Wsign-conversion
-      -Wno-unused-function)
-endif()
-
-if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU")
-  list(APPEND WARNING_FLAGS -Wno-gnu-designator -Wno-empty-translation-unit
-       -Wno-gnu-statement-expression -Wno-nullability-extension)
-endif()
-
-option(CI_BUILD "CI, extra flags will be set" OFF)
-if(CI_BUILD)
-  message(STATUS "CI build enabled")
-  if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    add_compile_options(/WX)
-  else()
-    add_compile_options(-Werror)
-  endif()
-endif()
 
 find_package(Argp REQUIRED)
 find_package(Threads REQUIRED)
@@ -90,22 +53,10 @@ add_library(
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 
-# Hide functions by default.
-set_property(TARGET dcp PROPERTY C_VISIBILITY_PRESET hidden)
-set_property(TARGET dcp PROPERTY VISIBILITY_INLINES_HIDDEN ON)
-
-# Write out dcp/export.h to the current binary directory.
-include(GenerateExportHeader)
-generate_export_header(
-  dcp
-  BASE_NAME
-  DCP
-  INCLUDE_GUARD_NAME
-  DCP_EXPORT_H
-  EXPORT_MACRO_NAME
-  DCP_API
-  EXPORT_FILE_NAME
-  ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h)
+cbp_hide_functions(dcp)
+cbp_set_warning_flags()
+cbp_ci_build_option()
+cbp_generate_export_header(dcp EXPORT_FILE)
 
 target_include_directories(
   dcp
@@ -135,8 +86,11 @@ target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in
-               ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h @ONLY)
+
+set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in ${VERSION_FILE}
+               @ONLY)
+
 # If you define this macro, functionality described in the X/Open
 # Guide is included. This is a superset of the POSIX.1 and POSIX.2
 # functionality and in fact _POSIX_SOURCE and _POSIX_C_SOURCE
@@ -175,30 +129,8 @@ target_link_libraries(dcp-scan PUBLIC dcp)
 
 # add_executable(hmmer3 src/hmmer3.c) target_link_libraries(hmmer3 PUBLIC dcp)
 
-# Installation
-install(
-  TARGETS dcp
-  EXPORT dcp-targets
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib
-  PUBLIC_HEADER DESTINATION include)
-install(DIRECTORY src/dcp/ DESTINATION include/dcp)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp/export.h
-              ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h DESTINATION include/dcp)
-install(
-  EXPORT dcp-targets
-  FILE dcp-targets.cmake
-  NAMESPACE DCP::
-  DESTINATION lib/cmake/dcp)
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-  dcp-config.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/dcp-config.cmake
-  INSTALL_DESTINATION lib/cmake/dcp
-  NO_SET_AND_CHECK_MACRO)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-config.cmake
-        DESTINATION lib/cmake/dcp)
-
+cbp_install(dcp MERGED)
+install(FILES ${EXPORT_FILE} ${VERSION_FILE} DESTINATION include/dcp)
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
         ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
