@@ -7,7 +7,7 @@ project(
 # Generate compile_commands.json file
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include(external/cmake-boilerplate/cpb.cmake)
+include(external/cmake-boilerplate/cbp.cmake)
 cbp_set_rpath()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
