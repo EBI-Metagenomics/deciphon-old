@@ -9,7 +9,7 @@
 #include "fasta/fasta.h"
 #include "gff/gff.h"
 #include "progress_file.h"
-#include "stream.h"
+#include "row.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -135,13 +135,12 @@ def create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
         frag_stop += step.seq_len
 #endif
 
-static struct stream seq_row = STREAM_INIT(88);
-static struct stream logo_row = STREAM_INIT(88);
-static struct stream state_row = STREAM_INIT(88);
+static struct row seq_row = ROW_INIT(88, 5);
+static struct row logo_row = ROW_INIT(88, 5);
+static struct row state_row = ROW_INIT(88, 5);
 
 static void annotate(struct imm_seq const *sequence)
 {
-    unsigned const cell_size = 5;
     char const *seq = sequence->str;
     struct imm_path const *path = &cli.pro.result.path;
     char name[IMM_STATE_NAME_SIZE] = {0};
@@ -153,65 +152,47 @@ static void annotate(struct imm_seq const *sequence)
     goto enter;
     for (; i < imm_path_nsteps(path); ++i)
     {
-        if (stream_size(&state_row) == 0)
+        if (row_full(&state_row))
         {
-            stream_flush(&seq_row, stdout);
-            fprintf(stdout, "\n");
-            stream_flush(&state_row, stdout);
-            fprintf(stdout, "\n");
-            fprintf(stdout, "\n");
+            row_flush(&seq_row, stdout);
+            row_flush(&logo_row, stdout);
+            row_flush(&state_row, stdout);
+            fputc('\n', stdout);
         }
-        stream_print(&seq_row, " ", 1);
-        stream_print(&logo_row, " ", 1);
-        stream_print(&state_row, " ", 1);
 
     enter:
         step = imm_path_step(path, i);
         dcp_pro_state_name(step->state_id, name);
 
-        if (stream_size(&state_row) < cell_size)
+        if (row_full(&state_row))
         {
-            stream_flush(&seq_row, stdout);
-            fprintf(stdout, "\n");
-            stream_flush(&logo_row, stdout);
-            fprintf(stdout, "\n");
-            stream_flush(&state_row, stdout);
-            fprintf(stdout, "\n");
-            fprintf(stdout, "\n");
+            row_flush(&seq_row, stdout);
+            row_flush(&logo_row, stdout);
+            row_flush(&state_row, stdout);
+            fputc('\n', stdout);
         }
 
-        stream_print(&seq_row, seq, step->seqlen);
+        row_add(&seq_row, seq, step->seqlen);
 
         if (dcp_pro_state_is_match(step->state_id))
         {
             unsigned idx = dcp_pro_state_idx(step->state_id);
             struct dcp_pro_prof *prof = &cli.pro.db.prof;
-            stream_print(&logo_row, prof->consensus + idx, 1);
+            row_add(&logo_row, prof->consensus + idx, 1);
         }
         else
-        {
-            stream_print(&logo_row, " ", 1);
-        }
+            row_add(&logo_row, " ", 1);
 
         unsigned n = (unsigned)strlen(name);
-        stream_print(&state_row, name, n);
-        for (unsigned k = 0; k < cell_size - n; ++k)
-            stream_print(&state_row, " ", 1);
+        row_add(&state_row, name, n);
 
         seq += step->seqlen;
-        for (unsigned k = 0; k < cell_size - step->seqlen; ++k)
-            stream_print(&seq_row, " ", 1);
-        for (unsigned k = 0; k < cell_size - 1; ++k)
-            stream_print(&logo_row, " ", 1);
     }
 
-    stream_flush(&seq_row, stdout);
-    fprintf(stdout, "\n");
-    stream_flush(&logo_row, stdout);
-    fprintf(stdout, "\n");
-    stream_flush(&state_row, stdout);
-    fprintf(stdout, "\n");
-    fprintf(stdout, "\n");
+    row_flush(&seq_row, stdout);
+    row_flush(&logo_row, stdout);
+    row_flush(&state_row, stdout);
+    fputc('\n', stdout);
 }
 
 static enum dcp_rc predict_codons(struct imm_seq const *seq)
