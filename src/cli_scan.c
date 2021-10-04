@@ -137,13 +137,19 @@ def create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
 
 static struct table table = TABLE_INIT(NULL, 88, 5);
 
-static void annotate(struct imm_seq const *sequence)
+static void annotate(struct imm_seq const *sequence, char const *profile_name,
+                     char const *seq_name)
 {
     table_setup(&table, stdout);
     char const *seq = sequence->str;
     struct imm_path const *path = &cli.pro.result.path;
     char name[IMM_STATE_NAME_SIZE] = {0};
 
+    table_set_headers(&table, profile_name, seq_name, "pcodon", "pamino",
+                      "state");
+
+    char const *ocodon = cli.output.codon.seq;
+    char const *oamino = cli.output.amino.seq;
     for (unsigned i = 0; i < imm_path_nsteps(path); ++i)
     {
         struct imm_step const *step = imm_path_step(path, i);
@@ -157,7 +163,22 @@ static void annotate(struct imm_seq const *sequence)
         else if (dcp_pro_state_is_insert(step->state_id))
             cons = '.';
 
-        table_add(&table, step->seqlen, seq, cons, name_size, name);
+        char const *codon = NULL;
+        char amino = 0;
+        if (dcp_pro_state_is_mute(step->state_id))
+        {
+            codon = "   ";
+            amino = ' ';
+        }
+        else
+        {
+            codon = ocodon;
+            amino = *oamino;
+            ocodon += 3;
+            oamino++;
+        }
+        table_add(&table, cons, step->seqlen, seq, codon, amino, name_size,
+                  name);
         seq += step->seqlen;
     }
 
@@ -266,7 +287,7 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
 
         printf("Name: %s\n", mt->name);
         /* printf("ACC: %s\n", mt->acc); */
-        annotate(&seq);
+        annotate(&seq, mt->name, cli.targets.fa.target.id);
 
         if ((rc = write_codons(ocodon))) return rc;
         if ((rc = write_aminos(oamino))) return rc;
