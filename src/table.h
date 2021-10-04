@@ -20,8 +20,7 @@ struct table
 static inline void table_setup(struct table *tbl, FILE *fd) { tbl->fd = fd; }
 
 bool table_add(struct table *tbl, unsigned seq_size, char const seq[seq_size],
-               char const *cons, unsigned state_size,
-               char const state[state_size]);
+               char cons, unsigned state_size, char const state[state_size]);
 
 bool table_flush(struct table *tbl);
 

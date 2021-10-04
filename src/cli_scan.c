@@ -144,30 +144,20 @@ static void annotate(struct imm_seq const *sequence)
     struct imm_path const *path = &cli.pro.result.path;
     char name[IMM_STATE_NAME_SIZE] = {0};
 
-    if (imm_path_nsteps(path) == 0) return;
-
-    unsigned i = 0;
-    struct imm_step const *step = NULL;
-    goto enter;
-    for (; i < imm_path_nsteps(path); ++i)
+    for (unsigned i = 0; i < imm_path_nsteps(path); ++i)
     {
-    enter:
-        step = imm_path_step(path, i);
-        dcp_pro_state_name(step->state_id, name);
+        struct imm_step const *step = imm_path_step(path, i);
+        unsigned name_size = dcp_pro_state_name(step->state_id, name);
 
-        char cons[2] = " ";
-        if (dcp_pro_state_is_match(step->state_id))
-        {
-            unsigned idx = dcp_pro_state_idx(step->state_id);
-            struct dcp_pro_prof *prof = &cli.pro.db.prof;
-            cons[0] = prof->consensus[idx];
-        }
-        else
-            cons[0] = ' ';
+        bool is_match = dcp_pro_state_is_match(step->state_id);
+        bool is_delete = dcp_pro_state_is_delete(step->state_id);
+        char cons = ' ';
+        if (is_match || is_delete)
+            cons = cli.pro.db.prof.consensus[dcp_pro_state_idx(step->state_id)];
+        else if (dcp_pro_state_is_insert(step->state_id))
+            cons = '.';
 
-        unsigned n = (unsigned)strlen(name);
-        table_add(&table, step->seqlen, seq, cons, n, name);
-
+        table_add(&table, step->seqlen, seq, cons, name_size, name);
         seq += step->seqlen;
     }
 
@@ -250,6 +240,7 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
             return error(DCP_RUNTIMEERROR, "failed to run viterbi");
 
         imm_float lrt = -2 * (null.loglik - cli.pro.result.loglik);
+        printf("%f\n", lrt);
         if (lrt < 100.0f) continue;
 
         enum dcp_rc rc = predict_codons(&seq);

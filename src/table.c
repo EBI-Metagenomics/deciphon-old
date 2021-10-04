@@ -1,16 +1,15 @@
 #include "table.h"
 
 bool table_add(struct table *tbl, unsigned seq_size, char const seq[seq_size],
-               char const *cons, unsigned state_size,
-               char const state[state_size])
+               char cons, unsigned state_size, char const state[state_size])
 {
     if (row_full(&tbl->sequence))
     {
         if (!table_flush(tbl)) return false;
     }
     row_add(&tbl->sequence, seq, seq_size);
-    row_add(&tbl->consensus, cons, 1);
-    row_add(&tbl->state, seq, state_size);
+    row_add(&tbl->consensus, &cons, 1);
+    row_add(&tbl->state, state, state_size);
     return true;
 }
 
