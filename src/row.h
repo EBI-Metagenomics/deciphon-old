@@ -1,10 +1,8 @@
 #ifndef ROW_H
 #define ROW_H
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 
 #define ROW_SIZE 256
 
@@ -44,29 +42,9 @@ static inline void row_reset(struct row *row)
     row->data[1] = '\0';
 }
 
-static inline void row_add(struct row *row, char const *src, unsigned size)
-{
-    assert(size <= row->cell_size);
-    row->data[row->pos++] = ' ';
+void row_add(struct row *row, char const *src, unsigned size);
 
-    memcpy(row->data + row->pos, src, size);
-    row->pos += size;
-
-    for (unsigned i = 0; i < (unsigned)(row->cell_size - size); ++i)
-        row->data[row->pos++] = ' ';
-
-    row->data[row->pos] = '\0';
-}
-
-static inline bool row_empty(struct row const *row) { return row->pos == 0; }
-
-static inline bool row_flush(struct row *row, FILE *restrict fd)
-{
-    if (EOF == fputs(row->data + 1, fd)) return false;
-    if (EOF == fputc('\n', fd)) return false;
-    row_reset(row);
-    return true;
-}
+bool row_flush(struct row *row, FILE *restrict fd);
 
 static inline bool row_full(struct row const *row)
 {

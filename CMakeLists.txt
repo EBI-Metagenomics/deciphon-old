@@ -48,8 +48,10 @@ add_library(
   src/pro_reader.c
   src/pro_state.c
   src/progress_file.c
+  src/row.c
   src/std_db.c
   src/std_prof.c
+  src/table.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 

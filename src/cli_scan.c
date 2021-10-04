@@ -9,7 +9,7 @@
 #include "fasta/fasta.h"
 #include "gff/gff.h"
 #include "progress_file.h"
-#include "row.h"
+#include "table.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -135,12 +135,11 @@ def create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
         frag_stop += step.seq_len
 #endif
 
-static struct row seq_row = ROW_INIT(88, 5);
-static struct row logo_row = ROW_INIT(88, 5);
-static struct row state_row = ROW_INIT(88, 5);
+static struct table table = TABLE_INIT(NULL, 88, 5);
 
 static void annotate(struct imm_seq const *sequence)
 {
+    table_setup(&table, stdout);
     char const *seq = sequence->str;
     struct imm_path const *path = &cli.pro.result.path;
     char name[IMM_STATE_NAME_SIZE] = {0};
@@ -152,47 +151,27 @@ static void annotate(struct imm_seq const *sequence)
     goto enter;
     for (; i < imm_path_nsteps(path); ++i)
     {
-        if (row_full(&state_row))
-        {
-            row_flush(&seq_row, stdout);
-            row_flush(&logo_row, stdout);
-            row_flush(&state_row, stdout);
-            fputc('\n', stdout);
-        }
-
     enter:
         step = imm_path_step(path, i);
         dcp_pro_state_name(step->state_id, name);
 
-        if (row_full(&state_row))
-        {
-            row_flush(&seq_row, stdout);
-            row_flush(&logo_row, stdout);
-            row_flush(&state_row, stdout);
-            fputc('\n', stdout);
-        }
-
-        row_add(&seq_row, seq, step->seqlen);
-
+        char cons[2] = " ";
         if (dcp_pro_state_is_match(step->state_id))
         {
             unsigned idx = dcp_pro_state_idx(step->state_id);
             struct dcp_pro_prof *prof = &cli.pro.db.prof;
-            row_add(&logo_row, prof->consensus + idx, 1);
+            cons[0] = prof->consensus[idx];
         }
         else
-            row_add(&logo_row, " ", 1);
+            cons[0] = ' ';
 
         unsigned n = (unsigned)strlen(name);
-        row_add(&state_row, name, n);
+        table_add(&table, step->seqlen, seq, cons, n, name);
 
         seq += step->seqlen;
     }
 
-    row_flush(&seq_row, stdout);
-    row_flush(&logo_row, stdout);
-    row_flush(&state_row, stdout);
-    fputc('\n', stdout);
+    table_flush(&table);
 }
 
 static enum dcp_rc predict_codons(struct imm_seq const *seq)
