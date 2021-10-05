@@ -10,6 +10,7 @@
 #include "gff/gff.h"
 #include "progress_file.h"
 #include "table.h"
+#include "tbl/tbl.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -135,54 +136,57 @@ def create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
         frag_stop += step.seq_len
 #endif
 
-static struct table table = TABLE_INIT(NULL, 88, 5);
+static struct tbl_8x_ed table = {0};
 
 static void annotate(struct imm_seq const *sequence, char const *profile_name,
                      char const *seq_name)
 {
-    table_setup(&table, stdout);
+    char const *headers[4] = {profile_name, seq_name, "posterior", ""};
+    tbl_8x_ed_setup(&table, stdout, 128, 6, 32, TBL_RIGHT, 4, headers);
     char const *seq = sequence->str;
     struct imm_path const *path = &cli.pro.result.path;
-    char name[IMM_STATE_NAME_SIZE] = {0};
-
-    table_set_headers(&table, profile_name, seq_name, "pcodon", "pamino",
-                      "state");
 
     char const *ocodon = cli.output.codon.seq;
     char const *oamino = cli.output.amino.seq;
     for (unsigned i = 0; i < imm_path_nsteps(path); ++i)
     {
         struct imm_step const *step = imm_path_step(path, i);
-        unsigned name_size = dcp_pro_state_name(step->state_id, name);
 
         bool is_match = dcp_pro_state_is_match(step->state_id);
         bool is_delete = dcp_pro_state_is_delete(step->state_id);
-        char cons = ' ';
+        char cons[2] = " ";
         if (is_match || is_delete)
-            cons = cli.pro.db.prof.consensus[dcp_pro_state_idx(step->state_id)];
+            cons[0] =
+                cli.pro.db.prof.consensus[dcp_pro_state_idx(step->state_id)];
         else if (dcp_pro_state_is_insert(step->state_id))
-            cons = '.';
+            cons[0] = '.';
 
-        char const *codon = NULL;
-        char amino = 0;
+        char codon[4] = {0};
+        char amino[2] = {0};
         if (dcp_pro_state_is_mute(step->state_id))
         {
-            codon = "   ";
-            amino = ' ';
+            codon[0] = ' ';
+            codon[1] = ' ';
+            codon[2] = ' ';
+            amino[0] = ' ';
         }
         else
         {
-            codon = ocodon;
-            amino = *oamino;
+            codon[0] = ocodon[0];
+            codon[1] = ocodon[1];
+            codon[2] = ocodon[2];
+            amino[0] = *oamino;
             ocodon += 3;
             oamino++;
         }
-        table_add(&table, cons, step->seqlen, seq, codon, amino, name_size,
-                  name);
+        char str[6] = {0};
+        memcpy(str, seq, step->seqlen);
+        tbl_8x_ed_add_col(&table, TBL_LEFT,
+                          (char const *[4]){cons, str, codon, amino});
         seq += step->seqlen;
     }
 
-    table_flush(&table);
+    tbl_8x_ed_flush(&table);
 }
 
 static enum dcp_rc predict_codons(struct imm_seq const *seq)
@@ -261,7 +265,6 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
             return error(DCP_RUNTIMEERROR, "failed to run viterbi");
 
         imm_float lrt = -2 * (null.loglik - cli.pro.result.loglik);
-        printf("%f\n", lrt);
         if (lrt < 100.0f) continue;
 
         enum dcp_rc rc = predict_codons(&seq);
@@ -285,8 +288,6 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
         gff_feature_set_attrs(f, "wqwq");
         gff_write(&cli.output.gff);
 
-        printf("Name: %s\n", mt->name);
-        /* printf("ACC: %s\n", mt->acc); */
         annotate(&seq, mt->name, cli.targets.fa.target.id);
 
         if ((rc = write_codons(ocodon))) return rc;

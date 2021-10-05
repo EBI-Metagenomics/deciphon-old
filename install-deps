@@ -9,3 +9,4 @@ bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/log || exit 1
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/hmmer-reader || exit 1
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/fasta || exit 1
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/imm || exit 1
+bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/tbl || exit 1
