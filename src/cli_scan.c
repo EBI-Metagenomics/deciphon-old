@@ -110,32 +110,6 @@ static struct imm_seq target_seq(void)
     return imm_seq(imm_str(tgt), abc);
 }
 
-#if 0
-def create_fragments(path: Path) -> Iterable[Tuple[Interval, Interval, bool]]:
-
-    frag_start = frag_stop = 0
-    step_start = step_stop = 0
-    homologous = False
-
-    for step_stop, step in enumerate(path):
-
-        change = not homologous and step.state.name.startswith(b"M")
-        change = change or homologous and step.state.name.startswith(b"E")
-        change = change or not homologous and step.state.name.startswith(b"T")
-
-        if change:
-            if frag_start < frag_stop:
-                fragi = Interval(frag_start, frag_stop)
-                stepi = Interval(step_start, step_stop)
-                yield (fragi, stepi, homologous)
-
-            frag_start = frag_stop
-            step_start = step_stop
-            homologous = not homologous
-
-        frag_stop += step.seq_len
-#endif
-
 static struct tbl_8x_ed table = {0};
 
 static void annotate(struct imm_seq const *sequence, char const *profile_name,
