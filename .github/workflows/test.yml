@@ -25,6 +25,10 @@ jobs:
       if: runner.os == 'macOS'
       run: brew install argp-standalone
 
+    - name: Install SQLite3 for Linux
+      if: runner.os == 'Linux'
+      run: apt install libsqlite3-dev
+
     - name: Check for sudo
       shell: bash
       run: |
