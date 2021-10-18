@@ -51,6 +51,7 @@ add_library(
   src/pro_state.c
   src/progress_file.c
   src/row.c
+  src/server.c
   src/std_db.c
   src/std_prof.c
   src/table.c

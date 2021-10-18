@@ -2,16 +2,23 @@
 #define DCP_SERVER_H
 
 #include "dcp/export.h"
+#include "dcp/rc.h"
+#include <sqlite3.h>
 #include <stdint.h>
 #include <stdio.h>
 
-struct dcp_result;
-struct dcp_server;
-struct dcp_task;
+/* struct dcp_result; */
+/* struct dcp_server; */
+/* struct dcp_task; */
+
+struct dcp_server
+{
+    sqlite3 *sql_db;
+};
 
 /* DCP_API void dcp_server_add_task(struct dcp_server *server, */
 /*                                  struct dcp_task *task); */
-DCP_API struct dcp_server *dcp_server_create(FILE *fd);
+DCP_API enum dcp_rc dcp_server_init(struct dcp_server *);
 /* DCP_API int dcp_server_destroy(struct dcp_server *server); */
 /* DCP_API void dcp_server_free_result(struct dcp_server *server, */
 /*                                     struct dcp_result const *result); */
