@@ -52,10 +52,11 @@ add_library(
   src/progress_file.c
   src/row.c
   src/server.c
+  src/sql.c
   src/std_db.c
   src/std_prof.c
-  src/task.c
   src/table.c
+  src/task.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 

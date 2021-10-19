@@ -9,15 +9,14 @@
 
 /* struct dcp_result; */
 /* struct dcp_server; */
-/* struct dcp_task; */
+struct dcp_task;
 
 struct dcp_server
 {
     sqlite3 *sql_db;
 };
 
-/* DCP_API void dcp_server_add_task(struct dcp_server *server, */
-/*                                  struct dcp_task *task); */
+DCP_API enum dcp_rc dcp_server_add_task(struct dcp_server *, struct dcp_task *);
 DCP_API enum dcp_rc dcp_server_init(struct dcp_server *);
 DCP_API void dcp_server_close(struct dcp_server *);
 /* DCP_API int dcp_server_destroy(struct dcp_server *server); */
