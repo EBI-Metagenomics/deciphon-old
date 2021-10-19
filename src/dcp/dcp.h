@@ -31,6 +31,7 @@ extern "C" {
 #include "dcp/server.h"
 #include "dcp/std_db.h"
 #include "dcp/std_prof.h"
+#include "dcp/target.h"
 #include "dcp/task.h"
 #include "dcp/version.h"
 
