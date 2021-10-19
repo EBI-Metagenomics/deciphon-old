@@ -15,16 +15,24 @@ struct dcp_task_cfg
     bool hmmer3_compat;
 };
 
+DCP_API extern struct dcp_task_cfg const dcp_task_cfg_default;
+
 struct dcp_task
 {
     struct dcp_task_cfg cfg;
     struct cco_queue targets;
 };
 
-static inline void dcp_task_init(struct dcp_task *task, struct dcp_task_cfg cfg)
+static inline void dcp_task_init(struct dcp_task *task)
+{
+    task->cfg = dcp_task_cfg_default;
+    cco_queue_init(&task->targets);
+}
+
+static inline void dcp_task_setup(struct dcp_task *task,
+                                  struct dcp_task_cfg cfg)
 {
     task->cfg = cfg;
-    cco_queue_init(&task->targets);
 }
 
 static inline void dcp_task_add(struct dcp_task *task, struct dcp_target *tgt)
