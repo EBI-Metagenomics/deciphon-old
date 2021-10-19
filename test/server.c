@@ -13,4 +13,6 @@ void test_server_init(void)
 {
     struct dcp_server srv;
     EQ(dcp_server_init(&srv), DCP_SUCCESS);
+
+    dcp_server_close(&srv);
 }

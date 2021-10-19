@@ -24,6 +24,8 @@ enum dcp_rc dcp_server_init(struct dcp_server *srv)
     return rc;
 }
 
+void dcp_server_close(struct dcp_server *srv) { close_sql_db(srv); }
+
 enum dcp_rc open_sql_db(struct dcp_server *srv)
 {
     if (sqlite3_open(SQL_DB_NAME, &srv->sql_db))
