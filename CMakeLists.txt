@@ -57,6 +57,7 @@ add_library(
   src/std_prof.c
   src/table.c
   src/task.c
+  src/third-party/base64.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)
 

@@ -4,6 +4,7 @@
 #include "dcp/server.h"
 #include "error.h"
 #include "imm/imm.h"
+#include "third-party/base64.h"
 #include <assert.h>
 #include <sqlite3.h>
 
@@ -11,58 +12,53 @@ static_assert(IMM_ABC_MAX_SIZE == 31, "IMM_ABC_MAX_SIZE == 31");
 static_assert(IMM_SYM_SIZE == 94, "IMM_SYM_SIZE == 94");
 
 static char const schema[] =
-    ""
-    "--"
-    "-- File generated with SQLiteStudio v3.3.3 on Tue Oct 19 14:15:37 2021"
-    "--"
-    "-- Text encoding used: UTF-8"
-    "--"
-    "PRAGMA foreign_keys = off;"
-    "BEGIN TRANSACTION;"
-    ""
-    "-- Table: abc"
-    "CREATE TABLE abc ("
-    "    name       VARCHAR (15) PRIMARY KEY"
-    "                            UNIQUE"
-    "                            NOT NULL,"
-    "    size       INTEGER      NOT NULL"
-    "                            CONSTRAINT [non-negative] CHECK (size >= 0),"
-    "    sym_idx    CHAR (94)    NOT NULL,"
-    "    symbols    VARCHAR (31) NOT NULL,"
-    "    creation   [DATETIME]   GENERATED ALWAYS AS (datetime('now') ), "
-    "    type       VARCHAR (7)  NOT NULL"
-    "                            CHECK (type IN ('dna', 'rna', 'amino') ),"
-    "    any_symbol CHAR (1)     NOT NULL"
-    ");"
-    ""
-    ""
-    "-- Table: target"
-    "CREATE TABLE target ("
-    "    sequence VARCHAR (0, 2147483647) NOT NULL,"
-    "    task     INTEGER                 REFERENCES task (id) ON DELETE "
-    "CASCADE"
-    "                                     NOT NULL"
-    ");"
-    ""
-    ""
-    "-- Table: task"
-    "CREATE TABLE task ("
-    "    id             INTEGER      PRIMARY KEY AUTOINCREMENT"
-    "                                UNIQUE"
-    "                                NOT NULL,"
-    "    cfg_loglik     BOOLEAN      NOT NULL,"
-    "    cfg_null       BOOLEAN      NOT NULL,"
-    "    multiple_hits  BOOLEAN      NOT NULL,"
-    "    hmmer3_compat  BOOLEAN      NOT NULL,"
-    "    abc            VARCHAR (15) REFERENCES abc (name) "
-    "                                NOT NULL,"
-    "    local_creation DATETIME     NOT NULL"
-    "                                GENERATED ALWAYS AS (datetime(now) )"
-    ");"
-    ""
-    "COMMIT TRANSACTION;"
-    "PRAGMA foreign_keys = on;"
-    ");";
+    "--\n"
+    "-- File generated with SQLiteStudio v3.3.3 on Tue Oct 19 14:15:37 2021\n"
+    "--\n"
+    "-- Text encoding used: UTF-8\n"
+    "--\n"
+    "PRAGMA foreign_keys = off;\n"
+    "BEGIN TRANSACTION;\n"
+    "\n"
+    "-- Table: abc\n"
+    "CREATE TABLE abc (\n"
+    "    name       VARCHAR (15)  PRIMARY KEY\n"
+    "                             UNIQUE\n"
+    "                             NOT NULL,\n"
+    "    size       INTEGER       NOT NULL\n"
+    "                             CONSTRAINT [non-negative] CHECK (size> 0),\n"
+    "    sym_idx64  VARCHAR (255) NOT NULL,\n"
+    "    symbols    VARCHAR (31)  NOT NULL,\n"
+    "    creation   [DATETIME]    GENERATED ALWAYS AS (datetime('now') ),\n"
+    "    type       VARCHAR (7)   NOT NULL\n"
+    "                             CHECK (type IN ('dna', 'rna', 'amino')),\n"
+    "    any_symbol CHAR (1)      NOT NULL\n"
+    ");\n"
+    "\n"
+    "-- Table: target\n"
+    "CREATE TABLE target (\n"
+    "    sequence VARCHAR (2147483647) NOT NULL,\n"
+    "    task     INTEGER              REFERENCES task (id) ON DELETE CASCADE\n"
+    "                                  NOT NULL\n"
+    ");\n"
+    "\n"
+    "-- Table: task\n"
+    "CREATE TABLE task (\n"
+    "    id             INTEGER      PRIMARY KEY AUTOINCREMENT\n"
+    "                                UNIQUE\n"
+    "                                NOT NULL,\n"
+    "    cfg_loglik     BOOLEAN      NOT NULL,\n"
+    "    cfg_null       BOOLEAN      NOT NULL,\n"
+    "    multiple_hits  BOOLEAN      NOT NULL,\n"
+    "    hmmer3_compat  BOOLEAN      NOT NULL,\n"
+    "    abc            VARCHAR (15) REFERENCES abc (name)\n"
+    "                                NOT NULL,\n"
+    "    local_creation DATETIME     NOT NULL\n"
+    "                                GENERATED ALWAYS AS (datetime(now))\n"
+    ");\n"
+    "\n"
+    "COMMIT TRANSACTION;\n"
+    "PRAGMA foreign_keys = on;\n";
 
 enum dcp_rc sql_open(struct dcp_server *srv)
 {
@@ -78,32 +74,38 @@ enum dcp_rc sql_open(struct dcp_server *srv)
 static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
                            char name[static 1], char type[static 1])
 {
-    char sym_idx[IMM_SYM_SIZE] = {0};
-    memcpy(sym_idx, abc->sym.idx, IMM_SYM_SIZE);
+    unsigned char const *sym_idx64 =
+        base64_encode(abc->sym.idx, IMM_SYM_SIZE, 0);
 
     char sql[512] = {0};
     int rc = snprintf(
         sql, ARRAY_SIZE(sql),
-        "INSERT INTO abc (name, size, sym_idx, symbols, any_symbol, type) "
-        "VALUES ('%s', %d, %.*s, '%s', '%c', '%s');",
-        name, abc->size, (int)ARRAY_SIZE(sym_idx), sym_idx, abc->symbols,
-        abc->any_symbol_id, type);
+        "INSERT INTO abc (name, size, sym_idx64, symbols, any_symbol, type) "
+        "VALUES ('%s', %d, '%s', '%s', '%c', '%s');",
+        name, abc->size, sym_idx64, abc->symbols, abc->any_symbol_id, type);
 
     if (rc < 0) return error(DCP_RUNTIMEERROR, "failed to insert abc into db");
+
+    char *msg = 0;
+    if (sqlite3_exec(db, sql, 0, 0, &msg))
+    {
+        fprintf(stderr, "SQL error: %s\n", msg);
+        return error(DCP_RUNTIMEERROR, "failed to add abc into db");
+    }
 
     return DCP_SUCCESS;
 }
 
 enum dcp_rc sql_create(struct dcp_server *srv)
 {
-    if (sqlite3_exec(srv->sql_db, schema, 0, 0, 0) != SQLITE_OK)
+    char *msg = 0;
+    printf("Schema:\n%s\n", schema);
+    if (sqlite3_exec(srv->sql_db, schema, 0, 0, &msg))
         return error(DCP_RUNTIMEERROR, "failed to create database");
 
+    fprintf(stderr, "SQL error: %s\n", msg);
     struct imm_dna const *dna = &imm_dna_iupac;
     add_abc(srv->sql_db, imm_super(imm_super(dna)), "dna_iupac", "dna");
-
-    if (sqlite3_exec(srv->sql_db, schema, 0, 0, 0) != SQLITE_OK)
-        return error(DCP_RUNTIMEERROR, "failed to create database");
 
     return DCP_SUCCESS;
 }

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+
+(
+    cd $SCRIPT_DIR/..
+    echo "#ifndef SCHEMA_H" >src/schema.h
+    echo "#define SCHEMA_H" >>src/schema.h
+    echo "" >>src/schema.h
+    xxd -i src/schema.sql | sed 's/\([0-9a-f]\)$/\1, 0x00/' >>src/schema.h
+    echo "" >>src/schema.h
+    echo "#endif" >>src/schema.h
+    clang-format -i src/schema.h
+)
