@@ -9,7 +9,14 @@ struct imm_seq;
 struct dcp_target
 {
     struct imm_seq const *seq;
-    struct cco_queue queue;
+    struct cco_node node;
 };
+
+static inline void dcp_target_init(struct dcp_target *tgt,
+                                   struct imm_seq const *seq)
+{
+    tgt->seq = seq;
+    cco_node_init(&tgt->node);
+}
 
 #endif

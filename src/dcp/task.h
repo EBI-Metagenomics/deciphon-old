@@ -21,11 +21,20 @@ struct dcp_task
     struct cco_queue targets;
 };
 
-DCP_API void dcp_task_add_seq(struct dcp_task *task, char const *seq);
-DCP_API struct dcp_task_cfg dcp_task_cfg(struct dcp_task *task);
-DCP_API struct dcp_task *dcp_task_create(struct dcp_task_cfg cfg);
-DCP_API void dcp_task_destroy(struct dcp_task *task);
-DCP_API bool dcp_task_end(struct dcp_task *task);
-DCP_API int dcp_task_errno(struct dcp_task const *task);
+static inline void dcp_task_init(struct dcp_task *task, struct dcp_task_cfg cfg)
+{
+    task->cfg = cfg;
+    cco_queue_init(&task->targets);
+}
+
+static inline void dcp_task_add(struct dcp_task *task, struct dcp_target *tgt)
+{
+    cco_queue_put(&task->targets, &tgt->node);
+}
+
+static inline struct dcp_task_cfg const *dcp_task_cfg(struct dcp_task const *t)
+{
+    return &t->cfg;
+}
 
 #endif
