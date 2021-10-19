@@ -1,4 +1,5 @@
 #include "sql.h"
+#include "dcp.h"
 #include "dcp/rc.h"
 #include "dcp/server.h"
 #include "error.h"
@@ -21,14 +22,17 @@ static char const schema[] =
     ""
     "-- Table: abc"
     "CREATE TABLE abc ("
-    "    name     VARCHAR (15) PRIMARY KEY"
-    "                          UNIQUE"
-    "                          NOT NULL,"
-    "    size     INTEGER      NOT NULL"
-    "                          CONSTRAINT [non-negative] CHECK (size >= 0),"
-    "    sym_idx  VARCHAR (77) NOT NULL,"
-    "    symbols  VARCHAR (31) NOT NULL,"
-    "    creation [DATETIME ]  GENERATED ALWAYS AS (datetime('now') ) "
+    "    name       VARCHAR (15) PRIMARY KEY"
+    "                            UNIQUE"
+    "                            NOT NULL,"
+    "    size       INTEGER      NOT NULL"
+    "                            CONSTRAINT [non-negative] CHECK (size >= 0),"
+    "    sym_idx    CHAR (94)    NOT NULL,"
+    "    symbols    VARCHAR (31) NOT NULL,"
+    "    creation   [DATETIME]   GENERATED ALWAYS AS (datetime('now') ), "
+    "    type       VARCHAR (7)  NOT NULL"
+    "                            CHECK (type IN ('dna', 'rna', 'amino') ),"
+    "    any_symbol CHAR (1)     NOT NULL"
     ");"
     ""
     ""
@@ -54,11 +58,16 @@ static char const schema[] =
     "                                NOT NULL,"
     "    local_creation DATETIME     NOT NULL"
     "                                GENERATED ALWAYS AS (datetime(now) )"
+    ");"
+    ""
+    "COMMIT TRANSACTION;"
+    "PRAGMA foreign_keys = on;"
     ");";
 
 enum dcp_rc sql_open(struct dcp_server *srv)
 {
-    if (sqlite3_open(":memory:", &srv->sql_db))
+    /* if (sqlite3_open(":memory:", &srv->sql_db)) */
+    if (sqlite3_open("file:/Users/horta/deciphon.db", &srv->sql_db))
     {
         sqlite3_close(srv->sql_db);
         return error(DCP_RUNTIMEERROR, "failed to open database");
@@ -66,24 +75,41 @@ enum dcp_rc sql_open(struct dcp_server *srv)
     return DCP_SUCCESS;
 }
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName);
-
-enum dcp_rc sql_create(struct dcp_server *srv)
+static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
+                           char name[static 1], char type[static 1])
 {
-    if (sqlite3_exec(srv->sql_db, schema, callback, 0, NULL) != SQLITE_OK)
-        return error(DCP_RUNTIMEERROR, "failed to create database");
+    char sym_idx[IMM_SYM_SIZE] = {0};
+    memcpy(sym_idx, abc->sym.idx, IMM_SYM_SIZE);
+
+    char sql[512] = {0};
+    int rc = snprintf(
+        sql, ARRAY_SIZE(sql),
+        "INSERT INTO abc (name, size, sym_idx, symbols, any_symbol, type) "
+        "VALUES ('%s', %d, %.*s, '%s', '%c', '%s');",
+        name, abc->size, (int)ARRAY_SIZE(sym_idx), sym_idx, abc->symbols,
+        abc->any_symbol_id, type);
+
+    if (rc < 0) return error(DCP_RUNTIMEERROR, "failed to insert abc into db");
+
     return DCP_SUCCESS;
 }
 
-void sql_close(struct dcp_server *srv) { sqlite3_close(srv->sql_db); }
-
-static int callback(void *NotUsed, int argc, char **argv, char **azColName)
+enum dcp_rc sql_create(struct dcp_server *srv)
 {
-    int i;
-    for (i = 0; i < argc; i++)
-    {
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-    }
-    printf("\n");
-    return 0;
+    if (sqlite3_exec(srv->sql_db, schema, 0, 0, 0) != SQLITE_OK)
+        return error(DCP_RUNTIMEERROR, "failed to create database");
+
+    struct imm_dna const *dna = &imm_dna_iupac;
+    add_abc(srv->sql_db, imm_super(imm_super(dna)), "dna_iupac", "dna");
+
+    if (sqlite3_exec(srv->sql_db, schema, 0, 0, 0) != SQLITE_OK)
+        return error(DCP_RUNTIMEERROR, "failed to create database");
+
+    return DCP_SUCCESS;
+}
+
+void sql_close(struct dcp_server *srv)
+{
+    int rc = sqlite3_close(srv->sql_db);
+    printf("%d\n", rc);
 }

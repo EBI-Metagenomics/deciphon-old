@@ -18,22 +18,15 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName)
 enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)
 {
     char sql[] = "INSERT ";
-    char *zErrMsg = 0;
-    int rc = sqlite3_exec(srv->sql_db, sql, callback, 0, &zErrMsg);
-    if (rc != SQLITE_OK)
-    {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
-        sqlite3_free(zErrMsg);
-        return DCP_RUNTIMEERROR;
-    }
+    if (sqlite3_exec(srv->sql_db, sql, 0, 0, 0)) return DCP_RUNTIMEERROR;
     return DCP_SUCCESS;
 }
 
 enum dcp_rc dcp_server_init(struct dcp_server *srv)
 {
     enum dcp_rc rc = DCP_SUCCESS;
-    if (!(rc = sql_open(srv))) return rc;
-    if (!(rc = sql_create(srv))) return rc;
+    if ((rc = sql_open(srv))) return rc;
+    if ((rc = sql_create(srv))) return rc;
     return rc;
 }
 
