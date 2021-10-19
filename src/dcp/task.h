@@ -2,10 +2,12 @@
 #define DCP_TASK_H
 
 #include "dcp/export.h"
+#include "dcp/rc.h"
 #include "dcp/target.h"
 #include <stdbool.h>
 
 struct dcp_task;
+struct imm_abc;
 
 struct dcp_task_cfg
 {
@@ -20,12 +22,15 @@ DCP_API extern struct dcp_task_cfg const dcp_task_cfg_default;
 struct dcp_task
 {
     struct dcp_task_cfg cfg;
+    struct imm_abc const *abc;
     struct cco_queue targets;
 };
 
-static inline void dcp_task_init(struct dcp_task *task)
+static inline void dcp_task_init(struct dcp_task *task,
+                                 struct imm_abc const *abc)
 {
     task->cfg = dcp_task_cfg_default;
+    task->abc = abc;
     cco_queue_init(&task->targets);
 }
 
@@ -35,10 +40,7 @@ static inline void dcp_task_setup(struct dcp_task *task,
     task->cfg = cfg;
 }
 
-static inline void dcp_task_add(struct dcp_task *task, struct dcp_target *tgt)
-{
-    cco_queue_put(&task->targets, &tgt->node);
-}
+DCP_API enum dcp_rc dcp_task_add(struct dcp_task *task, struct dcp_target *tgt);
 
 static inline struct dcp_task_cfg const *dcp_task_cfg(struct dcp_task const *t)
 {
