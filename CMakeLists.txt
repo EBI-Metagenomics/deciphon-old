@@ -37,7 +37,7 @@ add_library(
   src/cmp.c
   src/db.c
   src/dcp_strlcpy.c
-  src/fcopy.c
+  src/dcp_file.c
   src/log.c
   src/meta.c
   src/model.c
@@ -93,6 +93,7 @@ target_compile_features(dcp PRIVATE c_std_11)
 target_compile_definitions(
   dcp PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPRECATE>)
 target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
+target_compile_definitions(dcp PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)

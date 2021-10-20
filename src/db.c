@@ -3,8 +3,8 @@
 #include "dcp/db.h"
 #include "dcp/generics.h"
 #include "dcp/prof.h"
+#include "dcp_file.h"
 #include "error.h"
-#include "fcopy.h"
 #include "imm/imm.h"
 #include "prof.h"
 #include "third-party/cmp.h"
@@ -135,7 +135,7 @@ static enum dcp_rc closew(struct dcp_db *db)
     }
 
     dcp_cmp_rewind(&db->dp.cmp);
-    if ((rc = fcopy(dcp_cmp_fd(&db->file.cmp), dcp_cmp_fd(&db->dp.cmp))))
+    if ((rc = file_copy(dcp_cmp_fd(&db->file.cmp), dcp_cmp_fd(&db->dp.cmp))))
         goto cleanup;
 
     if (dcp_cmp_close(&db->dp.cmp))
