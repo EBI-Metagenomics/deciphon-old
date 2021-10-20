@@ -25,7 +25,7 @@ enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)
 enum dcp_rc dcp_server_init(struct dcp_server *srv)
 {
     enum dcp_rc rc = DCP_SUCCESS;
-    if ((rc = sql_open(srv))) return rc;
+    if ((rc = sql_setup(srv, "deciphon.sqlite3"))) return rc;
     if ((rc = sql_create(srv))) return rc;
     return rc;
 }

@@ -18,6 +18,7 @@
 ** See the showHelp() routine below for a brief description of how to
 ** run the utility.
 */
+#include "sqldiff.h"
 #include "sqlite3.h"
 #include <assert.h>
 #include <ctype.h>
@@ -2245,7 +2246,7 @@ static void showHelp(void)
         "See https://sqlite.org/sqldiff.html for detailed explanation.\n");
 }
 
-int main(int argc, char **argv)
+static int call_main(int argc, char const **argv)
 {
     const char *zDb1 = 0;
     const char *zDb2 = 0;
@@ -2254,7 +2255,7 @@ int main(int argc, char **argv)
     char *zErrMsg = 0;
     char *zSql;
     sqlite3_stmt *pStmt;
-    char *zTab = 0;
+    char const *zTab = 0;
     FILE *out = stdout;
     void (*xDiff)(const char *, FILE *) = diff_one_table;
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
@@ -2428,4 +2429,11 @@ int main(int argc, char **argv)
     /* TBD: Handle view differences */
     sqlite3_close(g.db);
     return 0;
+}
+
+int sqldiff_compare(char const *db0, char const *db1)
+{
+    char const *argv[] = {"sqldiff", "--schema", db0, db1};
+    int rc = call_main(4, argv);
+    return rc;
 }

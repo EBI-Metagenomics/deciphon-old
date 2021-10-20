@@ -2,6 +2,7 @@
 #include "dcp.h"
 #include "dcp/rc.h"
 #include "dcp/server.h"
+#include "dcp_file.h"
 #include "error.h"
 #include "imm/imm.h"
 #include "schema.h"
@@ -12,21 +13,8 @@
 static_assert(IMM_ABC_MAX_SIZE == 31, "IMM_ABC_MAX_SIZE == 31");
 static_assert(IMM_SYM_SIZE == 94, "IMM_SYM_SIZE == 94");
 
-enum dcp_rc sql_open(struct dcp_server *srv)
-{
-    /* if (sqlite3_open(":memory:", &srv->sql_db)) */
-    if (sqlite3_open("file:/Users/horta/deciphon.sqlite3", &srv->sql_db))
-    {
-        sqlite3_close(srv->sql_db);
-        return error(DCP_RUNTIMEERROR, "failed to open database");
-    }
-    return DCP_SUCCESS;
-}
-
-static char const now_unix_timestamp[] = "SELECT strftime('%s', 'now')";
-
-static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
-                           char name[static 1], char type[static 1])
+static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
+                    char type[static 1])
 {
     unsigned char const *sym_idx64 =
         base64_encode(abc->sym.idx, IMM_SYM_SIZE, 0);
@@ -46,18 +34,32 @@ static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
     if (sqlite3_exec(db, sql, 0, 0, &msg))
     {
         fprintf(stderr, "SQL error: %s\n", msg);
-        return error(DCP_RUNTIMEERROR, "failed to add abc into db");
+        return false;
     }
 
+    return true;
+}
+
+static enum dcp_rc add_alphabets(sqlite3 *db)
+{
+    add_abc(db, imm_super(imm_super(&imm_dna_iupac)), "dna_iupac", "dna");
+    add_abc(db, imm_super(imm_super(&imm_rna_iupac)), "rna_iupac", "rna");
+    add_abc(db, imm_super(&imm_amino_iupac), "amino_iupac", "amino");
     return DCP_SUCCESS;
 }
 
-enum dcp_rc sql_create(struct dcp_server *srv)
+static enum dcp_rc create_db(struct dcp_server *srv, char const *filepath)
 {
     char *msg = 0;
 
+    if (sqlite3_open(filepath, &srv->sql_db))
+    {
+        sqlite3_close(srv->sql_db);
+        return error(DCP_RUNTIMEERROR, "failed to open database");
+    }
+
     if (sqlite3_exec(srv->sql_db, (char const *)schema_sql, 0, 0, &msg))
-        return error(DCP_RUNTIMEERROR, "failed to create database");
+        return error(DCP_RUNTIMEERROR, "failed to insert schema");
 
     fprintf(stderr, "SQL error: %s\n", msg);
     struct imm_dna const *dna = &imm_dna_iupac;
@@ -65,6 +67,22 @@ enum dcp_rc sql_create(struct dcp_server *srv)
 
     return DCP_SUCCESS;
 }
+
+enum dcp_rc sql_setup(struct dcp_server *srv, char const *filepath)
+{
+    /* if (sqlite3_open(":memory:", &srv->sql_db)) */
+    if (!file_readable(filepath))
+    {
+    }
+    if (sqlite3_open("file:/Users/horta/deciphon.sqlite3", &srv->sql_db))
+    {
+        sqlite3_close(srv->sql_db);
+        return error(DCP_RUNTIMEERROR, "failed to open database");
+    }
+    return DCP_SUCCESS;
+}
+
+static char const now_unix_timestamp[] = "SELECT strftime('%s', 'now')";
 
 void sql_close(struct dcp_server *srv)
 {
