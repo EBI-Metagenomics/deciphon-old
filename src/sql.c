@@ -23,6 +23,8 @@ enum dcp_rc sql_open(struct dcp_server *srv)
     return DCP_SUCCESS;
 }
 
+static char const now_unix_timestamp[] = "SELECT strftime('%%s', 'now')";
+
 static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
                            char name[static 1], char type[static 1])
 {
@@ -30,11 +32,13 @@ static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
         base64_encode(abc->sym.idx, IMM_SYM_SIZE, 0);
 
     char sql[512] = {0};
+
     int rc = snprintf(
         sql, ARRAY_SIZE(sql),
-        "INSERT INTO abc (name, size, sym_idx64, symbols, any_symbol, type) "
-        "VALUES ('%s', %d, '%s', '%s', '%c', '%s');",
-        name, abc->size, sym_idx64, abc->symbols, abc->any_symbol_id, type);
+        "INSERT INTO abc (name, size, sym_idx64, symbols, any_symbol, type, "
+        "creation) VALUES ('%s', %d, '%s', '%s', '%c', '%s', (%s));",
+        name, abc->size, sym_idx64, abc->symbols, imm_abc_any_symbol(abc), type,
+        now_unix_timestamp);
 
     if (rc < 0) return error(DCP_RUNTIMEERROR, "failed to insert abc into db");
 
@@ -51,6 +55,7 @@ static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
 enum dcp_rc sql_create(struct dcp_server *srv)
 {
     char *msg = 0;
+
     if (sqlite3_exec(srv->sql_db, (char const *)schema_sql, 0, 0, &msg))
         return error(DCP_RUNTIMEERROR, "failed to create database");
 
