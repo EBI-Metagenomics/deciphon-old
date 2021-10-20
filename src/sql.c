@@ -15,7 +15,7 @@ static_assert(IMM_SYM_SIZE == 94, "IMM_SYM_SIZE == 94");
 enum dcp_rc sql_open(struct dcp_server *srv)
 {
     /* if (sqlite3_open(":memory:", &srv->sql_db)) */
-    if (sqlite3_open("file:/Users/horta/deciphon.db", &srv->sql_db))
+    if (sqlite3_open("file:/Users/horta/deciphon.sqlite3", &srv->sql_db))
     {
         sqlite3_close(srv->sql_db);
         return error(DCP_RUNTIMEERROR, "failed to open database");
@@ -23,7 +23,7 @@ enum dcp_rc sql_open(struct dcp_server *srv)
     return DCP_SUCCESS;
 }
 
-static char const now_unix_timestamp[] = "SELECT strftime('%%s', 'now')";
+static char const now_unix_timestamp[] = "SELECT strftime('%s', 'now')";
 
 static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
                            char name[static 1], char type[static 1])
