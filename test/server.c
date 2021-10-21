@@ -2,29 +2,31 @@
 #include "hope/hope.h"
 
 void test_server_setup(void);
-/* void test_server_reopen_database(void); */
+void test_server_reopen(void);
 
 int main(void)
 {
     test_server_setup();
-    /* test_server_reopen_database(); */
+    test_server_reopen();
     return hope_status();
 }
 
 void test_server_setup(void)
 {
     struct dcp_server srv = DCP_SERVER_INIT();
-    EQ(dcp_server_setup(&srv, TMPDIR "/init.sqlite3"), DCP_SUCCESS);
+    remove(TMPDIR "/setup.sqlite3");
+    EQ(dcp_server_setup(&srv, TMPDIR "/setup.sqlite3"), DCP_SUCCESS);
     dcp_server_close(&srv);
 }
-#if 0
-void test_server_reopen_database(void)
+
+void test_server_reopen(void)
 {
-    struct dcp_server srv;
-    EQ(dcp_server_init(&srv, "file://" TMPDIR "/reopen.sqlite3"), DCP_SUCCESS);
+    struct dcp_server srv = DCP_SERVER_INIT();
+    remove(TMPDIR "/reopen.sqlite3");
+
+    EQ(dcp_server_setup(&srv, TMPDIR "/reopen.sqlite3"), DCP_SUCCESS);
     dcp_server_close(&srv);
 
-    EQ(dcp_server_init(&srv, "file://" TMPDIR "/reopen.sqlite3"), DCP_SUCCESS);
+    EQ(dcp_server_setup(&srv, TMPDIR "/reopen.sqlite3"), DCP_SUCCESS);
     dcp_server_close(&srv);
 }
-#endif

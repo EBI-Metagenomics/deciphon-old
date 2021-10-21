@@ -18,7 +18,10 @@
 ** See the showHelp() routine below for a brief description of how to
 ** run the utility.
 */
+
 #include "sqldiff.h"
+#include "dcp_file.h"
+#include "error.h"
 #include "sqlite3.h"
 #include <assert.h>
 #include <ctype.h>
@@ -2246,7 +2249,7 @@ static void showHelp(void)
         "See https://sqlite.org/sqldiff.html for detailed explanation.\n");
 }
 
-static int call_main(int argc, char const **argv)
+static int call_main(int argc, char const **argv, FILE *out)
 {
     const char *zDb1 = 0;
     const char *zDb2 = 0;
@@ -2256,7 +2259,6 @@ static int call_main(int argc, char const **argv)
     char *zSql;
     sqlite3_stmt *pStmt;
     char const *zTab = 0;
-    FILE *out = stdout;
     void (*xDiff)(const char *, FILE *) = diff_one_table;
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     int nExt = 0;
@@ -2432,9 +2434,31 @@ static int call_main(int argc, char const **argv)
     return 0;
 }
 
-int sqldiff_compare(char const *db0, char const *db1)
+enum dcp_rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
 {
+    struct file_tmp tmp = FILE_TMP_INIT();
+    enum dcp_rc rc = file_tmp_mk(&tmp);
+    if (rc) return rc;
+
+    FILE *out = fopen(tmp.path, "w");
+    if (!out)
+    {
+        rc = error(DCP_IOERROR, "failed to open file");
+        goto cleanup;
+    }
+
+    long begin = ftell(out);
     char const *argv[] = {"sqldiff", "--schema", db0, db1};
-    int rc = call_main(4, argv);
+    if (call_main(sizeof argv / sizeof(char *), argv, out))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to compare databases");
+        goto cleanup;
+    }
+    long end = ftell(out);
+    *equal = !(begin - end);
+
+cleanup:
+    fclose(out);
+    file_tmp_rm(&tmp);
     return rc;
 }
