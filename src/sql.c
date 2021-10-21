@@ -71,13 +71,9 @@ static enum dcp_rc create_db(struct dcp_server *srv, char const *filepath)
     return DCP_SUCCESS;
 }
 
-enum dcp_rc sql_setup(struct dcp_server *srv, char const *filepath)
+enum dcp_rc sql_setup(struct dcp_server *srv, UriUriA const *uri)
 {
-    /* if (sqlite3_open(":memory:", &srv->sql_db)) */
-    if (!file_readable(filepath))
-    {
-    }
-    if (sqlite3_open("file:/Users/horta/deciphon.sqlite3", &srv->sql_db))
+    if (sqlite3_open(uri->scheme.first, &srv->sql_db))
     {
         sqlite3_close(srv->sql_db);
         return error(DCP_RUNTIMEERROR, "failed to open database");

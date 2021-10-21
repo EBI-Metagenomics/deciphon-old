@@ -1,6 +1,7 @@
 #include "dcp/server.h"
 #include "error.h"
 #include "sql.h"
+#include <uriparser/Uri.h>
 
 /* #define SQL_DB_NAME "deciphon" */
 
@@ -22,10 +23,29 @@ enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)
     return DCP_SUCCESS;
 }
 
-enum dcp_rc dcp_server_init(struct dcp_server *srv, char const *filepath)
+enum dcp_rc dcp_server_init(struct dcp_server *srv, char const *db_uri)
 {
+    UriUriA uri = {0};
     enum dcp_rc rc = DCP_SUCCESS;
-    if ((rc = sql_setup(srv, filepath))) return rc;
+
+    if (uriParseSingleUriA(&uri, db_uri, 0))
+        return error(DCP_ILLEGALARG, "failed to parse uri");
+
+    if (uriNormalizeSyntaxExA(&uri, uriNormalizeSyntaxMaskRequiredA(&uri)))
+    {
+        rc = error(DCP_ILLEGALARG, "failed to normalise uri");
+        goto cleanup;
+    }
+
+    if (strncmp(uri.scheme.first, "file:", 5))
+    {
+        rc = error(DCP_ILLEGALARG, "unknown uri scheme");
+        goto cleanup;
+    }
+    if ((rc = sql_setup(srv, &uri))) goto cleanup;
+
+cleanup:
+    uriFreeUriMembersA(&uri);
     return rc;
 }
 

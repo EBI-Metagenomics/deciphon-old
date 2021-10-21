@@ -17,8 +17,7 @@ struct dcp_server
 };
 
 DCP_API enum dcp_rc dcp_server_add_task(struct dcp_server *, struct dcp_task *);
-DCP_API enum dcp_rc dcp_server_init(struct dcp_server *srv,
-                                    char const *filepath);
+DCP_API enum dcp_rc dcp_server_init(struct dcp_server *srv, char const *db_uri);
 DCP_API void dcp_server_close(struct dcp_server *);
 /* DCP_API int dcp_server_destroy(struct dcp_server *server); */
 /* DCP_API void dcp_server_free_result(struct dcp_server *server, */

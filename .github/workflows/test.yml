@@ -23,11 +23,11 @@ jobs:
 
     - name: Install argp for MacOS
       if: runner.os == 'macOS'
-      run: brew install argp-standalone
+      run: brew install argp-standalone uriparser
 
     - name: Install SQLite3 for Linux
       if: runner.os == 'Linux'
-      run: sudo apt install libsqlite3-dev
+      run: sudo apt install libsqlite3-dev liburiparser-dev
 
     - name: Check for sudo
       shell: bash
