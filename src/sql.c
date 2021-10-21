@@ -106,9 +106,9 @@ static enum dcp_rc create_temporary_db(struct file_tmp *tmp)
     return rc;
 }
 
-enum dcp_rc sql_setup(struct dcp_server *srv, UriUriA const *uri)
+enum dcp_rc sql_setup(struct dcp_server *srv, char const *filepath)
 {
-    if (sqlite3_open(uri->scheme.first, &srv->sql_db))
+    if (sqlite3_open(filepath, &srv->sql_db))
     {
         sqlite3_close(srv->sql_db);
         return error(DCP_RUNTIMEERROR, "failed to open database");
@@ -121,11 +121,6 @@ enum dcp_rc sql_setup(struct dcp_server *srv, UriUriA const *uri)
     if (sqlite3_close(srv->sql_db))
         return error(DCP_RUNTIMEERROR, "failed to close database");
 
-    assert(uri->absolutePath);
-    char filepath[512] = {0};
-    assert(strlen(uri->scheme.first) + 1 <= sizeof filepath);
-    if (uriUriStringToUnixFilenameA(uri->scheme.first, filepath))
-        return error(DCP_RUNTIMEERROR, "failed to convert uri");
     if (empty)
     {
         if ((rc = create_db(filepath))) return rc;
