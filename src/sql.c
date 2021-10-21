@@ -13,6 +13,9 @@
 static_assert(IMM_ABC_MAX_SIZE == 31, "IMM_ABC_MAX_SIZE == 31");
 static_assert(IMM_SYM_SIZE == 94, "IMM_SYM_SIZE == 94");
 
+/* Unix timestamp */
+static char const now[] = "SELECT strftime('%s', 'now')";
+
 static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
                     char type[static 1])
 {
@@ -26,7 +29,7 @@ static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
         "INSERT INTO abc (name, size, sym_idx64, symbols, any_symbol, type, "
         "creation) VALUES ('%s', %d, '%s', '%s', '%c', '%s', (%s));",
         name, abc->size, sym_idx64, abc->symbols, imm_abc_any_symbol(abc), type,
-        now_unix_timestamp);
+        now);
 
     if (rc < 0) return error(DCP_RUNTIMEERROR, "failed to insert abc into db");
 
@@ -81,8 +84,6 @@ enum dcp_rc sql_setup(struct dcp_server *srv, char const *filepath)
     }
     return DCP_SUCCESS;
 }
-
-static char const now_unix_timestamp[] = "SELECT strftime('%s', 'now')";
 
 void sql_close(struct dcp_server *srv)
 {
