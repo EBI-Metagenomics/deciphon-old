@@ -52,7 +52,7 @@ add_library(
   src/progress_file.c
   src/row.c
   src/server.c
-  src/sql.c
+  src/jobs.c
   src/sqldiff.c
   src/std_db.c
   src/std_prof.c

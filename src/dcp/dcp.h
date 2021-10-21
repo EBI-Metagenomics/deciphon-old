@@ -10,6 +10,7 @@ extern "C" {
 #include "dcp/db.h"
 #include "dcp/entry_dist.h"
 #include "dcp/generics.h"
+#include "dcp/jobs.h"
 #include "dcp/log.h"
 #include "dcp/meta.h"
 #include "dcp/model.h"

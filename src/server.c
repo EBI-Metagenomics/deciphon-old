@@ -1,6 +1,6 @@
 #include "dcp/server.h"
 #include "error.h"
-#include "sql.h"
+#include "jobs.h"
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName)
 {
@@ -15,18 +15,23 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName)
 
 enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)
 {
+#if 0
     char sql[] = "INSERT ";
     if (sqlite3_exec(srv->sql_db, sql, 0, 0, 0)) return DCP_RUNTIMEERROR;
     return DCP_SUCCESS;
+#endif
 }
 
-enum dcp_rc dcp_server_init(struct dcp_server *srv, char const *filepath)
+enum dcp_rc dcp_server_setup(struct dcp_server *srv, char const *jobs_fp)
 {
     enum dcp_rc rc = DCP_SUCCESS;
-    if ((rc = sql_setup(srv, filepath))) goto cleanup;
+    if ((rc = jobs_setup(&srv->jobs, jobs_fp))) goto cleanup;
 
 cleanup:
     return rc;
 }
 
-void dcp_server_close(struct dcp_server *srv) { sql_close(srv); }
+enum dcp_rc dcp_server_close(struct dcp_server *srv)
+{
+    return jobs_close(&srv->jobs);
+}

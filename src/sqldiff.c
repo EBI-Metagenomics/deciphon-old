@@ -2266,7 +2266,8 @@ static int call_main(int argc, char const **argv)
     int neverUseTransaction = 0;
 
     g.zArgv0 = argv[0];
-    sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+    /* Danilo Horta: sqlite3_config cannot be called at this point anymore. */
+    /* sqlite3_config(SQLITE_CONFIG_SINGLETHREAD); */
     for (i = 1; i < argc; i++)
     {
         const char *z = argv[i];
