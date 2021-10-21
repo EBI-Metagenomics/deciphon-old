@@ -31,21 +31,39 @@ enum dcp_rc dcp_server_init(struct dcp_server *srv, char const *db_uri)
     if (uriParseSingleUriA(&uri, db_uri, 0))
         return error(DCP_ILLEGALARG, "failed to parse uri");
 
-    if (uriNormalizeSyntaxExA(&uri, uriNormalizeSyntaxMaskRequiredA(&uri)))
-    {
-        rc = error(DCP_ILLEGALARG, "failed to normalise uri");
-        goto cleanup;
-    }
+    if (uri.hostText.first)
+        return error(DCP_ILLEGALARG, "database uri with host not supported");
 
     if (strncmp(uri.scheme.first, "file:", 5))
     {
         rc = error(DCP_ILLEGALARG, "unknown uri scheme");
         goto cleanup;
     }
-    if ((rc = sql_setup(srv, &uri))) goto cleanup;
+
+    UriUriA abs_base = {0};
+    if (uriParseSingleUriA(&abs_base, "file:", 0))
+        return error(DCP_RUNTIMEERROR, "failed to parse uri");
+
+    UriUriA dst = {0};
+    if (uriAddBaseUriA(&dst, &uri, &abs_base))
+    {
+        uriFreeUriMembersA(&dst);
+        return error(DCP_ILLEGALARG, "failed to parse uri");
+    }
+
+    if (uriNormalizeSyntaxExA(&dst, uriNormalizeSyntaxMaskRequiredA(&dst)))
+    {
+        rc = error(DCP_ILLEGALARG, "failed to normalise uri");
+        goto cleanup;
+    }
+
+    if ((rc = sql_setup(srv, &dst))) goto cleanup;
 
 cleanup:
+    /* TODO: There are memory leak possibilities here */
     uriFreeUriMembersA(&uri);
+    uriFreeUriMembersA(&dst);
+    uriFreeUriMembersA(&abs_base);
     return rc;
 }
 

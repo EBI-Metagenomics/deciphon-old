@@ -1,5 +1,7 @@
 #include "dcp_file.h"
 #include "error.h"
+#include <assert.h>
+#include <unistd.h>
 
 #define BUFFSIZE (8 * 1024)
 
@@ -36,4 +38,16 @@ bool file_readable(char const *filepath)
         return true;
     }
     return false;
+}
+
+enum dcp_rc file_tmp_mk(struct file_tmp *tmp)
+{
+    if (mkstemp(tmp->path) == -1) return error(DCP_IOERROR, "mkstemp failed");
+    return DCP_SUCCESS;
+}
+
+enum dcp_rc file_tmp_rm(struct file_tmp const *tmp)
+{
+    if (remove(tmp->path)) return error(DCP_IOERROR, "remove failed");
+    return DCP_SUCCESS;
 }
