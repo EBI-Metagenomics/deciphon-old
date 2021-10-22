@@ -25,9 +25,22 @@ jobs:
       if: runner.os == 'macOS'
       run: brew install argp-standalone xxhash
 
+    - name: Install xxhash for MacOS
+      if: runner.os == 'macOS'
+      run: brew install xxhash
+
     - name: Install SQLite3 for Linux
       if: runner.os == 'Linux'
       run: sudo apt install libsqlite3-dev libxxhash-dev
+
+    - name: Install xxhash for Linux
+      if: runner.os == 'Linux'
+      run: |
+        wget https://github.com/Cyan4973/xxHash/archive/refs/tags/v0.8.0.tar.gz
+        tar xzf v0.8.0.tar.gz
+        cd xxHash-0.8.0
+        make
+        sudo make install
 
     - name: Check for sudo
       shell: bash
