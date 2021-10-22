@@ -13,6 +13,11 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName)
     return 0;
 }
 
+enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath)
+{
+    return DCP_SUCCESS;
+}
+
 enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)
 {
 #if 0
@@ -20,6 +25,7 @@ enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)
     if (sqlite3_exec(srv->sql_db, sql, 0, 0, 0)) return DCP_RUNTIMEERROR;
     return DCP_SUCCESS;
 #endif
+    return DCP_SUCCESS;
 }
 
 enum dcp_rc dcp_server_setup(struct dcp_server *srv, char const *jobs_fp)

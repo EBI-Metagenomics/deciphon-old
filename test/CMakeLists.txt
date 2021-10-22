@@ -39,13 +39,13 @@ function(dcp_add_test name srcs)
 endfunction()
 
 dcp_add_test(std_prof std_prof.c)
-dcp_add_test(std_db std_db.c)
+dcp_add_test(std_db "std_db.c;std_db_examples.c")
 
 dcp_add_test(pro_model pro_model.c)
 dcp_add_test(pro_prof pro_prof.c)
 dcp_add_test(pro_db pro_db.c)
 dcp_add_test(pro_reader pro_reader.c)
-dcp_add_test(server server.c)
+dcp_add_test(server "server.c;std_db_examples.c")
 dcp_add_test(task task.c)
 
 # CLI

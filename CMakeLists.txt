@@ -22,6 +22,8 @@ find_package(log REQUIRED)
 find_package(gff REQUIRED)
 find_package(tbl REQUIRED)
 find_package(SQLite3 REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_search_module(XXHASH REQUIRED IMPORTED_TARGET libxxhash)
 
 option(OPENMP "Enable OpenMP" On)
 if(OPENMP)
@@ -98,6 +100,7 @@ target_compile_definitions(dcp PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
+target_link_libraries(dcp PRIVATE PkgConfig::XXHASH)
 
 set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in ${VERSION_FILE}
