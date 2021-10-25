@@ -21,7 +21,8 @@ struct dcp_server
         .jobs = DCP_JOBS_INIT()                                                \
     }
 
-DCP_API enum dcp_rc dcp_server_add_db(struct dcp_server *, char const *);
+DCP_API enum dcp_rc dcp_server_add_db(struct dcp_server *, unsigned,
+                                      char const *, char const *);
 DCP_API enum dcp_rc dcp_server_add_task(struct dcp_server *, struct dcp_task *);
 DCP_API enum dcp_rc dcp_server_setup(struct dcp_server *srv, char const *);
 DCP_API enum dcp_rc dcp_server_close(struct dcp_server *);

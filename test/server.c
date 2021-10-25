@@ -42,7 +42,8 @@ void test_server_add_std_db(void)
     EQ(dcp_server_setup(&srv, TMPDIR "/add_std_db.sqlite3"), DCP_SUCCESS);
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
-    EQ(dcp_server_add_db(&srv, TMPDIR "/example1.dcp"), DCP_SUCCESS);
+    EQ(dcp_server_add_db(&srv, 1, "example1", TMPDIR "/example1.dcp"),
+       DCP_SUCCESS);
     /* /Users/horta/data/Pfam-A.5.dcp */
 
     EQ(dcp_server_close(&srv), DCP_SUCCESS);

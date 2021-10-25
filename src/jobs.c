@@ -37,8 +37,23 @@ static inline enum dcp_rc add_abc_error(void)
     return error(DCP_RUNTIMEERROR, "failed to insert abc into jobs database");
 }
 
-enum dcp_rc jobs_add_db(struct dcp_jobs *jobs, char const *filepath)
+enum dcp_rc jobs_add_db(struct dcp_jobs *jobs, unsigned user_id,
+                        char const *name, char const *filepath,
+                        char const *xxh3, char const *type)
 {
+    char sql[512] = {0};
+
+    int rc = snprintf(sql, ARRAY_SIZE(sql),
+                      "INSERT INTO target "
+                      "(name, filepath, xxh3, type, user)"
+                      " VALUES ('%s', '%s', '%s', '%s', %d);",
+                      name, filepath, xxh3, type, user_id);
+
+    if (rc < 0) return error(DCP_RUNTIMEERROR, "failed to snprintf");
+
+    if (sqlite3_exec(jobs->db, sql, NULL, NULL, NULL))
+        return error(DCP_RUNTIMEERROR, "failed to insert db");
+
     return DCP_SUCCESS;
 }
 
@@ -57,6 +72,12 @@ enum dcp_rc jobs_setup(struct dcp_jobs *jobs, char const *filepath)
     if (!ok) return error(DCP_RUNTIMEERROR, "damaged jobs database");
 
     return rc;
+}
+
+enum dcp_rc jobs_open(struct dcp_jobs *jobs, char const *filepath)
+{
+    if (sqlite3_open(filepath, &jobs->db)) return open_error(jobs->db);
+    return DCP_SUCCESS;
 }
 
 enum dcp_rc jobs_close(struct dcp_jobs *jobs)
@@ -92,7 +113,7 @@ static char const now[] = "SELECT strftime('%s', 'now')";
 
 static bool add_deciphon_user(sqlite3 *db)
 {
-    char const sql[] = "INSERT INTO USER (id, username, name, admin) VALUES "
+    char const sql[] = "INSERT INTO user (id, username, name, admin) VALUES "
                        "(1, 'deciphon', 'Deciphon', TRUE);";
     return sqlite3_exec(db, sql, NULL, NULL, NULL) == 0;
 }
@@ -115,9 +136,7 @@ static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
 
     if (rc < 0) return false;
 
-    if (sqlite3_exec(db, sql, NULL, NULL, NULL)) return false;
-
-    return true;
+    return sqlite3_exec(db, sql, NULL, NULL, NULL) == 0;
 }
 
 static enum dcp_rc add_alphabets(sqlite3 *db)

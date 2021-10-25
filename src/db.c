@@ -422,6 +422,22 @@ struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx)
     return dcp_meta(db->mt.data + o, db->mt.data + o + size);
 }
 
+enum dcp_rc dcp_db_fetch_prof_type(FILE *restrict fd,
+                                   enum dcp_prof_typeid *typeid)
+{
+    struct dcp_db db = {0};
+    db_init(&db, DCP_NULL_PROFILE);
+    db_openr(&db, fd);
+
+    enum dcp_rc rc = DCP_SUCCESS;
+    if ((rc = db_read_magic_number(&db))) return rc;
+    if ((rc = db_read_prof_type(&db))) return rc;
+    if ((rc = db_close(&db))) return rc;
+
+    *typeid = db.prof_typeid;
+    return rc;
+}
+
 unsigned dcp_db_float_size(struct dcp_db const *db) { return db->float_size; }
 
 enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db)

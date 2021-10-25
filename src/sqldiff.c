@@ -2209,10 +2209,10 @@ static void module_name_func(sqlite3_context *pCtx, int nVal,
     " ORDER BY name"
 
 static char const *sel1[2] = {SELECT1("sqlite_master"),
-                              SELECT1("seqlite_schema")};
+                              SELECT1("sqlite_schema")};
 
 static char const *sel2[2] = {SELECT2("sqlite_master"),
-                              SELECT2("seqlite_schema")};
+                              SELECT2("sqlite_schema")};
 
 /*
 ** Return the text of an SQL statement that itself returns the list of

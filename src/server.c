@@ -1,4 +1,6 @@
 #include "dcp/server.h"
+#include "dcp/db.h"
+#include "dcp/prof_types.h"
 #include "error.h"
 #include "jobs.h"
 
@@ -13,9 +15,33 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName)
     return 0;
 }
 
-enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath)
+enum dcp_rc dcp_server_add_db(struct dcp_server *srv, unsigned user_id,
+                              char const *name, char const *filepath)
 {
-    return jobs_add_db(&srv->jobs, filepath);
+    FILE *fd = fopen(filepath, "rb");
+    if (!fd) return error(DCP_IOERROR, "failed to open file");
+
+    enum dcp_prof_typeid typeid = 0;
+    enum dcp_rc rc = dcp_db_fetch_prof_type(fd, &typeid);
+    if (rc) goto cleanup;
+
+    char type[4] = {0};
+    if (typeid == DCP_STD_PROFILE)
+        strcpy(type, "std");
+    else if (typeid == DCP_PRO_PROFILE)
+        strcpy(type, "pro");
+    else
+    {
+        rc = error(DCP_RUNTIMEERROR, "unknown profile type");
+        goto cleanup;
+    }
+
+    fclose(fd);
+    return jobs_add_db(&srv->jobs, user_id, name, filepath, "xxh3", type);
+
+cleanup:
+    fclose(fd);
+    return rc;
 }
 
 enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)
@@ -32,6 +58,7 @@ enum dcp_rc dcp_server_setup(struct dcp_server *srv, char const *jobs_fp)
 {
     enum dcp_rc rc = DCP_SUCCESS;
     if ((rc = jobs_setup(&srv->jobs, jobs_fp))) goto cleanup;
+    if ((rc = jobs_open(&srv->jobs, jobs_fp))) goto cleanup;
 
 cleanup:
     return rc;
