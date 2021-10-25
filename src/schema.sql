@@ -47,7 +47,7 @@ CREATE TABLE job (
     hmmer3_compat  BOOLEAN      NOT NULL,
     abc            INTEGER      REFERENCES abc (id)
                                 NOT NULL,
-    target         INTEGER      REFERENCES target (id)
+    db             INTEGER      REFERENCES db (id)
                                 NOT NULL,
     status         VARCHAR (4)  CHECK (status IN ('pend', 'run', 'done', 'fail') )
                                 NOT NULL
@@ -63,15 +63,15 @@ CREATE TABLE job (
 );
 
 
--- Table: query
-CREATE TABLE [query] (
-    id   INTEGER PRIMARY KEY AUTOINCREMENT
-                 NOT NULL
-                 UNIQUE,
-    name VARCHAR NOT NULL,
-    seq  VARCHAR NOT NULL,
-    job  INTEGER REFERENCES job (id)
-                 NOT NULL
+-- Table: seq
+CREATE TABLE [seq] (
+    id     INTEGER PRIMARY KEY AUTOINCREMENT
+                   NOT NULL
+                   UNIQUE,
+    name   VARCHAR NOT NULL,
+    value  VARCHAR NOT NULL,
+    job    INTEGER REFERENCES job (id)
+                   NOT NULL
 );
 
 
@@ -90,8 +90,8 @@ CREATE TABLE result (
 );
 
 
--- Table: target
-CREATE TABLE target (
+-- Table: db
+CREATE TABLE db (
     id       INTEGER     PRIMARY KEY AUTOINCREMENT
                          UNIQUE
                          NOT NULL,

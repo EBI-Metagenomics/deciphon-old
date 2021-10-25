@@ -44,7 +44,7 @@ enum dcp_rc jobs_add_db(struct dcp_jobs *jobs, unsigned user_id,
     char sql[512] = {0};
 
     int rc = snprintf(sql, ARRAY_SIZE(sql),
-                      "INSERT INTO target "
+                      "INSERT INTO db "
                       "(name, filepath, xxh3, type, user)"
                       " VALUES ('%s', '%s', '%s', '%s', %d);",
                       name, filepath, xxh3, type, user_id);
@@ -184,9 +184,9 @@ static enum dcp_rc is_empty(char const *filepath, bool *empty)
     if (sqlite3_open(filepath, &db)) return open_error(db);
 
     *empty = true;
-    static char const *const query = "SELECT name FROM sqlite_master;";
+    static char const *const sql = "SELECT name FROM sqlite_master;";
 
-    if (sqlite3_exec(db, query, is_empty_cb, empty, 0))
+    if (sqlite3_exec(db, sql, is_empty_cb, empty, 0))
     {
         sqlite3_close(db);
         return error(DCP_RUNTIMEERROR, "failed to check if jobs db is empty");
