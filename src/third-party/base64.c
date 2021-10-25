@@ -27,9 +27,9 @@ static const unsigned char base64_table[65] =
  * not included in out_len.
  */
 unsigned char * base64_encode(const unsigned char *src, size_t len,
-			      size_t *out_len)
+			      unsigned char out[BASE64_MAX_SIZE], size_t *out_len)
 {
-	unsigned char *out, *pos;
+	unsigned char *pos;
 	const unsigned char *end, *in;
 	size_t olen;
 	int line_len;
@@ -39,9 +39,8 @@ unsigned char * base64_encode(const unsigned char *src, size_t len,
 	olen++; /* nul termination */
 	if (olen < len)
 		return NULL; /* integer overflow */
-	out = malloc(olen);
-	if (out == NULL)
-		return NULL;
+    if (olen > BASE64_MAX_SIZE)
+		return NULL; /* buffer overrun */
 
 	end = src + len;
 	in = src;
@@ -96,9 +95,9 @@ unsigned char * base64_encode(const unsigned char *src, size_t len,
  * Caller is responsible for freeing the returned buffer.
  */
 unsigned char * base64_decode(const unsigned char *src, size_t len,
-			      size_t *out_len)
+			      unsigned char out[BASE64_MAX_SIZE], size_t *out_len)
 {
-	unsigned char dtable[256], *out, *pos, block[4], tmp;
+	unsigned char dtable[256], *pos, block[4], tmp;
 	size_t i, count, olen;
 	int pad = 0;
 
@@ -117,9 +116,9 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
 		return NULL;
 
 	olen = count / 4 * 3;
-	pos = out = malloc(olen);
-	if (out == NULL)
-		return NULL;
+    if (olen > BASE64_MAX_SIZE)
+		return NULL; /* buffer overrun */
+	pos = out;
 
 	count = 0;
 	for (i = 0; i < len; i++) {
@@ -143,7 +142,6 @@ unsigned char * base64_decode(const unsigned char *src, size_t len,
 					pos -= 2;
 				else {
 					/* Invalid padding */
-					free(out);
 					return NULL;
 				}
 				break;

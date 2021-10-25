@@ -88,8 +88,9 @@ static char const now[] = "SELECT strftime('%s', 'now')";
 static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
                     char type[static 1])
 {
-    unsigned char const *sym_idx64 =
-        base64_encode(abc->sym.idx, IMM_SYM_SIZE, 0);
+    unsigned char sym_idx64[BASE64_MAX_SIZE];
+    if (!base64_encode(abc->sym.idx, IMM_SYM_SIZE, sym_idx64, 0))
+        return error(DCP_RUNTIMEERROR, "failed to encode alphabet");
 
     char sql[512] = {0};
 

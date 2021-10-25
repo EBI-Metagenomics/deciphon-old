@@ -11,9 +11,11 @@
 
 #include <stddef.h>
 
+#define BASE64_MAX_SIZE 512
+
 unsigned char * base64_encode(const unsigned char *src, size_t len,
-			      size_t *out_len);
+			     unsigned char out[BASE64_MAX_SIZE], size_t *out_len);
 unsigned char * base64_decode(const unsigned char *src, size_t len,
-			      size_t *out_len);
+			     unsigned char out[BASE64_MAX_SIZE], size_t *out_len);
 
 #endif /* BASE64_H */
