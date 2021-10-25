@@ -20,7 +20,8 @@ CREATE TABLE abc (
     creation   DATETIME      NOT NULL,
     type       VARCHAR (7)   NOT NULL
                              CHECK (type IN ('dna', 'rna', 'amino')),
-    any_symbol CHAR (1)      NOT NULL
+    any_symbol CHAR (1)      NOT NULL,
+    user       INTEGER REFERENCES user (id)
 );
 
 
@@ -99,7 +100,8 @@ CREATE TABLE target (
     filepath VARCHAR UNIQUE
                      NOT NULL,
     xxh3     INTEGER UNIQUE
-                     NOT NULL
+                     NOT NULL,
+    user     INTEGER REFERENCES user (id)
 );
 
 
@@ -110,7 +112,9 @@ CREATE TABLE user (
                           NOT NULL,
     username VARCHAR (31) UNIQUE
                           NOT NULL,
-    name     VARCHAR      NOT NULL
+    name     VARCHAR      NOT NULL,
+    admin    BOOLEAN      NOT NULL
+                          DEFAULT (FALSE)
 );
 
 

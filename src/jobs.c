@@ -85,6 +85,13 @@ cleanup:
 /* Unix timestamp */
 static char const now[] = "SELECT strftime('%s', 'now')";
 
+static bool add_deciphon_user(sqlite3 *db)
+{
+    char const sql[] = "INSERT INTO USER (id, username, name, admin) VALUES "
+                       "(1, 'deciphon', 'Deciphon', TRUE);";
+    return sqlite3_exec(db, sql, NULL, NULL, NULL) == 0;
+}
+
 static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
                     char type[static 1])
 {
@@ -97,7 +104,7 @@ static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
     int rc = snprintf(
         sql, ARRAY_SIZE(sql),
         "INSERT INTO abc (name, size, sym_idx64, symbols, any_symbol, type, "
-        "creation) VALUES ('%s', %d, '%s', '%s', '%c', '%s', (%s));",
+        "creation, user) VALUES ('%s', %d, '%s', '%s', '%c', '%s', (%s), 1);",
         name, abc->size, sym_idx64, abc->symbols, imm_abc_any_symbol(abc), type,
         now);
 
@@ -129,6 +136,9 @@ static enum dcp_rc emerge_db(char const *filepath)
 
     if (sqlite3_exec(db, (char const *)schema_sql, NULL, NULL, NULL))
         return error(DCP_RUNTIMEERROR, "failed to insert schema");
+
+    if (!add_deciphon_user(db))
+        return error(DCP_RUNTIMEERROR, "failed to add deciphon user");
 
     enum dcp_rc rc = add_alphabets(db);
     if (rc) return rc;
