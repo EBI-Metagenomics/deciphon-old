@@ -49,8 +49,7 @@ enum dcp_rc jobs_setup(struct dcp_jobs *jobs, char const *filepath)
 
     bool ok = false;
     if ((rc = check_integrity(filepath, &ok))) return rc;
-    if (!ok)
-        return error(DCP_RUNTIMEERROR, "damaged jobs database");
+    if (!ok) return error(DCP_RUNTIMEERROR, "damaged jobs database");
 
     return rc;
 }
@@ -103,8 +102,7 @@ static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
 
     if (rc < 0) return false;
 
-    char *msg = 0;
-    if (sqlite3_exec(db, sql, 0, 0, &msg)) return false;
+    if (sqlite3_exec(db, sql, NULL, NULL, NULL)) return false;
 
     return true;
 }
