@@ -18,7 +18,7 @@ static void del(struct dcp_prof *prof);
 void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
                        struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg)
 {
-    struct dcp_prof_vtable vtable = {del, DCP_PROTEIN_PROFILE};
+    struct dcp_prof_vtable vtable = {del, DCP_PRO_PROFILE};
     profile_init(&p->super, imm_super(nuclt), meta_unset, vtable);
     p->nuclt = nuclt;
     p->amino = amino;

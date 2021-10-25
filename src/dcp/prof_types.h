@@ -19,7 +19,7 @@ enum dcp_prof_typeid
 {
     DCP_NULL_PROFILE,
     DCP_STD_PROFILE,
-    DCP_PROTEIN_PROFILE,
+    DCP_PRO_PROFILE,
 };
 
 struct dcp_prof;

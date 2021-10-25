@@ -92,16 +92,18 @@ CREATE TABLE result (
 
 -- Table: target
 CREATE TABLE target (
-    id       INTEGER PRIMARY KEY AUTOINCREMENT
-                     UNIQUE
-                     NOT NULL,
-    name     VARCHAR UNIQUE
-                     NOT NULL,
-    filepath VARCHAR UNIQUE
-                     NOT NULL,
-    xxh3     INTEGER UNIQUE
-                     NOT NULL,
-    user     INTEGER REFERENCES user (id)
+    id       INTEGER     PRIMARY KEY AUTOINCREMENT
+                         UNIQUE
+                         NOT NULL,
+    name     VARCHAR     UNIQUE
+                         NOT NULL,
+    filepath VARCHAR     UNIQUE
+                         NOT NULL,
+    xxh3     INTEGER     UNIQUE
+                         NOT NULL,
+    type     VARCHAR (3) NOT NULL
+                         CHECK (type IN ('std', 'pro')),
+    user     INTEGER     REFERENCES user (id)
 );
 
 

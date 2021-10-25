@@ -37,6 +37,11 @@ static inline enum dcp_rc add_abc_error(void)
     return error(DCP_RUNTIMEERROR, "failed to insert abc into jobs database");
 }
 
+enum dcp_rc jobs_add_db(struct dcp_jobs *jobs, char const *filepath)
+{
+
+}
+
 enum dcp_rc jobs_setup(struct dcp_jobs *jobs, char const *filepath)
 {
     enum dcp_rc rc = touch_db(filepath);

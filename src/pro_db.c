@@ -101,7 +101,7 @@ static enum dcp_rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
 
 static void pro_db_init(struct dcp_pro_db *db)
 {
-    db_init(&db->super, DCP_PROTEIN_PROFILE);
+    db_init(&db->super, DCP_PRO_PROFILE);
     db->amino = imm_amino_empty;
     db->nuclt = imm_nuclt_empty;
     dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt, DCP_PRO_CFG_DEFAULT);
@@ -126,7 +126,7 @@ enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
     if ((rc = db_read_nprofiles(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
-    assert(db->super.prof_typeid == DCP_PROTEIN_PROFILE);
+    assert(db->super.prof_typeid == DCP_PRO_PROFILE);
     return rc;
 }
 

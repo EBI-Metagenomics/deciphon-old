@@ -15,7 +15,7 @@ static int callback(void *NotUsed, int argc, char **argv, char **azColName)
 
 enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath)
 {
-    return DCP_SUCCESS;
+    return jobs_add_db(&srv->jobs, filepath);
 }
 
 enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)

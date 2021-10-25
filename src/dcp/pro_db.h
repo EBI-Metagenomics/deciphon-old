@@ -17,7 +17,7 @@ struct dcp_pro_db
     struct dcp_pro_prof prof;
 };
 
-extern struct dcp_pro_db const dcp_pro_db_default;
+DCP_API extern struct dcp_pro_db const dcp_pro_db_default;
 
 DCP_API enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd);
 

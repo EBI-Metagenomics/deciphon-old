@@ -45,7 +45,7 @@ void test_db_pro_openr(void)
     EQ(dcp_pro_db_openr(&db, fd), DCP_SUCCESS);
 
     EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(dcp_super(&db)), DCP_PROTEIN_PROFILE);
+    EQ(dcp_db_prof_typeid(dcp_super(&db)), DCP_PRO_PROFILE);
     struct imm_nuclt const *nuclt = dcp_pro_db_nuclt(&db);
     struct imm_abc const *abc = imm_super(nuclt);
     EQ(imm_abc_typeid(abc), IMM_DNA);
@@ -65,7 +65,7 @@ void test_db_pro_openr(void)
     while (!dcp_db_end(dcp_super(&db)))
     {
         EQ(dcp_pro_db_read(&db, p), DCP_SUCCESS);
-        EQ(dcp_prof_typeid(dcp_super(p)), DCP_PROTEIN_PROFILE);
+        EQ(dcp_prof_typeid(dcp_super(p)), DCP_PRO_PROFILE);
         if (dcp_super(p)->idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->alt.dp);

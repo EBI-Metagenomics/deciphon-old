@@ -43,6 +43,7 @@ void test_server_add_std_db(void)
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
     EQ(dcp_server_add_db(&srv, TMPDIR "/example1.dcp"), DCP_SUCCESS);
+    /* /Users/horta/data/Pfam-A.5.dcp */
 
     dcp_server_close(&srv);
 }
