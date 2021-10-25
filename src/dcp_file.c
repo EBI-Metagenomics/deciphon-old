@@ -3,6 +3,12 @@
 #include <assert.h>
 #include <unistd.h>
 
+#ifndef __USE_XOPEN_EXTENDED
+/* To make mkstemp available. */
+#define __USE_XOPEN_EXTENDED
+#endif
+#include <stdlib.h>
+
 #define BUFFSIZE (8 * 1024)
 
 enum dcp_rc file_copy(FILE *restrict dst, FILE *restrict src)

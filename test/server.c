@@ -19,7 +19,7 @@ void test_server_setup(void)
     struct dcp_server srv = DCP_SERVER_INIT();
     remove(TMPDIR "/setup.sqlite3");
     EQ(dcp_server_setup(&srv, TMPDIR "/setup.sqlite3"), DCP_SUCCESS);
-    dcp_server_close(&srv);
+    EQ(dcp_server_close(&srv), DCP_SUCCESS);
 }
 
 void test_server_reopen(void)
@@ -28,10 +28,10 @@ void test_server_reopen(void)
     remove(TMPDIR "/reopen.sqlite3");
 
     EQ(dcp_server_setup(&srv, TMPDIR "/reopen.sqlite3"), DCP_SUCCESS);
-    dcp_server_close(&srv);
+    EQ(dcp_server_close(&srv), DCP_SUCCESS);
 
     EQ(dcp_server_setup(&srv, TMPDIR "/reopen.sqlite3"), DCP_SUCCESS);
-    dcp_server_close(&srv);
+    EQ(dcp_server_close(&srv), DCP_SUCCESS);
 }
 
 void test_server_add_std_db(void)
@@ -45,5 +45,5 @@ void test_server_add_std_db(void)
     EQ(dcp_server_add_db(&srv, TMPDIR "/example1.dcp"), DCP_SUCCESS);
     /* /Users/horta/data/Pfam-A.5.dcp */
 
-    dcp_server_close(&srv);
+    EQ(dcp_server_close(&srv), DCP_SUCCESS);
 }

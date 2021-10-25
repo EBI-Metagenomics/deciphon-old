@@ -263,7 +263,7 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
         return error(DCP_PARSEERROR, "profile is too long");
     prof->core_size = core_size;
 
-    uint32_t u32 = core_size + 1;
+    uint32_t u32 = (uint32_t)core_size + 1;
     if (!cmp_read_str(cmp, prof->consensus, &u32))
         return error(DCP_IOERROR, "failed to read consensus");
 

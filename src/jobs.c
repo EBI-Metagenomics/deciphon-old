@@ -39,7 +39,7 @@ static inline enum dcp_rc add_abc_error(void)
 
 enum dcp_rc jobs_add_db(struct dcp_jobs *jobs, char const *filepath)
 {
-
+    return DCP_SUCCESS;
 }
 
 enum dcp_rc jobs_setup(struct dcp_jobs *jobs, char const *filepath)

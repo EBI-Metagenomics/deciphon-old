@@ -31,7 +31,7 @@ jobs:
 
     - name: Install SQLite3 for Linux
       if: runner.os == 'Linux'
-      run: sudo apt install libsqlite3-dev libxxhash-dev
+      run: sudo apt install libsqlite3-dev
 
     - name: Install xxhash for Linux
       if: runner.os == 'Linux'

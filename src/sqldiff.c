@@ -74,6 +74,7 @@ struct GlobalVars
     unsigned fDebug;    /* Debug flags */
     int bSchemaCompare; /* Doing single-table sqlite_schema compare */
     sqlite3 *db;        /* The database connection */
+    int useSchemaName;
 } g;
 
 /*
@@ -101,6 +102,12 @@ static void strInit(Str *p)
     p->z = 0;
     p->nAlloc = 0;
     p->nUsed = 0;
+}
+
+static char const *schemaTblName(void)
+{
+    static char const *name[] = {"sqlite_master", "sqlite_schema"};
+    return name[g.useSchemaName];
 }
 
 /*
@@ -566,7 +573,8 @@ static void dump_table(const char *zTab, FILE *out)
     const char *zSep;         /* Separator string */
     Str ins;                  /* Beginning of the INSERT statement */
 
-    pStmt = db_prepare("SELECT sql FROM aux.sqlite_schema WHERE name=%Q", zTab);
+    pStmt = db_prepare("SELECT sql FROM aux.%s WHERE name=%Q", schemaTblName(),
+                       zTab);
     if (SQLITE_ROW == sqlite3_step(pStmt))
     {
         fprintf(out, "%s;\n", sqlite3_column_text(pStmt, 0));
@@ -627,9 +635,9 @@ static void dump_table(const char *zTab, FILE *out)
         strFree(&ins);
     } /* endif !g.bSchemaOnly */
     pStmt =
-        db_prepare("SELECT sql FROM aux.sqlite_schema"
+        db_prepare("SELECT sql FROM aux.%s"
                    " WHERE type='index' AND tbl_name=%Q AND sql IS NOT NULL",
-                   zTab);
+                   schemaTblName(), zTab);
     while (SQLITE_ROW == sqlite3_step(pStmt))
     {
         fprintf(out, "%s;\n", sqlite3_column_text(pStmt, 0));
@@ -835,13 +843,13 @@ static void diff_one_table(const char *zTab, FILE *out)
     }
 
     /* Drop indexes that are missing in the destination */
-    pStmt = db_prepare("SELECT name FROM main.sqlite_schema"
+    pStmt = db_prepare("SELECT name FROM main.%s"
                        " WHERE type='index' AND tbl_name=%Q"
                        "   AND sql IS NOT NULL"
-                       "   AND sql NOT IN (SELECT sql FROM aux.sqlite_schema"
+                       "   AND sql NOT IN (SELECT sql FROM aux.%s"
                        "                    WHERE type='index' AND tbl_name=%Q"
                        "                      AND sql IS NOT NULL)",
-                       zTab, zTab);
+                       schemaTblName(), zTab, schemaTblName(), zTab);
     while (SQLITE_ROW == sqlite3_step(pStmt))
     {
         char *z = safeId((const char *)sqlite3_column_text(pStmt, 0));
@@ -909,13 +917,13 @@ static void diff_one_table(const char *zTab, FILE *out)
     } /* endif !g.bSchemaOnly */
 
     /* Create indexes that are missing in the source */
-    pStmt = db_prepare("SELECT sql FROM aux.sqlite_schema"
+    pStmt = db_prepare("SELECT sql FROM aux.%s"
                        " WHERE type='index' AND tbl_name=%Q"
                        "   AND sql IS NOT NULL"
-                       "   AND sql NOT IN (SELECT sql FROM main.sqlite_schema"
+                       "   AND sql NOT IN (SELECT sql FROM main.%s"
                        "                    WHERE type='index' AND tbl_name=%Q"
                        "                      AND sql IS NOT NULL)",
-                       zTab, zTab);
+                       schemaTblName(), zTab, schemaTblName(), zTab);
     while (SQLITE_ROW == sqlite3_step(pStmt))
     {
         fprintf(out, "%s;\n", sqlite3_column_text(pStmt, 0));
@@ -938,10 +946,10 @@ end_diff_one_table:
 */
 static void checkSchemasMatch(const char *zTab)
 {
-    sqlite3_stmt *pStmt = db_prepare(
-        "SELECT A.sql=B.sql FROM main.sqlite_schema A, aux.sqlite_schema B"
-        " WHERE A.name=%Q AND B.name=%Q",
-        zTab, zTab);
+    sqlite3_stmt *pStmt =
+        db_prepare("SELECT A.sql=B.sql FROM main.%s A, aux.%s B"
+                   " WHERE A.name=%Q AND B.name=%Q",
+                   schemaTblName(), schemaTblName(), zTab, zTab);
     if (SQLITE_ROW == sqlite3_step(pStmt))
     {
         if (sqlite3_column_int(pStmt, 0) == 0)
@@ -997,16 +1005,17 @@ struct hash
 */
 static void hash_init(hash *pHash, const char *z)
 {
-    u16 a, b, i;
+    u16 i;
+    unsigned a, b;
     a = b = 0;
     for (i = 0; i < NHASH; i++)
     {
-        a += z[i];
-        b += (NHASH - i) * z[i];
+        a += (unsigned)z[i];
+        b += (unsigned)((NHASH - i) * z[i]);
         pHash->z[i] = z[i];
     }
-    pHash->a = a & 0xffff;
-    pHash->b = b & 0xffff;
+    pHash->a = ((u16)a) & 0xffff;
+    pHash->b = ((u16)b) & 0xffff;
     pHash->i = 0;
 }
 
@@ -1019,7 +1028,7 @@ static void hash_next(hash *pHash, int c)
     pHash->z[pHash->i] = (char)c;
     pHash->i = (pHash->i + 1) & (NHASH - 1);
     pHash->a = (u16)(pHash->a - old + (char)c);
-    pHash->b = pHash->b - NHASH * old + pHash->a;
+    pHash->b = (u16)(pHash->b - NHASH * old + pHash->a);
 }
 
 /*
@@ -1100,10 +1109,13 @@ static unsigned int checksum(const char *zIn, size_t N)
     {
     case 3:
         sum3 += (unsigned)(z[2] << 8);
+        /* FALLTHRU */
     case 2:
         sum3 += (unsigned)(z[1] << 16);
+        /* FALLTHRU */
     case 1:
         sum3 += (unsigned)(z[0] << 24);
+        /* FALLTHRU */
     default:;
     }
     return sum3;
@@ -1208,7 +1220,7 @@ static int rbuDeltaCreate(const char *zSrc,    /* The source or pattern file */
     /* Compute the hash table used to locate matching sections in the
     ** source file.
     */
-    nHash = lenSrc / NHASH;
+    nHash = (int)(lenSrc / NHASH);
     collide = sqlite3_malloc_generic((size_t)nHash * 2 * sizeof(int));
     landmark = &collide[nHash];
     memset(landmark, -1, (size_t)nHash * sizeof(int));
@@ -1219,7 +1231,7 @@ static int rbuDeltaCreate(const char *zSrc,    /* The source or pattern file */
         hash_init(&h, &zSrc[i]);
         hv = (int)(hash_32bit(&h) % (unsigned)nHash);
         collide[i / NHASH] = landmark[hv];
-        landmark[hv] = i / NHASH;
+        landmark[hv] = (int)(i / NHASH);
     }
 
     /* Begin scanning the target file and generating copy commands and
@@ -1321,7 +1333,7 @@ static int rbuDeltaCreate(const char *zSrc,    /* The source or pattern file */
                     /* Add an insert command before the copy */
                     putInt((unsigned)bestLitsz, &zDelta);
                     *(zDelta++) = ':';
-                    memcpy(zDelta, &zOut[base], bestLitsz);
+                    memcpy(zDelta, &zOut[base], (size_t)bestLitsz);
                     zDelta += bestLitsz;
                     base += (unsigned)bestLitsz;
                 }
@@ -1548,7 +1560,7 @@ static void rbudiff_one_table(const char *zTab, FILE *out)
 
             zOtaControl = (char *)sqlite3_malloc_generic(nOtaControl + 1);
             memcpy(zOtaControl, sqlite3_column_text(pStmt, nCol),
-                   nOtaControl + 1);
+                   (size_t)(nOtaControl + 1));
 
             for (i = 0; i < nCol; i++)
             {
@@ -2166,6 +2178,42 @@ static void module_name_func(sqlite3_context *pCtx, int nVal,
     sqlite3_result_text(pCtx, zToken, -1, SQLITE_TRANSIENT);
 }
 
+#define SELECT1(x)                                                             \
+    "SELECT name FROM main." #x "\n"                                           \
+    " WHERE type='table' AND (\n"                                              \
+    "    module_name(sql) IS NULL OR \n"                                       \
+    "    module_name(sql) IN (SELECT module FROM temp.tblmap)\n"               \
+    " ) AND name NOT IN (\n"                                                   \
+    "  SELECT a.name || b.postfix \n"                                          \
+    "FROM main." #x " AS a, temp.tblmap AS b \n"                               \
+    "WHERE module_name(a.sql) = b.module\n"                                    \
+    " )\n"                                                                     \
+    "UNION \n"                                                                 \
+    "SELECT name FROM aux." #x "\n"                                            \
+    " WHERE type='table' AND (\n"                                              \
+    "    module_name(sql) IS NULL OR \n"                                       \
+    "    module_name(sql) IN (SELECT module FROM temp.tblmap)\n"               \
+    " ) AND name NOT IN (\n"                                                   \
+    "  SELECT a.name || b.postfix \n"                                          \
+    "FROM aux." #x " AS a, temp.tblmap AS b \n"                                \
+    "WHERE module_name(a.sql) = b.module\n"                                    \
+    " )\n"                                                                     \
+    " ORDER BY name"
+
+#define SELECT2(x)                                                             \
+    "SELECT name FROM main." #x "\n"                                           \
+    " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"                \
+    " UNION\n"                                                                 \
+    "SELECT name FROM aux." #x "\n"                                            \
+    " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"                \
+    " ORDER BY name"
+
+static char const *sel1[2] = {SELECT1("sqlite_master"),
+                              SELECT1("seqlite_schema")};
+
+static char const *sel2[2] = {SELECT2("sqlite_master"),
+                              SELECT2("seqlite_schema")};
+
 /*
 ** Return the text of an SQL statement that itself returns the list of
 ** tables to process within the database.
@@ -2196,35 +2244,11 @@ static const char *all_tables_sql(void)
                                      module_name_func, 0, 0);
         assert(rc == SQLITE_OK);
 
-        return "SELECT name FROM main.sqlite_schema\n"
-               " WHERE type='table' AND (\n"
-               "    module_name(sql) IS NULL OR \n"
-               "    module_name(sql) IN (SELECT module FROM temp.tblmap)\n"
-               " ) AND name NOT IN (\n"
-               "  SELECT a.name || b.postfix \n"
-               "FROM main.sqlite_schema AS a, temp.tblmap AS b \n"
-               "WHERE module_name(a.sql) = b.module\n"
-               " )\n"
-               "UNION \n"
-               "SELECT name FROM aux.sqlite_schema\n"
-               " WHERE type='table' AND (\n"
-               "    module_name(sql) IS NULL OR \n"
-               "    module_name(sql) IN (SELECT module FROM temp.tblmap)\n"
-               " ) AND name NOT IN (\n"
-               "  SELECT a.name || b.postfix \n"
-               "FROM aux.sqlite_schema AS a, temp.tblmap AS b \n"
-               "WHERE module_name(a.sql) = b.module\n"
-               " )\n"
-               " ORDER BY name";
+        return sel1[g.useSchemaName];
     }
     else
     {
-        return "SELECT name FROM main.sqlite_schema\n"
-               " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"
-               " UNION\n"
-               "SELECT name FROM aux.sqlite_schema\n"
-               " WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%%'\n"
-               " ORDER BY name";
+        return sel2[g.useSchemaName];
     }
 }
 
@@ -2268,6 +2292,7 @@ static int call_main(int argc, char const **argv, FILE *out)
     int neverUseTransaction = 0;
 
     g.zArgv0 = argv[0];
+    g.useSchemaName = 1;
     /* Danilo Horta: sqlite3_config cannot be called at this point anymore. */
     /* sqlite3_config(SQLITE_CONFIG_SINGLETHREAD); */
     for (i = 1; i < argc; i++)
@@ -2374,9 +2399,17 @@ static int call_main(int argc, char const **argv, FILE *out)
     rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_schema", 0, 0, &zErrMsg);
     if (rc || zErrMsg)
     {
-        cmdlineError("\"%s\" does not appear to be a valid SQLite database",
-                     zDb1);
+        rc = sqlite3_exec(g.db, "SELECT * FROM sqlite_master", 0, 0, &zErrMsg);
+        if (rc || zErrMsg)
+        {
+            cmdlineError("\"%s\" does not appear to be a valid SQLite database",
+                         zDb1);
+        }
+        else
+            g.useSchemaName = 0;
     }
+    else
+        g.useSchemaName = 1;
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(g.db, 1);
     for (i = 0; i < nExt; i++)
@@ -2397,7 +2430,12 @@ static int call_main(int argc, char const **argv, FILE *out)
     {
         cmdlineError("cannot attach database \"%s\"", zDb2);
     }
-    rc = sqlite3_exec(g.db, "SELECT * FROM aux.sqlite_schema", 0, 0, &zErrMsg);
+    if (g.useSchemaName)
+        rc = sqlite3_exec(g.db, "SELECT * FROM aux.sqlite_schema", 0, 0,
+                          &zErrMsg);
+    else
+        rc = sqlite3_exec(g.db, "SELECT * FROM aux.sqlite_master", 0, 0,
+                          &zErrMsg);
     if (rc || zErrMsg)
     {
         cmdlineError("\"%s\" does not appear to be a valid SQLite database",
