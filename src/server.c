@@ -4,17 +4,6 @@
 #include "error.h"
 #include "jobs.h"
 
-static int callback(void *NotUsed, int argc, char **argv, char **azColName)
-{
-    int i;
-    for (i = 0; i < argc; i++)
-    {
-        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-    }
-    printf("\n");
-    return 0;
-}
-
 enum dcp_rc dcp_server_add_db(struct dcp_server *srv, unsigned user_id,
                               char const *name, char const *filepath)
 {
@@ -44,7 +33,8 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc dcp_server_add_job(struct dcp_server *srv, struct dcp_job *job)
+enum dcp_rc dcp_server_add_job(struct dcp_server *srv, unsigned user_id,
+                               char const *sid, struct dcp_job *job)
 {
 #if 0
     char sql[] = "INSERT ";

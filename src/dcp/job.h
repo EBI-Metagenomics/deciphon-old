@@ -6,13 +6,13 @@
 #include "dcp/seq.h"
 #include <stdbool.h>
 
+#define DCP_JOB_SID_SIZE 20
+
 struct dcp_job;
 struct imm_abc;
 
 struct dcp_job_cfg
 {
-    bool loglik;
-    bool null;
     bool multiple_hits;
     bool hmmer3_compat;
 };
@@ -22,6 +22,7 @@ DCP_API extern struct dcp_job_cfg const dcp_job_cfg_default;
 struct dcp_job
 {
     uint64_t id;
+    char sid[DCP_JOB_SID_SIZE];
     struct dcp_job_cfg cfg;
     struct imm_abc const *abc;
     struct cco_queue seqs;

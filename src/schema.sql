@@ -52,7 +52,8 @@ CREATE TABLE job (
     status         VARCHAR (4)  CHECK (status IN ('pend', 'run', 'done', 'fail') )
                                 NOT NULL
                                 DEFAULT ('pend'),
-    status_log     VARCHAR,
+    status_log     VARCHAR      NOT NULL
+                                DEFAULT (''),
     submission     DATETIME     NOT NULL,
     exec_started   DATETIME,
     exec_ended     DATETIME,

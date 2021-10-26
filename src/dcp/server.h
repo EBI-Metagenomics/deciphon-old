@@ -23,7 +23,8 @@ struct dcp_server
 
 DCP_API enum dcp_rc dcp_server_add_db(struct dcp_server *, unsigned,
                                       char const *, char const *);
-DCP_API enum dcp_rc dcp_server_add_job(struct dcp_server *, struct dcp_job *);
+DCP_API enum dcp_rc dcp_server_add_job(struct dcp_server *, unsigned,
+                                       char const *, struct dcp_job *);
 DCP_API enum dcp_rc dcp_server_setup(struct dcp_server *srv, char const *);
 DCP_API enum dcp_rc dcp_server_close(struct dcp_server *);
 /* DCP_API int dcp_server_destroy(struct dcp_server *server); */
