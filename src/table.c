@@ -1,6 +1,6 @@
 #include "table.h"
 #include "dcp.h"
-#include "dcp_strlcpy.h"
+#include "dcp/strlcpy.h"
 #include <assert.h>
 #include <string.h>
 

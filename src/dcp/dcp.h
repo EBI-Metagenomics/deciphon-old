@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include "dcp/abc.h"
 #include "dcp/cli.h"
 #include "dcp/cmp.h"
 #include "dcp/db.h"
@@ -34,6 +35,7 @@ extern "C" {
 #include "dcp/server.h"
 #include "dcp/std_db.h"
 #include "dcp/std_prof.h"
+#include "dcp/strlcpy.h"
 #include "dcp/utc.h"
 #include "dcp/version.h"
 

@@ -49,10 +49,10 @@ CREATE TABLE job (
                                 NOT NULL,
     db             INTEGER      REFERENCES db (id)
                                 NOT NULL,
-    status         VARCHAR (4)  CHECK (status IN ('pend', 'run', 'done', 'fail') )
+    state          VARCHAR (4)  CHECK (state IN ('pend', 'run', 'done', 'fail') )
                                 NOT NULL
                                 DEFAULT ('pend'),
-    status_log     VARCHAR      NOT NULL
+    error          VARCHAR (31) NOT NULL
                                 DEFAULT (''),
     submission     DATETIME     NOT NULL,
     exec_started   DATETIME,

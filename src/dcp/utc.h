@@ -7,9 +7,8 @@
 
 typedef uint64_t dcp_utc;
 
-static inline dcp_utc dcp_utc_now(void)
-{
-    return (dcp_utc)time(NULL);
-}
+#define DCP_UTC_NULL UINT64_MAX
+
+static inline dcp_utc dcp_utc_now(void) { return (dcp_utc)time(NULL); }
 
 #endif

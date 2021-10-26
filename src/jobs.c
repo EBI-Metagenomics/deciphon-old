@@ -50,7 +50,7 @@ static inline enum dcp_rc exec_sql(sqlite3 *db, char const sql[SQL_SIZE])
 enum dcp_rc jobs_add_job(struct dcp_jobs *jobs, unsigned user_id,
                          char const *sid, struct dcp_job *job)
 {
-    char sql[SQL_SIZE] = {0};
+    /* char sql[SQL_SIZE] = {0}; */
 
 #if 0
     int rc = snprintf(sql, ARRAY_SIZE(sql),
@@ -61,6 +61,7 @@ enum dcp_rc jobs_add_job(struct dcp_jobs *jobs, unsigned user_id,
                       job->sid, job->cfg.multiple_hits, job->cfg.hmmer3_compat,
                       job->abc_id, job->db_id, submission, job->user_id);
 #endif
+    return DCP_SUCCESS;
 }
 
 enum dcp_rc jobs_add_db(struct dcp_jobs *jobs, unsigned user_id,

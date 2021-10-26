@@ -47,8 +47,11 @@ void test_server_add_std_db(void)
 
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
 
+    struct dcp_abc abc;
+    dcp_abc_init(&abc, IMM_DNA, imm_super(nuclt));
+
     struct dcp_job job;
-    dcp_job_init(&job, imm_super(nuclt));
+    dcp_job_init(&job, &abc);
 
     char const *str[2] = {"ATGAAACGCATTAGCACCACCATTACCACCAC",
                           "AAACGCATTAGCACCACCA"};

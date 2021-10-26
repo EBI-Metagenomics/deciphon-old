@@ -1,4 +1,4 @@
-#include "dcp_strlcpy.h"
+#include "dcp/strlcpy.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>

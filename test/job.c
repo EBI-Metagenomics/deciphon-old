@@ -15,8 +15,11 @@ void test_job(void)
 {
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
 
+    struct dcp_abc abc;
+    dcp_abc_init(&abc, IMM_DNA, imm_super(nuclt));
+
     struct dcp_job job;
-    dcp_job_init(&job, imm_super(nuclt));
+    dcp_job_init(&job, &abc);
 
     char const *str[2] = {"ATGAAACGCATTAGCACCACCATTACCACCAC",
                           "AAACGCATTAGCACCACCA"};
@@ -36,8 +39,11 @@ void test_job_wrong_abc(void)
     struct imm_nuclt const *nuclt0 = imm_super(&imm_dna_iupac);
     struct imm_nuclt const *nuclt1 = imm_super(&imm_rna_iupac);
 
+    struct dcp_abc abc;
+    dcp_abc_init(&abc, IMM_DNA, imm_super(nuclt0));
+
     struct dcp_job job;
-    dcp_job_init(&job, imm_super(nuclt0));
+    dcp_job_init(&job, &abc);
 
     char const str[] = "A";
     struct imm_seq seq = imm_seq(imm_str(str), imm_super(nuclt1));

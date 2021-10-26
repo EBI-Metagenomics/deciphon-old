@@ -3,7 +3,7 @@
 #include "dcp/generics.h"
 #include "dcp/pro_db.h"
 #include "dcp/pro_reader.h"
-#include "dcp_strlcpy.h"
+#include "dcp/strlcpy.h"
 #include "error.h"
 #include "path.h"
 #include "progress_file.h"
