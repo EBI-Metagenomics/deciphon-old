@@ -48,7 +48,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-static char doc[] = "Scan targets -- dcp-scan targets.fna pfam.dcp";
+static char doc[] = "Scan queries -- dcp-scan queries.fna pfam.dcp";
 static char args_doc[] = "FNA DCP";
 static struct argp_option options[] = {
     {"quiet", 'q', 0, 0, "Disable output", 0}, {0}};
@@ -61,7 +61,7 @@ static struct
         char const *file;
         FILE *fd;
         struct fasta fa;
-    } targets;
+    } queries;
 
     struct
     {
@@ -102,12 +102,12 @@ static char const default_ocodon[] = "codon.fna";
 static char const default_oamino[] = "amino.fa";
 static char const default_output[] = "output.gff";
 
-static struct imm_seq target_seq(void)
+static struct imm_seq seq_setup(void)
 {
-    char const *tgt = cli.targets.fa.target.seq;
+    char const *seq = cli.queries.fa.target.seq;
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
     struct imm_abc const *abc = &prof->nuclt->super;
-    return imm_seq(imm_str(tgt), abc);
+    return imm_seq(imm_str(seq), abc);
 }
 
 static struct tbl_8x_ed table = {0};
@@ -202,8 +202,8 @@ static void decode_codons(void)
 
 static enum dcp_rc write_codons(char const *ocodon)
 {
-    char const *id = cli.targets.fa.target.id;
-    char const *desc = cli.targets.fa.target.desc;
+    char const *id = cli.queries.fa.target.id;
+    char const *desc = cli.queries.fa.target.desc;
     if (fasta_write(&cli.output.codon.fa, fasta_target(id, desc, ocodon), 60))
         return DCP_IOERROR;
     return DCP_SUCCESS;
@@ -211,14 +211,14 @@ static enum dcp_rc write_codons(char const *ocodon)
 
 static enum dcp_rc write_aminos(char const *oamino)
 {
-    char const *id = cli.targets.fa.target.id;
-    char const *desc = cli.targets.fa.target.desc;
+    char const *id = cli.queries.fa.target.id;
+    char const *desc = cli.queries.fa.target.desc;
     if (fasta_write(&cli.output.amino.fa, fasta_target(id, desc, oamino), 60))
         return DCP_IOERROR;
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc targets_scan(struct dcp_meta const *mt)
+static enum dcp_rc scan_queries(struct dcp_meta const *mt)
 {
     struct imm_result null = imm_result();
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
@@ -226,9 +226,9 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
     if (!task) return error(DCP_RUNTIMEERROR, "failed to create task");
 
     enum fasta_rc fasta_rc = FASTA_SUCCESS;
-    while (!(fasta_rc = fasta_read(&cli.targets.fa)))
+    while (!(fasta_rc = fasta_read(&cli.queries.fa)))
     {
-        struct imm_seq seq = target_seq();
+        struct imm_seq seq = seq_setup();
         if (imm_task_setup(task, &seq))
             return error(DCP_RUNTIMEERROR, "failed to create task");
 
@@ -251,7 +251,7 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
         /* start = frag.interval.start; */
         /* stop = frag.interval.stop; */
         struct gff_feature *f = gff_set_feature(&cli.output.gff);
-        gff_feature_set_seqid(f, cli.targets.fa.target.id);
+        gff_feature_set_seqid(f, cli.queries.fa.target.id);
         gff_feature_set_source(f, "deciphon");
         gff_feature_set_type(f, ".");
         gff_feature_set_start(f, ".");
@@ -262,7 +262,7 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
         gff_feature_set_attrs(f, "wqwq");
         gff_write(&cli.output.gff);
 
-        annotate(&seq, mt->name, cli.targets.fa.target.id);
+        annotate(&seq, mt->name, cli.queries.fa.target.id);
 
         if ((rc = write_codons(ocodon))) return rc;
         if ((rc = write_aminos(oamino))) return rc;
@@ -277,15 +277,15 @@ static enum dcp_rc targets_scan(struct dcp_meta const *mt)
 static enum dcp_rc cli_setup(void)
 {
     cli_log_setup();
-    cli.targets.file = arguments.args[0];
+    cli.queries.file = arguments.args[0];
     cli.pro.file = arguments.args[1];
     cli.pro.result = imm_result();
     cli.output.nmatches = 0;
 
-    if (!(cli.targets.fd = fopen(cli.targets.file, "r")))
-        return error(DCP_IOERROR, "failed to open targets file");
+    if (!(cli.queries.fd = fopen(cli.queries.file, "r")))
+        return error(DCP_IOERROR, "failed to open queries file");
 
-    progress_file_init(&cli.progress, cli.targets.fd);
+    progress_file_init(&cli.progress, cli.queries.fd);
 
     if (!(cli.pro.fd = fopen(cli.pro.file, "rb")))
         return error(DCP_IOERROR, "failed to open db file");
@@ -318,11 +318,11 @@ static enum dcp_rc cli_setup(void)
     return DCP_SUCCESS;
 }
 
-static void targets_setup(void)
+static void queries_setup(void)
 {
-    fasta_init(&cli.targets.fa, cli.targets.fd, FASTA_READ);
-    rewind(cli.targets.fd);
-    cli.targets.fa.target.desc = cli.pro.db.prof.super.mt.acc;
+    fasta_init(&cli.queries.fa, cli.queries.fd, FASTA_READ);
+    rewind(cli.queries.fd);
+    cli.queries.fa.target.desc = cli.pro.db.prof.super.mt.acc;
 }
 
 enum dcp_rc dcp_cli_scan(int argc, char **argv)
@@ -342,9 +342,9 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
         struct dcp_pro_prof *prof = dcp_pro_db_profile(&cli.pro.db);
         if ((rc = dcp_pro_db_read(&cli.pro.db, prof))) goto cleanup;
 
-        targets_setup();
+        queries_setup();
         struct dcp_meta const *mt = &cli.pro.db.prof.super.mt;
-        if ((rc = targets_scan(mt))) goto cleanup;
+        if ((rc = scan_queries(mt))) goto cleanup;
         progress_file_update(&cli.progress);
     }
     if (rc != DCP_END) goto cleanup;
@@ -354,7 +354,7 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
 cleanup:
     progress_file_stop(&cli.progress);
     imm_del(&cli.pro.result);
-    fclose(cli.targets.fd);
+    fclose(cli.queries.fd);
     fclose(cli.pro.fd);
     fclose(cli.output.codon.fd);
     fclose(cli.output.amino.fd);

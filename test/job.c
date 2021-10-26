@@ -23,12 +23,12 @@ void test_job(void)
     struct imm_seq seq[2] = {imm_seq(imm_str(str[0]), imm_super(nuclt)),
                              imm_seq(imm_str(str[1]), imm_super(nuclt))};
 
-    struct dcp_target tgt[2];
-    dcp_target_init(&tgt[0], seq[0]);
-    dcp_target_init(&tgt[1], seq[1]);
+    struct dcp_seq seqs[2];
+    dcp_seq_init(&seqs[0], seq[0]);
+    dcp_seq_init(&seqs[1], seq[1]);
 
-    EQ(dcp_job_add(&job, &tgt[0]), DCP_SUCCESS);
-    EQ(dcp_job_add(&job, &tgt[1]), DCP_SUCCESS);
+    EQ(dcp_job_add(&job, &seqs[0]), DCP_SUCCESS);
+    EQ(dcp_job_add(&job, &seqs[1]), DCP_SUCCESS);
 }
 
 void test_job_wrong_abc(void)
@@ -42,8 +42,8 @@ void test_job_wrong_abc(void)
     char const str[] = "A";
     struct imm_seq seq = imm_seq(imm_str(str), imm_super(nuclt1));
 
-    struct dcp_target tgt;
-    dcp_target_init(&tgt, seq);
+    struct dcp_seq seqs;
+    dcp_seq_init(&seqs, seq);
 
-    EQ(dcp_job_add(&job, &tgt), DCP_ILLEGALARG);
+    EQ(dcp_job_add(&job, &seqs), DCP_ILLEGALARG);
 }
