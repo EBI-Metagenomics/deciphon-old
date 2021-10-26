@@ -13,6 +13,8 @@
 #include <sqlite3.h>
 #include <stdio.h>
 
+#define SQL_SIZE 512
+
 static_assert(IMM_ABC_MAX_SIZE == 31, "IMM_ABC_MAX_SIZE == 31");
 static_assert(IMM_SYM_SIZE == 94, "IMM_SYM_SIZE == 94");
 
@@ -37,11 +39,18 @@ static inline enum dcp_rc add_abc_error(void)
     return error(DCP_RUNTIMEERROR, "failed to insert abc into jobs database");
 }
 
+static inline enum dcp_rc exec_sql(sqlite3 *db, char const sql[SQL_SIZE])
+{
+    if (sqlite3_exec(db, sql, NULL, NULL, NULL))
+        return error(DCP_RUNTIMEERROR, "failed to exec sql");
+    return DCP_SUCCESS;
+}
+
 enum dcp_rc jobs_add_db(struct dcp_jobs *jobs, unsigned user_id,
                         char const *name, char const *filepath,
                         char const *xxh3, char const *type)
 {
-    char sql[512] = {0};
+    char sql[SQL_SIZE] = {0};
 
     int rc = snprintf(sql, ARRAY_SIZE(sql),
                       "INSERT INTO db "
@@ -51,10 +60,7 @@ enum dcp_rc jobs_add_db(struct dcp_jobs *jobs, unsigned user_id,
 
     if (rc < 0) return error(DCP_RUNTIMEERROR, "failed to snprintf");
 
-    if (sqlite3_exec(jobs->db, sql, NULL, NULL, NULL))
-        return error(DCP_RUNTIMEERROR, "failed to insert db");
-
-    return DCP_SUCCESS;
+    return exec_sql(jobs->db, sql);
 }
 
 enum dcp_rc jobs_setup(struct dcp_jobs *jobs, char const *filepath)
@@ -111,21 +117,20 @@ cleanup:
 /* Unix timestamp */
 static char const now[] = "SELECT strftime('%s', 'now')";
 
-static bool add_deciphon_user(sqlite3 *db)
+static inline enum dcp_rc add_deciphon_user(sqlite3 *db)
 {
-    char const sql[] = "INSERT INTO user (id, username, name, admin) VALUES "
-                       "(1, 'deciphon', 'Deciphon', TRUE);";
-    return sqlite3_exec(db, sql, NULL, NULL, NULL) == 0;
+    return exec_sql(db, "INSERT INTO user (id, username, name, admin) VALUES "
+                        "(1, 'deciphon', 'Deciphon', TRUE);");
 }
 
-static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
-                    char type[static 1])
+static enum dcp_rc add_abc(sqlite3 *db, struct imm_abc const *abc,
+                           char name[static 1], char type[static 1])
 {
     unsigned char sym_idx64[BASE64_MAX_SIZE];
     if (!base64_encode(abc->sym.idx, IMM_SYM_SIZE, sym_idx64, 0))
         return error(DCP_RUNTIMEERROR, "failed to encode alphabet");
 
-    char sql[512] = {0};
+    char sql[SQL_SIZE] = {0};
 
     int rc = snprintf(
         sql, ARRAY_SIZE(sql),
@@ -134,23 +139,25 @@ static bool add_abc(sqlite3 *db, struct imm_abc const *abc, char name[static 1],
         name, abc->size, sym_idx64, abc->symbols, imm_abc_any_symbol(abc), type,
         now);
 
-    if (rc < 0) return false;
+    if (rc < 0) return error(DCP_RUNTIMEERROR, "failed to snprintf");
 
-    return sqlite3_exec(db, sql, NULL, NULL, NULL) == 0;
+    return exec_sql(db, sql);
 }
 
 static enum dcp_rc add_alphabets(sqlite3 *db)
 {
-    if (!add_abc(db, imm_super(imm_super(&imm_dna_iupac)), "dna_iupac", "dna"))
-        return add_abc_error();
+    enum dcp_rc rc = DCP_SUCCESS;
 
-    if (!add_abc(db, imm_super(imm_super(&imm_rna_iupac)), "rna_iupac", "rna"))
-        return add_abc_error();
+    if ((rc = add_abc(db, &imm_dna_iupac.super.super, "dna_iupac", "dna")))
+        return rc;
 
-    if (!add_abc(db, imm_super(&imm_amino_iupac), "amino_iupac", "amino"))
-        return add_abc_error();
+    if ((rc = add_abc(db, &imm_rna_iupac.super.super, "rna_iupac", "rna")))
+        return rc;
 
-    return DCP_SUCCESS;
+    if ((rc = add_abc(db, &imm_amino_iupac.super, "amino_iupac", "amino")))
+        return rc;
+
+    return rc;
 }
 
 static enum dcp_rc emerge_db(char const *filepath)
@@ -158,14 +165,11 @@ static enum dcp_rc emerge_db(char const *filepath)
     sqlite3 *db = NULL;
     if (sqlite3_open(filepath, &db)) return open_error(db);
 
-    if (sqlite3_exec(db, (char const *)schema_sql, NULL, NULL, NULL))
-        return error(DCP_RUNTIMEERROR, "failed to insert schema");
+    enum dcp_rc rc = DCP_SUCCESS;
 
-    if (!add_deciphon_user(db))
-        return error(DCP_RUNTIMEERROR, "failed to add deciphon user");
-
-    enum dcp_rc rc = add_alphabets(db);
-    if (rc) return rc;
+    if ((rc = exec_sql(db, (char const *)schema_sql))) return rc;
+    if ((rc = add_deciphon_user(db))) return rc;
+    if ((rc = add_alphabets(db))) return rc;
 
     if (sqlite3_close(db)) return close_error();
 

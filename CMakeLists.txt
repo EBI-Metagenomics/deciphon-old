@@ -38,8 +38,10 @@ add_library(
   src/cli_scan.c
   src/cmp.c
   src/db.c
-  src/dcp_strlcpy.c
   src/dcp_file.c
+  src/dcp_strlcpy.c
+  src/job.c
+  src/jobs.c
   src/log.c
   src/meta.c
   src/model.c
@@ -54,12 +56,10 @@ add_library(
   src/progress_file.c
   src/row.c
   src/server.c
-  src/jobs.c
   src/sqldiff.c
   src/std_db.c
   src/std_prof.c
   src/table.c
-  src/task.c
   src/third-party/base64.c
   src/third-party/cmp.c)
 add_library(DCP::dcp ALIAS dcp)

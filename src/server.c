@@ -44,7 +44,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc dcp_server_add_task(struct dcp_server *srv, struct dcp_task *tgt)
+enum dcp_rc dcp_server_add_job(struct dcp_server *srv, struct dcp_job *job)
 {
 #if 0
     char sql[] = "INSERT ";
