@@ -111,29 +111,44 @@ enum dcp_rc sched_submit(struct sched *sched, struct sched_job *job)
 enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
                          uint64_t *id)
 {
-    char *zSQL = sqlite3_mprintf("INSERT INTO db (filepath) VALUES (%Q) "
-                                 "RETURNING *;",
-                                 filepath);
+    enum dcp_rc rc = DCP_SUCCESS;
+    char const *sql = sqlite3_mprintf("INSERT INTO db (filepath) VALUES (%Q) "
+                                      "RETURNING id;",
+                                      filepath);
+    if (!sql)
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to format sqlite statement");
+        goto cleanup;
+    }
     sqlite3_stmt *stmt = NULL;
-    int rc = sqlite3_prepare_v2(sched->db, zSQL, -1, &stmt, NULL);
-    if (rc != SQLITE_OK)
+    if (sqlite3_prepare_v2(sched->db, sql, -1, &stmt, NULL))
     {
-        fprintf(stderr, "Cannot open database: %s\n",
-                sqlite3_errmsg(sched->db));
-        sqlite3_close(sched->db);
-        return 1;
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare sqlite");
+        goto cleanup;
     }
-    rc = sqlite3_step(stmt);
-    rc = sqlite3_step(stmt);
-    rc = sqlite3_step(stmt);
-    /* sqlite3_int64 id64 = 0; */
-    /* rc = sqlite3_bind_int64(stmt, 0, id64); */
-    while ((rc = sqlite3_step(stmt) == SQLITE_ROW))
+
+    if (sqlite3_step(stmt) != SQLITE_ROW)
     {
+        rc = error(DCP_RUNTIMEERROR, "failed to add db row");
+        goto cleanup;
     }
-    /* int sqlite3_step(sqlite3_stmt*); */
-    rc = sqlite3_finalize(stmt);
-    return DCP_SUCCESS;
+
+    sqlite3_int64 id64 = sqlite3_column_int64(stmt, 0);
+    assert(id64 > 0);
+    *id = (uint64_t)id64;
+
+    if (sqlite3_step(stmt) != SQLITE_DONE)
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to add db");
+        goto cleanup;
+    }
+
+    if (sqlite3_finalize(stmt))
+        rc = error(DCP_RUNTIMEERROR, "failed to finalize sqlite");
+
+cleanup:
+    sqlite3_free((void *)sql);
+    return rc;
 }
 
 static enum dcp_rc create_ground_truth_db(struct file_tmp *tmp)

@@ -39,7 +39,7 @@ void test_server_reopen(void)
 
 void test_server_std_db(void)
 {
-    remove(TMPDIR "/add_std_db.sqlite3");
+    remove(TMPDIR "/std_db.sqlite3");
 
     struct dcp_server *srv = dcp_server_open(TMPDIR "/std_db.sqlite3");
     NOTNULL(srv);
@@ -59,7 +59,7 @@ void test_server_submit_job(void)
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
     EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp"), DCP_SUCCESS);
-    /* sqlite3_last_insert_rowid */
+    EQ(dcp_server_close(srv), DCP_SUCCESS);
 
 #if 0
     sched_job_add_seq;
