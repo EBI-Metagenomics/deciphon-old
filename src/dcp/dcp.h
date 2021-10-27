@@ -28,12 +28,10 @@ extern "C" {
 #include "dcp/pro_xtrans.h"
 #include "dcp/prof_types.h"
 #include "dcp/rc.h"
-#include "dcp/seq.h"
 #include "dcp/server.h"
 #include "dcp/std_db.h"
 #include "dcp/std_prof.h"
 #include "dcp/strlcpy.h"
-#include "dcp/utc.h"
 #include "dcp/version.h"
 
 #ifdef __cplusplus

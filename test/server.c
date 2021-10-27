@@ -4,47 +4,53 @@
 
 void test_server_setup(void);
 void test_server_reopen(void);
-void test_server_add_std_db(void);
+void test_server_std_db(void);
+void test_server_submit_job(void);
 
 int main(void)
 {
     test_server_setup();
     test_server_reopen();
-    test_server_add_std_db();
+    test_server_std_db();
+    test_server_submit_job();
     return hope_status();
 }
 
 void test_server_setup(void)
 {
-    struct dcp_server srv = DCP_SERVER_INIT();
     remove(TMPDIR "/setup.sqlite3");
-    EQ(dcp_server_setup(&srv, TMPDIR "/setup.sqlite3"), DCP_SUCCESS);
-    EQ(dcp_server_close(&srv), DCP_SUCCESS);
+    struct dcp_server *srv = dcp_server_open(TMPDIR "/setup.sqlite3");
+    NOTNULL(srv);
+    EQ(dcp_server_close(srv), DCP_SUCCESS);
 }
 
 void test_server_reopen(void)
 {
-    struct dcp_server srv = DCP_SERVER_INIT();
     remove(TMPDIR "/reopen.sqlite3");
 
-    EQ(dcp_server_setup(&srv, TMPDIR "/reopen.sqlite3"), DCP_SUCCESS);
-    EQ(dcp_server_close(&srv), DCP_SUCCESS);
+    struct dcp_server *srv = dcp_server_open(TMPDIR "/reopen.sqlite3");
+    NOTNULL(srv);
+    EQ(dcp_server_close(srv), DCP_SUCCESS);
 
-    EQ(dcp_server_setup(&srv, TMPDIR "/reopen.sqlite3"), DCP_SUCCESS);
-    EQ(dcp_server_close(&srv), DCP_SUCCESS);
+    srv = dcp_server_open(TMPDIR "/reopen.sqlite3");
+    NOTNULL(srv);
+    EQ(dcp_server_close(srv), DCP_SUCCESS);
 }
 
-void test_server_add_std_db(void)
+void test_server_std_db(void)
 {
-    struct dcp_server srv = DCP_SERVER_INIT();
-
     remove(TMPDIR "/add_std_db.sqlite3");
-    EQ(dcp_server_setup(&srv, TMPDIR "/add_std_db.sqlite3"), DCP_SUCCESS);
+
+    struct dcp_server *srv = dcp_server_open(TMPDIR "/std_db.sqlite3");
+    NOTNULL(srv);
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
-    EQ(dcp_server_add_db(&srv, 1, "example1", TMPDIR "/example1.dcp"),
-       DCP_SUCCESS);
+    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp"), DCP_SUCCESS);
 
+    EQ(dcp_server_close(srv), DCP_SUCCESS);
+}
+
+#if 0
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
 
     struct dcp_abc abc;
@@ -70,6 +76,4 @@ void test_server_add_std_db(void)
 
     /* dcp_server_add_job(&srv, &job); */
     /* /Users/horta/data/Pfam-A.5.dcp */
-
-    EQ(dcp_server_close(&srv), DCP_SUCCESS);
-}
+#endif

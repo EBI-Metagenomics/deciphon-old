@@ -46,8 +46,6 @@ struct dcp_db
 
 extern struct dcp_db const dcp_db_default;
 
-DCP_API enum dcp_rc dcp_db_fetch_prof_type(FILE *restrict fd,
-                                           enum dcp_prof_typeid *typeid);
 DCP_API unsigned dcp_db_float_size(struct dcp_db const *db);
 DCP_API enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db);
 DCP_API unsigned dcp_db_nprofiles(struct dcp_db const *db);

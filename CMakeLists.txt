@@ -40,8 +40,6 @@ add_library(
   src/db.c
   src/dcp_file.c
   src/dcp_strlcpy.c
-  src/job.c
-  src/jobs.c
   src/log.c
   src/meta.c
   src/model.c
@@ -55,6 +53,8 @@ add_library(
   src/pro_state.c
   src/progress_file.c
   src/row.c
+  src/sched.c
+  src/sched_job.c
   src/server.c
   src/sqldiff.c
   src/std_db.c
