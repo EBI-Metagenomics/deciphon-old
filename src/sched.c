@@ -13,6 +13,8 @@
 #include <sqlite3.h>
 #include <stdio.h>
 
+static_assert(SQLITE_VERSION_NUMBER >= 3035000, "We need RETURNING statement");
+
 #define SQL_SIZE 512
 
 static_assert(IMM_ABC_MAX_SIZE == 31, "IMM_ABC_MAX_SIZE == 31");
@@ -55,6 +57,7 @@ static enum dcp_rc insert_into_job(sqlite3 *db, bool multiple_hits,
     return exec_sql(db, sql);
 }
 
+#if 0
 static enum dcp_rc insert_into_db(sqlite3 *db, char const *filepath)
 {
     char sql[SQL_SIZE] = {0};
@@ -62,9 +65,13 @@ static enum dcp_rc insert_into_db(sqlite3 *db, char const *filepath)
                       "INSERT INTO db (filepath)"
                       " VALUES ('%s');",
                       filepath);
+    sqlite3_stmt *pStmt;
+    sqlite3_prepare_v2();
+    sqlite3_prepare_v2(db, "select * from expenses", -1, &stmt, NULL);
     assert(rc >= 0);
     return exec_sql(db, sql);
 }
+#endif
 
 enum dcp_rc sched_setup(char const *filepath)
 {
@@ -101,9 +108,19 @@ enum dcp_rc sched_submit(struct sched *sched, struct sched_job *job)
                            job->db_id, dcp_utc_now());
 }
 
-enum dcp_rc sched_add_db(struct sched *sched, char const *filepath)
+enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
+                         uint64_t *id)
 {
-    return insert_into_db(sched->db, filepath);
+    char *zSQL = sqlite3_mprintf("INSERT INTO db (filepath) VALUES (%Q)"
+                                 "RETURNING id;",
+                                 filepath);
+    sqlite3_stmt *stmt = NULL;
+    int rc = sqlite3_prepare_v2(sched->db, zSQL, 0, &stmt, NULL);
+    while ((rc = sqlite3_step (stmt) == SQLITE_ROW)) {
+    }
+    /* int sqlite3_step(sqlite3_stmt*); */
+    rc = sqlite3_finalize(stmt);
+    return DCP_SUCCESS;
 }
 
 static enum dcp_rc create_ground_truth_db(struct file_tmp *tmp)

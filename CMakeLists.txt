@@ -21,7 +21,7 @@ find_package(imm REQUIRED)
 find_package(log REQUIRED)
 find_package(gff REQUIRED)
 find_package(tbl REQUIRED)
-find_package(SQLite3 REQUIRED)
+find_package(SQLite3 3.35.0 REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(XXHASH REQUIRED IMPORTED_TARGET libxxhash)
 

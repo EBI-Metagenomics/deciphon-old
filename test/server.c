@@ -50,7 +50,19 @@ void test_server_std_db(void)
     EQ(dcp_server_close(srv), DCP_SUCCESS);
 }
 
+void test_server_submit_job(void)
+{
+    remove(TMPDIR "/submit_job.sqlite3");
+
+    struct dcp_server *srv = dcp_server_open(TMPDIR "/submit_job.sqlite3");
+    NOTNULL(srv);
+
+    std_db_examples_new_ex1(TMPDIR "/example1.dcp");
+    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp"), DCP_SUCCESS);
+    /* sqlite3_last_insert_rowid */
+
 #if 0
+    sched_job_add_seq;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
 
     struct dcp_abc abc;
@@ -77,3 +89,4 @@ void test_server_std_db(void)
     /* dcp_server_add_job(&srv, &job); */
     /* /Users/horta/data/Pfam-A.5.dcp */
 #endif
+}

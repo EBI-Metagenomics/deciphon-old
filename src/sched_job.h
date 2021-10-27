@@ -10,10 +10,10 @@
 
 enum sched_job_state
 {
-    JOBS_JOB_STATE_PEND,
-    JOBS_JOB_STATE_RUN,
-    JOBS_JOB_STATE_DONE,
-    JOBS_JOB_STATE_FAIL
+    SCHED_JOB_PEND,
+    SCHED_JOB_RUN,
+    SCHED_JOB_DONE,
+    SCHED_JOB_FAIL
 };
 
 struct sched_job
