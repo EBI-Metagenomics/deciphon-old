@@ -45,7 +45,8 @@ void test_server_std_db(void)
     NOTNULL(srv);
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
-    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp"), DCP_SUCCESS);
+    uint64_t db_id = 0;
+    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp", &db_id), DCP_SUCCESS);
 
     EQ(dcp_server_close(srv), DCP_SUCCESS);
 }
@@ -58,7 +59,9 @@ void test_server_submit_job(void)
     NOTNULL(srv);
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
-    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp"), DCP_SUCCESS);
+    uint64_t db_id = 0;
+    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp", &db_id), DCP_SUCCESS);
+    EQ(db_id, 1);
     EQ(dcp_server_close(srv), DCP_SUCCESS);
 
 #if 0

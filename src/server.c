@@ -37,10 +37,10 @@ enum dcp_rc dcp_server_close(struct dcp_server *srv)
     return rc;
 }
 
-enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath)
+enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath,
+                              uint64_t *id)
 {
-    uint64_t id = 0;
     if (!file_readable(filepath))
         return error(DCP_IOERROR, "file is not readable");
-    return sched_add_db(&srv->sched, filepath, &id);
+    return sched_add_db(&srv->sched, filepath, id);
 }
