@@ -111,12 +111,25 @@ enum dcp_rc sched_submit(struct sched *sched, struct sched_job *job)
 enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
                          uint64_t *id)
 {
-    char *zSQL = sqlite3_mprintf("INSERT INTO db (filepath) VALUES (%Q)"
-                                 "RETURNING id;",
+    char *zSQL = sqlite3_mprintf("INSERT INTO db (filepath) VALUES (%Q) "
+                                 "RETURNING *;",
                                  filepath);
     sqlite3_stmt *stmt = NULL;
-    int rc = sqlite3_prepare_v2(sched->db, zSQL, 0, &stmt, NULL);
-    while ((rc = sqlite3_step (stmt) == SQLITE_ROW)) {
+    int rc = sqlite3_prepare_v2(sched->db, zSQL, -1, &stmt, NULL);
+    if (rc != SQLITE_OK)
+    {
+        fprintf(stderr, "Cannot open database: %s\n",
+                sqlite3_errmsg(sched->db));
+        sqlite3_close(sched->db);
+        return 1;
+    }
+    rc = sqlite3_step(stmt);
+    rc = sqlite3_step(stmt);
+    rc = sqlite3_step(stmt);
+    /* sqlite3_int64 id64 = 0; */
+    /* rc = sqlite3_bind_int64(stmt, 0, id64); */
+    while ((rc = sqlite3_step(stmt) == SQLITE_ROW))
+    {
     }
     /* int sqlite3_step(sqlite3_stmt*); */
     rc = sqlite3_finalize(stmt);
