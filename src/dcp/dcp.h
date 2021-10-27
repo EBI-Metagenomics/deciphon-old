@@ -5,14 +5,11 @@
 extern "C" {
 #endif
 
-#include "dcp/abc.h"
 #include "dcp/cli.h"
 #include "dcp/cmp.h"
 #include "dcp/db.h"
 #include "dcp/entry_dist.h"
 #include "dcp/generics.h"
-#include "dcp/job.h"
-#include "dcp/jobs.h"
 #include "dcp/log.h"
 #include "dcp/meta.h"
 #include "dcp/model.h"

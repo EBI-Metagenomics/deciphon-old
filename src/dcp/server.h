@@ -2,18 +2,16 @@
 #define DCP_SERVER_H
 
 #include "dcp/export.h"
-#include "dcp/jobs.h"
 #include "dcp/rc.h"
 #include <stdint.h>
 #include <stdio.h>
 
-/* struct dcp_result; */
-/* struct dcp_server; */
+struct dcp_jobs *jobs;
 struct dcp_job;
 
 struct dcp_server
 {
-    struct dcp_jobs jobs;
+    struct dcp_jobs *jobs;
 };
 
 #define DCP_SERVER_INIT()                                                      \

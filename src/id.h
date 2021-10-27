@@ -1,5 +1,5 @@
-#ifndef DCP_ID_H
-#define DCP_ID_H
+#ifndef ID_H
+#define ID_H
 
 #include <stdint.h>
 

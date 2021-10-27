@@ -1,7 +1,6 @@
-#ifndef DCP_UTC_H
-#define DCP_UTC_H
+#ifndef UTC_H
+#define UTC_H
 
-#include "dcp/export.h"
 #include <stdint.h>
 #include <time.h>
 

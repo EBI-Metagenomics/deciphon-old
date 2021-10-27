@@ -1,12 +1,11 @@
-#ifndef DCP_JOB_H
-#define DCP_JOB_H
+#ifndef JOB_H
+#define JOB_H
 
-#include "dcp/abc.h"
-#include "dcp/export.h"
-#include "dcp/id.h"
+#include "abc.h"
 #include "dcp/rc.h"
-#include "dcp/seq.h"
-#include "dcp/utc.h"
+#include "id.h"
+#include "seq.h"
+#include "utc.h"
 #include <stdbool.h>
 
 #define DCP_JOB_SID_SIZE 20
@@ -28,8 +27,6 @@ enum dcp_job_state
     DCP_JOB_STATE_DONE,
     DCP_JOB_STATE_FAIL
 };
-
-DCP_API extern struct dcp_job_cfg const dcp_job_cfg_default;
 
 struct dcp_job
 {
@@ -61,6 +58,6 @@ static inline void dcp_job_setup(struct dcp_job *job, struct dcp_job_cfg cfg)
     job->cfg = cfg;
 }
 
-DCP_API enum dcp_rc dcp_job_add(struct dcp_job *job, struct dcp_seq *seq);
+enum dcp_rc dcp_job_add(struct dcp_job *job, struct dcp_seq *seq);
 
 #endif

@@ -1,11 +1,10 @@
 #ifndef DCP_ABC_H
 #define DCP_ABC_H
 
-#include "dcp/export.h"
-#include "dcp/id.h"
 #include "dcp/strlcpy.h"
-#include "dcp/utc.h"
+#include "id.h"
 #include "imm/imm.h"
+#include "utc.h"
 #include <stdint.h>
 
 #define DCP_ABC_NAME_SIZE 16
@@ -20,8 +19,7 @@ struct dcp_abc
     dcp_id user_id;
 };
 
-static inline void dcp_abc_init(struct dcp_abc *abc,
-                                enum imm_abc_typeid type,
+static inline void dcp_abc_init(struct dcp_abc *abc, enum imm_abc_typeid type,
                                 struct imm_abc const *imm_abc)
 {
     abc->id = DCP_ID_NULL;
