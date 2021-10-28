@@ -27,6 +27,23 @@ static enum dcp_rc emerge_db(char const *filepath);
 static enum dcp_rc is_empty(char const *filepath, bool *empty);
 static enum dcp_rc touch_db(char const *filepath);
 
+static struct
+{
+    char const *begin;
+    struct
+    {
+        char const *job;
+        char const *seq;
+    } submit;
+    char const *end;
+} const sched_stmt = {
+    .begin = "BEGIN TRANSACTION;",
+    .submit = {.job = " INSERT INTO job (multi_hits, hmmer3_compat, db_id, "
+                      "submission) VALUES (?, ?, ?, ?) RETURNING id;",
+               .seq = "INSERT INTO seq (data, job_id) VALUES (?, ?);"},
+    .end = "COMMIT TRANSACTION;"
+};
+
 static inline enum dcp_rc open_error(sqlite3 *db)
 {
     sqlite3_close(db);
@@ -65,11 +82,58 @@ enum dcp_rc sched_setup(char const *filepath)
 enum dcp_rc sched_open(struct sched *sched, char const *filepath)
 {
     if (sqlite3_open(filepath, &sched->db)) return open_error(sched->db);
-    return DCP_SUCCESS;
+
+    enum dcp_rc rc = DCP_SUCCESS;
+    sched->stmt.begin = NULL;
+    sched->stmt.submit.job = NULL;
+    sched->stmt.submit.seq = NULL;
+    sched->stmt.end = NULL;
+
+    if (sqlite3_prepare_v2(sched->db, sched_stmt.begin, -1,
+                           &sched->stmt.begin, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare begin stmt");
+        goto cleanup;
+    }
+
+    if (sqlite3_prepare_v2(sched->db, sched_stmt.submit.job, -1,
+                           &sched->stmt.submit.job, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare submit.job stmt");
+        goto cleanup;
+    }
+
+    if (sqlite3_prepare_v2(sched->db, sched_stmt.submit.seq, -1,
+                           &sched->stmt.submit.seq, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare submit.seq stmt");
+        goto cleanup;
+    }
+
+    if (sqlite3_prepare_v2(sched->db, sched_stmt.end, -1,
+                           &sched->stmt.end, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare end stmt");
+        goto cleanup;
+    }
+
+    return rc;
+
+cleanup:
+    sqlite3_finalize(sched->stmt.end);
+    sqlite3_finalize(sched->stmt.submit.seq);
+    sqlite3_finalize(sched->stmt.submit.job);
+    sqlite3_finalize(sched->stmt.begin);
+    sqlite3_close(sched->db);
+    return rc;
 }
 
 enum dcp_rc sched_close(struct sched *sched)
 {
+    sqlite3_finalize(sched->stmt.end);
+    sqlite3_finalize(sched->stmt.submit.seq);
+    sqlite3_finalize(sched->stmt.submit.job);
+    sqlite3_finalize(sched->stmt.begin);
     if (sqlite3_close(sched->db)) return close_error();
     return DCP_SUCCESS;
 }
@@ -77,126 +141,91 @@ enum dcp_rc sched_close(struct sched *sched)
 enum dcp_rc sched_submit(struct sched *sched, struct dcp_job *job,
                          uint64_t db_id)
 {
-    static char const sql0[] = "BEGIN TRANSACTION;";
-
-    static char const sql1[] =
-        "INSERT INTO job (multi_hits, hmmer3_compat, db_id, "
-        "submission) VALUES (?, ?, ?, ?) RETURNING id;";
-
-    static char const sql2[] = "INSERT INTO seq (data, job_id) VALUES (?, ?);";
-
-    static char const sql3[] = "COMMIT TRANSACTION;";
-
     enum dcp_rc rc = DCP_SUCCESS;
-    sqlite3_stmt *stmt = NULL;
-
-    if (sqlite3_prepare_v2(sched->db, sql0, -1, &stmt, NULL))
+    if (sqlite3_reset(sched->stmt.begin))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to prepare statement1");
+        rc = error(DCP_RUNTIMEERROR, "failed to reset begin stmt");
         goto cleanup;
     }
-    if (sqlite3_step(stmt) != SQLITE_DONE)
+    if (sqlite3_step(sched->stmt.begin) != SQLITE_DONE)
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to begin job transaction");
+        rc = error(DCP_RUNTIMEERROR, "failed to exec begin stmt");
         goto cleanup;
     }
-    if (sqlite3_finalize(stmt))
+    if (sqlite3_reset(sched->stmt.submit.job))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to finalize statement1");
+        rc = error(DCP_RUNTIMEERROR, "failed to reset submit.job stmt");
         goto cleanup;
     }
-    if (sqlite3_prepare_v2(sched->db, sql1, -1, &stmt, NULL))
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to prepare statement2");
-        goto cleanup;
-    }
-    if (sqlite3_bind_int(stmt, 1, job->multi_hits))
+    if (sqlite3_bind_int(sched->stmt.submit.job, 1, job->multi_hits))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to bind multi_hits");
         goto cleanup;
     }
-    if (sqlite3_bind_int(stmt, 2, job->hmmer3_compat))
+    if (sqlite3_bind_int(sched->stmt.submit.job, 2, job->hmmer3_compat))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to bind hmmer3_compat");
         goto cleanup;
     }
-    if (sqlite3_bind_int64(stmt, 3, (sqlite3_int64)db_id))
+    if (sqlite3_bind_int64(sched->stmt.submit.job, 3, (sqlite3_int64)db_id))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to bind db_id");
         goto cleanup;
     }
-    if (sqlite3_bind_int64(stmt, 4, (sqlite3_int64)dcp_utc_now()))
+    sqlite3_int64 utc = (sqlite3_int64)dcp_utc_now();
+    if (sqlite3_bind_int64(sched->stmt.submit.job, 4, utc))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to bind timestamp");
+        rc = error(DCP_RUNTIMEERROR, "failed to bind submission");
         goto cleanup;
     }
-    if (sqlite3_step(stmt) != SQLITE_ROW)
+    if (sqlite3_step(sched->stmt.submit.job) != SQLITE_ROW)
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to add job row1");
-        printf("Error: %s\n", sqlite3_errmsg(sched->db));
+        rc = error(DCP_RUNTIMEERROR, "failed to add job row");
         goto cleanup;
     }
-    sqlite3_int64 job_id = sqlite3_column_int64(stmt, 0);
+    sqlite3_int64 job_id = sqlite3_column_int64(sched->stmt.submit.job, 0);
     assert(job_id > 0);
-    if (sqlite3_step(stmt) != SQLITE_DONE)
+    if (sqlite3_step(sched->stmt.submit.job) != SQLITE_DONE)
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to add job row2");
-        printf("Error: %s\n", sqlite3_errmsg(sched->db));
+        rc = error(DCP_RUNTIMEERROR, "failed to return job_id");
         goto cleanup;
     }
-    if (sqlite3_finalize(stmt))
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to finalize statement2");
-        goto cleanup;
-    }
-    if (sqlite3_prepare_v2(sched->db, sql2, -1, &stmt, NULL))
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to prepare statement3");
-        goto cleanup;
-    }
+
     struct cco_iter iter = cco_queue_iter(&job->seqs);
     struct dcp_seq *seq = NULL;
     cco_iter_for_each_entry(seq, &iter, node)
     {
-        if (sqlite3_bind_text(stmt, 1, seq->data, -1, NULL))
+        if (sqlite3_reset(sched->stmt.submit.seq))
+        {
+            rc = error(DCP_RUNTIMEERROR, "failed to reset submit.seq stmt");
+            goto cleanup;
+        }
+        if (sqlite3_bind_text(sched->stmt.submit.seq, 1, seq->data, -1, NULL))
         {
             rc = error(DCP_RUNTIMEERROR, "failed to bind sequence");
             goto cleanup;
         }
-        if (sqlite3_bind_int64(stmt, 2, job_id))
+        if (sqlite3_bind_int64(sched->stmt.submit.seq, 2, job_id))
         {
             rc = error(DCP_RUNTIMEERROR, "failed to bind job_id");
             goto cleanup;
         }
-        if (sqlite3_step(stmt) != SQLITE_DONE)
+        if (sqlite3_step(sched->stmt.submit.seq) != SQLITE_DONE)
         {
-            printf("Error: %s\n", sqlite3_errmsg(sched->db));
             rc = error(DCP_RUNTIMEERROR, "failed to add seq row");
             goto cleanup;
         }
-        if (sqlite3_reset(stmt))
-        {
-            rc = error(DCP_RUNTIMEERROR, "failed to reset seq statement");
-            goto cleanup;
-        }
     }
-    if (sqlite3_finalize(stmt))
+    if (sqlite3_reset(sched->stmt.end))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to finalize statement3");
+        rc = error(DCP_RUNTIMEERROR, "failed to reset end stmt");
         goto cleanup;
     }
-    if (sqlite3_prepare_v2(sched->db, sql3, -1, &stmt, NULL))
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to prepare statement4");
-        goto cleanup;
-    }
-    if (sqlite3_step(stmt) != SQLITE_DONE)
+    if (sqlite3_step(sched->stmt.end) != SQLITE_DONE)
     {
         rc = error(DCP_RUNTIMEERROR, "failed to commit job transaction");
         goto cleanup;
     }
-    if (sqlite3_finalize(stmt))
-        rc = error(DCP_RUNTIMEERROR, "failed to finalize sqlite");
 
 cleanup:
     return rc;

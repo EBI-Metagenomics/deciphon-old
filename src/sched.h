@@ -10,6 +10,16 @@ struct dcp_job;
 struct sched
 {
     sqlite3 *db;
+    struct
+    {
+        sqlite3_stmt *begin;
+        struct
+        {
+            sqlite3_stmt *job;
+            sqlite3_stmt *seq;
+        } submit;
+        sqlite3_stmt *end;
+    } stmt;
 };
 
 enum dcp_rc sched_setup(char const *filepath);
