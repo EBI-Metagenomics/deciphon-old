@@ -63,13 +63,11 @@ static inline enum dcp_rc exec_sql(sqlite3 *db, char const sql[SQL_SIZE])
 
 #define ERROR_RESET(n) error(DCP_RUNTIMEERROR, "failed to reset " n " stmt")
 #define ERROR_STEP(n) error(DCP_RUNTIMEERROR, "failed to exec " n " stmt")
-#define ERROR_BIND(n) error(DCP_RUNTIMEERROR, "failed to bind " n " stmt")
-
+#define ERROR_BIND(n) error(DCP_RUNTIMEERROR, "failed to bind " n)
 
 static enum dcp_rc begin_transaction(struct sched *sched)
 {
-    if (sqlite3_reset(sched->stmt.begin))
-        return ERROR_RESET("begin");
+    if (sqlite3_reset(sched->stmt.begin)) return ERROR_RESET("begin");
     if (sqlite3_step(sched->stmt.begin) != SQLITE_DONE)
         return ERROR_STEP("begin");
     return DCP_SUCCESS;
@@ -77,10 +75,8 @@ static enum dcp_rc begin_transaction(struct sched *sched)
 
 static enum dcp_rc end_transaction(struct sched *sched)
 {
-    if (sqlite3_reset(sched->stmt.end))
-        return ERROR_RESET("end");
-    if (sqlite3_step(sched->stmt.end) != SQLITE_DONE)
-        return ERROR_STEP("end");
+    if (sqlite3_reset(sched->stmt.end)) return ERROR_RESET("end");
+    if (sqlite3_step(sched->stmt.end) != SQLITE_DONE) return ERROR_STEP("end");
     return DCP_SUCCESS;
 }
 
@@ -160,46 +156,71 @@ enum dcp_rc sched_close(struct sched *sched)
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc submit_job(sqlite3_stmt *stmt, struct dcp_job *job, uint64_t db_id, uint64_t* job_id)
+static enum dcp_rc submit_job(sqlite3_stmt *stmt, struct dcp_job *job,
+                              uint64_t db_id, uint64_t *job_id)
 {
     enum dcp_rc rc = DCP_SUCCESS;
     if (sqlite3_reset(stmt))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to reset submit.job stmt");
+        rc = ERROR_RESET("submit job");
         goto cleanup;
     }
     if (sqlite3_bind_int(stmt, 1, job->multi_hits))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to bind multi_hits");
+        rc = ERROR_BIND("multi_hits");
         goto cleanup;
     }
     if (sqlite3_bind_int(stmt, 2, job->hmmer3_compat))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to bind hmmer3_compat");
+        rc = ERROR_BIND("hmmer3_compat");
         goto cleanup;
     }
     if (sqlite3_bind_int64(stmt, 3, (sqlite3_int64)db_id))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to bind db_id");
+        rc = ERROR_BIND("db_id");
         goto cleanup;
     }
     sqlite3_int64 utc = (sqlite3_int64)dcp_utc_now();
     if (sqlite3_bind_int64(stmt, 4, utc))
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to bind submission");
+        rc = ERROR_BIND("submission");
         goto cleanup;
     }
     if (sqlite3_step(stmt) != SQLITE_ROW)
     {
-        rc = error(DCP_RUNTIMEERROR, "failed to add job row");
+        rc = ERROR_STEP("job");
         goto cleanup;
     }
     sqlite3_int64 id64 = sqlite3_column_int64(stmt, 0);
     assert(id64 > 0);
     *job_id = (uint64_t)id64;
 
-    if (sqlite3_step(stmt) != SQLITE_DONE)
-        rc = error(DCP_RUNTIMEERROR, "failed to return job_id");
+    if (sqlite3_step(stmt) != SQLITE_DONE) rc = ERROR_STEP("job");
+
+cleanup:
+    return rc;
+}
+
+static enum dcp_rc add_seq(sqlite3_stmt *stmt, char const *seq,
+                           sqlite3_int64 job_id)
+{
+    enum dcp_rc rc = DCP_SUCCESS;
+    if (sqlite3_reset(stmt))
+    {
+        rc = ERROR_RESET("add seq");
+        goto cleanup;
+    }
+    if (sqlite3_bind_text(stmt, 1, seq, -1, NULL))
+    {
+        rc = ERROR_BIND("seq");
+        goto cleanup;
+    }
+    if (sqlite3_bind_int64(stmt, 2, job_id))
+    {
+        rc = ERROR_BIND("job_id");
+        goto cleanup;
+    }
+    if (sqlite3_step(stmt) != SQLITE_DONE) rc = ERROR_STEP("seq");
 
 cleanup:
     return rc;
@@ -209,8 +230,7 @@ enum dcp_rc sched_submit(struct sched *sched, struct dcp_job *job,
                          uint64_t db_id, uint64_t *job_id)
 {
     enum dcp_rc rc = DCP_SUCCESS;
-    if ((rc = begin_transaction(sched)))
-        goto cleanup;
+    if ((rc = begin_transaction(sched))) goto cleanup;
 
     if ((rc = submit_job(sched->stmt.submit.job, job, db_id, job_id)))
         goto cleanup;
@@ -219,27 +239,9 @@ enum dcp_rc sched_submit(struct sched *sched, struct dcp_job *job,
     struct dcp_seq *seq = NULL;
     cco_iter_for_each_entry(seq, &iter, node)
     {
-        if (sqlite3_reset(sched->stmt.submit.seq))
-        {
-            rc = error(DCP_RUNTIMEERROR, "failed to reset submit.seq stmt");
-            goto cleanup;
-        }
-        if (sqlite3_bind_text(sched->stmt.submit.seq, 1, seq->data, -1, NULL))
-        {
-            rc = error(DCP_RUNTIMEERROR, "failed to bind sequence");
-            goto cleanup;
-        }
+
         sqlite3_int64 id = (sqlite3_int64)*job_id;
-        if (sqlite3_bind_int64(sched->stmt.submit.seq, 2, id))
-        {
-            rc = error(DCP_RUNTIMEERROR, "failed to bind job_id");
-            goto cleanup;
-        }
-        if (sqlite3_step(sched->stmt.submit.seq) != SQLITE_DONE)
-        {
-            rc = error(DCP_RUNTIMEERROR, "failed to add seq row");
-            goto cleanup;
-        }
+        if (add_seq(sched->stmt.submit.seq, seq->data, id)) goto cleanup;
     }
     rc = end_transaction(sched);
 
