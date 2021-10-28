@@ -41,8 +41,7 @@ static struct
     .submit = {.job = " INSERT INTO job (multi_hits, hmmer3_compat, db_id, "
                       "submission) VALUES (?, ?, ?, ?) RETURNING id;",
                .seq = "INSERT INTO seq (data, job_id) VALUES (?, ?);"},
-    .end = "COMMIT TRANSACTION;"
-};
+    .end = "COMMIT TRANSACTION;"};
 
 static inline enum dcp_rc open_error(sqlite3 *db)
 {
@@ -59,6 +58,29 @@ static inline enum dcp_rc exec_sql(sqlite3 *db, char const sql[SQL_SIZE])
 {
     if (sqlite3_exec(db, sql, NULL, NULL, NULL))
         return error(DCP_RUNTIMEERROR, "failed to exec sql");
+    return DCP_SUCCESS;
+}
+
+#define ERROR_RESET(n) error(DCP_RUNTIMEERROR, "failed to reset " n " stmt")
+#define ERROR_STEP(n) error(DCP_RUNTIMEERROR, "failed to exec " n " stmt")
+#define ERROR_BIND(n) error(DCP_RUNTIMEERROR, "failed to bind " n " stmt")
+
+
+static enum dcp_rc begin_transaction(struct sched *sched)
+{
+    if (sqlite3_reset(sched->stmt.begin))
+        return ERROR_RESET("begin");
+    if (sqlite3_step(sched->stmt.begin) != SQLITE_DONE)
+        return ERROR_STEP("begin");
+    return DCP_SUCCESS;
+}
+
+static enum dcp_rc end_transaction(struct sched *sched)
+{
+    if (sqlite3_reset(sched->stmt.end))
+        return ERROR_RESET("end");
+    if (sqlite3_step(sched->stmt.end) != SQLITE_DONE)
+        return ERROR_STEP("end");
     return DCP_SUCCESS;
 }
 
@@ -89,8 +111,8 @@ enum dcp_rc sched_open(struct sched *sched, char const *filepath)
     sched->stmt.submit.seq = NULL;
     sched->stmt.end = NULL;
 
-    if (sqlite3_prepare_v2(sched->db, sched_stmt.begin, -1,
-                           &sched->stmt.begin, NULL))
+    if (sqlite3_prepare_v2(sched->db, sched_stmt.begin, -1, &sched->stmt.begin,
+                           NULL))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to prepare begin stmt");
         goto cleanup;
@@ -110,8 +132,8 @@ enum dcp_rc sched_open(struct sched *sched, char const *filepath)
         goto cleanup;
     }
 
-    if (sqlite3_prepare_v2(sched->db, sched_stmt.end, -1,
-                           &sched->stmt.end, NULL))
+    if (sqlite3_prepare_v2(sched->db, sched_stmt.end, -1, &sched->stmt.end,
+                           NULL))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to prepare end stmt");
         goto cleanup;
@@ -138,58 +160,60 @@ enum dcp_rc sched_close(struct sched *sched)
     return DCP_SUCCESS;
 }
 
-enum dcp_rc sched_submit(struct sched *sched, struct dcp_job *job,
-                         uint64_t db_id)
+static enum dcp_rc submit_job(sqlite3_stmt *stmt, struct dcp_job *job, uint64_t db_id, uint64_t* job_id)
 {
     enum dcp_rc rc = DCP_SUCCESS;
-    if (sqlite3_reset(sched->stmt.begin))
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to reset begin stmt");
-        goto cleanup;
-    }
-    if (sqlite3_step(sched->stmt.begin) != SQLITE_DONE)
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to exec begin stmt");
-        goto cleanup;
-    }
-    if (sqlite3_reset(sched->stmt.submit.job))
+    if (sqlite3_reset(stmt))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to reset submit.job stmt");
         goto cleanup;
     }
-    if (sqlite3_bind_int(sched->stmt.submit.job, 1, job->multi_hits))
+    if (sqlite3_bind_int(stmt, 1, job->multi_hits))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to bind multi_hits");
         goto cleanup;
     }
-    if (sqlite3_bind_int(sched->stmt.submit.job, 2, job->hmmer3_compat))
+    if (sqlite3_bind_int(stmt, 2, job->hmmer3_compat))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to bind hmmer3_compat");
         goto cleanup;
     }
-    if (sqlite3_bind_int64(sched->stmt.submit.job, 3, (sqlite3_int64)db_id))
+    if (sqlite3_bind_int64(stmt, 3, (sqlite3_int64)db_id))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to bind db_id");
         goto cleanup;
     }
     sqlite3_int64 utc = (sqlite3_int64)dcp_utc_now();
-    if (sqlite3_bind_int64(sched->stmt.submit.job, 4, utc))
+    if (sqlite3_bind_int64(stmt, 4, utc))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to bind submission");
         goto cleanup;
     }
-    if (sqlite3_step(sched->stmt.submit.job) != SQLITE_ROW)
+    if (sqlite3_step(stmt) != SQLITE_ROW)
     {
         rc = error(DCP_RUNTIMEERROR, "failed to add job row");
         goto cleanup;
     }
-    sqlite3_int64 job_id = sqlite3_column_int64(sched->stmt.submit.job, 0);
-    assert(job_id > 0);
-    if (sqlite3_step(sched->stmt.submit.job) != SQLITE_DONE)
-    {
+    sqlite3_int64 id64 = sqlite3_column_int64(stmt, 0);
+    assert(id64 > 0);
+    *job_id = (uint64_t)id64;
+
+    if (sqlite3_step(stmt) != SQLITE_DONE)
         rc = error(DCP_RUNTIMEERROR, "failed to return job_id");
+
+cleanup:
+    return rc;
+}
+
+enum dcp_rc sched_submit(struct sched *sched, struct dcp_job *job,
+                         uint64_t db_id, uint64_t *job_id)
+{
+    enum dcp_rc rc = DCP_SUCCESS;
+    if ((rc = begin_transaction(sched)))
         goto cleanup;
-    }
+
+    if ((rc = submit_job(sched->stmt.submit.job, job, db_id, job_id)))
+        goto cleanup;
 
     struct cco_iter iter = cco_queue_iter(&job->seqs);
     struct dcp_seq *seq = NULL;
@@ -205,7 +229,8 @@ enum dcp_rc sched_submit(struct sched *sched, struct dcp_job *job,
             rc = error(DCP_RUNTIMEERROR, "failed to bind sequence");
             goto cleanup;
         }
-        if (sqlite3_bind_int64(sched->stmt.submit.seq, 2, job_id))
+        sqlite3_int64 id = (sqlite3_int64)*job_id;
+        if (sqlite3_bind_int64(sched->stmt.submit.seq, 2, id))
         {
             rc = error(DCP_RUNTIMEERROR, "failed to bind job_id");
             goto cleanup;
@@ -216,16 +241,7 @@ enum dcp_rc sched_submit(struct sched *sched, struct dcp_job *job,
             goto cleanup;
         }
     }
-    if (sqlite3_reset(sched->stmt.end))
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to reset end stmt");
-        goto cleanup;
-    }
-    if (sqlite3_step(sched->stmt.end) != SQLITE_DONE)
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to commit job transaction");
-        goto cleanup;
-    }
+    rc = end_transaction(sched);
 
 cleanup:
     return rc;

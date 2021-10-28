@@ -13,6 +13,6 @@ DCP_API enum dcp_rc dcp_server_close(struct dcp_server *);
 DCP_API enum dcp_rc dcp_server_add_db(struct dcp_server *, char const *,
                                       uint64_t *);
 DCP_API enum dcp_rc dcp_server_submit_job(struct dcp_server *, struct dcp_job *,
-                                          uint64_t);
+                                          uint64_t, uint64_t *);
 
 #endif

@@ -71,7 +71,9 @@ void test_server_submit_job(void)
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
-    EQ(dcp_server_submit_job(srv, &job, db_id), DCP_SUCCESS);
+    uint64_t job_id = 0;
+    EQ(dcp_server_submit_job(srv, &job, db_id, &job_id), DCP_SUCCESS);
+    EQ(job_id, 1);
 
     EQ(dcp_server_close(srv), DCP_SUCCESS);
 
