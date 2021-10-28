@@ -11,6 +11,7 @@ enum dcp_rc
     DCP_IOERROR,
     DCP_RUNTIMEERROR,
     DCP_PARSEERROR,
+    DCP_NOTFOUND,
 };
 
 #endif

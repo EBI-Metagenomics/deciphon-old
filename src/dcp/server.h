@@ -2,6 +2,7 @@
 #define DCP_SERVER_H
 
 #include "dcp/export.h"
+#include "dcp/job_state.h"
 #include "dcp/rc.h"
 #include <stdint.h>
 
@@ -14,5 +15,7 @@ DCP_API enum dcp_rc dcp_server_add_db(struct dcp_server *, char const *,
                                       uint64_t *);
 DCP_API enum dcp_rc dcp_server_submit_job(struct dcp_server *, struct dcp_job *,
                                           uint64_t, uint64_t *);
+DCP_API enum dcp_rc dcp_server_job_state(struct dcp_server *, uint64_t,
+                                         enum dcp_job_state *);
 
 #endif

@@ -2,8 +2,9 @@
 #define DCP_JOB_H
 
 #include "cco/cco.h"
-#include <stdbool.h>
+#include "dcp/job_state.h"
 #include "dcp/seq.h"
+#include <stdbool.h>
 
 struct dcp_job
 {
@@ -12,7 +13,8 @@ struct dcp_job
     struct cco_queue seqs;
 };
 
-static inline void dcp_job_init(struct dcp_job *job, bool multi_hits, bool hmmer3_compat)
+static inline void dcp_job_init(struct dcp_job *job, bool multi_hits,
+                                bool hmmer3_compat)
 {
     job->multi_hits = multi_hits;
     job->hmmer3_compat = hmmer3_compat;

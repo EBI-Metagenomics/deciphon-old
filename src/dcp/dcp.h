@@ -11,6 +11,7 @@ extern "C" {
 #include "dcp/entry_dist.h"
 #include "dcp/generics.h"
 #include "dcp/job.h"
+#include "dcp/job_state.h"
 #include "dcp/log.h"
 #include "dcp/meta.h"
 #include "dcp/model.h"

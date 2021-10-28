@@ -48,5 +48,11 @@ enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath,
 enum dcp_rc dcp_server_submit_job(struct dcp_server *srv, struct dcp_job *job,
                                   uint64_t db_id, uint64_t *job_id)
 {
-    return sched_submit(&srv->sched, job, db_id, job_id);
+    return sched_submit_job(&srv->sched, job, db_id, job_id);
+}
+
+enum dcp_rc dcp_server_job_state(struct dcp_server *srv, uint64_t job_id,
+                                 enum dcp_job_state *state)
+{
+    return sched_job_state(&srv->sched, job_id, state);
 }
