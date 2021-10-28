@@ -19,7 +19,7 @@ enum sched_job_state
 struct sched_job
 {
     uint64_t id;
-    bool multiple_hits;
+    bool multi_hits;
     bool hmmer3_compat;
     uint64_t db_id;
     enum sched_job_state state;
@@ -30,7 +30,7 @@ struct sched_job
     struct cco_queue seqs;
 };
 
-void sched_job_setup(struct sched_job *job, bool multiple_hits,
+void sched_job_setup(struct sched_job *job, bool multi_hits,
                      bool hmmer3_compat, uint64_t db_id);
 
 void sched_job_add_seq(struct sched_job *job, struct sched_seq *seq);

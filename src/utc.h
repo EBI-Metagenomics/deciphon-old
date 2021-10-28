@@ -6,7 +6,7 @@
 
 typedef uint64_t dcp_utc;
 
-#define DCP_UTC_NA UINT64_MAX
+#define DCP_UTC_NULL 0
 
 static inline dcp_utc dcp_utc_now(void) { return (dcp_utc)time(NULL); }
 

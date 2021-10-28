@@ -6,7 +6,7 @@ CREATE TABLE job (
     id            INTEGER      PRIMARY KEY AUTOINCREMENT
                                UNIQUE
                                NOT NULL,
-    multiple_hits BOOLEAN      NOT NULL,
+    multi_hits    BOOLEAN      NOT NULL,
     hmmer3_compat BOOLEAN      NOT NULL,
     db_id         INTEGER      REFERENCES db (id)
                                NOT NULL,
@@ -15,9 +15,12 @@ CREATE TABLE job (
                                DEFAULT ('pend'),
     error         VARCHAR (31) NOT NULL
                                DEFAULT (''),
-    submission    DATETIME     NOT NULL,
-    exec_started  DATETIME     NOT NULL,
-    exec_ended    DATETIME     NOT NULL
+    submission    INTEGER      NOT NULL
+                               DEFAULT (0),
+    exec_started  INTEGER      NOT NULL
+                               DEFAULT (0),
+    exec_ended    INTEGER      NOT NULL
+                               DEFAULT (0)
 );
 
 

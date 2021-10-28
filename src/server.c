@@ -44,3 +44,8 @@ enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath,
         return error(DCP_IOERROR, "file is not readable");
     return sched_add_db(&srv->sched, filepath, id);
 }
+
+enum dcp_rc dcp_server_submit_job(struct dcp_server *srv, struct dcp_job *job, uint64_t db_id)
+{
+    return sched_submit(&srv->sched, job, db_id);
+}

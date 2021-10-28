@@ -1,5 +1,7 @@
 #include "sched.h"
 #include "dcp.h"
+#include "dcp/job.h"
+#include "dcp/seq.h"
 #include "dcp/server.h"
 #include "dcp_file.h"
 #include "error.h"
@@ -43,36 +45,6 @@ static inline enum dcp_rc exec_sql(sqlite3 *db, char const sql[SQL_SIZE])
     return DCP_SUCCESS;
 }
 
-static enum dcp_rc insert_into_job(sqlite3 *db, bool multiple_hits,
-                                   bool hmmer3_compat, uint64_t db_id,
-                                   dcp_utc submission)
-{
-    char sql[SQL_SIZE] = {0};
-    int rc = snprintf(sql, ARRAY_SIZE(sql),
-                      "INSERT INTO job "
-                      "(multiple_hits, hmmer3_compat, db_id, submission)"
-                      " VALUES (%d, %d, %" PRIu64 ", %" PRIu64 ");",
-                      multiple_hits, hmmer3_compat, db_id, submission);
-    assert(rc >= 0);
-    return exec_sql(db, sql);
-}
-
-#if 0
-static enum dcp_rc insert_into_db(sqlite3 *db, char const *filepath)
-{
-    char sql[SQL_SIZE] = {0};
-    int rc = snprintf(sql, ARRAY_SIZE(sql),
-                      "INSERT INTO db (filepath)"
-                      " VALUES ('%s');",
-                      filepath);
-    sqlite3_stmt *pStmt;
-    sqlite3_prepare_v2();
-    sqlite3_prepare_v2(db, "select * from expenses", -1, &stmt, NULL);
-    assert(rc >= 0);
-    return exec_sql(db, sql);
-}
-#endif
-
 enum dcp_rc sched_setup(char const *filepath)
 {
     enum dcp_rc rc = touch_db(filepath);
@@ -102,31 +74,152 @@ enum dcp_rc sched_close(struct sched *sched)
     return DCP_SUCCESS;
 }
 
-enum dcp_rc sched_submit(struct sched *sched, struct sched_job *job)
+enum dcp_rc sched_submit(struct sched *sched, struct dcp_job *job,
+                         uint64_t db_id)
 {
-    return insert_into_job(sched->db, job->multiple_hits, job->hmmer3_compat,
-                           job->db_id, dcp_utc_now());
+    static char const sql0[] = "BEGIN TRANSACTION;";
+
+    static char const sql1[] =
+        "INSERT INTO job (multi_hits, hmmer3_compat, db_id, "
+        "submission) VALUES (?, ?, ?, ?) RETURNING id;";
+
+    static char const sql2[] = "INSERT INTO seq (data, job_id) VALUES (?, ?);";
+
+    static char const sql3[] = "COMMIT TRANSACTION;";
+
+    enum dcp_rc rc = DCP_SUCCESS;
+    sqlite3_stmt *stmt = NULL;
+
+    if (sqlite3_prepare_v2(sched->db, sql0, -1, &stmt, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare statement1");
+        goto cleanup;
+    }
+    if (sqlite3_step(stmt) != SQLITE_DONE)
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to begin job transaction");
+        goto cleanup;
+    }
+    if (sqlite3_finalize(stmt))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to finalize statement1");
+        goto cleanup;
+    }
+    if (sqlite3_prepare_v2(sched->db, sql1, -1, &stmt, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare statement2");
+        goto cleanup;
+    }
+    if (sqlite3_bind_int(stmt, 1, job->multi_hits))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to bind multi_hits");
+        goto cleanup;
+    }
+    if (sqlite3_bind_int(stmt, 2, job->hmmer3_compat))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to bind hmmer3_compat");
+        goto cleanup;
+    }
+    if (sqlite3_bind_int64(stmt, 3, (sqlite3_int64)db_id))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to bind db_id");
+        goto cleanup;
+    }
+    if (sqlite3_bind_int64(stmt, 4, (sqlite3_int64)dcp_utc_now()))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to bind timestamp");
+        goto cleanup;
+    }
+    if (sqlite3_step(stmt) != SQLITE_ROW)
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to add job row1");
+        printf("Error: %s\n", sqlite3_errmsg(sched->db));
+        goto cleanup;
+    }
+    sqlite3_int64 job_id = sqlite3_column_int64(stmt, 0);
+    assert(job_id > 0);
+    if (sqlite3_step(stmt) != SQLITE_DONE)
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to add job row2");
+        printf("Error: %s\n", sqlite3_errmsg(sched->db));
+        goto cleanup;
+    }
+    if (sqlite3_finalize(stmt))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to finalize statement2");
+        goto cleanup;
+    }
+    if (sqlite3_prepare_v2(sched->db, sql2, -1, &stmt, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare statement3");
+        goto cleanup;
+    }
+    struct cco_iter iter = cco_queue_iter(&job->seqs);
+    struct dcp_seq *seq = NULL;
+    cco_iter_for_each_entry(seq, &iter, node)
+    {
+        if (sqlite3_bind_text(stmt, 1, seq->data, -1, NULL))
+        {
+            rc = error(DCP_RUNTIMEERROR, "failed to bind sequence");
+            goto cleanup;
+        }
+        if (sqlite3_bind_int64(stmt, 2, job_id))
+        {
+            rc = error(DCP_RUNTIMEERROR, "failed to bind job_id");
+            goto cleanup;
+        }
+        if (sqlite3_step(stmt) != SQLITE_DONE)
+        {
+            printf("Error: %s\n", sqlite3_errmsg(sched->db));
+            rc = error(DCP_RUNTIMEERROR, "failed to add seq row");
+            goto cleanup;
+        }
+        if (sqlite3_reset(stmt))
+        {
+            rc = error(DCP_RUNTIMEERROR, "failed to reset seq statement");
+            goto cleanup;
+        }
+    }
+    if (sqlite3_finalize(stmt))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to finalize statement3");
+        goto cleanup;
+    }
+    if (sqlite3_prepare_v2(sched->db, sql3, -1, &stmt, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to prepare statement4");
+        goto cleanup;
+    }
+    if (sqlite3_step(stmt) != SQLITE_DONE)
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to commit job transaction");
+        goto cleanup;
+    }
+    if (sqlite3_finalize(stmt))
+        rc = error(DCP_RUNTIMEERROR, "failed to finalize sqlite");
+
+cleanup:
+    return rc;
 }
 
 enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
                          uint64_t *id)
 {
     enum dcp_rc rc = DCP_SUCCESS;
-    char const *sql = sqlite3_mprintf("INSERT INTO db (filepath) VALUES (%Q) "
-                                      "RETURNING id;",
-                                      filepath);
-    if (!sql)
-    {
-        rc = error(DCP_RUNTIMEERROR, "failed to format sqlite statement");
-        goto cleanup;
-    }
+    static char const sql[] =
+        "INSERT INTO db (filepath) VALUES (?) RETURNING id;";
     sqlite3_stmt *stmt = NULL;
+
     if (sqlite3_prepare_v2(sched->db, sql, -1, &stmt, NULL))
     {
         rc = error(DCP_RUNTIMEERROR, "failed to prepare sqlite");
         goto cleanup;
     }
-
+    if (sqlite3_bind_text(stmt, 1, filepath, -1, NULL))
+    {
+        rc = error(DCP_RUNTIMEERROR, "failed to bind filepath");
+        goto cleanup;
+    }
     if (sqlite3_step(stmt) != SQLITE_ROW)
     {
         rc = error(DCP_RUNTIMEERROR, "failed to add db row");
@@ -143,11 +236,10 @@ enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
         goto cleanup;
     }
 
+cleanup:
     if (sqlite3_finalize(stmt))
         rc = error(DCP_RUNTIMEERROR, "failed to finalize sqlite");
 
-cleanup:
-    sqlite3_free((void *)sql);
     return rc;
 }
 
