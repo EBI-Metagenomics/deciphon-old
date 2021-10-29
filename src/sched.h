@@ -45,5 +45,8 @@ enum dcp_rc sched_db_filepath(struct sched *, uint64_t,
                               char filepath[FILEPATH_SIZE]);
 enum dcp_rc sched_next_seq(struct sched *, uint64_t, uint64_t *,
                            char seq[5001]);
+enum dcp_rc sched_add_result(struct sched *sched, uint64_t job_id,
+                             char const *output, char const *codon,
+                             char const *amino);
 
 #endif

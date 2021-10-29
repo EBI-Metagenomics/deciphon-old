@@ -15,6 +15,7 @@
 #include <inttypes.h>
 #include <sqlite3.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static_assert(SQLITE_VERSION_NUMBER >= 3035000, "We need RETURNING statement");
 
@@ -473,6 +474,51 @@ enum dcp_rc sched_next_seq(struct sched *sched, uint64_t job_id,
 
 cleanup:
     return rc;
+}
+
+enum dcp_rc sched_add_result(struct sched *sched, uint64_t job_id,
+                             char const *output, char const *codon,
+                             char const *amino)
+{
+    FILE *output_fd = fopen(output, "rb");
+    FILE *codon_fd = fopen(codon, "rb");
+    FILE *amino_fd = fopen(amino, "rb");
+
+    fseek(output_fd, 0, SEEK_END);
+    size_t fsize = (size_t)ftell(output_fd);
+    fseek(output_fd, 0, SEEK_SET);
+    char *str_output = malloc(fsize + 1);
+    fread(str_output, 1, fsize, output_fd);
+
+    fseek(amino_fd, 0, SEEK_END);
+    fsize = (size_t)ftell(amino_fd);
+    fseek(amino_fd, 0, SEEK_SET);
+    char *str_amino = malloc(fsize + 1);
+    fread(str_amino, 1, fsize, amino_fd);
+
+    fseek(codon_fd, 0, SEEK_END);
+    fsize = (size_t)ftell(codon_fd);
+    fseek(codon_fd, 0, SEEK_SET);
+    char *str_codon = malloc(fsize + 1);
+    fread(str_codon, 1, fsize, codon_fd);
+
+    sqlite3_stmt *stmt = NULL;
+    int bla = prepare(sched->db,
+                      "INSERT INTO result (job_id, amino_faa, "
+                      "codon_fna, output_gff) VALUES (?, ?, ?, ?);",
+                      &stmt);
+    bla = sqlite3_bind_int64(stmt, 1, (sqlite3_int64)job_id);
+    bla = sqlite3_bind_text(stmt, 2, str_amino, -1, NULL);
+    bla = sqlite3_bind_text(stmt, 3, str_codon, -1, NULL);
+    bla = sqlite3_bind_text(stmt, 4, str_output, -1, NULL);
+
+    bla = sqlite3_step(stmt);
+
+    fclose(amino_fd);
+    fclose(codon_fd);
+    fclose(output_fd);
+    sqlite3_finalize(stmt);
+    return DCP_DONE;
 }
 
 static enum dcp_rc create_ground_truth_db(struct file_tmp *tmp)
