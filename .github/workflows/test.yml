@@ -31,7 +31,11 @@ jobs:
 
     - name: Install SQLite3 for Linux
       if: runner.os == 'Linux'
-      run: sudo apt install libsqlite3-dev
+      run: |
+        wget https://www.sqlite.org/2021/sqlite-autoconf-3360000.tar.gz
+        tar xzf sqlite-autoconf-3360000.tar.gz
+        cd sqlite-autoconf-3360000
+        ./configure && make && sudo make install
 
     - name: Install xxhash for Linux
       if: runner.os == 'Linux'
