@@ -7,10 +7,26 @@
 #include "error.h"
 #include "filepath.h"
 #include "sched.h"
+#include "cco/cco.h"
+
+struct db
+{
+    uint64_t id;
+    FILE *fd;
+    struct cco_hnode node;
+};
+
+struct db_hahsed_ring
+{
+    uint64_t busy;
+    struct db data[64];
+    CCO_HASH_DECLARE(tbl, 8);
+};
 
 struct dcp_server
 {
     struct sched sched;
+    CCO_HASH_DECLARE(dbs, 8);
 };
 
 struct dcp_server *dcp_server_open(char const *filepath)
@@ -21,6 +37,8 @@ struct dcp_server *dcp_server_open(char const *filepath)
         error(DCP_OUTOFMEM, "failed to malloc server");
         goto cleanup;
     }
+
+    cco_hash_init(srv->dbs);
 
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_setup(filepath))) goto cleanup;
