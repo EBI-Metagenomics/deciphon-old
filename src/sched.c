@@ -385,15 +385,14 @@ enum dcp_rc sched_next_pend_job(struct sched *sched, struct dcp_job *job,
         goto cleanup;
     }
 
-    goto cleanup;
+    if (sqlite3_reset(sched->stmt.db))
+    {
+        rc = ERROR_RESET("db");
+        goto cleanup;
+    }
     if (sqlite3_bind_int64(sched->stmt.db, 1, db_id))
     {
         rc = ERROR_BIND("db_id");
-        goto cleanup;
-    }
-    if (sqlite3_reset(sched->stmt.db))
-    {
-        rc = ERROR_RESET("job pend");
         goto cleanup;
     }
     if (sqlite3_step(sched->stmt.db) != SQLITE_ROW)
@@ -402,9 +401,13 @@ enum dcp_rc sched_next_pend_job(struct sched *sched, struct dcp_job *job,
         goto cleanup;
     }
     char const *filepath = (char const *)sqlite3_column_text(sched->stmt.db, 0);
-    int size = sqlite3_column_bytes(sched->stmt.db, 0);
-    dcp_strlcpy(db_fp, filepath, (size_t)size + 1);
-    assert(strlen(filepath) == (size_t)size);
+    sqlite3_column_bytes(sched->stmt.db, 0);
+    dcp_strlcpy(db_fp, filepath, FILEPATH_SIZE);
+    if (sqlite3_step(sched->stmt.db) != SQLITE_DONE)
+    {
+        rc = ERROR_STEP("db");
+        goto cleanup;
+    }
 
 cleanup:
     return rc;

@@ -1,4 +1,5 @@
 #include "dcp/server.h"
+#include "dcp/std_db.h"
 #include "dcp/db.h"
 #include "dcp/job.h"
 #include "dcp/prof_types.h"
@@ -61,8 +62,29 @@ enum dcp_rc dcp_server_job_state(struct dcp_server *srv, uint64_t job_id,
 
 enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
 {
+    FILE *fd = NULL;
+    struct dcp_std_db db;
+    dcp_std_db_init(&db);
+
     struct dcp_job job;
     char db_fp[FILEPATH_SIZE] = {0};
     enum dcp_rc rc = sched_next_pend_job(&srv->sched, &job, db_fp);
+    if (rc == DCP_DONE) return DCP_DONE;
+
+    if (!(fd = fopen(db_fp, "rb")))
+        return error(DCP_IOERROR, "failed to open db file");
+
+    if ((rc = dcp_std_db_openr(&db, fd)))
+        goto cleanup;
+
+    if ((rc = dcp_std_db_close(&db)))
+        goto cleanup;
+
+    fclose(fd);
+    return DCP_NEXT;
+
+cleanup:
+    dcp_std_db_close(&db);
+    fclose(fd);
     return rc;
 }
