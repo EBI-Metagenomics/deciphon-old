@@ -25,14 +25,14 @@ enum dcp_rc file_copy(FILE *restrict dst, FILE *restrict src)
     }
     if (ferror(src)) return error(DCP_IOERROR, "failed to read file");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc file_empty(char const *filepath)
 {
     if (!fopen(filepath, "wb"))
         return error(DCP_IOERROR, "failed to empty a file");
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 bool file_readable(char const *filepath)
@@ -49,11 +49,11 @@ bool file_readable(char const *filepath)
 enum dcp_rc file_tmp_mk(struct file_tmp *tmp)
 {
     if (mkstemp(tmp->path) == -1) return error(DCP_IOERROR, "mkstemp failed");
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc file_tmp_rm(struct file_tmp const *tmp)
 {
     if (remove(tmp->path)) return error(DCP_IOERROR, "remove failed");
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }

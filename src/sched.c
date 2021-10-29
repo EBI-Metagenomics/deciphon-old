@@ -57,40 +57,40 @@ static struct
 static inline enum dcp_rc open_error(sqlite3 *db)
 {
     sqlite3_close(db);
-    return error(DCP_RUNTIMEERROR, "failed to open jobs database");
+    return error(DCP_FAIL, "failed to open jobs database");
 }
 
 static inline enum dcp_rc close_error(void)
 {
-    return error(DCP_RUNTIMEERROR, "failed to close jobs database");
+    return error(DCP_FAIL, "failed to close jobs database");
 }
 
 static inline enum dcp_rc exec_sql(sqlite3 *db, char const sql[SQL_SIZE])
 {
     if (sqlite3_exec(db, sql, NULL, NULL, NULL))
-        return error(DCP_RUNTIMEERROR, "failed to exec sql");
-    return DCP_SUCCESS;
+        return error(DCP_FAIL, "failed to exec sql");
+    return DCP_DONE;
 }
 
-#define ERROR_PREPARE(n) error(DCP_RUNTIMEERROR, "failed to prepare " n " stmt")
-#define ERROR_RESET(n) error(DCP_RUNTIMEERROR, "failed to reset " n " stmt")
-#define ERROR_STEP(n) error(DCP_RUNTIMEERROR, "failed to step on " n " stmt")
-#define ERROR_EXEC(n) error(DCP_RUNTIMEERROR, "failed to exec " n " stmt")
-#define ERROR_BIND(n) error(DCP_RUNTIMEERROR, "failed to bind " n)
+#define ERROR_PREPARE(n) error(DCP_FAIL, "failed to prepare " n " stmt")
+#define ERROR_RESET(n) error(DCP_FAIL, "failed to reset " n " stmt")
+#define ERROR_STEP(n) error(DCP_FAIL, "failed to step on " n " stmt")
+#define ERROR_EXEC(n) error(DCP_FAIL, "failed to exec " n " stmt")
+#define ERROR_BIND(n) error(DCP_FAIL, "failed to bind " n)
 
 static enum dcp_rc begin_transaction(struct sched *sched)
 {
     if (sqlite3_reset(sched->stmt.begin)) return ERROR_RESET("begin");
     if (sqlite3_step(sched->stmt.begin) != SQLITE_DONE)
         return ERROR_STEP("begin");
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc end_transaction(struct sched *sched)
 {
     if (sqlite3_reset(sched->stmt.end)) return ERROR_RESET("end");
     if (sqlite3_step(sched->stmt.end) != SQLITE_DONE) return ERROR_STEP("end");
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc sched_setup(char const *filepath)
@@ -105,7 +105,7 @@ enum dcp_rc sched_setup(char const *filepath)
 
     bool ok = false;
     if ((rc = check_integrity(filepath, &ok))) return rc;
-    if (!ok) return error(DCP_RUNTIMEERROR, "damaged jobs database");
+    if (!ok) return error(DCP_FAIL, "damaged jobs database");
 
     return rc;
 }
@@ -130,7 +130,7 @@ enum dcp_rc sched_open(struct sched *sched, char const *filepath)
 {
     if (sqlite3_open(filepath, &sched->db)) return open_error(sched->db);
 
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     sched->stmt.begin = NULL;
     sched->stmt.submit.job = NULL;
     sched->stmt.submit.seq = NULL;
@@ -191,7 +191,7 @@ enum dcp_rc sched_close(struct sched *sched)
 {
     finalize_statements(sched);
     if (sqlite3_close(sched->db)) return close_error();
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static inline sqlite3_int64 columnt_uint64(sqlite3_stmt *stmt, int idx)
@@ -204,7 +204,7 @@ static inline sqlite3_int64 columnt_uint64(sqlite3_stmt *stmt, int idx)
 static enum dcp_rc submit_job(sqlite3_stmt *stmt, struct dcp_job *job,
                               uint64_t db_id, uint64_t *job_id)
 {
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if (sqlite3_reset(stmt))
     {
         rc = ERROR_RESET("submit job");
@@ -247,7 +247,7 @@ cleanup:
 static enum dcp_rc add_seq(sqlite3_stmt *stmt, char const *seq,
                            sqlite3_int64 job_id)
 {
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if (sqlite3_reset(stmt))
     {
         rc = ERROR_RESET("add seq");
@@ -272,7 +272,7 @@ cleanup:
 enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job,
                              uint64_t db_id, uint64_t *job_id)
 {
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if ((rc = begin_transaction(sched))) goto cleanup;
 
     if ((rc = submit_job(sched->stmt.submit.job, job, db_id, job_id)))
@@ -295,7 +295,7 @@ cleanup:
 enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
                          uint64_t *id)
 {
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     static char const sql[] =
         "INSERT INTO db (filepath) VALUES (?) RETURNING id;";
     sqlite3_stmt *stmt = NULL;
@@ -331,7 +331,7 @@ cleanup:
 enum dcp_rc sched_job_state(struct sched *sched, uint64_t job_id,
                             enum dcp_job_state *state)
 {
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if (sqlite3_reset(sched->stmt.job.state))
     {
         rc = ERROR_RESET("job state");
@@ -371,7 +371,7 @@ enum dcp_rc sched_next_pend_job(struct sched *sched, struct dcp_job *job,
         goto cleanup;
     }
     int code = sqlite3_step(sched->stmt.job.pend);
-    if (code == SQLITE_DONE) return DCP_SUCCESS;
+    if (code == SQLITE_DONE) return DCP_DONE;
     if (code != SQLITE_ROW)
     {
         rc = ERROR_STEP("job pend update");
@@ -412,7 +412,7 @@ cleanup:
 
 static enum dcp_rc create_ground_truth_db(struct file_tmp *tmp)
 {
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if ((rc = file_tmp_mk(tmp))) return rc;
     if ((rc = touch_db(tmp->path))) return rc;
     if ((rc = emerge_db(tmp->path))) return rc;
@@ -422,7 +422,7 @@ static enum dcp_rc create_ground_truth_db(struct file_tmp *tmp)
 static enum dcp_rc check_integrity(char const *filepath, bool *ok)
 {
     struct file_tmp tmp = FILE_TMP_INIT();
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
 
     if ((rc = create_ground_truth_db(&tmp))) return rc;
     if ((rc = sqldiff_compare(filepath, tmp.path, ok))) goto cleanup;
@@ -441,7 +441,7 @@ static enum dcp_rc emerge_db(char const *filepath)
     if (rc) return rc;
     if (sqlite3_close(db)) return close_error();
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static int is_empty_cb(void *empty, int argc, char **argv, char **cols)
@@ -465,7 +465,7 @@ static enum dcp_rc is_empty(char const *filepath, bool *empty)
     }
 
     if (sqlite3_close(db)) return close_error();
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc touch_db(char const *filepath)
@@ -473,5 +473,5 @@ static enum dcp_rc touch_db(char const *filepath)
     sqlite3 *db = NULL;
     if (sqlite3_open(filepath, &db)) return open_error(db);
     if (sqlite3_close(db)) return close_error();
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }

@@ -20,10 +20,10 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
     enum hmr_rc hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
     if (hmr_rc == HMR_ENDFILE) return DCP_END;
 
-    if (hmr_rc) return DCP_RUNTIMEERROR;
+    if (hmr_rc) return DCP_FAIL;
 
     unsigned core_size = hmr_prof_length(&reader->prof);
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if ((rc = dcp_pro_model_setup(&reader->model, core_size))) return rc;
 
     hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);
@@ -68,7 +68,7 @@ enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
     assert(node_idx == core_size);
     assert(hmr_rc == HMR_ENDNODE);
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 struct dcp_meta dcp_pro_reader_meta(struct dcp_pro_reader const *reader)

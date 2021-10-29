@@ -33,13 +33,13 @@ int main(void)
     struct dcp_pro_reader reader;
     dcp_pro_reader_init(&reader, amino, nuclt, cfg, fd);
 
-    EQ(dcp_pro_reader_next(&reader), DCP_SUCCESS);
+    EQ(dcp_pro_reader_next(&reader), DCP_DONE);
 
     struct dcp_pro_prof prof;
     dcp_pro_prof_init(&prof, amino, nuclt, cfg);
 
     dcp_prof_nameit(dcp_super(&prof), dcp_meta("name", "acc"));
-    EQ(dcp_pro_prof_absorb(&prof, &reader.model), DCP_SUCCESS);
+    EQ(dcp_pro_prof_absorb(&prof, &reader.model), DCP_DONE);
 
     struct imm_seq seq = imm_seq(imm_str(sequence), dcp_super(&prof)->abc);
 

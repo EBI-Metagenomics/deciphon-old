@@ -171,7 +171,7 @@ static enum dcp_rc predict_codons(struct imm_seq const *seq)
     struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
     struct imm_codon codon = imm_codon_any(prof->nuclt);
 
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     char *ocodon = cli.output.codon.seq;
     while (!(rc = dcp_pro_codec_next(&codec, seq, &codon)))
     {
@@ -180,7 +180,7 @@ static enum dcp_rc predict_codons(struct imm_seq const *seq)
         *(ocodon++) = imm_codon_csym(&codon);
     }
     *ocodon = '\0';
-    if (rc == DCP_END) rc = DCP_SUCCESS;
+    if (rc == DCP_END) rc = DCP_DONE;
     return rc;
 }
 
@@ -206,7 +206,7 @@ static enum dcp_rc write_codons(char const *ocodon)
     char const *desc = cli.queries.fa.target.desc;
     if (fasta_write(&cli.output.codon.fa, fasta_target(id, desc, ocodon), 60))
         return DCP_IOERROR;
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc write_aminos(char const *oamino)
@@ -215,7 +215,7 @@ static enum dcp_rc write_aminos(char const *oamino)
     char const *desc = cli.queries.fa.target.desc;
     if (fasta_write(&cli.output.amino.fa, fasta_target(id, desc, oamino), 60))
         return DCP_IOERROR;
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc scan_queries(struct dcp_meta const *mt)
@@ -223,20 +223,20 @@ static enum dcp_rc scan_queries(struct dcp_meta const *mt)
     struct imm_result null = imm_result();
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
     struct imm_task *task = imm_task_new(&prof->alt.dp);
-    if (!task) return error(DCP_RUNTIMEERROR, "failed to create task");
+    if (!task) return error(DCP_FAIL, "failed to create task");
 
     enum fasta_rc fasta_rc = FASTA_SUCCESS;
     while (!(fasta_rc = fasta_read(&cli.queries.fa)))
     {
         struct imm_seq seq = seq_setup();
         if (imm_task_setup(task, &seq))
-            return error(DCP_RUNTIMEERROR, "failed to create task");
+            return error(DCP_FAIL, "failed to create task");
 
         if (imm_dp_viterbi(&prof->alt.dp, task, &cli.pro.result))
-            return error(DCP_RUNTIMEERROR, "failed to run viterbi");
+            return error(DCP_FAIL, "failed to run viterbi");
 
         if (imm_dp_viterbi(&prof->null.dp, task, &null))
-            return error(DCP_RUNTIMEERROR, "failed to run viterbi");
+            return error(DCP_FAIL, "failed to run viterbi");
 
         imm_float lrt = -2 * (null.loglik - cli.pro.result.loglik);
         if (lrt < 100.0f) continue;
@@ -271,7 +271,7 @@ static enum dcp_rc scan_queries(struct dcp_meta const *mt)
 
     imm_del(task);
     imm_del(&null);
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc cli_setup(void)
@@ -315,7 +315,7 @@ static enum dcp_rc cli_setup(void)
     enum dcp_rc rc = dcp_pro_db_openr(&cli.pro.db, cli.pro.fd);
     if (rc) return rc;
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static void queries_setup(void)

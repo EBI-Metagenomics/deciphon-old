@@ -16,7 +16,7 @@ void test_cli_press_write(void)
     int argc = 4;
     char *argv[1024] = {"dcp-press", ASSETS "/Pfam-A.5.hmm", "-o",
                         TMPDIR "Pfam-A.5.dcp"};
-    EQ(dcp_cli_press(argc, argv), DCP_SUCCESS);
+    EQ(dcp_cli_press(argc, argv), DCP_DONE);
 }
 
 void test_cli_press_read(void)
@@ -24,7 +24,7 @@ void test_cli_press_read(void)
     FILE *fd = fopen(TMPDIR "Pfam-A.5.dcp", "rb");
     NOTNULL(fd);
     struct dcp_pro_db db = dcp_pro_db_default;
-    EQ(dcp_pro_db_openr(&db, fd), DCP_SUCCESS);
+    EQ(dcp_pro_db_openr(&db, fd), DCP_DONE);
 
     EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);
     EQ(dcp_db_prof_typeid(dcp_super(&db)), DCP_PRO_PROFILE);
@@ -59,7 +59,7 @@ void test_cli_press_read(void)
     struct dcp_pro_prof *p = dcp_pro_db_profile(&db);
     while (!dcp_db_end(dcp_super(&db)))
     {
-        EQ(dcp_pro_db_read(&db, p), DCP_SUCCESS);
+        EQ(dcp_pro_db_read(&db, p), DCP_DONE);
         EQ(dcp_prof_typeid(dcp_super(p)), DCP_PRO_PROFILE);
         struct imm_task *task = imm_task_new(&p->alt.dp);
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
@@ -72,6 +72,6 @@ void test_cli_press_read(void)
     EQ(nprofs, 5);
 
     imm_del(&result);
-    EQ(dcp_pro_db_close(&db), DCP_SUCCESS);
+    EQ(dcp_pro_db_close(&db), DCP_DONE);
     fclose(fd);
 }

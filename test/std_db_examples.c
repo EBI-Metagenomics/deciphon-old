@@ -14,7 +14,7 @@ void std_db_examples_new_ex1(char const *filepath)
     NOTNULL(fd);
     struct dcp_std_db db;
     dcp_std_db_init(&db);
-    EQ(dcp_std_db_openw(&db, fd, &m->abc), DCP_SUCCESS);
+    EQ(dcp_std_db_openw(&db, fd, &m->abc), DCP_DONE);
 
     /* Profile 0 */
     struct dcp_std_prof p;
@@ -22,7 +22,7 @@ void std_db_examples_new_ex1(char const *filepath)
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
-    EQ(dcp_std_db_write(&db, &p), DCP_SUCCESS);
+    EQ(dcp_std_db_write(&db, &p), DCP_DONE);
 
     /* Profile 1 */
     struct imm_mute_state state;
@@ -34,10 +34,10 @@ void std_db_examples_new_ex1(char const *filepath)
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME1", "ACC1"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
-    EQ(dcp_std_db_write(&db, &p), DCP_SUCCESS);
+    EQ(dcp_std_db_write(&db, &p), DCP_DONE);
 
     dcp_del(&p);
-    EQ(dcp_std_db_close(&db), DCP_SUCCESS);
+    EQ(dcp_std_db_close(&db), DCP_DONE);
     fclose(fd);
 }
 
@@ -54,7 +54,7 @@ void std_db_examples_new_ex2(char const *filepath)
     NOTNULL(fd);
     struct dcp_std_db db;
     dcp_std_db_init(&db);
-    EQ(dcp_std_db_openw(&db, fd, abc), DCP_SUCCESS);
+    EQ(dcp_std_db_openw(&db, fd, abc), DCP_DONE);
 
     /* Profile 0 */
     struct dcp_std_prof p;
@@ -62,7 +62,7 @@ void std_db_examples_new_ex2(char const *filepath)
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
-    EQ(dcp_std_db_write(&db, &p), DCP_SUCCESS);
+    EQ(dcp_std_db_write(&db, &p), DCP_DONE);
 
     /* Profile 1 */
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME1", "ACC1"));
@@ -74,9 +74,9 @@ void std_db_examples_new_ex2(char const *filepath)
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
-    EQ(dcp_std_db_write(&db, &p), DCP_SUCCESS);
+    EQ(dcp_std_db_write(&db, &p), DCP_DONE);
 
     dcp_del(&p);
-    EQ(dcp_std_db_close(&db), DCP_SUCCESS);
+    EQ(dcp_std_db_close(&db), DCP_DONE);
     fclose(fd);
 }

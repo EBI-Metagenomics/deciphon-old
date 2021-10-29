@@ -35,5 +35,5 @@ enum dcp_rc dcp_cli_info(int argc, char **argv)
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
     printf("Version: " DCP_VERSION "\n");
     printf("Float size: %d\n", IMM_FLOAT_BYTES);
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }

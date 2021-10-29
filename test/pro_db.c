@@ -21,19 +21,19 @@ void test_db_pro_openw(void)
 
     struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
     struct dcp_pro_db db = dcp_pro_db_default;
-    EQ(dcp_pro_db_openw(&db, fd, amino, nuclt, cfg), DCP_SUCCESS);
+    EQ(dcp_pro_db_openw(&db, fd, amino, nuclt, cfg), DCP_DONE);
 
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&db);
 
     dcp_pro_prof_sample(prof, 1, 2);
     dcp_prof_nameit(dcp_super(prof), dcp_meta("NAME0", "ACC0"));
-    EQ(dcp_pro_db_write(&db, prof), DCP_SUCCESS);
+    EQ(dcp_pro_db_write(&db, prof), DCP_DONE);
 
     dcp_pro_prof_sample(prof, 2, 2);
     dcp_prof_nameit(dcp_super(prof), dcp_meta("NAME1", "ACC1"));
-    EQ(dcp_pro_db_write(&db, prof), DCP_SUCCESS);
+    EQ(dcp_pro_db_write(&db, prof), DCP_DONE);
 
-    EQ(dcp_pro_db_close(&db), DCP_SUCCESS);
+    EQ(dcp_pro_db_close(&db), DCP_DONE);
     fclose(fd);
 }
 
@@ -42,7 +42,7 @@ void test_db_pro_openr(void)
     FILE *fd = fopen(TMPDIR "/db.dcp", "rb");
     NOTNULL(fd);
     struct dcp_pro_db db = dcp_pro_db_default;
-    EQ(dcp_pro_db_openr(&db, fd), DCP_SUCCESS);
+    EQ(dcp_pro_db_openr(&db, fd), DCP_DONE);
 
     EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);
     EQ(dcp_db_prof_typeid(dcp_super(&db)), DCP_PRO_PROFILE);
@@ -64,7 +64,7 @@ void test_db_pro_openr(void)
     struct dcp_pro_prof *p = dcp_pro_db_profile(&db);
     while (!dcp_db_end(dcp_super(&db)))
     {
-        EQ(dcp_pro_db_read(&db, p), DCP_SUCCESS);
+        EQ(dcp_pro_db_read(&db, p), DCP_DONE);
         EQ(dcp_prof_typeid(dcp_super(p)), DCP_PRO_PROFILE);
         if (dcp_super(p)->idx == 0)
         {
@@ -80,6 +80,6 @@ void test_db_pro_openr(void)
     EQ(nprofs, 2);
 
     imm_del(&result);
-    EQ(dcp_pro_db_close(&db), DCP_SUCCESS);
+    EQ(dcp_pro_db_close(&db), DCP_DONE);
     fclose(fd);
 }

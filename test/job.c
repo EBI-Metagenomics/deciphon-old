@@ -30,8 +30,8 @@ void test_job(void)
     dcp_seq_init(&seqs[0], seq[0]);
     dcp_seq_init(&seqs[1], seq[1]);
 
-    EQ(dcp_job_add(&job, &seqs[0]), DCP_SUCCESS);
-    EQ(dcp_job_add(&job, &seqs[1]), DCP_SUCCESS);
+    EQ(dcp_job_add(&job, &seqs[0]), DCP_DONE);
+    EQ(dcp_job_add(&job, &seqs[1]), DCP_DONE);
 }
 
 void test_job_wrong_abc(void)

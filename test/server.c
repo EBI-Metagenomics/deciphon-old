@@ -23,7 +23,7 @@ void test_server_setup(void)
     remove(TMPDIR "/setup.sqlite3");
     struct dcp_server *srv = dcp_server_open(TMPDIR "/setup.sqlite3");
     NOTNULL(srv);
-    EQ(dcp_server_close(srv), DCP_SUCCESS);
+    EQ(dcp_server_close(srv), DCP_DONE);
 }
 
 void test_server_reopen(void)
@@ -32,11 +32,11 @@ void test_server_reopen(void)
 
     struct dcp_server *srv = dcp_server_open(TMPDIR "/reopen.sqlite3");
     NOTNULL(srv);
-    EQ(dcp_server_close(srv), DCP_SUCCESS);
+    EQ(dcp_server_close(srv), DCP_DONE);
 
     srv = dcp_server_open(TMPDIR "/reopen.sqlite3");
     NOTNULL(srv);
-    EQ(dcp_server_close(srv), DCP_SUCCESS);
+    EQ(dcp_server_close(srv), DCP_DONE);
 }
 
 void test_server_std_db(void)
@@ -48,9 +48,9 @@ void test_server_std_db(void)
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
     uint64_t db_id = 0;
-    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp", &db_id), DCP_SUCCESS);
+    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp", &db_id), DCP_DONE);
 
-    EQ(dcp_server_close(srv), DCP_SUCCESS);
+    EQ(dcp_server_close(srv), DCP_DONE);
 }
 
 void test_server_submit_job(void)
@@ -62,7 +62,7 @@ void test_server_submit_job(void)
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
     uint64_t db_id = 0;
-    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp", &db_id), DCP_SUCCESS);
+    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp", &db_id), DCP_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job;
@@ -74,10 +74,10 @@ void test_server_submit_job(void)
     dcp_job_add_seq(&job, seq + 1);
 
     uint64_t job_id = 0;
-    EQ(dcp_server_submit_job(srv, &job, db_id, &job_id), DCP_SUCCESS);
+    EQ(dcp_server_submit_job(srv, &job, db_id, &job_id), DCP_DONE);
     EQ(job_id, 1);
 
-    EQ(dcp_server_close(srv), DCP_SUCCESS);
+    EQ(dcp_server_close(srv), DCP_DONE);
 }
 
 void test_server_submit_and_fetch_job(void)
@@ -90,7 +90,7 @@ void test_server_submit_and_fetch_job(void)
 
     std_db_examples_new_ex1(TMPDIR "/example1.dcp");
     uint64_t db_id = 0;
-    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp", &db_id), DCP_SUCCESS);
+    EQ(dcp_server_add_db(srv, TMPDIR "/example1.dcp", &db_id), DCP_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job;
@@ -102,17 +102,17 @@ void test_server_submit_and_fetch_job(void)
     dcp_job_add_seq(&job, seq + 1);
 
     uint64_t job_id = 0;
-    EQ(dcp_server_submit_job(srv, &job, db_id, &job_id), DCP_SUCCESS);
+    EQ(dcp_server_submit_job(srv, &job, db_id, &job_id), DCP_DONE);
     EQ(job_id, 1);
 
     enum dcp_job_state state = 0;
-    EQ(dcp_server_job_state(srv, job_id, &state), DCP_SUCCESS);
+    EQ(dcp_server_job_state(srv, job_id, &state), DCP_DONE);
     EQ(state, DCP_JOB_PEND);
 
     EQ(dcp_server_job_state(srv, 2, &state), DCP_NOTFOUND);
 
     EQ(dcp_server_run(srv, false), DCP_NEXT);
-    EQ(dcp_server_run(srv, false), DCP_SUCCESS);
+    EQ(dcp_server_run(srv, false), DCP_DONE);
 
-    EQ(dcp_server_close(srv), DCP_SUCCESS);
+    EQ(dcp_server_close(srv), DCP_DONE);
 }

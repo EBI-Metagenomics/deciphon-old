@@ -30,22 +30,22 @@ int main(void)
     struct dcp_pro_model model;
     dcp_pro_model_init(&model, amino, nuclt, cfg, null_lprobs);
 
-    EQ(dcp_pro_model_setup(&model, core_size), DCP_SUCCESS);
+    EQ(dcp_pro_model_setup(&model, core_size), DCP_DONE);
 
-    EQ(dcp_pro_model_add_node(&model, match_lprobs1, '-'), DCP_SUCCESS);
-    EQ(dcp_pro_model_add_node(&model, match_lprobs2, '-'), DCP_SUCCESS);
-    EQ(dcp_pro_model_add_node(&model, match_lprobs3, '-'), DCP_SUCCESS);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs1, '-'), DCP_DONE);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs2, '-'), DCP_DONE);
+    EQ(dcp_pro_model_add_node(&model, match_lprobs3, '-'), DCP_DONE);
 
-    EQ(dcp_pro_model_add_trans(&model, t[0]), DCP_SUCCESS);
-    EQ(dcp_pro_model_add_trans(&model, t[1]), DCP_SUCCESS);
-    EQ(dcp_pro_model_add_trans(&model, t[2]), DCP_SUCCESS);
-    EQ(dcp_pro_model_add_trans(&model, t[3]), DCP_SUCCESS);
+    EQ(dcp_pro_model_add_trans(&model, t[0]), DCP_DONE);
+    EQ(dcp_pro_model_add_trans(&model, t[1]), DCP_DONE);
+    EQ(dcp_pro_model_add_trans(&model, t[2]), DCP_DONE);
+    EQ(dcp_pro_model_add_trans(&model, t[3]), DCP_DONE);
 
     struct dcp_pro_prof prof;
     dcp_pro_prof_init(&prof, amino, nuclt, cfg);
 
     dcp_prof_nameit(dcp_super(&prof), dcp_meta("NAME0", "ACC0"));
-    EQ(dcp_pro_prof_absorb(&prof, &model), DCP_SUCCESS);
+    EQ(dcp_pro_prof_absorb(&prof, &model), DCP_DONE);
 
     dcp_del(&prof);
     dcp_del(&model);

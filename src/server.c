@@ -21,7 +21,7 @@ struct dcp_server *dcp_server_open(char const *filepath)
         goto cleanup;
     }
 
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_setup(filepath))) goto cleanup;
     if ((rc = sched_open(&srv->sched, filepath))) goto cleanup;
 

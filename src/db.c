@@ -24,7 +24,7 @@ static enum dcp_rc init_tmpmeta(struct dcp_db *db)
     FILE *fd = tmpfile();
     if (!fd) return error(DCP_IOERROR, "tmpfile() failed");
     dcp_cmp_setup(&db->mt.file.cmp, fd);
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc init_tmpdp(struct dcp_db *db)
@@ -32,7 +32,7 @@ static enum dcp_rc init_tmpdp(struct dcp_db *db)
     FILE *fd = tmpfile();
     if (!fd) return error(DCP_IOERROR, "tmpfile() failed");
     dcp_cmp_setup(&db->dp.cmp, fd);
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
@@ -94,7 +94,7 @@ static enum dcp_rc flush_metadata(struct dcp_db *db)
             return error(DCP_IOERROR, "failed to write acc");
     }
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static void cleanup_metadata_data(struct dcp_db *db)
@@ -126,7 +126,7 @@ static enum dcp_rc closew(struct dcp_db *db)
         return error(DCP_IOERROR, "failed to write number of profiles");
 
     dcp_cmp_rewind(&db->mt.file.cmp);
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if ((rc = flush_metadata(db))) goto cleanup;
     if (dcp_cmp_close(&db->mt.file.cmp))
     {
@@ -156,7 +156,7 @@ enum dcp_rc db_close(struct dcp_db *db)
 {
     if (db->file.mode == DB_OPEN_WRITE) return closew(db);
     closer(db);
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 bool db_end(struct dcp_db const *db)
@@ -178,7 +178,7 @@ enum dcp_rc db_read_magic_number(struct dcp_db *db)
     if (magic_number != MAGIC_NUMBER)
         return error(DCP_PARSEERROR, "wrong file magic number");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_write_magic_number(struct dcp_db *db)
@@ -186,7 +186,7 @@ enum dcp_rc db_write_magic_number(struct dcp_db *db)
     if (!cmp_write_u64(&db->file.cmp, MAGIC_NUMBER))
         return error(DCP_IOERROR, "failed to write magic number");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_read_prof_type(struct dcp_db *db)
@@ -199,7 +199,7 @@ enum dcp_rc db_read_prof_type(struct dcp_db *db)
         return error(DCP_PARSEERROR, "wrong prof_type");
 
     db->prof_typeid = prof_type;
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_write_prof_type(struct dcp_db *db)
@@ -207,7 +207,7 @@ enum dcp_rc db_write_prof_type(struct dcp_db *db)
     if (!cmp_write_u8(&db->file.cmp, (uint8_t)db->prof_typeid))
         return error(DCP_IOERROR, "failed to write prof_type");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_read_float_size(struct dcp_db *db)
@@ -220,7 +220,7 @@ enum dcp_rc db_read_float_size(struct dcp_db *db)
         return error(DCP_PARSEERROR, "invalid float size");
 
     db->float_size = float_bytes;
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_write_float_size(struct dcp_db *db)
@@ -231,7 +231,7 @@ enum dcp_rc db_write_float_size(struct dcp_db *db)
     if (!cmp_write_u8(&db->file.cmp, (uint8_t)size))
         return error(DCP_IOERROR, "failed to write float size");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_read_nprofiles(struct dcp_db *db)
@@ -240,9 +240,9 @@ enum dcp_rc db_read_nprofiles(struct dcp_db *db)
         return error(DCP_IOERROR, "failed to read number of profiles");
 
     if (db->profiles.size > MAX_NPROFILES)
-        return error(DCP_RUNTIMEERROR, "too many profiles");
+        return error(DCP_FAIL, "too many profiles");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc read_metadata_size(struct dcp_db *db)
@@ -251,9 +251,9 @@ static enum dcp_rc read_metadata_size(struct dcp_db *db)
         return error(DCP_IOERROR, "failed to read metadata size");
 
     if (db->mt.size > max_mt_data_size())
-        return error(DCP_RUNTIMEERROR, "mt.data size is too big");
+        return error(DCP_FAIL, "mt.data size is too big");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 /* TODO: use it somewhere to make sure they are compatible */
@@ -261,9 +261,9 @@ static enum dcp_rc check_metadata_profile_compatibility(struct dcp_db const *db)
 {
     if ((db->mt.size > 0 && db->profiles.size == 0) ||
         (db->mt.size == 0 && db->profiles.size > 0))
-        return error(DCP_RUNTIMEERROR, "incompatible profiles and metadata");
+        return error(DCP_FAIL, "incompatible profiles and metadata");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc read_metadata_data(struct dcp_db *db)
@@ -286,7 +286,7 @@ static enum dcp_rc read_metadata_data(struct dcp_db *db)
         return error(DCP_PARSEERROR, "invalid metadata");
     }
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc alloc_metadata_parsing(struct dcp_db *db)
@@ -305,7 +305,7 @@ static enum dcp_rc alloc_metadata_parsing(struct dcp_db *db)
         cleanup_metadata_parsing(db);
     }
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc parse_metadata(struct dcp_db *db)
@@ -319,7 +319,7 @@ static enum dcp_rc parse_metadata(struct dcp_db *db)
         unsigned offset = db->mt.offset[i];
         unsigned j = 0;
         if (offset + j >= db->mt.size)
-            return error(DCP_RUNTIMEERROR, "mt.data index overflow");
+            return error(DCP_FAIL, "mt.data index overflow");
 
         /* Name */
         while (db->mt.data[offset + j++])
@@ -329,7 +329,7 @@ static enum dcp_rc parse_metadata(struct dcp_db *db)
 
         db->mt.name_length[i] = (uint8_t)(j - 1);
         if (offset + j >= db->mt.size)
-            return error(DCP_RUNTIMEERROR, "mt.data index overflow");
+            return error(DCP_FAIL, "mt.data index overflow");
 
         /* Accession */
         while (db->mt.data[offset + j++])
@@ -337,12 +337,12 @@ static enum dcp_rc parse_metadata(struct dcp_db *db)
         db->mt.offset[i + 1] = offset + j;
     }
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_read_metadata(struct dcp_db *db)
 {
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
 
     if ((rc = read_metadata_size(db))) goto cleanup;
 
@@ -353,7 +353,7 @@ enum dcp_rc db_read_metadata(struct dcp_db *db)
         if ((rc = parse_metadata(db))) goto cleanup;
     }
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 
 cleanup:
     cleanup_metadata_data(db);
@@ -370,7 +370,7 @@ static enum dcp_rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
     /* +1 for null-terminated */
     db->mt.size += (uint32_t)strlen(prof->mt.name) + 1;
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc write_accession(struct dcp_db *db,
@@ -383,7 +383,7 @@ static enum dcp_rc write_accession(struct dcp_db *db,
     /* +1 for null-terminated */
     db->mt.size += (uint32_t)strlen(prof->mt.acc) + 1;
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof)
@@ -396,23 +396,23 @@ enum dcp_rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof)
     if (strlen(prof->mt.acc) > MAX_ACC_SIZE)
         return error(DCP_ILLEGALARG, "profile accession is too long");
 
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
 
     if ((rc = write_name(db, prof))) return rc;
     if ((rc = write_accession(db, prof))) return rc;
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc db_check_write_prof_ready(struct dcp_db const *db,
                                       struct dcp_prof const *prof)
 {
     if (db->profiles.size == MAX_NPROFILES)
-        return error(DCP_RUNTIMEERROR, "too many profiles");
+        return error(DCP_FAIL, "too many profiles");
 
     if (prof->mt.name == NULL) return error(DCP_ILLEGALARG, "metadata not set");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx)

@@ -9,14 +9,14 @@ static enum dcp_rc read_abc(FILE *restrict fd, struct imm_abc *abc)
 {
     if (imm_abc_read(abc, fd))
         return error(DCP_IOERROR, "failed to read alphabet");
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
 {
     if (imm_abc_write(abc, fd))
         return error(DCP_IOERROR, "failed to write alphabet");
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 void dcp_std_db_init(struct dcp_std_db *db)
@@ -30,7 +30,7 @@ enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
 {
     db_openr(&db->super, fd);
 
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_prof_type(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
@@ -47,7 +47,7 @@ enum dcp_rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
 {
     db->abc = *abc;
 
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if ((rc = db_openw(&db->super, fd))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_prof_type(&db->super))) goto cleanup;
@@ -76,7 +76,7 @@ struct imm_abc const *dcp_std_db_abc(struct dcp_std_db const *db)
 
 enum dcp_rc dcp_std_db_read(struct dcp_std_db *db, struct dcp_std_prof *prof)
 {
-    if (db_end(&db->super)) return error(DCP_RUNTIMEERROR, "end of profiles");
+    if (db_end(&db->super)) return error(DCP_FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
     return std_prof_read(prof, dcp_cmp_fd(&db->super.file.cmp));
@@ -86,7 +86,7 @@ enum dcp_rc dcp_std_db_write(struct dcp_std_db *db,
                              struct dcp_std_prof const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
     if ((rc = std_prof_write(prof, dcp_cmp_fd(&db->super.dp.cmp)))) return rc;
     db->super.profiles.size++;

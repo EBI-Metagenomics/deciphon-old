@@ -124,7 +124,7 @@ static enum dcp_rc cli_setup(struct arguments const *args)
     dcp_pro_reader_init(&cli.reader, &cli.db.amino, &cli.db.nuclt,
                         cli.db.prof.cfg, cli.input.fd);
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 static enum dcp_rc profile_write(void)

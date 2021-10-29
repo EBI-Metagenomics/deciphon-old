@@ -19,13 +19,13 @@ void test_pro_prof_uniform(void)
 
     struct dcp_pro_prof prof;
     dcp_pro_prof_init(&prof, amino, nuclt, cfg);
-    EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_SUCCESS);
+    EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);
 
     EQ(dcp_pro_prof_setup(&prof, 0, true, false), DCP_ILLEGALARG);
-    EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_SUCCESS);
+    EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
 
     struct imm_result result = imm_result();
     struct imm_dp *dp = &prof.null.dp;
@@ -73,7 +73,7 @@ void test_pro_prof_uniform(void)
     EQ(name, "T");
 
     struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &result.path);
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
 
     struct imm_codon codons[10] = {
         IMM_CODON(prof.nuclt, "ATG"), IMM_CODON(prof.nuclt, "AAA"),
@@ -109,12 +109,12 @@ void test_pro_prof_occupancy(void)
 
     struct dcp_pro_prof prof;
     dcp_pro_prof_init(&prof, amino, nuclt, cfg);
-    EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_SUCCESS);
+    EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);
 
-    EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_SUCCESS);
+    EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
 
     struct imm_result result = imm_result();
     struct imm_dp *dp = &prof.null.dp;
@@ -162,7 +162,7 @@ void test_pro_prof_occupancy(void)
     EQ(name, "T");
 
     struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &result.path);
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
 
     struct imm_codon codons[10] = {
         IMM_CODON(prof.nuclt, "ATG"), IMM_CODON(prof.nuclt, "AAA"),

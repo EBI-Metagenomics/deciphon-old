@@ -43,7 +43,7 @@ static enum dcp_rc alloc_match_nuclt_dists(struct dcp_pro_prof *prof)
         return error(DCP_OUTOFMEM, "failed to alloc nuclt dists");
     }
     prof->alt.match_ndists = ptr;
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
@@ -106,7 +106,7 @@ enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, J), t.EC + t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, J), t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
@@ -121,10 +121,10 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
     struct pro_model_summary s = pro_model_summary(m);
 
     if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
-        return error(DCP_RUNTIMEERROR, "failed to hmm_reset");
+        return error(DCP_FAIL, "failed to hmm_reset");
 
     if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
-        return error(DCP_RUNTIMEERROR, "failed to hmm_reset");
+        return error(DCP_FAIL, "failed to hmm_reset");
 
     p->core_size = m->core_size;
     memcpy(p->consensus, m->consensus, m->core_size + 1);
@@ -147,7 +147,7 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
     p->alt.J = imm_state_idx(imm_super(s.alt.J));
     p->alt.C = imm_state_idx(imm_super(s.alt.C));
     p->alt.T = imm_state_idx(imm_super(s.alt.T));
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro)
@@ -175,7 +175,7 @@ enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     struct dcp_pro_model model;
     dcp_pro_model_init(&model, p->amino, p->nuclt, p->cfg, lprobs);
 
-    enum dcp_rc rc = DCP_SUCCESS;
+    enum dcp_rc rc = DCP_DONE;
 
     if ((rc = dcp_pro_model_setup(&model, core_size))) goto cleanup;
 
@@ -231,7 +231,7 @@ enum dcp_rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
     if (imm_lprob_is_nan(imm_frame_cond_decode(&cond, seq, codon)))
         return error(DCP_ILLEGALARG, "failed to decode sequence");
 
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 void dcp_pro_prof_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
@@ -253,8 +253,8 @@ static void del(struct dcp_prof *prof)
 enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
 {
     FILE *fd = dcp_cmp_fd(cmp);
-    if (imm_dp_read(&prof->null.dp, fd)) return DCP_RUNTIMEERROR;
-    if (imm_dp_read(&prof->alt.dp, fd)) return DCP_RUNTIMEERROR;
+    if (imm_dp_read(&prof->null.dp, fd)) return DCP_FAIL;
+    if (imm_dp_read(&prof->alt.dp, fd)) return DCP_FAIL;
 
     uint16_t core_size = 0;
     if (!cmp_read_u16(cmp, &core_size))
@@ -280,14 +280,14 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
             return rc;
         dcp_nuclt_dist_init(prof->alt.match_ndists + i, prof->nuclt);
     }
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
 
 enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, struct dcp_cmp *cmp)
 {
     FILE *fd = dcp_cmp_fd(cmp);
-    if (imm_dp_write(&prof->null.dp, fd)) return DCP_RUNTIMEERROR;
-    if (imm_dp_write(&prof->alt.dp, fd)) return DCP_RUNTIMEERROR;
+    if (imm_dp_write(&prof->null.dp, fd)) return DCP_FAIL;
+    if (imm_dp_write(&prof->alt.dp, fd)) return DCP_FAIL;
 
     if (!cmp_write_u16(cmp, (uint16_t)prof->core_size))
         return error(DCP_IOERROR, "failed to write core size");
@@ -305,5 +305,5 @@ enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, struct dcp_cmp *cmp)
         if ((rc = dcp_nuclt_dist_write(prof->alt.match_ndists + i, cmp)))
             return rc;
     }
-    return DCP_SUCCESS;
+    return DCP_DONE;
 }
