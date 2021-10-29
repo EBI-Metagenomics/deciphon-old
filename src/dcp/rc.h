@@ -5,6 +5,7 @@ enum dcp_rc
 {
     DCP_SUCCESS,
     DCP_END,
+    DCP_NEXT,
     DCP_FAILURE,
     DCP_OUTOFMEM,
     DCP_ILLEGALARG,

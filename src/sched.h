@@ -3,6 +3,7 @@
 
 #include "dcp/job_state.h"
 #include "dcp/rc.h"
+#include "filepath.h"
 #include <sqlite3.h>
 #include <stdint.h>
 
@@ -22,7 +23,9 @@ struct sched
         struct
         {
             sqlite3_stmt *state;
+            sqlite3_stmt *pend;
         } job;
+        sqlite3_stmt *db;
         sqlite3_stmt *end;
     } stmt;
 };
@@ -35,5 +38,7 @@ enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job,
 enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
                          uint64_t *id);
 enum dcp_rc sched_job_state(struct sched *, uint64_t, enum dcp_job_state *);
+enum dcp_rc sched_next_pend_job(struct sched *, struct dcp_job *,
+                                char[FILEPATH_SIZE]);
 
 #endif

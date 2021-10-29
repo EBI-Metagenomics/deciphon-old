@@ -111,5 +111,8 @@ void test_server_submit_and_fetch_job(void)
 
     EQ(dcp_server_job_state(srv, 2, &state), DCP_NOTFOUND);
 
+    EQ(dcp_server_run(srv, false), DCP_NEXT);
+    EQ(dcp_server_run(srv, false), DCP_SUCCESS);
+
     EQ(dcp_server_close(srv), DCP_SUCCESS);
 }

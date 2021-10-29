@@ -1,8 +1,10 @@
 #include "dcp/server.h"
 #include "dcp/db.h"
+#include "dcp/job.h"
 #include "dcp/prof_types.h"
 #include "dcp_file.h"
 #include "error.h"
+#include "filepath.h"
 #include "sched.h"
 
 struct dcp_server
@@ -55,4 +57,12 @@ enum dcp_rc dcp_server_job_state(struct dcp_server *srv, uint64_t job_id,
                                  enum dcp_job_state *state)
 {
     return sched_job_state(&srv->sched, job_id, state);
+}
+
+enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
+{
+    struct dcp_job job;
+    char db_fp[FILEPATH_SIZE] = {0};
+    enum dcp_rc rc = sched_next_pend_job(&srv->sched, &job, db_fp);
+    return rc;
 }
