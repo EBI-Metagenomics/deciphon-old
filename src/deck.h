@@ -1,15 +1,11 @@
-#ifndef deck_H
-#define deck_H
+#ifndef DECK_H
+#define DECK_H
 
 #include "bitops.h"
+#include "dnode.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-
-struct dnode
-{
-    unsigned idx;
-};
 
 struct deck
 {

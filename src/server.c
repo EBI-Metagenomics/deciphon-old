@@ -1,32 +1,19 @@
 #include "dcp/server.h"
-#include "dcp/std_db.h"
+#include "cco/cco.h"
+#include "db_tbl.h"
 #include "dcp/db.h"
 #include "dcp/job.h"
 #include "dcp/prof_types.h"
+#include "dcp/std_db.h"
 #include "dcp_file.h"
 #include "error.h"
 #include "filepath.h"
 #include "sched.h"
-#include "cco/cco.h"
-
-struct db
-{
-    uint64_t id;
-    FILE *fd;
-    struct cco_hnode node;
-};
-
-struct db_hahsed_ring
-{
-    uint64_t busy;
-    struct db data[64];
-    CCO_HASH_DECLARE(tbl, 8);
-};
 
 struct dcp_server
 {
     struct sched sched;
-    CCO_HASH_DECLARE(dbs, 8);
+    struct db_tbl db_tbl;
 };
 
 struct dcp_server *dcp_server_open(char const *filepath)
@@ -37,8 +24,7 @@ struct dcp_server *dcp_server_open(char const *filepath)
         error(DCP_OUTOFMEM, "failed to malloc server");
         goto cleanup;
     }
-
-    cco_hash_init(srv->dbs);
+    db_tbl_init(&srv->db_tbl);
 
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_setup(filepath))) goto cleanup;
@@ -80,29 +66,36 @@ enum dcp_rc dcp_server_job_state(struct dcp_server *srv, uint64_t job_id,
 
 enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
 {
-    FILE *fd = NULL;
-    struct dcp_std_db db;
-    dcp_std_db_init(&db);
-
     struct dcp_job job;
-    char db_fp[FILEPATH_SIZE] = {0};
-    enum dcp_rc rc = sched_next_pend_job(&srv->sched, &job, db_fp);
+    uint64_t db_id = 0;
+    enum dcp_rc rc = sched_next_pend_job(&srv->sched, &job, &db_id);
     if (rc == DCP_DONE) return DCP_DONE;
 
-    if (!(fd = fopen(db_fp, "rb")))
+    struct db *db = db_tbl_get(&srv->db_tbl, db_id);
+    if (!db)
+    {
+        if (!(db = db_tbl_new(&srv->db_tbl, db_id)))
+        {
+            rc = error(DCP_FAIL, "reached limit of open dbs");
+            goto cleanup;
+        }
+    }
+
+    char filepath[FILEPATH_SIZE] = {0};
+    if ((rc = sched_db_filepath(&srv->sched, db_id, filepath)))
+        goto cleanup;
+
+    if (!(db->fd = fopen(filepath, "rb")))
         return error(DCP_IOERROR, "failed to open db file");
 
-    if ((rc = dcp_std_db_openr(&db, fd)))
-        goto cleanup;
+    dcp_std_db_init(&db->std);
+    if ((rc = dcp_std_db_openr(&db->std, db->fd))) goto cleanup;
 
-    if ((rc = dcp_std_db_close(&db)))
-        goto cleanup;
-
-    fclose(fd);
     return DCP_NEXT;
 
 cleanup:
-    dcp_std_db_close(&db);
-    fclose(fd);
+    dcp_std_db_close(&db->std);
+    fclose(db->fd);
+    db_tbl_del(&srv->db_tbl, &db->hnode);
     return rc;
 }

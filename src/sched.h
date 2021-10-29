@@ -38,7 +38,8 @@ enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job,
 enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
                          uint64_t *id);
 enum dcp_rc sched_job_state(struct sched *, uint64_t, enum dcp_job_state *);
-enum dcp_rc sched_next_pend_job(struct sched *, struct dcp_job *,
-                                char[FILEPATH_SIZE]);
+enum dcp_rc sched_next_pend_job(struct sched *, struct dcp_job *, uint64_t *);
+enum dcp_rc sched_db_filepath(struct sched *, uint64_t,
+                              char filepath[FILEPATH_SIZE]);
 
 #endif
