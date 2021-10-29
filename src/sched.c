@@ -42,6 +42,7 @@ static struct
         char const *pend;
     } job;
     char const *db;
+    char const *seq;
     char const *end;
 } const sched_stmt = {
     .begin = "BEGIN TRANSACTION;",
@@ -52,6 +53,8 @@ static struct
             .pend = "UPDATE job SET state = 'run' WHERE id = (SELECT MIN(id) "
                     "FROM job WHERE state = 'pend') RETURNING id, db_id;"},
     .db = "SELECT filepath FROM db WHERE id = ?;",
+    .seq = "SELECT id, data FROM seq WHERE id > ? AND job_id = ? ORDER BY id "
+           "ASC LIMIT 1;",
     .end = "COMMIT TRANSACTION;"};
 
 static inline enum dcp_rc open_error(sqlite3 *db)
@@ -113,11 +116,12 @@ enum dcp_rc sched_setup(char const *filepath)
 static void finalize_statements(struct sched *sched)
 {
     sqlite3_finalize(sched->stmt.end);
+    sqlite3_finalize(sched->stmt.seq);
+    sqlite3_finalize(sched->stmt.db);
     sqlite3_finalize(sched->stmt.job.pend);
     sqlite3_finalize(sched->stmt.job.state);
     sqlite3_finalize(sched->stmt.submit.seq);
     sqlite3_finalize(sched->stmt.submit.job);
-    sqlite3_finalize(sched->stmt.db);
     sqlite3_finalize(sched->stmt.begin);
 }
 
@@ -170,6 +174,12 @@ enum dcp_rc sched_open(struct sched *sched, char const *filepath)
     if (prepare(sched->db, sched_stmt.db, &sched->stmt.db))
     {
         rc = ERROR_PREPARE("db");
+        goto cleanup;
+    }
+
+    if (prepare(sched->db, sched_stmt.seq, &sched->stmt.seq))
+    {
+        rc = ERROR_PREPARE("seq");
         goto cleanup;
     }
 
@@ -362,7 +372,7 @@ cleanup:
 }
 
 enum dcp_rc sched_next_pend_job(struct sched *sched, struct dcp_job *job,
-                                uint64_t* db_id)
+                                uint64_t *job_id, uint64_t *db_id)
 {
     enum dcp_rc rc = DCP_NEXT;
     if (sqlite3_reset(sched->stmt.job.pend))
@@ -377,9 +387,12 @@ enum dcp_rc sched_next_pend_job(struct sched *sched, struct dcp_job *job,
         rc = ERROR_STEP("job pend update");
         goto cleanup;
     }
-    /* sqlite3_int64 job_id = columnt_uint64(sched->stmt.job.pend, 0); */
+    sqlite3_int64 job_id64 = columnt_uint64(sched->stmt.job.pend, 0);
+    *job_id = (uint64_t)job_id64;
+
     sqlite3_int64 db_id64 = columnt_uint64(sched->stmt.job.pend, 1);
     *db_id = (uint64_t)db_id64;
+
     if (sqlite3_step(sched->stmt.job.pend) != SQLITE_DONE)
     {
         rc = ERROR_STEP("job pend returning");
@@ -415,6 +428,46 @@ enum dcp_rc sched_db_filepath(struct sched *sched, uint64_t id,
     if (sqlite3_step(sched->stmt.db) != SQLITE_DONE)
     {
         rc = ERROR_STEP("db");
+        goto cleanup;
+    }
+
+cleanup:
+    return rc;
+}
+
+enum dcp_rc sched_next_seq(struct sched *sched, uint64_t job_id,
+                           uint64_t *seq_id, char seq[5001])
+{
+    enum dcp_rc rc = DCP_NEXT;
+    if (sqlite3_reset(sched->stmt.seq))
+    {
+        rc = ERROR_RESET("seq");
+        goto cleanup;
+    }
+    if (sqlite3_bind_int64(sched->stmt.seq, 1, (sqlite_int64)*seq_id))
+    {
+        rc = ERROR_BIND("seq_id");
+        goto cleanup;
+    }
+    if (sqlite3_bind_int64(sched->stmt.seq, 2, (sqlite_int64)job_id))
+    {
+        rc = ERROR_BIND("job_id");
+        goto cleanup;
+    }
+    int code = sqlite3_step(sched->stmt.seq);
+    if (code == SQLITE_DONE) return DCP_DONE;
+    if (code != SQLITE_ROW)
+    {
+        rc = ERROR_STEP("seq");
+        goto cleanup;
+    }
+    sqlite3_int64 id64 = sqlite3_column_int64(sched->stmt.seq, 0);
+    *seq_id = (uint64_t)id64;
+    char const *data = (char const *)sqlite3_column_text(sched->stmt.seq, 1);
+    dcp_strlcpy(seq, data, 5001);
+    if (sqlite3_step(sched->stmt.seq) != SQLITE_DONE)
+    {
+        rc = ERROR_STEP("seq");
         goto cleanup;
     }
 
