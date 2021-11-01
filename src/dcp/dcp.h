@@ -30,6 +30,7 @@ extern "C" {
 #include "dcp/pro_xtrans.h"
 #include "dcp/prof_types.h"
 #include "dcp/rc.h"
+#include "dcp/sched.h"
 #include "dcp/seq.h"
 #include "dcp/server.h"
 #include "dcp/std_db.h"
