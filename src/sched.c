@@ -457,23 +457,15 @@ cleanup:
 static enum dcp_rc emerge_db(char const *filepath)
 {
     struct sqlite3 *db = NULL;
-    enum dcp_rc rc = DCP_DONE;
-    if (sqlite3_open(filepath, &db))
-    {
-        rc = ERROR_OPEN();
-        goto cleanup;
-    }
+    if (sqlite3_open(filepath, &db)) return ERROR_OPEN();
 
     if (sqlite3_exec(db, (char const *)schema_sql, 0, 0, 0))
     {
-        rc = ERROR_EXEC("emerge");
-        goto cleanup;
+        enum dcp_rc rc = ERROR_EXEC("emerge");
+        sqlite3_close(db);
+        return rc;
     }
-    if (sqlite3_close(db)) rc = ERROR_CLOSE();
-
-cleanup:
-    sqlite3_close(db);
-    return rc;
+    return sqlite3_close(db) ? ERROR_CLOSE() : DCP_DONE;
 }
 
 static int is_empty_cb(void *empty, int argc, char **argv, char **cols)
@@ -485,26 +477,18 @@ static int is_empty_cb(void *empty, int argc, char **argv, char **cols)
 static enum dcp_rc is_empty(char const *filepath, bool *empty)
 {
     struct sqlite3 *db = NULL;
-    enum dcp_rc rc = DCP_DONE;
-    if (sqlite3_open(filepath, &db))
-    {
-        rc = ERROR_OPEN();
-        goto cleanup;
-    }
+    if (sqlite3_open(filepath, &db)) return ERROR_OPEN();
 
     *empty = true;
     static char const *const sql = "SELECT name FROM sqlite_master;";
     if (sqlite3_exec(db, sql, is_empty_cb, empty, 0))
     {
-        rc = ERROR_EXEC("is_empty");
-        goto cleanup;
+        enum dcp_rc rc = ERROR_EXEC("is_empty");
+        sqlite3_close(db);
+        return rc;
     }
 
-    if (sqlite3_close(db)) rc = ERROR_CLOSE();
-
-cleanup:
-    sqlite3_close(db);
-    return rc;
+    return sqlite3_close(db) ? ERROR_CLOSE() : DCP_DONE;
 }
 
 static enum dcp_rc submit_job(sqlite3_stmt *stmt, struct dcp_job *job,
@@ -553,16 +537,6 @@ cleanup:
 static enum dcp_rc touch_db(char const *filepath)
 {
     struct sqlite3 *db = NULL;
-    enum dcp_rc rc = DCP_DONE;
-    if (sqlite3_open(filepath, &db))
-    {
-        rc = ERROR_OPEN();
-        goto cleanup;
-    }
-
-    if (sqlite3_close(db)) rc = ERROR_CLOSE();
-
-cleanup:
-    sqlite3_close(db);
-    return rc;
+    if (sqlite3_open(filepath, &db)) return ERROR_OPEN();
+    return sqlite3_close(db) ? ERROR_CLOSE() : DCP_DONE;
 }

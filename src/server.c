@@ -219,7 +219,7 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
                      DCP_NEXT))
         {
             struct imm_seq seq = imm_seq(imm_str(data), abc);
-            printf("DATA: %s\n", data);
+            /* printf("DATA: %s\n", data); */
 
             if (imm_task_setup(task, &seq))
                 return error(DCP_FAIL, "failed to create task");
@@ -282,7 +282,7 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
     fclose(gff_fd);
     dcp_pro_db_close(&db->pro);
 
-    sched_add_result(&srv->sched, job_id, "output.gff", "codon.fna", "amino.faa");
+    /* sched_add_result(&srv->sched, job_id, "output.gff", "codon.fna", "amino.faa"); */
 
     return DCP_NEXT;
 

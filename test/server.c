@@ -6,7 +6,7 @@
 void test_server_setup(void);
 void test_server_reopen(void);
 void test_server_std_db(void);
-/* void test_server_submit_job(void); */
+void test_server_submit_job(void);
 void test_server_submit_and_fetch_job(void);
 
 int main(void)
@@ -14,8 +14,8 @@ int main(void)
     test_server_setup();
     test_server_reopen();
     test_server_std_db();
-    /* test_server_submit_job(); */
-    /* test_server_submit_and_fetch_job(); */
+    test_server_submit_job();
+    test_server_submit_and_fetch_job();
     return hope_status();
 }
 
@@ -54,7 +54,6 @@ void test_server_std_db(void)
     EQ(dcp_server_close(srv), DCP_DONE);
 }
 
-#if 0
 void test_server_submit_job(void)
 {
     remove(TMPDIR "/submit_job.sqlite3");
@@ -81,7 +80,6 @@ void test_server_submit_job(void)
 
     EQ(dcp_server_close(srv), DCP_DONE);
 }
-#endif
 
 void test_server_submit_and_fetch_job(void)
 {
