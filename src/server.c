@@ -164,32 +164,49 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     tbl_8x_ed_flush(&table);
 }
 
+static enum dcp_rc prepare_db(struct dcp_server *srv, dcp_sched_id db_id, struct db **db)
+{
+    *db = db_tbl_get(&srv->db_tbl, db_id);
+
+    if (!*db && !(*db = db_tbl_new(&srv->db_tbl, db_id)))
+        return error(DCP_FAIL, "reached limit of open dbs");
+
+    char filepath[FILEPATH_SIZE] = {0};
+    enum dcp_rc rc = DCP_DONE;
+    if ((rc = sched_db_filepath(&srv->sched, db_id, filepath)))
+    {
+        db_tbl_del(&srv->db_tbl, &(*db)->hnode);
+        return rc;
+    }
+
+    if (!((*db)->fd = fopen(filepath, "rb")))
+    {
+        db_tbl_del(&srv->db_tbl, &(*db)->hnode);
+        return error(DCP_IOERROR, "failed to open db file");
+    }
+
+    if ((rc = dcp_pro_db_openr(&(*db)->pro, (*db)->fd)))
+    {
+        fclose((*db)->fd);
+        db_tbl_del(&srv->db_tbl, &(*db)->hnode);
+    }
+
+    return rc;
+}
+
 enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
 {
     struct dcp_job job;
     dcp_sched_id job_id = 0;
     dcp_sched_id db_id = 0;
+
     enum dcp_rc rc = sched_next_job(&srv->sched, &job, &job_id, &db_id);
     if (rc == DCP_DONE) return DCP_DONE;
 
-    struct db *db = db_tbl_get(&srv->db_tbl, db_id);
-    if (!db)
-    {
-        if (!(db = db_tbl_new(&srv->db_tbl, db_id)))
-        {
-            rc = error(DCP_FAIL, "reached limit of open dbs");
-            goto cleanup;
-        }
-    }
+    struct db *db = NULL;
+    if ((rc = prepare_db(srv, db_id, &db))) return rc;
 
-    char filepath[FILEPATH_SIZE] = {0};
-    if ((rc = sched_db_filepath(&srv->sched, db_id, filepath))) goto cleanup;
-
-    if (!(db->fd = fopen(filepath, "rb")))
-        return error(DCP_IOERROR, "failed to open db file");
-
-    if ((rc = dcp_pro_db_openr(&db->pro, db->fd))) goto cleanup;
-
+    return DCP_NEXT;
     FILE *gff_fd = fopen("output.gff", "w");
     struct gff gff;
     gff_init(&gff, gff_fd, GFF_WRITE);
@@ -282,7 +299,8 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
     fclose(gff_fd);
     dcp_pro_db_close(&db->pro);
 
-    /* sched_add_result(&srv->sched, job_id, "output.gff", "codon.fna", "amino.faa"); */
+    /* sched_add_result(&srv->sched, job_id, "output.gff", "codon.fna",
+     * "amino.faa"); */
 
     return DCP_NEXT;
 
