@@ -1,6 +1,6 @@
 #include "dcp/dcp.h"
-#include "pro_db_examples.h"
 #include "hope/hope.h"
+#include "pro_db_examples.h"
 
 void test_db_pro_openw(void);
 void test_db_pro_openr(void);
@@ -12,10 +12,7 @@ int main(void)
     return hope_status();
 }
 
-void test_db_pro_openw(void)
-{
-    pro_db_examples_new_ex1(TMPDIR "/db.dcp");
-}
+void test_db_pro_openw(void) { pro_db_examples_new_ex1(TMPDIR "/db.dcp"); }
 
 void test_db_pro_openr(void)
 {
@@ -40,7 +37,7 @@ void test_db_pro_openr(void)
     EQ(mt[1].acc, "ACC1");
 
     unsigned nprofs = 0;
-    struct imm_result result = imm_result();
+    struct imm_prod prod = imm_prod();
     struct dcp_pro_prof *p = dcp_pro_db_profile(&db);
     while (!dcp_db_end(dcp_super(&db)))
     {
@@ -51,15 +48,15 @@ void test_db_pro_openr(void)
             struct imm_task *task = imm_task_new(&p->alt.dp);
             struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-            EQ(imm_dp_viterbi(&p->alt.dp, task, &result), IMM_SUCCESS);
-            CLOSE(result.loglik, -2720.38142805010);
+            EQ(imm_dp_viterbi(&p->alt.dp, task, &prod), IMM_SUCCESS);
+            CLOSE(prod.loglik, -2720.38142805010);
             imm_del(task);
         }
         ++nprofs;
     }
     EQ(nprofs, 2);
 
-    imm_del(&result);
+    imm_del(&prod);
     EQ(dcp_pro_db_close(&db), DCP_DONE);
     fclose(fd);
 }

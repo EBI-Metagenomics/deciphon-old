@@ -137,7 +137,7 @@ void test_db_openr_example1(void)
     EQ(mt[1].acc, "ACC1");
 
     unsigned nprofs = 0;
-    struct imm_result result = imm_result();
+    struct imm_prod prod = imm_prod();
     struct dcp_std_prof *p = dcp_std_db_profile(&db);
     while (!dcp_db_end(dcp_super(&db)))
     {
@@ -149,15 +149,15 @@ void test_db_openr_example1(void)
             struct imm_abc const *abc = dcp_std_db_abc(&db);
             struct imm_seq seq = imm_seq(imm_str(imm_example1_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-            EQ(imm_dp_viterbi(&p->dp.alt, task, &result), IMM_SUCCESS);
-            CLOSE(result.loglik, -65826.0106185297);
+            EQ(imm_dp_viterbi(&p->dp.alt, task, &prod), IMM_SUCCESS);
+            CLOSE(prod.loglik, -65826.0106185297);
             imm_del(task);
         }
         ++nprofs;
     }
     EQ(nprofs, 2);
 
-    imm_del(&result);
+    imm_del(&prod);
     EQ(dcp_std_db_close(&db), DCP_DONE);
     fclose(fd);
 }
@@ -189,7 +189,7 @@ void test_db_openr_example2(void)
     EQ(mt[1].acc, "ACC1");
 
     unsigned nprofs = 0;
-    struct imm_result result = imm_result();
+    struct imm_prod prod = imm_prod();
     struct dcp_std_prof *p = dcp_std_db_profile(&db);
     while (!dcp_db_end(dcp_super(&db)))
     {
@@ -200,15 +200,15 @@ void test_db_openr_example2(void)
             struct imm_task *task = imm_task_new(&p->dp.alt);
             struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-            EQ(imm_dp_viterbi(&p->dp.alt, task, &result), IMM_SUCCESS);
-            CLOSE(result.loglik, -1622.8488101101);
+            EQ(imm_dp_viterbi(&p->dp.alt, task, &prod), IMM_SUCCESS);
+            CLOSE(prod.loglik, -1622.8488101101);
             imm_del(task);
         }
         ++nprofs;
     }
     EQ(nprofs, 2);
 
-    imm_del(&result);
+    imm_del(&prod);
     EQ(dcp_std_db_close(&db), DCP_DONE);
     fclose(fd);
 }

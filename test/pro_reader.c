@@ -45,14 +45,14 @@ int main(void)
 
     dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false);
 
-    struct imm_result result = imm_result();
+    struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.alt.dp;
     struct imm_task *task = imm_task_new(dp);
     NOTNULL(task);
     EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-    EQ(imm_dp_viterbi(dp, task, &result), IMM_SUCCESS);
-    CLOSE(result.loglik, -1430.9281381240353);
-    imm_del(&result);
+    EQ(imm_dp_viterbi(dp, task, &prod), IMM_SUCCESS);
+    CLOSE(prod.loglik, -1430.9281381240353);
+    imm_del(&prod);
 
     fclose(fd);
     dcp_del(&prof);

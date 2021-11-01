@@ -55,7 +55,7 @@ void test_cli_press_read(void)
                          -2808.72185153672};
 
     unsigned nprofs = 0;
-    struct imm_result result = imm_result();
+    struct imm_prod prod = imm_prod();
     struct dcp_pro_prof *p = dcp_pro_db_profile(&db);
     while (!dcp_db_end(dcp_super(&db)))
     {
@@ -64,14 +64,14 @@ void test_cli_press_read(void)
         struct imm_task *task = imm_task_new(&p->alt.dp);
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
         EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-        EQ(imm_dp_viterbi(&p->alt.dp, task, &result), IMM_SUCCESS);
-        CLOSE(result.loglik, logliks[dcp_super(p)->idx]);
+        EQ(imm_dp_viterbi(&p->alt.dp, task, &prod), IMM_SUCCESS);
+        CLOSE(prod.loglik, logliks[dcp_super(p)->idx]);
         imm_del(task);
         ++nprofs;
     }
     EQ(nprofs, 5);
 
-    imm_del(&result);
+    imm_del(&prod);
     EQ(dcp_pro_db_close(&db), DCP_DONE);
     fclose(fd);
 }

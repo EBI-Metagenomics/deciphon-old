@@ -8,6 +8,7 @@
 #include "error.h"
 #include "fasta/fasta.h"
 #include "gff/gff.h"
+#include "imm/imm.h"
 #include "progress_file.h"
 #include "table.h"
 #include "tbl/tbl.h"
@@ -68,7 +69,7 @@ static struct
         char const *file;
         FILE *fd;
         struct dcp_pro_db db;
-        struct imm_result result;
+        struct imm_prod prod;
     } pro;
 
     struct
@@ -118,7 +119,7 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     char const *headers[4] = {profile_name, seq_name, "posterior", ""};
     tbl_8x_ed_setup(&table, stdout, 128, 6, 32, TBL_RIGHT, 4, headers);
     char const *seq = sequence->str;
-    struct imm_path const *path = &cli.pro.result.path;
+    struct imm_path const *path = &cli.pro.prod.path;
 
     char const *ocodon = cli.output.codon.seq;
     char const *oamino = cli.output.amino.seq;
@@ -166,7 +167,7 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
 static enum dcp_rc predict_codons(struct imm_seq const *seq)
 {
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
-    struct imm_path const *path = &cli.pro.result.path;
+    struct imm_path const *path = &cli.pro.prod.path;
 
     struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
     struct imm_codon codon = imm_codon_any(prof->nuclt);
@@ -220,7 +221,7 @@ static enum dcp_rc write_aminos(char const *oamino)
 
 static enum dcp_rc scan_queries(struct dcp_meta const *mt)
 {
-    struct imm_result null = imm_result();
+    struct imm_prod null = imm_prod();
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
     struct imm_task *task = imm_task_new(&prof->alt.dp);
     if (!task) return error(DCP_FAIL, "failed to create task");
@@ -232,13 +233,13 @@ static enum dcp_rc scan_queries(struct dcp_meta const *mt)
         if (imm_task_setup(task, &seq))
             return error(DCP_FAIL, "failed to create task");
 
-        if (imm_dp_viterbi(&prof->alt.dp, task, &cli.pro.result))
+        if (imm_dp_viterbi(&prof->alt.dp, task, &cli.pro.prod))
             return error(DCP_FAIL, "failed to run viterbi");
 
         if (imm_dp_viterbi(&prof->null.dp, task, &null))
             return error(DCP_FAIL, "failed to run viterbi");
 
-        imm_float lrt = -2 * (null.loglik - cli.pro.result.loglik);
+        imm_float lrt = -2 * (null.loglik - cli.pro.prod.loglik);
         if (lrt < 100.0f) continue;
 
         enum dcp_rc rc = predict_codons(&seq);
@@ -279,7 +280,7 @@ static enum dcp_rc cli_setup(void)
     cli_log_setup();
     cli.queries.file = arguments.args[0];
     cli.pro.file = arguments.args[1];
-    cli.pro.result = imm_result();
+    cli.pro.prod = imm_prod();
     cli.output.nmatches = 0;
 
     if (!(cli.queries.fd = fopen(cli.queries.file, "r")))
@@ -353,7 +354,7 @@ enum dcp_rc dcp_cli_scan(int argc, char **argv)
 
 cleanup:
     progress_file_stop(&cli.progress);
-    imm_del(&cli.pro.result);
+    imm_del(&cli.pro.prod);
     fclose(cli.queries.fd);
     fclose(cli.pro.fd);
     fclose(cli.output.codon.fd);

@@ -23,6 +23,9 @@ struct dcp_server
     struct db_tbl db_tbl;
 };
 
+static enum dcp_rc prepare_db(struct dcp_server *srv, dcp_sched_id db_id,
+                              struct db **db);
+
 struct dcp_server *dcp_server_open(char const *filepath)
 {
     struct dcp_server *srv = malloc(sizeof(*srv));
@@ -77,7 +80,7 @@ static enum dcp_rc predict_codons(struct imm_seq const *seq,
                                   char ocodon[5001 * 3])
 {
     /* struct dcp_pro_prof *prof = &cli.pro.db.prof; */
-    /* struct imm_path const *path = &cli.pro.result.path; */
+    /* struct imm_path const *path = &cli.pro.prod.path; */
 
     struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
     struct imm_codon codon = imm_codon_any(prof->nuclt);
@@ -119,7 +122,7 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     char const *headers[4] = {profile_name, seq_name, "posterior", ""};
     tbl_8x_ed_setup(&table, stdout, 128, 6, 32, TBL_RIGHT, 4, headers);
     char const *seq = sequence->str;
-    /* struct imm_path const *path = &cli.pro.result.path; */
+    /* struct imm_path const *path = &cli.pro.prod.path; */
 
     /* char const *ocodon = cli.output.codon.seq; */
     /* char const *oamino = cli.output.amino.seq; */
@@ -164,7 +167,129 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     tbl_8x_ed_flush(&table);
 }
 
-static enum dcp_rc prepare_db(struct dcp_server *srv, dcp_sched_id db_id, struct db **db)
+enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
+{
+    struct dcp_job job;
+    dcp_sched_id job_id = 0;
+    dcp_sched_id db_id = 0;
+
+    enum dcp_rc rc = sched_next_job(&srv->sched, &job, &job_id, &db_id);
+    if (rc == DCP_DONE) return DCP_DONE;
+
+    struct db *db = NULL;
+    if ((rc = prepare_db(srv, db_id, &db))) return rc;
+
+    struct file_tmp file_gff = FILE_TMP_INIT();
+    rc = file_tmp_mk(&file_gff);
+
+    /* FILE *gff_fd = fopen("output.gff", "w"); */
+    /* struct gff gff; */
+    /* gff_init(&gff, gff_fd, GFF_WRITE); */
+    /* gff_set_version(&gff, NULL); */
+    /* gff_write(&gff); */
+
+    struct imm_prod prod = imm_prod();
+    struct imm_prod null = imm_prod();
+    /* struct fasta codon_fa; */
+    /* struct fasta amino_fa; */
+    /* FILE *codon_fd = fopen("codon.fna", "w"); */
+    /* FILE *amino_fd = fopen("amino.faa", "w"); */
+    /* fasta_init(&codon_fa, codon_fd, FASTA_WRITE); */
+    /* fasta_init(&amino_fa, amino_fd, FASTA_WRITE); */
+    int nmatches = 0;
+#if 0
+    while (!(rc = dcp_db_end(dcp_super(&db->pro))))
+    {
+        struct dcp_pro_prof *prof = dcp_pro_db_profile(&db->pro);
+        if ((rc = dcp_pro_db_read(&db->pro, prof))) goto cleanup;
+        struct imm_abc const *abc = prof->super.abc;
+        struct imm_task *task = imm_task_new(&prof->alt.dp);
+        if (!task) return error(DCP_FAIL, "failed to create task");
+
+        dcp_sched_id seq_id = 0;
+        char data[5001] = {0};
+        while ((rc = sched_next_seq(&srv->sched, job_id, &seq_id, data) ==
+                     DCP_NEXT))
+        {
+            struct imm_seq seq = imm_seq(imm_str(data), abc);
+            /* printf("DATA: %s\n", data); */
+
+            if (imm_task_setup(task, &seq))
+                return error(DCP_FAIL, "failed to create task");
+
+            if (imm_dp_viterbi(&prof->alt.dp, task, &prod))
+                return error(DCP_FAIL, "failed to run viterbi");
+
+            if (imm_dp_viterbi(&prof->null.dp, task, &null))
+                return error(DCP_FAIL, "failed to run viterbi");
+
+            imm_float lrt = -2 * (null.loglik - prod.loglik);
+            if (lrt < 100.0f) continue;
+
+            /* struct dcp_pro_prof *prof = &cli.pro.db.prof; */
+            /* struct imm_path const *path = &cli.pro.prod.path; */
+            char ocodon[5001 * 3] = {0};
+            char oamino[5001 * 3] = {0};
+            enum dcp_rc rc0 = predict_codons(&seq, prof, &prod.path, ocodon);
+            if (rc0) return rc0;
+
+            decode_codons(ocodon, oamino, prof->nuclt);
+
+            /* start = frag.interval.start; */
+            /* stop = frag.interval.stop; */
+            struct dcp_meta const *mt = &prof->super.mt;
+            struct gff_feature *f = gff_set_feature(&gff);
+            char seq_id_str[8] = {0};
+            sprintf(seq_id_str, "%lld.%d", seq_id, nmatches);
+            gff_feature_set_seqid(f, seq_id_str);
+            gff_feature_set_source(f, "deciphon");
+            gff_feature_set_type(f, ".");
+            gff_feature_set_start(f, ".");
+            gff_feature_set_end(f, ".");
+            gff_feature_set_score(f, "0.0");
+            gff_feature_set_strand(f, "+");
+            gff_feature_set_phase(f, ".");
+            char attrs[100] = {0};
+            sprintf(attrs, "ID=%s;Name=%s", mt->acc, mt->name);
+            gff_feature_set_attrs(f, attrs);
+            gff_write(&gff);
+
+            /* annotate(&seq, mt->name, seq_id_str, &prod.path, ocodon,
+             * oamino, prof); */
+
+            if (fasta_write(&codon_fa, fasta_target(seq_id_str, "", ocodon),
+                            60))
+                return DCP_IOERROR;
+
+            if (fasta_write(&amino_fa, fasta_target(seq_id_str, "", oamino),
+                            60))
+                return DCP_IOERROR;
+
+            nmatches++;
+        }
+    }
+    if (rc != DCP_END) goto cleanup;
+
+    fclose(codon_fd);
+    fclose(amino_fd);
+    fclose(gff_fd);
+    dcp_pro_db_close(&db->pro);
+
+    /* sched_add_prod(&srv->sched, job_id, "output.gff", "codon.fna",
+     * "amino.faa"); */
+
+    return DCP_NEXT;
+
+cleanup:
+    dcp_pro_db_close(&db->pro);
+    fclose(db->fd);
+    db_tbl_del(&srv->db_tbl, &db->hnode);
+#endif
+    return rc;
+}
+
+static enum dcp_rc prepare_db(struct dcp_server *srv, dcp_sched_id db_id,
+                              struct db **db)
 {
     *db = db_tbl_get(&srv->db_tbl, db_id);
 
@@ -191,122 +316,5 @@ static enum dcp_rc prepare_db(struct dcp_server *srv, dcp_sched_id db_id, struct
         db_tbl_del(&srv->db_tbl, &(*db)->hnode);
     }
 
-    return rc;
-}
-
-enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
-{
-    struct dcp_job job;
-    dcp_sched_id job_id = 0;
-    dcp_sched_id db_id = 0;
-
-    enum dcp_rc rc = sched_next_job(&srv->sched, &job, &job_id, &db_id);
-    if (rc == DCP_DONE) return DCP_DONE;
-
-    struct db *db = NULL;
-    if ((rc = prepare_db(srv, db_id, &db))) return rc;
-
-    return DCP_NEXT;
-    FILE *gff_fd = fopen("output.gff", "w");
-    struct gff gff;
-    gff_init(&gff, gff_fd, GFF_WRITE);
-    gff_set_version(&gff, NULL);
-    gff_write(&gff);
-
-    struct imm_result result = imm_result();
-    struct imm_result null = imm_result();
-    struct fasta codon_fa;
-    struct fasta amino_fa;
-    FILE *codon_fd = fopen("codon.fna", "w");
-    FILE *amino_fd = fopen("amino.faa", "w");
-    fasta_init(&codon_fa, codon_fd, FASTA_WRITE);
-    fasta_init(&amino_fa, amino_fd, FASTA_WRITE);
-    int nmatches = 0;
-    while (!(rc = dcp_db_end(dcp_super(&db->pro))))
-    {
-        struct dcp_pro_prof *prof = dcp_pro_db_profile(&db->pro);
-        if ((rc = dcp_pro_db_read(&db->pro, prof))) goto cleanup;
-        struct imm_abc const *abc = prof->super.abc;
-        struct imm_task *task = imm_task_new(&prof->alt.dp);
-        if (!task) return error(DCP_FAIL, "failed to create task");
-
-        dcp_sched_id seq_id = 0;
-        char data[5001] = {0};
-        while ((rc = sched_next_seq(&srv->sched, job_id, &seq_id, data) ==
-                     DCP_NEXT))
-        {
-            struct imm_seq seq = imm_seq(imm_str(data), abc);
-            /* printf("DATA: %s\n", data); */
-
-            if (imm_task_setup(task, &seq))
-                return error(DCP_FAIL, "failed to create task");
-
-            if (imm_dp_viterbi(&prof->alt.dp, task, &result))
-                return error(DCP_FAIL, "failed to run viterbi");
-
-            if (imm_dp_viterbi(&prof->null.dp, task, &null))
-                return error(DCP_FAIL, "failed to run viterbi");
-
-            imm_float lrt = -2 * (null.loglik - result.loglik);
-            if (lrt < 100.0f) continue;
-
-            /* struct dcp_pro_prof *prof = &cli.pro.db.prof; */
-            /* struct imm_path const *path = &cli.pro.result.path; */
-            char ocodon[5001 * 3] = {0};
-            char oamino[5001 * 3] = {0};
-            enum dcp_rc rc0 = predict_codons(&seq, prof, &result.path, ocodon);
-            if (rc0) return rc0;
-
-            decode_codons(ocodon, oamino, prof->nuclt);
-
-            /* start = frag.interval.start; */
-            /* stop = frag.interval.stop; */
-            struct dcp_meta const *mt = &prof->super.mt;
-            struct gff_feature *f = gff_set_feature(&gff);
-            char seq_id_str[8] = {0};
-            sprintf(seq_id_str, "%lld.%d", seq_id, nmatches);
-            gff_feature_set_seqid(f, seq_id_str);
-            gff_feature_set_source(f, "deciphon");
-            gff_feature_set_type(f, ".");
-            gff_feature_set_start(f, ".");
-            gff_feature_set_end(f, ".");
-            gff_feature_set_score(f, "0.0");
-            gff_feature_set_strand(f, "+");
-            gff_feature_set_phase(f, ".");
-            char attrs[100] = {0};
-            sprintf(attrs, "ID=%s;Name=%s", mt->acc, mt->name);
-            gff_feature_set_attrs(f, attrs);
-            gff_write(&gff);
-
-            /* annotate(&seq, mt->name, seq_id_str, &result.path, ocodon,
-             * oamino, prof); */
-
-            if (fasta_write(&codon_fa, fasta_target(seq_id_str, "", ocodon),
-                            60))
-                return DCP_IOERROR;
-
-            if (fasta_write(&amino_fa, fasta_target(seq_id_str, "", oamino),
-                            60))
-                return DCP_IOERROR;
-
-            nmatches++;
-        }
-    }
-    if (rc != DCP_END) goto cleanup;
-
-    fclose(codon_fd);
-    fclose(amino_fd);
-    fclose(gff_fd);
-    dcp_pro_db_close(&db->pro);
-
-    /* sched_add_result(&srv->sched, job_id, "output.gff", "codon.fna",
-     * "amino.faa"); */
-
-    return DCP_NEXT;
-
-cleanup:
-    dcp_pro_db_close(&db->pro);
-    fclose(db->fd);
-    db_tbl_del(&srv->db_tbl, &db->hnode);
     return rc;
 }
