@@ -169,7 +169,7 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
     struct dcp_job job;
     uint64_t job_id = 0;
     uint64_t db_id = 0;
-    enum dcp_rc rc = sched_next_pend_job(&srv->sched, &job, &job_id, &db_id);
+    enum dcp_rc rc = sched_next_job(&srv->sched, &job, &job_id, &db_id);
     if (rc == DCP_DONE) return DCP_DONE;
 
     struct db *db = db_tbl_get(&srv->db_tbl, db_id);

@@ -1,3 +1,7 @@
+set(CBP_DIR "${CMAKE_CURRENT_LIST_DIR}")
+list(APPEND CMAKE_MODULE_PATH "${CBP_DIR}/cmake")
+message(STATUS "CBP_DIR is ${CBP_DIR}")
+
 function(cbp_install tgt hdr_place)
   install(TARGETS ${tgt} EXPORT ${tgt}-targets)
 
@@ -99,4 +103,29 @@ macro(cbp_generate_export_header tgt export_file)
     ${TGT}_API
     EXPORT_FILE_NAME
     ${${export_file}})
+endmacro()
+
+macro(cbp_assert_null_is_zero_bits)
+  include(CheckCSourceRuns)
+  check_c_source_runs(
+  "
+  #include <stddef.h>
+  #include <stdint.h>
+
+  /* Returns zero if NULL is zero-bits represented. */
+  int main(void)
+  {
+    void *ptr = NULL;
+    intptr_t v0 = (intptr_t)ptr;
+    intptr_t v1 = 0;
+    return !(v0 == v1);
+  }
+  "
+  NULL_IS_ZERO_BITS)
+
+  if (NULL_IS_ZERO_BITS)
+    message(STATUS "NULL is zero-bits represented.")
+  else()
+    message(FATAL_ERROR "NULL is not zero-bits represented.")
+  endif()
 endmacro()

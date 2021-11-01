@@ -7,10 +7,8 @@ project(
 # Generate compile_commands.json file
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include(external/cmake-boilerplate/cbp.cmake)
+include("${CMAKE_CURRENT_LIST_DIR}/external/cmake-boilerplate/cbp.cmake")
 cbp_set_rpath()
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(Argp REQUIRED)
 find_package(Threads REQUIRED)
@@ -68,6 +66,7 @@ cbp_hide_functions(dcp)
 cbp_set_warning_flags()
 cbp_ci_build_option()
 cbp_generate_export_header(dcp EXPORT_FILE)
+cbp_assert_null_is_zero_bits()
 
 target_include_directories(
   dcp
@@ -108,25 +107,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in ${VERSION_FILE}
 
 target_compile_definitions(dcp PRIVATE _XOPEN_SOURCE=1)
 set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS};-D_XOPEN_SOURCE=1)
-
-include(CheckCSourceCompiles)
-include(CheckTypeSize)
-
-check_c_source_compiles(
-  "
-        static void f(char const* err, ...) __attribute__((format(printf, 1, 2)));
-        int main(void) {return 0;}
-    "
-  HAVE_ATTR_FMT)
-target_compile_definitions(dcp
-                           PRIVATE $<$<BOOL:${HAVE_ATTR_FMT}>:HAVE_ATTR_FMT>)
-
-check_type_size("int" SIZEOF_INT)
-if(NOT HAVE_SIZEOF_INT)
-  message(FATAL_ERROR "Could not determine the size of int.")
-endif()
-math(EXPR BITS_PER_INT "${SIZEOF_INT} * 8")
-target_compile_definitions(dcp PRIVATE BITS_PER_INT=${BITS_PER_INT})
 
 # Command line interface programs
 add_executable(dcp-press src/bin/press.c)
