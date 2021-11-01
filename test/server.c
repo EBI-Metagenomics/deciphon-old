@@ -1,11 +1,11 @@
 #include "dcp/dcp.h"
 #include "hope/hope.h"
-#include "std_db_examples.h"
 #include "pro_db_examples.h"
+#include "std_db_examples.h"
 
 void test_server_setup(void);
 void test_server_reopen(void);
-/* void test_server_std_db(void); */
+void test_server_std_db(void);
 /* void test_server_submit_job(void); */
 void test_server_submit_and_fetch_job(void);
 
@@ -13,9 +13,9 @@ int main(void)
 {
     test_server_setup();
     test_server_reopen();
-    /* test_server_std_db(); */
+    test_server_std_db();
     /* test_server_submit_job(); */
-    test_server_submit_and_fetch_job();
+    /* test_server_submit_and_fetch_job(); */
     return hope_status();
 }
 
@@ -40,7 +40,6 @@ void test_server_reopen(void)
     EQ(dcp_server_close(srv), DCP_DONE);
 }
 
-#if 0
 void test_server_std_db(void)
 {
     remove(TMPDIR "/std_db.sqlite3");
@@ -49,12 +48,13 @@ void test_server_std_db(void)
     NOTNULL(srv);
 
     std_db_examples_new_ex1(TMPDIR "/std_example1.dcp");
-    uint64_t db_id = 0;
+    dcp_sched_id db_id = 0;
     EQ(dcp_server_add_db(srv, TMPDIR "/std_example1.dcp", &db_id), DCP_DONE);
 
     EQ(dcp_server_close(srv), DCP_DONE);
 }
 
+#if 0
 void test_server_submit_job(void)
 {
     remove(TMPDIR "/submit_job.sqlite3");
@@ -63,7 +63,7 @@ void test_server_submit_job(void)
     NOTNULL(srv);
 
     std_db_examples_new_ex1(TMPDIR "/std_example1.dcp");
-    uint64_t db_id = 0;
+    dcp_sched_id db_id = 0;
     EQ(dcp_server_add_db(srv, TMPDIR "/std_example1.dcp", &db_id), DCP_DONE);
     EQ(db_id, 1);
 
@@ -75,7 +75,7 @@ void test_server_submit_job(void)
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
-    uint64_t job_id = 0;
+    dcp_sched_id job_id = 0;
     EQ(dcp_server_submit_job(srv, &job, db_id, &job_id), DCP_DONE);
     EQ(job_id, 1);
 
@@ -92,7 +92,7 @@ void test_server_submit_and_fetch_job(void)
     NOTNULL(srv);
 
     pro_db_examples_new_ex1(TMPDIR "/pro_example1.dcp");
-    uint64_t db_id = 0;
+    dcp_sched_id db_id = 0;
     EQ(dcp_server_add_db(srv, TMPDIR "/pro_example1.dcp", &db_id), DCP_DONE);
     EQ(db_id, 1);
 
@@ -104,7 +104,7 @@ void test_server_submit_and_fetch_job(void)
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
-    uint64_t job_id = 0;
+    dcp_sched_id job_id = 0;
     EQ(dcp_server_submit_job(srv, &job, db_id, &job_id), DCP_DONE);
     EQ(job_id, 1);
 

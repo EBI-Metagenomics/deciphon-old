@@ -4,13 +4,14 @@
 #include "dnode.h"
 #include "cco/cco.h"
 #include "dcp/db.h"
+#include "dcp/sched.h"
 #include "dcp/pro_db.h"
 #include "dcp/std_db.h"
 #include "deck.h"
 
 struct db
 {
-    uint64_t id;
+    dcp_sched_id id;
     struct dnode dnode;
     struct cco_hnode hnode;
     FILE *fd;
@@ -36,7 +37,7 @@ static void db_tbl_init(struct db_tbl *tbl)
         deck_assoc(&tbl->deck, &tbl->dbs[i].dnode);
 }
 
-static struct db *db_tbl_new(struct db_tbl *tbl, uint64_t id)
+static struct db *db_tbl_new(struct db_tbl *tbl, dcp_sched_id id)
 {
     struct dnode *dnode = deck_pop(&tbl->deck);
     struct db *db = cco_of(dnode, struct db, dnode);
@@ -46,7 +47,7 @@ static struct db *db_tbl_new(struct db_tbl *tbl, uint64_t id)
     return db;
 }
 
-static struct db *db_tbl_get(struct db_tbl *tbl, uint64_t id)
+static struct db *db_tbl_get(struct db_tbl *tbl, dcp_sched_id id)
 {
     struct db *db = NULL;
     cco_hash_for_each_possible(tbl->tbl, db, hnode, id)

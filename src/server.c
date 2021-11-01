@@ -52,7 +52,7 @@ enum dcp_rc dcp_server_close(struct dcp_server *srv)
 }
 
 enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath,
-                              uint64_t *id)
+                              dcp_sched_id *id)
 {
     if (!file_readable(filepath))
         return error(DCP_IOERROR, "file is not readable");
@@ -60,12 +60,12 @@ enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath,
 }
 
 enum dcp_rc dcp_server_submit_job(struct dcp_server *srv, struct dcp_job *job,
-                                  uint64_t db_id, uint64_t *job_id)
+                                  dcp_sched_id db_id, dcp_sched_id *job_id)
 {
     return sched_submit_job(&srv->sched, job, db_id, job_id);
 }
 
-enum dcp_rc dcp_server_job_state(struct dcp_server *srv, uint64_t job_id,
+enum dcp_rc dcp_server_job_state(struct dcp_server *srv, dcp_sched_id job_id,
                                  enum dcp_job_state *state)
 {
     return sched_job_state(&srv->sched, job_id, state);
@@ -167,8 +167,8 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
 enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
 {
     struct dcp_job job;
-    uint64_t job_id = 0;
-    uint64_t db_id = 0;
+    dcp_sched_id job_id = 0;
+    dcp_sched_id db_id = 0;
     enum dcp_rc rc = sched_next_job(&srv->sched, &job, &job_id, &db_id);
     if (rc == DCP_DONE) return DCP_DONE;
 
@@ -213,7 +213,7 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
         struct imm_task *task = imm_task_new(&prof->alt.dp);
         if (!task) return error(DCP_FAIL, "failed to create task");
 
-        uint64_t seq_id = 0;
+        dcp_sched_id seq_id = 0;
         char data[5001] = {0};
         while ((rc = sched_next_seq(&srv->sched, job_id, &seq_id, data) ==
                      DCP_NEXT))
