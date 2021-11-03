@@ -29,7 +29,7 @@ static_assert(IMM_SYM_SIZE == 94, "IMM_SYM_SIZE == 94");
 #define ERROR_EXEC(n) error(DCP_FAIL, "failed to exec " n " stmt")
 #define ERROR_BIND(n) error(DCP_FAIL, "failed to bind " n)
 
-static enum dcp_rc add_seq(sqlite3_stmt *, char const *seq,
+static enum dcp_rc add_seq(sqlite3_stmt *, char const *seq_id, char const *seq,
                            sqlite3_int64 job_id);
 static enum dcp_rc check_integrity(char const *filepath, bool *ok);
 static enum dcp_rc create_ground_truth_db(struct file_tmp *tmp);
@@ -84,7 +84,8 @@ static struct
 } const sched_stmt = {
     .submit = {.job = " INSERT INTO job (multi_hits, hmmer3_compat, db_id, "
                       "submission) VALUES (?, ?, ?, ?) RETURNING id;",
-               .seq = "INSERT INTO seq (data, job_id) VALUES (?, ?);"},
+               .seq =
+                   "INSERT INTO seq (seq_id, data, job_id) VALUES (?, ?, ?);"},
     .job = {.state = "SELECT state FROM job WHERE id = ? LIMIT 1;",
             .pend = "UPDATE job SET state = 'run' WHERE id = (SELECT MIN(id) "
                     "FROM job WHERE state = 'pend') RETURNING id, db_id;"},
@@ -196,7 +197,8 @@ enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job,
     struct dcp_seq *seq = NULL;
     cco_iter_for_each_entry(seq, &iter, node)
     {
-        if (add_seq(sched->stmt.submit.seq, seq->data, *job_id)) goto cleanup;
+        if (add_seq(sched->stmt.submit.seq, seq->id, seq->data, *job_id))
+            goto cleanup;
     }
 
 cleanup:
@@ -407,13 +409,18 @@ enum dcp_rc sched_add_result(struct sched *sched, dcp_sched_id job_id,
     return DCP_DONE;
 }
 
-static enum dcp_rc add_seq(sqlite3_stmt *stmt, char const *seq,
-                           sqlite3_int64 job_id)
+static enum dcp_rc add_seq(sqlite3_stmt *stmt, char const *seq_id,
+                           char const *seq, sqlite3_int64 job_id)
 {
     enum dcp_rc rc = DCP_DONE;
     if (sqlite3_reset(stmt))
     {
         rc = ERROR_RESET("add seq");
+        goto cleanup;
+    }
+    if (sqlite3_bind_text(stmt, 1, seq_id, -1, NULL))
+    {
+        rc = ERROR_BIND("seq_id");
         goto cleanup;
     }
     if (sqlite3_bind_text(stmt, 1, seq, -1, NULL))

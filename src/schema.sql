@@ -29,6 +29,7 @@ CREATE TABLE [seq] (
     id     INTEGER PRIMARY KEY AUTOINCREMENT
                    UNIQUE
                    NOT NULL,
+    seq_id VARCHAR NOT NULL,
     data   VARCHAR NOT NULL,
     job_id INTEGER REFERENCES job (id)
                    NOT NULL

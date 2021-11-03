@@ -13,6 +13,7 @@
 #include "fasta/fasta.h"
 #include "filepath.h"
 #include "gff/gff.h"
+#include "pro_prod.h"
 #include "sched.h"
 #include "table.h"
 #include "tbl/tbl.h"
@@ -179,25 +180,13 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
     struct db *db = NULL;
     if ((rc = prepare_db(srv, db_id, &db))) return rc;
 
-    struct file_tmp file_gff = FILE_TMP_INIT();
-    rc = file_tmp_mk(&file_gff);
+    struct file_tmp prod_file = FILE_TMP_INIT();
+    rc = file_tmp_mk(&prod_file);
 
-    /* FILE *gff_fd = fopen("output.gff", "w"); */
-    /* struct gff gff; */
-    /* gff_init(&gff, gff_fd, GFF_WRITE); */
-    /* gff_set_version(&gff, NULL); */
-    /* gff_write(&gff); */
-
-    struct imm_prod prod = imm_prod();
+    struct imm_prod alt = imm_prod();
     struct imm_prod null = imm_prod();
-    /* struct fasta codon_fa; */
-    /* struct fasta amino_fa; */
-    /* FILE *codon_fd = fopen("codon.fna", "w"); */
-    /* FILE *amino_fd = fopen("amino.faa", "w"); */
-    /* fasta_init(&codon_fa, codon_fd, FASTA_WRITE); */
-    /* fasta_init(&amino_fa, amino_fd, FASTA_WRITE); */
-    int nmatches = 0;
-#if 0
+    unsigned match_id = 0;
+    struct pro_prod prod = {0};
     while (!(rc = dcp_db_end(dcp_super(&db->pro))))
     {
         struct dcp_pro_prof *prof = dcp_pro_db_profile(&db->pro);
@@ -212,35 +201,41 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
                      DCP_NEXT))
         {
             struct imm_seq seq = imm_seq(imm_str(data), abc);
-            /* printf("DATA: %s\n", data); */
 
             if (imm_task_setup(task, &seq))
                 return error(DCP_FAIL, "failed to create task");
 
-            if (imm_dp_viterbi(&prof->alt.dp, task, &prod))
+            if (imm_dp_viterbi(&prof->alt.dp, task, &alt))
                 return error(DCP_FAIL, "failed to run viterbi");
 
             if (imm_dp_viterbi(&prof->null.dp, task, &null))
                 return error(DCP_FAIL, "failed to run viterbi");
 
-            imm_float lrt = -2 * (null.loglik - prod.loglik);
+            imm_float lrt = -2 * (null.loglik - alt.loglik);
             if (lrt < 100.0f) continue;
 
             /* struct dcp_pro_prof *prof = &cli.pro.db.prof; */
-            /* struct imm_path const *path = &cli.pro.prod.path; */
-            char ocodon[5001 * 3] = {0};
-            char oamino[5001 * 3] = {0};
-            enum dcp_rc rc0 = predict_codons(&seq, prof, &prod.path, ocodon);
-            if (rc0) return rc0;
+            /* struct imm_path const *path = &cli.pro.alt.path; */
+            char ocodon[4] = {0};
+            char oamino[2] = {0};
 
-            decode_codons(ocodon, oamino, prof->nuclt);
+            struct dcp_pro_codec codec = dcp_pro_codec_init(prof, &alt.path);
+            struct imm_codon codon = imm_codon_any(prof->nuclt);
+
+            while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
+            {
+                ocodon[0] = imm_codon_asym(&codon);
+                ocodon[1] = imm_codon_bsym(&codon);
+                ocodon[2] = imm_codon_csym(&codon);
+                oamino[0] = imm_gc_decode(1, codon);
+            }
 
             /* start = frag.interval.start; */
             /* stop = frag.interval.stop; */
+            prod.super.match_id++;
+            /* prod.super.seq_id = ""; */
             struct dcp_meta const *mt = &prof->super.mt;
-            struct gff_feature *f = gff_set_feature(&gff);
-            char seq_id_str[8] = {0};
-            sprintf(seq_id_str, "%lld.%d", seq_id, nmatches);
+            sprintf(seq_id_str, "%lld.%d", seq_id, match_id);
             gff_feature_set_seqid(f, seq_id_str);
             gff_feature_set_source(f, "deciphon");
             gff_feature_set_type(f, ".");
@@ -254,7 +249,7 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
             gff_feature_set_attrs(f, attrs);
             gff_write(&gff);
 
-            /* annotate(&seq, mt->name, seq_id_str, &prod.path, ocodon,
+            /* annotate(&seq, mt->name, seq_id_str, &alt.path, ocodon,
              * oamino, prof); */
 
             if (fasta_write(&codon_fa, fasta_target(seq_id_str, "", ocodon),
@@ -265,7 +260,7 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
                             60))
                 return DCP_IOERROR;
 
-            nmatches++;
+            match_id++;
         }
     }
     if (rc != DCP_END) goto cleanup;
@@ -284,7 +279,6 @@ cleanup:
     dcp_pro_db_close(&db->pro);
     fclose(db->fd);
     db_tbl_del(&srv->db_tbl, &db->hnode);
-#endif
     return rc;
 }
 
