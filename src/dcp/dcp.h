@@ -32,9 +32,10 @@ extern "C" {
 #include "dcp/rc.h"
 #include "dcp/sched.h"
 #include "dcp/seq.h"
-#include "dcp/server.h"
+#include "dcp/srv.h"
 #include "dcp/std_db.h"
 #include "dcp/std_prof.h"
+#include "dcp/str.h"
 #include "dcp/version.h"
 
 #ifdef __cplusplus

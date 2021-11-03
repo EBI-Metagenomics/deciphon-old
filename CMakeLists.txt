@@ -50,8 +50,8 @@ add_library(
   src/sched.c
   src/sched_job.c
   src/seq.c
-  src/server.c
   src/sqldiff.c
+  src/srv.c
   src/std_db.c
   src/std_prof.c
   src/table.c

@@ -1,4 +1,4 @@
-#include "dcp/server.h"
+#include "dcp/srv.h"
 #include "cco/cco.h"
 #include "db_tbl.h"
 #include "dcp/db.h"
@@ -19,18 +19,18 @@
 #include "tbl/tbl.h"
 #include "xstrlcpy.h"
 
-struct dcp_server
+struct dcp_srv
 {
     struct sched sched;
     struct db_tbl db_tbl;
 };
 
-static enum dcp_rc prepare_db(struct dcp_server *srv, dcp_sched_id db_id,
+static enum dcp_rc prepare_db(struct dcp_srv *srv, dcp_sched_id db_id,
                               struct db **db);
 
-struct dcp_server *dcp_server_open(char const *filepath)
+struct dcp_srv *dcp_srv_open(char const *filepath)
 {
-    struct dcp_server *srv = malloc(sizeof(*srv));
+    struct dcp_srv *srv = malloc(sizeof(*srv));
     if (!srv)
     {
         error(DCP_OUTOFMEM, "failed to malloc server");
@@ -49,29 +49,29 @@ cleanup:
     return NULL;
 }
 
-enum dcp_rc dcp_server_close(struct dcp_server *srv)
+enum dcp_rc dcp_srv_close(struct dcp_srv *srv)
 {
     enum dcp_rc rc = sched_close(&srv->sched);
     free(srv);
     return rc;
 }
 
-enum dcp_rc dcp_server_add_db(struct dcp_server *srv, char const *filepath,
-                              dcp_sched_id *id)
+enum dcp_rc dcp_srv_add_db(struct dcp_srv *srv, char const *filepath,
+                           dcp_sched_id *id)
 {
     if (!file_readable(filepath))
         return error(DCP_IOERROR, "file is not readable");
     return sched_add_db(&srv->sched, filepath, id);
 }
 
-enum dcp_rc dcp_server_submit_job(struct dcp_server *srv, struct dcp_job *job,
-                                  dcp_sched_id db_id, dcp_sched_id *job_id)
+enum dcp_rc dcp_srv_submit_job(struct dcp_srv *srv, struct dcp_job *job,
+                               dcp_sched_id db_id, dcp_sched_id *job_id)
 {
     return sched_submit_job(&srv->sched, job, db_id, job_id);
 }
 
-enum dcp_rc dcp_server_job_state(struct dcp_server *srv, dcp_sched_id job_id,
-                                 enum dcp_job_state *state)
+enum dcp_rc dcp_srv_job_state(struct dcp_srv *srv, dcp_sched_id job_id,
+                              enum dcp_job_state *state)
 {
     return sched_job_state(&srv->sched, job_id, state);
 }
@@ -185,7 +185,7 @@ static enum dcp_rc prod_file_open(struct prod_file *file)
     return rc;
 }
 
-enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
+enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
 {
     struct dcp_job job;
     dcp_sched_id job_id = 0;
@@ -277,7 +277,7 @@ cleanup:
     return rc;
 }
 
-static enum dcp_rc prepare_db(struct dcp_server *srv, dcp_sched_id db_id,
+static enum dcp_rc prepare_db(struct dcp_srv *srv, dcp_sched_id db_id,
                               struct db **db)
 {
     *db = db_tbl_get(&srv->db_tbl, db_id);

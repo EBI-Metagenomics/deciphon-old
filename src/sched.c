@@ -2,7 +2,7 @@
 #include "dcp.h"
 #include "dcp/job.h"
 #include "dcp/seq.h"
-#include "dcp/server.h"
+#include "dcp/srv.h"
 #include "dcp_file.h"
 #include "error.h"
 #include "imm/imm.h"
