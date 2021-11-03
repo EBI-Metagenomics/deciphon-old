@@ -17,6 +17,7 @@
 #include "sched.h"
 #include "table.h"
 #include "tbl/tbl.h"
+#include "xstrlcpy.h"
 
 struct dcp_server
 {
@@ -182,6 +183,8 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
 
     struct file_tmp prod_file = FILE_TMP_INIT();
     rc = file_tmp_mk(&prod_file);
+    FILE *prod_fd = fopen(prod_file.path, "wb");
+    if (!prod_fd) return error(DCP_IOERROR, "failed to open prod file");
 
     struct imm_prod alt = imm_prod();
     struct imm_prod null = imm_prod();
@@ -220,24 +223,18 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
             unsigned start = 0;
             for (unsigned idx = 0; idx < imm_path_nsteps(&alt.path); idx++)
             {
-                char ocodon[4] = {0};
-                char oamino[2] = {0};
                 step = imm_path_step(&alt.path, idx);
                 /* if (!dcp_pro_state_is_mute(step->state_id)) break; */
-                unsigned size = step->seqlen;
-                struct imm_seq frag = imm_subseq(&s, start, size);
+                struct imm_seq frag = imm_subseq(&s, start, step->seqlen);
+                xstrlcpy(match.frag, frag.str, frag.size);
+                struct imm_codon codon = imm_codon_any(prof->nuclt);
+                rc = dcp_pro_prof_decode(prof, &frag, step->state_id, &codon);
+                match.codon[0] = imm_codon_asym(&codon);
+                match.codon[1] = imm_codon_bsym(&codon);
+                match.codon[2] = imm_codon_csym(&codon);
+                match.amino = imm_gc_decode(1, codon);
             }
 
-            struct dcp_pro_codec codec = dcp_pro_codec_init(prof, &alt.path);
-            struct imm_codon codon = imm_codon_any(prof->nuclt);
-
-            while (!(rc = dcp_pro_codec_next(&codec, &s, &codon)))
-            {
-                ocodon[0] = imm_codon_asym(&codon);
-                ocodon[1] = imm_codon_bsym(&codon);
-                ocodon[2] = imm_codon_csym(&codon);
-                oamino[0] = imm_gc_decode(1, codon);
-            }
 
             /* start = frag.interval.start; */
             /* stop = frag.interval.stop; */
