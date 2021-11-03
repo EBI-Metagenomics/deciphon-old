@@ -329,7 +329,7 @@ cleanup:
 }
 
 enum dcp_rc sched_next_seq(struct sched *sched, dcp_sched_id job_id,
-                           dcp_sched_id *seq_id, char seq[DCP_SEQ_SIZE])
+                           dcp_sched_id *seq_id, struct dcp_seq *seq)
 {
     enum dcp_rc rc = DCP_NEXT;
     if (sqlite3_reset(sched->stmt.seq))
@@ -355,8 +355,10 @@ enum dcp_rc sched_next_seq(struct sched *sched, dcp_sched_id job_id,
         goto cleanup;
     }
     *seq_id = sqlite3_column_int64(sched->stmt.seq, 0);
-    char const *data = (char const *)sqlite3_column_text(sched->stmt.seq, 1);
-    dcp_strlcpy(seq, data, DCP_SEQ_SIZE);
+    char const *id = (char const *)sqlite3_column_text(sched->stmt.seq, 1);
+    char const *data = (char const *)sqlite3_column_text(sched->stmt.seq, 2);
+    dcp_strlcpy(seq->id, id, MEMBER_SIZE(*seq, id));
+    dcp_strlcpy(seq->data, data, MEMBER_SIZE(*seq, data));
     if (sqlite3_step(sched->stmt.seq) != SQLITE_DONE) rc = ERROR_STEP("seq");
 
 cleanup:

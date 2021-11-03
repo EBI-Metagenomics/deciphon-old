@@ -69,8 +69,8 @@ void test_server_submit_job(void)
     struct dcp_job job;
     dcp_job_init(&job, true, false);
     struct dcp_seq seq[2] = {0};
-    dcp_seq_init(seq + 0, imm_str(imm_example1_seq).data);
-    dcp_seq_init(seq + 1, imm_str(imm_example2_seq).data);
+    dcp_seq_init(seq + 0, "seq0", imm_str(imm_example1_seq).data);
+    dcp_seq_init(seq + 1, "seq1", imm_str(imm_example2_seq).data);
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
@@ -97,8 +97,8 @@ void test_server_submit_and_fetch_job(void)
     struct dcp_job job;
     dcp_job_init(&job, true, false);
     struct dcp_seq seq[2] = {0};
-    dcp_seq_init(seq + 0, imm_str(imm_example1_seq).data);
-    dcp_seq_init(seq + 1, imm_str(imm_example2_seq).data);
+    dcp_seq_init(seq + 0, "seq0", imm_str(imm_example1_seq).data);
+    dcp_seq_init(seq + 1, "seq1", imm_str(imm_example2_seq).data);
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 

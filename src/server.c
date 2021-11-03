@@ -196,13 +196,14 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
         if (!task) return error(DCP_FAIL, "failed to create task");
 
         dcp_sched_id seq_id = 0;
+        struct dcp_seq seq = {0};
         char data[5001] = {0};
-        while ((rc = sched_next_seq(&srv->sched, job_id, &seq_id, data) ==
+        while ((rc = sched_next_seq(&srv->sched, job_id, &seq_id, &seq) ==
                      DCP_NEXT))
         {
-            struct imm_seq seq = imm_seq(imm_str(data), abc);
+            struct imm_seq s = imm_seq(imm_str(data), abc);
 
-            if (imm_task_setup(task, &seq))
+            if (imm_task_setup(task, &s))
                 return error(DCP_FAIL, "failed to create task");
 
             if (imm_dp_viterbi(&prof->alt.dp, task, &alt))
@@ -222,7 +223,7 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
             struct dcp_pro_codec codec = dcp_pro_codec_init(prof, &alt.path);
             struct imm_codon codon = imm_codon_any(prof->nuclt);
 
-            while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
+            while (!(rc = dcp_pro_codec_next(&codec, &s, &codon)))
             {
                 ocodon[0] = imm_codon_asym(&codon);
                 ocodon[1] = imm_codon_bsym(&codon);
@@ -234,44 +235,17 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
             /* stop = frag.interval.stop; */
             prod.super.match_id++;
             /* prod.super.seq_id = ""; */
-            struct dcp_meta const *mt = &prof->super.mt;
-            sprintf(seq_id_str, "%lld.%d", seq_id, match_id);
-            gff_feature_set_seqid(f, seq_id_str);
-            gff_feature_set_source(f, "deciphon");
-            gff_feature_set_type(f, ".");
-            gff_feature_set_start(f, ".");
-            gff_feature_set_end(f, ".");
-            gff_feature_set_score(f, "0.0");
-            gff_feature_set_strand(f, "+");
-            gff_feature_set_phase(f, ".");
-            char attrs[100] = {0};
-            sprintf(attrs, "ID=%s;Name=%s", mt->acc, mt->name);
-            gff_feature_set_attrs(f, attrs);
-            gff_write(&gff);
+            /* struct dcp_meta const *mt = &prof->super.mt; */
 
             /* annotate(&seq, mt->name, seq_id_str, &alt.path, ocodon,
              * oamino, prof); */
-
-            if (fasta_write(&codon_fa, fasta_target(seq_id_str, "", ocodon),
-                            60))
-                return DCP_IOERROR;
-
-            if (fasta_write(&amino_fa, fasta_target(seq_id_str, "", oamino),
-                            60))
-                return DCP_IOERROR;
 
             match_id++;
         }
     }
     if (rc != DCP_END) goto cleanup;
 
-    fclose(codon_fd);
-    fclose(amino_fd);
-    fclose(gff_fd);
     dcp_pro_db_close(&db->pro);
-
-    /* sched_add_prod(&srv->sched, job_id, "output.gff", "codon.fna",
-     * "amino.faa"); */
 
     return DCP_NEXT;
 
