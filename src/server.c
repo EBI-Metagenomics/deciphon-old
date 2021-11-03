@@ -215,10 +215,18 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
             imm_float lrt = -2 * (null.loglik - alt.loglik);
             if (lrt < 100.0f) continue;
 
-            /* struct dcp_pro_prof *prof = &cli.pro.db.prof; */
-            /* struct imm_path const *path = &cli.pro.alt.path; */
-            char ocodon[4] = {0};
-            char oamino[2] = {0};
+            struct pro_match match = {0};
+            struct imm_step const *step = NULL;
+            unsigned start = 0;
+            for (unsigned idx = 0; idx < imm_path_nsteps(&alt.path); idx++)
+            {
+                char ocodon[4] = {0};
+                char oamino[2] = {0};
+                step = imm_path_step(&alt.path, idx);
+                /* if (!dcp_pro_state_is_mute(step->state_id)) break; */
+                unsigned size = step->seqlen;
+                struct imm_seq frag = imm_subseq(&s, start, size);
+            }
 
             struct dcp_pro_codec codec = dcp_pro_codec_init(prof, &alt.path);
             struct imm_codon codon = imm_codon_any(prof->nuclt);

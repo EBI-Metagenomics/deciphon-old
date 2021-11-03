@@ -11,7 +11,7 @@ void pro_match_init(struct pro_match *m, char const frag[static 1],
     xstrlcpy(m->state, state, MEMBER_SIZE(*m, state));
     xstrlcpy(m->codon, codon, MEMBER_SIZE(*m, codon));
     m->amino = amino;
-    cco_node_init(&m->node);
+    /* cco_node_init(&m->node); */
 }
 
 enum dcp_rc pro_match_write(struct pro_match *m, FILE *restrict fd)
