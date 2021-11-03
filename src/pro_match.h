@@ -3,12 +3,13 @@
 
 #include "cco/cco.h"
 #include "dcp/rc.h"
+#include "imm/imm.h"
 #include <stdio.h>
 
 struct pro_match
 {
     char frag[5];
-    char state[6];
+    char state[IMM_STATE_NAME_SIZE];
     char codon[4];
     char amino;
     struct cco_node node;

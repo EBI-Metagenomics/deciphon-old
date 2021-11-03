@@ -169,6 +169,22 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     tbl_8x_ed_flush(&table);
 }
 
+struct prod_file
+{
+    struct file_tmp tmp;
+    FILE *fd;
+};
+
+static enum dcp_rc prod_file_open(struct prod_file *file)
+{
+    file->tmp = FILE_TMP_INIT();
+    enum dcp_rc rc = file_tmp_mk(&file->tmp);
+    if (rc) return rc;
+    if (!(file->fd = fopen(file->tmp.path, "wb")))
+        rc = error(DCP_IOERROR, "failed to open prod file");
+    return rc;
+}
+
 enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
 {
     struct dcp_job job;
@@ -181,10 +197,8 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
     struct db *db = NULL;
     if ((rc = prepare_db(srv, db_id, &db))) return rc;
 
-    struct file_tmp prod_file = FILE_TMP_INIT();
-    rc = file_tmp_mk(&prod_file);
-    FILE *prod_fd = fopen(prod_file.path, "wb");
-    if (!prod_fd) return error(DCP_IOERROR, "failed to open prod file");
+    struct prod_file prod_file = {0};
+    if (!(rc = prod_file_open(&prod_file))) return rc;
 
     struct imm_prod alt = imm_prod();
     struct imm_prod null = imm_prod();
@@ -226,7 +240,10 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
                 step = imm_path_step(&alt.path, idx);
                 /* if (!dcp_pro_state_is_mute(step->state_id)) break; */
                 struct imm_seq frag = imm_subseq(&s, start, step->seqlen);
-                xstrlcpy(match.frag, frag.str, frag.size);
+                xstrlcpy(match.frag, frag.str, frag.size + 1);
+
+                dcp_pro_prof_state_name(step->state_id, match.state);
+
                 struct imm_codon codon = imm_codon_any(prof->nuclt);
                 rc = dcp_pro_prof_decode(prof, &frag, step->state_id, &codon);
                 match.codon[0] = imm_codon_asym(&codon);
@@ -234,7 +251,6 @@ enum dcp_rc dcp_server_run(struct dcp_server *srv, bool blocking)
                 match.codon[2] = imm_codon_csym(&codon);
                 match.amino = imm_gc_decode(1, codon);
             }
-
 
             /* start = frag.interval.start; */
             /* stop = frag.interval.stop; */
