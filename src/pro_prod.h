@@ -21,4 +21,6 @@ static inline void pro_prod_add_match(struct pro_prod *prod,
     cco_stack_put(&prod->matches, &match->node);
 }
 
+enum dcp_rc pro_prod_write(struct pro_prod *p, FILE *restrict fd);
+
 #endif

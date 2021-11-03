@@ -35,8 +35,8 @@ CREATE TABLE [seq] (
 );
 
 
--- Table: result
-CREATE TABLE result (
+-- Table: prod
+CREATE TABLE prod (
     id              INTEGER PRIMARY KEY AUTOINCREMENT
                     UNIQUE
                     NOT NULL,
