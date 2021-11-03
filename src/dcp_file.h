@@ -20,5 +20,6 @@ enum dcp_rc file_empty(char const *filepath);
 bool file_readable(char const *filepath);
 enum dcp_rc file_tmp_mk(struct file_tmp *tmp);
 enum dcp_rc file_tmp_rm(struct file_tmp const *tmp);
+enum dcp_rc file_write_newline(FILE *restrict fd);
 
 #endif

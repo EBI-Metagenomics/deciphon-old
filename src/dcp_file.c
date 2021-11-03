@@ -57,3 +57,9 @@ enum dcp_rc file_tmp_rm(struct file_tmp const *tmp)
     if (remove(tmp->path)) return error(DCP_IOERROR, "remove failed");
     return DCP_DONE;
 }
+
+enum dcp_rc file_write_newline(FILE *restrict fd)
+{
+    if (fputc(';', fd) == EOF) return error(DCP_IOERROR, "failed to write newline");
+    return DCP_DONE;
+}

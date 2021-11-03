@@ -39,10 +39,12 @@ add_library(
   src/path.c
   src/pro_codec.c
   src/pro_db.c
+  src/pro_match.c
   src/pro_model.c
   src/pro_prof.c
   src/pro_reader.c
   src/pro_state.c
+  src/prod.c
   src/progress_file.c
   src/row.c
   src/sched.c
