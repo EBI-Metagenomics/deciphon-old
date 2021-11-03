@@ -3,24 +3,24 @@ BEGIN TRANSACTION;
 
 -- Table: job
 CREATE TABLE job (
-    id            INTEGER      PRIMARY KEY AUTOINCREMENT
-                               UNIQUE
-                               NOT NULL,
-    multi_hits    BOOLEAN      NOT NULL,
-    hmmer3_compat BOOLEAN      NOT NULL,
-    db_id         INTEGER      REFERENCES db (id)
-                               NOT NULL,
-    state         VARCHAR (4)  CHECK (state IN ('pend', 'run', 'done', 'fail') )
-                               NOT NULL
-                               DEFAULT ('pend'),
-    error         VARCHAR (31) NOT NULL
-                               DEFAULT (''),
-    submission    INTEGER      NOT NULL
-                               DEFAULT (0),
-    exec_started  INTEGER      NOT NULL
-                               DEFAULT (0),
-    exec_ended    INTEGER      NOT NULL
-                               DEFAULT (0)
+    id            INTEGER     PRIMARY KEY AUTOINCREMENT
+                              UNIQUE
+                              NOT NULL,
+    multi_hits    BOOLEAN     NOT NULL,
+    hmmer3_compat BOOLEAN     NOT NULL,
+    db_id         INTEGER     REFERENCES db (id)
+                              NOT NULL,
+    state         VARCHAR(4)  CHECK (state IN ('pend', 'run', 'done', 'fail') )
+                              NOT NULL
+                              DEFAULT ('pend'),
+    error         VARCHAR(31) NOT NULL
+                              DEFAULT (''),
+    submission    INTEGER     NOT NULL
+                              DEFAULT (0),
+    exec_started  INTEGER     NOT NULL
+                              DEFAULT (0),
+    exec_ended    INTEGER     NOT NULL
+                              DEFAULT (0)
 );
 
 
@@ -37,15 +37,24 @@ CREATE TABLE [seq] (
 
 -- Table: prod
 CREATE TABLE prod (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT
-                    UNIQUE
-                    NOT NULL,
-    job_id          INTEGER REFERENCES job (id)
-                    NOT NULL
-                    UNIQUE,
-    amino_faa  TEXT NOT NULL,
-    codon_fna  TEXT NOT NULL,
-    output_gff TEXT NOT NULL
+    id          INTEGER PRIMARY KEY AUTOINCREMENT
+                        UNIQUE
+                        NOT NULL,
+    job_id      INTEGER REFERENCES job (id)
+                        NOT NULL
+                        UNIQUE,
+    match_id    INTEGER NOT NULL,
+    seq_id      VARCHAR NOT NULL,
+    prof_id     VARCHAR NOT NULL,
+    start       INTEGER NOT NULL,
+    end         INTEGER NOT NULL,
+    abc         VARCHAR NOT NULL,
+    loglik      VARCHAR NOT NULL,
+    null_loglik VARCHAR NOT NULL,
+    model       VARCHAR NOT NULL,
+    version     VARCHAR NOT NULL,
+    db_id       VARCHAR NOT NULL,
+    seq_hash    VARCHAR NOT NULL
 );
 
 
