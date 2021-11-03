@@ -27,8 +27,8 @@ CREATE TABLE job (
 -- Table: seq
 CREATE TABLE [seq] (
     id     INTEGER PRIMARY KEY AUTOINCREMENT
-                   NOT NULL
-                   UNIQUE,
+                   UNIQUE
+                   NOT NULL,
     data   VARCHAR NOT NULL,
     job_id INTEGER REFERENCES job (id)
                    NOT NULL
@@ -41,20 +41,21 @@ CREATE TABLE prod (
                         UNIQUE
                         NOT NULL,
     job_id      INTEGER REFERENCES job (id)
-                        NOT NULL
-                        UNIQUE,
+                        UNIQUE
+                        NOT NULL,
     match_id    INTEGER NOT NULL,
     seq_id      VARCHAR NOT NULL,
     prof_id     VARCHAR NOT NULL,
     start       INTEGER NOT NULL,
     end         INTEGER NOT NULL,
-    abc         VARCHAR NOT NULL,
+    abc_id      VARCHAR NOT NULL,
     loglik      VARCHAR NOT NULL,
     null_loglik VARCHAR NOT NULL,
     model       VARCHAR NOT NULL,
     version     VARCHAR NOT NULL,
     db_id       VARCHAR NOT NULL,
-    seq_hash    VARCHAR NOT NULL
+    seq_hash    VARCHAR NOT NULL,
+    match       VARCHAR NOT NULL
 );
 
 
@@ -65,6 +66,7 @@ CREATE TABLE db (
                      NOT NULL,
     filepath VARCHAR NOT NULL
                      UNIQUE
+                     NOT NULL
 );
 
 COMMIT TRANSACTION;

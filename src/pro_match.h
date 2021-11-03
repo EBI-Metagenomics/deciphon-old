@@ -2,8 +2,8 @@
 #define PRO_MATCH_H
 
 #include "cco/cco.h"
-#include <stdio.h>
 #include "dcp/rc.h"
+#include <stdio.h>
 
 struct pro_match
 {

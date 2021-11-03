@@ -11,7 +11,7 @@ struct prod
     char prof_id[32];
     unsigned start;
     unsigned end;
-    char abc[16];
+    char abc_id[16];
     double loglik;
     double null_loglik;
     char model[5];

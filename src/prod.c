@@ -14,7 +14,7 @@ void prod_init(struct prod *p, unsigned match_id, char const seq_id[static 1],
     dcp_strlcpy(p->prof_id, prof_id, MEMBER_SIZE(*p, prof_id));
     p->start = start;
     p->end = end;
-    dcp_strlcpy(p->abc, abc, MEMBER_SIZE(*p, abc));
+    dcp_strlcpy(p->abc_id, abc, MEMBER_SIZE(*p, abc_id));
     p->loglik = loglik;
     p->null_loglik = p->null_loglik;
     dcp_strlcpy(p->model, model, MEMBER_SIZE(*p, model));
@@ -37,7 +37,7 @@ enum dcp_rc prod_write(struct prod *p, FILE *restrict fd)
     if (fprintf(fd, "%s" TAB, p->seq_id) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%s" TAB, p->prof_id) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%d" TAB "%d" TAB, p->start, p->end)) return ERROR_WRITE;
-    if (fprintf(fd, "%s" TAB, p->abc) < 0) return ERROR_WRITE;
+    if (fprintf(fd, "%s" TAB, p->abc_id) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%a" TAB, p->loglik)) return ERROR_WRITE;
     if (fprintf(fd, "%a" TAB, p->null_loglik)) return ERROR_WRITE;
     if (fprintf(fd, "%s" TAB, p->model)) return ERROR_WRITE;
