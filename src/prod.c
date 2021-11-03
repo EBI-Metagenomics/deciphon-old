@@ -1,7 +1,7 @@
 #include "prod.h"
 #include "dcp.h"
-#include "dcp/strlcpy.h"
 #include "error.h"
+#include "xstrlcpy.h"
 
 void prod_init(struct prod *p, unsigned match_id, char const seq_id[static 1],
                char const prof_id[static 1], unsigned start, unsigned end,
@@ -10,17 +10,17 @@ void prod_init(struct prod *p, unsigned match_id, char const seq_id[static 1],
                char const db_id[static 1], char const seq_hash[static 1])
 {
     p->match_id = match_id;
-    dcp_strlcpy(p->seq_id, seq_id, MEMBER_SIZE(*p, seq_id));
-    dcp_strlcpy(p->prof_id, prof_id, MEMBER_SIZE(*p, prof_id));
+    xstrlcpy(p->seq_id, seq_id, MEMBER_SIZE(*p, seq_id));
+    xstrlcpy(p->prof_id, prof_id, MEMBER_SIZE(*p, prof_id));
     p->start = start;
     p->end = end;
-    dcp_strlcpy(p->abc_id, abc, MEMBER_SIZE(*p, abc_id));
+    xstrlcpy(p->abc_id, abc, MEMBER_SIZE(*p, abc_id));
     p->loglik = loglik;
     p->null_loglik = p->null_loglik;
-    dcp_strlcpy(p->model, model, MEMBER_SIZE(*p, model));
-    dcp_strlcpy(p->version, version, MEMBER_SIZE(*p, version));
-    dcp_strlcpy(p->db_id, db_id, MEMBER_SIZE(*p, db_id));
-    dcp_strlcpy(p->seq_hash, seq_hash, MEMBER_SIZE(*p, seq_hash));
+    xstrlcpy(p->model, model, MEMBER_SIZE(*p, model));
+    xstrlcpy(p->version, version, MEMBER_SIZE(*p, version));
+    xstrlcpy(p->db_id, db_id, MEMBER_SIZE(*p, db_id));
+    xstrlcpy(p->seq_hash, seq_hash, MEMBER_SIZE(*p, seq_hash));
 }
 
 #ifdef TAB

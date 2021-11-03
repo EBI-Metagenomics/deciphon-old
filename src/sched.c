@@ -3,13 +3,13 @@
 #include "dcp/job.h"
 #include "dcp/seq.h"
 #include "dcp/server.h"
-#include "dcp/strlcpy.h"
 #include "dcp_file.h"
 #include "error.h"
 #include "imm/imm.h"
 #include "sched_job.h"
 #include "schema.h"
 #include "sqldiff.h"
+#include "xstrlcpy.h"
 #include <assert.h>
 #include <inttypes.h>
 #include <sqlite3.h>
@@ -320,7 +320,7 @@ enum dcp_rc sched_db_filepath(struct sched *sched, dcp_sched_id id,
     }
     char const *fp = (char const *)sqlite3_column_text(stmt, 0);
     sqlite3_column_bytes(stmt, 0);
-    dcp_strlcpy(filepath, fp, FILEPATH_SIZE);
+    xstrlcpy(filepath, fp, FILEPATH_SIZE);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) rc = ERROR_STEP("db select");
 
@@ -357,8 +357,8 @@ enum dcp_rc sched_next_seq(struct sched *sched, dcp_sched_id job_id,
     *seq_id = sqlite3_column_int64(sched->stmt.seq, 0);
     char const *id = (char const *)sqlite3_column_text(sched->stmt.seq, 1);
     char const *data = (char const *)sqlite3_column_text(sched->stmt.seq, 2);
-    dcp_strlcpy(seq->id, id, MEMBER_SIZE(*seq, id));
-    dcp_strlcpy(seq->data, data, MEMBER_SIZE(*seq, data));
+    xstrlcpy(seq->id, id, MEMBER_SIZE(*seq, id));
+    xstrlcpy(seq->data, data, MEMBER_SIZE(*seq, data));
     if (sqlite3_step(sched->stmt.seq) != SQLITE_DONE) rc = ERROR_STEP("seq");
 
 cleanup:

@@ -1,6 +1,6 @@
 #include "table.h"
 #include "dcp.h"
-#include "dcp/strlcpy.h"
+#include "xstrlcpy.h"
 #include <assert.h>
 #include <string.h>
 
@@ -24,11 +24,11 @@ void table_set_headers(struct table *t, char const *cons, char const *seq,
                        char const *pcodon, char const *pamino,
                        char const *state)
 {
-    dcp_strlcpy(t->consensus.hdr, cons, MEMBER_SIZE(t->consensus, hdr));
-    dcp_strlcpy(t->sequence.hdr, seq, MEMBER_SIZE(t->sequence, hdr));
-    dcp_strlcpy(t->post_codon.hdr, pcodon, MEMBER_SIZE(t->post_codon, hdr));
-    dcp_strlcpy(t->post_amino.hdr, pamino, MEMBER_SIZE(t->post_amino, hdr));
-    dcp_strlcpy(t->state.hdr, state, MEMBER_SIZE(t->state, hdr));
+    xstrlcpy(t->consensus.hdr, cons, MEMBER_SIZE(t->consensus, hdr));
+    xstrlcpy(t->sequence.hdr, seq, MEMBER_SIZE(t->sequence, hdr));
+    xstrlcpy(t->post_codon.hdr, pcodon, MEMBER_SIZE(t->post_codon, hdr));
+    xstrlcpy(t->post_amino.hdr, pamino, MEMBER_SIZE(t->post_amino, hdr));
+    xstrlcpy(t->state.hdr, state, MEMBER_SIZE(t->state, hdr));
 
     fill_space(t->consensus.hdr, MEMBER_SIZE(t->consensus, hdr) - 1);
     fill_space(t->sequence.hdr, MEMBER_SIZE(t->sequence, hdr) - 1);

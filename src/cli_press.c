@@ -3,10 +3,10 @@
 #include "dcp/generics.h"
 #include "dcp/pro_db.h"
 #include "dcp/pro_reader.h"
-#include "dcp/strlcpy.h"
 #include "error.h"
 #include "path.h"
 #include "progress_file.h"
+#include "xstrlcpy.h"
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -21,7 +21,7 @@ struct arguments
 
 static bool infer_output_file(struct arguments *args)
 {
-    size_t n = dcp_strlcpy(args->output_file, args->input_file, PATH_MAX);
+    size_t n = xstrlcpy(args->output_file, args->input_file, PATH_MAX);
     if (n >= PATH_MAX) return false;
     return path_change_or_add_ext(args->output_file, PATH_MAX, ".dcp");
 }
@@ -37,7 +37,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         break;
 
     case 'o':
-        if (dcp_strlcpy(args->output_file, arg, PATH_MAX) >= PATH_MAX)
+        if (xstrlcpy(args->output_file, arg, PATH_MAX) >= PATH_MAX)
         {
             error(DCP_ILLEGALARG, "output path is too long");
             return ENAMETOOLONG;

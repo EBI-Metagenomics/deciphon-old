@@ -1,15 +1,15 @@
 #include "pro_match.h"
 #include "dcp.h"
-#include "dcp/strlcpy.h"
 #include "error.h"
+#include "xstrlcpy.h"
 
 void pro_match_init(struct pro_match *m, char const frag[static 1],
                     char const state[static 1], char const codon[static 1],
                     char amino)
 {
-    dcp_strlcpy(m->frag, frag, MEMBER_SIZE(*m, frag));
-    dcp_strlcpy(m->state, state, MEMBER_SIZE(*m, state));
-    dcp_strlcpy(m->codon, codon, MEMBER_SIZE(*m, codon));
+    xstrlcpy(m->frag, frag, MEMBER_SIZE(*m, frag));
+    xstrlcpy(m->state, state, MEMBER_SIZE(*m, state));
+    xstrlcpy(m->codon, codon, MEMBER_SIZE(*m, codon));
     m->amino = amino;
     cco_node_init(&m->node);
 }

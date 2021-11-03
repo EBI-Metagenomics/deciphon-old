@@ -35,7 +35,6 @@ extern "C" {
 #include "dcp/server.h"
 #include "dcp/std_db.h"
 #include "dcp/std_prof.h"
-#include "dcp/strlcpy.h"
 #include "dcp/version.h"
 
 #ifdef __cplusplus

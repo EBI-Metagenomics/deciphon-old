@@ -31,7 +31,6 @@ add_library(
   src/cmp.c
   src/db.c
   src/dcp_file.c
-  src/dcp_strlcpy.c
   src/log.c
   src/meta.c
   src/model.c
@@ -50,13 +49,15 @@ add_library(
   src/row.c
   src/sched.c
   src/sched_job.c
+  src/seq.c
   src/server.c
   src/sqldiff.c
   src/std_db.c
   src/std_prof.c
   src/table.c
   src/third-party/base64.c
-  src/third-party/cmp.c)
+  src/third-party/cmp.c
+  src/xstrlcpy.c)
 add_library(DCP::dcp ALIAS dcp)
 
 cbp_hide_functions(dcp)
