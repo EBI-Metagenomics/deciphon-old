@@ -2,8 +2,8 @@
 #define WORK_H
 
 #include "dcp/job.h"
-#include "path.h"
 #include "imm/imm.h"
+#include "path.h"
 #include "prod_file.h"
 
 struct db_handle;
@@ -17,6 +17,7 @@ struct work
     struct db_handle *db;
     struct imm_abc const *abc;
     struct dcp_pro_prof const *prof;
+    struct imm_task *task;
     struct prod_file prod_file;
     struct imm_prod alt;
     struct imm_prod null;
