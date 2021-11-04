@@ -8,6 +8,7 @@
 #include "dcp/pro_db.h"
 #include "dcp/pro_state.h"
 #include "dcp/prof_types.h"
+#include "dcp/rc.h"
 #include "error.h"
 #include "fasta/fasta.h"
 #include "gff/gff.h"
@@ -172,6 +173,9 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
     struct work work = {0};
 
     enum dcp_rc rc = work_fetch(&work, &srv->sched, &srv->db_pool);
+    if (rc == DCP_DONE) return DCP_DONE;
+
+    rc = work_run(&work);
 #if 0
     struct imm_prod alt = imm_prod();
     struct imm_prod null = imm_prod();

@@ -2,15 +2,9 @@
 #define WORK_H
 
 #include "dcp/job.h"
-#include "imm/imm.h"
 #include "path.h"
-#include <stdio.h>
-
-struct prod_file
-{
-    PATH_TEMP_DECLARE(path);
-    FILE *fd;
-};
+#include "imm/imm.h"
+#include "prod_file.h"
 
 struct db_handle;
 struct db_pool;
@@ -19,6 +13,7 @@ struct sched;
 struct work
 {
     struct dcp_job job;
+    char db_path[PATH_SIZE];
     struct db_handle *db;
     struct prod_file prod_file;
     struct imm_prod alt;

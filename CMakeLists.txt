@@ -46,6 +46,7 @@ add_library(
   src/pro_reader.c
   src/pro_state.c
   src/prod.c
+  src/prod_file.c
   src/progress_file.c
   src/row.c
   src/sched.c

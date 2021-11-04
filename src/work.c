@@ -6,35 +6,48 @@
 #include "xfile.h"
 #include "xstrlcpy.h"
 
-static enum dcp_rc fetch_db(struct db_pool *pool, int64_t id,
-                            struct db_handle **db);
+static enum dcp_rc open_work(struct work *work);
 
 enum dcp_rc work_fetch(struct work *work, struct sched *sched,
                        struct db_pool *pool)
 {
     enum dcp_rc rc = sched_next_job(sched, &work->job);
     if (rc == DCP_DONE) return DCP_DONE;
-    return fetch_db(pool, work->job.db_id, &work->db);
+    work->db = db_pool_fetch(pool, work->job.db_id);
+    if (!work->db) return error(DCP_FAIL, "reached limit of open db handles");
+
+    work->db_path[0] = 0;
+    if ((rc = sched_db_filepath(sched, work->job.db_id, work->db_path)))
+        return rc;
+    return DCP_NEXT;
 }
 
-enum dcp_rc work_run(struct work *work) { return DCP_DONE; }
-
-static enum dcp_rc prod_file_open(struct prod_file *file)
+enum dcp_rc work_run(struct work *work)
 {
-    xstrlcpy(file->path, PATH_TEMP_TEMPLATE, MEMBER_SIZE(*file, path));
-    enum dcp_rc rc = xfile_mktemp(file->path);
+    enum dcp_rc rc = open_work(work);
     if (rc) return rc;
-    if (!(file->fd = fopen(file->path, "wb")))
-        rc = error(DCP_IOERROR, "failed to open prod file");
-    return rc;
+    return DCP_DONE;
 }
 
-static enum dcp_rc fetch_db(struct db_pool *pool, int64_t id,
-                            struct db_handle **db)
+static enum dcp_rc open_work(struct work *work)
 {
-    struct db_handle *tmp = db_pool_get(pool, id);
-    if (!tmp && !(tmp = db_pool_new(pool, id)))
-        return error(DCP_FAIL, "reached limit of open db handles");
-    *db = tmp;
-    return DCP_DONE;
+    work->db->fd = NULL;
+    enum dcp_rc rc = prod_file_open(&work->prod_file);
+    if (rc) goto cleanup;
+
+    work->db->fd = fopen(work->db_path, "rb");
+    if (!work->db->fd)
+    {
+        rc = error(DCP_IOERROR, "failed to open db");
+        goto cleanup;
+    }
+
+    if ((rc = dcp_pro_db_openr(&work->db->pro, work->db->fd)))
+        goto cleanup;
+
+cleanup:
+    dcp_pro_db_close(&work->db->pro);
+    fclose(work->db->fd);
+    prod_file_close(&work->prod_file);
+    return rc;
 }

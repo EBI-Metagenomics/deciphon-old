@@ -32,3 +32,10 @@ void db_pool_del(struct db_pool *pool, struct cco_hnode *node)
 {
     cco_hash_del(node);
 }
+
+struct db_handle *db_pool_fetch(struct db_pool *pool, int64_t id)
+{
+    struct db_handle *db = db_pool_get(pool, id);
+    if (!db) db = db_pool_new(pool, id);
+    return db;
+}
