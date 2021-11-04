@@ -4,7 +4,6 @@
 #include "dcp/job.h"
 #include "imm/imm.h"
 #include "path.h"
-#include "sched.h"
 #include <stdio.h>
 
 struct prod_file
@@ -13,10 +12,12 @@ struct prod_file
     FILE *fd;
 };
 
+struct db_handle;
+
 struct work
 {
     struct dcp_job job;
-    struct db *db;
+    struct db_handle *db;
     struct prod_file prod_file;
     struct imm_prod alt;
     struct imm_prod null;

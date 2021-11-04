@@ -30,4 +30,9 @@ static inline void dcp_job_add_seq(struct dcp_job *job, struct dcp_seq *seq)
     cco_queue_put(&job->seqs, &seq->node);
 }
 
+static inline bool dcp_job_is_empty(struct dcp_job const *job)
+{
+    return cco_queue_empty(&job->seqs);
+}
+
 #endif

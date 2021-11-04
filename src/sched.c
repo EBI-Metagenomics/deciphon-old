@@ -450,7 +450,7 @@ static enum dcp_rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath))
 
 static enum dcp_rc check_integrity(char const *filepath, bool *ok)
 {
-    PATH_TEMP_DECLARE(tmp);
+    PATH_TEMP_DEFINE(tmp);
     enum dcp_rc rc = DCP_DONE;
 
     if ((rc = create_ground_truth_db(tmp))) return rc;

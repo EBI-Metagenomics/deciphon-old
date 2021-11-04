@@ -2475,7 +2475,7 @@ static int call_main(int argc, char const **argv, FILE *out)
 
 enum dcp_rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
 {
-    PATH_TEMP_DECLARE(path);
+    PATH_TEMP_DEFINE(path);
     enum dcp_rc rc = xfile_mktemp(path);
     if (rc) return rc;
 

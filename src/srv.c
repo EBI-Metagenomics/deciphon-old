@@ -26,9 +26,6 @@ struct dcp_srv
     struct db_pool db_pool;
 };
 
-static enum dcp_rc prepare_db(struct dcp_srv *srv, int64_t db_id,
-                              struct db **db);
-
 struct dcp_srv *dcp_srv_open(char const *filepath)
 {
     struct dcp_srv *srv = malloc(sizeof(*srv));
@@ -37,7 +34,7 @@ struct dcp_srv *dcp_srv_open(char const *filepath)
         error(DCP_OUTOFMEM, "failed to malloc server");
         goto cleanup;
     }
-    db_tbl_init(&srv->db_pool);
+    db_pool_init(&srv->db_pool);
 
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_setup(filepath))) goto cleanup;
@@ -170,19 +167,31 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     tbl_8x_ed_flush(&table);
 }
 
+static enum dcp_rc fetch_db(struct db_pool *pool, int64_t id,
+                            struct db_handle **db)
+{
+    struct db_handle *tmp = db_pool_get(pool, id);
+    if (!tmp && !(tmp = db_pool_new(pool, id)))
+        return error(DCP_FAIL, "reached limit of open db handles");
+    *db = tmp;
+    return DCP_DONE;
+}
+
+static enum dcp_rc fetch_work(struct work *work, struct sched *sched,
+                              struct db_pool *pool)
+{
+    enum dcp_rc rc = sched_next_job(sched, &work->job);
+    if (rc == DCP_DONE || dcp_job_is_empty(&work->job)) return DCP_DONE;
+    rc = fetch_db(pool, work->job.db_id, &work->db);
+    if (rc) return rc;
+    return rc;
+}
+
 enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
 {
     struct work work = {0};
 
-    enum dcp_rc rc = sched_next_job(&srv->sched, &work.job);
-    if (rc == DCP_DONE) return DCP_DONE;
-
-    if (!(work.db = db_tbl_get(&srv->db_pool, work.job.db_id)))
-    {
-        if (!(work.db = db_tbl_new(&srv->db_pool, work.job.db_id)))
-            return error(DCP_FAIL, "reached limit of open dbs");
-    }
-
+    enum dcp_rc rc = fetch_work(&work, &srv->sched, &srv->db_pool);
 #if 0
     struct imm_prod alt = imm_prod();
     struct imm_prod null = imm_prod();
@@ -261,35 +270,4 @@ cleanup:
     return rc;
 #endif
     return DCP_DONE;
-}
-
-static enum dcp_rc prepare_db(struct dcp_srv *srv, int64_t db_id,
-                              struct db **db)
-{
-    *db = db_tbl_get(&srv->db_pool, db_id);
-
-    if (!*db && !(*db = db_tbl_new(&srv->db_pool, db_id)))
-        return error(DCP_FAIL, "reached limit of open dbs");
-
-    char filepath[PATH_SIZE] = {0};
-    enum dcp_rc rc = DCP_DONE;
-    if ((rc = sched_db_filepath(&srv->sched, db_id, filepath)))
-    {
-        db_tbl_del(&srv->db_pool, &(*db)->hnode);
-        return rc;
-    }
-
-    if (!((*db)->fd = fopen(filepath, "rb")))
-    {
-        db_tbl_del(&srv->db_pool, &(*db)->hnode);
-        return error(DCP_IOERROR, "failed to open db file");
-    }
-
-    if ((rc = dcp_pro_db_openr(&(*db)->pro, (*db)->fd)))
-    {
-        fclose((*db)->fd);
-        db_tbl_del(&srv->db_pool, &(*db)->hnode);
-    }
-
-    return rc;
 }

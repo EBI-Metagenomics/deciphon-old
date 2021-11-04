@@ -3,8 +3,11 @@
 
 #include "cco/cco.h"
 #include "dcp/pro_db.h"
+#include "dcp/rc.h"
 #include "dcp/std_db.h"
 #include <stdio.h>
+
+struct sched;
 
 struct db_handle
 {
@@ -18,5 +21,7 @@ struct db_handle
         struct dcp_pro_db pro;
     };
 };
+
+enum dcp_rc db_handle_setup(struct db_handle *db, struct sched *sched, int64_t id);
 
 #endif
