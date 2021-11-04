@@ -13,6 +13,8 @@ struct prod_file
 };
 
 struct db_handle;
+struct db_pool;
+struct sched;
 
 struct work
 {
@@ -22,5 +24,8 @@ struct work
     struct imm_prod alt;
     struct imm_prod null;
 };
+
+enum dcp_rc work_fetch(struct work *, struct sched *, struct db_pool *);
+enum dcp_rc work_run(struct work *work);
 
 #endif

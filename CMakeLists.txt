@@ -58,6 +58,7 @@ add_library(
   src/table.c
   src/third-party/base64.c
   src/third-party/cmp.c
+  src/work.c
   src/xfile.c
   src/xstrlcpy.c)
 add_library(DCP::dcp ALIAS dcp)

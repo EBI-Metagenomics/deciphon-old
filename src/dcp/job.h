@@ -15,24 +15,18 @@ struct dcp_job
     struct cco_queue seqs;
 };
 
-static inline void dcp_job_init(struct dcp_job *job, bool multi_hits,
-                                bool hmmer3_compat)
+static inline void dcp_job_init(struct dcp_job *job)
 {
     job->id = 0;
     job->db_id = 0;
-    job->multi_hits = multi_hits;
-    job->hmmer3_compat = hmmer3_compat;
+    job->multi_hits = true;
+    job->hmmer3_compat = false;
     cco_queue_init(&job->seqs);
 }
 
 static inline void dcp_job_add_seq(struct dcp_job *job, struct dcp_seq *seq)
 {
     cco_queue_put(&job->seqs, &seq->node);
-}
-
-static inline bool dcp_job_is_empty(struct dcp_job const *job)
-{
-    return cco_queue_empty(&job->seqs);
 }
 
 #endif

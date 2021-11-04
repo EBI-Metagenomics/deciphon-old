@@ -286,6 +286,7 @@ enum dcp_rc sched_next_job(struct sched *sched, struct dcp_job *job)
         rc = ERROR_STEP("job pend update");
         goto cleanup;
     }
+    dcp_job_init(job);
     job->id = sqlite3_column_int64(stmt, 0);
     job->db_id = (int64_t)sqlite3_column_int64(stmt, 1);
 

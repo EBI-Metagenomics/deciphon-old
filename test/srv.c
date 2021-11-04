@@ -67,7 +67,7 @@ void test_srv_submit_job(void)
     EQ(db_id, 1);
 
     struct dcp_job job;
-    dcp_job_init(&job, true, false);
+    dcp_job_init(&job);
     struct dcp_seq seq[2] = {0};
     dcp_seq_init(seq + 0, "seq0", imm_str(imm_example1_seq).data);
     dcp_seq_init(seq + 1, "seq1", imm_str(imm_example2_seq).data);
@@ -94,7 +94,7 @@ void test_srv_submit_and_fetch_job(void)
     EQ(db_id, 1);
 
     struct dcp_job job;
-    dcp_job_init(&job, true, false);
+    dcp_job_init(&job);
     struct dcp_seq seq[2] = {0};
     dcp_seq_init(seq + 0, "seq0", imm_str(imm_example1_seq).data);
     dcp_seq_init(seq + 1, "seq1", imm_str(imm_example2_seq).data);
