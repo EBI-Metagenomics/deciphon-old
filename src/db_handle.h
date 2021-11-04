@@ -1,15 +1,14 @@
 #ifndef DB_HANDLE_H
 #define DB_HANDLE_H
 
-#include "dcp/pro_db.h"
-#include "dcp/sched.h"
 #include "cco/cco.h"
+#include "dcp/pro_db.h"
 #include "dcp/std_db.h"
 #include <stdio.h>
 
 struct db_handle
 {
-    dcp_sched_id id;
+    int64_t sched_id;
     unsigned pool_id;
     struct cco_hnode hnode;
     FILE *fd;

@@ -26,7 +26,7 @@ struct dcp_srv
     struct db_pool db_pool;
 };
 
-static enum dcp_rc prepare_db(struct dcp_srv *srv, dcp_sched_id db_id,
+static enum dcp_rc prepare_db(struct dcp_srv *srv, int64_t db_id,
                               struct db **db);
 
 struct dcp_srv *dcp_srv_open(char const *filepath)
@@ -58,7 +58,7 @@ enum dcp_rc dcp_srv_close(struct dcp_srv *srv)
 }
 
 enum dcp_rc dcp_srv_add_db(struct dcp_srv *srv, char const *filepath,
-                           dcp_sched_id *id)
+                           int64_t *id)
 {
     if (!xfile_is_readable(filepath))
         return error(DCP_IOERROR, "file is not readable");
@@ -66,12 +66,12 @@ enum dcp_rc dcp_srv_add_db(struct dcp_srv *srv, char const *filepath,
 }
 
 enum dcp_rc dcp_srv_submit_job(struct dcp_srv *srv, struct dcp_job *job,
-                               dcp_sched_id db_id, dcp_sched_id *job_id)
+                               int64_t db_id, int64_t *job_id)
 {
     return sched_submit_job(&srv->sched, job, db_id, job_id);
 }
 
-enum dcp_rc dcp_srv_job_state(struct dcp_srv *srv, dcp_sched_id job_id,
+enum dcp_rc dcp_srv_job_state(struct dcp_srv *srv, int64_t job_id,
                               enum dcp_job_state *state)
 {
     return sched_job_state(&srv->sched, job_id, state);
@@ -196,7 +196,7 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
         struct imm_task *task = imm_task_new(&prof->alt.dp);
         if (!task) return error(DCP_FAIL, "failed to create task");
 
-        dcp_sched_id seq_id = 0;
+        int64_t seq_id = 0;
         struct dcp_seq seq = {0};
         char data[5001] = {0};
         while ((rc = sched_next_seq(&srv->sched, job_id, &seq_id, &seq) ==
@@ -263,7 +263,7 @@ cleanup:
     return DCP_DONE;
 }
 
-static enum dcp_rc prepare_db(struct dcp_srv *srv, dcp_sched_id db_id,
+static enum dcp_rc prepare_db(struct dcp_srv *srv, int64_t db_id,
                               struct db **db)
 {
     *db = db_tbl_get(&srv->db_pool, db_id);

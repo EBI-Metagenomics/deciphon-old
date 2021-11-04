@@ -35,8 +35,8 @@ static enum dcp_rc check_integrity(char const *filepath, bool *ok);
 static enum dcp_rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath));
 static enum dcp_rc emerge_db(char const *filepath);
 static enum dcp_rc is_empty(char const *filepath, bool *empty);
-static enum dcp_rc submit_job(sqlite3_stmt *, struct dcp_job *,
-                              dcp_sched_id db_id, dcp_sched_id *job_id);
+static enum dcp_rc submit_job(sqlite3_stmt *, struct dcp_job *, int64_t db_id,
+                              int64_t *job_id);
 static enum dcp_rc touch_db(char const *filepath);
 
 static inline enum dcp_rc begin_transaction(struct sched *sched)
@@ -185,7 +185,7 @@ enum dcp_rc sched_close(struct sched *sched)
 }
 
 enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job,
-                             dcp_sched_id db_id, dcp_sched_id *job_id)
+                             int64_t db_id, int64_t *job_id)
 {
     enum dcp_rc rc = DCP_DONE;
     if ((rc = begin_transaction(sched))) return rc;
@@ -209,8 +209,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_add_db(struct sched *sched, char const *filepath,
-                         dcp_sched_id *id)
+enum dcp_rc sched_add_db(struct sched *sched, char const *filepath, int64_t *id)
 {
     sqlite3_stmt *stmt = sched->stmt.db.insert;
     enum dcp_rc rc = DCP_DONE;
@@ -238,7 +237,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_job_state(struct sched *sched, dcp_sched_id job_id,
+enum dcp_rc sched_job_state(struct sched *sched, int64_t job_id,
                             enum dcp_job_state *state)
 {
     enum dcp_rc rc = DCP_DONE;
@@ -288,7 +287,7 @@ enum dcp_rc sched_next_job(struct sched *sched, struct dcp_job *job)
         goto cleanup;
     }
     job->id = sqlite3_column_int64(stmt, 0);
-    job->db_id = (dcp_sched_id)sqlite3_column_int64(stmt, 1);
+    job->db_id = (int64_t)sqlite3_column_int64(stmt, 1);
 
     if (sqlite3_step(sched->stmt.job.pend) != SQLITE_DONE)
         rc = ERROR_STEP("job pend returning");
@@ -297,7 +296,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_db_filepath(struct sched *sched, dcp_sched_id id,
+enum dcp_rc sched_db_filepath(struct sched *sched, int64_t id,
                               char filepath[PATH_SIZE])
 {
     enum dcp_rc rc = DCP_DONE;
@@ -327,8 +326,8 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_next_seq(struct sched *sched, dcp_sched_id job_id,
-                           dcp_sched_id *seq_id, struct dcp_seq *seq)
+enum dcp_rc sched_next_seq(struct sched *sched, int64_t job_id, int64_t *seq_id,
+                           struct dcp_seq *seq)
 {
     enum dcp_rc rc = DCP_NEXT;
     if (sqlite3_reset(sched->stmt.seq))
@@ -364,7 +363,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_add_result(struct sched *sched, dcp_sched_id job_id,
+enum dcp_rc sched_add_result(struct sched *sched, int64_t job_id,
                              char const *output, char const *codon,
                              char const *amino)
 {
@@ -500,7 +499,7 @@ static enum dcp_rc is_empty(char const *filepath, bool *empty)
 }
 
 static enum dcp_rc submit_job(sqlite3_stmt *stmt, struct dcp_job *job,
-                              dcp_sched_id db_id, dcp_sched_id *job_id)
+                              int64_t db_id, int64_t *job_id)
 {
     enum dcp_rc rc = DCP_DONE;
     if (sqlite3_reset(stmt))

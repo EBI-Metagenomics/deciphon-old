@@ -14,8 +14,8 @@ struct db_pool
 };
 
 void db_pool_init(struct db_pool *pool);
-struct db_handle *db_pool_new(struct db_pool *pool, dcp_sched_id id);
-struct db_handle *db_pool_get(struct db_pool *pool, dcp_sched_id id);
+struct db_handle *db_pool_new(struct db_pool *pool, int64_t id);
+struct db_handle *db_pool_get(struct db_pool *pool, int64_t id);
 void db_pool_del(struct db_pool *pool, struct cco_hnode *node);
 
 #endif

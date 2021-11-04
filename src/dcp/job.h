@@ -4,13 +4,12 @@
 #include "cco/cco.h"
 #include "dcp/job_state.h"
 #include "dcp/seq.h"
-#include "dcp/sched.h"
 #include <stdbool.h>
 
 struct dcp_job
 {
-    dcp_sched_id id;
-    dcp_sched_id db_id;
+    int64_t id;
+    int64_t db_id;
     bool multi_hits;
     bool hmmer3_compat;
     struct cco_queue seqs;
