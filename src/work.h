@@ -15,6 +15,8 @@ struct work
     struct dcp_job job;
     char db_path[PATH_SIZE];
     struct db_handle *db;
+    struct imm_abc const *abc;
+    struct dcp_pro_prof const *prof;
     struct prod_file prod_file;
     struct imm_prod alt;
     struct imm_prod null;

@@ -8,6 +8,8 @@
 #include "dcp/generics.h"
 
 static enum dcp_rc open_work(struct work *work);
+static enum dcp_rc close_work(struct work *work);
+static enum dcp_rc next_profile(struct work *work);
 
 enum dcp_rc work_fetch(struct work *work, struct sched *sched,
                        struct db_pool *pool)
@@ -28,15 +30,16 @@ enum dcp_rc work_run(struct work *work)
     enum dcp_rc rc = open_work(work);
     if (rc) return rc;
 
-    while (!(rc = dcp_db_end(dcp_super(&work->db->pro))))
-    {
-        struct dcp_pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
-        if ((rc = dcp_pro_db_read(&work->db->pro, prof))) goto cleanup;
-        struct imm_abc const *abc = prof->super.abc;
-
+    while ((rc = next_profile(work)) == DCP_NEXT) {
+        /* work->abc; */
+        /* work->prof; */
     }
+
+    return close_work(work);
+
 cleanup:
-    return DCP_DONE;
+    close_work(work);
+    return rc;
 }
 
 static enum dcp_rc open_work(struct work *work)
@@ -58,8 +61,25 @@ static enum dcp_rc open_work(struct work *work)
     return DCP_DONE;
 
 cleanup:
-    dcp_pro_db_close(&work->db->pro);
-    fclose(work->db->fd);
-    prod_file_close(&work->prod_file);
+    close_work(work);
     return rc;
+}
+
+static enum dcp_rc close_work(struct work *work)
+{
+    enum dcp_rc rc = dcp_pro_db_close(&work->db->pro);
+    if (rc) return rc;
+    if (work->db->fd && fclose(work->db->fd)) return error(DCP_IOERROR, "failed to close file");
+    return prod_file_close(&work->prod_file);
+}
+
+static enum dcp_rc next_profile(struct work *work)
+{
+    if (dcp_db_end(dcp_super(&work->db->pro))) return DCP_DONE;
+    struct dcp_pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
+    enum dcp_rc rc = dcp_pro_db_read(&work->db->pro, prof);
+    if (rc) return rc;
+    work->prof = prof;
+    work->abc = work->prof->super.abc;
+    return DCP_NEXT;
 }
