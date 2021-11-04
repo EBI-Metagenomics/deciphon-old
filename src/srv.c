@@ -1,6 +1,6 @@
 #include "dcp/srv.h"
 #include "cco/cco.h"
-#include "db_tbl.h"
+#include "db_pool.h"
 #include "dcp/db.h"
 #include "dcp/generics.h"
 #include "dcp/job.h"
@@ -23,7 +23,7 @@
 struct dcp_srv
 {
     struct sched sched;
-    struct db_tbl db_tbl;
+    struct db_pool db_pool;
 };
 
 static enum dcp_rc prepare_db(struct dcp_srv *srv, dcp_sched_id db_id,
@@ -37,7 +37,7 @@ struct dcp_srv *dcp_srv_open(char const *filepath)
         error(DCP_OUTOFMEM, "failed to malloc server");
         goto cleanup;
     }
-    db_tbl_init(&srv->db_tbl);
+    db_tbl_init(&srv->db_pool);
 
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_setup(filepath))) goto cleanup;
@@ -177,12 +177,13 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
     enum dcp_rc rc = sched_next_job(&srv->sched, &work.job);
     if (rc == DCP_DONE) return DCP_DONE;
 
-    if (!(work.db = db_tbl_get(&srv->db_tbl, work.job.db_id)))
+    if (!(work.db = db_tbl_get(&srv->db_pool, work.job.db_id)))
     {
-        if (!(work.db = db_tbl_new(&srv->db_tbl, work.job.db_id)))
+        if (!(work.db = db_tbl_new(&srv->db_pool, work.job.db_id)))
             return error(DCP_FAIL, "reached limit of open dbs");
     }
 
+#if 0
     struct imm_prod alt = imm_prod();
     struct imm_prod null = imm_prod();
     unsigned match_id = 0;
@@ -256,36 +257,38 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
 cleanup:
     dcp_pro_db_close(&db->pro);
     fclose(db->fd);
-    db_tbl_del(&srv->db_tbl, &db->hnode);
+    db_tbl_del(&srv->db_pool, &db->hnode);
     return rc;
+#endif
+    return DCP_DONE;
 }
 
 static enum dcp_rc prepare_db(struct dcp_srv *srv, dcp_sched_id db_id,
                               struct db **db)
 {
-    *db = db_tbl_get(&srv->db_tbl, db_id);
+    *db = db_tbl_get(&srv->db_pool, db_id);
 
-    if (!*db && !(*db = db_tbl_new(&srv->db_tbl, db_id)))
+    if (!*db && !(*db = db_tbl_new(&srv->db_pool, db_id)))
         return error(DCP_FAIL, "reached limit of open dbs");
 
     char filepath[PATH_SIZE] = {0};
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_db_filepath(&srv->sched, db_id, filepath)))
     {
-        db_tbl_del(&srv->db_tbl, &(*db)->hnode);
+        db_tbl_del(&srv->db_pool, &(*db)->hnode);
         return rc;
     }
 
     if (!((*db)->fd = fopen(filepath, "rb")))
     {
-        db_tbl_del(&srv->db_tbl, &(*db)->hnode);
+        db_tbl_del(&srv->db_pool, &(*db)->hnode);
         return error(DCP_IOERROR, "failed to open db file");
     }
 
     if ((rc = dcp_pro_db_openr(&(*db)->pro, (*db)->fd)))
     {
         fclose((*db)->fd);
-        db_tbl_del(&srv->db_tbl, &(*db)->hnode);
+        db_tbl_del(&srv->db_pool, &(*db)->hnode);
     }
 
     return rc;

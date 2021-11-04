@@ -1,2 +1,4 @@
-CompileFlags:
-  Add: [-I/Users/horta/code/hmmer/src, -I/Users/horta/code/hmmer/easel]
+Diagnostics:
+  ClangTidy:
+    Add: modernize*
+    Remove: bugprone-sizeof-expression

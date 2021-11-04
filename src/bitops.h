@@ -55,7 +55,7 @@ static inline int bitops_fful(unsigned long x)
 #endif
 }
 
-#define BITOPS_SET(number, i) number |= 1UL << i
-#define BITOPS_CLR(number, i) number &= ~(1UL << i)
+#define BITOPS_SET(number, i) number |= 1UL << (i)
+#define BITOPS_CLR(number, i) number &= ~(1UL << (i))
 
 #endif

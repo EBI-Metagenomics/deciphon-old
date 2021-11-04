@@ -30,11 +30,13 @@ add_library(
   src/cli_scan.c
   src/cmp.c
   src/db.c
+  src/db_pool.c
   src/log.c
   src/meta.c
   src/model.c
   src/nuclt_dist.c
   src/path.c
+  src/pool.c
   src/pro_codec.c
   src/pro_db.c
   src/pro_match.c
