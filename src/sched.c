@@ -3,12 +3,12 @@
 #include "dcp/job.h"
 #include "dcp/seq.h"
 #include "dcp/srv.h"
-#include "dcp_file.h"
 #include "error.h"
 #include "imm/imm.h"
 #include "sched_job.h"
 #include "schema.h"
 #include "sqldiff.h"
+#include "xfile.h"
 #include "xstrlcpy.h"
 #include <assert.h>
 #include <inttypes.h>
@@ -32,7 +32,7 @@ static_assert(IMM_SYM_SIZE == 94, "IMM_SYM_SIZE == 94");
 static enum dcp_rc add_seq(sqlite3_stmt *, char const *seq_id, char const *seq,
                            sqlite3_int64 job_id);
 static enum dcp_rc check_integrity(char const *filepath, bool *ok);
-static enum dcp_rc create_ground_truth_db(struct file_tmp *tmp);
+static enum dcp_rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath));
 static enum dcp_rc emerge_db(char const *filepath);
 static enum dcp_rc is_empty(char const *filepath, bool *empty);
 static enum dcp_rc submit_job(sqlite3_stmt *, struct dcp_job *,
@@ -271,8 +271,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_next_job(struct sched *sched, struct dcp_job *job,
-                           dcp_sched_id *job_id, dcp_sched_id *db_id)
+enum dcp_rc sched_next_job(struct sched *sched, struct dcp_job *job)
 {
     enum dcp_rc rc = DCP_NEXT;
     struct sqlite3_stmt *stmt = sched->stmt.job.pend;
@@ -288,8 +287,8 @@ enum dcp_rc sched_next_job(struct sched *sched, struct dcp_job *job,
         rc = ERROR_STEP("job pend update");
         goto cleanup;
     }
-    *job_id = sqlite3_column_int64(stmt, 0);
-    *db_id = (dcp_sched_id)sqlite3_column_int64(stmt, 1);
+    job->id = sqlite3_column_int64(stmt, 0);
+    job->db_id = (dcp_sched_id)sqlite3_column_int64(stmt, 1);
 
     if (sqlite3_step(sched->stmt.job.pend) != SQLITE_DONE)
         rc = ERROR_STEP("job pend returning");
@@ -299,7 +298,7 @@ cleanup:
 }
 
 enum dcp_rc sched_db_filepath(struct sched *sched, dcp_sched_id id,
-                              char filepath[FILEPATH_SIZE])
+                              char filepath[PATH_SIZE])
 {
     enum dcp_rc rc = DCP_DONE;
     struct sqlite3_stmt *stmt = sched->stmt.db.select;
@@ -320,7 +319,7 @@ enum dcp_rc sched_db_filepath(struct sched *sched, dcp_sched_id id,
     }
     char const *fp = (char const *)sqlite3_column_text(stmt, 0);
     sqlite3_column_bytes(stmt, 0);
-    xstrlcpy(filepath, fp, FILEPATH_SIZE);
+    xstrlcpy(filepath, fp, PATH_SIZE);
 
     if (sqlite3_step(stmt) != SQLITE_DONE) rc = ERROR_STEP("db select");
 
@@ -441,25 +440,25 @@ cleanup:
     return rc;
 }
 
-static enum dcp_rc create_ground_truth_db(struct file_tmp *tmp)
+static enum dcp_rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath))
 {
     enum dcp_rc rc = DCP_DONE;
-    if ((rc = file_tmp_mk(tmp))) return rc;
-    if ((rc = touch_db(tmp->path))) return rc;
-    if ((rc = emerge_db(tmp->path))) return rc;
+    if ((rc = xfile_mktemp(filepath))) return rc;
+    if ((rc = touch_db(filepath))) return rc;
+    if ((rc = emerge_db(filepath))) return rc;
     return rc;
 }
 
 static enum dcp_rc check_integrity(char const *filepath, bool *ok)
 {
-    struct file_tmp tmp = FILE_TMP_INIT();
+    PATH_TEMP_DECLARE(tmp);
     enum dcp_rc rc = DCP_DONE;
 
-    if ((rc = create_ground_truth_db(&tmp))) return rc;
-    if ((rc = sqldiff_compare(filepath, tmp.path, ok))) goto cleanup;
+    if ((rc = create_ground_truth_db(tmp))) return rc;
+    if ((rc = sqldiff_compare(filepath, tmp, ok))) goto cleanup;
 
 cleanup:
-    file_tmp_rm(&tmp);
+    remove(tmp);
     return rc;
 }
 

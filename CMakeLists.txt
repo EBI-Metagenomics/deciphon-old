@@ -30,7 +30,6 @@ add_library(
   src/cli_scan.c
   src/cmp.c
   src/db.c
-  src/dcp_file.c
   src/log.c
   src/meta.c
   src/model.c
@@ -57,6 +56,7 @@ add_library(
   src/table.c
   src/third-party/base64.c
   src/third-party/cmp.c
+  src/xfile.c
   src/xstrlcpy.c)
 add_library(DCP::dcp ALIAS dcp)
 

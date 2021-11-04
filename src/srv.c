@@ -8,15 +8,16 @@
 #include "dcp/pro_db.h"
 #include "dcp/pro_state.h"
 #include "dcp/prof_types.h"
-#include "dcp_file.h"
 #include "error.h"
 #include "fasta/fasta.h"
-#include "filepath.h"
 #include "gff/gff.h"
+#include "path.h"
 #include "pro_prod.h"
 #include "sched.h"
 #include "table.h"
 #include "tbl/tbl.h"
+#include "work.h"
+#include "xfile.h"
 #include "xstrlcpy.h"
 
 struct dcp_srv
@@ -59,7 +60,7 @@ enum dcp_rc dcp_srv_close(struct dcp_srv *srv)
 enum dcp_rc dcp_srv_add_db(struct dcp_srv *srv, char const *filepath,
                            dcp_sched_id *id)
 {
-    if (!file_readable(filepath))
+    if (!xfile_is_readable(filepath))
         return error(DCP_IOERROR, "file is not readable");
     return sched_add_db(&srv->sched, filepath, id);
 }
@@ -169,36 +170,18 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     tbl_8x_ed_flush(&table);
 }
 
-struct prod_file
-{
-    struct file_tmp tmp;
-    FILE *fd;
-};
-
-static enum dcp_rc prod_file_open(struct prod_file *file)
-{
-    file->tmp = FILE_TMP_INIT();
-    enum dcp_rc rc = file_tmp_mk(&file->tmp);
-    if (rc) return rc;
-    if (!(file->fd = fopen(file->tmp.path, "wb")))
-        rc = error(DCP_IOERROR, "failed to open prod file");
-    return rc;
-}
-
 enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
 {
-    struct dcp_job job;
-    dcp_sched_id job_id = 0;
-    dcp_sched_id db_id = 0;
+    struct work work = {0};
 
-    enum dcp_rc rc = sched_next_job(&srv->sched, &job, &job_id, &db_id);
+    enum dcp_rc rc = sched_next_job(&srv->sched, &work.job);
     if (rc == DCP_DONE) return DCP_DONE;
 
-    struct db *db = NULL;
-    if ((rc = prepare_db(srv, db_id, &db))) return rc;
-
-    struct prod_file prod_file = {0};
-    if (!(rc = prod_file_open(&prod_file))) return rc;
+    if (!(work.db = db_tbl_get(&srv->db_tbl, work.job.db_id)))
+    {
+        if (!(work.db = db_tbl_new(&srv->db_tbl, work.job.db_id)))
+            return error(DCP_FAIL, "reached limit of open dbs");
+    }
 
     struct imm_prod alt = imm_prod();
     struct imm_prod null = imm_prod();
@@ -285,7 +268,7 @@ static enum dcp_rc prepare_db(struct dcp_srv *srv, dcp_sched_id db_id,
     if (!*db && !(*db = db_tbl_new(&srv->db_tbl, db_id)))
         return error(DCP_FAIL, "reached limit of open dbs");
 
-    char filepath[FILEPATH_SIZE] = {0};
+    char filepath[PATH_SIZE] = {0};
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_db_filepath(&srv->sched, db_id, filepath)))
     {

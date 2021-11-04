@@ -3,11 +3,11 @@
 #include "dcp/db.h"
 #include "dcp/generics.h"
 #include "dcp/prof.h"
-#include "dcp_file.h"
 #include "error.h"
 #include "imm/imm.h"
 #include "prof.h"
 #include "third-party/cmp.h"
+#include "xfile.h"
 #include <assert.h>
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B
@@ -135,7 +135,7 @@ static enum dcp_rc closew(struct dcp_db *db)
     }
 
     dcp_cmp_rewind(&db->dp.cmp);
-    if ((rc = file_copy(dcp_cmp_fd(&db->file.cmp), dcp_cmp_fd(&db->dp.cmp))))
+    if ((rc = xfile_copy(dcp_cmp_fd(&db->file.cmp), dcp_cmp_fd(&db->dp.cmp))))
         goto cleanup;
 
     if (dcp_cmp_close(&db->dp.cmp))

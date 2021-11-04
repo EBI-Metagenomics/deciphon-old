@@ -5,7 +5,7 @@
 #include "dcp/rc.h"
 #include "dcp/sched.h"
 #include "dcp/seq.h"
-#include "filepath.h"
+#include "path.h"
 
 struct dcp_job;
 struct sqlite3;
@@ -48,11 +48,10 @@ enum dcp_rc sched_add_db(struct sched *, char const *filepath,
 enum dcp_rc sched_job_state(struct sched *, dcp_sched_id job_id,
                             enum dcp_job_state *);
 
-enum dcp_rc sched_next_job(struct sched *, struct dcp_job *,
-                           dcp_sched_id *job_id, dcp_sched_id *db_id);
+enum dcp_rc sched_next_job(struct sched *, struct dcp_job *);
 
 enum dcp_rc sched_db_filepath(struct sched *, dcp_sched_id,
-                              char filepath[FILEPATH_SIZE]);
+                              char filepath[PATH_SIZE]);
 
 enum dcp_rc sched_next_seq(struct sched *, dcp_sched_id job_id,
                            dcp_sched_id *seq_id, struct dcp_seq *seq);

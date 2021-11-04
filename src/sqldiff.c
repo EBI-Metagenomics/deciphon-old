@@ -20,9 +20,10 @@
 */
 
 #include "sqldiff.h"
-#include "dcp_file.h"
 #include "error.h"
+#include "path.h"
 #include "sqlite3.h"
+#include "xfile.h"
 #include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
@@ -2474,11 +2475,11 @@ static int call_main(int argc, char const **argv, FILE *out)
 
 enum dcp_rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
 {
-    struct file_tmp tmp = FILE_TMP_INIT();
-    enum dcp_rc rc = file_tmp_mk(&tmp);
+    PATH_TEMP_DECLARE(path);
+    enum dcp_rc rc = xfile_mktemp(path);
     if (rc) return rc;
 
-    FILE *out = fopen(tmp.path, "w");
+    FILE *out = fopen(path, "w");
     if (!out)
     {
         rc = error(DCP_IOERROR, "failed to open file");
@@ -2497,6 +2498,6 @@ enum dcp_rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
 
 cleanup:
     fclose(out);
-    file_tmp_rm(&tmp);
+    remove(path);
     return rc;
 }
