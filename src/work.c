@@ -5,6 +5,7 @@
 #include "sched.h"
 #include "xfile.h"
 #include "xstrlcpy.h"
+#include "dcp/generics.h"
 
 static enum dcp_rc open_work(struct work *work);
 
@@ -26,6 +27,15 @@ enum dcp_rc work_run(struct work *work)
 {
     enum dcp_rc rc = open_work(work);
     if (rc) return rc;
+
+    while (!(rc = dcp_db_end(dcp_super(&work->db->pro))))
+    {
+        struct dcp_pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
+        if ((rc = dcp_pro_db_read(&work->db->pro, prof))) goto cleanup;
+        struct imm_abc const *abc = prof->super.abc;
+
+    }
+cleanup:
     return DCP_DONE;
 }
 
@@ -44,6 +54,8 @@ static enum dcp_rc open_work(struct work *work)
 
     if ((rc = dcp_pro_db_openr(&work->db->pro, work->db->fd)))
         goto cleanup;
+
+    return DCP_DONE;
 
 cleanup:
     dcp_pro_db_close(&work->db->pro);
