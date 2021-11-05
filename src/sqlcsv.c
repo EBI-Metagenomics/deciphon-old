@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define ERROR_PREPARE(n) error(DCP_FAIL, "failed to prepare " n " stmt")
+
 typedef struct ImportCtx ImportCtx;
 struct ImportCtx
 {
@@ -84,8 +86,33 @@ static void import_cleanup(ImportCtx *p)
     p->z = 0;
 }
 
-static void init_ctx(ImportCtx *p, char const *filepath)
+#define ERROR_EXEC(n) error(DCP_FAIL, "failed to exec " n " stmt")
+
+static inline enum dcp_rc begin_transaction(struct sqlite3 *db)
 {
+    if (sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0))
+        return ERROR_EXEC("begin");
+    return DCP_DONE;
+}
+
+static inline enum dcp_rc end_transaction(struct sqlite3 *db)
+{
+    if (sqlite3_exec(db, "END TRANSACTION;", 0, 0, 0)) return ERROR_EXEC("end");
+    return DCP_DONE;
+}
+
+static inline int prepare(sqlite3 *db, char const *sql,
+                          struct sqlite3_stmt **stmt)
+{
+    return sqlite3_prepare_v2(db, sql, -1, stmt, NULL);
+}
+
+static enum dcp_rc init_ctx(ImportCtx *p, struct sqlite3 *db,
+                            char const *filepath)
+{
+    int nCol;
+    int i;
+    char *(SQLITE_CDECL * xRead)(ImportCtx *) = ascii_read_one_field;
     memset(p, 0, sizeof(*p));
     p->cColSep = '\t';
     p->cRowSep = '\n';
@@ -93,13 +120,26 @@ static void init_ctx(ImportCtx *p, char const *filepath)
     p->nLine = 1;
     p->in = fopen(p->zFile, "rb");
     p->xCloser = fclose;
+    char const insert_sql[] =
+        "INSERT INTO prod (job_id, match_id, seq_id, prof_id, start, end, "
+        "abc_id, loglik, null_loglik, model, version, db_id, seq_hash, match) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
+    struct sqlite3_stmt *insert_stmt = NULL;
+    enum dcp_rc rc = DCP_DONE;
+
+    if (prepare(db, insert_sql, &insert_stmt))
+    {
+        rc = ERROR_PREPARE("submit job");
+        goto cleanup;
+    }
+    nCol = sqlite3_column_count(insert_stmt);
 
     do
     {
-        int startLine = sCtx.nLine;
         for (i = 0; i < nCol; i++)
         {
-            char *z = xRead(&sCtx);
+            char *z = xRead(p);
             /*
             ** Did we reach end-of-file before finding any columns?
             ** If so, stop instead of NULL filling the remaining columns.
@@ -110,48 +150,57 @@ static void init_ctx(ImportCtx *p, char const *filepath)
             ** columns in ASCII mode?  If so, stop instead of NULL filling
             ** the remaining columns.
             */
-            if (p->mode == MODE_Ascii && (z == 0 || z[0] == 0) && i == 0) break;
-            sqlite3_bind_text(pStmt, i + 1, z, -1, SQLITE_TRANSIENT);
-            if (i < nCol - 1 && sCtx.cTerm != sCtx.cColSep)
+            if ((z == 0 || z[0] == 0) && i == 0) break;
+            sqlite3_bind_text(insert_stmt, i + 1, z, -1, SQLITE_TRANSIENT);
+            if (i < nCol - 1 && p->cTerm != p->cColSep)
             {
+#if 0
                 utf8_printf(stderr,
                             "%s:%d: expected %d columns but found %d - "
                             "filling the rest with NULL\n",
-                            sCtx.zFile, startLine, nCol, i + 1);
+                            p->zFile, startLine, nCol, i + 1);
+#endif
                 i += 2;
                 while (i <= nCol)
                 {
-                    sqlite3_bind_null(pStmt, i);
+                    sqlite3_bind_null(insert_stmt, i);
                     i++;
                 }
             }
         }
-        if (sCtx.cTerm == sCtx.cColSep)
+        if (p->cTerm == p->cColSep)
         {
             do
             {
-                xRead(&sCtx);
+                xRead(p);
                 i++;
-            } while (sCtx.cTerm == sCtx.cColSep);
+            } while (p->cTerm == p->cColSep);
+#if 0
             utf8_printf(stderr,
                         "%s:%d: expected %d columns but found %d - "
                         "extras ignored\n",
-                        sCtx.zFile, startLine, nCol, i);
+                        p->zFile, startLine, nCol, i);
+#endif
         }
         if (i >= nCol)
         {
-            sqlite3_step(pStmt);
-            rc = sqlite3_reset(pStmt);
-            if (rc != SQLITE_OK)
+            sqlite3_step(insert_stmt);
+            int bla = sqlite3_reset(insert_stmt);
+            if (bla != SQLITE_OK)
             {
-                utf8_printf(stderr, "%s:%d: INSERT failed: %s\n", sCtx.zFile,
+#if 0
+                utf8_printf(stderr, "%s:%d: INSERT failed: %s\n", p->zFile,
                             startLine, sqlite3_errmsg(p->db));
-                sCtx.nErr++;
+#endif
+                p->nErr++;
             }
             else
             {
-                sCtx.nRow++;
+                p->nRow++;
             }
         }
-    } while (sCtx.cTerm != EOF);
+    } while (p->cTerm != EOF);
+
+cleanup:
+    return rc;
 }

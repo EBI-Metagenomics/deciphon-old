@@ -29,13 +29,13 @@ static_assert(IMM_SYM_SIZE == 94, "IMM_SYM_SIZE == 94");
 #define ERROR_EXEC(n) error(DCP_FAIL, "failed to exec " n " stmt")
 #define ERROR_BIND(n) error(DCP_FAIL, "failed to bind " n)
 
-static enum dcp_rc add_seq(sqlite3_stmt *, char const *seq_id, char const *seq,
+static enum dcp_rc add_seq(struct sqlite3_stmt *, char const *seq_id, char const *seq,
                            sqlite3_int64 job_id);
 static enum dcp_rc check_integrity(char const *filepath, bool *ok);
 static enum dcp_rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath));
 static enum dcp_rc emerge_db(char const *filepath);
 static enum dcp_rc is_empty(char const *filepath, bool *empty);
-static enum dcp_rc submit_job(sqlite3_stmt *, struct dcp_job *, int64_t db_id,
+static enum dcp_rc submit_job(struct sqlite3_stmt *, struct dcp_job *, int64_t db_id,
                               int64_t *job_id);
 static enum dcp_rc touch_db(char const *filepath);
 
@@ -58,7 +58,7 @@ static void rollback_transaction(struct sched *sched)
     sqlite3_exec(sched->db, "ROLLBACK TRANSACTION;", 0, 0, 0);
 }
 
-static inline int prepare(sqlite3 *db, char const *sql, sqlite3_stmt **stmt)
+static inline int prepare(struct sqlite3 *db, char const *sql, struct sqlite3_stmt **stmt)
 {
     return sqlite3_prepare_v2(db, sql, -1, stmt, NULL);
 }
@@ -211,7 +211,7 @@ cleanup:
 
 enum dcp_rc sched_add_db(struct sched *sched, char const *filepath, int64_t *id)
 {
-    sqlite3_stmt *stmt = sched->stmt.db.insert;
+    struct sqlite3_stmt *stmt = sched->stmt.db.insert;
     enum dcp_rc rc = DCP_DONE;
     if (sqlite3_reset(stmt))
     {
@@ -390,7 +390,7 @@ enum dcp_rc sched_add_result(struct sched *sched, int64_t job_id,
     char *str_codon = malloc(fsize + 1);
     fread(str_codon, 1, fsize, codon_fd);
 
-    sqlite3_stmt *stmt = NULL;
+    struct sqlite3_stmt *stmt = NULL;
     int bla = prepare(sched->db,
                       "INSERT INTO result (job_id, amino_faa, "
                       "codon_fna, output_gff) VALUES (?, ?, ?, ?);",
@@ -420,7 +420,7 @@ enum dcp_rc sched_insert_csv(struct sched *sched, char const *filepath)
     return DCP_DONE;
 }
 
-static enum dcp_rc add_seq(sqlite3_stmt *stmt, char const *seq_id,
+static enum dcp_rc add_seq(struct sqlite3_stmt *stmt, char const *seq_id,
                            char const *seq, sqlite3_int64 job_id)
 {
     enum dcp_rc rc = DCP_DONE;
@@ -509,7 +509,7 @@ static enum dcp_rc is_empty(char const *filepath, bool *empty)
     return sqlite3_close(db) ? ERROR_CLOSE() : DCP_DONE;
 }
 
-static enum dcp_rc submit_job(sqlite3_stmt *stmt, struct dcp_job *job,
+static enum dcp_rc submit_job(struct sqlite3_stmt *stmt, struct dcp_job *job,
                               int64_t db_id, int64_t *job_id)
 {
     enum dcp_rc rc = DCP_DONE;
