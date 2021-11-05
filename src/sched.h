@@ -61,6 +61,7 @@ enum dcp_rc sched_next_seq(struct sched *, int64_t job_id, int64_t *seq_id,
 enum dcp_rc sched_add_result(struct sched *, int64_t job_id, char const *output,
                              char const *codon, char const *amino);
 
-enum dcp_rc sched_insert_csv(struct sched *, char const *filepath);
+enum dcp_rc sched_insert_csv(struct sched *, int64_t job_id,
+                             char const *filepath);
 
 #endif

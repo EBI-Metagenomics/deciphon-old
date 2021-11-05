@@ -64,8 +64,6 @@ static enum dcp_rc write_product(struct work *work, unsigned match_id)
                "pro", DCP_VERSION, basename(db_path), "xxh3:xxxxxxxxxx");
     rc = prod_write(&work->prod_dcp, work->prod_file.fd);
     if (rc) return rc;
-    rc = prod_file_write_sep(&work->prod_file);
-    if (rc) return rc;
 
     struct imm_seq const *seq = &work->seq.imm;
     struct imm_path const *path = &work->prod.alt.path;
@@ -156,7 +154,7 @@ static enum dcp_rc close_work(struct work *work)
     if (work->db->fd && fclose(work->db->fd))
         return error(DCP_IOERROR, "failed to close file");
     fclose(work->prod_file.fd);
-    rc = sched_insert_csv(work->sched, work->prod_file.path);
+    rc = sched_insert_csv(work->sched, work->job.id, work->prod_file.path);
     if (rc) return rc;
     return prod_file_close(&work->prod_file);
 }

@@ -42,7 +42,6 @@ CREATE TABLE prod (
                         UNIQUE
                         NOT NULL,
     job_id      INTEGER REFERENCES job (id)
-                        UNIQUE
                         NOT NULL,
     match_id    INTEGER NOT NULL,
     seq_id      VARCHAR NOT NULL,

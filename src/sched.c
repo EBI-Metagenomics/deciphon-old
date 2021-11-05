@@ -446,12 +446,14 @@ struct ImportCtx
 };
 
 static enum dcp_rc init_ctx(struct sched *sched, ImportCtx *p,
-                            struct sqlite3 *db, char const *filepath);
+                            struct sqlite3 *db, int64_t job_id,
+                            char const *filepath);
 
-enum dcp_rc sched_insert_csv(struct sched *sched, char const *filepath)
+enum dcp_rc sched_insert_csv(struct sched *sched, int64_t job_id,
+                             char const *filepath)
 {
     ImportCtx p = {0};
-    enum dcp_rc rc = init_ctx(sched, &p, sched->db, filepath);
+    enum dcp_rc rc = init_ctx(sched, &p, sched->db, job_id, filepath);
     return rc;
 }
 
@@ -618,18 +620,24 @@ static void import_append_char(ImportCtx *p, int c)
 **      EOF on end-of-file.
 **   +  Report syntax errors on stderr
 */
-static char *ascii_read_one_field(ImportCtx *p)
+static char *ascii_read_one_field(ImportCtx *p, int *end_of_file)
 {
     int c;
     int cSep = p->cColSep;
     int rSep = p->cRowSep;
+    *end_of_file = false;
     p->n = 0;
     c = fgetc(p->in);
     /* if (c == EOF || seenInterrupt) */
     if (c == EOF)
     {
         p->cTerm = EOF;
+        *end_of_file = true;
         return 0;
+    }
+    if (c != EOF && c == cSep)
+    {
+        goto exit_early;
     }
     while (c != EOF && c != cSep && c != rSep)
     {
@@ -640,6 +648,11 @@ static char *ascii_read_one_field(ImportCtx *p)
     {
         p->nLine++;
     }
+    if (c == EOF)
+    {
+        *end_of_file = true;
+    }
+exit_early:
     p->cTerm = c;
     if (p->z) p->z[p->n] = 0;
     return p->z;
@@ -658,11 +671,12 @@ static void import_cleanup(ImportCtx *p)
 }
 
 static enum dcp_rc init_ctx(struct sched *sched, ImportCtx *p,
-                            struct sqlite3 *db, char const *filepath)
+                            struct sqlite3 *db, int64_t job_id,
+                            char const *filepath)
 {
     int nCol;
     int i;
-    char *(SQLITE_CDECL * xRead)(ImportCtx *) = ascii_read_one_field;
+    int end_of_file = false;
     memset(p, 0, sizeof(*p));
     p->cColSep = '\t';
     p->cRowSep = '\n';
@@ -676,29 +690,35 @@ static enum dcp_rc init_ctx(struct sched *sched, ImportCtx *p,
 
     struct sqlite3_stmt *stmt = sched->stmt.prod.insert;
 
-    nCol = 14;
+    char *z = NULL;
 
     do
     {
-        for (i = 0; i < nCol; i++)
+        if (sqlite3_reset(stmt))
         {
-            if (sqlite3_reset(stmt))
-            {
-                rc = ERROR_RESET("add seq");
-                goto cleanup;
-            }
-            char *z = xRead(p);
+            rc = ERROR_RESET("add seq");
+            goto cleanup;
+        }
+        if (sqlite3_bind_int64(stmt, 1, job_id))
+        {
+            rc = ERROR_BIND("prod job_id");
+            goto cleanup;
+        }
+        nCol = 14;
+        for (i = 1; i < nCol; i++)
+        {
+            z = ascii_read_one_field(p, &end_of_file);
             /*
             ** Did we reach end-of-file before finding any columns?
             ** If so, stop instead of NULL filling the remaining columns.
             */
-            if (z == 0 && i == 0) break;
+            if (z == 0 && i == 1) break;
             /*
             ** Did we reach end-of-file OR end-of-line before finding any
             ** columns in ASCII mode?  If so, stop instead of NULL filling
             ** the remaining columns.
             */
-            if ((z == 0 || z[0] == 0) && i == 0) break;
+            if ((z == 0 || end_of_file) && i == 1) break;
             if (sqlite3_bind_text(stmt, i + 1, z, -1, SQLITE_TRANSIENT))
             {
                 rc = ERROR_BIND("prod value");
@@ -728,7 +748,7 @@ static enum dcp_rc init_ctx(struct sched *sched, ImportCtx *p,
         {
             do
             {
-                xRead(p);
+                ascii_read_one_field(p, &end_of_file);
                 i++;
             } while (p->cTerm == p->cColSep);
 #if 0
@@ -742,6 +762,7 @@ static enum dcp_rc init_ctx(struct sched *sched, ImportCtx *p,
         {
             if (sqlite3_step(stmt) != SQLITE_DONE)
             {
+                printf("%s\n", sqlite3_errmsg(sched->db));
                 rc = ERROR_STEP("insert prod");
                 goto cleanup;
             }
@@ -754,5 +775,6 @@ cleanup:
         rollback_transaction(sched);
     else
         rc = end_transaction(sched);
+    free(z);
     return rc;
 }
