@@ -156,7 +156,8 @@ static enum dcp_rc close_work(struct work *work)
     if (work->db->fd && fclose(work->db->fd))
         return error(DCP_IOERROR, "failed to close file");
     fclose(work->prod_file.fd);
-    sched_insert_csv(work->sched, work->prod_file.path);
+    rc = sched_insert_csv(work->sched, work->prod_file.path);
+    if (rc) return rc;
     return prod_file_close(&work->prod_file);
 }
 

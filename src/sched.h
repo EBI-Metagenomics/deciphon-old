@@ -31,6 +31,10 @@ struct sched
             struct sqlite3_stmt *insert;
         } db;
         struct sqlite3_stmt *seq;
+        struct
+        {
+            struct sqlite3_stmt *insert;
+        } prod;
     } stmt;
 };
 
