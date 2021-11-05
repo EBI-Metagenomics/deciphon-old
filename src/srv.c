@@ -171,8 +171,9 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
 enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
 {
     struct work work = {0};
+    work_init(&work, &srv->sched);
 
-    enum dcp_rc rc = work_fetch(&work, &srv->sched, &srv->db_pool);
+    enum dcp_rc rc = work_fetch(&work, &srv->db_pool);
     if (rc == DCP_DONE) return DCP_DONE;
 
     rc = work_run(&work);

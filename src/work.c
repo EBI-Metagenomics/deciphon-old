@@ -10,17 +10,35 @@
 static enum dcp_rc open_work(struct work *work);
 static enum dcp_rc close_work(struct work *work);
 static enum dcp_rc next_profile(struct work *work);
-
-enum dcp_rc work_fetch(struct work *work, struct sched *sched,
-                       struct db_pool *pool)
+static enum dcp_rc next_seq(struct work *work);
+static inline void rewind_seqs(struct work *work) { work->seq.id = 0; }
+static enum dcp_rc prepare_task_for_prof(struct work *work);
+static enum dcp_rc prepare_task_for_seq(struct work *work);
+static void prepare_prod(struct work *work);
+static enum dcp_rc run_viterbi(struct work *work);
+static inline imm_float compute_lrt(struct work const *work)
 {
-    enum dcp_rc rc = sched_next_job(sched, &work->job);
+    return -2 * (work->prod.null.loglik - work->prod.alt.loglik);
+}
+
+void work_init(struct work *work, struct sched *sched)
+{
+    work->sched = sched;
+    work->task.alt = NULL;
+    work->task.null = NULL;
+    work->prod.alt = imm_prod();
+    work->prod.null = imm_prod();
+}
+
+enum dcp_rc work_fetch(struct work *work, struct db_pool *pool)
+{
+    enum dcp_rc rc = sched_next_job(work->sched, &work->job);
     if (rc == DCP_DONE) return DCP_DONE;
     work->db = db_pool_fetch(pool, work->job.db_id);
     if (!work->db) return error(DCP_FAIL, "reached limit of open db handles");
 
     work->db_path[0] = 0;
-    if ((rc = sched_db_filepath(sched, work->job.db_id, work->db_path)))
+    if ((rc = sched_db_filepath(work->sched, work->job.db_id, work->db_path)))
         return rc;
     return DCP_NEXT;
 }
@@ -32,11 +50,18 @@ enum dcp_rc work_run(struct work *work)
 
     while ((rc = next_profile(work)) == DCP_NEXT)
     {
-            /* struct imm_seq s = imm_seq(imm_str(data), abc); */
-            /* if (imm_task_setup(work->task, &s)) */
-            /*     return error(DCP_FAIL, "failed to setup task"); */
-        /* work->abc; */
-        /* work->prof; */
+        rewind_seqs(work);
+        if ((rc = prepare_task_for_prof(work))) goto cleanup;
+
+        while ((rc = next_seq(work)) == DCP_NEXT)
+        {
+            if ((rc = prepare_task_for_seq(work))) goto cleanup;
+            prepare_prod(work);
+            if ((rc = run_viterbi(work))) goto cleanup;
+
+            imm_float lrt = compute_lrt(work);
+            if (lrt < 100.0f) continue;
+        }
     }
 
     return close_work(work);
@@ -89,11 +114,65 @@ static enum dcp_rc next_profile(struct work *work)
     work->prof = prof;
     work->abc = work->prof->super.abc;
 
-    if (!work->task && !(work->task = imm_task_new(&work->prof->alt.dp)))
-        return error(DCP_FAIL, "failed to create task");
-
-    if (imm_task_reset(work->task, &work->prof->alt.dp))
-        return error(DCP_FAIL, "failed to reset task");
-
     return DCP_NEXT;
+}
+
+static enum dcp_rc next_seq(struct work *work)
+{
+    enum dcp_rc rc = sched_next_seq(work->sched, work->job.id, &work->seq.id,
+                                    &work->seq.dcp);
+    if (rc == DCP_DONE) return rc;
+    work->seq.imm = imm_seq(imm_str(work->seq.dcp.data), work->abc);
+    return rc;
+}
+
+static enum dcp_rc prepare_task_for_dp(struct imm_task **task,
+                                       struct imm_dp const *dp)
+{
+    if (*task)
+    {
+        if (imm_task_reset(*task, dp))
+            return error(DCP_FAIL, "failed to reset task");
+    }
+    else
+    {
+        if (!(*task = imm_task_new(dp)))
+            return error(DCP_FAIL, "failed to create task");
+    }
+    return DCP_DONE;
+}
+
+static enum dcp_rc prepare_task_for_prof(struct work *work)
+{
+    enum dcp_rc rc = prepare_task_for_dp(&work->task.alt, &work->prof->alt.dp);
+    if (rc) return rc;
+    return prepare_task_for_dp(&work->task.null, &work->prof->null.dp);
+}
+
+static enum dcp_rc prepare_task_for_seq(struct work *work)
+{
+    if (imm_task_setup(work->task.alt, &work->seq.imm))
+        return error(DCP_FAIL, "failed to setup task");
+
+    if (imm_task_setup(work->task.null, &work->seq.imm))
+        return error(DCP_FAIL, "failed to setup task");
+
+    return DCP_DONE;
+}
+
+static void prepare_prod(struct work *work)
+{
+    imm_prod_reset(&work->prod.alt);
+    imm_prod_reset(&work->prod.null);
+}
+
+static enum dcp_rc run_viterbi(struct work *work)
+{
+    if (imm_dp_viterbi(&work->prof->alt.dp, work->task.alt, &work->prod.alt))
+        return error(DCP_FAIL, "failed to run viterbi");
+
+    if (imm_dp_viterbi(&work->prof->null.dp, work->task.null, &work->prod.null))
+        return error(DCP_FAIL, "failed to run viterbi");
+
+    return DCP_DONE;
 }

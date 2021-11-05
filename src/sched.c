@@ -91,8 +91,8 @@ static struct
                     "FROM job WHERE state = 'pend') RETURNING id, db_id;"},
     .db = {.select = "SELECT filepath FROM db WHERE id = ?;",
            .insert = "INSERT INTO db (filepath) VALUES (?) RETURNING id;"},
-    .seq = "SELECT id, data FROM seq WHERE id > ? AND job_id = ? ORDER BY id "
-           "ASC LIMIT 1;",
+    .seq = "SELECT id, seq_id, data FROM seq WHERE id > ? AND job_id = ? "
+           "ORDER BY id ASC LIMIT 1;",
 };
 
 enum dcp_rc sched_setup(char const *filepath)
@@ -424,12 +424,12 @@ static enum dcp_rc add_seq(sqlite3_stmt *stmt, char const *seq_id,
         rc = ERROR_BIND("seq_id");
         goto cleanup;
     }
-    if (sqlite3_bind_text(stmt, 1, seq, -1, NULL))
+    if (sqlite3_bind_text(stmt, 2, seq, -1, NULL))
     {
         rc = ERROR_BIND("seq");
         goto cleanup;
     }
-    if (sqlite3_bind_int64(stmt, 2, job_id))
+    if (sqlite3_bind_int64(stmt, 3, job_id))
     {
         rc = ERROR_BIND("job_id");
         goto cleanup;
