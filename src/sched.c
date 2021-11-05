@@ -410,6 +410,16 @@ enum dcp_rc sched_add_result(struct sched *sched, int64_t job_id,
     return DCP_DONE;
 }
 
+enum dcp_rc sched_insert_csv(struct sched *sched, char const *filepath)
+{
+    char query[512] = {0};
+    sprintf(query, ".mode csv prod; .separator '\t'; .import %s prod;",
+            filepath);
+    char *errmsg = 0;
+    int bla = sqlite3_exec(sched->db, query, 0, 0, &errmsg);
+    return DCP_DONE;
+}
+
 static enum dcp_rc add_seq(sqlite3_stmt *stmt, char const *seq_id,
                            char const *seq, sqlite3_int64 job_id)
 {

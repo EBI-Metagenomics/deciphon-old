@@ -1,5 +1,4 @@
 #include "work.h"
-#include <libgen.h>
 #include "db_pool.h"
 #include "dcp.h"
 #include "dcp/generics.h"
@@ -11,6 +10,7 @@
 #include "sched.h"
 #include "xfile.h"
 #include "xstrlcpy.h"
+#include <libgen.h>
 
 static enum dcp_rc open_work(struct work *work);
 static enum dcp_rc close_work(struct work *work);
@@ -57,7 +57,7 @@ static enum dcp_rc write_product(struct work *work, unsigned match_id)
     struct imm_codon codon = imm_codon_any(work->prof->nuclt);
 
     struct dcp_meta const *mt = &work->prof->super.mt;
-    char db_path[PATH_SIZE]={0};
+    char db_path[PATH_SIZE] = {0};
     xstrlcpy(db_path, work->db_path, PATH_SIZE);
     prod_setup(&work->prod_dcp, match_id, work->seq.dcp.id, mt->acc, 0, 0,
                "dna_iupac", work->prod.alt.loglik, work->prod.null.loglik,
@@ -83,7 +83,8 @@ static enum dcp_rc write_product(struct work *work, unsigned match_id)
             pro_match_set_codon(&match, codon);
             pro_match_set_amino(&match, imm_gc_decode(1, codon));
         }
-        if (idx > 0) {
+        if (idx > 0)
+        {
             rc = pro_match_write_sep(work->prod_file.fd);
             if (rc) return rc;
         }
@@ -154,6 +155,8 @@ static enum dcp_rc close_work(struct work *work)
     if (rc) return rc;
     if (work->db->fd && fclose(work->db->fd))
         return error(DCP_IOERROR, "failed to close file");
+    fclose(work->prod_file.fd);
+    sched_insert_csv(work->sched, work->prod_file.path);
     return prod_file_close(&work->prod_file);
 }
 
