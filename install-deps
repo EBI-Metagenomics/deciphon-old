@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if ! type pkg-config >/dev/null; then
+    echo "Please, install pkg-config." >&2
+    exit 1
+fi
+
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s horta/hope || exit 1
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s horta/logaddexp || exit 1
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s horta/elapsed || exit 1
@@ -11,3 +16,20 @@ bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/fasta || exit 1
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/imm || exit 1
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/tabulate || exit 1
 bash -c "$(curl -fsSL https://git.io/Jz7Oa)" -s EBI-Metagenomics/gff || exit 1
+
+(
+    # Change dir to script's
+    {
+        src="${BASH_SOURCE[0]}"
+        while [[ -L ${src} ]]; do
+            # shellcheck disable=SC1117
+            src=$(find "${src}" -type l -ls | sed -n 's/^.* -> \(.*\)/\1/p')
+        done
+        dir=$(cd -P "$(dirname "${src}")" && pwd)
+        cd $dir || exit 1
+    }
+
+    if ! pkg-config --exists --print-errors sqlite3; then
+        ./install-sqlite3
+    fi
+)

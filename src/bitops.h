@@ -16,10 +16,10 @@
  *
  * Undefined if no bit exists, so code should check against 0 first.
  */
-static inline int bitops_fful(unsigned long x)
+static inline int bitops_fful(unsigned long word)
 {
-#if __has_builtin(__builtin_clz)
-    return __builtin_ffsl((long)x) - 1;
+#if __has_builtin(__builtin_ffsl)
+    return __builtin_ffsl((long)word) - 1;
 #else
     int num = 0;
 
