@@ -4,6 +4,7 @@
 #include "dcp/job.h"
 #include "imm/imm.h"
 #include "path.h"
+#include "prod.h"
 #include "prod_file.h"
 #include <stdint.h>
 
@@ -36,6 +37,7 @@ struct work
         struct imm_prod alt;
         struct imm_prod null;
     } prod;
+    struct prod prod_dcp;
 };
 
 void work_init(struct work *work, struct sched *sched);

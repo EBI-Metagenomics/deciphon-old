@@ -1,8 +1,13 @@
 #include "work.h"
+#include <libgen.h>
 #include "db_pool.h"
 #include "dcp.h"
 #include "dcp/generics.h"
+#include "dcp/pro_state.h"
+#include "dcp/version.h"
 #include "error.h"
+#include "pro_match.h"
+#include "prod.h"
 #include "sched.h"
 #include "xfile.h"
 #include "xstrlcpy.h"
@@ -43,11 +48,58 @@ enum dcp_rc work_fetch(struct work *work, struct db_pool *pool)
     return DCP_NEXT;
 }
 
+static enum dcp_rc write_product(struct work *work, unsigned match_id)
+{
+    enum dcp_rc rc = DCP_DONE;
+    struct pro_match match = {0};
+    unsigned start = 0;
+    char state[IMM_STATE_NAME_SIZE] = {0};
+    struct imm_codon codon = imm_codon_any(work->prof->nuclt);
+
+    struct dcp_meta const *mt = &work->prof->super.mt;
+    char db_path[PATH_SIZE]={0};
+    xstrlcpy(db_path, work->db_path, PATH_SIZE);
+    prod_setup(&work->prod_dcp, match_id, work->seq.dcp.id, mt->acc, 0, 0,
+               "dna_iupac", work->prod.alt.loglik, work->prod.null.loglik,
+               "pro", DCP_VERSION, basename(db_path), "xxh3:xxxxxxxxxx");
+    rc = prod_write(&work->prod_dcp, work->prod_file.fd);
+    if (rc) return rc;
+    rc = prod_file_write_sep(&work->prod_file);
+    if (rc) return rc;
+
+    struct imm_seq const *seq = &work->seq.imm;
+    struct imm_path const *path = &work->prod.alt.path;
+    for (unsigned idx = 0; idx < imm_path_nsteps(path); idx++)
+    {
+        struct imm_step const *step = imm_path_step(path, idx);
+        struct imm_seq frag = imm_subseq(seq, start, step->seqlen);
+        dcp_pro_prof_state_name(step->state_id, state);
+
+        pro_match_setup(&match, imm_subseq(seq, start, step->seqlen), state);
+        if (!dcp_pro_state_is_mute(step->state_id))
+        {
+            rc = dcp_pro_prof_decode(work->prof, &frag, step->state_id, &codon);
+            if (rc) return rc;
+            pro_match_set_codon(&match, codon);
+            pro_match_set_amino(&match, imm_gc_decode(1, codon));
+        }
+        if (idx > 0) {
+            rc = pro_match_write_sep(work->prod_file.fd);
+            if (rc) return rc;
+        }
+        if ((rc = pro_match_write(&match, work->prod_file.fd))) return rc;
+        start += step->seqlen;
+    }
+    rc = prod_file_write_nl(&work->prod_file);
+    return rc;
+}
+
 enum dcp_rc work_run(struct work *work)
 {
     enum dcp_rc rc = open_work(work);
     if (rc) return rc;
 
+    unsigned match_id = 1;
     while ((rc = next_profile(work)) == DCP_NEXT)
     {
         rewind_seqs(work);
@@ -61,6 +113,9 @@ enum dcp_rc work_run(struct work *work)
 
             imm_float lrt = compute_lrt(work);
             if (lrt < 100.0f) continue;
+
+            if ((rc = write_product(work, match_id))) goto cleanup;
+            match_id++;
         }
     }
 

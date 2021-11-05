@@ -41,7 +41,6 @@ add_library(
   src/pro_db.c
   src/pro_match.c
   src/pro_model.c
-  src/pro_prod.c
   src/pro_prof.c
   src/pro_reader.c
   src/pro_state.c

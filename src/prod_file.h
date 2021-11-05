@@ -11,6 +11,8 @@ struct prod_file
 };
 
 enum dcp_rc prod_file_open(struct prod_file *file);
+enum dcp_rc prod_file_write_sep(struct prod_file *file);
+enum dcp_rc prod_file_write_nl(struct prod_file *file);
 enum dcp_rc prod_file_close(struct prod_file *file);
 
 #endif

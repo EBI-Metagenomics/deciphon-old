@@ -21,11 +21,11 @@ struct prod
     char seq_hash[511];
 };
 
-void prod_init(struct prod *p, unsigned match_id, char const seq_id[static 1],
-               char const prof_id[static 1], unsigned start, unsigned end,
-               char const abc[static 1], double loglik, double null_loglik,
-               char const model[static 1], char const version[static 1],
-               char const db_id[static 1], char const seq_hash[static 1]);
+void prod_setup(struct prod *p, unsigned match_id, char const seq_id[static 1],
+                char const prof_id[static 1], unsigned start, unsigned end,
+                char const abc[static 1], double loglik, double null_loglik,
+                char const model[static 1], char const version[static 1],
+                char const db_id[static 1], char const seq_hash[static 1]);
 
 enum dcp_rc prod_write(struct prod *p, FILE *restrict fd);
 

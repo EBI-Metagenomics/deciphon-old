@@ -1,7 +1,6 @@
 #ifndef PRO_MATCH_H
 #define PRO_MATCH_H
 
-#include "cco/cco.h"
 #include "dcp/rc.h"
 #include "imm/imm.h"
 #include <stdio.h>
@@ -11,13 +10,13 @@ struct pro_match
     char frag[5];
     char state[IMM_STATE_NAME_SIZE];
     char codon[4];
-    char amino;
-    struct cco_node node;
+    char amino[2];
 };
 
-void pro_match_init(struct pro_match *m, char const frag[static 1],
-                    char const state[static 1], char const codon[static 1],
-                    char amino);
+void pro_match_setup(struct pro_match *m, struct imm_seq frag,
+                     char const state[static 1]);
+void pro_match_set_codon(struct pro_match *m, struct imm_codon codon);
+void pro_match_set_amino(struct pro_match *m, char amino);
 
 /* Output example
  *             ___________________________

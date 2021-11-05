@@ -3,20 +3,30 @@
 #include "error.h"
 #include "xstrlcpy.h"
 
-void pro_match_init(struct pro_match *m, char const frag[static 1],
-                    char const state[static 1], char const codon[static 1],
-                    char amino)
+void pro_match_setup(struct pro_match *m, struct imm_seq frag,
+                     char const state[static 1])
 {
-    xstrlcpy(m->frag, frag, MEMBER_SIZE(*m, frag));
+    xstrlcpy(m->frag, frag.str, frag.size + 1);
     xstrlcpy(m->state, state, MEMBER_SIZE(*m, state));
-    xstrlcpy(m->codon, codon, MEMBER_SIZE(*m, codon));
-    m->amino = amino;
-    /* cco_node_init(&m->node); */
+    m->codon[0] = 0;
+    m->amino[0] = 0;
+}
+
+void pro_match_set_codon(struct pro_match *m, struct imm_codon codon)
+{
+    m->codon[0] = imm_codon_asym(&codon);
+    m->codon[1] = imm_codon_bsym(&codon);
+    m->codon[2] = imm_codon_csym(&codon);
+}
+
+void pro_match_set_amino(struct pro_match *m, char amino)
+{
+    m->amino[0] = amino;
 }
 
 enum dcp_rc pro_match_write(struct pro_match *m, FILE *restrict fd)
 {
-    if (fprintf(fd, "%s,%s,%s,%c", m->frag, m->state, m->codon, m->amino) < 0)
+    if (fprintf(fd, "%s,%s,%s,%s", m->frag, m->state, m->codon, m->amino) < 0)
         return error(DCP_IOERROR, "failed to write match");
     return DCP_DONE;
 }
