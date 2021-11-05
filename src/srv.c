@@ -177,6 +177,8 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
     if (rc == DCP_DONE) return DCP_DONE;
 
     rc = work_run(&work);
+    if (rc) return rc;
+    return DCP_NEXT;
 #if 0
     struct imm_prod alt = imm_prod();
     struct imm_prod null = imm_prod();
