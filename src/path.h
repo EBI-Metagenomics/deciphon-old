@@ -5,9 +5,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/* Windows seems to have limited it to 260 characters in the past */
-#define PATH_SIZE 261
-
 #define PATH_TEMP_TEMPLATE "/tmp/dcpXXXXXX"
 #define PATH_TEMP_DECLARE(n) char n[sizeof PATH_TEMP_TEMPLATE]
 #define PATH_TEMP_DEFINE(n) PATH_TEMP_DECLARE(n) = PATH_TEMP_TEMPLATE;
