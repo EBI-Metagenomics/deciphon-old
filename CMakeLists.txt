@@ -22,8 +22,19 @@ find_package(tbl REQUIRED)
 find_package(SQLite3 3.35.0 REQUIRED)
 find_package(PkgConfig REQUIRED)
 
+add_custom_command(
+  OUTPUT sched_schema.c
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed-file
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/sched_schema.sql
+    sched_schema
+    sched_schema.c
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed-file
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/sched_schema.sql
+  VERBATIM)
+
 add_library(
   dcp
+  sched_schema.c
   src/cli.c
   src/cli_info.c
   src/cli_press.c
@@ -49,7 +60,6 @@ add_library(
   src/progress_file.c
   src/row.c
   src/sched.c
-  src/sched_job.c
   src/seq.c
   src/sqldiff.c
   src/srv.c
