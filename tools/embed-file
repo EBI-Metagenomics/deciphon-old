@@ -1,0 +1,21 @@
+#!/bin/bash
+
+function show_usage
+{
+    echo "Usage: embed-file RESOURCE_FILE SYMBOL"
+    echo "  Outputs C file from the contents of RESOURCE_FILE"
+}
+
+if [ $# -ne 2 ]; then
+    show_usage
+    exit 1
+fi
+
+resource_file=$1
+symbol=$2
+
+echo "unsigned char const ${symbol}[] = {"
+cat $resource_file <(printf '\0') | xxd -i | sed 's/^  /    /'
+echo "};"
+echo ""
+echo "size_t const ${symbol}_size = sizeof(${symbol});"
