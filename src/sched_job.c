@@ -1,22 +1,155 @@
 #include "sched_job.h"
+#include "dcp/rc.h"
 #include "error.h"
+#include "job_state.h"
+#include "macros.h"
+#include "sched_limits.h"
+#include "sched_macros.h"
+#include "utc.h"
+#include "xstrlcpy.h"
+#include <sqlite3.h>
+#include <stdlib.h>
 
-void sched_job_setup(struct sched_job *job, bool multi_hits, bool hmmer3_compat,
-                     uint64_t db_id)
+enum
 {
-    job->id = 0;
-    job->multi_hits = multi_hits;
-    job->hmmer3_compat = hmmer3_compat;
-    job->db_id = db_id;
-    job->state = DCP_JOB_PEND;
-    job->error[0] = '\0';
-    job->submission = DCP_UTC_NULL;
-    job->exec_started = DCP_UTC_NULL;
-    job->exec_ended = DCP_UTC_NULL;
-    cco_queue_init(&job->seqs);
+    INSERT,
+    GET_PEND,
+    GET_STATE,
+    SELECT,
+};
+
+/* clang-format off */
+static char const *const queries[] = {
+    [INSERT] =\
+"\
+        INSERT INTO job\
+            (\
+                db_id, multi_hits, hmmer3_compat,      state,\
+                error, submission, exec_started,  exec_ended,\
+            )\
+        VALUES\
+            (\
+                ?, ?, ?, ?,\
+                ?, ?, ?, ?,\
+            )\
+        RETURNING id;\
+",
+    [GET_PEND] = \
+"\
+        UPDATE job SET\
+            state = 'run'\
+        WHERE \
+            id = (SELECT MIN(id) FROM job WHERE state = 'pend')\
+        RETURNING id;\
+",
+    [GET_STATE] = "SELECT state FROM job WHERE id = ?);",
+    [SELECT] = "SELECT * FROM job WHERE id = ?;\
+"};
+/* clang-format on */
+
+static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
+
+enum dcp_rc sched_job_module_init(struct sqlite3 *db)
+{
+    enum dcp_rc rc = DCP_DONE;
+    for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
+        PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
+
+cleanup:
+    return rc;
 }
 
-void sched_job_add_seq(struct sched_job *job, struct sched_seq *seq)
+enum dcp_rc sched_job_add(struct sched_job *job)
 {
-    cco_queue_put(&job->seqs, &seq->node);
+    struct sqlite3_stmt *stmt = stmts[INSERT];
+    enum dcp_rc rc = DCP_DONE;
+    RESET_OR_CLEANUP(rc, stmt);
+
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, job->db_id);
+    BIND_INT_OR_CLEANUP(rc, stmt, 2, job->multi_hits);
+    BIND_INT_OR_CLEANUP(rc, stmt, 3, job->hmmer3_compat);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 4, job->state);
+
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 5, job->error);
+    BIND_INT64_OR_CLEANUP(rc, stmt, 6, (int64_t)utc_now());
+    BIND_INT64_OR_CLEANUP(rc, stmt, 7, 0);
+    BIND_INT64_OR_CLEANUP(rc, stmt, 8, 0);
+
+    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    job->id = sqlite3_column_int64(stmt, 0);
+    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
+
+cleanup:
+    return rc;
+}
+
+enum dcp_rc sched_job_next_pending(int64_t *job_id)
+{
+    struct sqlite3_stmt *stmt = stmts[GET_PEND];
+    enum dcp_rc rc = DCP_DONE;
+    RESET_OR_CLEANUP(rc, stmt);
+
+    int code = sqlite3_step(stmt);
+    if (code == SQLITE_DONE) return DCP_DONE;
+    if (code != SQLITE_ROW)
+    {
+        rc = STEP_ERROR();
+        goto cleanup;
+    }
+    *job_id = sqlite3_column_int64(stmt, 0);
+    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
+
+cleanup:
+    return rc;
+}
+
+enum dcp_rc sched_job_state(int64_t job_id, enum dcp_job_state *state)
+{
+    struct sqlite3_stmt *stmt = stmts[GET_STATE];
+    enum dcp_rc rc = DCP_DONE;
+    RESET_OR_CLEANUP(rc, stmt);
+
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
+    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+
+    char tmp[SCHED_STATE_SIZE] = {0};
+    COLUMN_TEXT(stmt, 0, tmp, SCHED_STATE_SIZE);
+    *state = job_state_resolve(tmp);
+    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
+
+cleanup:
+    return rc;
+}
+
+enum dcp_rc sched_job_get(struct sched_job *job, int64_t job_id)
+{
+    struct sqlite3_stmt *stmt = stmts[SELECT];
+    enum dcp_rc rc = DCP_DONE;
+    RESET_OR_CLEANUP(rc, stmt);
+
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
+    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+
+    job->id = sqlite3_column_int64(stmt, 0);
+
+    job->db_id = sqlite3_column_int64(stmt, 1);
+    job->multi_hits = sqlite3_column_int(stmt, 2);
+    job->hmmer3_compat = sqlite3_column_int(stmt, 3);
+    COLUMN_TEXT(stmt, 4, job->state, ARRAY_SIZE(MEMBER_REF(*job, state)));
+
+    COLUMN_TEXT(stmt, 5, job->error, ARRAY_SIZE(MEMBER_REF(*job, error)));
+    job->submission = sqlite3_column_int64(stmt, 6);
+    job->exec_started = sqlite3_column_int64(stmt, 7);
+    job->exec_ended = sqlite3_column_int64(stmt, 8);
+
+    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
+
+cleanup:
+    return rc;
+}
+
+void sched_job_module_del(void)
+{
+    for (unsigned i = 0; i < ARRAY_SIZE(stmts); ++i)
+        sqlite3_finalize(stmts[i]);
 }

@@ -1,7 +1,7 @@
 #include "prod_file.h"
-#include "dcp.h"
 #include "dcp/rc.h"
 #include "error.h"
+#include "macros.h"
 #include "xfile.h"
 #include "xstrlcpy.h"
 

@@ -22,6 +22,7 @@ struct dcp_db
         dcp_profile_idx_t size;
         dcp_profile_idx_t curr_idx;
     } profiles;
+    long prof_offset;
     struct
     {
         uint32_t *offset;

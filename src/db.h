@@ -30,4 +30,8 @@ enum dcp_rc db_check_write_prof_ready(struct dcp_db const *db,
 
 struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx);
 
+enum dcp_rc db_record_prof_offset(struct dcp_db *db);
+
+enum dcp_rc db_rewind(struct dcp_db *db);
+
 #endif

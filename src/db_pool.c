@@ -12,9 +12,8 @@ struct db_handle *db_pool_new(struct db_pool *pool, int64_t id)
 {
     unsigned *pool_id = pool_pop(&pool->pool);
     struct db_handle *db = cco_of(pool_id, struct db_handle, pool_id);
-    cco_hnode_init(&db->hnode);
+    db_handle_init(db, id);
     cco_hash_add(pool->handle_map, &db->hnode, id);
-    db->sched_id = id;
     return db;
 }
 
@@ -23,7 +22,7 @@ struct db_handle *db_pool_get(struct db_pool *pool, int64_t id)
     struct db_handle *db = NULL;
     cco_hash_for_each_possible(pool->handle_map, db, hnode, id)
     {
-        if (db->sched_id == id) break;
+        if (db->id == id) break;
     }
     return db;
 }

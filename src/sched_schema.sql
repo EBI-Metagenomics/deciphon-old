@@ -8,11 +8,11 @@ CREATE TABLE job (
     db_id INTEGER REFERENCES db (id) NOT NULL,
     multi_hits INTEGER NOT NULL,
     hmmer3_compat INTEGER NOT NULL,
-    state TEXT CHECK(state IN ('pend', 'run', 'done', 'fail')) NOT NULL DEFAULT ('pend'),
-    error TEXT NOT NULL DEFAULT (''),
-    submission INTEGER NOT NULL DEFAULT (0),
-    exec_started INTEGER NOT NULL DEFAULT (0),
-    exec_ended INTEGER NOT NULL DEFAULT (0)
+    state TEXT CHECK(state IN ('pend', 'run', 'done', 'fail')) NOT NULL,
+    error TEXT NOT NULL,
+    submission INTEGER NOT NULL,
+    exec_started INTEGER NOT NULL,
+    exec_ended INTEGER NOT NULL
 );
 
 CREATE TABLE seq (

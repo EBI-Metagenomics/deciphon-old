@@ -1,6 +1,6 @@
 #include "prod.h"
-#include "dcp.h"
 #include "error.h"
+#include "macros.h"
 #include "xstrlcpy.h"
 
 void prod_setup(struct prod *p, unsigned match_id, char const seq_id[static 1],

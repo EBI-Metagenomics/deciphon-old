@@ -12,6 +12,7 @@ extern "C" {
 #include "dcp/generics.h"
 #include "dcp/job.h"
 #include "dcp/job_state.h"
+#include "dcp/limits.h"
 #include "dcp/log.h"
 #include "dcp/meta.h"
 #include "dcp/model.h"

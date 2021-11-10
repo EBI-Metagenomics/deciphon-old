@@ -2,30 +2,36 @@
 #define SCHED_JOB_H
 
 #include "dcp/job_state.h"
-#include "dcp/rc.h"
-#include "sched_seq.h"
-#include "utc.h"
-#include <stdbool.h>
+#include "sched_limits.h"
+#include <stdint.h>
 
-#define SCHED_JOB_STATE_ERROR_SIZE 32
+struct sqlite3;
 
 struct sched_job
 {
-    uint64_t id;
-    bool multi_hits;
-    bool hmmer3_compat;
-    uint64_t db_id;
-    enum dcp_job_state state;
-    char error[SCHED_JOB_STATE_ERROR_SIZE];
-    dcp_utc submission;
-    dcp_utc exec_started;
-    dcp_utc exec_ended;
-    struct cco_queue seqs;
+    int64_t id;
+
+    int64_t db_id;
+    int32_t multi_hits;
+    int32_t hmmer3_compat;
+    char state[SCHED_STATE_SIZE];
+
+    char error[SCHED_ERROR_SIZE];
+    int64_t submission;
+    int64_t exec_started;
+    int64_t exec_ended;
 };
 
-void sched_job_setup(struct sched_job *job, bool multi_hits, bool hmmer3_compat,
-                     uint64_t db_id);
+#define SCHED_JOB_INIT(db_id, multi_hits, hmmer3_compat, submission)           \
+    {                                                                          \
+        0, db_id, multi_hits, hmmer3_compat, "", "", submission, 0, 0          \
+    }
 
-void sched_job_add_seq(struct sched_job *job, struct sched_seq *seq);
+enum dcp_rc sched_job_module_init(struct sqlite3 *db);
+enum dcp_rc sched_job_add(struct sched_job *job);
+enum dcp_rc sched_job_state(int64_t job_id, enum dcp_job_state *state);
+enum dcp_rc sched_job_next_pending(int64_t *job_id);
+enum dcp_rc sched_job_get(struct sched_job *job, int64_t job_id);
+void sched_job_module_del(void);
 
 #endif

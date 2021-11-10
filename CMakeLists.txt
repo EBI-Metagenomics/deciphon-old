@@ -41,7 +41,9 @@ add_library(
   src/cli_scan.c
   src/cmp.c
   src/db.c
+  src/db_handle.c
   src/db_pool.c
+  src/job_state.c
   src/log.c
   src/meta.c
   src/model.c
@@ -60,6 +62,10 @@ add_library(
   src/progress_file.c
   src/row.c
   src/sched.c
+  src/sched_db.c
+  src/sched_job.c
+  src/sched_prod.c
+  src/sched_seq.c
   src/seq.c
   src/sqldiff.c
   src/srv.c

@@ -8,7 +8,7 @@
 struct prod
 {
     unsigned match_id;
-    char seq_id[DCP_SEQ_ID_SIZE];
+    char seq_id[DCP_SEQ_NAME_SIZE];
     char prof_id[32];
     unsigned start;
     unsigned end;

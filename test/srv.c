@@ -49,7 +49,8 @@ void test_srv_std_db(void)
 
     std_db_examples_new_ex1(TMPDIR "/std_example1.dcp");
     int64_t db_id = 0;
-    EQ(dcp_srv_add_db(srv, TMPDIR "/std_example1.dcp", &db_id), DCP_DONE);
+    EQ(dcp_srv_add_db(srv, "std_example1", TMPDIR "/std_example1.dcp", &db_id),
+       DCP_DONE);
 
     EQ(dcp_srv_close(srv), DCP_DONE);
 }
@@ -63,7 +64,8 @@ void test_srv_submit_job(void)
 
     std_db_examples_new_ex1(TMPDIR "/std_example1.dcp");
     int64_t db_id = 0;
-    EQ(dcp_srv_add_db(srv, TMPDIR "/std_example1.dcp", &db_id), DCP_DONE);
+    EQ(dcp_srv_add_db(srv, "std_example1", TMPDIR "/std_example1.dcp", &db_id),
+       DCP_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job;
@@ -90,7 +92,8 @@ void test_srv_submit_and_fetch_job(void)
 
     pro_db_examples_new_ex1(TMPDIR "/pro_example1.dcp");
     int64_t db_id = 0;
-    EQ(dcp_srv_add_db(srv, TMPDIR "/pro_example1.dcp", &db_id), DCP_DONE);
+    EQ(dcp_srv_add_db(srv, "pro_example1", TMPDIR "/pro_example1.dcp", &db_id),
+       DCP_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job;

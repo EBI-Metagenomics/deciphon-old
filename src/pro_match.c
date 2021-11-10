@@ -1,6 +1,6 @@
 #include "pro_match.h"
-#include "dcp.h"
 #include "error.h"
+#include "macros.h"
 #include "xstrlcpy.h"
 
 void pro_match_setup(struct pro_match *m, struct imm_seq frag,

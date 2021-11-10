@@ -127,7 +127,7 @@ enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
     if ((rc = db_read_metadata(&db->super))) return rc;
 
     assert(db->super.prof_typeid == DCP_PRO_PROFILE);
-    return rc;
+    return db_record_prof_offset(&db->super);
 }
 
 enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,

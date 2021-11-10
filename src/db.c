@@ -1,10 +1,10 @@
 #include "db.h"
-#include "dcp.h"
 #include "dcp/db.h"
 #include "dcp/generics.h"
 #include "dcp/prof.h"
 #include "error.h"
 #include "imm/imm.h"
+#include "macros.h"
 #include "prof.h"
 #include "third-party/cmp.h"
 #include "xfile.h"
@@ -437,3 +437,19 @@ struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
 }
 
 bool dcp_db_end(struct dcp_db const *db) { return db_end(db); }
+
+enum dcp_rc db_record_prof_offset(struct dcp_db *db)
+{
+    FILE *fd = dcp_cmp_fd(&db->file.cmp);
+    if ((db->prof_offset = ftell(fd)) == -1)
+        return error(DCP_IOERROR, "failed to ftell");
+    return DCP_DONE;
+}
+
+enum dcp_rc db_rewind(struct dcp_db *db)
+{
+    FILE *fd = dcp_cmp_fd(&db->file.cmp);
+    if (fseek(fd, db->prof_offset, SEEK_SET) == -1)
+        return error(DCP_IOERROR, "failed to ftell");
+    return DCP_DONE;
+}

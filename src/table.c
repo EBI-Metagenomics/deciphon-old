@@ -1,5 +1,5 @@
 #include "table.h"
-#include "dcp.h"
+#include "macros.h"
 #include "xstrlcpy.h"
 #include <assert.h>
 #include <string.h>

@@ -12,9 +12,12 @@
 #include "error.h"
 #include "fasta/fasta.h"
 #include "gff/gff.h"
+#include "macros.h"
 #include "path.h"
 #include "pro_prod.h"
 #include "sched.h"
+#include "sched_db.h"
+#include "sched_job.h"
 #include "table.h"
 #include "tbl/tbl.h"
 #include "work.h"
@@ -55,12 +58,16 @@ enum dcp_rc dcp_srv_close(struct dcp_srv *srv)
     return rc;
 }
 
-enum dcp_rc dcp_srv_add_db(struct dcp_srv *srv, char const *filepath,
-                           int64_t *id)
+enum dcp_rc dcp_srv_add_db(struct dcp_srv *srv, char const *name,
+                           char const *filepath, int64_t *id)
 {
     if (!xfile_is_readable(filepath))
         return error(DCP_IOERROR, "file is not readable");
-    return sched_add_db(&srv->sched, filepath, id);
+
+    struct sched_db db = SCHED_DB_INIT();
+    sched_db_setup(&db, name, filepath);
+
+    return sched_db_add(&db);
 }
 
 enum dcp_rc dcp_srv_submit_job(struct dcp_srv *srv, struct dcp_job *job,
@@ -72,7 +79,7 @@ enum dcp_rc dcp_srv_submit_job(struct dcp_srv *srv, struct dcp_job *job,
 enum dcp_rc dcp_srv_job_state(struct dcp_srv *srv, int64_t job_id,
                               enum dcp_job_state *state)
 {
-    return sched_job_state(&srv->sched, job_id, state);
+    return sched_job_state(job_id, state);
 }
 
 static enum dcp_rc predict_codons(struct imm_seq const *seq,
@@ -171,90 +178,51 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
 enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
 {
     struct work work = {0};
-    work_init(&work, &srv->sched);
+    work_init(&work);
 
-    enum dcp_rc rc = work_fetch(&work, &srv->db_pool);
+    enum dcp_rc rc = work_next(&work);
     if (rc == DCP_DONE) return DCP_DONE;
 
     rc = work_run(&work);
     if (rc) return rc;
     return DCP_NEXT;
-#if 0
-    struct imm_prod alt = imm_prod();
-    struct imm_prod null = imm_prod();
-    unsigned match_id = 0;
-    struct pro_prod prod = {0};
-    while (!(rc = dcp_db_end(dcp_super(&db->pro))))
-    {
-        struct dcp_pro_prof *prof = dcp_pro_db_profile(&db->pro);
-        if ((rc = dcp_pro_db_read(&db->pro, prof))) goto cleanup;
-        struct imm_abc const *abc = prof->super.abc;
-        struct imm_task *task = imm_task_new(&prof->alt.dp);
-        if (!task) return error(DCP_FAIL, "failed to create task");
-
-        int64_t seq_id = 0;
-        struct dcp_seq seq = {0};
-        char data[5001] = {0};
-        while ((rc = sched_next_seq(&srv->sched, job_id, &seq_id, &seq) ==
-                     DCP_NEXT))
-        {
-            struct imm_seq s = imm_seq(imm_str(data), abc);
-
-            if (imm_task_setup(task, &s))
-                return error(DCP_FAIL, "failed to create task");
-
-            if (imm_dp_viterbi(&prof->alt.dp, task, &alt))
-                return error(DCP_FAIL, "failed to run viterbi");
-
-            if (imm_dp_viterbi(&prof->null.dp, task, &null))
-                return error(DCP_FAIL, "failed to run viterbi");
-
-            imm_float lrt = -2 * (null.loglik - alt.loglik);
-            if (lrt < 100.0f) continue;
-
-            struct pro_match match = {0};
-            struct imm_step const *step = NULL;
-            unsigned start = 0;
-            for (unsigned idx = 0; idx < imm_path_nsteps(&alt.path); idx++)
-            {
-                step = imm_path_step(&alt.path, idx);
-                /* if (!dcp_pro_state_is_mute(step->state_id)) break; */
-                struct imm_seq frag = imm_subseq(&s, start, step->seqlen);
-                xstrlcpy(match.frag, frag.str, frag.size + 1);
-
-                dcp_pro_prof_state_name(step->state_id, match.state);
-
-                struct imm_codon codon = imm_codon_any(prof->nuclt);
-                rc = dcp_pro_prof_decode(prof, &frag, step->state_id, &codon);
-                match.codon[0] = imm_codon_asym(&codon);
-                match.codon[1] = imm_codon_bsym(&codon);
-                match.codon[2] = imm_codon_csym(&codon);
-                match.amino = imm_gc_decode(1, codon);
-            }
-
-            /* start = frag.interval.start; */
-            /* stop = frag.interval.stop; */
-            prod.super.match_id++;
-            /* prod.super.seq_id = ""; */
-            /* struct dcp_meta const *mt = &prof->super.mt; */
-
-            /* annotate(&seq, mt->name, seq_id_str, &alt.path, ocodon,
-             * oamino, prof); */
-
-            match_id++;
-        }
-    }
-    if (rc != DCP_END) goto cleanup;
-
-    dcp_pro_db_close(&db->pro);
-
-    return DCP_NEXT;
-
-cleanup:
-    dcp_pro_db_close(&db->pro);
-    fclose(db->fd);
-    db_tbl_del(&srv->db_pool, &db->hnode);
-    return rc;
-#endif
-    return DCP_DONE;
 }
+
+#if 0
+enum dcp_rc next_work(struct dcp_srv *srv, struct work *work)
+{
+    int64_t job_id = 0;
+    enum dcp_rc rc = sched_job_next_pending(&job_id);
+    if (rc == DCP_DONE) return DCP_DONE;
+
+    int64_t db_id = work_job(work)->db_id;
+    work->db = db_pool_fetch(&srv->db_pool, db_id);
+    if (!work->db) return error(DCP_FAIL, "reached limit of open db handles");
+
+    if (!db_handle_is_open(work->db))
+    {
+        char path[PATH_SIZE] = {0};
+        if ((rc = sched_db_filepath(&srv->sched, db_id, path))) return rc;
+        return rc = db_handle_open(work->db, path) ? rc : DCP_NEXT;
+    }
+    return DCP_NEXT;
+}
+#endif
+
+#if 0
+enum dcp_rc fetch_seqs(struct dcp_srv *srv, struct work *work)
+{
+    work->nseqs = 0;
+
+    int64_t seq_id = 0;
+    unsigned i = 0;
+    enum dcp_rc rc = DCP_DONE;
+    while (rc == DCP_NEXT && i < ARRAY_SIZE(MEMBER_REF(*work, seqs)))
+    {
+        rc = sched_next_seq(&srv->sched, work->job.id, &seq_id, work->seqs + i);
+        ++i;
+    }
+    if (rc == DCP_DONE) return rc;
+    return rc;
+}
+#endif
