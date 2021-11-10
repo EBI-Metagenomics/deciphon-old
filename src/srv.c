@@ -182,7 +182,7 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
     work_init(&work);
 
     enum dcp_rc rc = work_next(&work);
-    if (rc == DCP_DONE) return DCP_DONE;
+    if (rc == DCP_NOTFOUND) return DCP_DONE;
 
     rc = work_run(&work);
     if (rc) return rc;

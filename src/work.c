@@ -66,7 +66,6 @@ enum dcp_rc work_next(struct work *work)
     }
 
 cleanup:
-    close_work(work);
     if (rc) return rc;
     return DCP_NEXT;
 }
@@ -152,19 +151,10 @@ cleanup:
 
 static enum dcp_rc open_work(struct work *work)
 {
-    work->db->fd = NULL;
     enum dcp_rc rc = prod_file_open(&work->prod_file);
     if (rc) goto cleanup;
 
-    work->db->fd = fopen(work->db_path, "rb");
-    if (!work->db->fd)
-    {
-        rc = error(DCP_IOERROR, "failed to open db");
-        goto cleanup;
-    }
-
-    if ((rc = dcp_pro_db_openr(&work->db->pro, work->db->fd))) goto cleanup;
-
+    if ((rc = db_handle_open(work->db, work->db_path))) goto cleanup;
     return DCP_DONE;
 
 cleanup:
@@ -174,16 +164,17 @@ cleanup:
 
 static enum dcp_rc close_work(struct work *work)
 {
+    enum dcp_rc rc = db_handle_close(work->db);
+    if (rc) goto cleanup;
 #if 0
-    enum dcp_rc rc = dcp_pro_db_close(&work->db->pro);
-    if (rc) return rc;
-    if (work->db->fd && fclose(work->db->fd))
-        return error(DCP_IOERROR, "failed to close file");
-    fclose(work->prod_file.fd);
     rc = sched_insert_csv(work->sched, work->job.id, work->prod_file.path);
     if (rc) return rc;
 #endif
     return prod_file_close(&work->prod_file);
+
+cleanup:
+    prod_file_close(&work->prod_file);
+    return rc;
 }
 
 static enum dcp_rc next_profile(struct work *work)

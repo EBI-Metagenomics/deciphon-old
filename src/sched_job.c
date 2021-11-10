@@ -90,7 +90,7 @@ enum dcp_rc sched_job_next_pending(int64_t *job_id)
     RESET_OR_CLEANUP(rc, stmt);
 
     int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return DCP_DONE;
+    if (code == SQLITE_DONE) return DCP_NOTFOUND;
     if (code != SQLITE_ROW)
     {
         rc = STEP_ERROR();
