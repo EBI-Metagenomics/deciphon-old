@@ -19,18 +19,24 @@ enum
 static char const *const queries[] = {
     [INSERT] = \
 "\
-    INSERT INTO seq\
-        (\
-            job_id, name, data\
-        )\
-    VALUES\
-        (\
-            ?, ?, ?\
-        ) RETURNING id;\
+        INSERT INTO seq\
+            (\
+                job_id, name, data\
+            )\
+        VALUES\
+            (\
+                ?, ?, ?\
+            ) RETURNING id;\
 ",
-    [SELECT] = "SELECT * FROM seq WHERE id = ?;\
+    [SELECT] = "SELECT id, job_id, name, data FROM seq WHERE id = ?;\
 ",
-    [NEXT] = "SELECT id FROM seq WHERE id > ? AND job_id = ?;"};
+    [NEXT] = \
+"\
+        SELECT\
+            id FROM seq\
+        WHERE\
+            id > ? AND job_id = ? ORDER BY id ASC LIMIT 1;\
+"};
 /* clang-format on */
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
@@ -107,8 +113,8 @@ enum dcp_rc sched_seq_get(struct sched_seq *seq, int64_t id)
 
     seq->id = sqlite3_column_int64(stmt, 0);
     seq->job_id = sqlite3_column_int64(stmt, 1);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 2, seq->name);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 3, seq->data);
+    COLUMN_TEXT(stmt, 2, seq->name, ARRAY_SIZE(MEMBER_REF(*seq, name)));
+    COLUMN_TEXT(stmt, 3, seq->data, ARRAY_SIZE(MEMBER_REF(*seq, data)));
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 

@@ -67,7 +67,8 @@ enum dcp_rc work_next(struct work *work)
 
 cleanup:
     close_work(work);
-    return rc;
+    if (rc) return rc;
+    return DCP_NEXT;
 }
 
 static enum dcp_rc write_product(struct work *work, unsigned match_id)
@@ -119,6 +120,7 @@ static enum dcp_rc write_product(struct work *work, unsigned match_id)
 
 enum dcp_rc work_run(struct work *work)
 {
+    return DCP_DONE;
     enum dcp_rc rc = open_work(work);
     if (rc) return rc;
 

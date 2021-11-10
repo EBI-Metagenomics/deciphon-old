@@ -110,7 +110,13 @@ enum dcp_rc sched_job_state(int64_t job_id, enum dcp_job_state *state)
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    int code = sqlite3_step(stmt);
+    if (code == SQLITE_DONE) return DCP_NOTFOUND;
+    if (code != SQLITE_ROW)
+    {
+        rc = STEP_ERROR();
+        goto cleanup;
+    }
 
     char tmp[SCHED_STATE_SIZE] = {0};
     COLUMN_TEXT(stmt, 0, tmp, SCHED_STATE_SIZE);
