@@ -148,8 +148,6 @@ cleanup:
     return rc;
 }
 
-void work_set_db(struct work *work, struct db_handle *db) { work->db = db; }
-
 static enum dcp_rc open_work(struct work *work)
 {
     work->db->fd = NULL;

@@ -9,14 +9,16 @@
 struct dcp_job
 {
     int64_t id;
+    int64_t db_id;
     bool multi_hits;
     bool hmmer3_compat;
     struct cco_queue seqs;
 };
 
-static inline void dcp_job_init(struct dcp_job *job)
+static inline void dcp_job_init(struct dcp_job *job, int64_t db_id)
 {
     job->id = 0;
+    job->db_id = db_id;
     job->multi_hits = true;
     job->hmmer3_compat = false;
     cco_queue_init(&job->seqs);

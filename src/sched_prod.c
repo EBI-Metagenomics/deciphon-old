@@ -1,9 +1,9 @@
 #include "sched_prod.h"
-#include "xstrlcpy.h"
 #include "error.h"
 #include "macros.h"
 #include "sched_limits.h"
 #include "sched_macros.h"
+#include "xstrlcpy.h"
 #include <sqlite3.h>
 #include <stdlib.h>
 
@@ -21,13 +21,13 @@ static char const *const queries[] = {
             (\
                 job_id,       seq_id, match_id,  prof_name,\
                 start_pos,   end_pos, abc_id,       loglik,\
-                null_loglik,   model, version,  match_data,\
+                null_loglik,   model, version,  match_data\
             )\
         VALUES\
             (\
                 ?, ?, ?, ?,\
                 ?, ?, ?, ?,\
-                ?, ?, ?, ?,\
+                ?, ?, ?, ?\
             ) RETURNING id;\
 ",
     [SELECT] = "SELECT * FROM seq WHERE id = ?;\
@@ -89,7 +89,8 @@ enum dcp_rc sched_prod_get(struct sched_prod *prod, int64_t prod_id)
     prod->job_id = sqlite3_column_int64(stmt, 1);
     prod->seq_id = sqlite3_column_int64(stmt, 2);
     prod->match_id = sqlite3_column_int64(stmt, 3);
-    COLUMN_TEXT(stmt, 4, prod->prof_name, ARRAY_SIZE(MEMBER_REF(*prod, prof_name)));
+    COLUMN_TEXT(stmt, 4, prod->prof_name,
+                ARRAY_SIZE(MEMBER_REF(*prod, prof_name)));
 
     prod->start_pos = sqlite3_column_int64(stmt, 5);
     prod->end_pos = sqlite3_column_int64(stmt, 6);
@@ -98,8 +99,10 @@ enum dcp_rc sched_prod_get(struct sched_prod *prod, int64_t prod_id)
 
     prod->null_loglik = sqlite3_column_double(stmt, 9);
     COLUMN_TEXT(stmt, 10, prod->model, ARRAY_SIZE(MEMBER_REF(*prod, model)));
-    COLUMN_TEXT(stmt, 11, prod->version, ARRAY_SIZE(MEMBER_REF(*prod, version)));
-    COLUMN_TEXT(stmt, 12, prod->match_data, ARRAY_SIZE(MEMBER_REF(*prod, match_data)));
+    COLUMN_TEXT(stmt, 11, prod->version,
+                ARRAY_SIZE(MEMBER_REF(*prod, version)));
+    COLUMN_TEXT(stmt, 12, prod->match_data,
+                ARRAY_SIZE(MEMBER_REF(*prod, match_data)));
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 

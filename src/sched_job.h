@@ -24,7 +24,7 @@ struct sched_job
 
 #define SCHED_JOB_INIT(db_id, multi_hits, hmmer3_compat, submission)           \
     {                                                                          \
-        0, db_id, multi_hits, hmmer3_compat, "", "", submission, 0, 0          \
+        0, db_id, multi_hits, hmmer3_compat, "pend", "", submission, 0, 0      \
     }
 
 enum dcp_rc sched_job_module_init(struct sqlite3 *db);

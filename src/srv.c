@@ -67,13 +67,14 @@ enum dcp_rc dcp_srv_add_db(struct dcp_srv *srv, char const *name,
     struct sched_db db = SCHED_DB_INIT();
     sched_db_setup(&db, name, filepath);
 
-    return sched_db_add(&db);
+    enum dcp_rc rc = sched_db_add(&db);
+    *id = db.id;
+    return rc;
 }
 
-enum dcp_rc dcp_srv_submit_job(struct dcp_srv *srv, struct dcp_job *job,
-                               int64_t db_id, int64_t *job_id)
+enum dcp_rc dcp_srv_submit_job(struct dcp_srv *srv, struct dcp_job *job)
 {
-    return sched_submit_job(&srv->sched, job, db_id, job_id);
+    return sched_submit_job(&srv->sched, job);
 }
 
 enum dcp_rc dcp_srv_job_state(struct dcp_srv *srv, int64_t job_id,

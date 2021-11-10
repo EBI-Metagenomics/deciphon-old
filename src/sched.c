@@ -75,17 +75,17 @@ enum dcp_rc sched_close(struct sched *sched)
     return sqlite3_close(sched->db) ? CLOSE_ERROR() : DCP_DONE;
 }
 
-enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job,
-                             int64_t db_id, int64_t *job_id)
+enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job)
 {
     BEGIN_TRANSACTION_OR_RETURN(sched->db);
 
     enum dcp_rc rc = DCP_DONE;
 
-    struct sched_job j = SCHED_JOB_INIT(db_id, job->multi_hits,
+    struct sched_job j = SCHED_JOB_INIT(job->db_id, job->multi_hits,
                                         job->hmmer3_compat, (int64_t)utc_now());
     if ((rc = sched_job_add(&j))) goto cleanup;
 
+    job->id = j.id;
     struct cco_iter iter = cco_queue_iter(&job->seqs);
     struct dcp_seq *seq = NULL;
     cco_iter_for_each_entry(seq, &iter, node)

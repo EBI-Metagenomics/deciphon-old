@@ -25,12 +25,12 @@ static char const *const queries[] = {
         INSERT INTO job\
             (\
                 db_id, multi_hits, hmmer3_compat,      state,\
-                error, submission, exec_started,  exec_ended,\
+                error, submission, exec_started,  exec_ended\
             )\
         VALUES\
             (\
                 ?, ?, ?, ?,\
-                ?, ?, ?, ?,\
+                ?, ?, ?, ?\
             )\
         RETURNING id;\
 ",
@@ -42,7 +42,7 @@ static char const *const queries[] = {
             id = (SELECT MIN(id) FROM job WHERE state = 'pend')\
         RETURNING id;\
 ",
-    [GET_STATE] = "SELECT state FROM job WHERE id = ?);",
+    [GET_STATE] = "SELECT state FROM job WHERE id = ?;",
     [SELECT] = "SELECT * FROM job WHERE id = ?;\
 "};
 /* clang-format on */
