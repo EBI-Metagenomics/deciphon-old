@@ -5,36 +5,42 @@
 #include "imm/imm.h"
 #include <stdio.h>
 
+#define PRO_MATCH_FRAG_SIZE 6
+
 struct pro_match
 {
-    char frag[5];
+    unsigned frag_size;
+    char const *frag;
     char state[IMM_STATE_NAME_SIZE];
-    char codon[4];
-    char amino[2];
+    char codon[3];
+    char amino;
 };
 
-void pro_match_setup(struct pro_match *m, struct imm_seq frag,
-                     char const state[static 1]);
-void pro_match_set_codon(struct pro_match *m, struct imm_codon codon);
-void pro_match_set_amino(struct pro_match *m, char amino);
+#define PRO_MATCH_INIT() {0}
 
-/* Output example
- *             ___________________________
- *             |   match0   |   match1   |
- *             ---------------------------
- * Output----->| CG,M1,CGA,K;CG,M4,CGA,K |
- *             ---|-|---|--|--------------
- * -----------   /  |   |  \    ---------------
- * | matched |__/   |   |   \___| most likely |
- * | letters |      |   |       | amino acid  |
- * -----------      |   |       ---------------
- *      -------------   ---------------
- *      | hmm state |   | most likely |
- *      -------------   | codon       |
- *                      ---------------
- */
+static inline void pro_match_set_frag(struct pro_match *match, unsigned size,
+                                      char const *frag)
+{
+    match->frag_size = size;
+    match->frag = frag;
+}
 
-enum dcp_rc pro_match_write(struct pro_match *m, FILE *restrict fd);
-enum dcp_rc pro_match_write_sep(FILE *restrict fd);
+static inline char *pro_match_get_state(struct pro_match *match)
+{
+    return match->state;
+}
+
+static inline void pro_match_set_codon(struct pro_match *match,
+                                       struct imm_codon codon)
+{
+    match->codon[0] = imm_codon_asym(&codon);
+    match->codon[1] = imm_codon_bsym(&codon);
+    match->codon[2] = imm_codon_csym(&codon);
+}
+
+static inline void pro_match_set_amino(struct pro_match *match, char amino)
+{
+    match->amino = amino;
+}
 
 #endif

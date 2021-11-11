@@ -23,18 +23,26 @@ CREATE TABLE seq (
 
 CREATE TABLE prod (
     id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+
     job_id INTEGER REFERENCES job (id) NOT NULL,
     seq_id INTEGER REFERENCES seq (id) NOT NULL,
     match_id INTEGER NOT NULL,
+
     prof_name TEXT NOT NULL,
+    abc_name TEXT NOT NULL,
+
     start_pos INTEGER NOT NULL,
     end_pos INTEGER NOT NULL,
-    abc_id TEXT NOT NULL,
+
     loglik REAL NOT NULL,
     null_loglik REAL NOT NULL,
+
     model TEXT NOT NULL,
     version TEXT NOT NULL,
-    match_data TEXT NOT NULL
+
+    match_data TEXT NOT NULL,
+    codon_data TEXT NOT NULL,
+    amino_data TEXT NOT NULL
 );
 
 CREATE TABLE db (

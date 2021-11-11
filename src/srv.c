@@ -5,7 +5,6 @@
 #include "dcp/generics.h"
 #include "dcp/job.h"
 #include "dcp/pro_codec.h"
-#include "dcp/pro_db.h"
 #include "dcp/pro_state.h"
 #include "dcp/prof_types.h"
 #include "dcp/rc.h"
@@ -13,8 +12,6 @@
 #include "fasta/fasta.h"
 #include "gff/gff.h"
 #include "macros.h"
-#include "path.h"
-#include "pro_prod.h"
 #include "sched.h"
 #include "sched_db.h"
 #include "sched_job.h"
@@ -27,7 +24,6 @@
 struct dcp_srv
 {
     struct sched sched;
-    struct db_pool db_pool;
 };
 
 struct dcp_srv *dcp_srv_open(char const *filepath)
@@ -38,7 +34,7 @@ struct dcp_srv *dcp_srv_open(char const *filepath)
         error(DCP_OUTOFMEM, "failed to malloc server");
         goto cleanup;
     }
-    db_pool_init(&srv->db_pool);
+    db_pool_module_init();
 
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_setup(filepath))) goto cleanup;
@@ -188,42 +184,3 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
     if (rc) return rc;
     return DCP_NEXT;
 }
-
-#if 0
-enum dcp_rc next_work(struct dcp_srv *srv, struct work *work)
-{
-    int64_t job_id = 0;
-    enum dcp_rc rc = sched_job_next_pending(&job_id);
-    if (rc == DCP_DONE) return DCP_DONE;
-
-    int64_t db_id = work_job(work)->db_id;
-    work->db = db_pool_fetch(&srv->db_pool, db_id);
-    if (!work->db) return error(DCP_FAIL, "reached limit of open db handles");
-
-    if (!db_handle_is_open(work->db))
-    {
-        char path[PATH_SIZE] = {0};
-        if ((rc = sched_db_filepath(&srv->sched, db_id, path))) return rc;
-        return rc = db_handle_open(work->db, path) ? rc : DCP_NEXT;
-    }
-    return DCP_NEXT;
-}
-#endif
-
-#if 0
-enum dcp_rc fetch_seqs(struct dcp_srv *srv, struct work *work)
-{
-    work->nseqs = 0;
-
-    int64_t seq_id = 0;
-    unsigned i = 0;
-    enum dcp_rc rc = DCP_DONE;
-    while (rc == DCP_NEXT && i < ARRAY_SIZE(MEMBER_REF(*work, seqs)))
-    {
-        rc = sched_next_seq(&srv->sched, work->job.id, &seq_id, work->seqs + i);
-        ++i;
-    }
-    if (rc == DCP_DONE) return rc;
-    return rc;
-}
-#endif

@@ -1,22 +1,14 @@
 #ifndef DB_POOL_H
 #define DB_POOL_H
 
-#include "cco/cco.h"
-#include "db_handle.h"
-#include "ilog2.h"
-#include "pool.h"
+#include <stdint.h>
 
-struct db_pool
-{
-    struct db_handle db_handles[POOL_SIZE];
-    CCO_HASH_DECLARE(handle_map, ilog2(POOL_SIZE));
-    struct pool pool;
-};
+struct db_handle;
 
-void db_pool_init(struct db_pool *pool);
-struct db_handle *db_pool_new(struct db_pool *pool, int64_t id);
-struct db_handle *db_pool_get(struct db_pool *pool, int64_t id);
-void db_pool_del(struct db_pool *pool, struct cco_hnode *node);
-struct db_handle *db_pool_fetch(struct db_pool *pool, int64_t id);
+void db_pool_module_init(void);
+struct db_handle *db_pool_new(int64_t id);
+struct db_handle *db_pool_get(int64_t id);
+void db_pool_del(struct db_handle *db);
+struct db_handle *db_pool_fetch(int64_t id);
 
 #endif
