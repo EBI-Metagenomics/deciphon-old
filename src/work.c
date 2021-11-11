@@ -36,8 +36,8 @@ static inline void prepare_prod(struct work_task *task)
     imm_prod_reset(&task->null.prod);
 }
 
-static inline enum dcp_rc
-work_task_fetch(struct work const *work, struct work_task *task, int64_t seq_id)
+static inline enum dcp_rc work_task_fetch(struct work_task *task,
+                                          int64_t seq_id)
 {
     return sched_seq_get(&task->sched_seq, seq_id);
 }
@@ -65,7 +65,7 @@ enum dcp_rc work_next(struct work *work)
     while ((rc = sched_seq_next(job_id, &seq_id)) == DCP_NEXT)
     {
         struct work_task *task = &work->tasks[work->ntasks];
-        if ((rc = work_task_fetch(work, task, seq_id))) goto cleanup;
+        if ((rc = work_task_fetch(task, seq_id))) goto cleanup;
 
         if (++work->ntasks >= ARRAY_SIZE(MEMBER_REF(*work, tasks)))
         {
@@ -80,7 +80,7 @@ cleanup:
 }
 
 static enum dcp_rc write_product(struct work *work, struct work_task *task,
-                                 unsigned match_id)
+                                 unsigned match_id, struct imm_seq seq)
 {
     enum dcp_rc rc = DCP_DONE;
     unsigned start = 0;
@@ -107,14 +107,14 @@ static enum dcp_rc write_product(struct work *work, struct work_task *task,
     rc = sched_prod_write_preamble(&task->prod, work->prod_file.fd);
     if (rc) return rc;
 
-    struct imm_seq const *seq = &task->imm_seq;
     struct imm_path const *path = &task->alt.prod.path;
     for (unsigned idx = 0; idx < imm_path_nsteps(path); idx++)
     {
         struct imm_step const *step = imm_path_step(path, idx);
-        struct imm_seq frag = imm_subseq(seq, start, step->seqlen);
+        struct imm_seq frag = imm_subseq(&seq, start, step->seqlen);
 
-        struct pro_match match = PRO_MATCH_INIT();
+        struct pro_match match = {0};
+        pro_match_init(&match);
         pro_match_set_frag(&match, step->seqlen, frag.str);
         dcp_pro_prof_state_name(step->state_id, pro_match_get_state(&match));
 
@@ -125,7 +125,7 @@ static enum dcp_rc write_product(struct work *work, struct work_task *task,
             pro_match_set_codon(&match, codon);
             pro_match_set_amino(&match, imm_gc_decode(1, codon));
         }
-        if (idx > 0)
+        if (idx > 0 && idx + 1 <= imm_path_nsteps(path))
         {
             rc = sched_prod_write_match_sep(work->prod_file.fd);
             if (rc) return rc;
@@ -160,7 +160,7 @@ enum dcp_rc work_run(struct work *work)
             imm_float lrt = compute_lrt(&work->tasks[i]);
             if (lrt < 100.0f) continue;
 
-            if ((rc = write_product(work, task, match_id))) goto cleanup;
+            if ((rc = write_product(work, task, match_id, seq))) goto cleanup;
             match_id++;
         }
     }

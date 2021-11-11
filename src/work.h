@@ -18,7 +18,6 @@ struct sched;
 struct work_task
 {
     struct sched_seq sched_seq;
-    struct imm_seq imm_seq;
     struct
     {
         struct imm_task *task;

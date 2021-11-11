@@ -12,11 +12,18 @@ struct pro_match
     unsigned frag_size;
     char const *frag;
     char state[IMM_STATE_NAME_SIZE];
-    char codon[3];
-    char amino;
+    char codon[4];
+    char amino[2];
 };
 
-#define PRO_MATCH_INIT() {0}
+static inline void pro_match_init(struct pro_match *match)
+{
+    match->frag_size = 0;
+    match->frag = NULL;
+    match->state[0] = 0;
+    match->codon[0] = 0;
+    match->amino[0] = 0;
+}
 
 static inline void pro_match_set_frag(struct pro_match *match, unsigned size,
                                       char const *frag)
@@ -40,7 +47,7 @@ static inline void pro_match_set_codon(struct pro_match *match,
 
 static inline void pro_match_set_amino(struct pro_match *match, char amino)
 {
-    match->amino = amino;
+    match->amino[0] = amino;
 }
 
 #endif

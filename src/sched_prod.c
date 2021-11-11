@@ -241,10 +241,10 @@ enum dcp_rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *m)
     if (fprintf(fd, "%s,", m->state) < 0)
         return error(DCP_IOERROR, "failed to write state");
 
-    if (fprintf(fd, "%c%c%c,", m->codon[0], m->codon[1], m->codon[2]) < 0)
+    if (fprintf(fd, "%s,", m->codon) < 0)
         return error(DCP_IOERROR, "failed to write codon");
 
-    if (fprintf(fd, "%c", m->amino) < 0)
+    if (fprintf(fd, "%s", m->amino) < 0)
         return error(DCP_IOERROR, "failed to write amino");
 
     return DCP_DONE;
