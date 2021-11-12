@@ -1,8 +1,8 @@
 #ifndef DCP_PROD_H
 #define DCP_PROD_H
 
-#include <stdint.h>
 #include "limits.h"
+#include <stdint.h>
 
 struct dcp_prod
 {
@@ -14,9 +14,6 @@ struct dcp_prod
 
     char prof_name[DCP_PROF_NAME_SIZE];
     char abc_name[DCP_ABC_NAME_SIZE];
-
-    int64_t start_pos;
-    int64_t end_pos;
 
     double loglik;
     double null_loglik;

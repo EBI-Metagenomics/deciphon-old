@@ -38,7 +38,6 @@ static char const *const queries[] = {
             (\
                 job_id,          seq_id,   match_id,\
                 prof_name,     abc_name,            \
-                start_pos,      end_pos,            \
                 loglik,     null_loglik,            \
                 model,          version,            \
                 match_data                          \
@@ -46,7 +45,6 @@ static char const *const queries[] = {
         VALUES\
             (\
                 ?, ?, ?, \
-                ?, ?,\
                 ?, ?,\
                 ?, ?,\
                 ?, ?,\
@@ -70,10 +68,10 @@ enum
     COL_TYPE_INT64,
     COL_TYPE_DOUBLE,
     COL_TYPE_TEXT
-} col_type[12] = {COL_TYPE_INT64, COL_TYPE_INT64,  COL_TYPE_INT64,
-                  COL_TYPE_TEXT,  COL_TYPE_TEXT,   COL_TYPE_INT64,
-                  COL_TYPE_INT64, COL_TYPE_DOUBLE, COL_TYPE_DOUBLE,
-                  COL_TYPE_TEXT,  COL_TYPE_TEXT,   COL_TYPE_TEXT};
+} col_type[12] = {COL_TYPE_INT64,  COL_TYPE_INT64, COL_TYPE_INT64,
+                  COL_TYPE_TEXT,   COL_TYPE_TEXT,  COL_TYPE_DOUBLE,
+                  COL_TYPE_DOUBLE, COL_TYPE_TEXT,  COL_TYPE_TEXT,
+                  COL_TYPE_TEXT};
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
@@ -100,16 +98,13 @@ enum dcp_rc sched_prod_add(struct dcp_prod *prod)
     BIND_TEXT_OR_CLEANUP(rc, stmt, 4, prod->prof_name);
     BIND_TEXT_OR_CLEANUP(rc, stmt, 5, prod->abc_name);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 6, prod->start_pos);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 7, prod->end_pos);
+    BIND_DOUBLE_OR_CLEANUP(rc, stmt, 6, prod->loglik);
+    BIND_DOUBLE_OR_CLEANUP(rc, stmt, 7, prod->null_loglik);
 
-    BIND_DOUBLE_OR_CLEANUP(rc, stmt, 8, prod->loglik);
-    BIND_DOUBLE_OR_CLEANUP(rc, stmt, 9, prod->null_loglik);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 8, prod->model);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 9, prod->version);
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 10, prod->model);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 11, prod->version);
-
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 12, prod->match_data);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 10, prod->match_data);
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     prod->id = sqlite3_column_int64(stmt, 0);
@@ -162,16 +157,13 @@ enum dcp_rc sched_prod_get(struct dcp_prod *prod, int64_t prod_id)
     COLUMN_TEXT(stmt, 4, prod->prof_name, XSIZE(*prod, prof_name));
     COLUMN_TEXT(stmt, 5, prod->abc_name, XSIZE(*prod, abc_name));
 
-    prod->start_pos = sqlite3_column_int64(stmt, 6);
-    prod->end_pos = sqlite3_column_int64(stmt, 7);
+    prod->loglik = sqlite3_column_double(stmt, 6);
+    prod->null_loglik = sqlite3_column_double(stmt, 7);
 
-    prod->loglik = sqlite3_column_double(stmt, 8);
-    prod->null_loglik = sqlite3_column_double(stmt, 9);
+    COLUMN_TEXT(stmt, 8, prod->model, XSIZE(*prod, model));
+    COLUMN_TEXT(stmt, 9, prod->version, XSIZE(*prod, version));
 
-    COLUMN_TEXT(stmt, 10, prod->model, XSIZE(*prod, model));
-    COLUMN_TEXT(stmt, 11, prod->version, XSIZE(*prod, version));
-
-    COLUMN_TEXT(stmt, 12, prod->match_data, XSIZE(*prod, match_data));
+    COLUMN_TEXT(stmt, 10, prod->match_data, XSIZE(*prod, match_data));
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
@@ -204,16 +196,6 @@ void sched_prod_set_prof_name(struct dcp_prod *prod,
                               char const prof_name[SCHED_NAME_SIZE])
 {
     xstrlcpy(prod->prof_name, prof_name, SCHED_NAME_SIZE);
-}
-
-void sched_prod_set_start_pos(struct dcp_prod *prod, int64_t start_pos)
-{
-    prod->start_pos = start_pos;
-}
-
-void sched_prod_set_end_pos(struct dcp_prod *prod, int64_t end_pos)
-{
-    prod->end_pos = end_pos;
 }
 
 void sched_prod_set_abc_name(struct dcp_prod *prod,
@@ -254,9 +236,6 @@ enum dcp_rc sched_prod_write_preamble(struct dcp_prod *p, FILE *restrict fd)
 
     if (fprintf(fd, "%s" TAB, p->prof_name) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%s" TAB, p->abc_name) < 0) return ERROR_WRITE;
-
-    if (fprintf(fd, "%lld" TAB, p->start_pos) < 0) return ERROR_WRITE;
-    if (fprintf(fd, "%lld" TAB, p->end_pos) < 0) return ERROR_WRITE;
 
     /* Reference: https://stackoverflow.com/a/21162120 */
     if (fprintf(fd, "%.17g" TAB, p->loglik) < 0) return ERROR_WRITE;
@@ -324,7 +303,7 @@ enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd)
         rc = tok_next(&tok, fd);
         if (tok.id == TOK_EOF) break;
 
-        for (int i = 0; i < 12; i++)
+        for (int i = 0; i < 10; i++)
         {
             if (col_type[i] == COL_TYPE_INT64)
             {

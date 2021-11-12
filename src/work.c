@@ -207,7 +207,6 @@ enum dcp_rc write_product(struct work *work, struct work_task *task,
                           unsigned match_id, struct imm_seq seq)
 {
     enum dcp_rc rc = DCP_DONE;
-    unsigned start = 0;
     struct imm_codon codon = imm_codon_any(work->prof->nuclt);
 
     struct dcp_meta const *mt = &work->prof->super.mt;
@@ -219,9 +218,6 @@ enum dcp_rc write_product(struct work *work, struct work_task *task,
     sched_prod_set_prof_name(&task->prod, mt->acc);
     sched_prod_set_abc_name(&task->prod, "dna_iupac");
 
-    sched_prod_set_start_pos(&task->prod, 0);
-    sched_prod_set_end_pos(&task->prod, 0);
-
     sched_prod_set_loglik(&task->prod, task->alt.prod.loglik);
     sched_prod_set_null_loglik(&task->prod, task->null.prod.loglik);
 
@@ -231,6 +227,7 @@ enum dcp_rc write_product(struct work *work, struct work_task *task,
     rc = sched_prod_write_preamble(&task->prod, work->prod_file.fd);
     if (rc) return rc;
 
+    unsigned start = 0;
     struct imm_path const *path = &task->alt.prod.path;
     for (unsigned idx = 0; idx < imm_path_nsteps(path); idx++)
     {

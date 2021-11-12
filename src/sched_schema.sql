@@ -31,9 +31,6 @@ CREATE TABLE prod (
     prof_name TEXT NOT NULL,
     abc_name TEXT NOT NULL,
 
-    start_pos INTEGER NOT NULL,
-    end_pos INTEGER NOT NULL,
-
     loglik REAL NOT NULL,
     null_loglik REAL NOT NULL,
 
