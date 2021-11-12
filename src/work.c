@@ -1,5 +1,4 @@
 #include "work.h"
-#include "utc.h"
 #include "db_handle.h"
 #include "db_pool.h"
 #include "dcp/generics.h"
@@ -8,10 +7,9 @@
 #include "error.h"
 #include "macros.h"
 #include "pro_match.h"
-#include "prod_file.h"
 #include "sched_db.h"
 #include "sched_job.h"
-#include "xfile.h"
+#include "utc.h"
 #include "xstrlcpy.h"
 #include <libgen.h>
 
@@ -122,7 +120,7 @@ cleanup:
 
 enum dcp_rc open_work(struct work *work)
 {
-    enum dcp_rc rc = prod_file_open(&work->prod_file);
+    enum dcp_rc rc = xfile_tmp_open(&work->prod_file);
     if (rc) goto cleanup;
 
     if ((rc = db_handle_open(work->db, work->db_path))) goto cleanup;
@@ -137,9 +135,9 @@ enum dcp_rc close_work(struct work *work)
 {
     enum dcp_rc rc = db_handle_close(work->db);
     if (rc) goto cleanup;
-    rc = prod_file_close(&work->prod_file);
-    if (rc) goto cleanup;
-    int64_t exec_ended =(int64_t) utc_now();
+    if ((rc = xfile_tmp_rewind(&work->prod_file))) goto cleanup;
+
+    int64_t exec_ended = (int64_t)utc_now();
     if (work->failed)
     {
         rc = sched_job_set_error(work->job.id, "some error", exec_ended);
@@ -147,18 +145,14 @@ enum dcp_rc close_work(struct work *work)
     }
     else
     {
-        FILE *fd = fopen(work->prod_file.path, "r");
-        rc = sched_prod_add_from_tsv(fd);
-        fclose(fd);
+        rc = sched_prod_add_from_tsv(work->prod_file.fd);
+        if (rc) goto cleanup;
         rc = sched_job_set_done(work->job.id, exec_ended);
         if (rc) goto cleanup;
     }
-    if (rc) return rc;
-    /* if (remove(file->path)) return error(DCP_IOERROR, "failed to remove
-     * file"); */
 
 cleanup:
-    fclose(work->prod_file.fd);
+    xfile_tmp_destroy(&work->prod_file);
     return rc;
 }
 
@@ -273,6 +267,6 @@ enum dcp_rc write_product(struct work *work, struct work_task *task,
             return rc;
         start += step->seqlen;
     }
-    rc = prod_file_write_nl(&work->prod_file);
+    rc = sched_prod_write_nl(work->prod_file.fd);
     return rc;
 }

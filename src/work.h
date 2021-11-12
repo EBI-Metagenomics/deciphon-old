@@ -4,10 +4,10 @@
 #include "dcp/job.h"
 #include "imm/imm.h"
 #include "path.h"
-#include "prod_file.h"
 #include "sched_job.h"
 #include "sched_prod.h"
 #include "sched_seq.h"
+#include "xfile.h"
 #include "xlimits.h"
 #include <stdatomic.h>
 #include <stdint.h>
@@ -40,7 +40,7 @@ struct work
     char db_path[PATH_SIZE];
     struct db_handle *db;
     struct dcp_pro_prof const *prof;
-    struct prod_file prod_file;
+    struct xfile_tmp prod_file;
     atomic_bool failed;
 };
 

@@ -31,6 +31,7 @@ void sched_prod_set_version(struct dcp_prod *, char const[SCHED_SHORT_SIZE]);
 enum dcp_rc sched_prod_write_preamble(struct dcp_prod *prod, FILE *restrict fd);
 enum dcp_rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *);
 enum dcp_rc sched_prod_write_match_sep(FILE *restrict fd);
+enum dcp_rc sched_prod_write_nl(FILE *restrict fd);
 
 enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd);
 

@@ -286,9 +286,15 @@ enum dcp_rc sched_prod_write_match_sep(FILE *restrict fd)
     return DCP_DONE;
 }
 
+enum dcp_rc sched_prod_write_nl(FILE *restrict fd)
+{
+    if (fputc('\n', fd) == EOF)
+        return error(DCP_IOERROR, "failed to write newline");
+    return DCP_DONE;
+}
+
 enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd)
 {
-
     enum dcp_rc rc = DCP_DONE;
     BEGIN_TRANSACTION_OR_RETURN(sched_db());
 
@@ -301,6 +307,7 @@ enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd)
     {
         RESET_OR_CLEANUP(rc, stmt);
         rc = tok_next(&tok, fd);
+        if (rc) return rc;
         if (tok.id == TOK_EOF) break;
 
         for (int i = 0; i < 10; i++)
