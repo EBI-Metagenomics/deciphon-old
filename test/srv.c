@@ -116,7 +116,6 @@ void test_srv_submit_and_fetch_job(void)
 
     EQ(dcp_srv_job_state(srv, 2, &state), DCP_NOTFOUND);
 
-    EQ(dcp_srv_run(srv, true), DCP_NEXT);
     EQ(dcp_srv_run(srv, true), DCP_DONE);
 
     int64_t prod_id = 0;

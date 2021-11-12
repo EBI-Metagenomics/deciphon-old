@@ -1,12 +1,10 @@
 #include "dcp/srv.h"
+#include "elapsed/elapsed.h"
 #include "cco/cco.h"
 #include "db_pool.h"
 #include "dcp/db.h"
-#include "dcp/generics.h"
 #include "dcp/job.h"
-#include "dcp/pro_codec.h"
 #include "dcp/pro_state.h"
-#include "dcp/prof_types.h"
 #include "dcp/rc.h"
 #include "error.h"
 #include "macros.h"
@@ -16,7 +14,6 @@
 #include "table.h"
 #include "work.h"
 #include "xfile.h"
-#include "xstrlcpy.h"
 
 struct dcp_srv
 {
@@ -79,15 +76,25 @@ enum dcp_rc dcp_srv_job_state(struct dcp_srv *srv, int64_t job_id,
 
 enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
 {
+    enum dcp_rc rc = DCP_DONE;
     struct work work = {0};
     work_init(&work);
 
-    enum dcp_rc rc = work_next(&work);
-    if (rc == DCP_NOTFOUND) return DCP_DONE;
+    while (true)
+    {
+        if ((rc = work_next(&work)) == DCP_NOTFOUND)
+        {
+            /* sleep */
+            elapsed_sleep(100);
+            break;
+        }
+        if (rc != DCP_NEXT) return rc;
 
-    rc = work_run(&work);
-    if (rc) return rc;
-    return DCP_NEXT;
+        rc = work_run(&work);
+        if (rc) return rc;
+    }
+
+    return DCP_DONE;
 }
 
 enum dcp_rc dcp_srv_next_prod(struct dcp_srv *srv, int64_t job_id,
