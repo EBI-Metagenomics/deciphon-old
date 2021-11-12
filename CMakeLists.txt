@@ -40,6 +40,7 @@ add_library(
   src/cli_info.c
   src/cli_press.c
   src/cli_scan.c
+  src/cli_server.c
   src/cmp.c
   src/db.c
   src/db_handle.c
@@ -135,12 +136,16 @@ target_link_libraries(dcp-info PUBLIC dcp)
 add_executable(dcp-scan src/bin/scan.c)
 target_link_libraries(dcp-scan PUBLIC dcp)
 
+add_executable(dcp-server src/bin/server.c)
+target_link_libraries(dcp-server PUBLIC dcp)
+
 cbp_install(dcp MERGED)
 install(FILES ${EXPORT_FILE} ${VERSION_FILE} DESTINATION include/dcp)
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
         ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
         ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
+        ${CMAKE_CURRENT_BINARY_DIR}/dcp-server
   PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
   DESTINATION bin)
 

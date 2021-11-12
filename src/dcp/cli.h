@@ -7,5 +7,6 @@
 DCP_API enum dcp_rc dcp_cli_info(int argc, char **argv);
 DCP_API enum dcp_rc dcp_cli_press(int argc, char **argv);
 DCP_API enum dcp_rc dcp_cli_scan(int argc, char **argv);
+DCP_API enum dcp_rc dcp_cli_server(int argc, char **argv);
 
 #endif
