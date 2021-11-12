@@ -33,6 +33,7 @@ struct sched_prod
 
 enum dcp_rc sched_prod_module_init(struct sqlite3 *db);
 enum dcp_rc sched_prod_add(struct sched_prod *prod);
+enum dcp_rc sched_prod_next(int64_t job_id, int64_t *prod_id);
 enum dcp_rc sched_prod_get(struct sched_prod *prod, int64_t prod_id);
 void sched_prod_module_del(void);
 

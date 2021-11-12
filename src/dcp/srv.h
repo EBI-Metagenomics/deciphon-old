@@ -18,5 +18,7 @@ DCP_API enum dcp_rc dcp_srv_submit_job(struct dcp_srv *, struct dcp_job *);
 DCP_API enum dcp_rc dcp_srv_job_state(struct dcp_srv *, int64_t,
                                       enum dcp_job_state *);
 DCP_API enum dcp_rc dcp_srv_run(struct dcp_srv *, bool blocking);
+DCP_API enum dcp_rc dcp_srv_next_prod(struct dcp_srv *, int64_t job_id,
+                                      int64_t *prod_id);
 
 #endif

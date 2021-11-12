@@ -29,6 +29,7 @@ extern "C" {
 #include "dcp/pro_trans.h"
 #include "dcp/pro_xnode.h"
 #include "dcp/pro_xtrans.h"
+#include "dcp/prod.h"
 #include "dcp/prof_types.h"
 #include "dcp/rc.h"
 #include "dcp/seq.h"

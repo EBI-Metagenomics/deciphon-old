@@ -26,7 +26,8 @@
 enum
 {
     INSERT,
-    SELECT
+    SELECT,
+    NEXT
 };
 
 /* clang-format off */
@@ -53,6 +54,13 @@ static char const *const queries[] = {
             ) RETURNING id;\
 ",
     [SELECT] = "SELECT * FROM seq WHERE id = ?;\
+",
+    [NEXT] = \
+"\
+        SELECT\
+            id FROM prod\
+        WHERE\
+            id > ? AND job_id = ? ORDER BY id ASC LIMIT 1;\
 "};
 /* clang-format on */
 
@@ -106,6 +114,31 @@ enum dcp_rc sched_prod_add(struct sched_prod *prod)
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     prod->id = sqlite3_column_int64(stmt, 0);
     if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
+
+cleanup:
+    return rc;
+}
+
+enum dcp_rc sched_prod_next(int64_t job_id, int64_t *prod_id)
+{
+    struct sqlite3_stmt *stmt = stmts[NEXT];
+    enum dcp_rc rc = DCP_DONE;
+    RESET_OR_CLEANUP(rc, stmt);
+
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, *prod_id);
+    BIND_INT64_OR_CLEANUP(rc, stmt, 2, job_id);
+
+    int code = sqlite3_step(stmt);
+    if (code == SQLITE_DONE) return DCP_DONE;
+    if (code != SQLITE_ROW)
+    {
+        rc = STEP_ERROR();
+        goto cleanup;
+    }
+    *prod_id = sqlite3_column_int64(stmt, 0);
+    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
+
+    return DCP_NEXT;
 
 cleanup:
     return rc;
@@ -289,8 +322,7 @@ enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd)
     {
         RESET_OR_CLEANUP(rc, stmt);
         rc = tok_next(&tok, fd);
-        if (tok.id == TOK_EOF)
-            break;
+        if (tok.id == TOK_EOF) break;
 
         for (int i = 0; i < 12; i++)
         {

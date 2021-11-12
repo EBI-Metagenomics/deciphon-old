@@ -119,5 +119,14 @@ void test_srv_submit_and_fetch_job(void)
     EQ(dcp_srv_run(srv, true), DCP_NEXT);
     EQ(dcp_srv_run(srv, true), DCP_DONE);
 
+    int64_t prod_id = 0;
+    EQ(dcp_srv_next_prod(srv, 1, &prod_id), DCP_NEXT);
+    EQ(prod_id, 1);
+
+    EQ(dcp_srv_next_prod(srv, 1, &prod_id), DCP_NEXT);
+    EQ(prod_id, 2);
+
+    EQ(dcp_srv_next_prod(srv, 1, &prod_id), DCP_DONE);
+
     EQ(dcp_srv_close(srv), DCP_DONE);
 }

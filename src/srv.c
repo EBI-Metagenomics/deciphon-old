@@ -21,9 +21,15 @@
 #include "xfile.h"
 #include "xstrlcpy.h"
 
+struct dcp_prod
+{
+    struct sched_prod sched_prod;
+};
+
 struct dcp_srv
 {
-    int bla;
+    struct dcp_job job;
+    struct dcp_prod prod;
 };
 
 struct dcp_srv *dcp_srv_open(char const *filepath)
@@ -183,4 +189,10 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
     rc = work_run(&work);
     if (rc) return rc;
     return DCP_NEXT;
+}
+
+enum dcp_rc dcp_srv_next_prod(struct dcp_srv *srv, int64_t job_id,
+                              int64_t *prod_id)
+{
+    return sched_prod_next(job_id, prod_id);
 }
