@@ -2,13 +2,26 @@
 #include "error.h"
 #include "macros.h"
 #include "pro_match.h"
+#include "sched.h"
 #include "sched_limits.h"
 #include "sched_macros.h"
+#include "to.h"
+#include "tok.h"
 #include "xstrlcpy.h"
 #include <sqlite3.h>
 #include <stdlib.h>
 
 #define XSIZE(var, member) ARRAY_SIZE(MEMBER_REF(var, member))
+
+#ifdef TAB
+#undef TAB
+#endif
+#define TAB "\t"
+
+#ifdef NL
+#undef NL
+#endif
+#define NL "\n"
 
 enum
 {
@@ -42,6 +55,17 @@ static char const *const queries[] = {
     [SELECT] = "SELECT * FROM seq WHERE id = ?;\
 "};
 /* clang-format on */
+
+enum
+{
+    COL_TYPE_INT,
+    COL_TYPE_INT64,
+    COL_TYPE_DOUBLE,
+    COL_TYPE_TEXT
+} col_type[12] = {COL_TYPE_INT64, COL_TYPE_INT64,  COL_TYPE_INT64,
+                  COL_TYPE_TEXT,  COL_TYPE_TEXT,   COL_TYPE_INT64,
+                  COL_TYPE_INT64, COL_TYPE_DOUBLE, COL_TYPE_DOUBLE,
+                  COL_TYPE_TEXT,  COL_TYPE_TEXT,   COL_TYPE_TEXT};
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
@@ -187,12 +211,6 @@ void sched_prod_set_version(struct sched_prod *prod,
     xstrlcpy(prod->version, version, SCHED_SHORT_SIZE);
 }
 
-#ifdef TAB
-#undef TAB
-#endif
-
-#define TAB "\t"
-
 #define ERROR_WRITE error(DCP_IOERROR, "failed to write product")
 
 enum dcp_rc sched_prod_write_preamble(struct sched_prod *p, FILE *restrict fd)
@@ -254,4 +272,65 @@ enum dcp_rc sched_prod_write_match_sep(FILE *restrict fd)
 {
     if (fputc(';', fd) == EOF) return error(DCP_IOERROR, "failed to write sep");
     return DCP_DONE;
+}
+
+enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd)
+{
+
+    enum dcp_rc rc = DCP_DONE;
+    BEGIN_TRANSACTION_OR_RETURN(sched_db());
+
+    struct sqlite3_stmt *stmt = stmts[INSERT];
+
+    struct tok tok = {0};
+    tok_init(&tok);
+
+    do
+    {
+        RESET_OR_CLEANUP(rc, stmt);
+        rc = tok_next(&tok, fd);
+        if (tok.id == TOK_EOF)
+            break;
+
+        for (int i = 0; i < 12; i++)
+        {
+            if (col_type[i] == COL_TYPE_INT64)
+            {
+                int64_t val = 0;
+                if (!to_int64(tok.value, &val))
+                {
+                    error(DCP_PARSEERROR, "failed to parse int64");
+                    goto cleanup;
+                }
+                BIND_INT64_OR_CLEANUP(rc, stmt, i + 1, val);
+            }
+            else if (col_type[i] == COL_TYPE_DOUBLE)
+            {
+                double val = 0;
+                if (!to_double(tok.value, &val))
+                {
+                    error(DCP_PARSEERROR, "failed to parse double");
+                    goto cleanup;
+                }
+                BIND_DOUBLE_OR_CLEANUP(rc, stmt, i + 1, val);
+            }
+            else if (col_type[i] == COL_TYPE_TEXT)
+            {
+                BIND_TEXT_OR_CLEANUP(rc, stmt, i + 1, tok.value);
+            }
+            rc = tok_next(&tok, fd);
+        }
+        assert(tok.id == TOK_NL);
+        STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+        STEP_OR_CLEANUP(stmt, SQLITE_DONE);
+    } while (true);
+
+cleanup:
+    if (rc)
+        ROLLBACK_TRANSACTION(sched_db());
+    else
+    {
+        END_TRANSACTION_OR_RETURN(sched_db());
+    }
+    return rc;
 }

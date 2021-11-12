@@ -23,7 +23,7 @@
 
 struct dcp_srv
 {
-    struct sched sched;
+    int bla;
 };
 
 struct dcp_srv *dcp_srv_open(char const *filepath)
@@ -38,7 +38,7 @@ struct dcp_srv *dcp_srv_open(char const *filepath)
 
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_setup(filepath))) goto cleanup;
-    if ((rc = sched_open(&srv->sched, filepath))) goto cleanup;
+    if ((rc = sched_open(filepath))) goto cleanup;
 
     return srv;
 
@@ -49,7 +49,7 @@ cleanup:
 
 enum dcp_rc dcp_srv_close(struct dcp_srv *srv)
 {
-    enum dcp_rc rc = sched_close(&srv->sched);
+    enum dcp_rc rc = sched_close();
     free(srv);
     return rc;
 }
@@ -70,7 +70,7 @@ enum dcp_rc dcp_srv_add_db(struct dcp_srv *srv, char const *name,
 
 enum dcp_rc dcp_srv_submit_job(struct dcp_srv *srv, struct dcp_job *job)
 {
-    return sched_submit_job(&srv->sched, job);
+    return sched_submit_job(job);
 }
 
 enum dcp_rc dcp_srv_job_state(struct dcp_srv *srv, int64_t job_id,

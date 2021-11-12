@@ -32,7 +32,7 @@ static inline void pro_match_set_frag(struct pro_match *match, unsigned size,
     match->frag = frag;
 }
 
-static inline char *pro_match_get_state(struct pro_match *match)
+static inline char *pro_match_get_state_name(struct pro_match *match)
 {
     return match->state;
 }

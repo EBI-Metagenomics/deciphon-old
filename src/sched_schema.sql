@@ -40,9 +40,7 @@ CREATE TABLE prod (
     model TEXT NOT NULL,
     version TEXT NOT NULL,
 
-    match_data TEXT NOT NULL,
-    codon_data TEXT NOT NULL,
-    amino_data TEXT NOT NULL
+    match_data TEXT NOT NULL
 );
 
 CREATE TABLE db (

@@ -72,6 +72,8 @@ add_library(
   src/table.c
   src/third-party/base64.c
   src/third-party/cmp.c
+  src/to.c
+  src/tok.c
   src/work.c
   src/xfile.c
   src/xstrlcpy.c)

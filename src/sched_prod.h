@@ -2,8 +2,8 @@
 #define SCHED_PROD_H
 
 #include "sched_limits.h"
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 struct pro_match;
 struct sqlite3;
@@ -52,8 +52,11 @@ void sched_prod_set_null_loglik(struct sched_prod *, double);
 void sched_prod_set_model(struct sched_prod *, char const[SCHED_SHORT_SIZE]);
 void sched_prod_set_version(struct sched_prod *, char const[SCHED_SHORT_SIZE]);
 
-enum dcp_rc sched_prod_write_preamble(struct sched_prod *prod, FILE *restrict fd);
-enum dcp_rc sched_prod_write_match(FILE *restrict fd, struct pro_match const*);
+enum dcp_rc sched_prod_write_preamble(struct sched_prod *prod,
+                                      FILE *restrict fd);
+enum dcp_rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *);
 enum dcp_rc sched_prod_write_match_sep(FILE *restrict fd);
+
+enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd);
 
 #endif

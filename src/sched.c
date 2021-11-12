@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+static struct sqlite3 *sqlite3_db = NULL;
+
 static_assert(SQLITE_VERSION_NUMBER >= 3035000, "We need RETURNING statement");
 
 enum dcp_rc add_seq(struct sqlite3_stmt *, char const *seq_id, char const *seq,
@@ -48,36 +50,37 @@ enum dcp_rc sched_setup(char const filepath[PATH_SIZE])
     return rc;
 }
 
-enum dcp_rc sched_open(struct sched *sched, char const filepath[PATH_SIZE])
+enum dcp_rc sched_open(char const filepath[PATH_SIZE])
 {
     enum dcp_rc rc = DCP_DONE;
-    memset(sched, 0, sizeof(*sched));
 
-    if (sqlite3_open(filepath, &sched->db)) return OPEN_ERROR();
-    if ((rc = sched_job_module_init(sched->db))) goto cleanup;
-    if ((rc = sched_seq_module_init(sched->db))) goto cleanup;
-    if ((rc = sched_prod_module_init(sched->db))) goto cleanup;
-    if ((rc = sched_db_module_init(sched->db))) goto cleanup;
+    if (sqlite3_open(filepath, &sqlite3_db)) return OPEN_ERROR();
+    if ((rc = sched_job_module_init(sqlite3_db))) goto cleanup;
+    if ((rc = sched_seq_module_init(sqlite3_db))) goto cleanup;
+    if ((rc = sched_prod_module_init(sqlite3_db))) goto cleanup;
+    if ((rc = sched_db_module_init(sqlite3_db))) goto cleanup;
 
     return rc;
 
 cleanup:
-    sqlite3_close(sched->db);
+    sqlite3_close(sqlite3_db);
     return rc;
 }
 
-enum dcp_rc sched_close(struct sched *sched)
+enum dcp_rc sched_close(void)
 {
     sched_db_module_del();
     sched_prod_module_del();
     sched_seq_module_del();
     sched_job_module_del();
-    return sqlite3_close(sched->db) ? CLOSE_ERROR() : DCP_DONE;
+    return sqlite3_close(sqlite3_db) ? CLOSE_ERROR() : DCP_DONE;
 }
 
-enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job)
+struct sqlite3 *sched_db(void) { return sqlite3_db; }
+
+enum dcp_rc sched_submit_job(struct dcp_job *job)
 {
-    BEGIN_TRANSACTION_OR_RETURN(sched->db);
+    BEGIN_TRANSACTION_OR_RETURN(sqlite3_db);
 
     enum dcp_rc rc = DCP_DONE;
 
@@ -98,10 +101,10 @@ enum dcp_rc sched_submit_job(struct sched *sched, struct dcp_job *job)
 cleanup:
     if (rc)
     {
-        ROLLBACK_TRANSACTION(sched->db);
+        ROLLBACK_TRANSACTION(sqlite3_db);
         return rc;
     }
-    END_TRANSACTION_OR_RETURN(sched->db);
+    END_TRANSACTION_OR_RETURN(sqlite3_db);
     return rc;
 }
 
