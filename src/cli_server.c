@@ -54,6 +54,9 @@ enum dcp_rc dcp_cli_server(int argc, char **argv)
     enum dcp_rc rc = DCP_DONE;
     char const *dbfile = arguments.args[0];
 
+    skeleton_daemon();
+    /* signal(SIGINT, intHandler); */
+
     struct dcp_srv *srv = dcp_srv_open(dbfile);
     rc = srv ? DCP_DONE : DCP_OUTOFMEM;
     if (rc) goto cleanup;
@@ -62,8 +65,7 @@ enum dcp_rc dcp_cli_server(int argc, char **argv)
     rc = dcp_srv_add_db(srv, "pro_example1", "pro_example1.dcp", &db_id);
     if (rc) goto cleanup;
 
-    skeleton_daemon();
-    rc = dcp_srv_run(srv);
+    rc = dcp_srv_run(srv, false);
     if (rc) goto cleanup;
 
     rc = dcp_srv_close(srv);
