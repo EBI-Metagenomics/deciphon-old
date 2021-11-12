@@ -9,6 +9,7 @@
 #include "sched_prod.h"
 #include "sched_seq.h"
 #include "xlimits.h"
+#include <stdatomic.h>
 #include <stdint.h>
 
 struct db_handle;
@@ -40,6 +41,7 @@ struct work
     struct db_handle *db;
     struct dcp_pro_prof const *prof;
     struct prod_file prod_file;
+    atomic_bool failed;
 };
 
 void work_init(struct work *);

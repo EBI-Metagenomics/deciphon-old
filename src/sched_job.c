@@ -16,6 +16,8 @@ enum
     GET_PEND,
     GET_STATE,
     SELECT,
+    SET_ERROR,
+    SET_DONE
 };
 
 /* clang-format off */
@@ -44,6 +46,16 @@ static char const *const queries[] = {
 ",
     [GET_STATE] = "SELECT state FROM job WHERE id = ?;",
     [SELECT] = "SELECT * FROM job WHERE id = ?;\
+",
+    [SET_ERROR] = \
+"\
+    UPDATE job SET\
+        state = 'fail', error = ?, exec_ended = ? WHERE id = ?;\
+",
+    [SET_DONE] = \
+"\
+    UPDATE job SET\
+        state = 'done', exec_ended = ? WHERE id = ?;\
 "};
 /* clang-format on */
 
@@ -97,6 +109,39 @@ enum dcp_rc sched_job_next_pending(int64_t *job_id)
         goto cleanup;
     }
     *job_id = sqlite3_column_int64(stmt, 0);
+    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
+
+cleanup:
+    return rc;
+}
+
+enum dcp_rc sched_job_set_error(int64_t job_id,
+                                char const error[DCP_ERROR_SIZE],
+                                int64_t exec_ended)
+{
+    struct sqlite3_stmt *stmt = stmts[SET_ERROR];
+    enum dcp_rc rc = DCP_DONE;
+    RESET_OR_CLEANUP(rc, stmt);
+
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 1, error);
+    BIND_INT64_OR_CLEANUP(rc, stmt, 2, exec_ended);
+    BIND_INT64_OR_CLEANUP(rc, stmt, 3, job_id);
+
+    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
+
+cleanup:
+    return rc;
+}
+
+enum dcp_rc sched_job_set_done(int64_t job_id, int64_t exec_ended)
+{
+    struct sqlite3_stmt *stmt = stmts[SET_DONE];
+    enum dcp_rc rc = DCP_DONE;
+    RESET_OR_CLEANUP(rc, stmt);
+
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, exec_ended);
+    BIND_INT64_OR_CLEANUP(rc, stmt, 2, job_id);
+
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
 cleanup:

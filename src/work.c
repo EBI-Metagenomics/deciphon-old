@@ -1,4 +1,5 @@
 #include "work.h"
+#include "utc.h"
 #include "db_handle.h"
 #include "db_pool.h"
 #include "dcp/generics.h"
@@ -43,7 +44,11 @@ static inline enum dcp_rc work_task_fetch(struct work_task *task,
     return sched_seq_get(&task->sched_seq, seq_id);
 }
 
-void work_init(struct work *work) { work->ntasks = 0; }
+void work_init(struct work *work)
+{
+    work->ntasks = 0;
+    atomic_store(&work->failed, false);
+}
 
 enum dcp_rc work_next(struct work *work)
 {
@@ -110,6 +115,7 @@ enum dcp_rc work_run(struct work *work)
     return close_work(work);
 
 cleanup:
+    atomic_store(&work->failed, true);
     close_work(work);
     return rc;
 }
@@ -133,9 +139,20 @@ enum dcp_rc close_work(struct work *work)
     if (rc) goto cleanup;
     rc = prod_file_close(&work->prod_file);
     if (rc) goto cleanup;
-    FILE *fd = fopen(work->prod_file.path, "r");
-    rc = sched_prod_add_from_tsv(fd);
-    fclose(fd);
+    int64_t exec_ended =(int64_t) utc_now();
+    if (work->failed)
+    {
+        rc = sched_job_set_error(work->job.id, "some error", exec_ended);
+        if (rc) goto cleanup;
+    }
+    else
+    {
+        FILE *fd = fopen(work->prod_file.path, "r");
+        rc = sched_prod_add_from_tsv(fd);
+        fclose(fd);
+        rc = sched_job_set_done(work->job.id, exec_ended);
+        if (rc) goto cleanup;
+    }
     if (rc) return rc;
     /* if (remove(file->path)) return error(DCP_IOERROR, "failed to remove
      * file"); */

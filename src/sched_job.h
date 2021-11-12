@@ -31,6 +31,10 @@ enum dcp_rc sched_job_module_init(struct sqlite3 *db);
 enum dcp_rc sched_job_add(struct sched_job *job);
 enum dcp_rc sched_job_state(int64_t job_id, enum dcp_job_state *state);
 enum dcp_rc sched_job_next_pending(int64_t *job_id);
+enum dcp_rc sched_job_set_error(int64_t job_id,
+                                char const error[DCP_ERROR_SIZE],
+                                int64_t exec_ended);
+enum dcp_rc sched_job_set_done(int64_t job_id, int64_t exec_ended);
 enum dcp_rc sched_job_get(struct sched_job *job, int64_t job_id);
 void sched_job_module_del(void);
 
