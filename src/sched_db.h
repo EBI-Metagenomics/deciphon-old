@@ -2,6 +2,7 @@
 #define SCHED_DB_H
 
 #include "sched_limits.h"
+#include "dcp/limits.h"
 #include <stdint.h>
 
 struct sqlite3;
@@ -9,7 +10,7 @@ struct sqlite3;
 struct sched_db
 {
     int64_t id;
-    char name[SCHED_NAME_SIZE];
+    char name[DCP_DB_NAME_SIZE];
     char filepath[PATH_SIZE];
 };
 
@@ -18,11 +19,12 @@ struct sched_db
         0, "", ""                                                              \
     }
 
-void sched_db_setup(struct sched_db *db, char const name[SCHED_NAME_SIZE],
+void sched_db_setup(struct sched_db *db, char const name[DCP_DB_NAME_SIZE],
                     char const filepath[PATH_SIZE]);
 enum dcp_rc sched_db_module_init(struct sqlite3 *db);
 enum dcp_rc sched_db_add(struct sched_db *db);
 enum dcp_rc sched_db_get(struct sched_db *db, int64_t db_id);
+enum dcp_rc sched_db_exist(struct sched_db *db, char const name[DCP_DB_NAME_SIZE]);
 void sched_db_module_del(void);
 
 #endif

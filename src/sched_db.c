@@ -11,7 +11,8 @@
 enum
 {
     INSERT,
-    SELECT
+    SELECT,
+    EXIST
 };
 
 /* clang-format off */
@@ -28,15 +29,17 @@ static char const *const queries[] = {
             ) RETURNING id;\
 ",
     [SELECT] = "SELECT * FROM db WHERE id = ?;\
+",
+    [EXIST] = "SELECT COUNT(1) FROM db WHERE name = ?;\
 "};
 /* clang-format on */
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-void sched_db_setup(struct sched_db *db, char const name[SCHED_NAME_SIZE],
+void sched_db_setup(struct sched_db *db, char const name[DCP_DB_NAME_SIZE],
                     char const filepath[PATH_SIZE])
 {
-    xstrlcpy(db->name, name, SCHED_NAME_SIZE);
+    xstrlcpy(db->name, name, DCP_DB_NAME_SIZE);
     xstrlcpy(db->filepath, filepath, PATH_SIZE);
 }
 

@@ -1,4 +1,6 @@
 #include "cli.h"
+#include "log/log.h"
+#include "dcp/log.h"
 #include "dcp/cli.h"
 #include "dcp/dcp.h"
 #include <signal.h>
@@ -48,6 +50,19 @@ static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 void skeleton_daemon(void);
 
+static void syslog_print(char const *msg, void *arg)
+{
+    syslog(LOG_ERR, "%.*s", DCP_ERROR_SIZE - 1, msg);
+}
+
+static void print_log_put(char const *msg, void *arg)
+{
+    __log_put(LOG_ERROR, msg);
+}
+
+static void flush_nop(void *arg)
+{
+}
 
 enum dcp_rc dcp_cli_daemon(int argc, char **argv)
 {
@@ -57,30 +72,28 @@ enum dcp_rc dcp_cli_daemon(int argc, char **argv)
     char const *dbfile = arguments.args[0];
 
     skeleton_daemon();
-    syslog(LOG_NOTICE, "First daemon started.");
-    sleep(1);
+    dcp_log_setup(print_log_put, NULL);
+    log_setup(LOG_ERROR, syslog_print, flush_nop, NULL);
 
     rc = dcp_srv_open(dbfile);
     if (rc) goto cleanup;
-    syslog(LOG_NOTICE, "dcp_srv_open");
 
     int64_t db_id = 0;
     rc = dcp_srv_add_db("pro_example1",
                         "/Users/horta/tmp/pro_example1.dcp", &db_id);
-    syslog(LOG_NOTICE, "dcp_srv_add_db: %d", rc);
     if (rc) goto cleanup;
 
     rc = dcp_srv_run(false);
-    syslog(LOG_NOTICE, "dcp_srv_run: %d", rc);
     if (rc) goto cleanup;
 
     rc = dcp_srv_close();
-    syslog(LOG_NOTICE, "dcp_srv_close: %d", rc);
+    log_flush();
     closelog();
     return rc;
 
 cleanup:
     dcp_srv_close();
+    log_flush();
     closelog();
     return rc;
 }
