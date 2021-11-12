@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <syslog.h>
 #include <unistd.h>
 
 struct arguments
@@ -47,6 +48,7 @@ static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 void skeleton_daemon(void);
 
+
 enum dcp_rc dcp_cli_daemon(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
@@ -55,24 +57,31 @@ enum dcp_rc dcp_cli_daemon(int argc, char **argv)
     char const *dbfile = arguments.args[0];
 
     skeleton_daemon();
-    /* signal(SIGINT, intHandler); */
+    syslog(LOG_NOTICE, "First daemon started.");
+    sleep(1);
 
-    struct dcp_srv *srv = dcp_srv_open(dbfile);
-    rc = srv ? DCP_DONE : DCP_OUTOFMEM;
+    rc = dcp_srv_open(dbfile);
     if (rc) goto cleanup;
+    syslog(LOG_NOTICE, "dcp_srv_open");
 
     int64_t db_id = 0;
-    rc = dcp_srv_add_db(srv, "pro_example1", "pro_example1.dcp", &db_id);
+    rc = dcp_srv_add_db("pro_example1",
+                        "/Users/horta/tmp/pro_example1.dcp", &db_id);
+    syslog(LOG_NOTICE, "dcp_srv_add_db: %d", rc);
     if (rc) goto cleanup;
 
-    rc = dcp_srv_run(srv, false);
+    rc = dcp_srv_run(false);
+    syslog(LOG_NOTICE, "dcp_srv_run: %d", rc);
     if (rc) goto cleanup;
 
-    rc = dcp_srv_close(srv);
+    rc = dcp_srv_close();
+    syslog(LOG_NOTICE, "dcp_srv_close: %d", rc);
+    closelog();
     return rc;
 
 cleanup:
-    dcp_srv_close(srv);
+    dcp_srv_close();
+    closelog();
     return rc;
 }
 void skeleton_daemon(void)
@@ -115,4 +124,6 @@ void skeleton_daemon(void)
     {
         close((int)x);
     }
+    /* Open the log file */
+    openlog("deciphond", LOG_PID, LOG_DAEMON);
 }
