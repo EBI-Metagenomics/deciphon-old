@@ -18,15 +18,10 @@
 #include "xfile.h"
 #include "xstrlcpy.h"
 
-struct dcp_prod
-{
-    struct sched_prod sched_prod;
-};
-
 struct dcp_srv
 {
     struct dcp_job job;
-    struct sched_prod prod;
+    struct dcp_prod prod;
 };
 
 struct dcp_srv *dcp_srv_open(char const *filepath)

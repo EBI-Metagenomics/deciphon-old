@@ -28,7 +28,7 @@ struct work_task
         struct imm_task *task;
         struct imm_prod prod;
     } null;
-    struct sched_prod prod;
+    struct dcp_prod prod;
 };
 
 struct work

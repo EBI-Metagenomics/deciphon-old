@@ -87,7 +87,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_add(struct sched_prod *prod)
+enum dcp_rc sched_prod_add(struct dcp_prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     enum dcp_rc rc = DCP_DONE;
@@ -144,7 +144,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_get(struct sched_prod *prod, int64_t prod_id)
+enum dcp_rc sched_prod_get(struct dcp_prod *prod, int64_t prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
     enum dcp_rc rc = DCP_DONE;
@@ -185,60 +185,60 @@ void sched_prod_module_del(void)
         sqlite3_finalize(stmts[i]);
 }
 
-void sched_prod_set_job_id(struct sched_prod *prod, int64_t job_id)
+void sched_prod_set_job_id(struct dcp_prod *prod, int64_t job_id)
 {
     prod->job_id = job_id;
 }
 
-void sched_prod_set_seq_id(struct sched_prod *prod, int64_t seq_id)
+void sched_prod_set_seq_id(struct dcp_prod *prod, int64_t seq_id)
 {
     prod->seq_id = seq_id;
 }
 
-void sched_prod_set_match_id(struct sched_prod *prod, int64_t match_id)
+void sched_prod_set_match_id(struct dcp_prod *prod, int64_t match_id)
 {
     prod->match_id = match_id;
 }
 
-void sched_prod_set_prof_name(struct sched_prod *prod,
+void sched_prod_set_prof_name(struct dcp_prod *prod,
                               char const prof_name[SCHED_NAME_SIZE])
 {
     xstrlcpy(prod->prof_name, prof_name, SCHED_NAME_SIZE);
 }
 
-void sched_prod_set_start_pos(struct sched_prod *prod, int64_t start_pos)
+void sched_prod_set_start_pos(struct dcp_prod *prod, int64_t start_pos)
 {
     prod->start_pos = start_pos;
 }
 
-void sched_prod_set_end_pos(struct sched_prod *prod, int64_t end_pos)
+void sched_prod_set_end_pos(struct dcp_prod *prod, int64_t end_pos)
 {
     prod->end_pos = end_pos;
 }
 
-void sched_prod_set_abc_name(struct sched_prod *prod,
+void sched_prod_set_abc_name(struct dcp_prod *prod,
                              char const abc_name[SCHED_SHORT_SIZE])
 {
     xstrlcpy(prod->abc_name, abc_name, SCHED_SHORT_SIZE);
 }
 
-void sched_prod_set_loglik(struct sched_prod *prod, double loglik)
+void sched_prod_set_loglik(struct dcp_prod *prod, double loglik)
 {
     prod->loglik = loglik;
 }
 
-void sched_prod_set_null_loglik(struct sched_prod *prod, double null_loglik)
+void sched_prod_set_null_loglik(struct dcp_prod *prod, double null_loglik)
 {
     prod->null_loglik = null_loglik;
 }
 
-void sched_prod_set_model(struct sched_prod *prod,
+void sched_prod_set_model(struct dcp_prod *prod,
                           char const model[SCHED_SHORT_SIZE])
 {
     xstrlcpy(prod->model, model, SCHED_SHORT_SIZE);
 }
 
-void sched_prod_set_version(struct sched_prod *prod,
+void sched_prod_set_version(struct dcp_prod *prod,
                             char const version[SCHED_SHORT_SIZE])
 {
     xstrlcpy(prod->version, version, SCHED_SHORT_SIZE);
@@ -246,7 +246,7 @@ void sched_prod_set_version(struct sched_prod *prod,
 
 #define ERROR_WRITE error(DCP_IOERROR, "failed to write product")
 
-enum dcp_rc sched_prod_write_preamble(struct sched_prod *p, FILE *restrict fd)
+enum dcp_rc sched_prod_write_preamble(struct dcp_prod *p, FILE *restrict fd)
 {
     if (fprintf(fd, "%lld" TAB, p->job_id) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%lld" TAB, p->seq_id) < 0) return ERROR_WRITE;
