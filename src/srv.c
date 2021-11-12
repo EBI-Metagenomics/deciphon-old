@@ -74,7 +74,7 @@ enum dcp_rc dcp_srv_job_state(struct dcp_srv *srv, int64_t job_id,
     return sched_job_state(job_id, state);
 }
 
-enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
+enum dcp_rc dcp_srv_run(struct dcp_srv *srv)
 {
     enum dcp_rc rc = DCP_DONE;
     struct work work = {0};
@@ -84,8 +84,7 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
     {
         if ((rc = work_next(&work)) == DCP_NOTFOUND)
         {
-            /* sleep */
-            elapsed_sleep(100);
+            elapsed_sleep(500);
             break;
         }
         if (rc != DCP_NEXT) return rc;
