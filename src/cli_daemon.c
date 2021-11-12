@@ -1,6 +1,6 @@
 #include "cli.h"
-#include "dcp/dcp.h"
 #include "dcp/cli.h"
+#include "dcp/dcp.h"
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +39,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-static char doc[] = "Run server -- dcp-server deciphon.sqlite3";
+static char doc[] = "Run daemon -- deciphond deciphon.sqlite3";
 static char args_doc[] = "DBFILE";
 static struct argp_option options[] = {
     {"quiet", 'q', 0, 0, "Disable output", 0}, {0}};
@@ -47,7 +47,7 @@ static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 void skeleton_daemon(void);
 
-enum dcp_rc dcp_cli_server(int argc, char **argv)
+enum dcp_rc dcp_cli_daemon(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 

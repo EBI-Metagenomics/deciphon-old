@@ -40,7 +40,7 @@ add_library(
   src/cli_info.c
   src/cli_press.c
   src/cli_scan.c
-  src/cli_server.c
+  src/cli_daemon.c
   src/cmp.c
   src/db.c
   src/db_handle.c
@@ -136,8 +136,8 @@ target_link_libraries(dcp-info PUBLIC dcp)
 add_executable(dcp-scan src/bin/scan.c)
 target_link_libraries(dcp-scan PUBLIC dcp)
 
-add_executable(dcp-server src/bin/server.c)
-target_link_libraries(dcp-server PUBLIC dcp)
+add_executable(deciphond src/bin/deciphond.c)
+target_link_libraries(deciphond PUBLIC dcp)
 
 cbp_install(dcp MERGED)
 install(FILES ${EXPORT_FILE} ${VERSION_FILE} DESTINATION include/dcp)
