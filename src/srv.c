@@ -29,7 +29,7 @@ struct dcp_prod
 struct dcp_srv
 {
     struct dcp_job job;
-    struct dcp_prod prod;
+    struct sched_prod prod;
 };
 
 struct dcp_srv *dcp_srv_open(char const *filepath)
@@ -194,5 +194,70 @@ enum dcp_rc dcp_srv_run(struct dcp_srv *srv, bool blocking)
 enum dcp_rc dcp_srv_next_prod(struct dcp_srv *srv, int64_t job_id,
                               int64_t *prod_id)
 {
-    return sched_prod_next(job_id, prod_id);
+    enum dcp_rc rc = sched_prod_next(job_id, prod_id);
+    if (rc == DCP_DONE) return rc;
+    if (rc != DCP_NEXT) return rc;
+    if ((rc = sched_prod_get(&srv->prod, *prod_id))) return rc;
+    return DCP_NEXT;
+}
+
+void dcp_srv_prod_seq_id(struct dcp_srv *srv, int64_t prod_id, int64_t *seq_id)
+{
+    if (prod_id != srv->prod.id) return;
+    *seq_id = srv->prod.seq_id;
+}
+
+void dcp_srv_prod_match_id(struct dcp_srv *srv, int64_t prod_id,
+                           int64_t *match_id)
+{
+    if (prod_id != srv->prod.id) return;
+    *match_id = srv->prod.match_id;
+}
+
+void dcp_srv_prod_prof_name(struct dcp_srv *srv, int64_t prod_id,
+                            char prof_name[DCP_PROF_NAME_SIZE])
+{
+    if (prod_id != srv->prod.id) return;
+    xstrlcpy(prof_name, srv->prod.prof_name, DCP_PROF_NAME_SIZE);
+}
+
+void dcp_srv_prod_abc_name(struct dcp_srv *srv, int64_t prod_id,
+                           char abc_name[DCP_ABC_NAME_SIZE])
+{
+    if (prod_id != srv->prod.id) return;
+    xstrlcpy(abc_name, srv->prod.abc_name, DCP_ABC_NAME_SIZE);
+}
+
+void dcp_srv_prod_loglik(struct dcp_srv *srv, int64_t prod_id, double *loglik)
+{
+    if (prod_id != srv->prod.id) return;
+    *loglik = srv->prod.loglik;
+}
+
+void dcp_srv_prod_null_loglik(struct dcp_srv *srv, int64_t prod_id,
+                              double *null_loglik)
+{
+    if (prod_id != srv->prod.id) return;
+    *null_loglik = srv->prod.null_loglik;
+}
+
+void dcp_srv_prod_model(struct dcp_srv *srv, int64_t prod_id,
+                        char model[DCP_MODEL_SIZE])
+{
+    if (prod_id != srv->prod.id) return;
+    xstrlcpy(model, srv->prod.model, DCP_MODEL_SIZE);
+}
+
+void dcp_srv_prod_version(struct dcp_srv *srv, int64_t prod_id,
+                          char version[DCP_VERSION_SIZE])
+{
+    if (prod_id != srv->prod.id) return;
+    xstrlcpy(version, srv->prod.version, DCP_VERSION_SIZE);
+}
+
+void dcp_srv_prod_match_data(struct dcp_srv *srv, int64_t prod_id,
+                             char match_data[DCP_MATCH_DATA_SIZE])
+{
+    if (prod_id != srv->prod.id) return;
+    xstrlcpy(match_data, srv->prod.match_data, DCP_MATCH_DATA_SIZE);
 }

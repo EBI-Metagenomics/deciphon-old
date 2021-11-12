@@ -53,7 +53,7 @@ static char const *const queries[] = {
                 ?\
             ) RETURNING id;\
 ",
-    [SELECT] = "SELECT * FROM seq WHERE id = ?;\
+    [SELECT] = "SELECT * FROM prod WHERE id = ?;\
 ",
     [NEXT] = \
 "\
