@@ -100,6 +100,11 @@ enum dcp_rc dcp_srv_next_prod(struct dcp_srv *srv, int64_t job_id,
     return DCP_NEXT;
 }
 
+struct dcp_prod const *dcp_srv_get_prod(struct dcp_srv const *srv)
+{
+    return &srv->prod;
+}
+
 void dcp_srv_prod_seq_id(struct dcp_srv *srv, int64_t prod_id, int64_t *seq_id)
 {
     if (prod_id != srv->prod.id) return;

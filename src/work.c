@@ -141,7 +141,7 @@ enum dcp_rc close_work(struct work *work)
      * file"); */
 
 cleanup:
-    prod_file_close(&work->prod_file);
+    fclose(work->prod_file.fd);
     return rc;
 }
 

@@ -123,51 +123,33 @@ void test_srv_submit_and_fetch_job(void)
     EQ(dcp_srv_next_prod(srv, 1, &prod_id), DCP_NEXT);
     EQ(prod_id, 1);
 
-    int64_t seq_id = 0;
-    int64_t match_id = 0;
-    char prof_name[DCP_PROF_NAME_SIZE] = {0};
-    char abc_name[DCP_ABC_NAME_SIZE] = {0};
-    double loglik = 0;
-    double null_loglik = 0;
-    char model[DCP_MODEL_SIZE] = {0};
-    char version[DCP_VERSION_SIZE] = {0};
-    char match_data[DCP_MATCH_DATA_SIZE] = {0};
+    struct dcp_prod const *p = dcp_srv_get_prod(srv);
 
-    dcp_srv_prod_seq_id(srv, prod_id, &seq_id);
-    dcp_srv_prod_match_id(srv, prod_id, &match_id);
-    dcp_srv_prod_prof_name(srv, prod_id, prof_name);
-    dcp_srv_prod_abc_name(srv, prod_id, abc_name);
-    dcp_srv_prod_loglik(srv, prod_id, &loglik);
-    dcp_srv_prod_null_loglik(srv, prod_id, &null_loglik);
-    dcp_srv_prod_model(srv, prod_id, model);
-    dcp_srv_prod_version(srv, prod_id, version);
-    dcp_srv_prod_match_data(srv, prod_id, match_data);
+    EQ(p->id, 1);
+    EQ(p->seq_id, 2);
+    EQ(p->match_id, 1);
+    EQ(p->prof_name, "ACC0");
+    EQ(p->abc_name, "dna_iupac");
+    CLOSE(p->loglik, -2720.38134765625);
+    CLOSE(p->null_loglik, -3163.185302734375);
+    EQ(p->model, "pro");
+    EQ(p->version, "0.0.4");
 
-    EQ(prod_id,1);
-    EQ(seq_id,2);
-    EQ(match_id,1);
-    EQ(prof_name,"ACC0");
-    EQ(abc_name,"dna_iupac");
-    CLOSE(loglik, -2720.38134765625);
-    CLOSE(null_loglik, -3163.185302734375);
-    EQ(model, "pro");
-    EQ(version,"0.0.4");
     extern char const prod1_match_data[];
-    EQ(match_data, prod1_match_data);
-
+    EQ(p->match_data, prod1_match_data);
 
     EQ(dcp_srv_next_prod(srv, 1, &prod_id), DCP_NEXT);
     EQ(prod_id, 2);
 
-    dcp_srv_prod_seq_id(srv, prod_id, &seq_id);
-    dcp_srv_prod_match_id(srv, prod_id, &match_id);
-    dcp_srv_prod_prof_name(srv, prod_id, prof_name);
-    dcp_srv_prod_abc_name(srv, prod_id, abc_name);
-    dcp_srv_prod_loglik(srv, prod_id, &loglik);
-    dcp_srv_prod_null_loglik(srv, prod_id, &null_loglik);
-    dcp_srv_prod_model(srv, prod_id, model);
-    dcp_srv_prod_version(srv, prod_id, version);
-    dcp_srv_prod_match_data(srv, prod_id, match_data);
+    EQ(p->id, 2);
+    EQ(p->seq_id, 2);
+    EQ(p->match_id, 2);
+    EQ(p->prof_name, "ACC1");
+    EQ(p->abc_name, "dna_iupac");
+    CLOSE(p->loglik, -2854.53369140625);
+    CLOSE(p->null_loglik, -3094.66308593750);
+    EQ(p->model, "pro");
+    EQ(p->version, "0.0.4");
 
     EQ(dcp_srv_next_prod(srv, 1, &prod_id), DCP_DONE);
 
