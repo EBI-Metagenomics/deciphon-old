@@ -70,7 +70,6 @@ add_library(
   src/std_db.c
   src/std_prof.c
   src/table.c
-  src/third-party/base64.c
   src/third-party/cmp.c
   src/to.c
   src/tok.c
