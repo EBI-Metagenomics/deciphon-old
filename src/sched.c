@@ -33,7 +33,7 @@ enum dcp_rc submit_job(struct sqlite3_stmt *, struct sched_job *, int64_t db_id,
                        int64_t *job_id);
 enum dcp_rc touch_db(char const *filepath);
 
-enum dcp_rc sched_setup(char const filepath[PATH_SIZE])
+enum dcp_rc sched_setup(char const filepath[DCP_PATH_SIZE])
 {
     enum dcp_rc rc = touch_db(filepath);
     if (rc) return rc;
@@ -50,7 +50,7 @@ enum dcp_rc sched_setup(char const filepath[PATH_SIZE])
     return rc;
 }
 
-enum dcp_rc sched_open(char const filepath[PATH_SIZE])
+enum dcp_rc sched_open(char const filepath[DCP_PATH_SIZE])
 {
     enum dcp_rc rc = DCP_DONE;
 

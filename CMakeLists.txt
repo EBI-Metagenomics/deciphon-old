@@ -22,6 +22,7 @@ find_package(gff REQUIRED)
 find_package(tbl REQUIRED)
 find_package(SQLite3 3.35.0 REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(xxHash REQUIRED)
 
 add_custom_command(
   OUTPUT sched_schema.c
@@ -107,6 +108,7 @@ target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
 target_link_libraries(dcp PUBLIC GFF::gff)
 target_link_libraries(dcp PUBLIC TBL::tbl)
 target_link_libraries(dcp PUBLIC SQLite::SQLite3)
+target_link_libraries(dcp PUBLIC xxHash::xxHash)
 target_link_libraries(dcp PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 set_target_properties(dcp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(dcp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})

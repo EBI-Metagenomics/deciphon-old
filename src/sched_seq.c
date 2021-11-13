@@ -2,7 +2,6 @@
 #include "dcp/rc.h"
 #include "error.h"
 #include "macros.h"
-#include "sched_limits.h"
 #include "sched_macros.h"
 #include "xstrlcpy.h"
 #include <sqlite3.h>
@@ -51,11 +50,11 @@ cleanup:
     return rc;
 }
 
-void sched_seq_setup(struct sched_seq *seq, char const name[SCHED_NAME_SIZE],
-                     char const data[SCHED_DATA_SIZE])
+void sched_seq_setup(struct sched_seq *seq, char const name[DCP_SEQ_NAME_SIZE],
+                     char const data[DCP_MATCH_DATA_SIZE])
 {
-    xstrlcpy(seq->name, name, SCHED_NAME_SIZE);
-    xstrlcpy(seq->data, data, SCHED_DATA_SIZE);
+    xstrlcpy(seq->name, name, DCP_SEQ_NAME_SIZE);
+    xstrlcpy(seq->data, data, DCP_MATCH_DATA_SIZE);
 }
 
 enum dcp_rc sched_seq_add(struct sched_seq *seq)

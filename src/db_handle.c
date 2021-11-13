@@ -13,7 +13,7 @@ void db_handle_init(struct db_handle *db, int64_t id)
     db->fd = NULL;
     db->open_since = 0;
 }
-enum dcp_rc db_handle_open(struct db_handle *db, char path[PATH_SIZE])
+enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE])
 {
     if (db_handle_is_open(db)) return db_rewind(&db->pro.super);
 

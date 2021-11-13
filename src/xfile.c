@@ -4,6 +4,7 @@
 #include "xstrlcpy.h"
 #include <assert.h>
 #include <unistd.h>
+#include <xxhash.h>
 
 #ifndef __USE_XOPEN_EXTENDED
 /* To make mkstemp available. */
@@ -54,7 +55,7 @@ enum dcp_rc xfile_copy(FILE *restrict dst, FILE *restrict src)
     return DCP_DONE;
 }
 
-bool xfile_is_readable(char const filepath[PATH_SIZE])
+bool xfile_is_readable(char const filepath[DCP_PATH_SIZE])
 {
     FILE *file = NULL;
     if ((file = fopen(filepath, "r")))
@@ -65,8 +66,49 @@ bool xfile_is_readable(char const filepath[PATH_SIZE])
     return false;
 }
 
-enum dcp_rc xfile_mktemp(char filepath[PATH_SIZE])
+enum dcp_rc xfile_mktemp(char filepath[DCP_PATH_SIZE])
 {
     if (mkstemp(filepath) == -1) return error(DCP_IOERROR, "mkstemp failed");
     return DCP_DONE;
+}
+
+/* Are two types/vars the same type (ignoring qualifiers)? */
+#define same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
+
+static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
+
+enum dcp_rc xfile_hash(FILE *restrict fd, uint64_t *hash)
+{
+    enum dcp_rc rc = DCP_DONE;
+    XXH64_state_t *const state = XXH64_createState();
+    if (!state)
+    {
+        rc = error(DCP_OUTOFMEM, "not enough memory for hashing");
+        goto cleanup;
+    }
+    XXH64_reset(state, 0);
+
+    size_t n = 0;
+    unsigned char buffer[BUFFSIZE] = {0};
+    while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, fd)) > 0)
+    {
+        if (n < BUFFSIZE && ferror(fd))
+        {
+            rc = error(DCP_IOERROR, "failed to read file");
+            goto cleanup;
+        }
+
+        XXH64_update(state, buffer, n);
+    }
+    if (ferror(fd))
+    {
+        rc = error(DCP_IOERROR, "failed to read file");
+        goto cleanup;
+    }
+
+    *hash = XXH64_digest(state);
+
+cleanup:
+    XXH64_freeState(state);
+    return rc;
 }

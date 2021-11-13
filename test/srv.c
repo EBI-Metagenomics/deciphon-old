@@ -65,7 +65,7 @@ void test_srv_submit_job(void)
     std_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
     EQ(dcp_srv_add_db("std_example1", ex_path, &db_id), DCP_DONE);
-    EQ(db_id, 1);
+    EQ(db_id, 8785732475887659012ULL);
 
     struct dcp_job job = {0};
     dcp_job_init(&job, db_id);
@@ -92,7 +92,7 @@ void test_srv_submit_and_fetch_job(void)
     pro_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
     EQ(dcp_srv_add_db("pro_example1", ex_path, &db_id), DCP_DONE);
-    EQ(db_id, 1);
+    EQ(db_id, 3074291357329825406ULL);
 
     struct dcp_job job = {0};
     dcp_job_init(&job, db_id);

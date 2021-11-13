@@ -2,7 +2,7 @@
 #define SCHED_JOB_H
 
 #include "dcp/job_state.h"
-#include "sched_limits.h"
+#include "dcp/limits.h"
 #include <stdint.h>
 
 struct sqlite3;
@@ -14,9 +14,9 @@ struct sched_job
     int64_t db_id;
     int32_t multi_hits;
     int32_t hmmer3_compat;
-    char state[SCHED_STATE_SIZE];
+    char state[DCP_STATE_SIZE];
 
-    char error[SCHED_ERROR_SIZE];
+    char error[DCP_ERROR_SIZE];
     int64_t submission;
     int64_t exec_started;
     int64_t exec_ended;

@@ -2,13 +2,13 @@
 #define WORK_H
 
 #include "dcp/job.h"
+#include "dcp/limits.h"
 #include "imm/imm.h"
 #include "path.h"
 #include "sched_job.h"
 #include "sched_prod.h"
 #include "sched_seq.h"
 #include "xfile.h"
-#include "xlimits.h"
 #include <stdatomic.h>
 #include <stdint.h>
 
@@ -37,7 +37,7 @@ struct work
     struct sched_job job;
     unsigned ntasks;
     struct work_task tasks[128];
-    char db_path[PATH_SIZE];
+    char db_path[DCP_PATH_SIZE];
     struct db_handle *db;
     struct dcp_pro_prof const *prof;
     struct xfile_tmp prod_file;

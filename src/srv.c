@@ -52,12 +52,12 @@ enum dcp_rc dcp_srv_add_db(char const *name,
     if (!xfile_is_readable(filepath))
         return error(DCP_IOERROR, "file is not readable");
 
-    struct sched_db db = SCHED_DB_INIT();
-    sched_db_setup(&db, name, filepath);
+    struct sched_db db = {0};
+    enum dcp_rc rc = sched_db_setup(&db, name, filepath);
+    if (rc) return rc;
 
-    enum dcp_rc rc = sched_db_add(&db);
     *id = db.id;
-    return rc;
+    return sched_db_add(&db);
 }
 
 enum dcp_rc dcp_srv_submit_job(struct dcp_job *job)

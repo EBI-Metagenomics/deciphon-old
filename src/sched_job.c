@@ -3,7 +3,6 @@
 #include "error.h"
 #include "job_state.h"
 #include "macros.h"
-#include "sched_limits.h"
 #include "sched_macros.h"
 #include "utc.h"
 #include "xstrlcpy.h"
@@ -163,8 +162,8 @@ enum dcp_rc sched_job_state(int64_t job_id, enum dcp_job_state *state)
         goto cleanup;
     }
 
-    char tmp[SCHED_STATE_SIZE] = {0};
-    COLUMN_TEXT(stmt, 0, tmp, SCHED_STATE_SIZE);
+    char tmp[DCP_STATE_SIZE] = {0};
+    COLUMN_TEXT(stmt, 0, tmp, DCP_STATE_SIZE);
     *state = job_state_resolve(tmp);
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
