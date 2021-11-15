@@ -82,6 +82,7 @@ enum dcp_rc dcp_cli_daemon(int argc, char **argv)
     char db_name[DCP_DB_NAME_SIZE] = {0};
     static_assert(DCP_DB_NAME_SIZE <= DCP_FILENAME_SIZE, "Avoid overflow");
     path_basename(db_name, dcpfile);
+    path_strip_ext(db_name);
 
     int64_t db_id = 0;
     rc = dcp_srv_add_db(db_name, dcpfile, &db_id);

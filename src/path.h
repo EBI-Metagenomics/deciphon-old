@@ -16,4 +16,6 @@ bool path_change_or_add_ext(char str[static 1], size_t max_size,
 void path_basename(char filename[DCP_FILENAME_SIZE],
                    char const path[DCP_PATH_SIZE]);
 
+void path_strip_ext(char str[static 1]);
+
 #endif

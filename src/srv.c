@@ -25,8 +25,7 @@ static struct dcp_srv
 
 static void signal_handler(int sig)
 {
-    if (sig == SIGINT)
-        atomic_store(&srv.interrupt, true);
+    if (sig == SIGINT) atomic_store(&srv.interrupt, true);
 }
 
 enum dcp_rc dcp_srv_open(char const *filepath)
@@ -41,13 +40,9 @@ enum dcp_rc dcp_srv_open(char const *filepath)
     return rc;
 }
 
-enum dcp_rc dcp_srv_close(void)
-{
-    return sched_close();
-}
+enum dcp_rc dcp_srv_close(void) { return sched_close(); }
 
-enum dcp_rc dcp_srv_add_db(char const *name,
-                           char const *filepath, int64_t *id)
+enum dcp_rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
 {
     if (!xfile_is_readable(filepath))
         return error(DCP_IOERROR, "file is not readable");
@@ -65,8 +60,7 @@ enum dcp_rc dcp_srv_submit_job(struct dcp_job *job)
     return sched_submit_job(job);
 }
 
-enum dcp_rc dcp_srv_job_state(int64_t job_id,
-                              enum dcp_job_state *state)
+enum dcp_rc dcp_srv_job_state(int64_t job_id, enum dcp_job_state *state)
 {
     return sched_job_state(job_id, state);
 }
@@ -94,8 +88,7 @@ enum dcp_rc dcp_srv_run(bool single_run)
     return DCP_DONE;
 }
 
-enum dcp_rc dcp_srv_next_prod(int64_t job_id,
-                              int64_t *prod_id)
+enum dcp_rc dcp_srv_next_prod(int64_t job_id, int64_t *prod_id)
 {
     enum dcp_rc rc = sched_prod_next(job_id, prod_id);
     if (rc == DCP_DONE) return rc;
@@ -104,7 +97,4 @@ enum dcp_rc dcp_srv_next_prod(int64_t job_id,
     return DCP_NEXT;
 }
 
-struct dcp_prod const *dcp_srv_get_prod(void)
-{
-    return &srv.prod;
-}
+struct dcp_prod const *dcp_srv_get_prod(void) { return &srv.prod; }
