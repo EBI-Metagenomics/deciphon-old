@@ -63,19 +63,16 @@ enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
 
     struct dcp_pro_node *n = m->alt.nodes + m->alt.node_idx;
 
-    setup_nuclt_dist(&n->match.nucltd, m->amino, m->nuclt, lodds);
+    setup_nuclt_dist(&n->match.nucltd, m->amino, m->code->nuclt, lodds);
 
     init_match(&n->M, m, &n->match.nucltd);
-    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->M)))
-        return DCP_FAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->M))) return DCP_FAIL;
 
     init_insert(&n->I, m);
-    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->I)))
-        return DCP_FAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->I))) return DCP_FAIL;
 
     init_delete(&n->D, m);
-    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->D)))
-        return DCP_FAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, imm_super(&n->D))) return DCP_FAIL;
 
     m->alt.node_idx++;
 
@@ -106,23 +103,25 @@ void dcp_pro_model_del(struct dcp_pro_model const *model)
 }
 
 void dcp_pro_model_init(struct dcp_pro_model *m, struct imm_amino const *amino,
-                        struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg,
+                        struct imm_nuclt_code const *code,
+                        struct dcp_pro_cfg cfg,
                         imm_float const null_lprobs[IMM_AMINO_SIZE])
 
 {
     m->amino = amino;
-    m->nuclt = nuclt;
+    m->code = code;
     m->cfg = cfg;
     m->core_size = 0;
     m->consensus[0] = '\0';
+    struct imm_nuclt const *nuclt = code->nuclt;
 
     memcpy(m->null.lprobs, null_lprobs, sizeof *null_lprobs * IMM_AMINO_SIZE);
 
-    imm_hmm_init(&m->null.hmm, imm_super(m->nuclt));
+    imm_hmm_init(&m->null.hmm, &m->code->super);
 
     setup_nuclt_dist(&m->null.nucltd, amino, nuclt, null_lprobs);
 
-    imm_hmm_init(&m->alt.hmm, imm_super(m->nuclt));
+    imm_hmm_init(&m->alt.hmm, &m->code->super);
 
     imm_float const lodds[IMM_AMINO_SIZE] = {0};
     setup_nuclt_dist(&m->alt.insert.nucltd, amino, nuclt, lodds);
@@ -198,7 +197,7 @@ struct imm_amino const *pro_model_amino(struct dcp_pro_model const *m)
 
 struct imm_nuclt const *pro_model_nuclt(struct dcp_pro_model const *m)
 {
-    return m->nuclt;
+    return m->code->nuclt;
 }
 
 struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
@@ -244,7 +243,7 @@ static void init_xnodes(struct dcp_pro_model *m)
     struct imm_nuclt_lprob const *nucltp = &m->null.nucltd.nucltp;
     struct imm_codon_marg const *codonm = &m->null.nucltd.codonm;
     struct dcp_pro_xnode *n = &m->xnode;
-    struct imm_nuclt const *nuclt = m->nuclt;
+    struct imm_nuclt const *nuclt = m->code->nuclt;
 
     imm_frame_state_init(&n->null.R, DCP_PRO_ID_R, nucltp, codonm, e);
 
@@ -298,7 +297,7 @@ static bool have_finished_add(struct dcp_pro_model const *m)
 static void init_delete(struct imm_mute_state *state, struct dcp_pro_model *m)
 {
     unsigned id = DCP_PRO_ID_DELETE | (m->alt.node_idx + 1);
-    imm_mute_state_init(state, id, imm_super(m->nuclt));
+    imm_mute_state_init(state, id, imm_super(m->code->nuclt));
 }
 
 static void init_insert(struct imm_frame_state *state, struct dcp_pro_model *m)

@@ -7,12 +7,11 @@
 #include "dcp/std_prof.h"
 #include <stdio.h>
 
-struct imm_abc;
-
 struct dcp_std_db
 {
     struct dcp_db super;
     struct imm_abc abc;
+    struct imm_code code;
     struct dcp_std_prof prof;
 };
 
@@ -21,7 +20,7 @@ DCP_API void dcp_std_db_init(struct dcp_std_db *db);
 DCP_API enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd);
 
 DCP_API enum dcp_rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
-                                     struct imm_abc const *abc);
+                                     struct imm_code const *code);
 
 DCP_API enum dcp_rc dcp_std_db_close(struct dcp_std_db *db);
 

@@ -14,11 +14,11 @@ void std_db_examples_new_ex1(char const *filepath)
     NOTNULL(fd);
     struct dcp_std_db db;
     dcp_std_db_init(&db);
-    EQ(dcp_std_db_openw(&db, fd, &m->abc), DCP_DONE);
+    EQ(dcp_std_db_openw(&db, fd, &m->code), DCP_DONE);
 
     /* Profile 0 */
     struct dcp_std_prof p;
-    dcp_std_prof_init(&p, &m->abc);
+    dcp_std_prof_init(&p, &m->code);
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
@@ -28,7 +28,7 @@ void std_db_examples_new_ex1(char const *filepath)
     struct imm_mute_state state;
     imm_mute_state_init(&state, 3, &m->abc);
     struct imm_hmm hmm;
-    imm_hmm_init(&hmm, &m->abc);
+    imm_hmm_init(&hmm, &m->code);
     EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME1", "ACC1"));
@@ -50,15 +50,16 @@ void std_db_examples_new_ex2(char const *filepath)
 
     struct imm_example2 *m = &imm_example2;
     struct imm_abc const *abc = imm_super(imm_super(m->dna));
+    struct imm_code const *code = &m->code;
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
     struct dcp_std_db db;
     dcp_std_db_init(&db);
-    EQ(dcp_std_db_openw(&db, fd, abc), DCP_DONE);
+    EQ(dcp_std_db_openw(&db, fd, code), DCP_DONE);
 
     /* Profile 0 */
     struct dcp_std_prof p;
-    dcp_std_prof_init(&p, abc);
+    dcp_std_prof_init(&p, code);
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
@@ -69,7 +70,7 @@ void std_db_examples_new_ex2(char const *filepath)
     struct imm_mute_state state;
     imm_mute_state_init(&state, 3, abc);
     struct imm_hmm hmm;
-    imm_hmm_init(&hmm, abc);
+    imm_hmm_init(&hmm, &m->code);
     EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);

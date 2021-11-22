@@ -16,18 +16,20 @@
 static void del(struct dcp_prof *prof);
 
 void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
-                       struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg)
+                       struct imm_nuclt_code const *code,
+                       struct dcp_pro_cfg cfg)
 {
     struct dcp_prof_vtable vtable = {del, DCP_PRO_PROFILE};
-    profile_init(&p->super, imm_super(nuclt), meta_unset, vtable);
-    p->nuclt = nuclt;
+    struct imm_nuclt const *nuclt = code->nuclt;
+    profile_init(&p->super, &code->super, meta_unset, vtable);
+    p->code = code;
     p->amino = amino;
     p->cfg = cfg;
     p->eps = imm_frame_epsilon(cfg.epsilon);
     p->core_size = 0;
     p->consensus[0] = '\0';
-    imm_dp_init(&p->null.dp, imm_super(nuclt));
-    imm_dp_init(&p->alt.dp, imm_super(nuclt));
+    imm_dp_init(&p->null.dp, &code->super);
+    imm_dp_init(&p->alt.dp, &code->super);
     dcp_nuclt_dist_init(&p->null.ndist, nuclt);
     dcp_nuclt_dist_init(&p->alt.insert_ndist, nuclt);
     p->alt.match_ndists = NULL;
@@ -112,7 +114,7 @@ enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
 enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
                                 struct dcp_pro_model const *m)
 {
-    if (p->nuclt != pro_model_nuclt(m))
+    if (p->code->nuclt != pro_model_nuclt(m))
         return error(DCP_ILLEGALARG, "Different nucleotide alphabets.");
 
     if (p->amino != pro_model_amino(m))
@@ -173,7 +175,7 @@ enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
 
     struct dcp_pro_model model;
-    dcp_pro_model_init(&model, p->amino, p->nuclt, p->cfg, lprobs);
+    dcp_pro_model_init(&model, p->amino, p->code, p->cfg, lprobs);
 
     enum dcp_rc rc = DCP_DONE;
 
@@ -278,7 +280,7 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
     {
         if ((rc = dcp_nuclt_dist_read(prof->alt.match_ndists + i, cmp)))
             return rc;
-        dcp_nuclt_dist_init(prof->alt.match_ndists + i, prof->nuclt);
+        dcp_nuclt_dist_init(prof->alt.match_ndists + i, prof->code->nuclt);
     }
     return DCP_DONE;
 }

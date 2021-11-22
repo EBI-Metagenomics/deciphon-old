@@ -15,14 +15,16 @@ void test_pro_prof_uniform(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+    struct imm_nuclt_code code;
+    imm_nuclt_code_init(&code, nuclt);
     struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
 
     struct dcp_pro_prof prof;
-    dcp_pro_prof_init(&prof, amino, nuclt, cfg);
+    dcp_pro_prof_init(&prof, amino, &code, cfg);
     EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-    struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);
+    struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->code->abc);
 
     EQ(dcp_pro_prof_setup(&prof, 0, true, false), DCP_ILLEGALARG);
     EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
@@ -75,16 +77,17 @@ void test_pro_prof_uniform(void)
     struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &prod.path);
     enum dcp_rc rc = DCP_DONE;
 
+    nuclt = prof.code->nuclt;
     struct imm_codon codons[10] = {
-        IMM_CODON(prof.nuclt, "ATG"), IMM_CODON(prof.nuclt, "AAA"),
-        IMM_CODON(prof.nuclt, "CGC"), IMM_CODON(prof.nuclt, "ATA"),
-        IMM_CODON(prof.nuclt, "GCA"), IMM_CODON(prof.nuclt, "CCA"),
-        IMM_CODON(prof.nuclt, "CCT"), IMM_CODON(prof.nuclt, "TAC"),
-        IMM_CODON(prof.nuclt, "CAC"), IMM_CODON(prof.nuclt, "CAC"),
+        IMM_CODON(nuclt, "ATG"), IMM_CODON(nuclt, "AAA"),
+        IMM_CODON(nuclt, "CGC"), IMM_CODON(nuclt, "ATA"),
+        IMM_CODON(nuclt, "GCA"), IMM_CODON(nuclt, "CCA"),
+        IMM_CODON(nuclt, "CCT"), IMM_CODON(nuclt, "TAC"),
+        IMM_CODON(nuclt, "CAC"), IMM_CODON(nuclt, "CAC"),
     };
 
-    unsigned any = imm_abc_any_symbol_id(imm_super(prof.nuclt));
-    struct imm_codon codon = imm_codon(prof.nuclt, any, any, any);
+    unsigned any = imm_abc_any_symbol_id(imm_super(nuclt));
+    struct imm_codon codon = imm_codon(nuclt, any, any, any);
     unsigned i = 0;
     while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
     {
@@ -105,14 +108,16 @@ void test_pro_prof_occupancy(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+    struct imm_nuclt_code code;
+    imm_nuclt_code_init(&code, nuclt);
     struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
 
     struct dcp_pro_prof prof;
-    dcp_pro_prof_init(&prof, amino, nuclt, cfg);
+    dcp_pro_prof_init(&prof, amino, &code, cfg);
     EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-    struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->abc);
+    struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->code->abc);
 
     EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
 
@@ -164,16 +169,17 @@ void test_pro_prof_occupancy(void)
     struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &prod.path);
     enum dcp_rc rc = DCP_DONE;
 
+    nuclt = prof.code->nuclt;
     struct imm_codon codons[10] = {
-        IMM_CODON(prof.nuclt, "ATG"), IMM_CODON(prof.nuclt, "AAA"),
-        IMM_CODON(prof.nuclt, "CGC"), IMM_CODON(prof.nuclt, "ATA"),
-        IMM_CODON(prof.nuclt, "GCA"), IMM_CODON(prof.nuclt, "CCA"),
-        IMM_CODON(prof.nuclt, "CCT"), IMM_CODON(prof.nuclt, "TAC"),
-        IMM_CODON(prof.nuclt, "CAC"), IMM_CODON(prof.nuclt, "CAC"),
+        IMM_CODON(nuclt, "ATG"), IMM_CODON(nuclt, "AAA"),
+        IMM_CODON(nuclt, "CGC"), IMM_CODON(nuclt, "ATA"),
+        IMM_CODON(nuclt, "GCA"), IMM_CODON(nuclt, "CCA"),
+        IMM_CODON(nuclt, "CCT"), IMM_CODON(nuclt, "TAC"),
+        IMM_CODON(nuclt, "CAC"), IMM_CODON(nuclt, "CAC"),
     };
 
-    unsigned any = imm_abc_any_symbol_id(imm_super(prof.nuclt));
-    struct imm_codon codon = imm_codon(prof.nuclt, any, any, any);
+    unsigned any = imm_abc_any_symbol_id(imm_super(nuclt));
+    struct imm_codon codon = imm_codon(nuclt, any, any, any);
     unsigned i = 0;
     while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
     {

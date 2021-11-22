@@ -104,7 +104,9 @@ static void pro_db_init(struct dcp_pro_db *db)
     db_init(&db->super, DCP_PRO_PROFILE);
     db->amino = imm_amino_empty;
     db->nuclt = imm_nuclt_empty;
-    dcp_pro_prof_init(&db->prof, &db->amino, &db->nuclt, DCP_PRO_CFG_DEFAULT);
+    db->code = imm_nuclt_code_empty;
+    db->code.nuclt = &db->nuclt;
+    dcp_pro_prof_init(&db->prof, &db->amino, &db->code, DCP_PRO_CFG_DEFAULT);
 }
 
 enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
@@ -126,6 +128,7 @@ enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
     if ((rc = db_read_nprofiles(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
+    imm_code_init(&db->code.super, imm_super(&db->nuclt));
     assert(db->super.prof_typeid == DCP_PRO_PROFILE);
     return db_record_prof_offset(&db->super);
 }
@@ -138,6 +141,7 @@ enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
     pro_db_init(db);
     db->amino = *amino;
     db->nuclt = *nuclt;
+    imm_nuclt_code_init(&db->code, &db->nuclt);
 
     struct dcp_cmp *cmp = &db->super.file.cmp;
     unsigned float_size = db->super.float_size;

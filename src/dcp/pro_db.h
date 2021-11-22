@@ -14,6 +14,7 @@ struct dcp_pro_db
     struct dcp_db super;
     struct imm_amino amino;
     struct imm_nuclt nuclt;
+    struct imm_nuclt_code code;
     struct dcp_pro_prof prof;
 };
 

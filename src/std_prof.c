@@ -7,12 +7,12 @@
 
 static void del(struct dcp_prof *prof);
 
-void dcp_std_prof_init(struct dcp_std_prof *prof, struct imm_abc const *abc)
+void dcp_std_prof_init(struct dcp_std_prof *prof, struct imm_code const *code)
 {
-    imm_dp_init(&prof->dp.null, abc);
-    imm_dp_init(&prof->dp.alt, abc);
+    imm_dp_init(&prof->dp.null, code);
+    imm_dp_init(&prof->dp.alt, code);
     struct dcp_prof_vtable vtable = {del, DCP_STD_PROFILE};
-    profile_init(&prof->super, abc, meta_unset, vtable);
+    profile_init(&prof->super, code, meta_unset, vtable);
 }
 
 enum dcp_rc std_prof_read(struct dcp_std_prof *prof, FILE *restrict fd)

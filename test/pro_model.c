@@ -6,6 +6,8 @@ int main(void)
     unsigned core_size = 3;
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+    struct imm_nuclt_code code;
+    imm_nuclt_code_init(&code, nuclt);
     struct dcp_pro_cfg cfg = {DCP_ENTRY_DIST_OCCUPANCY, 0.01f};
     imm_float null_lprobs[IMM_AMINO_SIZE];
     imm_float null_lodds[IMM_AMINO_SIZE];
@@ -28,7 +30,7 @@ int main(void)
     }
 
     struct dcp_pro_model model;
-    dcp_pro_model_init(&model, amino, nuclt, cfg, null_lprobs);
+    dcp_pro_model_init(&model, amino, &code, cfg, null_lprobs);
 
     EQ(dcp_pro_model_setup(&model, core_size), DCP_DONE);
 
@@ -42,7 +44,7 @@ int main(void)
     EQ(dcp_pro_model_add_trans(&model, t[3]), DCP_DONE);
 
     struct dcp_pro_prof prof;
-    dcp_pro_prof_init(&prof, amino, nuclt, cfg);
+    dcp_pro_prof_init(&prof, amino, &code, cfg);
 
     dcp_prof_nameit(dcp_super(&prof), dcp_meta("NAME0", "ACC0"));
     EQ(dcp_pro_prof_absorb(&prof, &model), DCP_DONE);

@@ -23,7 +23,7 @@ void dcp_std_db_init(struct dcp_std_db *db)
 {
     db_init(&db->super, DCP_STD_PROFILE);
     db->abc = imm_abc_empty;
-    dcp_std_prof_init(&db->prof, &db->abc);
+    dcp_std_prof_init(&db->prof, &db->code);
 }
 
 enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
@@ -38,21 +38,22 @@ enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
     if ((rc = db_read_nprofiles(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
+    imm_code_init(&db->code, &db->abc);
     assert(db->super.prof_typeid == DCP_STD_PROFILE);
     return rc;
 }
 
 enum dcp_rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
-                             struct imm_abc const *abc)
+                             struct imm_code const *code)
 {
-    db->abc = *abc;
+    db->code = *code;
 
     enum dcp_rc rc = DCP_DONE;
     if ((rc = db_openw(&db->super, fd))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_prof_type(&db->super))) goto cleanup;
     if ((rc = db_write_float_size(&db->super))) goto cleanup;
-    if ((rc = write_abc(fd, &db->abc))) goto cleanup;
+    if ((rc = write_abc(fd, db->code.abc))) goto cleanup;
 
     return rc;
 

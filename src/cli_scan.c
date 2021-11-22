@@ -107,7 +107,7 @@ static struct imm_seq seq_setup(void)
 {
     char const *seq = cli.queries.fa.target.seq;
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
-    struct imm_abc const *abc = &prof->nuclt->super;
+    struct imm_abc const *abc = &prof->code->nuclt->super;
     return imm_seq(imm_str(seq), abc);
 }
 
@@ -170,7 +170,7 @@ static enum dcp_rc predict_codons(struct imm_seq const *seq)
     struct imm_path const *path = &cli.pro.prod.path;
 
     struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
-    struct imm_codon codon = imm_codon_any(prof->nuclt);
+    struct imm_codon codon = imm_codon_any(prof->code->nuclt);
 
     enum dcp_rc rc = DCP_DONE;
     char *ocodon = cli.output.codon.seq;
@@ -189,7 +189,7 @@ static void decode_codons(void)
 {
     char *ocodon = cli.output.codon.seq;
     char *oamino = cli.output.amino.seq;
-    struct imm_codon codon = imm_codon_any(cli.pro.db.prof.nuclt);
+    struct imm_codon codon = imm_codon_any(cli.pro.db.prof.code->nuclt);
     struct imm_abc const *abc = &codon.nuclt->super;
     while (*ocodon)
     {

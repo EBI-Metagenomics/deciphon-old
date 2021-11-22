@@ -121,7 +121,7 @@ static enum dcp_rc cli_setup(struct arguments const *args)
                          imm_super(&imm_dna_iupac), DCP_PRO_CFG_DEFAULT);
     if (rc) return rc;
 
-    dcp_pro_reader_init(&cli.reader, &cli.db.amino, &cli.db.nuclt,
+    dcp_pro_reader_init(&cli.reader, &cli.db.amino, &cli.db.code,
                         cli.db.prof.cfg, cli.input.fd);
 
     return DCP_DONE;

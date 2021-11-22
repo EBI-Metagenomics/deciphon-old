@@ -27,7 +27,7 @@ static inline imm_float compute_lrt(struct work_task const *task)
 }
 static inline struct imm_abc const *get_abc(struct work const *work)
 {
-    return work->prof->super.abc;
+    return work->prof->super.code->abc;
 }
 static inline void prepare_prod(struct work_task *task)
 {
@@ -218,7 +218,7 @@ enum dcp_rc write_product(struct work *work, struct work_task *task,
                           unsigned match_id, struct imm_seq seq)
 {
     enum dcp_rc rc = DCP_DONE;
-    struct imm_codon codon = imm_codon_any(work->prof->nuclt);
+    struct imm_codon codon = imm_codon_any(work->prof->code->nuclt);
 
     struct dcp_meta const *mt = &work->prof->super.mt;
 

@@ -6,6 +6,7 @@ int main(void)
     imm_example1_init();
 
     struct imm_abc const *abc = &imm_example1.abc;
+    struct imm_code const *code = &imm_example1.code;
     struct imm_hmm *null = &imm_example1.null.hmm;
     struct imm_hmm *alt = &imm_example1.hmm;
 
@@ -21,7 +22,7 @@ int main(void)
     EQ(imm_hmm_set_start(alt, imm_super(&state1), imm_log(0.1)), IMM_SUCCESS);
 
     struct dcp_std_prof prof;
-    dcp_std_prof_init(&prof, abc);
+    dcp_std_prof_init(&prof, code);
     dcp_prof_nameit(dcp_super(&prof), dcp_meta("NAME1", "ACC1"));
     EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_SUCCESS);

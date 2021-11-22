@@ -20,7 +20,7 @@ struct dcp_pro_reader
 
 DCP_API void dcp_pro_reader_init(struct dcp_pro_reader *reader,
                                  struct imm_amino const *amino,
-                                 struct imm_nuclt const *nuclt,
+                                 struct imm_nuclt_code const *code,
                                  struct dcp_pro_cfg cfg, FILE *restrict fd);
 
 DCP_API enum dcp_rc dcp_pro_reader_next(struct dcp_pro_reader *reader);

@@ -11,7 +11,7 @@ struct dcp_prof
 {
     struct dcp_prof_vtable vtable;
     unsigned idx;
-    struct imm_abc const *abc;
+    struct imm_code const *code;
     struct dcp_meta mt;
 };
 

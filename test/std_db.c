@@ -28,11 +28,13 @@ void test_db_openw_empty(void)
 {
     struct imm_dna const *dna = &imm_dna_iupac;
     struct imm_abc const *abc = imm_super(imm_super(dna));
+    struct imm_code code;
+    imm_code_init(&code, abc);
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
     NOTNULL(fd);
     struct dcp_std_db db;
     dcp_std_db_init(&db);
-    EQ(dcp_std_db_openw(&db, fd, abc), DCP_DONE);
+    EQ(dcp_std_db_openw(&db, fd, &code), DCP_DONE);
     EQ(dcp_std_db_close(&db), DCP_DONE);
     fclose(fd);
 }
@@ -59,11 +61,13 @@ void test_db_openw_one_mute(void)
 {
     struct imm_dna const *dna = &imm_dna_iupac;
     struct imm_abc const *abc = imm_super(imm_super(dna));
+    struct imm_code code;
+    imm_code_init(&code, abc);
 
     struct imm_mute_state state;
     imm_mute_state_init(&state, 3, abc);
     struct imm_hmm hmm;
-    imm_hmm_init(&hmm, abc);
+    imm_hmm_init(&hmm, &code);
     EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
 
@@ -71,10 +75,10 @@ void test_db_openw_one_mute(void)
     NOTNULL(fd);
     struct dcp_std_db db;
     dcp_std_db_init(&db);
-    EQ(dcp_std_db_openw(&db, fd, abc), DCP_DONE);
+    EQ(dcp_std_db_openw(&db, fd, &code), DCP_DONE);
 
     struct dcp_std_prof p;
-    dcp_std_prof_init(&p, abc);
+    dcp_std_prof_init(&p, &code);
     dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);

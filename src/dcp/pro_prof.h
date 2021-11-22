@@ -14,7 +14,7 @@ struct dcp_pro_prof
     struct dcp_prof super;
 
     struct imm_amino const *amino;
-    struct imm_nuclt const *nuclt;
+    struct imm_nuclt_code const *code;
     struct dcp_pro_cfg cfg;
     struct imm_frame_epsilon eps;
     unsigned core_size;
@@ -44,7 +44,7 @@ struct dcp_pro_prof
 
 DCP_API void dcp_pro_prof_init(struct dcp_pro_prof *prof,
                                struct imm_amino const *amino,
-                               struct imm_nuclt const *nuclt,
+                               struct imm_nuclt_code const *code,
                                struct dcp_pro_cfg cfg);
 
 DCP_API enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof,
