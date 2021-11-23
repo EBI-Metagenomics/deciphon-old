@@ -36,7 +36,7 @@ struct work
 {
     struct sched_job job;
     unsigned ntasks;
-    struct work_task tasks[128];
+    struct work_task tasks[4];
     char db_path[DCP_PATH_SIZE];
     struct db_handle *db;
     struct dcp_pro_prof const *prof;

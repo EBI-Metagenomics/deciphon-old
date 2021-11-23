@@ -9,6 +9,7 @@ struct sqlite3;
 struct sched_db
 {
     int64_t id;
+    int64_t xxh64;
     char name[DCP_DB_NAME_SIZE];
     char filepath[DCP_PATH_SIZE];
 };

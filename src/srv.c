@@ -51,8 +51,9 @@ enum dcp_rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
     enum dcp_rc rc = sched_db_setup(&db, name, filepath);
     if (rc) return rc;
 
+    rc = sched_db_add(&db);
     *id = db.id;
-    return sched_db_add(&db);
+    return rc;
 }
 
 enum dcp_rc dcp_srv_submit_job(struct dcp_job *job)
@@ -71,6 +72,7 @@ enum dcp_rc dcp_srv_run(bool single_run)
     struct work work = {0};
     work_init(&work);
 
+    printf("Looking for work...\n");
     while (!atomic_load(&srv.interrupt))
     {
         if ((rc = work_next(&work)) == DCP_NOTFOUND)
@@ -81,7 +83,9 @@ enum dcp_rc dcp_srv_run(bool single_run)
         }
         if (rc != DCP_NEXT) return rc;
 
+        printf("Found work (%lld)...\n", work.job.id);
         rc = work_run(&work);
+        printf("Finished work (%lld)!\n", work.job.id);
         if (rc) return rc;
     }
 

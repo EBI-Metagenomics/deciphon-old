@@ -72,7 +72,7 @@ enum dcp_rc dcp_cli_daemon(int argc, char **argv)
     char const *dbfile = arguments.args[0];
     char const *dcpfile = arguments.args[1];
 
-    skeleton_daemon();
+    /* skeleton_daemon(); */
     dcp_log_setup(print_log_put, NULL);
     log_setup(LOG_ERROR, syslog_print, flush_nop, NULL);
 
@@ -87,6 +87,7 @@ enum dcp_rc dcp_cli_daemon(int argc, char **argv)
     int64_t db_id = 0;
     rc = dcp_srv_add_db(db_name, dcpfile, &db_id);
     if (rc) goto cleanup;
+    printf("%s added as %s\n", dcpfile, db_name);
 
     rc = dcp_srv_run(false);
     if (rc) goto cleanup;

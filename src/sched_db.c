@@ -21,12 +21,13 @@ static char const *const queries[] = {
 "\
         INSERT INTO db\
             (\
-                id, name, filepath\
+                xxh64, name, filepath\
             )\
         VALUES\
             (\
                 ?, ?, ?\
-            );\
+            )\
+        RETURNING id;\
 ",
     [SELECT] = "SELECT * FROM db WHERE id = ?;\
 ",
@@ -43,7 +44,7 @@ enum dcp_rc sched_db_setup(struct sched_db *db,
     FILE *fd = fopen(filepath, "rb");
     if (!fd) return error(DCP_IOERROR, "failed to open file");
 
-    enum dcp_rc rc = xfile_hash(fd, (uint64_t *)&db->id);
+    enum dcp_rc rc = xfile_hash(fd, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
 
     xstrlcpy(db->name, name, DCP_DB_NAME_SIZE);
@@ -70,11 +71,13 @@ enum dcp_rc sched_db_add(struct sched_db *db)
     enum dcp_rc rc = DCP_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, db->id);
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, db->xxh64);
     BIND_TEXT_OR_CLEANUP(rc, stmt, 2, db->name);
     BIND_TEXT_OR_CLEANUP(rc, stmt, 3, db->filepath);
 
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
+    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    db->id = sqlite3_column_int64(stmt, 0);
+    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
 
 cleanup:
     return rc;
@@ -90,8 +93,9 @@ enum dcp_rc sched_db_get(struct sched_db *db, int64_t db_id)
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
 
     db->id = sqlite3_column_int64(stmt, 0);
-    COLUMN_TEXT(stmt, 1, db->name, ARRAY_SIZE(MEMBER_REF(*db, name)));
-    COLUMN_TEXT(stmt, 2, db->filepath, ARRAY_SIZE(MEMBER_REF(*db, filepath)));
+    db->xxh64 = sqlite3_column_int64(stmt, 1);
+    COLUMN_TEXT(stmt, 2, db->name, ARRAY_SIZE(MEMBER_REF(*db, name)));
+    COLUMN_TEXT(stmt, 3, db->filepath, ARRAY_SIZE(MEMBER_REF(*db, filepath)));
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
