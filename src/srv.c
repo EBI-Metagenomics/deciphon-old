@@ -18,20 +18,22 @@
 
 static struct dcp_srv
 {
-    volatile atomic_bool interrupt;
+    struct
+    {
+        volatile sig_atomic_t interrupt;
+        struct sigaction action;
+    } signal;
     struct dcp_job job;
     struct dcp_prod prod;
-} srv;
+} srv = {0};
 
-static void signal_handler(int sig)
-{
-    if (sig == SIGINT) atomic_store(&srv.interrupt, true);
-}
+static void signal_interrupt(int signum) { srv.signal.interrupt = 1; }
 
 enum dcp_rc dcp_srv_open(char const *filepath)
 {
-    atomic_store(&srv.interrupt, false);
-    signal(SIGINT, signal_handler);
+    srv.signal.action.sa_handler = &signal_interrupt;
+    sigemptyset(&srv.signal.action.sa_mask);
+    sigaction(SIGINT, &srv.signal.action, NULL);
     db_pool_module_init();
 
     enum dcp_rc rc = DCP_DONE;
@@ -80,7 +82,7 @@ enum dcp_rc dcp_srv_run(bool single_run)
     work_init(&work);
 
     printf("Looking for work...\n");
-    while (!atomic_load(&srv.interrupt))
+    while (!srv.signal.interrupt)
     {
         if ((rc = work_next(&work)) == DCP_NOTFOUND)
         {
@@ -96,6 +98,7 @@ enum dcp_rc dcp_srv_run(bool single_run)
         if (rc) return rc;
     }
 
+    printf("Goodbye!\n");
     return DCP_DONE;
 }
 
