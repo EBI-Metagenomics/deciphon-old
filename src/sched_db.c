@@ -8,10 +8,11 @@
 #include <sqlite3.h>
 #include <stdlib.h>
 
-enum
+enum stmt
 {
     INSERT,
-    SELECT,
+    SELECT_BY_ID,
+    SELECT_BY_XXH64,
     EXIST
 };
 
@@ -29,7 +30,9 @@ static char const *const queries[] = {
             )\
         RETURNING id;\
 ",
-    [SELECT] = "SELECT * FROM db WHERE id = ?;\
+    [SELECT_BY_ID] = "SELECT * FROM db WHERE id = ?;\
+",
+    [SELECT_BY_XXH64] = "SELECT * FROM db WHERE xxh64 = ?;\
 ",
     [EXIST] = "SELECT COUNT(1) FROM db WHERE name = ?;\
 "};
@@ -83,14 +86,21 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_db_get(struct sched_db *db, int64_t db_id)
+static enum dcp_rc select_db(struct sched_db *db, int64_t by_value,
+                             enum stmt select_stmt)
 {
-    struct sqlite3_stmt *stmt = stmts[SELECT];
+    struct sqlite3_stmt *stmt = stmts[select_stmt];
     enum dcp_rc rc = DCP_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, db_id);
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, by_value);
+    int code = sqlite3_step(stmt);
+    if (code == SQLITE_DONE) return DCP_NOTFOUND;
+    if (code != SQLITE_ROW)
+    {
+        rc = error(DCP_FAIL, "failed to step");
+        goto cleanup;
+    }
 
     db->id = sqlite3_column_int64(stmt, 0);
     db->xxh64 = sqlite3_column_int64(stmt, 1);
@@ -101,6 +111,16 @@ enum dcp_rc sched_db_get(struct sched_db *db, int64_t db_id)
 
 cleanup:
     return rc;
+}
+
+enum dcp_rc sched_db_get_by_id(struct sched_db *db, int64_t id)
+{
+    return select_db(db, id, SELECT_BY_ID);
+}
+
+enum dcp_rc sched_db_get_by_xxh64(struct sched_db *db, int64_t xxh64)
+{
+    return select_db(db, xxh64, SELECT_BY_XXH64);
 }
 
 void sched_db_module_del(void)

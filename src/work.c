@@ -61,7 +61,7 @@ enum dcp_rc work_next(struct work *work)
 
     work->db_path[0] = 0;
     struct sched_db db = {0};
-    if ((rc = sched_db_get(&db, work->job.db_id))) return rc;
+    if ((rc = sched_db_get_by_id(&db, work->job.db_id))) return rc;
     xstrlcpy(work->db_path, db.filepath, DCP_PATH_SIZE);
 
     int64_t seq_id = 0;

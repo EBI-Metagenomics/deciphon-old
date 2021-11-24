@@ -51,8 +51,15 @@ enum dcp_rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
     enum dcp_rc rc = sched_db_setup(&db, name, filepath);
     if (rc) return rc;
 
-    rc = sched_db_add(&db);
-    *id = db.id;
+    struct sched_db db2 = {0};
+    rc = sched_db_get_by_xxh64(&db2, db.xxh64);
+    if (rc == DCP_NOTFOUND)
+    {
+        rc = sched_db_add(&db);
+        *id = db.id;
+        return rc;
+    }
+    *id = db2.id;
     return rc;
 }
 
