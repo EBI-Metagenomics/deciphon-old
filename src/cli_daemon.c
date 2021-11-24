@@ -45,7 +45,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 }
 
 static char doc[] = "Run daemon -- deciphond deciphon.sqlite3 pfam.dcp";
-static char args_doc[] = "DBFILE DCPFILE";
+static char args_doc[] = "SCHEDFILE DCPFILE";
 static struct argp_option options[] = {
     {"quiet", 'q', 0, 0, "Disable output", 0}, {0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
@@ -54,6 +54,7 @@ void skeleton_daemon(void);
 
 static void syslog_print(char const *msg, void *arg)
 {
+    printf("%.*s\n", DCP_ERROR_SIZE - 1, msg);
     syslog(LOG_ERR, "%.*s", DCP_ERROR_SIZE - 1, msg);
 }
 
@@ -69,14 +70,14 @@ enum dcp_rc dcp_cli_daemon(int argc, char **argv)
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 
     enum dcp_rc rc = DCP_DONE;
-    char const *dbfile = arguments.args[0];
+    char const *schedfile = arguments.args[0];
     char const *dcpfile = arguments.args[1];
 
     /* skeleton_daemon(); */
     dcp_log_setup(print_log_put, NULL);
     log_setup(LOG_ERROR, syslog_print, flush_nop, NULL);
 
-    rc = dcp_srv_open(dbfile);
+    rc = dcp_srv_open(schedfile);
     if (rc) goto cleanup;
 
     char db_name[DCP_DB_NAME_SIZE] = {0};
@@ -87,7 +88,6 @@ enum dcp_rc dcp_cli_daemon(int argc, char **argv)
     int64_t db_id = 0;
     rc = dcp_srv_add_db(db_name, dcpfile, &db_id);
     if (rc) goto cleanup;
-    printf("%s added as %s\n", dcpfile, db_name);
 
     rc = dcp_srv_run(false);
     if (rc) goto cleanup;

@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 project(
   deciphon
   VERSION 0.0.4
-  LANGUAGES C)
+  LANGUAGES C
+)
 
 # Generate compile_commands.json file
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -27,12 +28,13 @@ find_package(xxHash REQUIRED)
 add_custom_command(
   OUTPUT sched_schema.c
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed-file
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/sched_schema.sql
-    sched_schema
-    sched_schema.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/sched_schema.sql
+  sched_schema
+  sched_schema.c
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed-file
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/sched_schema.sql
-  VERBATIM)
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/sched_schema.sql
+  VERBATIM
+)
 
 add_library(
   dcp
@@ -77,7 +79,8 @@ add_library(
   src/tok.c
   src/work.c
   src/xfile.c
-  src/xstrlcpy.c)
+  src/xstrlcpy.c
+)
 add_library(DCP::dcp ALIAS dcp)
 
 cbp_hide_functions(dcp)
@@ -94,9 +97,10 @@ endif()
 target_include_directories(
   dcp
   PUBLIC $<INSTALL_INTERFACE:include>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 target_link_libraries(dcp PUBLIC $<$<NOT:$<BOOL:${ARGP_BUILTIN}>>:Argp::argp>)
 target_link_libraries(dcp PUBLIC Threads::Threads)
 target_link_libraries(dcp PUBLIC ATHR::athr)
@@ -113,8 +117,7 @@ target_link_libraries(dcp PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 set_target_properties(dcp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(dcp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 target_compile_features(dcp PRIVATE c_std_11)
-target_compile_definitions(
-  dcp PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPRECATE>)
+target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPRECATE>)
 target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
 target_compile_definitions(dcp PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
@@ -122,8 +125,10 @@ target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
 
 set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in ${VERSION_FILE}
-               @ONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in ${VERSION_FILE}
+  @ONLY
+)
 
 target_compile_definitions(dcp PRIVATE _XOPEN_SOURCE=1)
 set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS};-D_XOPEN_SOURCE=1)
@@ -145,11 +150,12 @@ cbp_install(dcp MERGED)
 install(FILES ${EXPORT_FILE} ${VERSION_FILE} DESTINATION include/dcp)
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
-        ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
-        ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
-        ${CMAKE_CURRENT_BINARY_DIR}/dcp-server
+  ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
+  ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
+  ${CMAKE_CURRENT_BINARY_DIR}/dcp-server
   PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-  DESTINATION bin)
+  DESTINATION bin
+)
 
 enable_testing()
 add_subdirectory(test)

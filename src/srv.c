@@ -7,6 +7,7 @@
 #include "dcp/rc.h"
 #include "elapsed/elapsed.h"
 #include "error.h"
+#include "info.h"
 #include "macros.h"
 #include "sched.h"
 #include "sched_db.h"
@@ -81,7 +82,7 @@ enum dcp_rc dcp_srv_run(bool single_run)
     struct work work = {0};
     work_init(&work);
 
-    printf("Looking for work...\n");
+    info("Starting the server");
     while (!srv.signal.interrupt)
     {
         if ((rc = work_next(&work)) == DCP_NOTFOUND)
@@ -92,13 +93,13 @@ enum dcp_rc dcp_srv_run(bool single_run)
         }
         if (rc != DCP_NEXT) return rc;
 
-        printf("Found work (%lld)...\n", work.job.id);
+        info("Found a new job");
         rc = work_run(&work);
-        printf("Finished work (%lld), rc %d!\n", work.job.id, rc);
         if (rc) return rc;
+        info("Finished a job");
     }
 
-    printf("Goodbye!\n");
+    info("Goodbye!");
     return DCP_DONE;
 }
 
