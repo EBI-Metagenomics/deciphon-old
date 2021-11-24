@@ -91,8 +91,10 @@ enum dcp_rc work_run(struct work *work)
     unsigned match_id = 1;
     while ((rc = next_profile(work)) == DCP_NEXT)
     {
+        printf("Next prof\n");
         for (unsigned i = 0; i < work->ntasks; ++i)
         {
+            printf("Task\n");
             struct work_task *task = &work->tasks[i];
             struct imm_seq seq =
                 imm_seq(imm_str(task->sched_seq.data), get_abc(work));
@@ -103,7 +105,9 @@ enum dcp_rc work_run(struct work *work)
             if ((rc = run_viterbi(work, task))) goto cleanup;
 
             imm_float lrt = compute_lrt(&work->tasks[i]);
+            printf("LRT: %f\n", lrt);
             if (lrt < 100.0f) continue;
+            printf("Found a match!\n");
 
             if ((rc = write_product(work, task, match_id, seq))) goto cleanup;
             match_id++;

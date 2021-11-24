@@ -94,7 +94,7 @@ enum dcp_rc dcp_srv_run(bool single_run)
 
         printf("Found work (%lld)...\n", work.job.id);
         rc = work_run(&work);
-        printf("Finished work (%lld)!\n", work.job.id);
+        printf("Finished work (%lld), rc %d!\n", work.job.id, rc);
         if (rc) return rc;
     }
 
