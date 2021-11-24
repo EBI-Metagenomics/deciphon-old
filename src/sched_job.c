@@ -38,7 +38,7 @@ static char const *const queries[] = {
     [GET_PEND] = \
 "\
         UPDATE job SET\
-            state = 'run'\
+            state = 'run', exec_started = ?\
         WHERE \
             id = (SELECT MIN(id) FROM job WHERE state = 'pend')\
         RETURNING id;\
@@ -100,6 +100,7 @@ enum dcp_rc sched_job_next_pending(int64_t *job_id)
     enum dcp_rc rc = DCP_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, (int64_t)utc_now());
     int code = sqlite3_step(stmt);
     if (code == SQLITE_DONE) return DCP_NOTFOUND;
     if (code != SQLITE_ROW)
