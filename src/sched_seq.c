@@ -27,7 +27,7 @@ static char const *const queries[] = {
                 ?, ?, ?\
             ) RETURNING id;\
 ",
-    [SELECT] = "SELECT id, job_id, name, data FROM seq WHERE id = ?;\
+    [SELECT] = "SELECT id, job_id, name, upper(data) FROM seq WHERE id = ?;\
 ",
     [NEXT] = \
 "\

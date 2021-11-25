@@ -40,8 +40,8 @@ static char const *const queries[] = {
         UPDATE job SET\
             state = 'run', exec_started = ?\
         WHERE \
-            id = (SELECT MIN(id) FROM job WHERE state = 'pend')\
-        RETURNING id;\
+            id = (SELECT MIN(id) FROM job WHERE state = 'pend' LIMIT 1)\
+        RETURNING id LIMIT 1;\
 ",
     [GET_STATE] = "SELECT state FROM job WHERE id = ?;",
     [SELECT] = "SELECT * FROM job WHERE id = ?;\

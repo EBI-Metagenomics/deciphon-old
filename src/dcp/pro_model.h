@@ -12,7 +12,7 @@
 #include "dcp/pro_xtrans.h"
 #include "dcp/rc.h"
 
-#define DCP_PRO_MODEL_CORE_SIZE_MAX 2047
+#define DCP_PRO_MODEL_CORE_SIZE_MAX 2048
 
 struct dcp_pro_model
 {
