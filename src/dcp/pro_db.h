@@ -20,9 +20,12 @@ struct dcp_pro_db
 
 DCP_API extern struct dcp_pro_db const dcp_pro_db_default;
 
-DCP_API enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd);
+void dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db, unsigned nfiles,
+                                    FILE *fp[]);
 
-DCP_API enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
+DCP_API enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fp);
+
+DCP_API enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fp,
                                      struct imm_amino const *amino,
                                      struct imm_nuclt const *nuclt,
                                      struct dcp_pro_cfg cfg);

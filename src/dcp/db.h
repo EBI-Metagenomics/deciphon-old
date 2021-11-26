@@ -6,6 +6,8 @@
 #include "dcp/meta.h"
 #include "dcp/prof_types.h"
 
+#define DCP_DB_HANDLE_MAX_FILES 64
+
 enum dcp_db_mode
 {
     DB_OPEN_NULL,
@@ -40,7 +42,7 @@ struct dcp_db
     } dp;
     struct
     {
-        struct dcp_cmp cmp;
+        struct dcp_cmp cmp[DCP_DB_HANDLE_MAX_FILES];
         enum dcp_db_mode mode;
     } file;
 };

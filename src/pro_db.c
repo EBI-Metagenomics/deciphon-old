@@ -109,12 +109,17 @@ static void pro_db_init(struct dcp_pro_db *db)
     dcp_pro_prof_init(&db->prof, &db->amino, &db->code, DCP_PRO_CFG_DEFAULT);
 }
 
+void dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db, unsigned nfiles,
+                                    FILE *fp[])
+{
+}
+
 enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
 {
     pro_db_init(db);
     db_openr(&db->super, fd);
 
-    struct dcp_cmp *cmp = &db->super.file.cmp;
+    struct dcp_cmp *cmp = &db->super.file.cmp[0];
     imm_float *epsilon = &db->prof.cfg.epsilon;
 
     enum dcp_rc rc = DCP_DONE;
@@ -143,7 +148,7 @@ enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
     db->nuclt = *nuclt;
     imm_nuclt_code_init(&db->code, &db->nuclt);
 
-    struct dcp_cmp *cmp = &db->super.file.cmp;
+    struct dcp_cmp *cmp = &db->super.file.cmp[0];
     unsigned float_size = db->super.float_size;
     imm_float epsilon = db->prof.cfg.epsilon;
 
@@ -192,7 +197,7 @@ enum dcp_rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof)
     if (db_end(&db->super)) return error(DCP_FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
-    return pro_prof_read(prof, &db->super.file.cmp);
+    return pro_prof_read(prof, &db->super.file.cmp[0]);
 }
 
 enum dcp_rc dcp_pro_db_write(struct dcp_pro_db *db,

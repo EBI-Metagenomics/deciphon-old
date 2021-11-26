@@ -9,7 +9,7 @@
 #include "path.h"
 #include <stdio.h>
 
-#define DB_HANDLE_MAX_FILES 64
+#define DB_HANDLE_MAX_FILES DCP_DB_HANDLE_MAX_FILES
 
 struct db_handle
 {

@@ -68,11 +68,12 @@ enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
     else if ((rc = dcp_pro_db_openr(&db->pro, db->fp[0])))
         goto cleanup;
 
+    dcp_pro_db_setup_multi_readers(&db->pro, (unsigned)db->nfiles, db->fp);
+
     db->open_since = utc_now();
     return rc;
 
 cleanup:
-
     close_files(db, 0, db->nfiles, true);
     return rc;
 }
@@ -82,6 +83,11 @@ enum dcp_rc db_handle_close(struct db_handle *db)
     db->open_since = 0;
     enum dcp_rc rc = dcp_pro_db_close(&db->pro);
     if (rc) return rc;
-    if (fclose(db->fp[0])) return error(DCP_IOERROR, "failed to close db");
-    return DCP_DONE;
+
+    if ((rc = close_files(db, 0, db->nfiles, false))) goto cleanup;
+    return rc;
+
+cleanup:
+    close_files(db, 0, db->nfiles, true);
+    return rc;
 }
