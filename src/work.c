@@ -123,7 +123,7 @@ enum dcp_rc open_work(struct work *work)
     enum dcp_rc rc = xfile_tmp_open(&work->prod_file);
     if (rc) goto cleanup;
 
-    if ((rc = db_handle_open(work->db, work->db_path))) goto cleanup;
+    if ((rc = db_handle_open(work->db, work->db_path, 1))) goto cleanup;
     return DCP_DONE;
 
 cleanup:

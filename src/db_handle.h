@@ -9,14 +9,15 @@
 #include "path.h"
 #include <stdio.h>
 
-struct sched;
+#define DB_HANDLE_MAX_FILES 64
 
 struct db_handle
 {
     int64_t id;
     unsigned pool_id;
     struct cco_hnode hnode;
-    FILE *fd;
+    int nfiles;
+    FILE *fp[DB_HANDLE_MAX_FILES];
     uint64_t open_since;
     union
     {
@@ -26,12 +27,8 @@ struct db_handle
 };
 
 void db_handle_init(struct db_handle *db, int64_t id);
-enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE]);
+enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
+                           int nfiles);
 enum dcp_rc db_handle_close(struct db_handle *db);
-
-static inline bool db_handle_is_open(struct db_handle const *db)
-{
-    return db->open_since != 0;
-}
 
 #endif

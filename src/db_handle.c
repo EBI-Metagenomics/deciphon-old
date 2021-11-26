@@ -2,33 +2,79 @@
 #include "db.h"
 #include "dcp/pro_db.h"
 #include "error.h"
+#include "macros.h"
 #include "utc.h"
 #include "xstrlcpy.h"
+#include <string.h>
 
 void db_handle_init(struct db_handle *db, int64_t id)
 {
     db->id = id;
     db->pool_id = 0;
     cco_hnode_init(&db->hnode);
-    db->fd = NULL;
+    db->nfiles = 0;
+    memset(db->fp, 0, MEMBER_SIZE(*db, fp));
     db->open_since = 0;
 }
-enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE])
+
+static enum dcp_rc close_files(struct db_handle *db, int start, int end,
+                               bool ignore_error)
 {
-    if (db_handle_is_open(db)) return db_rewind(&db->pro.super);
-
-    db->fd = fopen(path, "rb");
-    if (!db->fd) return error(DCP_IOERROR, "failed to open db");
-
-    enum dcp_rc rc = dcp_pro_db_openr(&db->pro, db->fd);
-    if (rc)
+    enum dcp_rc rc = DCP_DONE;
+    for (int i = start; i < end; ++i)
     {
-        fclose(db->fd);
-        return rc;
+        if (fclose(db->fp[i]) && !ignore_error)
+        {
+            rc = error(DCP_IOERROR, "failed to close db");
+            break;
+        }
+        db->nfiles--;
     }
+    return rc;
+}
+
+static enum dcp_rc open_files(struct db_handle *db, int start, int end,
+                              char path[DCP_PATH_SIZE])
+{
+    enum dcp_rc rc = DCP_DONE;
+    for (int i = start; i < end; ++i)
+    {
+        if (!(db->fp[i] = fopen(path, "rb")))
+        {
+            rc = error(DCP_IOERROR, "failed to open db");
+            break;
+        }
+        db->nfiles++;
+    }
+    return rc;
+}
+
+enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
+                           int nfiles)
+{
+    enum dcp_rc rc = DCP_DONE;
+    assert(nfiles > 0);
+    bool reset = db->nfiles > 0;
+
+    int n = nfiles - db->nfiles;
+    if (n < 0 && (rc = close_files(db, db->nfiles + n, db->nfiles, false)))
+        goto cleanup;
+
+    if (n > 0 && (rc = open_files(db, db->nfiles, db->nfiles + n, path)))
+        goto cleanup;
+
+    if (reset)
+        db_rewind(&db->pro.super);
+    else if ((rc = dcp_pro_db_openr(&db->pro, db->fp[0])))
+        goto cleanup;
 
     db->open_since = utc_now();
-    return DCP_DONE;
+    return rc;
+
+cleanup:
+
+    close_files(db, 0, db->nfiles, true);
+    return rc;
 }
 
 enum dcp_rc db_handle_close(struct db_handle *db)
@@ -36,6 +82,6 @@ enum dcp_rc db_handle_close(struct db_handle *db)
     db->open_since = 0;
     enum dcp_rc rc = dcp_pro_db_close(&db->pro);
     if (rc) return rc;
-    if (fclose(db->fd)) return error(DCP_IOERROR, "failed to close db");
+    if (fclose(db->fp[0])) return error(DCP_IOERROR, "failed to close db");
     return DCP_DONE;
 }
