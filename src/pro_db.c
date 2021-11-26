@@ -8,6 +8,7 @@
 #include "pro_prof.h"
 #include "third-party/cmp.h"
 #include "xcmp.h"
+#include "xmath.h"
 
 struct dcp_pro_db const dcp_pro_db_default = {0};
 
@@ -113,6 +114,8 @@ static void pro_db_init(struct dcp_pro_db *db)
 void dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db, unsigned nfiles,
                                     FILE *fp[])
 {
+    unsigned n = db_nprofiles(&db->super);
+    xmath_partition_size(n, nfiles, i);
 }
 
 enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)

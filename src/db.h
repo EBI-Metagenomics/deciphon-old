@@ -34,4 +34,9 @@ enum dcp_rc db_record_prof_offset(struct dcp_db *db);
 
 enum dcp_rc db_rewind(struct dcp_db *db);
 
+static inline unsigned db_nprofiles(struct dcp_db const *db)
+{
+    return db->profiles.size;
+}
+
 #endif

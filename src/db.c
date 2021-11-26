@@ -442,16 +442,16 @@ bool dcp_db_end(struct dcp_db const *db) { return db_end(db); }
 
 enum dcp_rc db_record_prof_offset(struct dcp_db *db)
 {
-    FILE *fd = xcmp_fd(&db->file.cmp[0]);
-    if ((db->prof_offset = ftell(fd)) == -1)
+    FILE *fp = xcmp_fd(&db->file.cmp[0]);
+    if ((db->prof_offset = ftell(fp)) == -1)
         return error(DCP_IOERROR, "failed to ftell");
     return DCP_DONE;
 }
 
 enum dcp_rc db_rewind(struct dcp_db *db)
 {
-    FILE *fd = xcmp_fd(&db->file.cmp[0]);
-    if (fseek(fd, db->prof_offset, SEEK_SET) == -1)
+    FILE *fp = xcmp_fd(&db->file.cmp[0]);
+    if (fseek(fp, db->prof_offset, SEEK_SET) == -1)
         return error(DCP_IOERROR, "failed to ftell");
     return DCP_DONE;
 }
