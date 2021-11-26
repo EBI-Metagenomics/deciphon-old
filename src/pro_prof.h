@@ -4,11 +4,11 @@
 #include "dcp/rc.h"
 #include <stdio.h>
 
-struct dcp_cmp;
+struct cmp_ctx_s;
 struct dcp_pro_prof;
 
-enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *ctx);
+enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *ctx);
 enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof,
-                           struct dcp_cmp *ctx);
+                           struct cmp_ctx_s *ctx);
 
 #endif

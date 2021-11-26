@@ -12,7 +12,7 @@ struct dcp_nuclt_dist
     struct imm_codon_marg codonm;
 };
 
-struct dcp_cmp;
+struct cmp_ctx_s;
 
 static inline void dcp_nuclt_dist_init(struct dcp_nuclt_dist *nucltd,
                                        struct imm_nuclt const *nuclt)
@@ -22,9 +22,9 @@ static inline void dcp_nuclt_dist_init(struct dcp_nuclt_dist *nucltd,
 }
 
 DCP_API enum dcp_rc dcp_nuclt_dist_write(struct dcp_nuclt_dist const *ndist,
-                                         struct dcp_cmp *cmp);
+                                         struct cmp_ctx_s *cmp);
 
 DCP_API enum dcp_rc dcp_nuclt_dist_read(struct dcp_nuclt_dist *ndist,
-                                        struct dcp_cmp *cmp);
+                                        struct cmp_ctx_s *cmp);
 
 #endif

@@ -33,16 +33,16 @@ struct dcp_db
         char *data;
         struct
         {
-            struct dcp_cmp cmp;
+            struct cmp_ctx_s cmp;
         } file;
     } mt;
     struct
     {
-        struct dcp_cmp cmp;
+        struct cmp_ctx_s cmp;
     } dp;
     struct
     {
-        struct dcp_cmp cmp[DCP_DB_HANDLE_MAX_FILES];
+        struct cmp_ctx_s cmp[DCP_DB_HANDLE_MAX_FILES];
         enum dcp_db_mode mode;
     } file;
 };

@@ -22,18 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef THIRD_PARTY_CMP_H
-#define THIRD_PARTY_CMP_H
+#ifndef CMP_H__
+#define CMP_H__
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "dcp/cmp.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-typedef dcp_cmp_reader cmp_reader;
-typedef dcp_cmp_skipper cmp_skipper;
-typedef dcp_cmp_writer cmp_writer;
+struct cmp_ctx_s;
+
+#if 0
+typedef bool   (*cmp_reader)(struct cmp_ctx_s *ctx, void *data, size_t limit);
+typedef bool   (*cmp_skipper)(struct cmp_ctx_s *ctx, size_t count);
+typedef size_t (*cmp_writer)(struct cmp_ctx_s *ctx, const void *data,
+                                                    size_t count);
+#endif
 
 enum {
   CMP_TYPE_POSITIVE_FIXNUM, /*  0 */
@@ -99,7 +103,15 @@ union cmp_object_data_u {
   cmp_ext_t ext;
 };
 
-typedef struct dcp_cmp cmp_ctx_t;
+#if 0
+typedef struct cmp_ctx_s {
+  uint8_t      error;
+  void        *buf;
+  cmp_reader   read;
+  cmp_skipper  skip;
+  cmp_writer   write;
+} cmp_ctx_t;
+#endif
 
 typedef struct cmp_object_s {
   uint8_t type;
@@ -291,7 +303,7 @@ bool cmp_read_str_size(cmp_ctx_t *ctx, uint32_t *size);
 
 /*
  * Reads a string from the backend; according to the spec, the string's data
- * ought to be encoded using UTF-8,
+ * ought to be encoded using UTF-8, 
  */
 bool cmp_read_str(cmp_ctx_t *ctx, char *data, uint32_t *size);
 
@@ -559,4 +571,7 @@ bool cmp_object_to_bin(cmp_ctx_t *ctx, const cmp_object_t *obj, void *data, uint
 #define cmp_write_uint     cmp_write_uinteger
 #define cmp_read_sinteger  cmp_read_integer
 
-#endif
+#endif /* CMP_H__ */
+
+/* vi: set et ts=2 sw=2: */
+

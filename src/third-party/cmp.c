@@ -22,10 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include "cmp.h"
 
 static const uint32_t version = 19;
@@ -143,6 +139,8 @@ static uint16_t be16(uint16_t x) {
   return x;
 }
 
+static int16_t sbe16(int16_t x) { return (int16_t)be16((uint16_t)x); }
+
 static uint32_t be32(uint32_t x) {
   char *b = (char *)&x;
 
@@ -158,6 +156,8 @@ static uint32_t be32(uint32_t x) {
 
   return x;
 }
+
+static int32_t sbe32(int32_t x) { return (int32_t)be32((uint32_t)x); }
 
 static uint64_t be64(uint64_t x) {
   char *b = (char *)&x;
@@ -185,6 +185,8 @@ static uint64_t be64(uint64_t x) {
   return x;
 }
 
+static int64_t sbe64(int64_t x) { return (int64_t)be64((uint64_t)x); }
+
 #ifndef CMP_NO_FLOAT
 static float decode_befloat(const char *b) {
   float f = 0.;
@@ -195,6 +197,12 @@ static float decode_befloat(const char *b) {
     fb[1] = b[2];
     fb[2] = b[1];
     fb[3] = b[0];
+  }
+  else {
+    fb[0] = b[0];
+    fb[1] = b[1];
+    fb[2] = b[2];
+    fb[3] = b[3];
   }
 
   return f;
@@ -213,6 +221,16 @@ static double decode_bedouble(const char *b) {
     db[5] = b[2];
     db[6] = b[1];
     db[7] = b[0];
+  }
+  else {
+    db[0] = b[0];
+    db[1] = b[1];
+    db[2] = b[2];
+    db[3] = b[3];
+    db[4] = b[4];
+    db[5] = b[5];
+    db[6] = b[6];
+    db[7] = b[7];
   }
 
   return d;
@@ -629,21 +647,21 @@ static bool read_obj_data(cmp_ctx_t *ctx, uint8_t type_marker,
         ctx->error = DATA_READING_ERROR;
         return false;
       }
-      obj->as.s16 = (int16_t)be16((uint16_t)obj->as.s16);
+      obj->as.s16 = sbe16(obj->as.s16);
       return true;
     case CMP_TYPE_SINT32:
       if (!ctx->read(ctx, &obj->as.s32, sizeof(int32_t))) {
         ctx->error = DATA_READING_ERROR;
         return false;
       }
-      obj->as.s32 = (int32_t)be32((uint32_t)obj->as.s32);
+      obj->as.s32 = sbe32(obj->as.s32);
       return true;
     case CMP_TYPE_SINT64:
       if (!ctx->read(ctx, &obj->as.s64, sizeof(int64_t))) {
         ctx->error = DATA_READING_ERROR;
         return false;
       }
-      obj->as.s64 = (int64_t)be64((uint64_t)obj->as.s64);
+      obj->as.s64 = sbe64(obj->as.s64);
       return true;
     case CMP_TYPE_FLOAT:
     {
@@ -828,7 +846,7 @@ bool cmp_write_s16(cmp_ctx_t *ctx, int16_t s) {
   if (!write_type_marker(ctx, S16_MARKER))
     return false;
 
-  s = (int16_t)be16((uint16_t)s);
+  s = sbe16(s);
 
   return ctx->write(ctx, &s, sizeof(int16_t));
 }
@@ -837,7 +855,7 @@ bool cmp_write_s32(cmp_ctx_t *ctx, int32_t i) {
   if (!write_type_marker(ctx, S32_MARKER))
     return false;
 
-  i = (int32_t)be32((uint32_t)i);
+  i = sbe32(i);
 
   return ctx->write(ctx, &i, sizeof(int32_t));
 }
@@ -846,7 +864,7 @@ bool cmp_write_s64(cmp_ctx_t *ctx, int64_t l) {
   if (!write_type_marker(ctx, S64_MARKER))
     return false;
 
-  l = (int64_t)be64((uint64_t)l);
+  l = sbe64(l);
 
   return ctx->write(ctx, &l, sizeof(int64_t));
 }
@@ -2128,13 +2146,13 @@ bool cmp_read_uint(cmp_ctx_t *ctx, uint32_t *i) {
     case CMP_TYPE_NEGATIVE_FIXNUM:
     case CMP_TYPE_SINT8:
       if (obj.as.s8 >= 0) {
-        *i = (uint32_t)obj.as.s8;
+        *i = (uint8_t)obj.as.s8;
         return true;
       }
       break;
     case CMP_TYPE_SINT16:
       if (obj.as.s16 >= 0) {
-        *i = (uint32_t)obj.as.s16;
+        *i = (uint16_t)obj.as.s16;
         return true;
       }
       break;
@@ -2175,19 +2193,19 @@ bool cmp_read_ulong(cmp_ctx_t *ctx, uint64_t *u) {
     case CMP_TYPE_NEGATIVE_FIXNUM:
     case CMP_TYPE_SINT8:
       if (obj.as.s8 >= 0) {
-        *u = (uint64_t)obj.as.s8;
+        *u = (uint8_t)obj.as.s8;
         return true;
       }
       break;
     case CMP_TYPE_SINT16:
       if (obj.as.s16 >= 0) {
-        *u = (uint64_t)obj.as.s16;
+        *u = (uint16_t)obj.as.s16;
         return true;
       }
       break;
     case CMP_TYPE_SINT32:
       if (obj.as.s32 >= 0) {
-        *u = (uint64_t)obj.as.s32;
+        *u = (uint32_t)obj.as.s32;
         return true;
       }
       break;
@@ -2434,7 +2452,7 @@ bool cmp_read_fixext1_marker(cmp_ctx_t *ctx, int8_t *type) {
 
   if (!cmp_read_object(ctx, &obj))
     return false;
-  
+
   if (obj.type != CMP_TYPE_FIXEXT1) {
     ctx->error = INVALID_TYPE_ERROR;
     return false;
@@ -2460,7 +2478,7 @@ bool cmp_read_fixext2_marker(cmp_ctx_t *ctx, int8_t *type) {
 
   if (!cmp_read_object(ctx, &obj))
     return false;
-  
+
   if (obj.type != CMP_TYPE_FIXEXT2) {
     ctx->error = INVALID_TYPE_ERROR;
     return false;
@@ -2486,7 +2504,7 @@ bool cmp_read_fixext4_marker(cmp_ctx_t *ctx, int8_t *type) {
 
   if (!cmp_read_object(ctx, &obj))
     return false;
-  
+
   if (obj.type != CMP_TYPE_FIXEXT4) {
     ctx->error = INVALID_TYPE_ERROR;
     return false;
@@ -2512,7 +2530,7 @@ bool cmp_read_fixext8_marker(cmp_ctx_t *ctx, int8_t *type) {
 
   if (!cmp_read_object(ctx, &obj))
     return false;
-  
+
   if (obj.type != CMP_TYPE_FIXEXT8) {
     ctx->error = INVALID_TYPE_ERROR;
     return false;
@@ -2538,7 +2556,7 @@ bool cmp_read_fixext16_marker(cmp_ctx_t *ctx, int8_t *type) {
 
   if (!cmp_read_object(ctx, &obj))
     return false;
-  
+
   if (obj.type != CMP_TYPE_FIXEXT16) {
     ctx->error = INVALID_TYPE_ERROR;
     return false;
@@ -3534,3 +3552,4 @@ bool cmp_object_to_bin(cmp_ctx_t *ctx, const cmp_object_t *obj, void *data,
 }
 
 /* vi: set et ts=2 sw=2: */
+

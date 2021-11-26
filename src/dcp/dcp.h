@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 #include "dcp/cli.h"
-#include "dcp/cmp.h"
 #include "dcp/db.h"
 #include "dcp/entry_dist.h"
 #include "dcp/generics.h"

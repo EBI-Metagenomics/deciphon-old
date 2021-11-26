@@ -44,7 +44,7 @@ add_library(
   src/cli_press.c
   src/cli_scan.c
   src/cli_daemon.c
-  src/cmp.c
+  src/xcmp.c
   src/db.c
   src/db_handle.c
   src/db_pool.c

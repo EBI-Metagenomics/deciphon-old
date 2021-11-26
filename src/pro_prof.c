@@ -11,7 +11,9 @@
 #include "prof.h"
 #include "third-party/cmp.h"
 #include "third-party/xrandom.h"
+#include "xcmp.h"
 #include <assert.h>
+#include <stdlib.h>
 
 static void del(struct dcp_prof *prof);
 
@@ -252,9 +254,9 @@ static void del(struct dcp_prof *prof)
     }
 }
 
-enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
+enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
 {
-    FILE *fd = dcp_cmp_fd(cmp);
+    FILE *fd = xcmp_fd(cmp);
     if (imm_dp_read(&prof->null.dp, fd)) return DCP_FAIL;
     if (imm_dp_read(&prof->alt.dp, fd)) return DCP_FAIL;
 
@@ -285,9 +287,10 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct dcp_cmp *cmp)
     return DCP_DONE;
 }
 
-enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof, struct dcp_cmp *cmp)
+enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof,
+                           struct cmp_ctx_s *cmp)
 {
-    FILE *fd = dcp_cmp_fd(cmp);
+    FILE *fd = xcmp_fd(cmp);
     if (imm_dp_write(&prof->null.dp, fd)) return DCP_FAIL;
     if (imm_dp_write(&prof->alt.dp, fd)) return DCP_FAIL;
 

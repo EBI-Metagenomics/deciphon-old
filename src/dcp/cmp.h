@@ -1,47 +1,24 @@
 #ifndef DCP_CMP_H
 #define DCP_CMP_H
 
-/* Wrapper around [CMP library](https://github.com/camgunz/cmp). */
-
-#include "dcp/export.h"
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-struct dcp_cmp;
+struct cmp_ctx_s;
 
-typedef bool (*dcp_cmp_reader)(struct dcp_cmp *cmp, void *data, size_t limit);
-typedef bool (*dcp_cmp_skipper)(struct dcp_cmp *cmp, size_t count);
-typedef size_t (*dcp_cmp_writer)(struct dcp_cmp *cmp, const void *data,
-                                 size_t count);
+typedef bool (*cmp_reader)(struct cmp_ctx_s *ctx, void *data, size_t limit);
+typedef bool (*cmp_skipper)(struct cmp_ctx_s *ctx, size_t count);
+typedef size_t (*cmp_writer)(struct cmp_ctx_s *ctx, const void *data,
+                             size_t count);
 
-struct dcp_cmp
+typedef struct cmp_ctx_s
 {
     uint8_t error;
     void *buf;
-    dcp_cmp_reader read;
-    dcp_cmp_skipper skip;
-    dcp_cmp_writer write;
-};
-
-static inline void dcp_cmp_setup(struct dcp_cmp *cmp, FILE *fd)
-{
-    cmp->buf = fd;
-}
-
-DCP_API struct dcp_cmp dcp_cmp_init(FILE *fd);
-
-static inline FILE *dcp_cmp_fd(struct dcp_cmp *cmp) { return (FILE *)cmp->buf; }
-
-static inline int dcp_cmp_close(struct dcp_cmp *cmp)
-{
-    return fclose(dcp_cmp_fd(cmp));
-}
-
-static inline void dcp_cmp_rewind(struct dcp_cmp *cmp)
-{
-    rewind(dcp_cmp_fd(cmp));
-}
+    cmp_reader read;
+    cmp_skipper skip;
+    cmp_writer write;
+} cmp_ctx_t;
 
 #endif

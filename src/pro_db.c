@@ -7,10 +7,11 @@
 #include "error.h"
 #include "pro_prof.h"
 #include "third-party/cmp.h"
+#include "xcmp.h"
 
 struct dcp_pro_db const dcp_pro_db_default = {0};
 
-static enum dcp_rc read_epsilon(struct dcp_cmp *cmp, unsigned float_bytes,
+static enum dcp_rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
                                 imm_float *epsilon)
 {
     if (float_bytes == 4)
@@ -34,7 +35,7 @@ static enum dcp_rc read_epsilon(struct dcp_cmp *cmp, unsigned float_bytes,
     return DCP_DONE;
 }
 
-static enum dcp_rc write_epsilon(struct dcp_cmp *cmp, unsigned float_bytes,
+static enum dcp_rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
                                  imm_float epsilon)
 {
     if (float_bytes == 4)
@@ -53,7 +54,7 @@ static enum dcp_rc write_epsilon(struct dcp_cmp *cmp, unsigned float_bytes,
     return DCP_DONE;
 }
 
-static enum dcp_rc read_entry_dist(struct dcp_cmp *cmp,
+static enum dcp_rc read_entry_dist(struct cmp_ctx_s *cmp,
                                    enum dcp_entry_dist *edist)
 {
     uint8_t val = 0;
@@ -63,7 +64,7 @@ static enum dcp_rc read_entry_dist(struct dcp_cmp *cmp,
     return DCP_DONE;
 }
 
-static enum dcp_rc write_entry_dist(struct dcp_cmp *cmp,
+static enum dcp_rc write_entry_dist(struct cmp_ctx_s *cmp,
                                     enum dcp_entry_dist edist)
 {
     if (!cmp_write_u8(cmp, (uint8_t)edist))
@@ -119,7 +120,7 @@ enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
     pro_db_init(db);
     db_openr(&db->super, fd);
 
-    struct dcp_cmp *cmp = &db->super.file.cmp[0];
+    struct cmp_ctx_s *cmp = &db->super.file.cmp[0];
     imm_float *epsilon = &db->prof.cfg.epsilon;
 
     enum dcp_rc rc = DCP_DONE;
@@ -148,7 +149,7 @@ enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
     db->nuclt = *nuclt;
     imm_nuclt_code_init(&db->code, &db->nuclt);
 
-    struct dcp_cmp *cmp = &db->super.file.cmp[0];
+    struct cmp_ctx_s *cmp = &db->super.file.cmp[0];
     unsigned float_size = db->super.float_size;
     imm_float epsilon = db->prof.cfg.epsilon;
 
@@ -165,8 +166,8 @@ enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
     return rc;
 
 cleanup:
-    dcp_cmp_close(&db->super.mt.file.cmp);
-    dcp_cmp_close(&db->super.dp.cmp);
+    xcmp_close(&db->super.mt.file.cmp);
+    xcmp_close(&db->super.dp.cmp);
     return rc;
 }
 
