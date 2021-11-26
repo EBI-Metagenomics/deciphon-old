@@ -41,6 +41,8 @@ void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
 {
     db->prof_typeid = prof_typeid;
     db->float_size = IMM_FLOAT_BYTES;
+    db->npartitions = 1;
+    memset(db->partition_offset, 0, MEMBER_SIZE(*db, partition_offset));
     db->profiles.size = 0;
     db->profiles.curr_idx = 0;
     db->mt.offset = NULL;
@@ -49,7 +51,9 @@ void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
     db->mt.data = NULL;
     db->mt.file.cmp = xcmp_init(NULL);
     db->dp.cmp = xcmp_init(NULL);
-    db->file.cmp[0] = xcmp_init(NULL);
+    unsigned n = ARRAY_SIZE(MEMBER_REF(*db, partition_offset));
+    for (unsigned i = 0; i < n; ++i)
+        db->file.cmp[i] = xcmp_init(NULL);
     db->file.mode = DB_OPEN_NULL;
 }
 
@@ -440,18 +444,18 @@ struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
 
 bool dcp_db_end(struct dcp_db const *db) { return db_end(db); }
 
-enum dcp_rc db_record_prof_offset(struct dcp_db *db)
+enum dcp_rc db_record_first_partition_offset(struct dcp_db *db)
 {
     FILE *fp = xcmp_fd(&db->file.cmp[0]);
-    if ((db->prof_offset = ftell(fp)) == -1)
-        return error(DCP_IOERROR, "failed to ftell");
+    if ((db->partition_offset[0] = ftello(fp)) == -1)
+        return error(DCP_IOERROR, "failed to ftello");
     return DCP_DONE;
 }
 
 enum dcp_rc db_rewind(struct dcp_db *db)
 {
     FILE *fp = xcmp_fd(&db->file.cmp[0]);
-    if (fseek(fp, db->prof_offset, SEEK_SET) == -1)
-        return error(DCP_IOERROR, "failed to ftell");
+    if (fseek(fp, db->partition_offset[0], SEEK_SET) == -1)
+        return error(DCP_IOERROR, "failed to fseek");
     return DCP_DONE;
 }

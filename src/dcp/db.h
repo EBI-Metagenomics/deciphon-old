@@ -19,12 +19,13 @@ struct dcp_db
 {
     enum dcp_prof_typeid prof_typeid;
     unsigned float_size;
+    unsigned npartitions;
     struct
     {
         dcp_profile_idx_t size;
         dcp_profile_idx_t curr_idx;
     } profiles;
-    long prof_offset;
+    off_t partition_offset[DCP_DB_HANDLE_MAX_FILES];
     struct
     {
         uint32_t *offset;

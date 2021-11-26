@@ -115,7 +115,8 @@ void dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db, unsigned nfiles,
                                     FILE *fp[])
 {
     unsigned n = db_nprofiles(&db->super);
-    xmath_partition_size(n, nfiles, i);
+    assert(nfiles <= n);
+    /* xmath_partition_size(n, nfiles, i); */
 }
 
 enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
@@ -139,7 +140,7 @@ enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
 
     imm_code_init(&db->code.super, imm_super(&db->nuclt));
     assert(db->super.prof_typeid == DCP_PRO_PROFILE);
-    return db_record_prof_offset(&db->super);
+    return db_record_first_partition_offset(&db->super);
 }
 
 enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
