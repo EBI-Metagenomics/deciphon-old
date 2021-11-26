@@ -27,7 +27,7 @@ void progress_file_start(struct progress_file *p, bool enabled)
     p->enabled = enabled;
     if (!p->enabled) return;
 
-    if ((p->pos = ftell(p->fd)) == -1L)
+    if ((p->pos = ftello(p->fd)) == -1L)
     {
         error(DCP_IOERROR, FTELL_FAILED_MSG);
         p->enabled = false;
@@ -56,7 +56,7 @@ void progress_file_update(struct progress_file *p)
 {
     if (!p->enabled) return;
 
-    long curr_pos = ftell(p->fd);
+    off_t curr_pos = ftello(p->fd);
     if (curr_pos == -1L)
     {
         error(DCP_IOERROR, FTELL_FAILED_MSG);
