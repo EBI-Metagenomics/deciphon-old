@@ -8,22 +8,23 @@ void test_srv_setup(void);
 void test_srv_reopen(void);
 void test_srv_std_db(void);
 void test_srv_submit_job(void);
-void test_srv_submit_and_fetch_job(void);
+void test_srv_submit_and_fetch_job(unsigned num_threads);
 
 int main(void)
 {
-    test_srv_setup();
-    test_srv_reopen();
-    test_srv_std_db();
-    test_srv_submit_job();
-    test_srv_submit_and_fetch_job();
+    /* test_srv_setup(); */
+    /* test_srv_reopen(); */
+    /* test_srv_std_db(); */
+    /* test_srv_submit_job(); */
+    /* test_srv_submit_and_fetch_job(1); */
+    test_srv_submit_and_fetch_job(4);
     return hope_status();
 }
 
 void test_srv_setup(void)
 {
     remove(TMPDIR "/setup.sqlite3");
-    EQ(dcp_srv_open(TMPDIR "/setup.sqlite3"), DCP_DONE);
+    EQ(dcp_srv_open(TMPDIR "/setup.sqlite3", 1), DCP_DONE);
     EQ(dcp_srv_close(), DCP_DONE);
 }
 
@@ -31,10 +32,10 @@ void test_srv_reopen(void)
 {
     remove(TMPDIR "/reopen.sqlite3");
 
-    EQ(dcp_srv_open(TMPDIR "/reopen.sqlite3"), DCP_DONE);
+    EQ(dcp_srv_open(TMPDIR "/reopen.sqlite3", 1), DCP_DONE);
     EQ(dcp_srv_close(), DCP_DONE);
 
-    EQ(dcp_srv_open(TMPDIR "/reopen.sqlite3"), DCP_DONE);
+    EQ(dcp_srv_open(TMPDIR "/reopen.sqlite3", 1), DCP_DONE);
     EQ(dcp_srv_close(), DCP_DONE);
 }
 
@@ -45,7 +46,7 @@ void test_srv_std_db(void)
 
     remove(db_path);
 
-    EQ(dcp_srv_open(db_path), DCP_DONE);
+    EQ(dcp_srv_open(db_path, 1), DCP_DONE);
 
     std_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
@@ -60,7 +61,7 @@ void test_srv_submit_job(void)
     char const ex_path[] = TMPDIR "/std_example1.dcp";
     remove(db_path);
 
-    EQ(dcp_srv_open(db_path), DCP_DONE);
+    EQ(dcp_srv_open(db_path, 1), DCP_DONE);
 
     std_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
@@ -81,13 +82,13 @@ void test_srv_submit_job(void)
     EQ(dcp_srv_close(), DCP_DONE);
 }
 
-void test_srv_submit_and_fetch_job(void)
+void test_srv_submit_and_fetch_job(unsigned num_threads)
 {
     char const db_path[] = TMPDIR "/submit_and_fetch_job.sqlite3";
     char const ex_path[] = TMPDIR "/pro_example1.dcp";
     remove(db_path);
 
-    EQ(dcp_srv_open(db_path), DCP_DONE);
+    EQ(dcp_srv_open(db_path, num_threads), DCP_DONE);
 
     pro_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
