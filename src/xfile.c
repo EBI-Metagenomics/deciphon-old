@@ -55,7 +55,7 @@ enum dcp_rc xfile_copy(FILE *restrict dst, FILE *restrict src)
     return DCP_DONE;
 }
 
-bool xfile_is_readable(char const filepath[DCP_PATH_SIZE])
+bool xfile_is_readable(char const *filepath)
 {
     FILE *file = NULL;
     if ((file = fopen(filepath, "r")))
@@ -66,7 +66,7 @@ bool xfile_is_readable(char const filepath[DCP_PATH_SIZE])
     return false;
 }
 
-enum dcp_rc xfile_mktemp(char filepath[DCP_PATH_SIZE])
+enum dcp_rc xfile_mktemp(char *filepath)
 {
     if (mkstemp(filepath) == -1) return error(DCP_IOERROR, "mkstemp failed");
     return DCP_DONE;

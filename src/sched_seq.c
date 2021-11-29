@@ -50,8 +50,7 @@ cleanup:
     return rc;
 }
 
-void sched_seq_setup(struct sched_seq *seq, char const name[DCP_SEQ_NAME_SIZE],
-                     char const data[DCP_MATCH_DATA_SIZE])
+void sched_seq_setup(struct sched_seq *seq, char const *name, char const *data)
 {
     xstrlcpy(seq->name, name, DCP_SEQ_NAME_SIZE);
     xstrlcpy(seq->data, data, DCP_MATCH_DATA_SIZE);

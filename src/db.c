@@ -10,6 +10,7 @@
 #include "xcmp.h"
 #include "xfile.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B

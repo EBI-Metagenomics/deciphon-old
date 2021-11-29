@@ -1,7 +1,7 @@
 #ifndef ILOG2_H
 #define ILOG2_H
 
-#include "fls.h"
+#include "bitops.h"
 
 /**
  * ilog2 - log base 2 of 32-bit or a 64-bit unsigned value
@@ -18,8 +18,8 @@
      : sizeof(x) <= 4        ? ilog2_u32(x)                                    \
                              : ilog2_u64(x))
 
-static inline unsigned ilog2_u32(uint32_t n) { return fls32(n) - 1; }
+static inline unsigned ilog2_u32(uint32_t n) { return bitops_fls32(n) - 1; }
 
-static inline unsigned ilog2_u64(uint64_t n) { return fls64(n) - 1; }
+static inline unsigned ilog2_u64(uint64_t n) { return bitops_fls64(n) - 1; }
 
 #endif

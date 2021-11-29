@@ -20,13 +20,13 @@ void sched_prod_set_match_id(struct dcp_prod *, int64_t);
 
 void sched_prod_set_prof_name(struct dcp_prod *,
                               char const[DCP_PROF_NAME_SIZE]);
-void sched_prod_set_abc_name(struct dcp_prod *, char const[DCP_ABC_NAME_SIZE]);
+void sched_prod_set_abc_name(struct dcp_prod *, char const *);
 
 void sched_prod_set_loglik(struct dcp_prod *, double);
 void sched_prod_set_null_loglik(struct dcp_prod *, double);
 
-void sched_prod_set_model(struct dcp_prod *, char const[DCP_MODEL_SIZE]);
-void sched_prod_set_version(struct dcp_prod *, char const[DCP_VERSION_SIZE]);
+void sched_prod_set_model(struct dcp_prod *, char const *);
+void sched_prod_set_version(struct dcp_prod *, char const *);
 
 enum dcp_rc sched_prod_write_preamble(struct dcp_prod *prod, FILE *restrict fd);
 enum dcp_rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *);

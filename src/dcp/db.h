@@ -5,6 +5,7 @@
 #include "dcp/export.h"
 #include "dcp/meta.h"
 #include "dcp/prof_types.h"
+#include <sys/types.h>
 
 #define DCP_DB_HANDLE_MAX_FILES 64
 

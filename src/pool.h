@@ -2,15 +2,15 @@
 #define POOL_H
 
 #include "bitops.h"
-#include "bits.h"
+#include "size.h"
 #include <limits.h>
 #include <stdbool.h>
 
-#define POOL_SIZE BITS_PER_INT
+#define POOL_SIZE SIZE_BITS_PER_INT
 
 struct pool
 {
-    unsigned avail;
+    unsigned long avail;
     unsigned *ids[POOL_SIZE];
 };
 
@@ -20,7 +20,7 @@ unsigned *pool_pop(struct pool *pool);
 
 static inline void pool_put(struct pool *pool, unsigned *id)
 {
-    BITOPS_SET(pool->avail, *id);
+    bitops_set(*id, &pool->avail);
 }
 
 static inline bool pool_full(struct pool *pool)

@@ -115,8 +115,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_job_set_error(int64_t job_id,
-                                char const error[DCP_ERROR_SIZE],
+enum dcp_rc sched_job_set_error(int64_t job_id, char const *error,
                                 int64_t exec_ended)
 {
     struct sqlite3_stmt *stmt = stmts[SET_ERROR];

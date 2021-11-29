@@ -19,8 +19,8 @@ enum dcp_rc xfile_tmp_rewind(struct xfile_tmp *file);
 void xfile_tmp_destroy(struct xfile_tmp *file);
 
 enum dcp_rc xfile_copy(FILE *restrict dst, FILE *restrict src);
-bool xfile_is_readable(char const filepath[DCP_PATH_SIZE]);
-enum dcp_rc xfile_mktemp(char filepath[DCP_PATH_SIZE]);
+bool xfile_is_readable(char const *filepath);
+enum dcp_rc xfile_mktemp(char *filepath);
 
 enum dcp_rc xfile_hash(FILE *restrict fp, uint64_t *hash);
 

@@ -7,6 +7,7 @@
 #include "to.h"
 #include "tok.h"
 #include "xstrlcpy.h"
+#include <inttypes.h>
 #include <sqlite3.h>
 #include <stdlib.h>
 
@@ -197,8 +198,7 @@ void sched_prod_set_prof_name(struct dcp_prod *prod,
     xstrlcpy(prod->prof_name, prof_name, DCP_PROF_NAME_SIZE);
 }
 
-void sched_prod_set_abc_name(struct dcp_prod *prod,
-                             char const abc_name[DCP_ABC_NAME_SIZE])
+void sched_prod_set_abc_name(struct dcp_prod *prod, char const *abc_name)
 {
     xstrlcpy(prod->abc_name, abc_name, DCP_ABC_NAME_SIZE);
 }
@@ -213,14 +213,12 @@ void sched_prod_set_null_loglik(struct dcp_prod *prod, double null_loglik)
     prod->null_loglik = null_loglik;
 }
 
-void sched_prod_set_model(struct dcp_prod *prod,
-                          char const model[DCP_MODEL_SIZE])
+void sched_prod_set_model(struct dcp_prod *prod, char const *model)
 {
     xstrlcpy(prod->model, model, DCP_MODEL_SIZE);
 }
 
-void sched_prod_set_version(struct dcp_prod *prod,
-                            char const version[DCP_VERSION_SIZE])
+void sched_prod_set_version(struct dcp_prod *prod, char const *version)
 {
     xstrlcpy(prod->version, version, DCP_VERSION_SIZE);
 }
@@ -229,9 +227,9 @@ void sched_prod_set_version(struct dcp_prod *prod,
 
 enum dcp_rc sched_prod_write_preamble(struct dcp_prod *p, FILE *restrict fd)
 {
-    if (fprintf(fd, "%lld" TAB, p->job_id) < 0) return ERROR_WRITE;
-    if (fprintf(fd, "%lld" TAB, p->seq_id) < 0) return ERROR_WRITE;
-    if (fprintf(fd, "%lld" TAB, p->match_id) < 0) return ERROR_WRITE;
+    if (fprintf(fd, "%" PRId64 TAB, p->job_id) < 0) return ERROR_WRITE;
+    if (fprintf(fd, "%" PRId64 TAB, p->seq_id) < 0) return ERROR_WRITE;
+    if (fprintf(fd, "%" PRId64 TAB, p->match_id) < 0) return ERROR_WRITE;
 
     if (fprintf(fd, "%s" TAB, p->prof_name) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%s" TAB, p->abc_name) < 0) return ERROR_WRITE;
