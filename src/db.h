@@ -6,8 +6,9 @@
 
 void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid);
 
-void db_openr(struct dcp_db *db, FILE *restrict fd);
-enum dcp_rc db_openw(struct dcp_db *db, FILE *restrict fd);
+void db_openr(struct dcp_db *db, FILE *restrict fp);
+void db_set_files(struct dcp_db *db, unsigned nfiles, FILE *restrict fp[]);
+enum dcp_rc db_openw(struct dcp_db *db, FILE *restrict fp);
 enum dcp_rc db_close(struct dcp_db *db);
 bool db_end(struct dcp_db const *db);
 

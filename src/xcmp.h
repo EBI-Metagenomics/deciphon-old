@@ -17,13 +17,13 @@ size_t xcmp_write(struct cmp_ctx_s *, const void *data, size_t count);
 struct cmp_ctx_s xcmp_init(FILE *fp);
 void xcmp_setup(struct cmp_ctx_s *cmp, FILE *fp);
 
-static inline FILE *xcmp_fd(struct cmp_ctx_s *cmp) { return (FILE *)cmp->buf; }
+static inline FILE *xcmp_fp(struct cmp_ctx_s *cmp) { return (FILE *)cmp->buf; }
 
 static inline int xcmp_close(struct cmp_ctx_s *cmp)
 {
-    return fclose(xcmp_fd(cmp));
+    return fclose(xcmp_fp(cmp));
 }
 
-static inline void xcmp_rewind(struct cmp_ctx_s *cmp) { rewind(xcmp_fd(cmp)); }
+static inline void xcmp_rewind(struct cmp_ctx_s *cmp) { rewind(xcmp_fp(cmp)); }
 
 #endif

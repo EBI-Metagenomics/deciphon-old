@@ -4,6 +4,7 @@
 #include "error.h"
 #include "macros.h"
 #include "utc.h"
+#include "xmath.h"
 #include "xstrlcpy.h"
 #include <string.h>
 
@@ -50,22 +51,24 @@ static enum dcp_rc open_files(struct db_handle *db, int start, int end,
 }
 
 enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
-                           int nfiles)
+                           unsigned nfiles)
 {
     enum dcp_rc rc = DCP_DONE;
     assert(nfiles > 0);
-    bool reset = db->nfiles > 0;
+    if (db->nfiles == 0)
+    {
+        if ((rc = open_files(db, 0, 1, path))) goto cleanup;
+        if ((rc = dcp_pro_db_openr(&db->pro, db->fp[0]))) goto cleanup;
+    }
+    else
+        db_rewind(&db->pro.super);
 
-    int n = nfiles - db->nfiles;
+    int num_files = (int)xmath_min(db_nprofiles(&db->pro.super), nfiles);
+    int n = num_files - db->nfiles;
     if (n < 0 && (rc = close_files(db, db->nfiles + n, db->nfiles, false)))
         goto cleanup;
 
     if (n > 0 && (rc = open_files(db, db->nfiles, db->nfiles + n, path)))
-        goto cleanup;
-
-    if (reset)
-        db_rewind(&db->pro.super);
-    else if ((rc = dcp_pro_db_openr(&db->pro, db->fp[0])))
         goto cleanup;
 
     rc = dcp_pro_db_setup_multi_readers(&db->pro, (unsigned)db->nfiles, db->fp);

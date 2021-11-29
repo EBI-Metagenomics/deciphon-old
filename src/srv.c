@@ -24,18 +24,20 @@ static struct dcp_srv
         volatile sig_atomic_t interrupt;
         struct sigaction action;
     } signal;
+    unsigned num_threads;
     struct dcp_job job;
     struct dcp_prod prod;
 } srv = {0};
 
 static void signal_interrupt(int signum) { srv.signal.interrupt = 1; }
 
-enum dcp_rc dcp_srv_open(char const *filepath)
+enum dcp_rc dcp_srv_open(char const *filepath, unsigned num_threads)
 {
     srv.signal.action.sa_handler = &signal_interrupt;
     sigemptyset(&srv.signal.action.sa_mask);
     sigaction(SIGINT, &srv.signal.action, NULL);
     db_pool_module_init();
+    srv.num_threads = num_threads;
 
     enum dcp_rc rc = DCP_DONE;
     if ((rc = sched_setup(filepath))) return rc;
@@ -94,7 +96,7 @@ enum dcp_rc dcp_srv_run(bool single_run)
         if (rc != DCP_NEXT) return rc;
 
         info("Found a new job");
-        rc = work_run(&work);
+        rc = work_run(&work, srv.num_threads);
         if (rc) return rc;
         info("Finished a job");
     }

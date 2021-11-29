@@ -77,7 +77,7 @@ enum dcp_rc dcp_cli_daemon(int argc, char **argv)
     dcp_log_setup(print_log_put, NULL);
     log_setup(LOG_ERROR, syslog_print, flush_nop, NULL);
 
-    rc = dcp_srv_open(schedfile);
+    rc = dcp_srv_open(schedfile, 1);
     if (rc) goto cleanup;
 
     char db_name[DCP_DB_NAME_SIZE] = {0};

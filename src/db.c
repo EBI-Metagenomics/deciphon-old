@@ -57,18 +57,24 @@ void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
     db->file.mode = DB_OPEN_NULL;
 }
 
-void db_openr(struct dcp_db *db, FILE *restrict fd)
+void db_openr(struct dcp_db *db, FILE *restrict fp)
 {
-    xcmp_setup(&db->file.cmp[0], fd);
+    xcmp_setup(&db->file.cmp[0], fp);
     db->file.mode = DB_OPEN_READ;
 }
 
-enum dcp_rc db_openw(struct dcp_db *db, FILE *restrict fd)
+void db_set_files(struct dcp_db *db, unsigned nfiles, FILE *restrict fp[])
+{
+    for (unsigned i = 0; i < nfiles; ++i)
+        xcmp_setup(&db->file.cmp[i], fp[i]);
+}
+
+enum dcp_rc db_openw(struct dcp_db *db, FILE *restrict fp)
 {
     enum dcp_rc rc = init_tmpdp(db);
     if (rc) return rc;
 
-    xcmp_setup(&db->file.cmp[0], fd);
+    xcmp_setup(&db->file.cmp[0], fp);
     db->file.mode = DB_OPEN_WRITE;
 
     return init_tmpmeta(db);
@@ -141,7 +147,7 @@ static enum dcp_rc closew(struct dcp_db *db)
     }
 
     xcmp_rewind(&db->dp.cmp);
-    if ((rc = xfile_copy(xcmp_fd(&db->file.cmp[0]), xcmp_fd(&db->dp.cmp))))
+    if ((rc = xfile_copy(xcmp_fp(&db->file.cmp[0]), xcmp_fp(&db->dp.cmp))))
         goto cleanup;
 
     if (xcmp_close(&db->dp.cmp))
@@ -446,7 +452,7 @@ bool dcp_db_end(struct dcp_db const *db) { return db_end(db); }
 
 enum dcp_rc db_current_offset(struct dcp_db *db, off_t *offset)
 {
-    FILE *fp = xcmp_fd(&db->file.cmp[0]);
+    FILE *fp = xcmp_fp(&db->file.cmp[0]);
     if ((*offset = ftello(fp)) == -1)
         return error(DCP_IOERROR, "failed to ftello");
     return DCP_DONE;
@@ -461,7 +467,7 @@ enum dcp_rc db_rewind(struct dcp_db *db)
 {
     for (unsigned i = 0; i < db->npartitions; ++i)
     {
-        FILE *fp = xcmp_fd(&db->file.cmp[i]);
+        FILE *fp = xcmp_fp(&db->file.cmp[i]);
         if (fseek(fp, db->partition_offset[i], SEEK_SET) == -1)
             return error(DCP_IOERROR, "failed to fseek");
     }

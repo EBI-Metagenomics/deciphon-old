@@ -17,24 +17,24 @@
 enum dcp_rc xfile_tmp_open(struct xfile_tmp *file)
 {
     xstrlcpy(file->path, PATH_TEMP_TEMPLATE, MEMBER_SIZE(*file, path));
-    file->fd = NULL;
+    file->fp = NULL;
     enum dcp_rc rc = xfile_mktemp(file->path);
     if (rc) return rc;
-    if (!(file->fd = fopen(file->path, "wb+")))
+    if (!(file->fp = fopen(file->path, "wb+")))
         rc = error(DCP_IOERROR, "failed to open prod file");
     return rc;
 }
 
 enum dcp_rc xfile_tmp_rewind(struct xfile_tmp *file)
 {
-    if (fflush(file->fd)) return error(DCP_IOERROR, "failed to flush file");
-    rewind(file->fd);
+    if (fflush(file->fp)) return error(DCP_IOERROR, "failed to flush file");
+    rewind(file->fp);
     return DCP_DONE;
 }
 
 void xfile_tmp_destroy(struct xfile_tmp *file)
 {
-    fclose(file->fd);
+    fclose(file->fp);
     remove(file->path);
 }
 
@@ -77,7 +77,7 @@ enum dcp_rc xfile_mktemp(char filepath[DCP_PATH_SIZE])
 
 static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
 
-enum dcp_rc xfile_hash(FILE *restrict fd, uint64_t *hash)
+enum dcp_rc xfile_hash(FILE *restrict fp, uint64_t *hash)
 {
     enum dcp_rc rc = DCP_DONE;
     XXH64_state_t *const state = XXH64_createState();
@@ -90,9 +90,9 @@ enum dcp_rc xfile_hash(FILE *restrict fd, uint64_t *hash)
 
     size_t n = 0;
     unsigned char buffer[BUFFSIZE] = {0};
-    while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, fd)) > 0)
+    while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, fp)) > 0)
     {
-        if (n < BUFFSIZE && ferror(fd))
+        if (n < BUFFSIZE && ferror(fp))
         {
             rc = error(DCP_IOERROR, "failed to read file");
             goto cleanup;
@@ -100,7 +100,7 @@ enum dcp_rc xfile_hash(FILE *restrict fd, uint64_t *hash)
 
         XXH64_update(state, buffer, n);
     }
-    if (ferror(fd))
+    if (ferror(fp))
     {
         rc = error(DCP_IOERROR, "failed to read file");
         goto cleanup;

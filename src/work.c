@@ -10,10 +10,11 @@
 #include "sched_db.h"
 #include "sched_job.h"
 #include "utc.h"
+#include "xmath.h"
 #include "xstrlcpy.h"
 #include <libgen.h>
 
-enum dcp_rc open_work(struct work *work);
+enum dcp_rc open_work(struct work *work, unsigned num_threads);
 enum dcp_rc close_work(struct work *work);
 enum dcp_rc next_profile(struct work *work);
 enum dcp_rc prepare_task_for_dp(struct imm_task **task,
@@ -21,9 +22,11 @@ enum dcp_rc prepare_task_for_dp(struct imm_task **task,
 enum dcp_rc prepare_task_for_prof(struct work *work, struct work_task *task);
 enum dcp_rc prepare_task_for_seq(struct work_task *task, struct imm_seq *seq);
 enum dcp_rc run_viterbi(struct work *work, struct work_task *task);
-static inline imm_float compute_lrt(struct work_task const *task)
+static inline double compute_lrt(struct work_task const *task)
 {
-    return -2 * (task->null.prod.loglik - task->alt.prod.loglik);
+    printf("Nul (%f) Alt (%f)\n", task->null.prod.loglik,
+           task->alt.prod.loglik);
+    return xmath_lrt(task->null.prod.loglik, task->alt.prod.loglik);
 }
 static inline struct imm_abc const *get_abc(struct work const *work)
 {
@@ -83,9 +86,9 @@ cleanup:
     return DCP_NEXT;
 }
 
-enum dcp_rc work_run(struct work *work)
+enum dcp_rc work_run(struct work *work, unsigned num_threads)
 {
-    enum dcp_rc rc = open_work(work);
+    enum dcp_rc rc = open_work(work, num_threads);
     if (rc) return rc;
 
     unsigned match_id = 1;
@@ -102,13 +105,17 @@ enum dcp_rc work_run(struct work *work)
             prepare_prod(task);
             if ((rc = run_viterbi(work, task))) goto cleanup;
 
-            imm_float lrt = compute_lrt(&work->tasks[i]);
+            double lrt = compute_lrt(&work->tasks[i]);
+            printf("Match_id (%d), lrt (%f)\n", match_id, lrt);
+            if (lrt < -100000.f)
+                printf("Weird                                      lrt\n");
             if (lrt < 100.0f) continue;
 
             if ((rc = write_product(work, task, match_id, seq))) goto cleanup;
             match_id++;
         }
     }
+    printf("\n");
 
     return close_work(work);
 
@@ -118,12 +125,13 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc open_work(struct work *work)
+enum dcp_rc open_work(struct work *work, unsigned num_threads)
 {
     enum dcp_rc rc = xfile_tmp_open(&work->prod_file);
     if (rc) goto cleanup;
 
-    if ((rc = db_handle_open(work->db, work->db_path, 1))) goto cleanup;
+    rc = db_handle_open(work->db, work->db_path, num_threads);
+    if (rc) goto cleanup;
     return DCP_DONE;
 
 cleanup:
@@ -145,7 +153,7 @@ enum dcp_rc close_work(struct work *work)
     }
     else
     {
-        rc = sched_prod_add_from_tsv(work->prod_file.fd);
+        rc = sched_prod_add_from_tsv(work->prod_file.fp);
         if (rc) goto cleanup;
         rc = sched_job_set_done(work->job.id, exec_ended);
         if (rc) goto cleanup;
@@ -235,7 +243,7 @@ enum dcp_rc write_product(struct work *work, struct work_task *task,
     sched_prod_set_model(&task->prod, "pro");
     sched_prod_set_version(&task->prod, DCP_VERSION);
 
-    rc = sched_prod_write_preamble(&task->prod, work->prod_file.fd);
+    rc = sched_prod_write_preamble(&task->prod, work->prod_file.fp);
     if (rc) return rc;
 
     unsigned start = 0;
@@ -260,13 +268,13 @@ enum dcp_rc write_product(struct work *work, struct work_task *task,
         }
         if (idx > 0 && idx + 1 <= imm_path_nsteps(path))
         {
-            rc = sched_prod_write_match_sep(work->prod_file.fd);
+            rc = sched_prod_write_match_sep(work->prod_file.fp);
             if (rc) return rc;
         }
-        if ((rc = sched_prod_write_match(work->prod_file.fd, &match)))
+        if ((rc = sched_prod_write_match(work->prod_file.fp, &match)))
             return rc;
         start += step->seqlen;
     }
-    rc = sched_prod_write_nl(work->prod_file.fd);
+    rc = sched_prod_write_nl(work->prod_file.fp);
     return rc;
 }

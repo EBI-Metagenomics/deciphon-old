@@ -81,7 +81,7 @@ enum dcp_rc dcp_std_db_read(struct dcp_std_db *db, struct dcp_std_prof *prof)
     if (db_end(&db->super)) return error(DCP_FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
-    return std_prof_read(prof, xcmp_fd(&db->super.file.cmp[0]));
+    return std_prof_read(prof, xcmp_fp(&db->super.file.cmp[0]));
 }
 
 enum dcp_rc dcp_std_db_write(struct dcp_std_db *db,
@@ -90,7 +90,7 @@ enum dcp_rc dcp_std_db_write(struct dcp_std_db *db,
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum dcp_rc rc = DCP_DONE;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
-    if ((rc = std_prof_write(prof, xcmp_fd(&db->super.dp.cmp)))) return rc;
+    if ((rc = std_prof_write(prof, xcmp_fp(&db->super.dp.cmp)))) return rc;
     db->super.profiles.size++;
     return rc;
 }

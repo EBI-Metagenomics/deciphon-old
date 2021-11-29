@@ -11,7 +11,7 @@
 
 struct dcp_job;
 
-DCP_API enum dcp_rc dcp_srv_open(char const *filepath);
+DCP_API enum dcp_rc dcp_srv_open(char const *filepath, unsigned num_threads);
 DCP_API enum dcp_rc dcp_srv_close(void);
 DCP_API enum dcp_rc dcp_srv_add_db(char const *name, char const *filepath,
                                    int64_t *id);

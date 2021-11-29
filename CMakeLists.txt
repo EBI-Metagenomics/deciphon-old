@@ -40,11 +40,10 @@ add_library(
   dcp
   sched_schema.c
   src/cli.c
+  src/cli_daemon.c
   src/cli_info.c
   src/cli_press.c
   src/cli_scan.c
-  src/cli_daemon.c
-  src/xcmp.c
   src/db.c
   src/db_handle.c
   src/db_pool.c
@@ -61,6 +60,7 @@ add_library(
   src/pro_prof.c
   src/pro_reader.c
   src/pro_state.c
+  src/prod.c
   src/progress_file.c
   src/row.c
   src/sched.c
@@ -78,6 +78,7 @@ add_library(
   src/to.c
   src/tok.c
   src/work.c
+  src/xcmp.c
   src/xfile.c
   src/xstrlcpy.c
 )

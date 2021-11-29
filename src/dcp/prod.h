@@ -1,6 +1,7 @@
 #ifndef DCP_PROD_H
 #define DCP_PROD_H
 
+#include "imm/imm.h"
 #include "limits.h"
 #include <stdint.h>
 
@@ -23,5 +24,7 @@ struct dcp_prod
 
     char match_data[DCP_MATCH_DATA_SIZE];
 };
+
+IMM_API double dcp_prod_lrt(struct dcp_prod const *prod);
 
 #endif

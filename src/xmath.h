@@ -28,4 +28,9 @@ static unsigned xmath_partition_size(unsigned nelems, unsigned nparts,
     return xmath_min(size, nelems - size * idx);
 }
 
+static inline double xmath_lrt(double null_loglik, double alt_loglik)
+{
+    return -2 * (null_loglik - alt_loglik);
+}
+
 #endif

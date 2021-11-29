@@ -126,7 +126,7 @@ enum dcp_rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
     while (!(rc = dcp_pro_db_read(db, prof)) && part < nfiles)
     {
         size++;
-        if (size >= xmath_partition_size(n, nfiles, part))
+        if (size >= xmath_partition_size(n, nfiles, part - 1))
         {
             rc = db_current_offset(&db->super,
                                    db->super.partition_offset + part);
@@ -142,6 +142,7 @@ enum dcp_rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
 
     if (!db_end(&db->super)) return rc;
     db->super.npartitions = nfiles;
+    db_set_files(&db->super, nfiles, fp);
     return DCP_DONE;
 }
 
