@@ -68,7 +68,9 @@ enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
     else if ((rc = dcp_pro_db_openr(&db->pro, db->fp[0])))
         goto cleanup;
 
-    dcp_pro_db_setup_multi_readers(&db->pro, (unsigned)db->nfiles, db->fp);
+    rc = dcp_pro_db_setup_multi_readers(&db->pro, (unsigned)db->nfiles, db->fp);
+    if (rc) goto cleanup;
+    db_rewind(&db->pro.super);
 
     db->open_since = utc_now();
     return rc;

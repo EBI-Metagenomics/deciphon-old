@@ -111,12 +111,38 @@ static void pro_db_init(struct dcp_pro_db *db)
     dcp_pro_prof_init(&db->prof, &db->amino, &db->code, DCP_PRO_CFG_DEFAULT);
 }
 
-void dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db, unsigned nfiles,
-                                    FILE *fp[])
+enum dcp_rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
+                                           unsigned nfiles, FILE *fp[])
 {
     unsigned n = db_nprofiles(&db->super);
     assert(nfiles <= n);
-    /* xmath_partition_size(n, nfiles, i); */
+
+    enum dcp_rc rc = DCP_DONE;
+    struct dcp_pro_prof *prof = dcp_pro_db_profile(db);
+    unsigned part = 0;
+    rc = db_current_offset(&db->super, db->super.partition_offset + part);
+    part++;
+    unsigned size = 0;
+    while (!(rc = dcp_pro_db_read(db, prof)) && part < nfiles)
+    {
+        size++;
+        if (size >= xmath_partition_size(n, nfiles, part))
+        {
+            rc = db_current_offset(&db->super,
+                                   db->super.partition_offset + part);
+            ++part;
+            size = 0;
+        }
+    }
+
+    while (!(rc = dcp_pro_db_read(db, prof)))
+        ;
+    if (!db_end(&db->super)) return rc;
+    rc = db_current_offset(&db->super, db->super.partition_offset + part);
+
+    if (!db_end(&db->super)) return rc;
+    db->super.npartitions = nfiles;
+    return DCP_DONE;
 }
 
 enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
