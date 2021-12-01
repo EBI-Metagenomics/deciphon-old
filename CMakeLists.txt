@@ -25,6 +25,13 @@ find_package(SQLite3 3.35.0 REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(xxHash REQUIRED)
 
+find_program(XXD_FOUND "xxd")
+if(XXD_FOUND)
+  message(STATUS "Looking for xxd - found")
+else()
+  message(FATAL_ERROR "Looking for xxd - not found")
+endif()
+
 add_custom_command(
   OUTPUT sched_schema.c
   COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed-file

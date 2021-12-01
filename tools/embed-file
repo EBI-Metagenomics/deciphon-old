@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if ! type xxd; then
+    echo "Please, install xxd." >&2
+    exit 1
+fi
+
 function show_usage
 {
     echo "Usage: embed-file RESOURCE_FILE SYMBOL OUTPUT_FILE"
