@@ -14,7 +14,7 @@ struct dcp_pro_db
     struct imm_amino amino;
     struct imm_nuclt nuclt;
     struct imm_nuclt_code code;
-    struct dcp_pro_prof prof;
+    struct pro_prof prof;
 };
 
 extern struct dcp_pro_db const dcp_pro_db_default;
@@ -37,12 +37,12 @@ struct imm_nuclt const *dcp_pro_db_nuclt(struct dcp_pro_db const *db);
 
 struct dcp_pro_cfg dcp_pro_db_cfg(struct dcp_pro_db const *db);
 
-enum rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof);
+enum rc dcp_pro_db_read(struct dcp_pro_db *db, struct pro_prof *prof);
 
 enum rc dcp_pro_db_write(struct dcp_pro_db *db,
-                             struct dcp_pro_prof const *prof);
+                             struct pro_prof const *prof);
 
-struct dcp_pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db);
+struct pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db);
 
 struct dcp_db *dcp_pro_db_super(struct dcp_pro_db *db);
 

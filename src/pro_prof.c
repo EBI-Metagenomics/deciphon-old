@@ -15,7 +15,7 @@
 
 static void del(struct dcp_prof *prof);
 
-void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
+void dcp_pro_prof_init(struct pro_prof *p, struct imm_amino const *amino,
                        struct imm_nuclt_code const *code,
                        struct dcp_pro_cfg cfg)
 {
@@ -35,7 +35,7 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
     p->alt.match_ndists = NULL;
 }
 
-static enum rc alloc_match_nuclt_dists(struct dcp_pro_prof *prof)
+static enum rc alloc_match_nuclt_dists(struct pro_prof *prof)
 {
     size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
     void *ptr = realloc(prof->alt.match_ndists, size);
@@ -48,8 +48,8 @@ static enum rc alloc_match_nuclt_dists(struct dcp_pro_prof *prof)
     return DONE;
 }
 
-enum rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
-                               bool multi_hits, bool hmmer3_compat)
+enum rc dcp_pro_prof_setup(struct pro_prof *prof, unsigned seq_size,
+                           bool multi_hits, bool hmmer3_compat)
 {
     if (seq_size == 0) return error(ILLEGALARG, "sequence cannot be empty");
 
@@ -111,8 +111,7 @@ enum rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
     return DONE;
 }
 
-enum rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
-                                struct dcp_pro_model const *m)
+enum rc dcp_pro_prof_absorb(struct pro_prof *p, struct pro_model const *m)
 {
     if (p->code->nuclt != pro_model_nuclt(m))
         return error(ILLEGALARG, "Different nucleotide alphabets.");
@@ -152,7 +151,7 @@ enum rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
     return DONE;
 }
 
-struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro)
+struct dcp_prof *dcp_pro_prof_super(struct pro_prof *pro)
 {
     return &pro->super;
 }
@@ -162,8 +161,8 @@ void dcp_pro_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
     dcp_pro_state_name(id, name);
 }
 
-enum rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
-                                unsigned core_size)
+enum rc dcp_pro_prof_sample(struct pro_prof *p, unsigned seed,
+                            unsigned core_size)
 {
     assert(core_size >= 2);
     p->core_size = core_size;
@@ -174,7 +173,7 @@ enum rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
 
-    struct dcp_pro_model model;
+    struct pro_model model;
     dcp_pro_model_init(&model, p->amino, p->code, p->cfg, lprobs);
 
     enum rc rc = DONE;
@@ -209,9 +208,9 @@ cleanup:
     return rc;
 }
 
-enum rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
-                                struct imm_seq const *seq, unsigned state_id,
-                                struct imm_codon *codon)
+enum rc dcp_pro_prof_decode(struct pro_prof const *prof,
+                            struct imm_seq const *seq, unsigned state_id,
+                            struct imm_codon *codon)
 {
     assert(!dcp_pro_state_is_mute(state_id));
 
@@ -236,7 +235,7 @@ enum rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
     return DONE;
 }
 
-void dcp_pro_prof_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
+void dcp_pro_prof_write_dot(struct pro_prof const *p, FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, dcp_pro_state_name);
 }
@@ -245,14 +244,14 @@ static void del(struct dcp_prof *prof)
 {
     if (prof)
     {
-        struct dcp_pro_prof *p = (struct dcp_pro_prof *)prof;
+        struct pro_prof *p = (struct pro_prof *)prof;
         free(p->alt.match_ndists);
         imm_del(&p->null.dp);
         imm_del(&p->alt.dp);
     }
 }
 
-enum rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
+enum rc pro_prof_read(struct pro_prof *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_read(&prof->null.dp, fd)) return FAIL;
@@ -285,8 +284,7 @@ enum rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
     return DONE;
 }
 
-enum rc pro_prof_write(struct dcp_pro_prof const *prof,
-                           struct cmp_ctx_s *cmp)
+enum rc pro_prof_write(struct pro_prof const *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_write(&prof->null.dp, fd)) return FAIL;

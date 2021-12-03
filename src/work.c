@@ -164,7 +164,7 @@ enum rc next_profile(struct work *work)
 {
     if (dcp_db_end(&work->db->pro.super)) return DONE;
 
-    struct dcp_pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
+    struct pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
 
     enum rc rc = dcp_pro_db_read(&work->db->pro, prof);
     if (rc) return rc;

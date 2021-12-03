@@ -104,7 +104,7 @@ static char const default_output[] = "output.gff";
 static struct imm_seq seq_setup(void)
 {
     char const *seq = cli.queries.fa.target.seq;
-    struct dcp_pro_prof *prof = &cli.pro.db.prof;
+    struct pro_prof *prof = &cli.pro.db.prof;
     struct imm_abc const *abc = &prof->code->nuclt->super;
     return imm_seq(imm_str(seq), abc);
 }
@@ -164,7 +164,7 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
 
 static enum rc predict_codons(struct imm_seq const *seq)
 {
-    struct dcp_pro_prof *prof = &cli.pro.db.prof;
+    struct pro_prof *prof = &cli.pro.db.prof;
     struct imm_path const *path = &cli.pro.prod.path;
 
     struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
@@ -220,7 +220,7 @@ static enum rc write_aminos(char const *oamino)
 static enum rc scan_queries(struct dcp_meta const *mt)
 {
     struct imm_prod null = imm_prod();
-    struct dcp_pro_prof *prof = &cli.pro.db.prof;
+    struct pro_prof *prof = &cli.pro.db.prof;
     struct imm_task *task = imm_task_new(&prof->alt.dp);
     if (!task) return error(FAIL, "failed to create task");
 
@@ -338,7 +338,7 @@ static enum rc cli_scan(int argc, char **argv)
     progress_file_start(&cli.progress, !arguments.quiet);
     while (!(rc = dcp_db_end(&cli.pro.db.super)))
     {
-        struct dcp_pro_prof *prof = dcp_pro_db_profile(&cli.pro.db);
+        struct pro_prof *prof = dcp_pro_db_profile(&cli.pro.db);
         if ((rc = dcp_pro_db_read(&cli.pro.db, prof))) goto cleanup;
 
         queries_setup();

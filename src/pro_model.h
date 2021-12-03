@@ -15,7 +15,7 @@
 
 #define DCP_PRO_MODEL_CORE_SIZE_MAX 2048
 
-struct dcp_pro_model
+struct pro_model
 {
     struct imm_amino const *amino;
     struct imm_nuclt_code const *code;
@@ -48,23 +48,22 @@ struct dcp_pro_model
     } alt;
 };
 
-enum rc dcp_pro_model_add_node(struct dcp_pro_model *,
-                                   imm_float const lp[IMM_AMINO_SIZE],
-                                   char consensus);
+enum rc dcp_pro_model_add_node(struct pro_model *,
+                               imm_float const lp[IMM_AMINO_SIZE],
+                               char consensus);
 
-enum rc dcp_pro_model_add_trans(struct dcp_pro_model *,
-                                    struct dcp_pro_trans trans);
+enum rc dcp_pro_model_add_trans(struct pro_model *, struct dcp_pro_trans trans);
 
-void dcp_pro_model_del(struct dcp_pro_model const *);
+void dcp_pro_model_del(struct pro_model const *);
 
-void dcp_pro_model_init(struct dcp_pro_model *, struct imm_amino const *amino,
+void dcp_pro_model_init(struct pro_model *, struct imm_amino const *amino,
                         struct imm_nuclt_code const *code,
                         struct dcp_pro_cfg cfg,
                         imm_float const null_lprobs[IMM_AMINO_SIZE]);
 
-enum rc dcp_pro_model_setup(struct dcp_pro_model *, unsigned core_size);
+enum rc dcp_pro_model_setup(struct pro_model *, unsigned core_size);
 
-void dcp_pro_model_write_dot(struct dcp_pro_model const *, FILE *restrict fp);
+void dcp_pro_model_write_dot(struct pro_model const *, FILE *restrict fp);
 
 struct pro_model_summary
 {
@@ -87,10 +86,10 @@ struct pro_model_summary
     } alt;
 };
 
-struct dcp_pro_model;
+struct pro_model;
 
-struct imm_amino const *pro_model_amino(struct dcp_pro_model const *m);
-struct imm_nuclt const *pro_model_nuclt(struct dcp_pro_model const *m);
-struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m);
+struct imm_amino const *pro_model_amino(struct pro_model const *m);
+struct imm_nuclt const *pro_model_nuclt(struct pro_model const *m);
+struct pro_model_summary pro_model_summary(struct pro_model const *m);
 
 #endif

@@ -9,7 +9,7 @@
 #include "rc.h"
 #include <stdio.h>
 
-struct dcp_pro_prof
+struct pro_prof
 {
     struct dcp_prof super;
 
@@ -42,39 +42,38 @@ struct dcp_pro_prof
     } alt;
 };
 
-void dcp_pro_prof_init(struct dcp_pro_prof *prof, struct imm_amino const *amino,
+void dcp_pro_prof_init(struct pro_prof *prof, struct imm_amino const *amino,
                        struct imm_nuclt_code const *code,
                        struct dcp_pro_cfg cfg);
 
-enum rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
-                               bool multi_hits, bool hmmer3_compat);
+enum rc dcp_pro_prof_setup(struct pro_prof *prof, unsigned seq_size,
+                           bool multi_hits, bool hmmer3_compat);
 
-enum rc dcp_pro_prof_absorb(struct dcp_pro_prof *prof,
-                                struct dcp_pro_model const *model);
+enum rc dcp_pro_prof_absorb(struct pro_prof *prof,
+                            struct pro_model const *model);
 
-struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro);
+struct dcp_prof *dcp_pro_prof_super(struct pro_prof *pro);
 
 void dcp_pro_prof_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
 
-enum rc dcp_pro_prof_sample(struct dcp_pro_prof *prof, unsigned seed,
-                                unsigned core_size);
+enum rc dcp_pro_prof_sample(struct pro_prof *prof, unsigned seed,
+                            unsigned core_size);
 
-enum rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
-                                struct imm_seq const *seq, unsigned state_id,
-                                struct imm_codon *codon);
+enum rc dcp_pro_prof_decode(struct pro_prof const *prof,
+                            struct imm_seq const *seq, unsigned state_id,
+                            struct imm_codon *codon);
 
-static inline void dcp_pro_prof_del(struct dcp_pro_prof *prof)
+static inline void dcp_pro_prof_del(struct pro_prof *prof)
 {
     if (prof) dcp_prof_del(&prof->super);
 }
 
-void dcp_pro_prof_write_dot(struct dcp_pro_prof const *prof, FILE *restrict fp);
+void dcp_pro_prof_write_dot(struct pro_prof const *prof, FILE *restrict fp);
 
 struct cmp_ctx_s;
-struct dcp_pro_prof;
+struct pro_prof;
 
-enum rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *ctx);
-enum rc pro_prof_write(struct dcp_pro_prof const *prof,
-                           struct cmp_ctx_s *ctx);
+enum rc pro_prof_read(struct pro_prof *prof, struct cmp_ctx_s *ctx);
+enum rc pro_prof_write(struct pro_prof const *prof, struct cmp_ctx_s *ctx);
 
 #endif

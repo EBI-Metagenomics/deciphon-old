@@ -117,7 +117,7 @@ enum rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
     assert(nfiles <= n);
 
     enum rc rc = DONE;
-    struct dcp_pro_prof *prof = dcp_pro_db_profile(db);
+    struct pro_prof *prof = dcp_pro_db_profile(db);
     unsigned part = 0;
     rc = db_current_offset(&db->super, db->super.partition_offset + part);
     part++;
@@ -228,7 +228,7 @@ struct dcp_pro_cfg dcp_pro_db_cfg(struct dcp_pro_db const *db)
     return db->prof.cfg;
 }
 
-enum rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof)
+enum rc dcp_pro_db_read(struct dcp_pro_db *db, struct pro_prof *prof)
 {
     if (db_end(&db->super)) return error(FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
@@ -237,7 +237,7 @@ enum rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof)
 }
 
 enum rc dcp_pro_db_write(struct dcp_pro_db *db,
-                             struct dcp_pro_prof const *prof)
+                             struct pro_prof const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum rc rc = DONE;
@@ -247,7 +247,7 @@ enum rc dcp_pro_db_write(struct dcp_pro_db *db,
     return rc;
 }
 
-struct dcp_pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db)
+struct pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db)
 {
     return &db->prof;
 }

@@ -3,7 +3,7 @@
 
 unsigned dcp_pro_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
-    unsigned msb = __dcp_pro_state_id_msb(id);
+    unsigned msb = pro_state_id_msb(id);
     if (msb == DCP_PRO_ID_EXT)
     {
         if (id == DCP_PRO_ID_R)
