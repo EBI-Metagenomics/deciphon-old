@@ -1,33 +1,33 @@
 #include "dcp/dcp.h"
 #include "hope/hope.h"
 
-void test_pro_prof_uniform(void);
-void test_pro_prof_occupancy(void);
+void test_protein_profile_uniform(void);
+void test_protein_profile_occupancy(void);
 
 int main(void)
 {
-    test_pro_prof_uniform();
-    test_pro_prof_occupancy();
+    test_protein_profile_uniform();
+    test_protein_profile_occupancy();
     return hope_status();
 }
 
-void test_pro_prof_uniform(void)
+void test_protein_profile_uniform(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
     struct imm_nuclt_code code;
     imm_nuclt_code_init(&code, nuclt);
-    struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
 
-    struct dcp_pro_prof prof;
-    dcp_pro_prof_init(&prof, amino, &code, cfg);
-    EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_DONE);
+    struct protein_prof prof;
+    protein_profile_init(&prof, amino, &code, cfg);
+    EQ(protein_profile_sample(&prof, 1, 2), DCP_DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(IMM_STR(str), dcp_super(&prof)->code->abc);
 
-    EQ(dcp_pro_prof_setup(&prof, 0, true, false), DCP_ILLEGALARG);
-    EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
+    EQ(protein_profile_setup(&prof, 0, true, false), DCP_ILLEGALARG);
+    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
 
     struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.null.dp;
@@ -42,13 +42,13 @@ void test_pro_prof_uniform(void)
     char name[IMM_STATE_NAME_SIZE];
 
     EQ(imm_path_step(&prod.path, 0)->seqlen, 3);
-    EQ(imm_path_step(&prod.path, 0)->state_id, DCP_PRO_ID_R);
-    dcp_pro_prof_state_name(imm_path_step(&prod.path, 0)->state_id, name);
+    EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_ID_R);
+    protein_profile_state_name(imm_path_step(&prod.path, 0)->state_id, name);
     EQ(name, "R");
 
     EQ(imm_path_step(&prod.path, 10)->seqlen, 2);
-    EQ(imm_path_step(&prod.path, 10)->state_id, DCP_PRO_ID_R);
-    dcp_pro_prof_state_name(imm_path_step(&prod.path, 10)->state_id, name);
+    EQ(imm_path_step(&prod.path, 10)->state_id, PROTEIN_ID_R);
+    protein_profile_state_name(imm_path_step(&prod.path, 10)->state_id, name);
     EQ(name, "R");
 
     imm_prod_reset(&prod);
@@ -65,16 +65,16 @@ void test_pro_prof_uniform(void)
     EQ(imm_path_nsteps(&prod.path), 14);
 
     EQ(imm_path_step(&prod.path, 0)->seqlen, 0);
-    EQ(imm_path_step(&prod.path, 0)->state_id, DCP_PRO_ID_S);
-    dcp_pro_prof_state_name(imm_path_step(&prod.path, 0)->state_id, name);
+    EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_ID_S);
+    protein_profile_state_name(imm_path_step(&prod.path, 0)->state_id, name);
     EQ(name, "S");
 
     EQ(imm_path_step(&prod.path, 13)->seqlen, 0);
-    EQ(imm_path_step(&prod.path, 13)->state_id, DCP_PRO_ID_T);
-    dcp_pro_prof_state_name(imm_path_step(&prod.path, 13)->state_id, name);
+    EQ(imm_path_step(&prod.path, 13)->state_id, PROTEIN_ID_T);
+    protein_profile_state_name(imm_path_step(&prod.path, 13)->state_id, name);
     EQ(name, "T");
 
-    struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &prod.path);
+    struct protein_codec codec = protein_codec_init(&prof, &prod.path);
     enum dcp_rc rc = DCP_DONE;
 
     nuclt = prof.code->nuclt;
@@ -89,7 +89,7 @@ void test_pro_prof_uniform(void)
     unsigned any = imm_abc_any_symbol_id(imm_super(nuclt));
     struct imm_codon codon = imm_codon(nuclt, any, any, any);
     unsigned i = 0;
-    while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
+    while (!(rc = protein_codec_next(&codec, &seq, &codon)))
     {
         EQ(codons[i].a, codon.a);
         EQ(codons[i].b, codon.b);
@@ -104,22 +104,22 @@ void test_pro_prof_uniform(void)
     imm_del(task);
 }
 
-void test_pro_prof_occupancy(void)
+void test_protein_profile_occupancy(void)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
     struct imm_nuclt_code code;
     imm_nuclt_code_init(&code, nuclt);
-    struct dcp_pro_cfg cfg = dcp_pro_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
+    struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
 
-    struct dcp_pro_prof prof;
-    dcp_pro_prof_init(&prof, amino, &code, cfg);
-    EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_DONE);
+    struct protein_prof prof;
+    protein_profile_init(&prof, amino, &code, cfg);
+    EQ(protein_profile_sample(&prof, 1, 2), DCP_DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->code->abc);
 
-    EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
+    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
 
     struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.null.dp;
@@ -134,13 +134,13 @@ void test_pro_prof_occupancy(void)
     char name[IMM_STATE_NAME_SIZE];
 
     EQ(imm_path_step(&prod.path, 0)->seqlen, 3);
-    EQ(imm_path_step(&prod.path, 0)->state_id, DCP_PRO_ID_R);
-    dcp_pro_prof_state_name(imm_path_step(&prod.path, 0)->state_id, name);
+    EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_ID_R);
+    protein_profile_state_name(imm_path_step(&prod.path, 0)->state_id, name);
     EQ(name, "R");
 
     EQ(imm_path_step(&prod.path, 10)->seqlen, 2);
-    EQ(imm_path_step(&prod.path, 10)->state_id, DCP_PRO_ID_R);
-    dcp_pro_prof_state_name(imm_path_step(&prod.path, 10)->state_id, name);
+    EQ(imm_path_step(&prod.path, 10)->state_id, PROTEIN_ID_R);
+    protein_profile_state_name(imm_path_step(&prod.path, 10)->state_id, name);
     EQ(name, "R");
 
     imm_prod_reset(&prod);
@@ -157,16 +157,16 @@ void test_pro_prof_occupancy(void)
     EQ(imm_path_nsteps(&prod.path), 14);
 
     EQ(imm_path_step(&prod.path, 0)->seqlen, 0);
-    EQ(imm_path_step(&prod.path, 0)->state_id, DCP_PRO_ID_S);
-    dcp_pro_prof_state_name(imm_path_step(&prod.path, 0)->state_id, name);
+    EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_ID_S);
+    protein_profile_state_name(imm_path_step(&prod.path, 0)->state_id, name);
     EQ(name, "S");
 
     EQ(imm_path_step(&prod.path, 13)->seqlen, 0);
-    EQ(imm_path_step(&prod.path, 13)->state_id, DCP_PRO_ID_T);
-    dcp_pro_prof_state_name(imm_path_step(&prod.path, 13)->state_id, name);
+    EQ(imm_path_step(&prod.path, 13)->state_id, PROTEIN_ID_T);
+    protein_profile_state_name(imm_path_step(&prod.path, 13)->state_id, name);
     EQ(name, "T");
 
-    struct dcp_pro_codec codec = dcp_pro_codec_init(&prof, &prod.path);
+    struct protein_codec codec = protein_codec_init(&prof, &prod.path);
     enum dcp_rc rc = DCP_DONE;
 
     nuclt = prof.code->nuclt;
@@ -181,7 +181,7 @@ void test_pro_prof_occupancy(void)
     unsigned any = imm_abc_any_symbol_id(imm_super(nuclt));
     struct imm_codon codon = imm_codon(nuclt, any, any, any);
     unsigned i = 0;
-    while (!(rc = dcp_pro_codec_next(&codec, &seq, &codon)))
+    while (!(rc = protein_codec_next(&codec, &seq, &codon)))
     {
         EQ(codons[i].a, codon.a);
         EQ(codons[i].b, codon.b);

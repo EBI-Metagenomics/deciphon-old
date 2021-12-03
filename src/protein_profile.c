@@ -15,7 +15,7 @@
 
 static void del(struct profile *prof);
 
-void protein_prof_init(struct protein_prof *p, struct imm_amino const *amino,
+void protein_profile_init(struct protein_profile *p, struct imm_amino const *amino,
                        struct imm_nuclt_code const *code,
                        struct protein_cfg cfg)
 {
@@ -35,7 +35,7 @@ void protein_prof_init(struct protein_prof *p, struct imm_amino const *amino,
     p->alt.match_ndists = NULL;
 }
 
-static enum rc alloc_match_nuclt_dists(struct protein_prof *prof)
+static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
 {
     size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
     void *ptr = realloc(prof->alt.match_ndists, size);
@@ -48,7 +48,7 @@ static enum rc alloc_match_nuclt_dists(struct protein_prof *prof)
     return DONE;
 }
 
-enum rc protein_prof_setup(struct protein_prof *prof, unsigned seq_size,
+enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
                            bool multi_hits, bool hmmer3_compat)
 {
     if (seq_size == 0) return error(ILLEGALARG, "sequence cannot be empty");
@@ -111,7 +111,7 @@ enum rc protein_prof_setup(struct protein_prof *prof, unsigned seq_size,
     return DONE;
 }
 
-enum rc protein_prof_absorb(struct protein_prof *p, struct protein_model const *m)
+enum rc protein_profile_absorb(struct protein_profile *p, struct protein_model const *m)
 {
     if (p->code->nuclt != protein_model_nuclt(m))
         return error(ILLEGALARG, "Different nucleotide alphabets.");
@@ -151,14 +151,14 @@ enum rc protein_prof_absorb(struct protein_prof *p, struct protein_model const *
     return DONE;
 }
 
-struct profile *protein_prof_super(struct protein_prof *pro) { return &pro->super; }
+struct profile *protein_profile_super(struct protein_profile *pro) { return &pro->super; }
 
-void protein_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
+void protein_profile_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
     protein_state_name(id, name);
 }
 
-enum rc protein_prof_sample(struct protein_prof *p, unsigned seed,
+enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,
                             unsigned core_size)
 {
     assert(core_size >= 2);
@@ -198,14 +198,14 @@ enum rc protein_prof_sample(struct protein_prof *p, unsigned seed,
         if ((rc = protein_model_add_trans(&model, t))) goto cleanup;
     }
 
-    rc = protein_prof_absorb(p, &model);
+    rc = protein_profile_absorb(p, &model);
 
 cleanup:
     protein_model_del(&model);
     return rc;
 }
 
-enum rc protein_prof_decode(struct protein_prof const *prof,
+enum rc protein_profile_decode(struct protein_profile const *prof,
                             struct imm_seq const *seq, unsigned state_id,
                             struct imm_codon *codon)
 {
@@ -232,7 +232,7 @@ enum rc protein_prof_decode(struct protein_prof const *prof,
     return DONE;
 }
 
-void protein_prof_write_dot(struct protein_prof const *p, FILE *restrict fp)
+void protein_profile_write_dot(struct protein_profile const *p, FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, protein_state_name);
 }
@@ -241,14 +241,14 @@ static void del(struct profile *prof)
 {
     if (prof)
     {
-        struct protein_prof *p = (struct protein_prof *)prof;
+        struct protein_profile *p = (struct protein_profile *)prof;
         free(p->alt.match_ndists);
         imm_del(&p->null.dp);
         imm_del(&p->alt.dp);
     }
 }
 
-enum rc protein_prof_read(struct protein_prof *prof, struct cmp_ctx_s *cmp)
+enum rc protein_profile_read(struct protein_profile *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_read(&prof->null.dp, fd)) return FAIL;
@@ -281,7 +281,7 @@ enum rc protein_prof_read(struct protein_prof *prof, struct cmp_ctx_s *cmp)
     return DONE;
 }
 
-enum rc protein_prof_write(struct protein_prof const *prof, struct cmp_ctx_s *cmp)
+enum rc protein_profile_write(struct protein_profile const *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_write(&prof->null.dp, fd)) return FAIL;

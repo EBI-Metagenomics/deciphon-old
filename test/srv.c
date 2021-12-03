@@ -1,7 +1,7 @@
 #include "dcp/dcp.h"
 #include "dcp/rc.h"
 #include "hope/hope.h"
-#include "pro_db_examples.h"
+#include "protein_db_examples.h"
 #include "std_db_examples.h"
 
 void test_srv_setup(void);
@@ -85,14 +85,14 @@ void test_srv_submit_job(void)
 void test_srv_submit_and_fetch_job(unsigned num_threads)
 {
     char const db_path[] = TMPDIR "/submit_and_fetch_job.sqlite3";
-    char const ex_path[] = TMPDIR "/pro_example1.dcp";
+    char const ex_path[] = TMPDIR "/protein_example1.dcp";
     remove(db_path);
 
     EQ(dcp_srv_open(db_path, num_threads), DCP_DONE);
 
-    pro_db_examples_new_ex1(ex_path);
+    protein_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(dcp_srv_add_db("pro_example1", ex_path, &db_id), DCP_DONE);
+    EQ(dcp_srv_add_db("protein_example1", ex_path, &db_id), DCP_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job = {0};

@@ -129,7 +129,7 @@ static enum rc profile_write(void)
 {
     profile_nameit(&cli.db.prof.super, protein_reader_meta(&cli.reader));
 
-    enum rc rc = protein_prof_absorb(&cli.db.prof, &cli.reader.model);
+    enum rc rc = protein_profile_absorb(&cli.db.prof, &cli.reader.model);
     if (rc) return rc;
 
     return protein_db_write(&cli.db, &cli.db.prof);

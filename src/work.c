@@ -164,7 +164,7 @@ enum rc next_profile(struct work *work)
 {
     if (dcp_db_end(&work->db->pro.super)) return DONE;
 
-    struct protein_prof *prof = protein_db_profile(&work->db->pro);
+    struct protein_profile *prof = protein_db_profile(&work->db->pro);
 
     enum rc rc = protein_db_read(&work->db->pro, prof);
     if (rc) return rc;
@@ -252,12 +252,12 @@ enum rc write_product(struct work *work, struct task *task,
         struct protein_match match = {0};
         protein_match_init(&match);
         protein_match_set_frag(&match, step->seqlen, frag.str);
-        protein_prof_state_name(step->state_id,
+        protein_profile_state_name(step->state_id,
                                 protein_match_get_state_name(&match));
 
         if (!protein_state_is_mute(step->state_id))
         {
-            rc = protein_prof_decode(work->prof, &frag, step->state_id, &codon);
+            rc = protein_profile_decode(work->prof, &frag, step->state_id, &codon);
             if (rc) return rc;
             protein_match_set_codon(&match, codon);
             protein_match_set_amino(&match, imm_gc_decode(1, codon));

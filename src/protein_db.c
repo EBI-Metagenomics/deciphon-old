@@ -107,7 +107,7 @@ static void protein_db_init(struct protein_db *db)
     db->nuclt = imm_nuclt_empty;
     db->code = imm_nuclt_code_empty;
     db->code.nuclt = &db->nuclt;
-    protein_prof_init(&db->prof, &db->amino, &db->code,
+    protein_profile_init(&db->prof, &db->amino, &db->code,
                           PROTEIN_CFG_DEFAULT);
 }
 
@@ -118,7 +118,7 @@ enum rc protein_db_setup_multi_readers(struct protein_db *db,
     assert(nfiles <= n);
 
     enum rc rc = DONE;
-    struct protein_prof *prof = protein_db_profile(db);
+    struct protein_profile *prof = protein_db_profile(db);
     unsigned part = 0;
     rc = db_current_offset(&db->super, db->super.partition_offset + part);
     part++;
@@ -210,7 +210,7 @@ cleanup:
 enum rc protein_db_close(struct protein_db *db)
 {
     enum rc rc = db_close(&db->super);
-    protein_prof_del(&db->prof);
+    protein_profile_del(&db->prof);
     return rc;
 }
 
@@ -230,26 +230,26 @@ struct protein_cfg protein_db_cfg(struct protein_db const *db)
 }
 
 enum rc protein_db_read(struct protein_db *db,
-                            struct protein_prof *prof)
+                            struct protein_profile *prof)
 {
     if (db_end(&db->super)) return error(FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
-    return protein_prof_read(prof, &db->super.file.cmp[0]);
+    return protein_profile_read(prof, &db->super.file.cmp[0]);
 }
 
 enum rc protein_db_write(struct protein_db *db,
-                             struct protein_prof const *prof)
+                             struct protein_profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum rc rc = DONE;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
-    if ((rc = protein_prof_write(prof, &db->super.dp.cmp))) return rc;
+    if ((rc = protein_profile_write(prof, &db->super.dp.cmp))) return rc;
     db->super.profiles.size++;
     return rc;
 }
 
-struct protein_prof *protein_db_profile(struct protein_db *db)
+struct protein_profile *protein_db_profile(struct protein_db *db)
 {
     return &db->prof;
 }

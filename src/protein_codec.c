@@ -21,5 +21,5 @@ enum rc protein_codec_next(struct protein_codec *codec,
     struct imm_seq frag = imm_subseq(seq, codec->start, size);
     codec->start += size;
     codec->idx++;
-    return protein_prof_decode(codec->prof, &frag, step->state_id, codon);
+    return protein_profile_decode(codec->prof, &frag, step->state_id, codon);
 }
