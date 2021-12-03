@@ -1,9 +1,9 @@
-#ifndef DCP_PRO_XTRANS_H
-#define DCP_PRO_XTRANS_H
+#ifndef DCP_PROTEIN_XTRANS_H
+#define DCP_PROTEIN_XTRANS_H
 
 #include "imm/imm.h"
 
-struct dcp_pro_xtrans
+struct dcp_protein_xtrans
 {
     imm_float NN;
     imm_float CC;
@@ -16,7 +16,7 @@ struct dcp_pro_xtrans
     imm_float EC;
 };
 
-static inline void dcp_pro_xtrans_init(struct dcp_pro_xtrans *t)
+static inline void dcp_protein_xtrans_init(struct dcp_protein_xtrans *t)
 {
     t->NN = IMM_LPROB_ONE;
     t->NB = IMM_LPROB_ONE;

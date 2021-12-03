@@ -22,7 +22,7 @@ struct work
     struct task tasks[WORK_MAX_NTASKS];
     char db_path[DCP_PATH_SIZE];
     struct db_handle *db;
-    struct pro_prof const *prof;
+    struct protein_prof const *prof;
     struct xfile_tmp prod_file;
     atomic_bool failed;
     struct tok *tok;

@@ -2,7 +2,7 @@
 #include "array.h"
 #include "logger.h"
 #include "macros.h"
-#include "pro_match.h"
+#include "protein_match.h"
 #include "safe.h"
 #include "sched.h"
 #include "sched_macros.h"
@@ -270,7 +270,7 @@ enum rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
  *                      ---------------
  */
 
-enum rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *m)
+enum rc sched_prod_write_match(FILE *restrict fd, struct protein_match const *m)
 {
     if (fprintf(fd, "%.*s,", m->frag_size, m->frag) < 0)
         return error(IOERROR, "failed to write frag");

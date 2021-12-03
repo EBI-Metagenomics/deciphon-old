@@ -1,11 +1,11 @@
-#ifndef DCP_PRO_TRANS_H
-#define DCP_PRO_TRANS_H
+#ifndef DCP_PROTEIN_TRANS_H
+#define DCP_PROTEIN_TRANS_H
 
 #include "imm/imm.h"
 
-#define DCP_PRO_TRANS_SIZE 7
+#define DCP_PROTEIN_TRANS_SIZE 7
 
-struct dcp_pro_trans
+struct dcp_protein_trans
 {
     union
     {
@@ -21,7 +21,7 @@ struct dcp_pro_trans
         } __attribute__((packed));
         struct
         {
-            imm_float data[DCP_PRO_TRANS_SIZE];
+            imm_float data[DCP_PROTEIN_TRANS_SIZE];
         };
     };
 };

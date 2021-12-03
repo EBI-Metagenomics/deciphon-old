@@ -6,7 +6,7 @@
 #include "job.h"
 #include "logger.h"
 #include "macros.h"
-#include "pro_state.h"
+#include "protein_state.h"
 #include "rc.h"
 #include "sched.h"
 #include "sched_db.h"

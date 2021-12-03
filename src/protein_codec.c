@@ -1,9 +1,9 @@
-#include "pro_codec.h"
+#include "protein_codec.h"
 #include "imm/imm.h"
-#include "pro_profile.h"
-#include "pro_state.h"
+#include "protein_profile.h"
+#include "protein_state.h"
 
-enum rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
+enum rc dcp_protein_codec_next(struct dcp_protein_codec *codec,
                                struct imm_seq const *seq,
                                struct imm_codon *codon)
 {
@@ -12,7 +12,7 @@ enum rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
     for (; codec->idx < imm_path_nsteps(codec->path); codec->idx++)
     {
         step = imm_path_step(codec->path, codec->idx);
-        if (!dcp_pro_state_is_mute(step->state_id)) break;
+        if (!dcp_protein_state_is_mute(step->state_id)) break;
     }
 
     if (codec->idx >= imm_path_nsteps(codec->path)) return END;
@@ -21,5 +21,5 @@ enum rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
     struct imm_seq frag = imm_subseq(seq, codec->start, size);
     codec->start += size;
     codec->idx++;
-    return dcp_pro_prof_decode(codec->prof, &frag, step->state_id, codon);
+    return dcp_protein_prof_decode(codec->prof, &frag, step->state_id, codon);
 }

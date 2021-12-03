@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 struct array;
-struct pro_match;
+struct protein_match;
 struct sqlite3;
 struct tok;
 
@@ -30,7 +30,7 @@ void sched_prod_set_model(struct prod *, char const *);
 void sched_prod_set_version(struct prod *, char const *);
 
 enum rc sched_prod_write_preamble(struct prod *prod, FILE *restrict fd);
-enum rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *);
+enum rc sched_prod_write_match(FILE *restrict fd, struct protein_match const *);
 enum rc sched_prod_write_match_sep(FILE *restrict fd);
 enum rc sched_prod_write_nl(FILE *restrict fd);
 

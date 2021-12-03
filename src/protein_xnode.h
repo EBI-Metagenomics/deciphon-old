@@ -1,14 +1,14 @@
-#ifndef DCP_PRO_XNODE_H
-#define DCP_PRO_XNODE_H
+#ifndef DCP_PROTEIN_XNODE_H
+#define DCP_PROTEIN_XNODE_H
 
 #include "imm/imm.h"
 
-struct dcp_pro_xnode_null
+struct dcp_protein_xnode_null
 {
     struct imm_frame_state R;
 };
 
-struct dcp_pro_xnode_alt
+struct dcp_protein_xnode_alt
 {
     struct imm_mute_state S;
     struct imm_frame_state N;
@@ -19,10 +19,10 @@ struct dcp_pro_xnode_alt
     struct imm_mute_state T;
 };
 
-struct dcp_pro_xnode
+struct dcp_protein_xnode
 {
-    struct dcp_pro_xnode_null null;
-    struct dcp_pro_xnode_alt alt;
+    struct dcp_protein_xnode_null null;
+    struct dcp_protein_xnode_alt alt;
 };
 
 #endif

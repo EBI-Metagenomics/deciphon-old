@@ -60,14 +60,14 @@ add_library(
   src/nuclt_dist.c
   src/path.c
   src/pool.c
-  src/pro_codec.c
-  src/pro_db.c
-  src/pro_model.c
-  src/pro_profile.c
-  src/pro_reader.c
-  src/pro_state.c
   src/prod.c
   src/progress_file.c
+  src/protein_codec.c
+  src/protein_db.c
+  src/protein_model.c
+  src/protein_profile.c
+  src/protein_reader.c
+  src/protein_state.c
   src/row.c
   src/safe.c
   src/sched.c

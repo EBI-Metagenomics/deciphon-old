@@ -1,10 +1,10 @@
-#include "pro_profile.h"
+#include "protein_profile.h"
 #include "dcp_cmp.h"
 #include "imm/imm.h"
 #include "logger.h"
 #include "meta.h"
-#include "pro_model.h"
-#include "pro_profile.h"
+#include "protein_model.h"
+#include "protein_profile.h"
 #include "profile.h"
 #include "rc.h"
 #include "third-party/cmp.h"
@@ -15,9 +15,9 @@
 
 static void del(struct profile *prof);
 
-void dcp_pro_prof_init(struct pro_prof *p, struct imm_amino const *amino,
+void dcp_protein_prof_init(struct protein_prof *p, struct imm_amino const *amino,
                        struct imm_nuclt_code const *code,
-                       struct dcp_pro_cfg cfg)
+                       struct dcp_protein_cfg cfg)
 {
     struct profile_vtable vtable = {del, DCP_PROTEIN_PROFILE};
     struct imm_nuclt const *nuclt = code->nuclt;
@@ -35,7 +35,7 @@ void dcp_pro_prof_init(struct pro_prof *p, struct imm_amino const *amino,
     p->alt.match_ndists = NULL;
 }
 
-static enum rc alloc_match_nuclt_dists(struct pro_prof *prof)
+static enum rc alloc_match_nuclt_dists(struct protein_prof *prof)
 {
     size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
     void *ptr = realloc(prof->alt.match_ndists, size);
@@ -48,7 +48,7 @@ static enum rc alloc_match_nuclt_dists(struct pro_prof *prof)
     return DONE;
 }
 
-enum rc dcp_pro_prof_setup(struct pro_prof *prof, unsigned seq_size,
+enum rc dcp_protein_prof_setup(struct protein_prof *prof, unsigned seq_size,
                            bool multi_hits, bool hmmer3_compat)
 {
     if (seq_size == 0) return error(ILLEGALARG, "sequence cannot be empty");
@@ -68,7 +68,7 @@ enum rc dcp_pro_prof_setup(struct pro_prof *prof, unsigned seq_size,
     imm_float l1p = imm_log(2 + q / (1 - q)) - imm_log(L + 2 + q / (1 - q));
     imm_float lr = imm_log(L) - imm_log(L + 1);
 
-    struct dcp_pro_xtrans t;
+    struct dcp_protein_xtrans t;
 
     t.NN = t.CC = t.JJ = lp;
     t.NB = t.CT = t.JB = l1p;
@@ -111,15 +111,15 @@ enum rc dcp_pro_prof_setup(struct pro_prof *prof, unsigned seq_size,
     return DONE;
 }
 
-enum rc dcp_pro_prof_absorb(struct pro_prof *p, struct pro_model const *m)
+enum rc dcp_protein_prof_absorb(struct protein_prof *p, struct protein_model const *m)
 {
-    if (p->code->nuclt != pro_model_nuclt(m))
+    if (p->code->nuclt != protein_model_nuclt(m))
         return error(ILLEGALARG, "Different nucleotide alphabets.");
 
-    if (p->amino != pro_model_amino(m))
+    if (p->amino != protein_model_amino(m))
         return error(ILLEGALARG, "Different amino alphabets.");
 
-    struct pro_model_summary s = pro_model_summary(m);
+    struct protein_model_summary s = protein_model_summary(m);
 
     if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
         return error(FAIL, "failed to hmm_reset");
@@ -151,14 +151,14 @@ enum rc dcp_pro_prof_absorb(struct pro_prof *p, struct pro_model const *m)
     return DONE;
 }
 
-struct profile *dcp_pro_prof_super(struct pro_prof *pro) { return &pro->super; }
+struct profile *dcp_protein_prof_super(struct protein_prof *pro) { return &pro->super; }
 
-void dcp_pro_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
+void dcp_protein_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
-    dcp_pro_state_name(id, name);
+    dcp_protein_state_name(id, name);
 }
 
-enum rc dcp_pro_prof_sample(struct pro_prof *p, unsigned seed,
+enum rc dcp_protein_prof_sample(struct protein_prof *p, unsigned seed,
                             unsigned core_size)
 {
     assert(core_size >= 2);
@@ -170,55 +170,55 @@ enum rc dcp_pro_prof_sample(struct pro_prof *p, unsigned seed,
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
 
-    struct pro_model model;
-    dcp_pro_model_init(&model, p->amino, p->code, p->cfg, lprobs);
+    struct protein_model model;
+    dcp_protein_model_init(&model, p->amino, p->code, p->cfg, lprobs);
 
     enum rc rc = DONE;
 
-    if ((rc = dcp_pro_model_setup(&model, core_size))) goto cleanup;
+    if ((rc = dcp_protein_model_setup(&model, core_size))) goto cleanup;
 
     for (unsigned i = 0; i < core_size; ++i)
     {
         imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
         imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
-        if ((rc = dcp_pro_model_add_node(&model, lprobs, '-'))) goto cleanup;
+        if ((rc = dcp_protein_model_add_node(&model, lprobs, '-'))) goto cleanup;
     }
 
     for (unsigned i = 0; i < core_size + 1; ++i)
     {
-        struct dcp_pro_trans t;
-        imm_lprob_sample(&rnd, DCP_PRO_TRANS_SIZE, t.data);
+        struct dcp_protein_trans t;
+        imm_lprob_sample(&rnd, DCP_PROTEIN_TRANS_SIZE, t.data);
         if (i == 0) t.DD = IMM_LPROB_ZERO;
         if (i == core_size)
         {
             t.MD = IMM_LPROB_ZERO;
             t.DD = IMM_LPROB_ZERO;
         }
-        imm_lprob_normalize(DCP_PRO_TRANS_SIZE, t.data);
-        if ((rc = dcp_pro_model_add_trans(&model, t))) goto cleanup;
+        imm_lprob_normalize(DCP_PROTEIN_TRANS_SIZE, t.data);
+        if ((rc = dcp_protein_model_add_trans(&model, t))) goto cleanup;
     }
 
-    rc = dcp_pro_prof_absorb(p, &model);
+    rc = dcp_protein_prof_absorb(p, &model);
 
 cleanup:
-    dcp_pro_model_del(&model);
+    dcp_protein_model_del(&model);
     return rc;
 }
 
-enum rc dcp_pro_prof_decode(struct pro_prof const *prof,
+enum rc dcp_protein_prof_decode(struct protein_prof const *prof,
                             struct imm_seq const *seq, unsigned state_id,
                             struct imm_codon *codon)
 {
-    assert(!dcp_pro_state_is_mute(state_id));
+    assert(!dcp_protein_state_is_mute(state_id));
 
     struct dcp_nuclt_dist const *nucltd = NULL;
-    if (dcp_pro_state_is_insert(state_id))
+    if (dcp_protein_state_is_insert(state_id))
     {
         nucltd = &prof->alt.insert_ndist;
     }
-    else if (dcp_pro_state_is_match(state_id))
+    else if (dcp_protein_state_is_match(state_id))
     {
-        unsigned idx = dcp_pro_state_idx(state_id);
+        unsigned idx = dcp_protein_state_idx(state_id);
         nucltd = prof->alt.match_ndists + idx;
     }
     else
@@ -232,23 +232,23 @@ enum rc dcp_pro_prof_decode(struct pro_prof const *prof,
     return DONE;
 }
 
-void dcp_pro_prof_write_dot(struct pro_prof const *p, FILE *restrict fp)
+void dcp_protein_prof_write_dot(struct protein_prof const *p, FILE *restrict fp)
 {
-    imm_dp_write_dot(&p->alt.dp, fp, dcp_pro_state_name);
+    imm_dp_write_dot(&p->alt.dp, fp, dcp_protein_state_name);
 }
 
 static void del(struct profile *prof)
 {
     if (prof)
     {
-        struct pro_prof *p = (struct pro_prof *)prof;
+        struct protein_prof *p = (struct protein_prof *)prof;
         free(p->alt.match_ndists);
         imm_del(&p->null.dp);
         imm_del(&p->alt.dp);
     }
 }
 
-enum rc pro_prof_read(struct pro_prof *prof, struct cmp_ctx_s *cmp)
+enum rc protein_prof_read(struct protein_prof *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_read(&prof->null.dp, fd)) return FAIL;
@@ -257,7 +257,7 @@ enum rc pro_prof_read(struct pro_prof *prof, struct cmp_ctx_s *cmp)
     uint16_t core_size = 0;
     if (!cmp_read_u16(cmp, &core_size))
         return error(IOERROR, "failed to read core size");
-    if (core_size > DCP_PRO_MODEL_CORE_SIZE_MAX)
+    if (core_size > DCP_PROTEIN_MODEL_CORE_SIZE_MAX)
         return error(PARSEERROR, "profile is too long");
     prof->core_size = core_size;
 
@@ -281,7 +281,7 @@ enum rc pro_prof_read(struct pro_prof *prof, struct cmp_ctx_s *cmp)
     return DONE;
 }
 
-enum rc pro_prof_write(struct pro_prof const *prof, struct cmp_ctx_s *cmp)
+enum rc protein_prof_write(struct protein_prof const *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_write(&prof->null.dp, fd)) return FAIL;

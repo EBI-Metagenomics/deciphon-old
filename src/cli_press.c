@@ -1,9 +1,9 @@
 #include "cli.h"
 #include "logger.h"
 #include "path.h"
-#include "pro_db.h"
-#include "pro_reader.h"
 #include "progress_file.h"
+#include "protein_db.h"
+#include "protein_reader.h"
 #include "safe.h"
 #include <stdlib.h>
 #include <sys/types.h>
@@ -94,8 +94,8 @@ static struct
         FILE *fd;
     } output;
     struct progress_file progress;
-    struct dcp_pro_db db;
-    struct dcp_pro_reader reader;
+    struct dcp_protein_db db;
+    struct dcp_protein_reader reader;
 } cli = {0};
 
 static enum rc cli_setup(struct arguments const *args)
@@ -112,27 +112,27 @@ static enum rc cli_setup(struct arguments const *args)
 
     progress_file_init(&cli.progress, cli.input.fd);
 
-    cli.db = dcp_pro_db_default;
+    cli.db = dcp_protein_db_default;
 
-    enum rc rc =
-        dcp_pro_db_openw(&cli.db, cli.output.fd, &imm_amino_iupac,
-                         imm_super(&imm_dna_iupac), DCP_PRO_CFG_DEFAULT);
+    enum rc rc = dcp_protein_db_openw(&cli.db, cli.output.fd, &imm_amino_iupac,
+                                      imm_super(&imm_dna_iupac),
+                                      DCP_PROTEIN_CFG_DEFAULT);
     if (rc) return rc;
 
-    dcp_pro_reader_init(&cli.reader, &cli.db.amino, &cli.db.code,
-                        cli.db.prof.cfg, cli.input.fd);
+    dcp_protein_reader_init(&cli.reader, &cli.db.amino, &cli.db.code,
+                            cli.db.prof.cfg, cli.input.fd);
 
     return DONE;
 }
 
 static enum rc profile_write(void)
 {
-    profile_nameit(&cli.db.prof.super, dcp_pro_reader_meta(&cli.reader));
+    profile_nameit(&cli.db.prof.super, dcp_protein_reader_meta(&cli.reader));
 
-    enum rc rc = dcp_pro_prof_absorb(&cli.db.prof, &cli.reader.model);
+    enum rc rc = dcp_protein_prof_absorb(&cli.db.prof, &cli.reader.model);
     if (rc) return rc;
 
-    return dcp_pro_db_write(&cli.db, &cli.db.prof);
+    return dcp_protein_db_write(&cli.db, &cli.db.prof);
 }
 
 static enum rc cli_press(int argc, char **argv)
@@ -144,7 +144,7 @@ static enum rc cli_press(int argc, char **argv)
     if (rc) goto cleanup;
 
     progress_file_start(&cli.progress, !arguments.quiet);
-    while (!(rc = dcp_pro_reader_next(&cli.reader)))
+    while (!(rc = dcp_protein_reader_next(&cli.reader)))
     {
         rc = profile_write();
         progress_file_update(&cli.progress);
@@ -156,7 +156,7 @@ static enum rc cli_press(int argc, char **argv)
         goto cleanup;
     }
 
-    rc = dcp_pro_db_close(&cli.db);
+    rc = dcp_protein_db_close(&cli.db);
 
 cleanup:
     progress_file_stop(&cli.progress);

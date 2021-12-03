@@ -3,10 +3,10 @@
 #include "gff/gff.h"
 #include "imm/imm.h"
 #include "logger.h"
-#include "pro_codec.h"
-#include "pro_db.h"
-#include "pro_reader.h"
-#include "pro_state.h"
+#include "protein_codec.h"
+#include "protein_db.h"
+#include "protein_reader.h"
+#include "protein_state.h"
 #include "progress_file.h"
 #include "table.h"
 #include "tbl/tbl.h"
@@ -66,7 +66,7 @@ static struct
     {
         char const *file;
         FILE *fd;
-        struct dcp_pro_db db;
+        struct dcp_protein_db db;
         struct imm_prod prod;
     } pro;
 
@@ -104,7 +104,7 @@ static char const default_output[] = "output.gff";
 static struct imm_seq seq_setup(void)
 {
     char const *seq = cli.queries.fa.target.seq;
-    struct pro_prof *prof = &cli.pro.db.prof;
+    struct protein_prof *prof = &cli.pro.db.prof;
     struct imm_abc const *abc = &prof->code->nuclt->super;
     return imm_seq(imm_str(seq), abc);
 }
@@ -125,18 +125,18 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     {
         struct imm_step const *step = imm_path_step(path, i);
 
-        bool is_match = dcp_pro_state_is_match(step->state_id);
-        bool is_delete = dcp_pro_state_is_delete(step->state_id);
+        bool is_match = dcp_protein_state_is_match(step->state_id);
+        bool is_delete = dcp_protein_state_is_delete(step->state_id);
         char cons[2] = " ";
         if (is_match || is_delete)
             cons[0] =
-                cli.pro.db.prof.consensus[dcp_pro_state_idx(step->state_id)];
-        else if (dcp_pro_state_is_insert(step->state_id))
+                cli.pro.db.prof.consensus[dcp_protein_state_idx(step->state_id)];
+        else if (dcp_protein_state_is_insert(step->state_id))
             cons[0] = '.';
 
         char codon[4] = {0};
         char amino[2] = {0};
-        if (dcp_pro_state_is_mute(step->state_id))
+        if (dcp_protein_state_is_mute(step->state_id))
         {
             codon[0] = ' ';
             codon[1] = ' ';
@@ -164,15 +164,15 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
 
 static enum rc predict_codons(struct imm_seq const *seq)
 {
-    struct pro_prof *prof = &cli.pro.db.prof;
+    struct protein_prof *prof = &cli.pro.db.prof;
     struct imm_path const *path = &cli.pro.prod.path;
 
-    struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
+    struct dcp_protein_codec codec = dcp_protein_codec_init(prof, path);
     struct imm_codon codon = imm_codon_any(prof->code->nuclt);
 
     enum rc rc = DONE;
     char *ocodon = cli.output.codon.seq;
-    while (!(rc = dcp_pro_codec_next(&codec, seq, &codon)))
+    while (!(rc = dcp_protein_codec_next(&codec, seq, &codon)))
     {
         *(ocodon++) = imm_codon_asym(&codon);
         *(ocodon++) = imm_codon_bsym(&codon);
@@ -220,7 +220,7 @@ static enum rc write_aminos(char const *oamino)
 static enum rc scan_queries(struct meta const *mt)
 {
     struct imm_prod null = imm_prod();
-    struct pro_prof *prof = &cli.pro.db.prof;
+    struct protein_prof *prof = &cli.pro.db.prof;
     struct imm_task *task = imm_task_new(&prof->alt.dp);
     if (!task) return error(FAIL, "failed to create task");
 
@@ -309,9 +309,9 @@ static enum rc cli_setup(void)
     cli.output.amino.seq[0] = '\0';
     gff_init(&cli.output.gff, cli.output.fd, GFF_WRITE);
 
-    cli.pro.db = dcp_pro_db_default;
+    cli.pro.db = dcp_protein_db_default;
 
-    enum rc rc = dcp_pro_db_openr(&cli.pro.db, cli.pro.fd);
+    enum rc rc = dcp_protein_db_openr(&cli.pro.db, cli.pro.fd);
     if (rc) return rc;
 
     return DONE;
@@ -338,8 +338,8 @@ static enum rc cli_scan(int argc, char **argv)
     progress_file_start(&cli.progress, !arguments.quiet);
     while (!(rc = dcp_db_end(&cli.pro.db.super)))
     {
-        struct pro_prof *prof = dcp_pro_db_profile(&cli.pro.db);
-        if ((rc = dcp_pro_db_read(&cli.pro.db, prof))) goto cleanup;
+        struct protein_prof *prof = dcp_protein_db_profile(&cli.pro.db);
+        if ((rc = dcp_protein_db_read(&cli.pro.db, prof))) goto cleanup;
 
         queries_setup();
         struct meta const *mt = &cli.pro.db.prof.super.mt;
@@ -348,7 +348,7 @@ static enum rc cli_scan(int argc, char **argv)
     }
     if (rc != END) goto cleanup;
 
-    rc = dcp_pro_db_close(&cli.pro.db);
+    rc = dcp_protein_db_close(&cli.pro.db);
 
 cleanup:
     progress_file_stop(&cli.progress);

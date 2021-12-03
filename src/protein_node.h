@@ -1,10 +1,10 @@
-#ifndef PRO_NODE_H
-#define PRO_NODE_H
+#ifndef PROTEIN_NODE_H
+#define PROTEIN_NODE_H
 
 #include "imm/imm.h"
 #include "nuclt_dist.h"
 
-struct dcp_pro_node
+struct dcp_protein_node
 {
     union
     {

@@ -4,7 +4,7 @@
 #include "cco/cco.h"
 #include "dcp_limits.h"
 #include "path.h"
-#include "pro_db.h"
+#include "protein_db.h"
 #include "rc.h"
 #include "standard_db.h"
 #include <stdio.h>
@@ -22,7 +22,7 @@ struct db_handle
     union
     {
         struct dcp_standard_db std;
-        struct dcp_pro_db pro;
+        struct dcp_protein_db pro;
     };
 };
 

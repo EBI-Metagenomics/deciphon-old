@@ -3,8 +3,8 @@
 #include "db_pool.h"
 #include "logger.h"
 #include "macros.h"
-#include "pro_match.h"
-#include "pro_state.h"
+#include "protein_match.h"
+#include "protein_state.h"
 #include "safe.h"
 #include "sched_db.h"
 #include "sched_job.h"
@@ -164,9 +164,9 @@ enum rc next_profile(struct work *work)
 {
     if (dcp_db_end(&work->db->pro.super)) return DONE;
 
-    struct pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
+    struct protein_prof *prof = dcp_protein_db_profile(&work->db->pro);
 
-    enum rc rc = dcp_pro_db_read(&work->db->pro, prof);
+    enum rc rc = dcp_protein_db_read(&work->db->pro, prof);
     if (rc) return rc;
 
     work->prof = prof;
@@ -249,18 +249,18 @@ enum rc write_product(struct work *work, struct task *task,
         struct imm_step const *step = imm_path_step(path, idx);
         struct imm_seq frag = imm_subseq(&seq, start, step->seqlen);
 
-        struct pro_match match = {0};
-        pro_match_init(&match);
-        pro_match_set_frag(&match, step->seqlen, frag.str);
-        dcp_pro_prof_state_name(step->state_id,
-                                pro_match_get_state_name(&match));
+        struct protein_match match = {0};
+        protein_match_init(&match);
+        protein_match_set_frag(&match, step->seqlen, frag.str);
+        dcp_protein_prof_state_name(step->state_id,
+                                protein_match_get_state_name(&match));
 
-        if (!dcp_pro_state_is_mute(step->state_id))
+        if (!dcp_protein_state_is_mute(step->state_id))
         {
-            rc = dcp_pro_prof_decode(work->prof, &frag, step->state_id, &codon);
+            rc = dcp_protein_prof_decode(work->prof, &frag, step->state_id, &codon);
             if (rc) return rc;
-            pro_match_set_codon(&match, codon);
-            pro_match_set_amino(&match, imm_gc_decode(1, codon));
+            protein_match_set_codon(&match, codon);
+            protein_match_set_amino(&match, imm_gc_decode(1, codon));
         }
         if (idx > 0 && idx + 1 <= imm_path_nsteps(path))
         {
