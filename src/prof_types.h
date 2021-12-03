@@ -22,11 +22,11 @@ enum dcp_prof_typeid
     DCP_PRO_PROFILE,
 };
 
-struct dcp_prof;
+struct profile;
 
 struct dcp_prof_vtable
 {
-    void (*del)(struct dcp_prof *prof);
+    void (*del)(struct profile *prof);
     enum dcp_prof_typeid typeid;
 };
 

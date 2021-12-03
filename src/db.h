@@ -77,10 +77,10 @@ enum rc db_write_float_size(struct dcp_db *db);
 enum rc db_read_nprofiles(struct dcp_db *db);
 enum rc db_read_metadata(struct dcp_db *db);
 
-enum rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof);
+enum rc db_write_prof_meta(struct dcp_db *db, struct profile const *prof);
 
 enum rc db_check_write_prof_ready(struct dcp_db const *db,
-                                      struct dcp_prof const *prof);
+                                      struct profile const *prof);
 
 struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx);
 

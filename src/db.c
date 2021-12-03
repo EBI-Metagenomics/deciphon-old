@@ -371,7 +371,7 @@ cleanup:
     return rc;
 }
 
-static enum rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
+static enum rc write_name(struct dcp_db *db, struct profile const *prof)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
@@ -384,7 +384,7 @@ static enum rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
 }
 
 static enum rc write_accession(struct dcp_db *db,
-                                   struct dcp_prof const *prof)
+                                   struct profile const *prof)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
@@ -396,7 +396,7 @@ static enum rc write_accession(struct dcp_db *db,
     return DONE;
 }
 
-enum rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof)
+enum rc db_write_prof_meta(struct dcp_db *db, struct profile const *prof)
 {
     if (prof->mt.name == NULL) return error(ILLEGALARG, "metadata not set");
 
@@ -415,7 +415,7 @@ enum rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof)
 }
 
 enum rc db_check_write_prof_ready(struct dcp_db const *db,
-                                      struct dcp_prof const *prof)
+                                      struct profile const *prof)
 {
     if (db->profiles.size == MAX_NPROFILES)
         return error(FAIL, "too many profiles");

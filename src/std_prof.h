@@ -5,9 +5,9 @@
 #include "rc.h"
 #include <stdio.h>
 
-struct std_prof
+struct standard_profile
 {
-    struct dcp_prof super;
+    struct profile super;
     struct
     {
         struct imm_dp null;
@@ -15,26 +15,15 @@ struct std_prof
     } dp;
 };
 
-void std_prof_init(struct std_prof *, struct imm_code const *);
+void standard_profile_init(struct standard_profile *, struct imm_code const *);
 
-static inline void dcp_std_prof_del(struct std_prof *prof)
+static inline void standard_profile_del(struct standard_profile *prof)
 {
     if (prof) prof->super.vtable.del(&prof->super);
 }
 
-static inline struct dcp_prof *dcp_std_prof_super(struct std_prof *std)
-{
-    return &std->super;
-}
-
-struct std_prof;
-
-enum rc std_prof_read(struct std_prof *prof, FILE *restrict fd);
-enum rc std_prof_write(struct std_prof const *prof, FILE *restrict fd);
-
-static inline void std_prof_del(struct std_prof *prof)
-{
-    dcp_prof_del(&prof->super);
-}
+enum rc standard_profile_read(struct standard_profile *prof, FILE *restrict fd);
+enum rc standard_profile_write(struct standard_profile const *prof,
+                               FILE *restrict fd);
 
 #endif

@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-static void del(struct dcp_prof *prof);
+static void del(struct profile *prof);
 
 void dcp_pro_prof_init(struct pro_prof *p, struct imm_amino const *amino,
                        struct imm_nuclt_code const *code,
@@ -151,7 +151,7 @@ enum rc dcp_pro_prof_absorb(struct pro_prof *p, struct pro_model const *m)
     return DONE;
 }
 
-struct dcp_prof *dcp_pro_prof_super(struct pro_prof *pro)
+struct profile *dcp_pro_prof_super(struct pro_prof *pro)
 {
     return &pro->super;
 }
@@ -240,7 +240,7 @@ void dcp_pro_prof_write_dot(struct pro_prof const *p, FILE *restrict fp)
     imm_dp_write_dot(&p->alt.dp, fp, dcp_pro_state_name);
 }
 
-static void del(struct dcp_prof *prof)
+static void del(struct profile *prof)
 {
     if (prof)
     {

@@ -11,7 +11,7 @@ struct dcp_std_db
     struct dcp_db super;
     struct imm_abc abc;
     struct imm_code code;
-    struct std_prof prof;
+    struct standard_profile prof;
 };
 
 void dcp_std_db_init(struct dcp_std_db *db);
@@ -25,12 +25,12 @@ enum rc dcp_std_db_close(struct dcp_std_db *db);
 
 struct imm_abc const *dcp_std_db_abc(struct dcp_std_db const *db);
 
-enum rc dcp_std_db_read(struct dcp_std_db *db, struct std_prof *prof);
+enum rc dcp_std_db_read(struct dcp_std_db *db, struct standard_profile *prof);
 
 enum rc dcp_std_db_write(struct dcp_std_db *db,
-                             struct std_prof const *prof);
+                             struct standard_profile const *prof);
 
-struct std_prof *dcp_std_db_profile(struct dcp_std_db *db);
+struct standard_profile *dcp_std_db_profile(struct dcp_std_db *db);
 
 struct dcp_db *dcp_std_db_super(struct dcp_std_db *db);
 

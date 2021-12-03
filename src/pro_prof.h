@@ -11,7 +11,7 @@
 
 struct pro_prof
 {
-    struct dcp_prof super;
+    struct profile super;
 
     struct imm_amino const *amino;
     struct imm_nuclt_code const *code;
@@ -52,7 +52,7 @@ enum rc dcp_pro_prof_setup(struct pro_prof *prof, unsigned seq_size,
 enum rc dcp_pro_prof_absorb(struct pro_prof *prof,
                             struct pro_model const *model);
 
-struct dcp_prof *dcp_pro_prof_super(struct pro_prof *pro);
+struct profile *dcp_pro_prof_super(struct pro_prof *pro);
 
 void dcp_pro_prof_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
 
