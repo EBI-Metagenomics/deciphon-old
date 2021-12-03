@@ -1,9 +1,12 @@
 #include "sched_seq.h"
 #include "dcp/rc.h"
-#include "error.h"
+#include "logger.h"
 #include "macros.h"
+#include "safe.h"
 #include "sched_macros.h"
-#include "xstrlcpy.h"
+#include "xsql.h"
+#include <assert.h>
+#include <limits.h>
 #include <sqlite3.h>
 #include <stdint.h>
 
@@ -50,9 +53,12 @@ cleanup:
     return rc;
 }
 
-void sched_seq_setup(struct sched_seq *seq, char const *name, char const *data)
+void sched_seq_setup(struct sched_seq *seq, char const *name,
+                     struct array *data)
 {
     safe_strcpy(seq->name, name, DCP_SEQ_NAME_SIZE);
+    assert(array_size(data) <= INT_MAX);
+    seq->data = data;
 }
 
 enum dcp_rc sched_seq_add(struct sched_seq *seq)
@@ -62,8 +68,10 @@ enum dcp_rc sched_seq_add(struct sched_seq *seq)
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, seq->job_id);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 2, seq->name);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 3, seq->data);
+    BIND_STRING_OR_CLEANUP(rc, stmt, 2, seq->name);
+    assert(array_size(seq->data) <= INT_MAX);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 3, (int)array_size(seq->data),
+                         array_data(seq->data));
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     seq->id = sqlite3_column_int64(stmt, 0);
@@ -110,8 +118,12 @@ enum dcp_rc sched_seq_get(struct sched_seq *seq, int64_t id)
 
     seq->id = sqlite3_column_int64(stmt, 0);
     seq->job_id = sqlite3_column_int64(stmt, 1);
-    COLUMN_TEXT(stmt, 2, seq->name, ARRAY_SIZE(MEMBER_REF(*seq, name)));
-    COLUMN_TEXT(stmt, 3, seq->data, ARRAY_SIZE(MEMBER_REF(*seq, data)));
+
+    rc = xsql_get_text(stmt, 2, ARRAY_SIZE_OF(*seq, name), seq->name);
+    if (rc) goto cleanup;
+
+    rc = xsql_get_text_as_array(stmt, 3, &seq->data);
+    if (rc) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
