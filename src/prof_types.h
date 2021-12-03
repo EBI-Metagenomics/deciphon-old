@@ -18,8 +18,8 @@ static_assert(sizeof(imm_state_id_t) == 2, "16 bits state_id.");
 enum dcp_prof_typeid
 {
     DCP_NULL_PROFILE,
-    DCP_STD_PROFILE,
-    DCP_PRO_PROFILE,
+    DCP_STANDARD_PROFILE,
+    DCP_PROTEIN_PROFILE,
 };
 
 struct profile;

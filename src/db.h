@@ -54,7 +54,7 @@ extern struct dcp_db const dcp_db_default;
 unsigned dcp_db_float_size(struct dcp_db const *db);
 enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db);
 unsigned dcp_db_nprofiles(struct dcp_db const *db);
-struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx);
+struct meta dcp_db_meta(struct dcp_db const *db, unsigned idx);
 bool dcp_db_end(struct dcp_db const *db);
 
 void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid);
@@ -80,9 +80,9 @@ enum rc db_read_metadata(struct dcp_db *db);
 enum rc db_write_prof_meta(struct dcp_db *db, struct profile const *prof);
 
 enum rc db_check_write_prof_ready(struct dcp_db const *db,
-                                      struct profile const *prof);
+                                  struct profile const *prof);
 
-struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx);
+struct meta db_meta(struct dcp_db const *db, unsigned idx);
 
 enum rc db_current_offset(struct dcp_db *db, off_t *offset);
 

@@ -1,6 +1,7 @@
-#include "dcp/dcp.h"
+#include "standard_db.h"
 #include "hope/hope.h"
-#include "std_db_examples.h"
+#include "standard_db_examples.h"
+#include "standard_profile.h"
 
 void test_db_openw_empty(void);
 void test_db_openr_empty(void);
@@ -32,10 +33,10 @@ void test_db_openw_empty(void)
     imm_code_init(&code, abc);
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
     NOTNULL(fd);
-    struct dcp_std_db db;
-    dcp_std_db_init(&db);
-    EQ(dcp_std_db_openw(&db, fd, &code), DCP_DONE);
-    EQ(dcp_std_db_close(&db), DCP_DONE);
+    struct dcp_standard_db db;
+    dcp_standard_db_init(&db);
+    EQ(dcp_standard_db_openw(&db, fd, &code), DONE);
+    EQ(dcp_standard_db_close(&db), DONE);
     fclose(fd);
 }
 
@@ -43,17 +44,17 @@ void test_db_openr_empty(void)
 {
     FILE *fd = fopen(TMPDIR "/empty.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_std_db db;
-    dcp_std_db_init(&db);
-    EQ(dcp_std_db_openr(&db, fd), DCP_DONE);
-    EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(dcp_super(&db)), DCP_STD_PROFILE);
-    struct imm_abc const *abc = dcp_std_db_abc(&db);
+    struct dcp_standard_db db;
+    dcp_standard_db_init(&db);
+    EQ(dcp_standard_db_openr(&db, fd), DONE);
+    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(dcp_db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
     EQ(imm_abc_typeid(imm_super(imm_super(dna))), IMM_DNA);
-    EQ(dcp_std_db_close(&db), DCP_DONE);
+    EQ(dcp_standard_db_close(&db), DONE);
     fclose(fd);
 }
 
@@ -73,19 +74,19 @@ void test_db_openw_one_mute(void)
 
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
     NOTNULL(fd);
-    struct dcp_std_db db;
-    dcp_std_db_init(&db);
-    EQ(dcp_std_db_openw(&db, fd, &code), DCP_DONE);
+    struct dcp_standard_db db;
+    dcp_standard_db_init(&db);
+    EQ(dcp_standard_db_openw(&db, fd, &code), DONE);
 
-    struct dcp_std_prof p;
-    dcp_std_prof_init(&p, &code);
-    dcp_prof_nameit(dcp_super(&p), dcp_meta("NAME0", "ACC0"));
+    struct standard_profile p;
+    standard_profile_init(&p, &code);
+    prof_nameit(&p.super, meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
-    EQ(dcp_std_db_write(&db, &p), DCP_DONE);
+    EQ(dcp_standard_db_write(&db, &p), DONE);
 
-    dcp_del(&p);
-    EQ(dcp_std_db_close(&db), DCP_DONE);
+    standard_profile_del(&p);
+    EQ(dcp_standard_db_close(&db), DONE);
     fclose(fd);
 }
 
@@ -93,25 +94,25 @@ void test_db_openr_one_mute(void)
 {
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_std_db db;
-    dcp_std_db_init(&db);
-    EQ(dcp_std_db_openr(&db, fd), DCP_DONE);
-    EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(dcp_super(&db)), DCP_STD_PROFILE);
-    struct imm_abc const *abc = dcp_std_db_abc(&db);
+    struct dcp_standard_db db;
+    dcp_standard_db_init(&db);
+    EQ(dcp_standard_db_openr(&db, fd), DONE);
+    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(dcp_db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
     EQ(imm_abc_typeid(imm_super(imm_super(dna))), IMM_DNA);
 
-    EQ(dcp_db_nprofiles(dcp_super(&db)), 1);
+    EQ(dcp_db_nprofiles(&db.super), 1);
 
-    struct dcp_meta mt = dcp_db_meta(dcp_super(&db), 0);
+    struct meta mt = dcp_db_meta(&db.super, 0);
 
     EQ(mt.name, "NAME0");
     EQ(mt.acc, "ACC0");
 
-    EQ(dcp_std_db_close(&db), DCP_DONE);
+    EQ(dcp_standard_db_close(&db), DONE);
     fclose(fd);
 }
 
@@ -124,17 +125,16 @@ void test_db_openr_example1(void)
 {
     FILE *fd = fopen(TMPDIR "/example1.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_std_db db;
-    dcp_std_db_init(&db);
-    EQ(dcp_std_db_openr(&db, fd), DCP_DONE);
-    EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(dcp_super(&db)), DCP_STD_PROFILE);
-    EQ(imm_abc_typeid(dcp_std_db_abc(&db)), IMM_ABC);
+    struct dcp_standard_db db;
+    dcp_standard_db_init(&db);
+    EQ(dcp_standard_db_openr(&db, fd), DONE);
+    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(dcp_db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(imm_abc_typeid(dcp_standard_db_abc(&db)), IMM_ABC);
 
-    EQ(dcp_db_nprofiles(dcp_super(&db)), 2);
+    EQ(dcp_db_nprofiles(&db.super), 2);
 
-    struct dcp_meta mt[2] = {dcp_db_meta(dcp_super(&db), 0),
-                             dcp_db_meta(dcp_super(&db), 1)};
+    struct meta mt[2] = {dcp_db_meta(&db.super, 0), dcp_db_meta(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -142,15 +142,15 @@ void test_db_openr_example1(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    struct dcp_std_prof *p = dcp_std_db_profile(&db);
-    while (!dcp_db_end(dcp_super(&db)))
+    struct standard_profile *p = dcp_standard_db_profile(&db);
+    while (!dcp_db_end(&db.super))
     {
-        EQ(dcp_std_db_read(&db, p), DCP_DONE);
-        EQ(dcp_prof_typeid(dcp_super(p)), DCP_STD_PROFILE);
-        if (dcp_super(p)->idx == 0)
+        EQ(dcp_standard_db_read(&db, p), DONE);
+        EQ(dcp_prof_typeid(&p->super), DCP_STANDARD_PROFILE);
+        if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);
-            struct imm_abc const *abc = dcp_std_db_abc(&db);
+            struct imm_abc const *abc = dcp_standard_db_abc(&db);
             struct imm_seq seq = imm_seq(imm_str(imm_example1_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
             EQ(imm_dp_viterbi(&p->dp.alt, task, &prod), IMM_SUCCESS);
@@ -162,7 +162,7 @@ void test_db_openr_example1(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(dcp_std_db_close(&db), DCP_DONE);
+    EQ(dcp_standard_db_close(&db), DONE);
     fclose(fd);
 }
 
@@ -175,18 +175,17 @@ void test_db_openr_example2(void)
 {
     FILE *fd = fopen(TMPDIR "/example2.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_std_db db;
-    dcp_std_db_init(&db);
-    EQ(dcp_std_db_openr(&db, fd), DCP_DONE);
-    EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(dcp_super(&db)), DCP_STD_PROFILE);
-    struct imm_abc const *abc = dcp_std_db_abc(&db);
+    struct dcp_standard_db db;
+    dcp_standard_db_init(&db);
+    EQ(dcp_standard_db_openr(&db, fd), DONE);
+    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(dcp_db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
-    EQ(dcp_db_nprofiles(dcp_super(&db)), 2);
+    EQ(dcp_db_nprofiles(&db.super), 2);
 
-    struct dcp_meta mt[2] = {dcp_db_meta(dcp_super(&db), 0),
-                             dcp_db_meta(dcp_super(&db), 1)};
+    struct meta mt[2] = {dcp_db_meta(&db.super, 0), dcp_db_meta(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -194,12 +193,12 @@ void test_db_openr_example2(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    struct dcp_std_prof *p = dcp_std_db_profile(&db);
-    while (!dcp_db_end(dcp_super(&db)))
+    struct standard_profile *p = dcp_standard_db_profile(&db);
+    while (!dcp_db_end(&db.super))
     {
-        EQ(dcp_std_db_read(&db, p), DCP_DONE);
-        EQ(dcp_prof_typeid(dcp_super(p)), DCP_STD_PROFILE);
-        if (dcp_super(p)->idx == 0)
+        EQ(dcp_standard_db_read(&db, p), DONE);
+        EQ(dcp_prof_typeid(&p->super), DCP_STANDARD_PROFILE);
+        if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);
             struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
@@ -213,6 +212,6 @@ void test_db_openr_example2(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(dcp_std_db_close(&db), DCP_DONE);
+    EQ(dcp_standard_db_close(&db), DONE);
     fclose(fd);
 }

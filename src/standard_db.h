@@ -1,5 +1,5 @@
-#ifndef DCP_STD_DB_H
-#define DCP_STD_DB_H
+#ifndef STANDARD_DB_H
+#define STANDARD_DB_H
 
 #include "db.h"
 #include "meta.h"
@@ -19,16 +19,17 @@ void dcp_standard_db_init(struct dcp_standard_db *db);
 enum rc dcp_standard_db_openr(struct dcp_standard_db *db, FILE *restrict fd);
 
 enum rc dcp_standard_db_openw(struct dcp_standard_db *db, FILE *restrict fd,
-                         struct imm_code const *code);
+                              struct imm_code const *code);
 
 enum rc dcp_standard_db_close(struct dcp_standard_db *db);
 
 struct imm_abc const *dcp_standard_db_abc(struct dcp_standard_db const *db);
 
-enum rc dcp_standard_db_read(struct dcp_standard_db *db, struct standard_profile *prof);
+enum rc dcp_standard_db_read(struct dcp_standard_db *db,
+                             struct standard_profile *prof);
 
 enum rc dcp_standard_db_write(struct dcp_standard_db *db,
-                         struct standard_profile const *prof);
+                              struct standard_profile const *prof);
 
 struct standard_profile *dcp_standard_db_profile(struct dcp_standard_db *db);
 

@@ -16,38 +16,38 @@ static imm_float const uniform_lprobs[IMM_NUCLT_SIZE] = {LOGN2, LOGN2, LOGN2,
 /* Compute log(1 - p) given log(p). */
 static inline imm_float log1_p(imm_float logp) { return log1p(-exp(logp)); }
 
-static void add_xnodes(struct pro_model *);
-static void init_xnodes(struct pro_model *);
+enum rc add_xnodes(struct pro_model *);
+void init_xnodes(struct pro_model *);
 
-static void calculate_occupancy(struct pro_model *);
+void calculate_occupancy(struct pro_model *);
 
-static bool have_called_setup(struct pro_model *);
-static bool have_finished_add(struct pro_model const *);
+bool have_called_setup(struct pro_model *);
+bool have_finished_add(struct pro_model const *);
 
-static void init_delete(struct imm_mute_state *, struct pro_model *);
-static void init_insert(struct imm_frame_state *, struct pro_model *);
-static void init_match(struct imm_frame_state *, struct pro_model *,
-                       struct dcp_nuclt_dist *);
+void init_delete(struct imm_mute_state *, struct pro_model *);
+void init_insert(struct imm_frame_state *, struct pro_model *);
+void init_match(struct imm_frame_state *, struct pro_model *,
+                struct dcp_nuclt_dist *);
 
-static void init_null_xtrans(struct imm_hmm *, struct dcp_pro_xnode_null *);
-static void init_alt_xtrans(struct imm_hmm *, struct dcp_pro_xnode_alt *);
+enum rc init_null_xtrans(struct imm_hmm *, struct dcp_pro_xnode_null *);
+enum rc init_alt_xtrans(struct imm_hmm *, struct dcp_pro_xnode_alt *);
 
-static struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *);
-static struct imm_codon_lprob codon_lprob(struct imm_amino const *,
-                                          struct imm_amino_lprob const *,
-                                          struct imm_nuclt const *);
+struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *);
+struct imm_codon_lprob codon_lprob(struct imm_amino const *,
+                                   struct imm_amino_lprob const *,
+                                   struct imm_nuclt const *);
 
-static void setup_nuclt_dist(struct dcp_nuclt_dist *, struct imm_amino const *,
-                             struct imm_nuclt const *,
-                             imm_float const[IMM_AMINO_SIZE]);
+void setup_nuclt_dist(struct dcp_nuclt_dist *, struct imm_amino const *,
+                      struct imm_nuclt const *,
+                      imm_float const[IMM_AMINO_SIZE]);
 
-static void setup_entry_trans(struct pro_model *);
-static void setup_exit_trans(struct pro_model *);
-static void setup_transitions(struct pro_model *);
+enum rc setup_entry_trans(struct pro_model *);
+enum rc setup_exit_trans(struct pro_model *);
+enum rc setup_transitions(struct pro_model *);
 
 enum rc dcp_pro_model_add_node(struct pro_model *m,
-                                   imm_float const lprobs[IMM_AMINO_SIZE],
-                                   char consensus)
+                               imm_float const lprobs[IMM_AMINO_SIZE],
+                               char consensus)
 {
     if (!have_called_setup(m))
         return error(FAIL, "Must call dcp_pro_model_setup first.");
@@ -81,8 +81,7 @@ enum rc dcp_pro_model_add_node(struct pro_model *m,
     return DONE;
 }
 
-enum rc dcp_pro_model_add_trans(struct pro_model *m,
-                                    struct dcp_pro_trans trans)
+enum rc dcp_pro_model_add_trans(struct pro_model *m, struct dcp_pro_trans trans)
 {
     if (!have_called_setup(m))
         return error(FAIL, "Must call dcp_pro_model_setup first.");
@@ -154,8 +153,7 @@ static void model_reset(struct pro_model *model)
 
 enum rc dcp_pro_model_setup(struct pro_model *m, unsigned core_size)
 {
-    if (core_size == 0)
-        return error(ILLEGALARG, "`core_size` cannot be zero.");
+    if (core_size == 0) return error(ILLEGALARG, "`core_size` cannot be zero.");
 
     if (core_size > DCP_PRO_MODEL_CORE_SIZE_MAX)
         return error(ILLEGALARG, "`core_size` is too big.");
@@ -181,8 +179,7 @@ enum rc dcp_pro_model_setup(struct pro_model *m, unsigned core_size)
     m->alt.trans = ptr;
 
     model_reset(m);
-    add_xnodes(m);
-    return DONE;
+    return add_xnodes(m);
 }
 
 void dcp_pro_model_write_dot(struct pro_model const *m, FILE *restrict fp)
@@ -217,27 +214,28 @@ struct pro_model_summary pro_model_summary(struct pro_model const *m)
         }};
 }
 
-static void add_xnodes(struct pro_model *m)
+enum rc add_xnodes(struct pro_model *m)
 {
-    enum rc rc = DONE;
+    int e = 0;
     struct dcp_pro_xnode *n = &m->xnode;
 
-    rc += imm_hmm_add_state(&m->null.hmm, imm_super(&n->null.R));
-    rc += imm_hmm_set_start(&m->null.hmm, imm_super(&n->null.R), IMM_LPROB_ONE);
+    e += imm_hmm_add_state(&m->null.hmm, imm_super(&n->null.R));
+    e += imm_hmm_set_start(&m->null.hmm, imm_super(&n->null.R), IMM_LPROB_ONE);
 
-    rc += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.S));
-    rc += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.N));
-    rc += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.B));
-    rc += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.E));
-    rc += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.J));
-    rc += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.C));
-    rc += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.T));
-    rc += imm_hmm_set_start(&m->alt.hmm, imm_super(&n->alt.S), IMM_LPROB_ONE);
+    e += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.S));
+    e += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.N));
+    e += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.B));
+    e += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.E));
+    e += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.J));
+    e += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.C));
+    e += imm_hmm_add_state(&m->alt.hmm, imm_super(&n->alt.T));
+    e += imm_hmm_set_start(&m->alt.hmm, imm_super(&n->alt.S), IMM_LPROB_ONE);
 
-    assert(rc == DCP_DONE);
+    if (e > 0) return error(ILLEGALARG, "failed to add_xnodes");
+    return DONE;
 }
 
-static void init_xnodes(struct pro_model *m)
+void init_xnodes(struct pro_model *m)
 {
     imm_float e = m->cfg.epsilon;
     struct imm_nuclt_lprob const *nucltp = &m->null.nucltd.nucltp;
@@ -256,7 +254,7 @@ static void init_xnodes(struct pro_model *m)
     imm_mute_state_init(&n->alt.T, DCP_PRO_ID_T, imm_super(nuclt));
 }
 
-static void calculate_occupancy(struct pro_model *m)
+void calculate_occupancy(struct pro_model *m)
 {
     struct dcp_pro_trans *trans = m->alt.trans;
     m->alt.locc[0] = imm_lprob_add(trans->MI, trans->MM);
@@ -283,24 +281,21 @@ static void calculate_occupancy(struct pro_model *m)
     assert(!imm_lprob_is_nan(logZ));
 }
 
-static bool have_called_setup(struct pro_model *m)
-{
-    return m->core_size > 0;
-}
+bool have_called_setup(struct pro_model *m) { return m->core_size > 0; }
 
-static bool have_finished_add(struct pro_model const *m)
+bool have_finished_add(struct pro_model const *m)
 {
     unsigned core_size = m->core_size;
     return m->alt.node_idx == core_size && m->alt.trans_idx == (core_size + 1);
 }
 
-static void init_delete(struct imm_mute_state *state, struct pro_model *m)
+void init_delete(struct imm_mute_state *state, struct pro_model *m)
 {
     unsigned id = DCP_PRO_ID_DELETE | (m->alt.node_idx + 1);
     imm_mute_state_init(state, id, imm_super(m->code->nuclt));
 }
 
-static void init_insert(struct imm_frame_state *state, struct pro_model *m)
+void init_insert(struct imm_frame_state *state, struct pro_model *m)
 {
     imm_float e = m->cfg.epsilon;
     unsigned id = DCP_PRO_ID_INSERT | (m->alt.node_idx + 1);
@@ -309,46 +304,57 @@ static void init_insert(struct imm_frame_state *state, struct pro_model *m)
     imm_frame_state_init(state, id, nucltp, codonm, e);
 }
 
-static void init_match(struct imm_frame_state *state, struct pro_model *m,
-                       struct dcp_nuclt_dist *d)
+void init_match(struct imm_frame_state *state, struct pro_model *m,
+                struct dcp_nuclt_dist *d)
 {
     imm_float e = m->cfg.epsilon;
     unsigned id = DCP_PRO_ID_MATCH | (m->alt.node_idx + 1);
     imm_frame_state_init(state, id, &d->nucltp, &d->codonm, e);
 }
 
-static void init_null_xtrans(struct imm_hmm *hmm,
-                             struct dcp_pro_xnode_null *node)
+enum rc init_null_xtrans(struct imm_hmm *hmm, struct dcp_pro_xnode_null *node)
 {
-    enum rc rc = DONE;
     imm_float const o = IMM_LPROB_ONE;
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->R), imm_super(&node->R), o);
-    assert(rc == DCP_DONE);
+    if (imm_hmm_set_trans(hmm, imm_super(&node->R), imm_super(&node->R), o))
+        return FAIL;
+    return DONE;
 }
 
-static void init_alt_xtrans(struct imm_hmm *hmm, struct dcp_pro_xnode_alt *node)
+enum rc init_alt_xtrans(struct imm_hmm *hmm, struct dcp_pro_xnode_alt *node)
 {
-    enum rc rc = DONE;
     imm_float const o = IMM_LPROB_ONE;
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->S), imm_super(&node->B), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->S), imm_super(&node->N), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->N), imm_super(&node->N), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->N), imm_super(&node->B), o);
 
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->E), imm_super(&node->T), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->E), imm_super(&node->C), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->C), imm_super(&node->C), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->C), imm_super(&node->T), o);
+    if (imm_hmm_set_trans(hmm, imm_super(&node->S), imm_super(&node->B), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->S), imm_super(&node->N), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->N), imm_super(&node->N), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->N), imm_super(&node->B), o))
+        return FAIL;
 
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->E), imm_super(&node->B), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->E), imm_super(&node->J), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->J), imm_super(&node->J), o);
-    rc += imm_hmm_set_trans(hmm, imm_super(&node->J), imm_super(&node->B), o);
+    if (imm_hmm_set_trans(hmm, imm_super(&node->E), imm_super(&node->T), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->E), imm_super(&node->C), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->C), imm_super(&node->C), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->C), imm_super(&node->T), o))
+        return FAIL;
 
-    assert(rc == DCP_DONE);
+    if (imm_hmm_set_trans(hmm, imm_super(&node->E), imm_super(&node->B), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->E), imm_super(&node->J), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->J), imm_super(&node->J), o))
+        return FAIL;
+    if (imm_hmm_set_trans(hmm, imm_super(&node->J), imm_super(&node->B), o))
+        return FAIL;
+
+    return DONE;
 }
 
-static struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
+struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
 {
     imm_float lprobs[] = {[0 ... IMM_NUCLT_SIZE - 1] = IMM_LPROB_ZERO};
 
@@ -367,9 +373,9 @@ static struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
     return imm_nuclt_lprob(codonp->nuclt, lprobs);
 }
 
-static struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
-                                          struct imm_amino_lprob const *aminop,
-                                          struct imm_nuclt const *nuclt)
+struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
+                                   struct imm_amino_lprob const *aminop,
+                                   struct imm_nuclt const *nuclt)
 {
     /* FIXME: We don't need 255 positions*/
     unsigned count[] = {[0 ... 254] = 0};
@@ -402,10 +408,10 @@ static struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
     return codonp;
 }
 
-static void setup_nuclt_dist(struct dcp_nuclt_dist *dist,
-                             struct imm_amino const *amino,
-                             struct imm_nuclt const *nuclt,
-                             imm_float const lprobs[IMM_AMINO_SIZE])
+void setup_nuclt_dist(struct dcp_nuclt_dist *dist,
+                      struct imm_amino const *amino,
+                      struct imm_nuclt const *nuclt,
+                      imm_float const lprobs[IMM_AMINO_SIZE])
 {
     dist->nucltp = imm_nuclt_lprob(nuclt, uniform_lprobs);
     struct imm_amino_lprob aminop = imm_amino_lprob(amino, lprobs);
@@ -417,9 +423,8 @@ static void setup_nuclt_dist(struct dcp_nuclt_dist *dist,
     dist->codonm = imm_codon_marg(&codonp);
 }
 
-static void setup_entry_trans(struct pro_model *m)
+enum rc setup_entry_trans(struct pro_model *m)
 {
-    enum rc rc = DONE;
     if (m->cfg.entry_dist == DCP_ENTRY_DIST_UNIFORM)
     {
         imm_float M = (imm_float)m->core_size;
@@ -429,7 +434,8 @@ static void setup_entry_trans(struct pro_model *m)
         for (unsigned i = 0; i < m->core_size; ++i)
         {
             struct dcp_pro_node *node = m->alt.nodes + i;
-            rc += imm_hmm_set_trans(&m->alt.hmm, B, imm_super(&node->M), cost);
+            if (imm_hmm_set_trans(&m->alt.hmm, B, imm_super(&node->M), cost))
+                return FAIL;
         }
     }
     else
@@ -440,41 +446,41 @@ static void setup_entry_trans(struct pro_model *m)
         for (unsigned i = 0; i < m->core_size; ++i)
         {
             struct dcp_pro_node *node = m->alt.nodes + i;
-            rc += imm_hmm_set_trans(&m->alt.hmm, B, imm_super(&node->M),
-                                    m->alt.locc[i]);
+            if (imm_hmm_set_trans(&m->alt.hmm, B, imm_super(&node->M),
+                                  m->alt.locc[i]))
+                return FAIL;
         }
     }
-    assert(rc == DCP_DONE);
+    return DONE;
 }
 
-static void setup_exit_trans(struct pro_model *m)
+enum rc setup_exit_trans(struct pro_model *m)
 {
-    enum rc rc = DONE;
     struct imm_state *E = imm_super(&m->xnode.alt.E);
 
     for (unsigned i = 0; i < m->core_size; ++i)
     {
         struct dcp_pro_node *node = m->alt.nodes + i;
-        rc +=
-            imm_hmm_set_trans(&m->alt.hmm, imm_super(&node->M), E, imm_log(1));
+        if (imm_hmm_set_trans(&m->alt.hmm, imm_super(&node->M), E, imm_log(1)))
+            return FAIL;
     }
     for (unsigned i = 1; i < m->core_size; ++i)
     {
         struct dcp_pro_node *node = m->alt.nodes + i;
-        rc +=
-            imm_hmm_set_trans(&m->alt.hmm, imm_super(&node->D), E, imm_log(1));
+        if (imm_hmm_set_trans(&m->alt.hmm, imm_super(&node->D), E, imm_log(1)))
+            return FAIL;
     }
-    assert(rc == DCP_DONE);
+    return DONE;
 }
 
-static void setup_transitions(struct pro_model *m)
+enum rc setup_transitions(struct pro_model *m)
 {
     struct imm_hmm *h = &m->alt.hmm;
     struct dcp_pro_trans *trans = m->alt.trans;
 
     struct imm_state *B = imm_super(&m->xnode.alt.B);
     struct imm_state *M1 = imm_super(&m->alt.nodes[0].M);
-    enum imm_rc rc = imm_hmm_set_trans(h, B, M1, trans[0].MM);
+    if (imm_hmm_set_trans(h, B, M1, trans[0].MM)) return FAIL;
 
     for (unsigned i = 0; i + 1 < m->core_size; ++i)
     {
@@ -482,24 +488,29 @@ static void setup_transitions(struct pro_model *m)
         struct dcp_pro_node *nx = m->alt.nodes + i + 1;
         unsigned j = i + 1;
         struct dcp_pro_trans t = trans[j];
-        rc += imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&pr->I), t.MI);
-        rc += imm_hmm_set_trans(h, imm_super(&pr->I), imm_super(&pr->I), t.II);
-        rc += imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&nx->M), t.MM);
-        rc += imm_hmm_set_trans(h, imm_super(&pr->I), imm_super(&nx->M), t.IM);
-        rc += imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&nx->D), t.MD);
-        rc += imm_hmm_set_trans(h, imm_super(&pr->D), imm_super(&nx->D), t.DD);
-        rc += imm_hmm_set_trans(h, imm_super(&pr->D), imm_super(&nx->M), t.DM);
+        if (imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&pr->I), t.MI))
+            return FAIL;
+        if (imm_hmm_set_trans(h, imm_super(&pr->I), imm_super(&pr->I), t.II))
+            return FAIL;
+        if (imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&nx->M), t.MM))
+            return FAIL;
+        if (imm_hmm_set_trans(h, imm_super(&pr->I), imm_super(&nx->M), t.IM))
+            return FAIL;
+        if (imm_hmm_set_trans(h, imm_super(&pr->M), imm_super(&nx->D), t.MD))
+            return FAIL;
+        if (imm_hmm_set_trans(h, imm_super(&pr->D), imm_super(&nx->D), t.DD))
+            return FAIL;
+        if (imm_hmm_set_trans(h, imm_super(&pr->D), imm_super(&nx->M), t.DM))
+            return FAIL;
     }
 
     unsigned n = m->core_size;
     struct imm_state *Mm = imm_super(&m->alt.nodes[n - 1].M);
     struct imm_state *E = imm_super(&m->xnode.alt.E);
-    rc += imm_hmm_set_trans(h, Mm, E, trans[n].MM);
+    if (imm_hmm_set_trans(h, Mm, E, trans[n].MM)) return FAIL;
 
-    assert(!rc);
-
-    setup_entry_trans(m);
-    setup_exit_trans(m);
-    init_null_xtrans(&m->null.hmm, &m->xnode.null);
-    init_alt_xtrans(&m->alt.hmm, &m->xnode.alt);
+    if (setup_entry_trans(m)) return FAIL;
+    if (setup_exit_trans(m)) return FAIL;
+    if (init_null_xtrans(&m->null.hmm, &m->xnode.null)) return FAIL;
+    return init_alt_xtrans(&m->alt.hmm, &m->xnode.alt);
 }

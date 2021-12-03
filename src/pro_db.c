@@ -12,7 +12,7 @@
 struct dcp_pro_db const dcp_pro_db_default = {0};
 
 static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
-                                imm_float *epsilon)
+                            imm_float *epsilon)
 {
     if (float_bytes == 4)
     {
@@ -36,7 +36,7 @@ static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
 }
 
 static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
-                                 imm_float epsilon)
+                             imm_float epsilon)
 {
     if (float_bytes == 4)
     {
@@ -55,7 +55,7 @@ static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
 }
 
 static enum rc read_entry_dist(struct cmp_ctx_s *cmp,
-                                   enum dcp_entry_dist *edist)
+                               enum dcp_entry_dist *edist)
 {
     uint8_t val = 0;
     if (!cmp_read_u8(cmp, &val))
@@ -65,7 +65,7 @@ static enum rc read_entry_dist(struct cmp_ctx_s *cmp,
 }
 
 static enum rc write_entry_dist(struct cmp_ctx_s *cmp,
-                                    enum dcp_entry_dist edist)
+                                enum dcp_entry_dist edist)
 {
     if (!cmp_write_u8(cmp, (uint8_t)edist))
         return error(IOERROR, "failed to write entry distribution");
@@ -102,7 +102,7 @@ static enum rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
 
 static void pro_db_init(struct dcp_pro_db *db)
 {
-    db_init(&db->super, DCP_PRO_PROFILE);
+    db_init(&db->super, DCP_PROTEIN_PROFILE);
     db->amino = imm_amino_empty;
     db->nuclt = imm_nuclt_empty;
     db->code = imm_nuclt_code_empty;
@@ -110,8 +110,8 @@ static void pro_db_init(struct dcp_pro_db *db)
     dcp_pro_prof_init(&db->prof, &db->amino, &db->code, DCP_PRO_CFG_DEFAULT);
 }
 
-enum rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
-                                           unsigned nfiles, FILE *fp[])
+enum rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db, unsigned nfiles,
+                                       FILE *fp[])
 {
     unsigned n = db_nprofiles(&db->super);
     assert(nfiles <= n);
@@ -175,9 +175,8 @@ enum rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
 }
 
 enum rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
-                             struct imm_amino const *amino,
-                             struct imm_nuclt const *nuclt,
-                             struct dcp_pro_cfg cfg)
+                         struct imm_amino const *amino,
+                         struct imm_nuclt const *nuclt, struct dcp_pro_cfg cfg)
 {
     pro_db_init(db);
     db->amino = *amino;
@@ -236,8 +235,7 @@ enum rc dcp_pro_db_read(struct dcp_pro_db *db, struct pro_prof *prof)
     return pro_prof_read(prof, &db->super.file.cmp[0]);
 }
 
-enum rc dcp_pro_db_write(struct dcp_pro_db *db,
-                             struct pro_prof const *prof)
+enum rc dcp_pro_db_write(struct dcp_pro_db *db, struct pro_prof const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum rc rc = DONE;
@@ -247,9 +245,6 @@ enum rc dcp_pro_db_write(struct dcp_pro_db *db,
     return rc;
 }
 
-struct pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db)
-{
-    return &db->prof;
-}
+struct pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db) { return &db->prof; }
 
 struct dcp_db *dcp_pro_db_super(struct dcp_pro_db *db) { return &db->super; }

@@ -29,7 +29,7 @@ void test_db_pro_openr(void)
 
     EQ(dcp_db_nprofiles(dcp_super(&db)), 2);
 
-    struct dcp_meta mt[2] = {dcp_db_meta(dcp_super(&db), 0),
+    struct meta mt[2] = {dcp_db_meta(dcp_super(&db), 0),
                              dcp_db_meta(dcp_super(&db), 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");

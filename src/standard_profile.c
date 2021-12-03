@@ -12,7 +12,7 @@ void standard_profile_init(struct standard_profile *prof,
 {
     imm_dp_init(&prof->dp.null, code);
     imm_dp_init(&prof->dp.alt, code);
-    struct dcp_prof_vtable vtable = {del, DCP_STD_PROFILE};
+    struct dcp_prof_vtable vtable = {del, DCP_STANDARD_PROFILE};
     profile_init(&prof->super, code, meta_unset, vtable);
 }
 

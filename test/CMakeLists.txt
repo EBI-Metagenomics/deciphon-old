@@ -35,13 +35,13 @@ function(dcp_add_test name srcs)
 endfunction()
 
 dcp_add_test(standard_profile standard_profile.c)
-# dcp_add_test(std_db "std_db.c;std_db_examples.c")
+dcp_add_test(standard_db "standard_db.c;standard_db_examples.c")
 
 # dcp_add_test(pro_model pro_model.c)
 # dcp_add_test(pro_prof pro_prof.c)
 # dcp_add_test(pro_db "pro_db.c;pro_db_examples.c")
 # dcp_add_test(pro_reader pro_reader.c)
-# dcp_add_test(srv "srv.c;std_db_examples.c;pro_db_examples.c;srv_data.c")
+# dcp_add_test(srv "srv.c;standard_db_examples.c;pro_db_examples.c;srv_data.c")
 # dcp_add_test(job job.c)
 
 # CLI

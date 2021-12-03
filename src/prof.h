@@ -11,7 +11,7 @@ struct profile
     struct dcp_prof_vtable vtable;
     unsigned idx;
     struct imm_code const *code;
-    struct dcp_meta mt;
+    struct meta mt;
 };
 
 static inline void dcp_prof_del(struct profile *prof)
@@ -19,7 +19,7 @@ static inline void dcp_prof_del(struct profile *prof)
     if (prof) prof->vtable.del(prof);
 }
 
-static inline void prof_nameit(struct profile *prof, struct dcp_meta mt)
+static inline void prof_nameit(struct profile *prof, struct meta mt)
 {
     prof->mt = mt;
 }
@@ -30,7 +30,7 @@ static inline enum dcp_prof_typeid dcp_prof_typeid(struct profile const *prof)
 }
 
 static void profile_init(struct profile *prof, struct imm_code const *code,
-                         struct dcp_meta mt, struct dcp_prof_vtable vtable)
+                         struct meta mt, struct dcp_prof_vtable vtable)
 {
     prof->vtable = vtable;
     prof->idx = DCP_PROFILE_NULL_IDX;

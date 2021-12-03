@@ -1,17 +1,17 @@
 #ifndef META_H
 #define META_H
 
-struct dcp_meta
+struct meta
 {
     char const *name;
     char const *acc;
 };
 
-static inline struct dcp_meta meta(char const *name, char const *acc)
+static inline struct meta meta(char const *name, char const *acc)
 {
-    return (struct dcp_meta){name, acc};
+    return (struct meta){name, acc};
 }
 
-extern struct dcp_meta meta_unset;
+extern struct meta meta_unset;
 
 #endif

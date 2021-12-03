@@ -217,7 +217,7 @@ static enum rc write_aminos(char const *oamino)
     return DONE;
 }
 
-static enum rc scan_queries(struct dcp_meta const *mt)
+static enum rc scan_queries(struct meta const *mt)
 {
     struct imm_prod null = imm_prod();
     struct pro_prof *prof = &cli.pro.db.prof;
@@ -342,7 +342,7 @@ static enum rc cli_scan(int argc, char **argv)
         if ((rc = dcp_pro_db_read(&cli.pro.db, prof))) goto cleanup;
 
         queries_setup();
-        struct dcp_meta const *mt = &cli.pro.db.prof.super.mt;
+        struct meta const *mt = &cli.pro.db.prof.super.mt;
         if ((rc = scan_queries(mt))) goto cleanup;
         progress_file_update(&cli.progress);
     }

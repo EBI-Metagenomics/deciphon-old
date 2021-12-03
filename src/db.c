@@ -205,7 +205,7 @@ enum rc db_read_prof_type(struct dcp_db *db)
     if (!cmp_read_u8(&db->file.cmp[0], &prof_type))
         return error(IOERROR, "failed to read profile type");
 
-    if (prof_type != DCP_STD_PROFILE && prof_type != DCP_PRO_PROFILE)
+    if (prof_type != DCP_STANDARD_PROFILE && prof_type != DCP_PROTEIN_PROFILE)
         return error(PARSEERROR, "wrong prof_type");
 
     db->prof_typeid = prof_type;
@@ -334,8 +334,7 @@ static enum rc parse_metadata(struct dcp_db *db)
         /* Name */
         while (db->mt.data[offset + j++])
             ;
-        if (j - 1 > MAX_NAME_SIZE)
-            return error(ILLEGALARG, "name is too long");
+        if (j - 1 > MAX_NAME_SIZE) return error(ILLEGALARG, "name is too long");
 
         db->mt.name_length[i] = (uint8_t)(j - 1);
         if (offset + j >= db->mt.size)
@@ -383,8 +382,7 @@ static enum rc write_name(struct dcp_db *db, struct profile const *prof)
     return DONE;
 }
 
-static enum rc write_accession(struct dcp_db *db,
-                                   struct profile const *prof)
+static enum rc write_accession(struct dcp_db *db, struct profile const *prof)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
@@ -415,7 +413,7 @@ enum rc db_write_prof_meta(struct dcp_db *db, struct profile const *prof)
 }
 
 enum rc db_check_write_prof_ready(struct dcp_db const *db,
-                                      struct profile const *prof)
+                                  struct profile const *prof)
 {
     if (db->profiles.size == MAX_NPROFILES)
         return error(FAIL, "too many profiles");
@@ -425,7 +423,7 @@ enum rc db_check_write_prof_ready(struct dcp_db const *db,
     return DONE;
 }
 
-struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx)
+struct meta db_meta(struct dcp_db const *db, unsigned idx)
 {
     unsigned o = db->mt.offset[idx];
     unsigned size = (unsigned)(db->mt.name_length[idx] + 1);
@@ -441,7 +439,7 @@ enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db)
 
 unsigned dcp_db_nprofiles(struct dcp_db const *db) { return db->profiles.size; }
 
-struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
+struct meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
 {
     return db_meta(db, idx);
 }
@@ -451,8 +449,7 @@ bool dcp_db_end(struct dcp_db const *db) { return db_end(db); }
 enum rc db_current_offset(struct dcp_db *db, off_t *offset)
 {
     FILE *fp = xcmp_fp(&db->file.cmp[0]);
-    if ((*offset = ftello(fp)) == -1)
-        return error(IOERROR, "failed to ftello");
+    if ((*offset = ftello(fp)) == -1) return error(IOERROR, "failed to ftello");
     return DONE;
 }
 

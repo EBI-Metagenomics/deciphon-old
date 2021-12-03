@@ -224,7 +224,7 @@ enum rc write_product(struct work *work, struct task *task,
     enum rc rc = DONE;
     struct imm_codon codon = imm_codon_any(work->prof->code->nuclt);
 
-    struct dcp_meta const *mt = &work->prof->super.mt;
+    struct meta const *mt = &work->prof->super.mt;
 
     sched_prod_set_job_id(&task->prod, work->job.id);
     sched_prod_set_seq_id(&task->prod, task->sched_seq.id);

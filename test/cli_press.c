@@ -34,7 +34,7 @@ void test_cli_press_read(void)
 
     EQ(dcp_db_nprofiles(dcp_super(&db)), 5);
 
-    struct dcp_meta mt[5] = {
+    struct meta mt[5] = {
         dcp_db_meta(dcp_super(&db), 0), dcp_db_meta(dcp_super(&db), 1),
         dcp_db_meta(dcp_super(&db), 2), dcp_db_meta(dcp_super(&db), 3),
         dcp_db_meta(dcp_super(&db), 4)};

@@ -71,7 +71,7 @@ enum rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
     return DONE;
 }
 
-struct dcp_meta dcp_pro_reader_meta(struct dcp_pro_reader const *reader)
+struct meta dcp_pro_reader_meta(struct dcp_pro_reader const *reader)
 {
     return meta(reader->prof.meta.name, reader->prof.meta.acc);
 }

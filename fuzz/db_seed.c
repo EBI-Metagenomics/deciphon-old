@@ -21,7 +21,7 @@ static void write_example1(void)
     struct dcp_profile prof = {0};
     dcp_profile_init(&m->abc, &prof);
     prof.idx = 0;
-    prof.mt = dcp_metadata("NAME0", "ACC0");
+    prof.mt = metadata("NAME0", "ACC0");
     imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.n), prof.dp.null);
     imm_hmm_reset_dp(m->hmm, imm_super(m->end), prof.dp.alt);
     dcp_db_write(db, &prof);
@@ -32,7 +32,7 @@ static void write_example1(void)
     imm_hmm_add_state(hmm, imm_super(state));
     imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3));
     prof.idx = 1;
-    prof.mt = dcp_metadata("NAME1", "ACC1");
+    prof.mt = metadata("NAME1", "ACC1");
     imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.null);
     imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.alt);
     dcp_db_write(db, &prof);
@@ -54,7 +54,7 @@ static void write_example2(void)
     struct dcp_profile prof = {0};
     dcp_profile_init(abc, &prof);
     prof.idx = 0;
-    prof.mt = dcp_metadata("NAME0", "ACC0");
+    prof.mt = metadata("NAME0", "ACC0");
     imm_hmm_reset_dp(m->null.hmm, imm_super(m->null.n), prof.dp.null);
     imm_hmm_reset_dp(m->hmm, imm_super(m->end), prof.dp.alt);
     dcp_db_write(db, &prof);
@@ -65,7 +65,7 @@ static void write_example2(void)
     imm_hmm_add_state(hmm, imm_super(state));
     imm_hmm_set_start(hmm, imm_super(state), imm_log(0.3));
     prof.idx = 1;
-    prof.mt = dcp_metadata("NAME1", "ACC1");
+    prof.mt = metadata("NAME1", "ACC1");
     imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.null);
     imm_hmm_reset_dp(hmm, imm_super(state), prof.dp.alt);
     dcp_db_write(db, &prof);

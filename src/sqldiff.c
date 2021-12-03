@@ -2225,7 +2225,7 @@ static const char *all_tables_sql(void)
     {
         int rc;
 
-        rc = sqlite3_exec(
+        sqlite3_exec(
             g.db,
             "CREATE TEMP TABLE tblmap(module COLLATE nocase, postfix);"
             "INSERT INTO temp.tblmap VALUES"
@@ -2243,6 +2243,7 @@ static const char *all_tables_sql(void)
 
         rc = sqlite3_create_function(g.db, "module_name", 1, SQLITE_UTF8, 0,
                                      module_name_func, 0, 0);
+        (void)rc;
         assert(rc == SQLITE_OK);
 
         return sel1[g.useSchemaName];

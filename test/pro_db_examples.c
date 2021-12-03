@@ -17,11 +17,11 @@ void pro_db_examples_new_ex1(char const *filepath)
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&db);
 
     dcp_pro_prof_sample(prof, 1, 2);
-    dcp_prof_nameit(dcp_super(prof), dcp_meta("NAME0", "ACC0"));
+    dcp_prof_nameit(dcp_super(prof), meta("NAME0", "ACC0"));
     EQ(dcp_pro_db_write(&db, prof), DCP_DONE);
 
     dcp_pro_prof_sample(prof, 2, 2);
-    dcp_prof_nameit(dcp_super(prof), dcp_meta("NAME1", "ACC1"));
+    dcp_prof_nameit(dcp_super(prof), meta("NAME1", "ACC1"));
     EQ(dcp_pro_db_write(&db, prof), DCP_DONE);
 
     EQ(dcp_pro_db_close(&db), DCP_DONE);

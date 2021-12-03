@@ -40,7 +40,7 @@ int main(void)
     struct dcp_pro_prof prof;
     dcp_pro_prof_init(&prof, amino, &code, cfg);
 
-    dcp_prof_nameit(dcp_super(&prof), dcp_meta("name", "acc"));
+    dcp_prof_nameit(dcp_super(&prof), meta("name", "acc"));
     EQ(dcp_pro_prof_absorb(&prof, &reader.model), DCP_DONE);
 
     struct imm_seq seq =

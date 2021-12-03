@@ -46,7 +46,7 @@ int main(void)
     struct dcp_pro_prof prof;
     dcp_pro_prof_init(&prof, amino, &code, cfg);
 
-    dcp_prof_nameit(dcp_super(&prof), dcp_meta("NAME0", "ACC0"));
+    dcp_prof_nameit(dcp_super(&prof), meta("NAME0", "ACC0"));
     EQ(dcp_pro_prof_absorb(&prof, &model), DCP_DONE);
 
     dcp_del(&prof);

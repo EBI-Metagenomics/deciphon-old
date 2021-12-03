@@ -19,7 +19,7 @@ void dcp_pro_prof_init(struct pro_prof *p, struct imm_amino const *amino,
                        struct imm_nuclt_code const *code,
                        struct dcp_pro_cfg cfg)
 {
-    struct dcp_prof_vtable vtable = {del, DCP_PRO_PROFILE};
+    struct dcp_prof_vtable vtable = {del, DCP_PROTEIN_PROFILE};
     struct imm_nuclt const *nuclt = code->nuclt;
     profile_init(&p->super, &code->super, meta_unset, vtable);
     p->code = code;
@@ -151,10 +151,7 @@ enum rc dcp_pro_prof_absorb(struct pro_prof *p, struct pro_model const *m)
     return DONE;
 }
 
-struct profile *dcp_pro_prof_super(struct pro_prof *pro)
-{
-    return &pro->super;
-}
+struct profile *dcp_pro_prof_super(struct pro_prof *pro) { return &pro->super; }
 
 void dcp_pro_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
