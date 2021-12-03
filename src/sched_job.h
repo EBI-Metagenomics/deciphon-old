@@ -1,8 +1,8 @@
 #ifndef SCHED_JOB_H
 #define SCHED_JOB_H
 
-#include "dcp/job_state.h"
-#include "dcp/limits.h"
+#include "dcp_limits.h"
+#include "job_state.h"
 #include <stdint.h>
 
 struct sqlite3;

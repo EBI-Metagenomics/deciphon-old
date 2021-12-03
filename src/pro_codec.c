@@ -1,7 +1,7 @@
-#include "dcp/pro_codec.h"
-#include "dcp/pro_prof.h"
-#include "dcp/pro_state.h"
+#include "pro_codec.h"
 #include "imm/imm.h"
+#include "pro_prof.h"
+#include "pro_state.h"
 
 enum dcp_rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
                                struct imm_seq const *seq,

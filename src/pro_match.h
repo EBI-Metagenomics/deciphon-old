@@ -1,8 +1,8 @@
 #ifndef PRO_MATCH_H
 #define PRO_MATCH_H
 
-#include "dcp/rc.h"
 #include "imm/imm.h"
+#include "rc.h"
 #include <stdio.h>
 
 #define PRO_MATCH_FRAG_SIZE 6

@@ -1,7 +1,7 @@
 #ifndef XSQL_H
 #define XSQL_H
 
-#include "dcp/rc.h"
+#include "rc.h"
 
 struct array;
 struct sqlite3_stmt;

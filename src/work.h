@@ -1,9 +1,9 @@
 #ifndef WORK_H
 #define WORK_H
 
-#include "dcp/job.h"
-#include "dcp/limits.h"
+#include "dcp_limits.h"
 #include "imm/imm.h"
+#include "job.h"
 #include "path.h"
 #include "task.h"
 #include "xfile.h"

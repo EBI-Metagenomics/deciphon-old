@@ -85,7 +85,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_add(struct sched_prod *prod)
+enum dcp_rc sched_prod_add(struct prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     enum dcp_rc rc = DCP_DONE;
@@ -143,7 +143,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_get(struct sched_prod *prod, int64_t prod_id)
+enum dcp_rc sched_prod_get(struct prod *prod, int64_t prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
     enum dcp_rc rc = DCP_DONE;
@@ -187,55 +187,55 @@ void sched_prod_module_del(void)
         sqlite3_finalize(stmts[i]);
 }
 
-void sched_prod_set_job_id(struct sched_prod *prod, int64_t job_id)
+void sched_prod_set_job_id(struct prod *prod, int64_t job_id)
 {
     prod->job_id = job_id;
 }
 
-void sched_prod_set_seq_id(struct sched_prod *prod, int64_t seq_id)
+void sched_prod_set_seq_id(struct prod *prod, int64_t seq_id)
 {
     prod->seq_id = seq_id;
 }
 
-void sched_prod_set_match_id(struct sched_prod *prod, int64_t match_id)
+void sched_prod_set_match_id(struct prod *prod, int64_t match_id)
 {
     prod->match_id = match_id;
 }
 
-void sched_prod_set_prof_name(struct sched_prod *prod,
+void sched_prod_set_prof_name(struct prod *prod,
                               char const prof_name[DCP_PROF_NAME_SIZE])
 {
     safe_strcpy(prod->prof_name, prof_name, DCP_PROF_NAME_SIZE);
 }
 
-void sched_prod_set_abc_name(struct sched_prod *prod, char const *abc_name)
+void sched_prod_set_abc_name(struct prod *prod, char const *abc_name)
 {
     safe_strcpy(prod->abc_name, abc_name, DCP_ABC_NAME_SIZE);
 }
 
-void sched_prod_set_loglik(struct sched_prod *prod, double loglik)
+void sched_prod_set_loglik(struct prod *prod, double loglik)
 {
     prod->loglik = loglik;
 }
 
-void sched_prod_set_null_loglik(struct sched_prod *prod, double null_loglik)
+void sched_prod_set_null_loglik(struct prod *prod, double null_loglik)
 {
     prod->null_loglik = null_loglik;
 }
 
-void sched_prod_set_model(struct sched_prod *prod, char const *model)
+void sched_prod_set_model(struct prod *prod, char const *model)
 {
     safe_strcpy(prod->model, model, DCP_MODEL_SIZE);
 }
 
-void sched_prod_set_version(struct sched_prod *prod, char const *version)
+void sched_prod_set_version(struct prod *prod, char const *version)
 {
     safe_strcpy(prod->version, version, DCP_VERSION_SIZE);
 }
 
 #define ERROR_WRITE error(DCP_IOERROR, "failed to write product")
 
-enum dcp_rc sched_prod_write_preamble(struct sched_prod *p, FILE *restrict fd)
+enum dcp_rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
 {
     if (fprintf(fd, "%" PRId64 TAB, p->job_id) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%" PRId64 TAB, p->seq_id) < 0) return ERROR_WRITE;

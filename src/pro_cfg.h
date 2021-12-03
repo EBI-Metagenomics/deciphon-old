@@ -1,7 +1,7 @@
-#ifndef DCP_PRO_CFG_H
-#define DCP_PRO_CFG_H
+#ifndef PRO_CFG_H
+#define PRO_CFG_H
 
-#include "dcp/entry_dist.h"
+#include "entry_dist.h"
 #include "imm/imm.h"
 
 struct dcp_pro_cfg

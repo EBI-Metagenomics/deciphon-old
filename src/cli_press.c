@@ -1,10 +1,8 @@
 #include "cli.h"
-#include "dcp/cli.h"
-#include "dcp/generics.h"
-#include "dcp/pro_db.h"
-#include "dcp/pro_reader.h"
 #include "logger.h"
 #include "path.h"
+#include "pro_db.h"
+#include "pro_reader.h"
 #include "progress_file.h"
 #include "safe.h"
 #include <stdlib.h>
@@ -129,7 +127,7 @@ static enum dcp_rc cli_setup(struct arguments const *args)
 
 static enum dcp_rc profile_write(void)
 {
-    dcp_prof_nameit(dcp_super(&cli.db.prof), dcp_pro_reader_meta(&cli.reader));
+    dcp_prof_nameit(&cli.db.prof.super, dcp_pro_reader_meta(&cli.reader));
 
     enum dcp_rc rc = dcp_pro_prof_absorb(&cli.db.prof, &cli.reader.model);
     if (rc) return rc;
@@ -137,7 +135,7 @@ static enum dcp_rc profile_write(void)
     return dcp_pro_db_write(&cli.db, &cli.db.prof);
 }
 
-enum dcp_rc cli_press(int argc, char **argv)
+static enum dcp_rc cli_press(int argc, char **argv)
 {
     struct arguments arguments = {0};
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;

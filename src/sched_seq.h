@@ -2,7 +2,7 @@
 #define SCHED_SEQ_H
 
 #include "array.h"
-#include "dcp/limits.h"
+#include "dcp_limits.h"
 #include <stdint.h>
 
 struct sqlite3;

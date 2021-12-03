@@ -1,5 +1,5 @@
-#include "dcp/seq.h"
-#include "xstrlcpy.h"
+#include "seq.h"
+#include "safe.h"
 
 void dcp_seq_init(struct dcp_seq *seq, char const id[static 1],
                   struct imm_str str)

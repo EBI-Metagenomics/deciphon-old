@@ -1,8 +1,8 @@
-#ifndef DCP_PRO_NODE_H
-#define DCP_PRO_NODE_H
+#ifndef PRO_NODE_H
+#define PRO_NODE_H
 
-#include "dcp/nuclt_dist.h"
 #include "imm/imm.h"
+#include "nuclt_dist.h"
 
 struct dcp_pro_node
 {

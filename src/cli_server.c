@@ -1,9 +1,8 @@
 #include "cli.h"
-#include "dcp/cli.h"
-#include "dcp/dcp.h"
-#include "dcp/log.h"
 #include "log/log.h"
+#include "logger.h"
 #include "path.h"
+#include "srv.h"
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>
@@ -65,7 +64,7 @@ static void print_log_put(char const *msg, void *arg)
 
 static void flush_nop(void *arg) {}
 
-enum dcp_rc cli_server(int argc, char **argv)
+static enum dcp_rc cli_server(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 

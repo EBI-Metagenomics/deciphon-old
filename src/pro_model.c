@@ -1,9 +1,9 @@
-#include "dcp/pro_model.h"
-#include "dcp/entry_dist.h"
-#include "dcp/nuclt_dist.h"
-#include "dcp/pro_node.h"
-#include "error.h"
 #include "pro_model.h"
+#include "entry_dist.h"
+#include "logger.h"
+#include "nuclt_dist.h"
+#include "pro_model.h"
+#include "pro_node.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>

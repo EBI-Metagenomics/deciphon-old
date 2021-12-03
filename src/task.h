@@ -1,6 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 
+#include "prod.h"
 #include "sched_job.h"
 #include "sched_prod.h"
 #include "sched_seq.h"
@@ -19,7 +20,7 @@ struct task
         struct imm_task *task;
         struct imm_prod prod;
     } null;
-    struct sched_prod prod;
+    struct prod prod;
 };
 
 enum dcp_rc task_setup(struct task *task, struct imm_abc const *abc,

@@ -20,7 +20,7 @@
 */
 
 #include "sqldiff.h"
-#include "error.h"
+#include "logger.h"
 #include "path.h"
 #include "sqlite3.h"
 #include "xfile.h"

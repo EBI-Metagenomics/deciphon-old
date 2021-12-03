@@ -1,6 +1,6 @@
 #include "table.h"
 #include "macros.h"
-#include "xstrlcpy.h"
+#include "safe.h"
 #include <assert.h>
 #include <string.h>
 

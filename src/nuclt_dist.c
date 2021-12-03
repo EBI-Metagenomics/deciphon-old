@@ -1,5 +1,5 @@
-#include "dcp/nuclt_dist.h"
-#include "dcp/cmp.h"
+#include "nuclt_dist.h"
+#include "dcp_cmp.h"
 #include "xcmp.h"
 
 enum dcp_rc dcp_nuclt_dist_write(struct dcp_nuclt_dist const *ndist,

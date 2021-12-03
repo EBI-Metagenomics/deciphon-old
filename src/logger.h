@@ -1,8 +1,11 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include "dcp/rc.h"
 #include "macros.h"
+#include "rc.h"
+
+typedef void dcp_log_print_t(char const *msg, void *arg);
+void dcp_log_setup(dcp_log_print_t *print, void *arg);
 
 #define __WARN_FMT(rc, msg) LOCAL(__LINE__) ":" #rc ": " msg
 enum dcp_rc __logger_warn(enum dcp_rc rc, char const *msg);

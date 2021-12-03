@@ -1,17 +1,16 @@
 #include "work.h"
 #include "db_handle.h"
 #include "db_pool.h"
-#include "dcp/generics.h"
-#include "dcp/pro_state.h"
-#include "dcp/version.h"
 #include "logger.h"
 #include "macros.h"
 #include "pro_match.h"
+#include "pro_state.h"
 #include "safe.h"
 #include "sched_db.h"
 #include "sched_job.h"
 #include "tok.h"
 #include "utc.h"
+#include "version.h"
 #include "xmath.h"
 #include <libgen.h>
 
@@ -163,7 +162,7 @@ cleanup:
 
 enum dcp_rc next_profile(struct work *work)
 {
-    if (dcp_db_end(dcp_super(&work->db->pro))) return DCP_DONE;
+    if (dcp_db_end(&work->db->pro.super)) return DCP_DONE;
 
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
 

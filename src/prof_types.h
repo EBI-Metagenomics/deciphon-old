@@ -1,7 +1,7 @@
-#ifndef DCP_PROF_TYPES_H
-#define DCP_PROF_TYPES_H
+#ifndef PROF_TYPES_H
+#define PROF_TYPES_H
 
-#include "dcp/entry_dist.h"
+#include "entry_dist.h"
 #include "imm/imm.h"
 #include <stdint.h>
 #include <stdio.h>

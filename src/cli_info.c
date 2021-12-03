@@ -1,6 +1,6 @@
 #include "cli.h"
-#include "dcp/cli.h"
 #include "imm/imm.h"
+#include "rc.h"
 
 struct arguments
 {
@@ -29,7 +29,7 @@ static char args_doc[] = "";
 static struct argp_option options[] = {{0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
-enum dcp_rc cli_info(int argc, char **argv)
+static enum dcp_rc cli_info(int argc, char **argv)
 {
     struct arguments arguments;
     argp_parse(&argp, argc, argv, 0, 0, &arguments);

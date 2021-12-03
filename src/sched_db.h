@@ -1,7 +1,7 @@
 #ifndef SCHED_DB_H
 #define SCHED_DB_H
 
-#include "dcp/limits.h"
+#include "dcp_limits.h"
 #include <stdint.h>
 
 struct sqlite3;

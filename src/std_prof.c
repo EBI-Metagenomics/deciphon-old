@@ -1,8 +1,8 @@
-#include "dcp/std_prof.h"
-#include "dcp/rc.h"
+#include "std_prof.h"
 #include "imm/imm.h"
 #include "meta.h"
 #include "prof.h"
+#include "rc.h"
 #include "std_prof.h"
 
 static void del(struct dcp_prof *prof);

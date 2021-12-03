@@ -1,9 +1,8 @@
-#ifndef DCP_PRO_STATE_H
-#define DCP_PRO_STATE_H
+#ifndef PRO_STATE_H
+#define PRO_STATE_H
 
-#include "dcp/export.h"
-#include "dcp/pro_model.h"
 #include "imm/imm.h"
+#include "pro_model.h"
 
 static inline unsigned __dcp_pro_state_id_msb(unsigned id)
 {
@@ -39,7 +38,6 @@ static inline unsigned dcp_pro_state_idx(unsigned id)
     return (id & (0xFFFF >> 2)) - 1;
 }
 
-DCP_API unsigned dcp_pro_state_name(unsigned id,
-                                    char name[IMM_STATE_NAME_SIZE]);
+unsigned dcp_pro_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE]);
 
 #endif

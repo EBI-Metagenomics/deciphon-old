@@ -1,11 +1,11 @@
-#ifndef DCP_GENERICS_H
-#define DCP_GENERICS_H
+#ifndef GENERICS_H
+#define GENERICS_H
 
-#include "dcp/pro_db.h"
-#include "dcp/pro_model.h"
-#include "dcp/pro_prof.h"
-#include "dcp/std_db.h"
-#include "dcp/std_prof.h"
+#include "pro_db.h"
+#include "pro_model.h"
+#include "pro_prof.h"
+#include "std_db.h"
+#include "std_prof.h"
 
 #define dcp_super(x)                                                           \
     _Generic((x), struct dcp_std_prof *                                        \

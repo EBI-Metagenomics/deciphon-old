@@ -1,9 +1,9 @@
 #ifndef XFILE_H
 #define XFILE_H
 
-#include "dcp/limits.h"
-#include "dcp/rc.h"
+#include "dcp_limits.h"
 #include "path.h"
+#include "rc.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

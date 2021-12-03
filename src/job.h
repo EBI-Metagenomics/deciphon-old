@@ -2,8 +2,8 @@
 #define DCP_JOB_H
 
 #include "cco/cco.h"
-#include "dcp/job_state.h"
-#include "dcp/seq.h"
+#include "job_state.h"
+#include "seq.h"
 #include <stdbool.h>
 
 struct dcp_job

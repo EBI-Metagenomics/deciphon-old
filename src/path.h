@@ -1,7 +1,7 @@
 #ifndef PATH_H
 #define PATH_H
 
-#include "dcp/limits.h"
+#include "dcp_limits.h"
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>

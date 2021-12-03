@@ -1,5 +1,5 @@
 #include "path.h"
-#include "xstrlcpy.h"
+#include "safe.h"
 #include <string.h>
 
 bool append_ext(char *str, size_t len, size_t max_size, char const *ext);

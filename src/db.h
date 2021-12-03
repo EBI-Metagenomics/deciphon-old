@@ -1,7 +1,7 @@
 #ifndef DB_H
 #define DB_H
 
-#include "cmp.h"
+#include "dcp_cmp.h"
 #include "meta.h"
 #include "prof.h"
 #include "prof_types.h"
@@ -51,11 +51,11 @@ struct dcp_db
 
 extern struct dcp_db const dcp_db_default;
 
-DCP_API unsigned dcp_db_float_size(struct dcp_db const *db);
-DCP_API enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db);
-DCP_API unsigned dcp_db_nprofiles(struct dcp_db const *db);
-DCP_API struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx);
-DCP_API bool dcp_db_end(struct dcp_db const *db);
+unsigned dcp_db_float_size(struct dcp_db const *db);
+enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db);
+unsigned dcp_db_nprofiles(struct dcp_db const *db);
+struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx);
+bool dcp_db_end(struct dcp_db const *db);
 
 void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid);
 

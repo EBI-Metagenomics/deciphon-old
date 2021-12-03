@@ -2,11 +2,11 @@
 #define DB_HANDLE_H
 
 #include "cco/cco.h"
-#include "dcp/limits.h"
-#include "dcp/pro_db.h"
-#include "dcp/rc.h"
-#include "dcp/std_db.h"
+#include "dcp_limits.h"
 #include "path.h"
+#include "pro_db.h"
+#include "rc.h"
+#include "std_db.h"
 #include <stdio.h>
 
 #define DB_HANDLE_MAX_FILES DCP_DB_HANDLE_MAX_FILES

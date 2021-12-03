@@ -1,5 +1,5 @@
-#include "dcp/pro_state.h"
-#include "dcp/pro_model.h"
+#include "pro_state.h"
+#include "pro_model.h"
 
 unsigned dcp_pro_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {

@@ -1,14 +1,12 @@
-#include "dcp/pro_prof.h"
-#include "dcp/cmp.h"
-#include "dcp/generics.h"
-#include "dcp/prof.h"
-#include "dcp/rc.h"
-#include "error.h"
+#include "pro_prof.h"
+#include "dcp_cmp.h"
 #include "imm/imm.h"
+#include "logger.h"
 #include "meta.h"
 #include "pro_model.h"
 #include "pro_prof.h"
 #include "prof.h"
+#include "rc.h"
 #include "third-party/cmp.h"
 #include "third-party/xrandom.h"
 #include "xcmp.h"
@@ -207,7 +205,7 @@ enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     rc = dcp_pro_prof_absorb(p, &model);
 
 cleanup:
-    dcp_del(&model);
+    dcp_pro_model_del(&model);
     return rc;
 }
 

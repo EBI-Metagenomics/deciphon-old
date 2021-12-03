@@ -1,6 +1,6 @@
 #include "task.h"
-#include "dcp/rc.h"
 #include "logger.h"
+#include "rc.h"
 
 enum dcp_rc task_setup(struct task *task, struct imm_abc const *abc,
                        int64_t seq_id)

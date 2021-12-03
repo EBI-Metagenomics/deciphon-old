@@ -11,7 +11,7 @@ enum dcp_rc xsql_get_text(struct sqlite3_stmt *stmt, int col, unsigned dst_size,
 {
     char const *str = (char const *)sqlite3_column_text(stmt, col);
     if (!str) return error(DCP_OUTOFMEM, "failed to fetch sqlite text");
-    int len = sqlite3_column_bytes(stmt, col);
+    sqlite3_column_bytes(stmt, col);
     assert((unsigned)len < dst_size);
     safe_strcpy(dst, str, dst_size);
     return DCP_DONE;

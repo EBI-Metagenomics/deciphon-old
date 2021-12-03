@@ -1,14 +1,13 @@
-#include "dcp/srv.h"
+#include "srv.h"
 #include "cco/cco.h"
+#include "db.h"
 #include "db_pool.h"
-#include "dcp/db.h"
-#include "dcp/job.h"
-#include "dcp/pro_state.h"
-#include "dcp/rc.h"
 #include "elapsed/elapsed.h"
-#include "error.h"
-#include "info.h"
+#include "job.h"
+#include "logger.h"
 #include "macros.h"
+#include "pro_state.h"
+#include "rc.h"
 #include "sched.h"
 #include "sched_db.h"
 #include "sched_job.h"
@@ -26,7 +25,7 @@ static struct dcp_srv
     } signal;
     unsigned num_threads;
     struct dcp_job job;
-    struct dcp_prod prod;
+    struct prod prod;
 } srv = {0};
 
 static void signal_interrupt(int signum) { srv.signal.interrupt = 1; }
@@ -114,4 +113,4 @@ enum dcp_rc dcp_srv_next_prod(int64_t job_id, int64_t *prod_id)
     return DCP_NEXT;
 }
 
-struct dcp_prod const *dcp_srv_get_prod(void) { return &srv.prod; }
+struct prod const *dcp_srv_get_prod(void) { return &srv.prod; }

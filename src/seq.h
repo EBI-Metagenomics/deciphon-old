@@ -2,8 +2,7 @@
 #define DCP_SEQ_H
 
 #include "cco/cco.h"
-#include "dcp/export.h"
-#include "dcp/limits.h"
+#include "dcp_limits.h"
 #include "imm/imm.h"
 
 struct dcp_seq

@@ -1,5 +1,5 @@
 #include "progress_file.h"
-#include "error.h"
+#include "logger.h"
 #include <assert.h>
 #include <sys/stat.h>
 

@@ -1,8 +1,7 @@
-#ifndef DCP_PRO_CODEC_H
-#define DCP_PRO_CODEC_H
+#ifndef PRO_CODEC_H
+#define PRO_CODEC_H
 
-#include "dcp/export.h"
-#include "dcp/rc.h"
+#include "rc.h"
 
 struct dcp_pro_prof;
 struct imm_codon;
@@ -23,8 +22,8 @@ dcp_pro_codec_init(struct dcp_pro_prof const *prof, struct imm_path const *path)
     return (struct dcp_pro_codec){0, 0, prof, path};
 }
 
-DCP_API enum dcp_rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
-                                       struct imm_seq const *seq,
-                                       struct imm_codon *codon);
+enum dcp_rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
+                               struct imm_seq const *seq,
+                               struct imm_codon *codon);
 
 #endif

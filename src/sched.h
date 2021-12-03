@@ -1,7 +1,7 @@
 #ifndef SCHED_H
 #define SCHED_H
 
-#include "dcp/limits.h"
+#include "dcp_limits.h"
 #include <stdint.h>
 
 struct dcp_job;

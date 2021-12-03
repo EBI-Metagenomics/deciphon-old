@@ -57,7 +57,6 @@ add_library(
   src/job_state.c
   src/logger.c
   src/meta.c
-  src/model.c
   src/nuclt_dist.c
   src/path.c
   src/pool.c
@@ -82,6 +81,7 @@ add_library(
   src/std_db.c
   src/std_prof.c
   src/table.c
+  src/task.c
   src/third-party/cmp.c
   src/to.c
   src/tok.c

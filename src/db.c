@@ -1,7 +1,4 @@
 #include "db.h"
-#include "dcp/db.h"
-#include "dcp/generics.h"
-#include "dcp/prof.h"
 #include "imm/imm.h"
 #include "logger.h"
 #include "macros.h"

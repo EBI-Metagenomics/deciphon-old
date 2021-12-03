@@ -1,14 +1,12 @@
 #include "cli.h"
-#include "dcp/cli.h"
-#include "dcp/generics.h"
-#include "dcp/pro_codec.h"
-#include "dcp/pro_db.h"
-#include "dcp/pro_reader.h"
-#include "dcp/pro_state.h"
 #include "fasta/fasta.h"
 #include "gff/gff.h"
 #include "imm/imm.h"
 #include "logger.h"
+#include "pro_codec.h"
+#include "pro_db.h"
+#include "pro_reader.h"
+#include "pro_state.h"
 #include "progress_file.h"
 #include "table.h"
 #include "tbl/tbl.h"
@@ -326,7 +324,7 @@ static void queries_setup(void)
     cli.queries.fa.target.desc = cli.pro.db.prof.super.mt.acc;
 }
 
-enum dcp_rc cli_scan(int argc, char **argv)
+static enum dcp_rc cli_scan(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 
@@ -338,7 +336,7 @@ enum dcp_rc cli_scan(int argc, char **argv)
     gff_write(&cli.output.gff);
 
     progress_file_start(&cli.progress, !arguments.quiet);
-    while (!(rc = dcp_db_end(dcp_super(&cli.pro.db))))
+    while (!(rc = dcp_db_end(&cli.pro.db.super)))
     {
         struct dcp_pro_prof *prof = dcp_pro_db_profile(&cli.pro.db);
         if ((rc = dcp_pro_db_read(&cli.pro.db, prof))) goto cleanup;
