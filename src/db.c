@@ -429,7 +429,7 @@ struct dcp_meta db_meta(struct dcp_db const *db, unsigned idx)
 {
     unsigned o = db->mt.offset[idx];
     unsigned size = (unsigned)(db->mt.name_length[idx] + 1);
-    return dcp_meta(db->mt.data + o, db->mt.data + o + size);
+    return meta(db->mt.data + o, db->mt.data + o + size);
 }
 
 unsigned dcp_db_float_size(struct dcp_db const *db) { return db->float_size; }

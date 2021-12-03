@@ -127,7 +127,7 @@ static enum rc cli_setup(struct arguments const *args)
 
 static enum rc profile_write(void)
 {
-    dcp_prof_nameit(&cli.db.prof.super, dcp_pro_reader_meta(&cli.reader));
+    prof_nameit(&cli.db.prof.super, dcp_pro_reader_meta(&cli.reader));
 
     enum rc rc = dcp_pro_prof_absorb(&cli.db.prof, &cli.reader.model);
     if (rc) return rc;

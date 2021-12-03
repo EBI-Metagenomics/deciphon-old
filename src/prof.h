@@ -19,7 +19,7 @@ static inline void dcp_prof_del(struct dcp_prof *prof)
     if (prof) prof->vtable.del(prof);
 }
 
-static inline void dcp_prof_nameit(struct dcp_prof *prof, struct dcp_meta mt)
+static inline void prof_nameit(struct dcp_prof *prof, struct dcp_meta mt)
 {
     prof->mt = mt;
 }

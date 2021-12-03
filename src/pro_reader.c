@@ -73,7 +73,7 @@ enum rc dcp_pro_reader_next(struct dcp_pro_reader *reader)
 
 struct dcp_meta dcp_pro_reader_meta(struct dcp_pro_reader const *reader)
 {
-    return dcp_meta(reader->prof.meta.name, reader->prof.meta.acc);
+    return meta(reader->prof.meta.name, reader->prof.meta.acc);
 }
 
 static void init_null_lprobs(imm_float lprobs[IMM_AMINO_SIZE])

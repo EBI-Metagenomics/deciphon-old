@@ -5,7 +5,7 @@
 #include "rc.h"
 #include <stdio.h>
 
-struct dcp_std_prof
+struct std_prof
 {
     struct dcp_prof super;
     struct
@@ -15,24 +15,24 @@ struct dcp_std_prof
     } dp;
 };
 
-void dcp_std_prof_init(struct dcp_std_prof *, struct imm_code const *);
+void std_prof_init(struct std_prof *, struct imm_code const *);
 
-static inline void dcp_std_prof_del(struct dcp_std_prof *prof)
+static inline void dcp_std_prof_del(struct std_prof *prof)
 {
     if (prof) prof->super.vtable.del(&prof->super);
 }
 
-static inline struct dcp_prof *dcp_std_prof_super(struct dcp_std_prof *std)
+static inline struct dcp_prof *dcp_std_prof_super(struct std_prof *std)
 {
     return &std->super;
 }
 
-struct dcp_std_prof;
+struct std_prof;
 
-enum rc std_prof_read(struct dcp_std_prof *prof, FILE *restrict fd);
-enum rc std_prof_write(struct dcp_std_prof const *prof, FILE *restrict fd);
+enum rc std_prof_read(struct std_prof *prof, FILE *restrict fd);
+enum rc std_prof_write(struct std_prof const *prof, FILE *restrict fd);
 
-static inline void std_prof_del(struct dcp_std_prof *prof)
+static inline void std_prof_del(struct std_prof *prof)
 {
     dcp_prof_del(&prof->super);
 }

@@ -23,7 +23,7 @@ void dcp_std_db_init(struct dcp_std_db *db)
 {
     db_init(&db->super, DCP_STD_PROFILE);
     db->abc = imm_abc_empty;
-    dcp_std_prof_init(&db->prof, &db->code);
+    std_prof_init(&db->prof, &db->code);
 }
 
 enum rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
@@ -75,7 +75,7 @@ struct imm_abc const *dcp_std_db_abc(struct dcp_std_db const *db)
     return &db->abc;
 }
 
-enum rc dcp_std_db_read(struct dcp_std_db *db, struct dcp_std_prof *prof)
+enum rc dcp_std_db_read(struct dcp_std_db *db, struct std_prof *prof)
 {
     if (db_end(&db->super)) return error(FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
@@ -84,7 +84,7 @@ enum rc dcp_std_db_read(struct dcp_std_db *db, struct dcp_std_prof *prof)
 }
 
 enum rc dcp_std_db_write(struct dcp_std_db *db,
-                             struct dcp_std_prof const *prof)
+                             struct std_prof const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum rc rc = DONE;
@@ -94,7 +94,7 @@ enum rc dcp_std_db_write(struct dcp_std_db *db,
     return rc;
 }
 
-struct dcp_std_prof *dcp_std_db_profile(struct dcp_std_db *db)
+struct std_prof *dcp_std_db_profile(struct dcp_std_db *db)
 {
     return &db->prof;
 }

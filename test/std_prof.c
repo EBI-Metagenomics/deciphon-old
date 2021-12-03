@@ -22,9 +22,9 @@ int main(void)
     EQ(imm_hmm_add_state(alt, imm_super(&state1)), IMM_SUCCESS);
     EQ(imm_hmm_set_start(alt, imm_super(&state1), imm_log(0.1)), IMM_SUCCESS);
 
-    struct dcp_std_prof prof;
-    dcp_std_prof_init(&prof, code);
-    dcp_prof_nameit(&prof.super, dcp_meta("NAME1", "ACC1"));
+    struct std_prof prof;
+    std_prof_init(&prof, code);
+    prof_nameit(&prof.super, meta("NAME1", "ACC1"));
     EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_SUCCESS);
 
