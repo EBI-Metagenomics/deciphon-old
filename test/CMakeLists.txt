@@ -4,22 +4,17 @@ set(ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets)
 file(MAKE_DIRECTORY ${ASSETS})
 set(URL "https://deciphon.s3.eu-west-2.amazonaws.com")
 
-file(DOWNLOAD ${URL}/PF02545.hmm.7z ${ASSETS}/PF02545.hmm.7z
-     EXPECTED_HASH SHA1=2b27ec36086e5c424b719437a924728801bb8277)
+file(
+  DOWNLOAD ${URL}/PF02545.hmm.7z ${ASSETS}/PF02545.hmm.7z
+  EXPECTED_HASH SHA1=2b27ec36086e5c424b719437a924728801bb8277
+)
 file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.hmm.7z DESTINATION ${ASSETS})
 
-file(DOWNLOAD ${URL}/Pfam-A.5.hmm.7z ${ASSETS}/Pfam-A.5.hmm.7z
-     EXPECTED_HASH SHA1=1dcdd145730f2a9e2314132972775ec284fb02e1)
+file(
+  DOWNLOAD ${URL}/Pfam-A.5.hmm.7z ${ASSETS}/Pfam-A.5.hmm.7z
+  EXPECTED_HASH SHA1=1dcdd145730f2a9e2314132972775ec284fb02e1
+)
 file(ARCHIVE_EXTRACT INPUT ${ASSETS}/Pfam-A.5.hmm.7z DESTINATION ${ASSETS})
-
-# include(FetchContent) FetchContent_Declare( pfam24 URL
-# https://deciphon.s3.eu-west-2.amazonaws.com/pfam24.dcp.7z URL_HASH
-# SHA1=1d52d936292c3b572efe73ef6830476aa416ced9)
-
-# FetchContent_MakeAvailable(pfam24) FetchContent_GetProperties(pfam24
-# SOURCE_DIR srcdir) set(PFAM24_FILEPATH ${srcdir}/pfam24.dcp)
-
-# .7z
 
 function(dcp_add_test name srcs)
   add_executable(${name} ${srcs})
@@ -33,23 +28,24 @@ function(dcp_add_test name srcs)
   add_custom_command(
     TARGET ${name}
     PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${TMPDIR})
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${TMPDIR}
+  )
   target_compile_definitions(${name} PUBLIC "ASSETS=\"${ASSETS}\"")
   target_compile_definitions(${name} PUBLIC "TMPDIR=\"${TMPDIR}\"")
 endfunction()
 
 dcp_add_test(std_prof std_prof.c)
-dcp_add_test(std_db "std_db.c;std_db_examples.c")
+# dcp_add_test(std_db "std_db.c;std_db_examples.c")
 
-dcp_add_test(pro_model pro_model.c)
-dcp_add_test(pro_prof pro_prof.c)
-dcp_add_test(pro_db "pro_db.c;pro_db_examples.c")
-dcp_add_test(pro_reader pro_reader.c)
-dcp_add_test(srv "srv.c;std_db_examples.c;pro_db_examples.c;srv_data.c")
+# dcp_add_test(pro_model pro_model.c)
+# dcp_add_test(pro_prof pro_prof.c)
+# dcp_add_test(pro_db "pro_db.c;pro_db_examples.c")
+# dcp_add_test(pro_reader pro_reader.c)
+# dcp_add_test(srv "srv.c;std_db_examples.c;pro_db_examples.c;srv_data.c")
 # dcp_add_test(job job.c)
 
 # CLI
-dcp_add_test(cli_press cli_press.c)
+# dcp_add_test(cli_press cli_press.c)
 
 # dcp_add_test(db_pp "db_pp.c;data.c") dcp_add_test(metadata metadata.c)
 # dcp_add_test(tasks "tasks.c;pfam24_results.c") dcp_add_test(very_long_seq

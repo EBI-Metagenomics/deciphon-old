@@ -1,4 +1,4 @@
-#include "dcp/dcp.h"
+#include "std_prof.h"
 #include "hope/hope.h"
 #include "imm/imm.h"
 
@@ -24,10 +24,10 @@ int main(void)
 
     struct dcp_std_prof prof;
     dcp_std_prof_init(&prof, code);
-    dcp_prof_nameit(dcp_super(&prof), dcp_meta("NAME1", "ACC1"));
+    dcp_prof_nameit(&prof.super, dcp_meta("NAME1", "ACC1"));
     EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_SUCCESS);
 
-    dcp_del(&prof);
+    std_prof_del(&prof);
     return hope_status();
 }

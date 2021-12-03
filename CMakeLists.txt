@@ -168,8 +168,8 @@ install(
   DESTINATION bin
 )
 
-# enable_testing()
-# add_subdirectory(test)
+enable_testing()
+add_subdirectory(test)
 # if(FUZZ)
 #   add_subdirectory(fuzz)
 # endif()

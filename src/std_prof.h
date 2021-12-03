@@ -32,4 +32,9 @@ struct dcp_std_prof;
 enum rc std_prof_read(struct dcp_std_prof *prof, FILE *restrict fd);
 enum rc std_prof_write(struct dcp_std_prof const *prof, FILE *restrict fd);
 
+static inline void std_prof_del(struct dcp_std_prof *prof)
+{
+    dcp_prof_del(&prof->super);
+}
+
 #endif
