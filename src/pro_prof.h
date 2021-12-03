@@ -65,7 +65,7 @@ enum rc dcp_pro_prof_decode(struct pro_prof const *prof,
 
 static inline void dcp_pro_prof_del(struct pro_prof *prof)
 {
-    if (prof) dcp_prof_del(&prof->super);
+    if (prof) profile_del(&prof->super);
 }
 
 void dcp_pro_prof_write_dot(struct pro_prof const *prof, FILE *restrict fp);

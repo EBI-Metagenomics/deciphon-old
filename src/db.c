@@ -35,7 +35,7 @@ static enum rc init_tmpdp(struct dcp_db *db)
     return DONE;
 }
 
-void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid)
+void db_init(struct dcp_db *db, enum profile_typeid prof_typeid)
 {
     db->prof_typeid = prof_typeid;
     db->float_size = IMM_FLOAT_BYTES;
@@ -432,7 +432,7 @@ struct meta db_meta(struct dcp_db const *db, unsigned idx)
 
 unsigned dcp_db_float_size(struct dcp_db const *db) { return db->float_size; }
 
-enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db)
+enum profile_typeid dcp_db_prof_typeid(struct dcp_db const *db)
 {
     return db->prof_typeid;
 }

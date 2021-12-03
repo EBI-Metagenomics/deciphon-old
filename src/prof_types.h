@@ -1,5 +1,5 @@
-#ifndef PROF_TYPES_H
-#define PROF_TYPES_H
+#ifndef PROFILE_TYPES_H
+#define PROFILE_TYPES_H
 
 #include "entry_dist.h"
 #include "imm/imm.h"
@@ -15,7 +15,7 @@ typedef uint32_t dcp_profile_idx_t;
 static_assert(sizeof(imm_state_id_t) == 2, "16 bits state_id.");
 #define DCP_PROFILE_BITS_ID 16
 
-enum dcp_prof_typeid
+enum profile_typeid
 {
     DCP_NULL_PROFILE,
     DCP_STANDARD_PROFILE,
@@ -24,10 +24,10 @@ enum dcp_prof_typeid
 
 struct profile;
 
-struct dcp_prof_vtable
+struct profile_vtable
 {
     void (*del)(struct profile *prof);
-    enum dcp_prof_typeid typeid;
+    enum profile_typeid typeid;
 };
 
 #endif

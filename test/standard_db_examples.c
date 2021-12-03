@@ -20,7 +20,7 @@ void std_db_examples_new_ex1(char const *filepath)
     /* Profile 0 */
     struct standard_profile p;
     standard_profile_init(&p, &m->code);
-    prof_nameit(&p.super, meta("NAME0", "ACC0"));
+    profile_nameit(&p.super, meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
     EQ(dcp_standard_db_write(&db, &p), DONE);
@@ -32,7 +32,7 @@ void std_db_examples_new_ex1(char const *filepath)
     imm_hmm_init(&hmm, &m->code);
     EQ(imm_hmm_add_state(&hmm, imm_super(&state)), IMM_SUCCESS);
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
-    prof_nameit(&p.super, meta("NAME1", "ACC1"));
+    profile_nameit(&p.super, meta("NAME1", "ACC1"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(dcp_standard_db_write(&db, &p), DONE);
@@ -61,13 +61,13 @@ void std_db_examples_new_ex2(char const *filepath)
     /* Profile 0 */
     struct standard_profile p;
     standard_profile_init(&p, code);
-    prof_nameit(&p.super, meta("NAME0", "ACC0"));
+    profile_nameit(&p.super, meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
     EQ(dcp_standard_db_write(&db, &p), DONE);
 
     /* Profile 1 */
-    prof_nameit(&p.super, meta("NAME1", "ACC1"));
+    profile_nameit(&p.super, meta("NAME1", "ACC1"));
     struct imm_mute_state state;
     imm_mute_state_init(&state, 3, abc);
     struct imm_hmm hmm;

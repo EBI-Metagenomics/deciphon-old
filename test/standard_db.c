@@ -80,7 +80,7 @@ void test_db_openw_one_mute(void)
 
     struct standard_profile p;
     standard_profile_init(&p, &code);
-    prof_nameit(&p.super, meta("NAME0", "ACC0"));
+    profile_nameit(&p.super, meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(dcp_standard_db_write(&db, &p), DONE);
@@ -146,7 +146,7 @@ void test_db_openr_example1(void)
     while (!dcp_db_end(&db.super))
     {
         EQ(dcp_standard_db_read(&db, p), DONE);
-        EQ(dcp_prof_typeid(&p->super), DCP_STANDARD_PROFILE);
+        EQ(profile_typeid(&p->super), DCP_STANDARD_PROFILE);
         if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);
@@ -197,7 +197,7 @@ void test_db_openr_example2(void)
     while (!dcp_db_end(&db.super))
     {
         EQ(dcp_standard_db_read(&db, p), DONE);
-        EQ(dcp_prof_typeid(&p->super), DCP_STANDARD_PROFILE);
+        EQ(profile_typeid(&p->super), DCP_STANDARD_PROFILE);
         if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);

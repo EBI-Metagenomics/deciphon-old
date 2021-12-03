@@ -18,7 +18,7 @@ enum dcp_db_mode
 
 struct dcp_db
 {
-    enum dcp_prof_typeid prof_typeid;
+    enum profile_typeid prof_typeid;
     unsigned float_size;
     unsigned npartitions;
     struct
@@ -52,12 +52,12 @@ struct dcp_db
 extern struct dcp_db const dcp_db_default;
 
 unsigned dcp_db_float_size(struct dcp_db const *db);
-enum dcp_prof_typeid dcp_db_prof_typeid(struct dcp_db const *db);
+enum profile_typeid dcp_db_prof_typeid(struct dcp_db const *db);
 unsigned dcp_db_nprofiles(struct dcp_db const *db);
 struct meta dcp_db_meta(struct dcp_db const *db, unsigned idx);
 bool dcp_db_end(struct dcp_db const *db);
 
-void db_init(struct dcp_db *db, enum dcp_prof_typeid prof_typeid);
+void db_init(struct dcp_db *db, enum profile_typeid prof_typeid);
 
 void db_openr(struct dcp_db *db, FILE *restrict fp);
 void db_set_files(struct dcp_db *db, unsigned nfiles, FILE *restrict fp[]);
