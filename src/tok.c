@@ -36,6 +36,15 @@ struct tok *tok_new(unsigned size)
     return tok;
 }
 
+enum tok_id tok_id(struct tok const *tok) { return tok->id; }
+
+char const *tok_value(struct tok const *tok) { return tok->value; }
+
+unsigned tok_size(struct tok const *tok)
+{
+    return (unsigned)strlen(tok->value);
+}
+
 void tok_del(struct tok const *tok) { free((void *)tok); }
 
 enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
