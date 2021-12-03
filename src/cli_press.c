@@ -137,7 +137,7 @@ static enum dcp_rc profile_write(void)
     return dcp_pro_db_write(&cli.db, &cli.db.prof);
 }
 
-enum dcp_rc dcp_cli_press(int argc, char **argv)
+enum dcp_rc cli_press(int argc, char **argv)
 {
     struct arguments arguments = {0};
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
@@ -167,3 +167,8 @@ cleanup:
     cli_log_flush();
     return rc;
 }
+
+char const *argp_program_version = "dcp-press " DCP_VERSION;
+char const *argp_program_bug_address = CLI_BUG_ADDRESS;
+
+int main(int argc, char **argv) { return (int)cli_press(argc, argv); }

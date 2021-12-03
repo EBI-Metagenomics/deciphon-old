@@ -29,7 +29,7 @@ static char args_doc[] = "";
 static struct argp_option options[] = {{0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
-enum dcp_rc dcp_cli_info(int argc, char **argv)
+enum dcp_rc cli_info(int argc, char **argv)
 {
     struct arguments arguments;
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
@@ -37,3 +37,8 @@ enum dcp_rc dcp_cli_info(int argc, char **argv)
     printf("Float size: %d\n", IMM_FLOAT_BYTES);
     return DCP_DONE;
 }
+
+char const *argp_program_version = "dcp-info " DCP_VERSION;
+char const *argp_program_bug_address = CLI_BUG_ADDRESS;
+
+int main(int argc, char **argv) { return (int)cli_info(argc, argv); }

@@ -65,7 +65,7 @@ static void print_log_put(char const *msg, void *arg)
 
 static void flush_nop(void *arg) {}
 
-enum dcp_rc dcp_cli_daemon(int argc, char **argv)
+enum dcp_rc cli_server(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 
@@ -146,3 +146,8 @@ void skeleton_daemon(void)
     /* Open the log file */
     openlog("deciphond", LOG_PID, LOG_DAEMON);
 }
+
+char const *argp_program_version = "deciphond " DCP_VERSION;
+char const *argp_program_bug_address = CLI_BUG_ADDRESS;
+
+int main(int argc, char **argv) { return (int)cli_server(argc, argv); }

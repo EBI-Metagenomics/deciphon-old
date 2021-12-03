@@ -48,7 +48,6 @@ add_library(
   sched_schema.c
   src/array.c
   src/cli.c
-  src/cli_daemon.c
   src/cli_info.c
   src/cli_press.c
   src/cli_scan.c
@@ -136,9 +135,9 @@ target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
 
-set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/dcp/version.h)
+set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version.h)
 configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/dcp/version.h.in ${VERSION_FILE}
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${VERSION_FILE}
   @ONLY
 )
 
@@ -146,16 +145,16 @@ target_compile_definitions(dcp PRIVATE _XOPEN_SOURCE=1)
 set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS};-D_XOPEN_SOURCE=1)
 
 # Command line interface programs
-add_executable(dcp-press src/bin/press.c)
+add_executable(dcp-press src/cli_press.c)
 target_link_libraries(dcp-press PUBLIC dcp)
 
-add_executable(dcp-info src/bin/info.c)
+add_executable(dcp-info src/cli_info.c)
 target_link_libraries(dcp-info PUBLIC dcp)
 
-add_executable(dcp-scan src/bin/scan.c)
+add_executable(dcp-scan src/cli_scan.c)
 target_link_libraries(dcp-scan PUBLIC dcp)
 
-add_executable(deciphond src/bin/deciphond.c)
+add_executable(deciphond src/cli_server.c)
 target_link_libraries(deciphond PUBLIC dcp)
 
 cbp_install(dcp MERGED)
@@ -169,8 +168,8 @@ install(
   DESTINATION bin
 )
 
-enable_testing()
-add_subdirectory(test)
-if(FUZZ)
-  add_subdirectory(fuzz)
-endif()
+# enable_testing()
+# add_subdirectory(test)
+# if(FUZZ)
+#   add_subdirectory(fuzz)
+# endif()

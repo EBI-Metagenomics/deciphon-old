@@ -2,7 +2,7 @@
 #define CLI_H
 
 #include "athr/athr.h"
-#include "dcp/version.h"
+#include "version.h"
 #include <argp.h>
 #include <stdbool.h>
 #include <stdio.h>

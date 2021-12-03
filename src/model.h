@@ -4,15 +4,30 @@
 #include "imm/imm.h"
 #include "str.h"
 
-struct model
+enum dcp_model
 {
-    imm_float                loglik;
-    struct imm_result const* result;
-    struct dcp_string        path;
-    struct dcp_string        codons;
+    DCP_MODEL_ALT,
+    DCP_MODEL_NULL
 };
 
-static inline void model_set_loglik(struct model* model, imm_float loglik) { model->loglik = loglik; }
-static inline void model_set_result(struct model* model, struct imm_result const* r) { model->result = r; }
+extern enum dcp_model const dcp_models[2];
+
+struct model
+{
+    imm_float loglik;
+    struct imm_result const *result;
+    struct dcp_string path;
+    struct dcp_string codons;
+};
+
+static inline void model_set_loglik(struct model *model, imm_float loglik)
+{
+    model->loglik = loglik;
+}
+static inline void model_set_result(struct model *model,
+                                    struct imm_result const *r)
+{
+    model->result = r;
+}
 
 #endif

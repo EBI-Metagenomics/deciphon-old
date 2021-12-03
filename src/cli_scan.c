@@ -326,7 +326,7 @@ static void queries_setup(void)
     cli.queries.fa.target.desc = cli.pro.db.prof.super.mt.acc;
 }
 
-enum dcp_rc dcp_cli_scan(int argc, char **argv)
+enum dcp_rc cli_scan(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
 
@@ -379,3 +379,8 @@ cleanup:
     }
     return rc;
 }
+
+char const *argp_program_version = "dcp-scan " DCP_VERSION;
+char const *argp_program_bug_address = CLI_BUG_ADDRESS;
+
+int main(int argc, char **argv) { return (int)cli_scan(argc, argv); }
