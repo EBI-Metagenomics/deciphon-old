@@ -2,7 +2,7 @@
 #define PROFILE_H
 
 #include "meta.h"
-#include "prof_types.h"
+#include "profile_types.h"
 
 struct imm_abc;
 

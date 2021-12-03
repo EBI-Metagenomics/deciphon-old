@@ -4,7 +4,7 @@
 #include "dcp_cmp.h"
 #include "meta.h"
 #include "profile.h"
-#include "prof_types.h"
+#include "profile_types.h"
 #include <sys/types.h>
 
 #define DCP_DB_HANDLE_MAX_FILES 64

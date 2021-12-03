@@ -63,7 +63,7 @@ add_library(
   src/pro_codec.c
   src/pro_db.c
   src/pro_model.c
-  src/pro_prof.c
+  src/pro_profile.c
   src/pro_reader.c
   src/pro_state.c
   src/prod.c
