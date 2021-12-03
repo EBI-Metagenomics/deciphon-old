@@ -1,11 +1,11 @@
 #include "db_handle.h"
 #include "db.h"
 #include "dcp/pro_db.h"
-#include "error.h"
+#include "logger.h"
 #include "macros.h"
+#include "safe.h"
 #include "utc.h"
 #include "xmath.h"
-#include "xstrlcpy.h"
 #include <string.h>
 
 void db_handle_init(struct db_handle *db, int64_t id)

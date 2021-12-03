@@ -3,10 +3,10 @@
 #include "dcp/generics.h"
 #include "dcp/pro_db.h"
 #include "dcp/pro_reader.h"
-#include "error.h"
+#include "logger.h"
 #include "path.h"
 #include "progress_file.h"
-#include "xstrlcpy.h"
+#include "safe.h"
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>

@@ -1,7 +1,7 @@
 #include "sched.h"
 #include "dcp/job.h"
 #include "dcp/rc.h"
-#include "error.h"
+#include "logger.h"
 #include "macros.h"
 #include "path.h"
 #include "sched_db.h"

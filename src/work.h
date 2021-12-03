@@ -5,9 +5,7 @@
 #include "dcp/limits.h"
 #include "imm/imm.h"
 #include "path.h"
-#include "sched_job.h"
-#include "sched_prod.h"
-#include "sched_seq.h"
+#include "task.h"
 #include "xfile.h"
 #include <stdatomic.h>
 #include <stdint.h>

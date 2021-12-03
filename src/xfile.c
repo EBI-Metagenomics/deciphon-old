@@ -1,7 +1,7 @@
 #include "xfile.h"
-#include "error.h"
+#include "logger.h"
 #include "macros.h"
-#include "xstrlcpy.h"
+#include "safe.h"
 #include <assert.h>
 #include <unistd.h>
 #include <xxhash.h>

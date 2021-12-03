@@ -1,11 +1,12 @@
 #include "sched_job.h"
 #include "dcp/rc.h"
-#include "error.h"
 #include "job_state.h"
+#include "logger.h"
 #include "macros.h"
+#include "safe.h"
 #include "sched_macros.h"
 #include "utc.h"
-#include "xstrlcpy.h"
+#include "xsql.h"
 #include <sqlite3.h>
 #include <stdlib.h>
 

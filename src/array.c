@@ -1,5 +1,5 @@
 #include "array.h"
-#include "xreallocf.h"
+#include "safe.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -55,7 +55,8 @@ struct array *array_shrink(struct array *arr)
 {
     if (arr->capacity == arr->size) return arr;
 
-    struct array *dst = safe_realloc(arr, sizeof(*dst) + sizeof(char) * arr->size);
+    struct array *dst =
+        safe_realloc(arr, sizeof(*dst) + sizeof(char) * arr->size);
     if (dst)
     {
         dst->size = arr->size;
