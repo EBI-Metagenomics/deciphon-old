@@ -1,4 +1,5 @@
 #include "array.h"
+#include "xreallocf.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,7 +31,7 @@ struct array *array_prealloc(struct array *arr, size_t size)
 {
     if (arr->capacity >= size) return arr;
 
-    struct array *dst = reallocf(arr, sizeof(*dst) + sizeof(char) * size);
+    struct array *dst = xreallocf(arr, sizeof(*dst) + sizeof(char) * size);
     if (dst)
     {
         dst->size = size;
@@ -39,7 +40,7 @@ struct array *array_prealloc(struct array *arr, size_t size)
     return dst;
 }
 
-struct array *array_put(struct array *arr, char *data, size_t size)
+struct array *array_put(struct array *arr, char const *data, size_t size)
 {
     struct array *dst = array_prealloc(arr, size);
     if (dst)
@@ -54,7 +55,7 @@ struct array *array_shrink(struct array *arr)
 {
     if (arr->capacity == arr->size) return arr;
 
-    struct array *dst = reallocf(arr, sizeof(*dst) + sizeof(char) * arr->size);
+    struct array *dst = xreallocf(arr, sizeof(*dst) + sizeof(char) * arr->size);
     if (dst)
     {
         dst->size = arr->size;

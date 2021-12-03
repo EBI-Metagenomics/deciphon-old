@@ -15,7 +15,7 @@ void array_del(struct array const *arr);
 
 struct array *array_prealloc(struct array *arr, size_t size);
 
-struct array *array_put(struct array *arr, char *data, size_t size);
+struct array *array_put(struct array *arr, char const *data, size_t size);
 
 struct array *array_shrink(struct array *arr);
 
