@@ -43,9 +43,9 @@ static char const *const queries[] = {
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-enum dcp_rc sched_seq_module_init(struct sqlite3 *db)
+enum rc sched_seq_module_init(struct sqlite3 *db)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
         PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
 
@@ -53,11 +53,11 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_seq_add(int64_t job_id, char const *name, unsigned len,
+enum rc sched_seq_add(int64_t job_id, char const *name, unsigned len,
                           char const *data)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
@@ -71,10 +71,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_seq_next(int64_t job_id, int64_t *seq_id)
+enum rc sched_seq_next(int64_t job_id, int64_t *seq_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, *seq_id);
@@ -96,10 +96,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_seq_get(struct sched_seq *seq, int64_t id)
+enum rc sched_seq_get(struct sched_seq *seq, int64_t id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, id);

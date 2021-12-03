@@ -20,7 +20,7 @@ struct tok
 #define DELIM " \t\r"
 
 static void add_space_before_newline(char *line);
-static enum dcp_rc next_line(FILE *restrict fd, unsigned size, char *line);
+static enum rc next_line(FILE *restrict fd, unsigned size, char *line);
 
 struct tok *tok_new(unsigned size)
 {
@@ -47,9 +47,9 @@ unsigned tok_size(struct tok const *tok)
 
 void tok_del(struct tok const *tok) { free((void *)tok); }
 
-enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
+enum rc tok_next(struct tok *tok, FILE *restrict fd)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
 
     if (tok->line.consumed)
     {
@@ -82,7 +82,7 @@ enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
     return DONE;
 }
 
-static enum dcp_rc next_line(FILE *restrict fd, unsigned size, char *line)
+static enum rc next_line(FILE *restrict fd, unsigned size, char *line)
 {
     /* -1 to append space before newline if required */
     if (!fgets(line, (int)(size - 1), fd))

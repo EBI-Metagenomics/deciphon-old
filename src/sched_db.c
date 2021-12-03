@@ -41,14 +41,14 @@ static char const *const queries[] = {
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-enum dcp_rc sched_db_setup(struct sched_db *db,
+enum rc sched_db_setup(struct sched_db *db,
                            char const name[DCP_DB_NAME_SIZE],
                            char const filepath[DCP_PATH_SIZE])
 {
     FILE *fd = fopen(filepath, "rb");
     if (!fd) return error(IOERROR, "failed to open file");
 
-    enum dcp_rc rc = xfile_hash(fd, (uint64_t *)&db->xxh64);
+    enum rc rc = xfile_hash(fd, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
 
     safe_strcpy(db->name, name, DCP_DB_NAME_SIZE);
@@ -59,9 +59,9 @@ cleanup:
     return DONE;
 }
 
-enum dcp_rc sched_db_module_init(struct sqlite3 *db)
+enum rc sched_db_module_init(struct sqlite3 *db)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
         PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
 
@@ -69,10 +69,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_db_add(struct sched_db *db)
+enum rc sched_db_add(struct sched_db *db)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, db->xxh64);
@@ -89,11 +89,11 @@ cleanup:
     return rc;
 }
 
-static enum dcp_rc select_db(struct sched_db *db, int64_t by_value,
+static enum rc select_db(struct sched_db *db, int64_t by_value,
                              enum stmt select_stmt)
 {
     struct sqlite3_stmt *stmt = stmts[select_stmt];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, by_value);
@@ -118,12 +118,12 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_db_get_by_id(struct sched_db *db, int64_t id)
+enum rc sched_db_get_by_id(struct sched_db *db, int64_t id)
 {
     return select_db(db, id, SELECT_BY_ID);
 }
 
-enum dcp_rc sched_db_get_by_xxh64(struct sched_db *db, int64_t xxh64)
+enum rc sched_db_get_by_xxh64(struct sched_db *db, int64_t xxh64)
 {
     return select_db(db, xxh64, SELECT_BY_XXH64);
 }

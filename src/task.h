@@ -23,7 +23,7 @@ struct task
     struct prod prod;
 };
 
-enum dcp_rc task_setup(struct task *task, struct imm_abc const *abc,
+enum rc task_setup(struct task *task, struct imm_abc const *abc,
                        int64_t seq_id);
 
 #endif

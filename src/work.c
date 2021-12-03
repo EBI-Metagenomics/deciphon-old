@@ -14,14 +14,14 @@
 #include "xmath.h"
 #include <libgen.h>
 
-enum dcp_rc open_work(struct work *work, unsigned num_threads);
-enum dcp_rc close_work(struct work *work);
-enum dcp_rc next_profile(struct work *work);
-enum dcp_rc prepare_task_for_dp(struct imm_task **task,
+enum rc open_work(struct work *work, unsigned num_threads);
+enum rc close_work(struct work *work);
+enum rc next_profile(struct work *work);
+enum rc prepare_task_for_dp(struct imm_task **task,
                                 struct imm_dp const *dp);
-enum dcp_rc prepare_task_for_prof(struct work *work, struct task *task);
-enum dcp_rc prepare_task_for_seq(struct task *task, struct imm_seq *seq);
-enum dcp_rc run_viterbi(struct work *work, struct task *task);
+enum rc prepare_task_for_prof(struct work *work, struct task *task);
+enum rc prepare_task_for_seq(struct task *task, struct imm_seq *seq);
+enum rc run_viterbi(struct work *work, struct task *task);
 static inline double compute_lrt(struct task const *task)
 {
     printf("Nul (%f) Alt (%f)\n", task->null.prod.loglik,
@@ -37,7 +37,7 @@ static inline void prepare_prod(struct task *task)
     imm_prod_reset(&task->alt.prod);
     imm_prod_reset(&task->null.prod);
 }
-enum dcp_rc write_product(struct work *work, struct task *task,
+enum rc write_product(struct work *work, struct task *task,
                           unsigned match_id, struct imm_seq seq);
 
 void work_init(struct work *work)
@@ -48,9 +48,9 @@ void work_init(struct work *work)
     work->tok = tok_new(64000);
 }
 
-enum dcp_rc work_next(struct work *work)
+enum rc work_next(struct work *work)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     int64_t job_id = 0;
 
     if ((rc = sched_job_next_pending(&job_id))) return rc;
@@ -83,9 +83,9 @@ cleanup:
     return NEXT;
 }
 
-enum dcp_rc work_run(struct work *work, unsigned num_threads)
+enum rc work_run(struct work *work, unsigned num_threads)
 {
-    enum dcp_rc rc = open_work(work, num_threads);
+    enum rc rc = open_work(work, num_threads);
     if (rc) return rc;
 
     unsigned match_id = 1;
@@ -120,9 +120,9 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc open_work(struct work *work, unsigned num_threads)
+enum rc open_work(struct work *work, unsigned num_threads)
 {
-    enum dcp_rc rc = xfile_tmp_open(&work->prod_file);
+    enum rc rc = xfile_tmp_open(&work->prod_file);
     if (rc) goto cleanup;
 
     rc = db_handle_open(work->db, work->db_path, num_threads);
@@ -134,9 +134,9 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc close_work(struct work *work)
+enum rc close_work(struct work *work)
 {
-    enum dcp_rc rc = db_handle_close(work->db);
+    enum rc rc = db_handle_close(work->db);
     if (rc) goto cleanup;
     if ((rc = xfile_tmp_rewind(&work->prod_file))) goto cleanup;
 
@@ -160,13 +160,13 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc next_profile(struct work *work)
+enum rc next_profile(struct work *work)
 {
     if (dcp_db_end(&work->db->pro.super)) return DONE;
 
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
 
-    enum dcp_rc rc = dcp_pro_db_read(&work->db->pro, prof);
+    enum rc rc = dcp_pro_db_read(&work->db->pro, prof);
     if (rc) return rc;
 
     work->prof = prof;
@@ -174,7 +174,7 @@ enum dcp_rc next_profile(struct work *work)
     return NEXT;
 }
 
-enum dcp_rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
+enum rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
 {
     if (*task)
     {
@@ -189,14 +189,14 @@ enum dcp_rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
     return DONE;
 }
 
-enum dcp_rc prepare_task_for_prof(struct work *work, struct task *task)
+enum rc prepare_task_for_prof(struct work *work, struct task *task)
 {
-    enum dcp_rc rc = prepare_task_for_dp(&task->alt.task, &work->prof->alt.dp);
+    enum rc rc = prepare_task_for_dp(&task->alt.task, &work->prof->alt.dp);
     if (rc) return rc;
     return prepare_task_for_dp(&task->null.task, &work->prof->null.dp);
 }
 
-enum dcp_rc prepare_task_for_seq(struct task *task, struct imm_seq *seq)
+enum rc prepare_task_for_seq(struct task *task, struct imm_seq *seq)
 {
     if (imm_task_setup(task->alt.task, seq))
         return error(FAIL, "failed to setup task");
@@ -207,7 +207,7 @@ enum dcp_rc prepare_task_for_seq(struct task *task, struct imm_seq *seq)
     return DONE;
 }
 
-enum dcp_rc run_viterbi(struct work *work, struct task *task)
+enum rc run_viterbi(struct work *work, struct task *task)
 {
     if (imm_dp_viterbi(&work->prof->alt.dp, task->alt.task, &task->alt.prod))
         return error(FAIL, "failed to run viterbi");
@@ -218,10 +218,10 @@ enum dcp_rc run_viterbi(struct work *work, struct task *task)
     return DONE;
 }
 
-enum dcp_rc write_product(struct work *work, struct task *task,
+enum rc write_product(struct work *work, struct task *task,
                           unsigned match_id, struct imm_seq seq)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     struct imm_codon codon = imm_codon_any(work->prof->code->nuclt);
 
     struct dcp_meta const *mt = &work->prof->super.mt;

@@ -61,9 +61,9 @@ static char const *const queries[] = {
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-enum dcp_rc sched_job_module_init(struct sqlite3 *db)
+enum rc sched_job_module_init(struct sqlite3 *db)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
         PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
 
@@ -71,10 +71,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_job_add(struct sched_job *job)
+enum rc sched_job_add(struct sched_job *job)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, job->db_id);
@@ -95,10 +95,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_job_next_pending(int64_t *job_id)
+enum rc sched_job_next_pending(int64_t *job_id)
 {
     struct sqlite3_stmt *stmt = stmts[GET_PEND];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, (int64_t)utc_now());
@@ -116,11 +116,11 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_job_set_error(int64_t job_id, char const *error,
+enum rc sched_job_set_error(int64_t job_id, char const *error,
                                 int64_t exec_ended)
 {
     struct sqlite3_stmt *stmt = stmts[SET_ERROR];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_STRING_OR_CLEANUP(rc, stmt, 1, error);
@@ -133,10 +133,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_job_set_done(int64_t job_id, int64_t exec_ended)
+enum rc sched_job_set_done(int64_t job_id, int64_t exec_ended)
 {
     struct sqlite3_stmt *stmt = stmts[SET_DONE];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, exec_ended);
@@ -148,10 +148,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_job_state(int64_t job_id, enum dcp_job_state *state)
+enum rc sched_job_state(int64_t job_id, enum dcp_job_state *state)
 {
     struct sqlite3_stmt *stmt = stmts[GET_STATE];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
@@ -173,10 +173,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_job_get(struct sched_job *job, int64_t job_id)
+enum rc sched_job_get(struct sched_job *job, int64_t job_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);

@@ -27,8 +27,8 @@ struct db_handle
 };
 
 void db_handle_init(struct db_handle *db, int64_t id);
-enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
+enum rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
                            unsigned nfiles);
-enum dcp_rc db_handle_close(struct db_handle *db);
+enum rc db_handle_close(struct db_handle *db);
 
 #endif

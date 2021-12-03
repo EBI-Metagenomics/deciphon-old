@@ -7,12 +7,12 @@
 struct dcp_job;
 struct sqlite3;
 
-enum dcp_rc sched_setup(char const filepath[DCP_PATH_SIZE]);
-enum dcp_rc sched_open(char const filepath[DCP_PATH_SIZE]);
-enum dcp_rc sched_close(void);
+enum rc sched_setup(char const filepath[DCP_PATH_SIZE]);
+enum rc sched_open(char const filepath[DCP_PATH_SIZE]);
+enum rc sched_close(void);
 struct sqlite3 *sched_db(void);
-enum dcp_rc sched_submit_job(struct dcp_job *job);
-enum dcp_rc sched_fetch_pend_job(struct dcp_job *job, int64_t db_id,
+enum rc sched_submit_job(struct dcp_job *job);
+enum rc sched_fetch_pend_job(struct dcp_job *job, int64_t db_id,
                                  int64_t *job_id);
 
 #endif

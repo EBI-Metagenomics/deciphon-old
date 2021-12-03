@@ -29,7 +29,7 @@ static inline struct dcp_prof *dcp_std_prof_super(struct dcp_std_prof *std)
 
 struct dcp_std_prof;
 
-enum dcp_rc std_prof_read(struct dcp_std_prof *prof, FILE *restrict fd);
-enum dcp_rc std_prof_write(struct dcp_std_prof const *prof, FILE *restrict fd);
+enum rc std_prof_read(struct dcp_std_prof *prof, FILE *restrict fd);
+enum rc std_prof_write(struct dcp_std_prof const *prof, FILE *restrict fd);
 
 #endif

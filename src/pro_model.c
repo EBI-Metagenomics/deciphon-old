@@ -45,7 +45,7 @@ static void setup_entry_trans(struct dcp_pro_model *);
 static void setup_exit_trans(struct dcp_pro_model *);
 static void setup_transitions(struct dcp_pro_model *);
 
-enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
+enum rc dcp_pro_model_add_node(struct dcp_pro_model *m,
                                    imm_float const lprobs[IMM_AMINO_SIZE],
                                    char consensus)
 {
@@ -81,7 +81,7 @@ enum dcp_rc dcp_pro_model_add_node(struct dcp_pro_model *m,
     return DONE;
 }
 
-enum dcp_rc dcp_pro_model_add_trans(struct dcp_pro_model *m,
+enum rc dcp_pro_model_add_trans(struct dcp_pro_model *m,
                                     struct dcp_pro_trans trans)
 {
     if (!have_called_setup(m))
@@ -152,7 +152,7 @@ static void model_reset(struct dcp_pro_model *model)
     imm_state_detach(imm_super(&model->xnode.alt.T));
 }
 
-enum dcp_rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
+enum rc dcp_pro_model_setup(struct dcp_pro_model *m, unsigned core_size)
 {
     if (core_size == 0)
         return error(ILLEGALARG, "`core_size` cannot be zero.");
@@ -219,7 +219,7 @@ struct pro_model_summary pro_model_summary(struct dcp_pro_model const *m)
 
 static void add_xnodes(struct dcp_pro_model *m)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     struct dcp_pro_xnode *n = &m->xnode;
 
     rc += imm_hmm_add_state(&m->null.hmm, imm_super(&n->null.R));
@@ -320,7 +320,7 @@ static void init_match(struct imm_frame_state *state, struct dcp_pro_model *m,
 static void init_null_xtrans(struct imm_hmm *hmm,
                              struct dcp_pro_xnode_null *node)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     imm_float const o = IMM_LPROB_ONE;
     rc += imm_hmm_set_trans(hmm, imm_super(&node->R), imm_super(&node->R), o);
     assert(rc == DCP_DONE);
@@ -328,7 +328,7 @@ static void init_null_xtrans(struct imm_hmm *hmm,
 
 static void init_alt_xtrans(struct imm_hmm *hmm, struct dcp_pro_xnode_alt *node)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     imm_float const o = IMM_LPROB_ONE;
     rc += imm_hmm_set_trans(hmm, imm_super(&node->S), imm_super(&node->B), o);
     rc += imm_hmm_set_trans(hmm, imm_super(&node->S), imm_super(&node->N), o);
@@ -419,7 +419,7 @@ static void setup_nuclt_dist(struct dcp_nuclt_dist *dist,
 
 static void setup_entry_trans(struct dcp_pro_model *m)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     if (m->cfg.entry_dist == DCP_ENTRY_DIST_UNIFORM)
     {
         imm_float M = (imm_float)m->core_size;
@@ -449,7 +449,7 @@ static void setup_entry_trans(struct dcp_pro_model *m)
 
 static void setup_exit_trans(struct dcp_pro_model *m)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     struct imm_state *E = imm_super(&m->xnode.alt.E);
 
     for (unsigned i = 0; i < m->core_size; ++i)

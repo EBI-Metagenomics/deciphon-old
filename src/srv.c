@@ -30,7 +30,7 @@ static struct dcp_srv
 
 static void signal_interrupt(int signum) { srv.signal.interrupt = 1; }
 
-enum dcp_rc dcp_srv_open(char const *filepath, unsigned num_threads)
+enum rc dcp_srv_open(char const *filepath, unsigned num_threads)
 {
     srv.signal.action.sa_handler = &signal_interrupt;
     sigemptyset(&srv.signal.action.sa_mask);
@@ -38,21 +38,21 @@ enum dcp_rc dcp_srv_open(char const *filepath, unsigned num_threads)
     db_pool_module_init();
     srv.num_threads = num_threads;
 
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     if ((rc = sched_setup(filepath))) return rc;
     rc = sched_open(filepath);
     return rc;
 }
 
-enum dcp_rc dcp_srv_close(void) { return sched_close(); }
+enum rc dcp_srv_close(void) { return sched_close(); }
 
-enum dcp_rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
+enum rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
 {
     if (!xfile_is_readable(filepath))
         return error(IOERROR, "file is not readable");
 
     struct sched_db db = {0};
-    enum dcp_rc rc = sched_db_setup(&db, name, filepath);
+    enum rc rc = sched_db_setup(&db, name, filepath);
     if (rc) return rc;
 
     struct sched_db db2 = {0};
@@ -67,19 +67,19 @@ enum dcp_rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
     return rc;
 }
 
-enum dcp_rc dcp_srv_submit_job(struct dcp_job *job)
+enum rc dcp_srv_submit_job(struct dcp_job *job)
 {
     return sched_submit_job(job);
 }
 
-enum dcp_rc dcp_srv_job_state(int64_t job_id, enum dcp_job_state *state)
+enum rc dcp_srv_job_state(int64_t job_id, enum dcp_job_state *state)
 {
     return sched_job_state(job_id, state);
 }
 
-enum dcp_rc dcp_srv_run(bool single_run)
+enum rc dcp_srv_run(bool single_run)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     struct work work = {0};
     work_init(&work);
 
@@ -104,9 +104,9 @@ enum dcp_rc dcp_srv_run(bool single_run)
     return DONE;
 }
 
-enum dcp_rc dcp_srv_next_prod(int64_t job_id, int64_t *prod_id)
+enum rc dcp_srv_next_prod(int64_t job_id, int64_t *prod_id)
 {
-    enum dcp_rc rc = sched_prod_next(job_id, prod_id);
+    enum rc rc = sched_prod_next(job_id, prod_id);
     if (rc == DONE) return rc;
     if (rc != NEXT) return rc;
     if ((rc = sched_prod_get(&srv.prod, *prod_id))) return rc;

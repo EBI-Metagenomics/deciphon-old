@@ -1,7 +1,7 @@
 #ifndef RC_H
 #define RC_H
 
-enum dcp_rc
+enum rc
 {
     DONE,
     END,

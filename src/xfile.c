@@ -14,18 +14,18 @@
 
 #define BUFFSIZE (8 * 1024)
 
-enum dcp_rc xfile_tmp_open(struct xfile_tmp *file)
+enum rc xfile_tmp_open(struct xfile_tmp *file)
 {
     safe_strcpy(file->path, PATH_TEMP_TEMPLATE, MEMBER_SIZE(*file, path));
     file->fp = NULL;
-    enum dcp_rc rc = xfile_mktemp(file->path);
+    enum rc rc = xfile_mktemp(file->path);
     if (rc) return rc;
     if (!(file->fp = fopen(file->path, "wb+")))
         rc = error(IOERROR, "failed to open prod file");
     return rc;
 }
 
-enum dcp_rc xfile_tmp_rewind(struct xfile_tmp *file)
+enum rc xfile_tmp_rewind(struct xfile_tmp *file)
 {
     if (fflush(file->fp)) return error(IOERROR, "failed to flush file");
     rewind(file->fp);
@@ -38,7 +38,7 @@ void xfile_tmp_destroy(struct xfile_tmp *file)
     remove(file->path);
 }
 
-enum dcp_rc xfile_copy(FILE *restrict dst, FILE *restrict src)
+enum rc xfile_copy(FILE *restrict dst, FILE *restrict src)
 {
     char buffer[BUFFSIZE];
     size_t n = 0;
@@ -66,7 +66,7 @@ bool xfile_is_readable(char const *filepath)
     return false;
 }
 
-enum dcp_rc xfile_mktemp(char *filepath)
+enum rc xfile_mktemp(char *filepath)
 {
     if (mkstemp(filepath) == -1) return error(IOERROR, "mkstemp failed");
     return DONE;
@@ -77,9 +77,9 @@ enum dcp_rc xfile_mktemp(char *filepath)
 
 static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
 
-enum dcp_rc xfile_hash(FILE *restrict fp, uint64_t *hash)
+enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     XXH64_state_t *const state = XXH64_createState();
     if (!state)
     {

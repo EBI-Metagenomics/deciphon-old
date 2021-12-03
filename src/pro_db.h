@@ -19,17 +19,17 @@ struct dcp_pro_db
 
 extern struct dcp_pro_db const dcp_pro_db_default;
 
-enum dcp_rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
+enum rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
                                            unsigned nfiles, FILE *fp[]);
 
-enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fp);
+enum rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fp);
 
-enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fp,
+enum rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fp,
                              struct imm_amino const *amino,
                              struct imm_nuclt const *nuclt,
                              struct dcp_pro_cfg cfg);
 
-enum dcp_rc dcp_pro_db_close(struct dcp_pro_db *db);
+enum rc dcp_pro_db_close(struct dcp_pro_db *db);
 
 struct imm_amino const *dcp_pro_db_amino(struct dcp_pro_db const *db);
 
@@ -37,9 +37,9 @@ struct imm_nuclt const *dcp_pro_db_nuclt(struct dcp_pro_db const *db);
 
 struct dcp_pro_cfg dcp_pro_db_cfg(struct dcp_pro_db const *db);
 
-enum dcp_rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof);
+enum rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof);
 
-enum dcp_rc dcp_pro_db_write(struct dcp_pro_db *db,
+enum rc dcp_pro_db_write(struct dcp_pro_db *db,
                              struct dcp_pro_prof const *prof);
 
 struct dcp_pro_prof *dcp_pro_db_profile(struct dcp_pro_db *db);

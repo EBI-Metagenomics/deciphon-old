@@ -23,17 +23,17 @@ static struct sqlite3 *sqlite3_db = NULL;
 
 static_assert(SQLITE_VERSION_NUMBER >= 3035000, "We need RETURNING statement");
 
-enum dcp_rc check_integrity(char const *filepath, bool *ok);
-enum dcp_rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath));
-enum dcp_rc emerge_db(char const *filepath);
-enum dcp_rc is_empty(char const *filepath, bool *empty);
-enum dcp_rc submit_job(struct sqlite3_stmt *, struct sched_job *, int64_t db_id,
+enum rc check_integrity(char const *filepath, bool *ok);
+enum rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath));
+enum rc emerge_db(char const *filepath);
+enum rc is_empty(char const *filepath, bool *empty);
+enum rc submit_job(struct sqlite3_stmt *, struct sched_job *, int64_t db_id,
                        int64_t *job_id);
-enum dcp_rc touch_db(char const *filepath);
+enum rc touch_db(char const *filepath);
 
-enum dcp_rc sched_setup(char const filepath[DCP_PATH_SIZE])
+enum rc sched_setup(char const filepath[DCP_PATH_SIZE])
 {
-    enum dcp_rc rc = touch_db(filepath);
+    enum rc rc = touch_db(filepath);
     if (rc) return rc;
 
     bool empty = false;
@@ -48,9 +48,9 @@ enum dcp_rc sched_setup(char const filepath[DCP_PATH_SIZE])
     return rc;
 }
 
-enum dcp_rc sched_open(char const filepath[DCP_PATH_SIZE])
+enum rc sched_open(char const filepath[DCP_PATH_SIZE])
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
 
     if (sqlite3_open(filepath, &sqlite3_db)) return OPEN_ERROR();
     if ((rc = sched_job_module_init(sqlite3_db))) goto cleanup;
@@ -65,7 +65,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_close(void)
+enum rc sched_close(void)
 {
     sched_db_module_del();
     sched_prod_module_del();
@@ -76,11 +76,11 @@ enum dcp_rc sched_close(void)
 
 struct sqlite3 *sched_db(void) { return sqlite3_db; }
 
-enum dcp_rc sched_submit_job(struct dcp_job *job)
+enum rc sched_submit_job(struct dcp_job *job)
 {
     BEGIN_TRANSACTION_OR_RETURN(sqlite3_db);
 
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
 
     struct sched_job j = SCHED_JOB_INIT(job->db_id, job->multi_hits,
                                         job->hmmer3_compat, (int64_t)utc_now());
@@ -105,10 +105,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc check_integrity(char const *filepath, bool *ok)
+enum rc check_integrity(char const *filepath, bool *ok)
 {
     PATH_TEMP_DEFINE(tmp);
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
 
     if ((rc = create_ground_truth_db(tmp))) return rc;
     if ((rc = sqldiff_compare(filepath, tmp, ok))) goto cleanup;
@@ -118,23 +118,23 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath))
+enum rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath))
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     if ((rc = xfile_mktemp(filepath))) return rc;
     if ((rc = touch_db(filepath))) return rc;
     if ((rc = emerge_db(filepath))) return rc;
     return rc;
 }
 
-enum dcp_rc emerge_db(char const *filepath)
+enum rc emerge_db(char const *filepath)
 {
     struct sqlite3 *db = NULL;
     if (sqlite3_open(filepath, &db)) return OPEN_ERROR();
 
     if (sqlite3_exec(db, (char const *)sched_schema, 0, 0, 0))
     {
-        enum dcp_rc rc = EXEC_ERROR();
+        enum rc rc = EXEC_ERROR();
         sqlite3_close(db);
         return rc;
     }
@@ -147,7 +147,7 @@ static int is_empty_cb(void *empty, int argc, char **argv, char **cols)
     return 0;
 }
 
-enum dcp_rc is_empty(char const *filepath, bool *empty)
+enum rc is_empty(char const *filepath, bool *empty)
 {
     struct sqlite3 *db = NULL;
     if (sqlite3_open(filepath, &db)) return OPEN_ERROR();
@@ -156,7 +156,7 @@ enum dcp_rc is_empty(char const *filepath, bool *empty)
     static char const *const sql = "SELECT name FROM sqlite_master;";
     if (sqlite3_exec(db, sql, is_empty_cb, empty, 0))
     {
-        enum dcp_rc rc = EXEC_ERROR();
+        enum rc rc = EXEC_ERROR();
         sqlite3_close(db);
         return rc;
     }
@@ -164,7 +164,7 @@ enum dcp_rc is_empty(char const *filepath, bool *empty)
     return sqlite3_close(db) ? CLOSE_ERROR() : DONE;
 }
 
-enum dcp_rc touch_db(char const *filepath)
+enum rc touch_db(char const *filepath)
 {
     struct sqlite3 *db = NULL;
     if (sqlite3_open(filepath, &db)) return OPEN_ERROR();

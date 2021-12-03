@@ -162,7 +162,7 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     tbl_8x_ed_flush(&table);
 }
 
-static enum dcp_rc predict_codons(struct imm_seq const *seq)
+static enum rc predict_codons(struct imm_seq const *seq)
 {
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
     struct imm_path const *path = &cli.pro.prod.path;
@@ -170,7 +170,7 @@ static enum dcp_rc predict_codons(struct imm_seq const *seq)
     struct dcp_pro_codec codec = dcp_pro_codec_init(prof, path);
     struct imm_codon codon = imm_codon_any(prof->code->nuclt);
 
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     char *ocodon = cli.output.codon.seq;
     while (!(rc = dcp_pro_codec_next(&codec, seq, &codon)))
     {
@@ -199,7 +199,7 @@ static void decode_codons(void)
     *oamino = '\0';
 }
 
-static enum dcp_rc write_codons(char const *ocodon)
+static enum rc write_codons(char const *ocodon)
 {
     char const *id = cli.queries.fa.target.id;
     char const *desc = cli.queries.fa.target.desc;
@@ -208,7 +208,7 @@ static enum dcp_rc write_codons(char const *ocodon)
     return DONE;
 }
 
-static enum dcp_rc write_aminos(char const *oamino)
+static enum rc write_aminos(char const *oamino)
 {
     char const *id = cli.queries.fa.target.id;
     char const *desc = cli.queries.fa.target.desc;
@@ -217,7 +217,7 @@ static enum dcp_rc write_aminos(char const *oamino)
     return DONE;
 }
 
-static enum dcp_rc scan_queries(struct dcp_meta const *mt)
+static enum rc scan_queries(struct dcp_meta const *mt)
 {
     struct imm_prod null = imm_prod();
     struct dcp_pro_prof *prof = &cli.pro.db.prof;
@@ -240,7 +240,7 @@ static enum dcp_rc scan_queries(struct dcp_meta const *mt)
         imm_float lrt = -2 * (null.loglik - cli.pro.prod.loglik);
         if (lrt < 100.0f) continue;
 
-        enum dcp_rc rc = predict_codons(&seq);
+        enum rc rc = predict_codons(&seq);
         if (rc) return rc;
 
         char const *ocodon = cli.output.codon.seq;
@@ -273,7 +273,7 @@ static enum dcp_rc scan_queries(struct dcp_meta const *mt)
     return DONE;
 }
 
-static enum dcp_rc cli_setup(void)
+static enum rc cli_setup(void)
 {
     cli_log_setup();
     cli.queries.file = arguments.args[0];
@@ -311,7 +311,7 @@ static enum dcp_rc cli_setup(void)
 
     cli.pro.db = dcp_pro_db_default;
 
-    enum dcp_rc rc = dcp_pro_db_openr(&cli.pro.db, cli.pro.fd);
+    enum rc rc = dcp_pro_db_openr(&cli.pro.db, cli.pro.fd);
     if (rc) return rc;
 
     return DONE;
@@ -324,11 +324,11 @@ static void queries_setup(void)
     cli.queries.fa.target.desc = cli.pro.db.prof.super.mt.acc;
 }
 
-static enum dcp_rc cli_scan(int argc, char **argv)
+static enum rc cli_scan(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
 
-    enum dcp_rc rc = cli_setup();
+    enum rc rc = cli_setup();
     if (rc) goto cleanup;
 
     assert(imm_abc_typeid(&cli.pro.db.nuclt.super) == IMM_DNA);

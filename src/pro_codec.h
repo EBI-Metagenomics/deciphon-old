@@ -22,7 +22,7 @@ dcp_pro_codec_init(struct dcp_pro_prof const *prof, struct imm_path const *path)
     return (struct dcp_pro_codec){0, 0, prof, path};
 }
 
-enum dcp_rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
+enum rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
                                struct imm_seq const *seq,
                                struct imm_codon *codon);
 

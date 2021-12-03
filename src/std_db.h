@@ -16,18 +16,18 @@ struct dcp_std_db
 
 void dcp_std_db_init(struct dcp_std_db *db);
 
-enum dcp_rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd);
+enum rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd);
 
-enum dcp_rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
+enum rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
                              struct imm_code const *code);
 
-enum dcp_rc dcp_std_db_close(struct dcp_std_db *db);
+enum rc dcp_std_db_close(struct dcp_std_db *db);
 
 struct imm_abc const *dcp_std_db_abc(struct dcp_std_db const *db);
 
-enum dcp_rc dcp_std_db_read(struct dcp_std_db *db, struct dcp_std_prof *prof);
+enum rc dcp_std_db_read(struct dcp_std_db *db, struct dcp_std_prof *prof);
 
-enum dcp_rc dcp_std_db_write(struct dcp_std_db *db,
+enum rc dcp_std_db_write(struct dcp_std_db *db,
                              struct dcp_std_prof const *prof);
 
 struct dcp_std_prof *dcp_std_db_profile(struct dcp_std_db *db);

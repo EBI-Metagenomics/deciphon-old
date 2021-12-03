@@ -46,20 +46,20 @@ void dcp_pro_prof_init(struct dcp_pro_prof *prof, struct imm_amino const *amino,
                        struct imm_nuclt_code const *code,
                        struct dcp_pro_cfg cfg);
 
-enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
+enum rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
                                bool multi_hits, bool hmmer3_compat);
 
-enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *prof,
+enum rc dcp_pro_prof_absorb(struct dcp_pro_prof *prof,
                                 struct dcp_pro_model const *model);
 
 struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro);
 
 void dcp_pro_prof_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
 
-enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *prof, unsigned seed,
+enum rc dcp_pro_prof_sample(struct dcp_pro_prof *prof, unsigned seed,
                                 unsigned core_size);
 
-enum dcp_rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
+enum rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
                                 struct imm_seq const *seq, unsigned state_id,
                                 struct imm_codon *codon);
 
@@ -73,8 +73,8 @@ void dcp_pro_prof_write_dot(struct dcp_pro_prof const *prof, FILE *restrict fp);
 struct cmp_ctx_s;
 struct dcp_pro_prof;
 
-enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *ctx);
-enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof,
+enum rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *ctx);
+enum rc pro_prof_write(struct dcp_pro_prof const *prof,
                            struct cmp_ctx_s *ctx);
 
 #endif

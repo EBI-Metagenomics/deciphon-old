@@ -98,7 +98,7 @@ static struct
     struct dcp_pro_reader reader;
 } cli = {0};
 
-static enum dcp_rc cli_setup(struct arguments const *args)
+static enum rc cli_setup(struct arguments const *args)
 {
     cli_log_setup();
     cli.input.file = args->input_file;
@@ -114,7 +114,7 @@ static enum dcp_rc cli_setup(struct arguments const *args)
 
     cli.db = dcp_pro_db_default;
 
-    enum dcp_rc rc =
+    enum rc rc =
         dcp_pro_db_openw(&cli.db, cli.output.fd, &imm_amino_iupac,
                          imm_super(&imm_dna_iupac), DCP_PRO_CFG_DEFAULT);
     if (rc) return rc;
@@ -125,22 +125,22 @@ static enum dcp_rc cli_setup(struct arguments const *args)
     return DONE;
 }
 
-static enum dcp_rc profile_write(void)
+static enum rc profile_write(void)
 {
     dcp_prof_nameit(&cli.db.prof.super, dcp_pro_reader_meta(&cli.reader));
 
-    enum dcp_rc rc = dcp_pro_prof_absorb(&cli.db.prof, &cli.reader.model);
+    enum rc rc = dcp_pro_prof_absorb(&cli.db.prof, &cli.reader.model);
     if (rc) return rc;
 
     return dcp_pro_db_write(&cli.db, &cli.db.prof);
 }
 
-static enum dcp_rc cli_press(int argc, char **argv)
+static enum rc cli_press(int argc, char **argv)
 {
     struct arguments arguments = {0};
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
 
-    enum dcp_rc rc = cli_setup(&arguments);
+    enum rc rc = cli_setup(&arguments);
     if (rc) goto cleanup;
 
     progress_file_start(&cli.progress, !arguments.quiet);

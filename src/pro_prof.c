@@ -35,7 +35,7 @@ void dcp_pro_prof_init(struct dcp_pro_prof *p, struct imm_amino const *amino,
     p->alt.match_ndists = NULL;
 }
 
-static enum dcp_rc alloc_match_nuclt_dists(struct dcp_pro_prof *prof)
+static enum rc alloc_match_nuclt_dists(struct dcp_pro_prof *prof)
 {
     size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
     void *ptr = realloc(prof->alt.match_ndists, size);
@@ -48,7 +48,7 @@ static enum dcp_rc alloc_match_nuclt_dists(struct dcp_pro_prof *prof)
     return DONE;
 }
 
-enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
+enum rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
                                bool multi_hits, bool hmmer3_compat)
 {
     if (seq_size == 0) return error(ILLEGALARG, "sequence cannot be empty");
@@ -111,7 +111,7 @@ enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
     return DONE;
 }
 
-enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
+enum rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
                                 struct dcp_pro_model const *m)
 {
     if (p->code->nuclt != pro_model_nuclt(m))
@@ -130,7 +130,7 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
 
     p->core_size = m->core_size;
     memcpy(p->consensus, m->consensus, m->core_size + 1);
-    enum dcp_rc rc = alloc_match_nuclt_dists(p);
+    enum rc rc = alloc_match_nuclt_dists(p);
     if (rc) return rc;
 
     p->null.ndist = m->null.nucltd;
@@ -162,7 +162,7 @@ void dcp_pro_prof_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
     dcp_pro_state_name(id, name);
 }
 
-enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
+enum rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
                                 unsigned core_size)
 {
     assert(core_size >= 2);
@@ -177,7 +177,7 @@ enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     struct dcp_pro_model model;
     dcp_pro_model_init(&model, p->amino, p->code, p->cfg, lprobs);
 
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
 
     if ((rc = dcp_pro_model_setup(&model, core_size))) goto cleanup;
 
@@ -209,7 +209,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
+enum rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
                                 struct imm_seq const *seq, unsigned state_id,
                                 struct imm_codon *codon)
 {
@@ -252,7 +252,7 @@ static void del(struct dcp_prof *prof)
     }
 }
 
-enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
+enum rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_read(&prof->null.dp, fd)) return FAIL;
@@ -269,7 +269,7 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
     if (!cmp_read_str(cmp, prof->consensus, &u32))
         return error(IOERROR, "failed to read consensus");
 
-    enum dcp_rc rc = alloc_match_nuclt_dists(prof);
+    enum rc rc = alloc_match_nuclt_dists(prof);
     if (rc) return rc;
 
     if ((rc = dcp_nuclt_dist_read(&prof->null.ndist, cmp))) return rc;
@@ -285,7 +285,7 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
     return DONE;
 }
 
-enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof,
+enum rc pro_prof_write(struct dcp_pro_prof const *prof,
                            struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
@@ -298,7 +298,7 @@ enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof,
     if (!cmp_write_str(cmp, prof->consensus, prof->core_size))
         return error(IOERROR, "failed to write consensus");
 
-    enum dcp_rc rc = dcp_nuclt_dist_write(&prof->null.ndist, cmp);
+    enum rc rc = dcp_nuclt_dist_write(&prof->null.ndist, cmp);
     if (rc) return rc;
 
     if ((rc = dcp_nuclt_dist_write(&prof->alt.insert_ndist, cmp))) return rc;

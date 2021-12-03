@@ -19,7 +19,7 @@
 
 struct dcp_db const dcp_db_default = {0};
 
-static enum dcp_rc init_tmpmeta(struct dcp_db *db)
+static enum rc init_tmpmeta(struct dcp_db *db)
 {
     FILE *fd = tmpfile();
     if (!fd) return error(IOERROR, "tmpfile() failed");
@@ -27,7 +27,7 @@ static enum dcp_rc init_tmpmeta(struct dcp_db *db)
     return DONE;
 }
 
-static enum dcp_rc init_tmpdp(struct dcp_db *db)
+static enum rc init_tmpdp(struct dcp_db *db)
 {
     FILE *fd = tmpfile();
     if (!fd) return error(IOERROR, "tmpfile() failed");
@@ -67,9 +67,9 @@ void db_set_files(struct dcp_db *db, unsigned nfiles, FILE *restrict fp[])
         xcmp_setup(&db->file.cmp[i], fp[i]);
 }
 
-enum dcp_rc db_openw(struct dcp_db *db, FILE *restrict fp)
+enum rc db_openw(struct dcp_db *db, FILE *restrict fp)
 {
-    enum dcp_rc rc = init_tmpdp(db);
+    enum rc rc = init_tmpdp(db);
     if (rc) return rc;
 
     xcmp_setup(&db->file.cmp[0], fp);
@@ -78,7 +78,7 @@ enum dcp_rc db_openw(struct dcp_db *db, FILE *restrict fp)
     return init_tmpmeta(db);
 }
 
-static enum dcp_rc flush_metadata(struct dcp_db *db)
+static enum rc flush_metadata(struct dcp_db *db)
 {
     struct cmp_ctx_s *cmp = &db->file.cmp[0];
 
@@ -128,7 +128,7 @@ static void closer(struct dcp_db *db)
     cleanup_metadata_parsing(db);
 }
 
-static enum dcp_rc closew(struct dcp_db *db)
+static enum rc closew(struct dcp_db *db)
 {
     assert(db->file.mode == DB_OPEN_WRITE);
 
@@ -136,7 +136,7 @@ static enum dcp_rc closew(struct dcp_db *db)
         return error(IOERROR, "failed to write number of profiles");
 
     xcmp_rewind(&db->mt.file.cmp);
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     if ((rc = flush_metadata(db))) goto cleanup;
     if (xcmp_close(&db->mt.file.cmp))
     {
@@ -162,7 +162,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc db_close(struct dcp_db *db)
+enum rc db_close(struct dcp_db *db)
 {
     if (db->file.mode == DB_OPEN_WRITE) return closew(db);
     closer(db);
@@ -179,7 +179,7 @@ static inline uint32_t max_mt_data_size(void)
     return MAX_NPROFILES * (MAX_NAME_SIZE + MAX_ACC_SIZE + 2);
 }
 
-enum dcp_rc db_read_magic_number(struct dcp_db *db)
+enum rc db_read_magic_number(struct dcp_db *db)
 {
     uint64_t magic_number = 0;
     if (!cmp_read_u64(&db->file.cmp[0], &magic_number))
@@ -191,7 +191,7 @@ enum dcp_rc db_read_magic_number(struct dcp_db *db)
     return DONE;
 }
 
-enum dcp_rc db_write_magic_number(struct dcp_db *db)
+enum rc db_write_magic_number(struct dcp_db *db)
 {
     if (!cmp_write_u64(&db->file.cmp[0], MAGIC_NUMBER))
         return error(IOERROR, "failed to write magic number");
@@ -199,7 +199,7 @@ enum dcp_rc db_write_magic_number(struct dcp_db *db)
     return DONE;
 }
 
-enum dcp_rc db_read_prof_type(struct dcp_db *db)
+enum rc db_read_prof_type(struct dcp_db *db)
 {
     uint8_t prof_type = 0;
     if (!cmp_read_u8(&db->file.cmp[0], &prof_type))
@@ -212,7 +212,7 @@ enum dcp_rc db_read_prof_type(struct dcp_db *db)
     return DONE;
 }
 
-enum dcp_rc db_write_prof_type(struct dcp_db *db)
+enum rc db_write_prof_type(struct dcp_db *db)
 {
     if (!cmp_write_u8(&db->file.cmp[0], (uint8_t)db->prof_typeid))
         return error(IOERROR, "failed to write prof_type");
@@ -220,7 +220,7 @@ enum dcp_rc db_write_prof_type(struct dcp_db *db)
     return DONE;
 }
 
-enum dcp_rc db_read_float_size(struct dcp_db *db)
+enum rc db_read_float_size(struct dcp_db *db)
 {
     uint8_t float_bytes = 0;
     if (!cmp_read_u8(&db->file.cmp[0], &float_bytes))
@@ -233,7 +233,7 @@ enum dcp_rc db_read_float_size(struct dcp_db *db)
     return DONE;
 }
 
-enum dcp_rc db_write_float_size(struct dcp_db *db)
+enum rc db_write_float_size(struct dcp_db *db)
 {
     unsigned size = IMM_FLOAT_BYTES;
     assert(size == 4 || size == 8);
@@ -244,7 +244,7 @@ enum dcp_rc db_write_float_size(struct dcp_db *db)
     return DONE;
 }
 
-enum dcp_rc db_read_nprofiles(struct dcp_db *db)
+enum rc db_read_nprofiles(struct dcp_db *db)
 {
     if (!cmp_read_u32(&db->file.cmp[0], &db->profiles.size))
         return error(IOERROR, "failed to read number of profiles");
@@ -255,7 +255,7 @@ enum dcp_rc db_read_nprofiles(struct dcp_db *db)
     return DONE;
 }
 
-static enum dcp_rc read_metadata_size(struct dcp_db *db)
+static enum rc read_metadata_size(struct dcp_db *db)
 {
     if (!cmp_read_u32(&db->file.cmp[0], &db->mt.size))
         return error(IOERROR, "failed to read metadata size");
@@ -267,7 +267,7 @@ static enum dcp_rc read_metadata_size(struct dcp_db *db)
 }
 
 /* TODO: use it somewhere to make sure they are compatible */
-static enum dcp_rc check_metadata_profile_compatibility(struct dcp_db const *db)
+static enum rc check_metadata_profile_compatibility(struct dcp_db const *db)
 {
     if ((db->mt.size > 0 && db->profiles.size == 0) ||
         (db->mt.size == 0 && db->profiles.size > 0))
@@ -276,7 +276,7 @@ static enum dcp_rc check_metadata_profile_compatibility(struct dcp_db const *db)
     return DONE;
 }
 
-static enum dcp_rc read_metadata_data(struct dcp_db *db)
+static enum rc read_metadata_data(struct dcp_db *db)
 {
     assert(db->mt.size > 0);
 
@@ -299,7 +299,7 @@ static enum dcp_rc read_metadata_data(struct dcp_db *db)
     return DONE;
 }
 
-static enum dcp_rc alloc_metadata_parsing(struct dcp_db *db)
+static enum rc alloc_metadata_parsing(struct dcp_db *db)
 {
     uint32_t n = db->profiles.size;
 
@@ -318,7 +318,7 @@ static enum dcp_rc alloc_metadata_parsing(struct dcp_db *db)
     return DONE;
 }
 
-static enum dcp_rc parse_metadata(struct dcp_db *db)
+static enum rc parse_metadata(struct dcp_db *db)
 {
     assert(db->mt.offset);
     assert(db->mt.name_length);
@@ -350,9 +350,9 @@ static enum dcp_rc parse_metadata(struct dcp_db *db)
     return DONE;
 }
 
-enum dcp_rc db_read_metadata(struct dcp_db *db)
+enum rc db_read_metadata(struct dcp_db *db)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
 
     if ((rc = read_metadata_size(db))) goto cleanup;
 
@@ -371,7 +371,7 @@ cleanup:
     return rc;
 }
 
-static enum dcp_rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
+static enum rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
@@ -383,7 +383,7 @@ static enum dcp_rc write_name(struct dcp_db *db, struct dcp_prof const *prof)
     return DONE;
 }
 
-static enum dcp_rc write_accession(struct dcp_db *db,
+static enum rc write_accession(struct dcp_db *db,
                                    struct dcp_prof const *prof)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
@@ -396,7 +396,7 @@ static enum dcp_rc write_accession(struct dcp_db *db,
     return DONE;
 }
 
-enum dcp_rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof)
+enum rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof)
 {
     if (prof->mt.name == NULL) return error(ILLEGALARG, "metadata not set");
 
@@ -406,7 +406,7 @@ enum dcp_rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof)
     if (strlen(prof->mt.acc) > MAX_ACC_SIZE)
         return error(ILLEGALARG, "profile accession is too long");
 
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
 
     if ((rc = write_name(db, prof))) return rc;
     if ((rc = write_accession(db, prof))) return rc;
@@ -414,7 +414,7 @@ enum dcp_rc db_write_prof_meta(struct dcp_db *db, struct dcp_prof const *prof)
     return DONE;
 }
 
-enum dcp_rc db_check_write_prof_ready(struct dcp_db const *db,
+enum rc db_check_write_prof_ready(struct dcp_db const *db,
                                       struct dcp_prof const *prof)
 {
     if (db->profiles.size == MAX_NPROFILES)
@@ -448,7 +448,7 @@ struct dcp_meta dcp_db_meta(struct dcp_db const *db, unsigned idx)
 
 bool dcp_db_end(struct dcp_db const *db) { return db_end(db); }
 
-enum dcp_rc db_current_offset(struct dcp_db *db, off_t *offset)
+enum rc db_current_offset(struct dcp_db *db, off_t *offset)
 {
     FILE *fp = xcmp_fp(&db->file.cmp[0]);
     if ((*offset = ftello(fp)) == -1)
@@ -456,12 +456,12 @@ enum dcp_rc db_current_offset(struct dcp_db *db, off_t *offset)
     return DONE;
 }
 
-enum dcp_rc db_record_first_partition_offset(struct dcp_db *db)
+enum rc db_record_first_partition_offset(struct dcp_db *db)
 {
     return db_current_offset(db, db->partition_offset);
 }
 
-enum dcp_rc db_rewind(struct dcp_db *db)
+enum rc db_rewind(struct dcp_db *db)
 {
     for (unsigned i = 0; i < db->npartitions; ++i)
     {

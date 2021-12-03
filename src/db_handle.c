@@ -18,10 +18,10 @@ void db_handle_init(struct db_handle *db, int64_t id)
     db->open_since = 0;
 }
 
-static enum dcp_rc close_files(struct db_handle *db, int start, int end,
+static enum rc close_files(struct db_handle *db, int start, int end,
                                bool ignore_error)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     for (int i = start; i < end; ++i)
     {
         if (fclose(db->fp[i]) && !ignore_error)
@@ -34,10 +34,10 @@ static enum dcp_rc close_files(struct db_handle *db, int start, int end,
     return rc;
 }
 
-static enum dcp_rc open_files(struct db_handle *db, int start, int end,
+static enum rc open_files(struct db_handle *db, int start, int end,
                               char path[DCP_PATH_SIZE])
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     for (int i = start; i < end; ++i)
     {
         if (!(db->fp[i] = fopen(path, "rb")))
@@ -50,10 +50,10 @@ static enum dcp_rc open_files(struct db_handle *db, int start, int end,
     return rc;
 }
 
-enum dcp_rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
+enum rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
                            unsigned nfiles)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     assert(nfiles > 0);
     if (db->nfiles == 0)
     {
@@ -83,10 +83,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc db_handle_close(struct db_handle *db)
+enum rc db_handle_close(struct db_handle *db)
 {
     db->open_since = 0;
-    enum dcp_rc rc = dcp_pro_db_close(&db->pro);
+    enum rc rc = dcp_pro_db_close(&db->pro);
     if (rc) return rc;
 
     if ((rc = close_files(db, 0, db->nfiles, false))) goto cleanup;

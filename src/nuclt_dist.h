@@ -20,10 +20,10 @@ static inline void dcp_nuclt_dist_init(struct dcp_nuclt_dist *nucltd,
     nucltd->codonm.nuclt = nuclt;
 }
 
-enum dcp_rc dcp_nuclt_dist_write(struct dcp_nuclt_dist const *ndist,
+enum rc dcp_nuclt_dist_write(struct dcp_nuclt_dist const *ndist,
                                  struct cmp_ctx_s *cmp);
 
-enum dcp_rc dcp_nuclt_dist_read(struct dcp_nuclt_dist *ndist,
+enum rc dcp_nuclt_dist_read(struct dcp_nuclt_dist *ndist,
                                 struct cmp_ctx_s *cmp);
 
 #endif

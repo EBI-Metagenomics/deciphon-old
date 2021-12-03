@@ -18,6 +18,6 @@ void tok_del(struct tok const *tok);
 enum tok_id tok_id(struct tok const *tok);
 char const *tok_value(struct tok const *tok);
 unsigned tok_size(struct tok const *tok);
-enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd);
+enum rc tok_next(struct tok *tok, FILE *restrict fd);
 
 #endif

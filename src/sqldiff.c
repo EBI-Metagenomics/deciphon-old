@@ -2473,10 +2473,10 @@ static int call_main(int argc, char const **argv, FILE *out)
     return 0;
 }
 
-enum dcp_rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
+enum rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
 {
     PATH_TEMP_DEFINE(path);
-    enum dcp_rc rc = xfile_mktemp(path);
+    enum rc rc = xfile_mktemp(path);
     if (rc) return rc;
 
     FILE *out = fopen(path, "w");

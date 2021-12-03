@@ -29,7 +29,7 @@ struct work
 };
 
 void work_init(struct work *);
-enum dcp_rc work_next(struct work *);
-enum dcp_rc work_run(struct work *, unsigned num_threads);
+enum rc work_next(struct work *);
+enum rc work_run(struct work *, unsigned num_threads);
 
 #endif

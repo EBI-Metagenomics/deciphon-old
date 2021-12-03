@@ -75,9 +75,9 @@ enum
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-enum dcp_rc sched_prod_module_init(struct sqlite3 *db)
+enum rc sched_prod_module_init(struct sqlite3 *db)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
         PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
 
@@ -85,10 +85,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_add(struct prod *prod)
+enum rc sched_prod_add(struct prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, prod->job_id);
@@ -118,10 +118,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_next(int64_t job_id, int64_t *prod_id)
+enum rc sched_prod_next(int64_t job_id, int64_t *prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, *prod_id);
@@ -143,10 +143,10 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_get(struct prod *prod, int64_t prod_id)
+enum rc sched_prod_get(struct prod *prod, int64_t prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, prod_id);
@@ -235,7 +235,7 @@ void sched_prod_set_version(struct prod *prod, char const *version)
 
 #define ERROR_WRITE error(IOERROR, "failed to write product")
 
-enum dcp_rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
+enum rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
 {
     if (fprintf(fd, "%" PRId64 TAB, p->job_id) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%" PRId64 TAB, p->seq_id) < 0) return ERROR_WRITE;
@@ -270,7 +270,7 @@ enum dcp_rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
  *                      ---------------
  */
 
-enum dcp_rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *m)
+enum rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *m)
 {
     if (fprintf(fd, "%.*s,", m->frag_size, m->frag) < 0)
         return error(IOERROR, "failed to write frag");
@@ -287,22 +287,22 @@ enum dcp_rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *m)
     return DONE;
 }
 
-enum dcp_rc sched_prod_write_match_sep(FILE *restrict fd)
+enum rc sched_prod_write_match_sep(FILE *restrict fd)
 {
     if (fputc(';', fd) == EOF) return error(IOERROR, "failed to write sep");
     return DONE;
 }
 
-enum dcp_rc sched_prod_write_nl(FILE *restrict fd)
+enum rc sched_prod_write_nl(FILE *restrict fd)
 {
     if (fputc('\n', fd) == EOF)
         return error(IOERROR, "failed to write newline");
     return DONE;
 }
 
-enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
+enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
 {
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     BEGIN_TRANSACTION_OR_RETURN(sched_db());
 
     struct sqlite3_stmt *stmt = stmts[INSERT];

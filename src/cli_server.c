@@ -64,11 +64,11 @@ static void print_log_put(char const *msg, void *arg)
 
 static void flush_nop(void *arg) {}
 
-static enum dcp_rc cli_server(int argc, char **argv)
+static enum rc cli_server(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
 
-    enum dcp_rc rc = DONE;
+    enum rc rc = DONE;
     char const *schedfile = arguments.args[0];
     char const *dcpfile = arguments.args[1];
 
