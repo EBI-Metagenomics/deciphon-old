@@ -4,15 +4,16 @@
 #include "cco/cco.h"
 #include "dcp/export.h"
 #include "dcp/limits.h"
+#include "imm/imm.h"
 
 struct dcp_seq
 {
     char name[DCP_SEQ_NAME_SIZE];
-    char data[DCP_SEQ_SIZE];
+    struct imm_str str;
     struct cco_node node;
 };
 
 void dcp_seq_init(struct dcp_seq *seq, char const id[static 1],
-                  char const data[static 1]);
+                  struct imm_str str);
 
 #endif
