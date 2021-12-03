@@ -80,9 +80,9 @@ enum dcp_rc sched_job_add(struct sched_job *job)
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, job->db_id);
     BIND_INT_OR_CLEANUP(rc, stmt, 2, job->multi_hits);
     BIND_INT_OR_CLEANUP(rc, stmt, 3, job->hmmer3_compat);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 4, job->state);
+    BIND_STRING_OR_CLEANUP(rc, stmt, 4, job->state);
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 5, job->error);
+    BIND_STRING_OR_CLEANUP(rc, stmt, 5, job->error);
     BIND_INT64_OR_CLEANUP(rc, stmt, 6, (int64_t)utc_now());
     BIND_INT64_OR_CLEANUP(rc, stmt, 7, 0);
     BIND_INT64_OR_CLEANUP(rc, stmt, 8, 0);
@@ -123,7 +123,7 @@ enum dcp_rc sched_job_set_error(int64_t job_id, char const *error,
     enum dcp_rc rc = DCP_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 1, error);
+    BIND_STRING_OR_CLEANUP(rc, stmt, 1, error);
     BIND_INT64_OR_CLEANUP(rc, stmt, 2, exec_ended);
     BIND_INT64_OR_CLEANUP(rc, stmt, 3, job_id);
 
@@ -164,7 +164,8 @@ enum dcp_rc sched_job_state(int64_t job_id, enum dcp_job_state *state)
     }
 
     char tmp[DCP_STATE_SIZE] = {0};
-    COLUMN_TEXT(stmt, 0, tmp, DCP_STATE_SIZE);
+    rc = xsql_get_text(stmt, 0, DCP_STATE_SIZE, tmp);
+    if (rc) goto cleanup;
     *state = job_state_resolve(tmp);
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
@@ -186,9 +187,11 @@ enum dcp_rc sched_job_get(struct sched_job *job, int64_t job_id)
     job->db_id = sqlite3_column_int64(stmt, 1);
     job->multi_hits = sqlite3_column_int(stmt, 2);
     job->hmmer3_compat = sqlite3_column_int(stmt, 3);
-    COLUMN_TEXT(stmt, 4, job->state, ARRAY_SIZE(MEMBER_REF(*job, state)));
+    rc = xsql_get_text(stmt, 4, ARRAY_SIZE_OF(*job, state), job->state);
+    if (rc) goto cleanup;
 
-    COLUMN_TEXT(stmt, 5, job->error, ARRAY_SIZE(MEMBER_REF(*job, error)));
+    rc = xsql_get_text(stmt, 5, ARRAY_SIZE_OF(*job, error), job->error);
+    if (rc) goto cleanup;
     job->submission = sqlite3_column_int64(stmt, 6);
     job->exec_started = sqlite3_column_int64(stmt, 7);
     job->exec_ended = sqlite3_column_int64(stmt, 8);

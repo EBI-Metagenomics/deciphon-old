@@ -76,8 +76,10 @@ enum dcp_rc sched_db_add(struct sched_db *db)
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, db->xxh64);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 2, db->name);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 3, db->filepath);
+    rc = xsql_get_text(stmt, 2, ARRAY_SIZE_OF(*db, name), db->name);
+    if (rc) goto cleanup;
+    rc = xsql_get_text(stmt, 3, ARRAY_SIZE_OF(*db, filepath), db->filepath);
+    if (rc) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     db->id = sqlite3_column_int64(stmt, 0);
@@ -105,8 +107,10 @@ static enum dcp_rc select_db(struct sched_db *db, int64_t by_value,
 
     db->id = sqlite3_column_int64(stmt, 0);
     db->xxh64 = sqlite3_column_int64(stmt, 1);
-    COLUMN_TEXT(stmt, 2, db->name, ARRAY_SIZE(MEMBER_REF(*db, name)));
-    COLUMN_TEXT(stmt, 3, db->filepath, ARRAY_SIZE(MEMBER_REF(*db, filepath)));
+    rc = xsql_get_text(stmt, 2, ARRAY_SIZE_OF(*db, name), db->name);
+    if (rc) goto cleanup;
+    rc = xsql_get_text(stmt, 3, ARRAY_SIZE_OF(*db, filepath), db->filepath);
+    if (rc) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 

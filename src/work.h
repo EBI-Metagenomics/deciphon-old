@@ -10,36 +10,22 @@
 #include <stdatomic.h>
 #include <stdint.h>
 
-struct db_handle;
-struct db_pool;
-struct sched;
+#define WORK_MAX_NTASKS 64
 
-struct work_task
-{
-    struct sched_seq sched_seq;
-    struct
-    {
-        struct imm_task *task;
-        struct imm_prod prod;
-    } alt;
-    struct
-    {
-        struct imm_task *task;
-        struct imm_prod prod;
-    } null;
-    struct dcp_prod prod;
-};
+struct db_handle;
+struct tok;
 
 struct work
 {
     struct sched_job job;
     unsigned ntasks;
-    struct work_task tasks[4];
+    struct task tasks[WORK_MAX_NTASKS];
     char db_path[DCP_PATH_SIZE];
     struct db_handle *db;
     struct dcp_pro_prof const *prof;
     struct xfile_tmp prod_file;
     atomic_bool failed;
+    struct tok *tok;
 };
 
 void work_init(struct work *);

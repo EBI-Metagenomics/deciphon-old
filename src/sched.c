@@ -23,8 +23,6 @@ static struct sqlite3 *sqlite3_db = NULL;
 
 static_assert(SQLITE_VERSION_NUMBER >= 3035000, "We need RETURNING statement");
 
-enum dcp_rc add_seq(struct sqlite3_stmt *, char const *seq_id, char const *seq,
-                    int64_t job_id);
 enum dcp_rc check_integrity(char const *filepath, bool *ok);
 enum dcp_rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath));
 enum dcp_rc emerge_db(char const *filepath);
@@ -93,9 +91,8 @@ enum dcp_rc sched_submit_job(struct dcp_job *job)
     struct dcp_seq *seq = NULL;
     cco_iter_for_each_entry(seq, &iter, node)
     {
-        struct sched_seq s = SCHED_SEQ_INIT(j.id);
-        sched_seq_setup(&s, seq->name, seq->data);
-        if ((rc = sched_seq_add(&s))) goto cleanup;
+        if ((rc = sched_seq_add(j.id, seq->name, seq->str.len, seq->str.data)))
+            goto cleanup;
     }
 
 cleanup:
@@ -105,20 +102,6 @@ cleanup:
         return rc;
     }
     END_TRANSACTION_OR_RETURN(sqlite3_db);
-    return rc;
-}
-
-enum dcp_rc add_seq(struct sqlite3_stmt *stmt, char const *seq_id,
-                    char const *seq, int64_t job_id)
-{
-    enum dcp_rc rc = DCP_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 1, seq_id);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 2, seq);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 3, job_id);
-    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
-
-cleanup:
     return rc;
 }
 

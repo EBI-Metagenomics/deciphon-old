@@ -20,10 +20,10 @@ enum dcp_rc close_work(struct work *work);
 enum dcp_rc next_profile(struct work *work);
 enum dcp_rc prepare_task_for_dp(struct imm_task **task,
                                 struct imm_dp const *dp);
-enum dcp_rc prepare_task_for_prof(struct work *work, struct work_task *task);
-enum dcp_rc prepare_task_for_seq(struct work_task *task, struct imm_seq *seq);
-enum dcp_rc run_viterbi(struct work *work, struct work_task *task);
-static inline double compute_lrt(struct work_task const *task)
+enum dcp_rc prepare_task_for_prof(struct work *work, struct task *task);
+enum dcp_rc prepare_task_for_seq(struct task *task, struct imm_seq *seq);
+enum dcp_rc run_viterbi(struct work *work, struct task *task);
+static inline double compute_lrt(struct task const *task)
 {
     printf("Nul (%f) Alt (%f)\n", task->null.prod.loglik,
            task->alt.prod.loglik);
@@ -33,23 +33,20 @@ static inline struct imm_abc const *get_abc(struct work const *work)
 {
     return work->prof->super.code->abc;
 }
-static inline void prepare_prod(struct work_task *task)
+static inline void prepare_prod(struct task *task)
 {
     imm_prod_reset(&task->alt.prod);
     imm_prod_reset(&task->null.prod);
 }
-enum dcp_rc write_product(struct work *work, struct work_task *task,
+enum dcp_rc write_product(struct work *work, struct task *task,
                           unsigned match_id, struct imm_seq seq);
-static inline enum dcp_rc work_task_fetch(struct work_task *task,
-                                          int64_t seq_id)
-{
-    return sched_seq_get(&task->sched_seq, seq_id);
-}
 
 void work_init(struct work *work)
 {
     work->ntasks = 0;
     atomic_store(&work->failed, false);
+    /* TODO: review it */
+    work->tok = tok_new(64000);
 }
 
 enum dcp_rc work_next(struct work *work)
@@ -66,14 +63,14 @@ enum dcp_rc work_next(struct work *work)
     work->db_path[0] = 0;
     struct sched_db db = {0};
     if ((rc = sched_db_get_by_id(&db, work->job.db_id))) return rc;
-    xstrlcpy(work->db_path, db.filepath, DCP_PATH_SIZE);
+    safe_strcpy(work->db_path, db.filepath, DCP_PATH_SIZE);
 
     int64_t seq_id = 0;
     work->ntasks = 0;
     while ((rc = sched_seq_next(job_id, &seq_id)) == DCP_NEXT)
     {
-        struct work_task *task = &work->tasks[work->ntasks];
-        if ((rc = work_task_fetch(task, seq_id))) goto cleanup;
+        struct task *task = &work->tasks[work->ntasks];
+        if ((rc = task_setup(task, get_abc(work), seq_id))) goto cleanup;
 
         if (++work->ntasks >= ARRAY_SIZE(MEMBER_REF(*work, tasks)))
         {
@@ -97,9 +94,8 @@ enum dcp_rc work_run(struct work *work, unsigned num_threads)
     {
         for (unsigned i = 0; i < work->ntasks; ++i)
         {
-            struct work_task *task = &work->tasks[i];
-            struct imm_seq seq =
-                imm_seq(imm_str(task->sched_seq.data), get_abc(work));
+            struct task *task = &work->tasks[i];
+            struct imm_seq seq = task->seq;
 
             if ((rc = prepare_task_for_prof(work, task))) goto cleanup;
             if ((rc = prepare_task_for_seq(task, &seq))) goto cleanup;
@@ -108,8 +104,7 @@ enum dcp_rc work_run(struct work *work, unsigned num_threads)
 
             double lrt = compute_lrt(&work->tasks[i]);
             printf("Match_id (%d), lrt (%f)\n", match_id, lrt);
-            if (lrt < -100000.f)
-                printf("Weird                                      lrt\n");
+            if (lrt < -100000.f) printf("Weird lrt\n");
             if (lrt < 100.0f) continue;
 
             if ((rc = write_product(work, task, match_id, seq))) goto cleanup;
@@ -154,7 +149,7 @@ enum dcp_rc close_work(struct work *work)
     }
     else
     {
-        rc = sched_prod_add_from_tsv(work->prod_file.fp);
+        rc = sched_prod_add_from_tsv(work->prod_file.fp, work->tok);
         if (rc) goto cleanup;
         rc = sched_job_set_done(work->job.id, exec_ended);
         if (rc) goto cleanup;
@@ -162,6 +157,7 @@ enum dcp_rc close_work(struct work *work)
 
 cleanup:
     xfile_tmp_destroy(&work->prod_file);
+    tok_del(work->tok);
     return rc;
 }
 
@@ -194,14 +190,14 @@ enum dcp_rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
     return DCP_DONE;
 }
 
-enum dcp_rc prepare_task_for_prof(struct work *work, struct work_task *task)
+enum dcp_rc prepare_task_for_prof(struct work *work, struct task *task)
 {
     enum dcp_rc rc = prepare_task_for_dp(&task->alt.task, &work->prof->alt.dp);
     if (rc) return rc;
     return prepare_task_for_dp(&task->null.task, &work->prof->null.dp);
 }
 
-enum dcp_rc prepare_task_for_seq(struct work_task *task, struct imm_seq *seq)
+enum dcp_rc prepare_task_for_seq(struct task *task, struct imm_seq *seq)
 {
     if (imm_task_setup(task->alt.task, seq))
         return error(DCP_FAIL, "failed to setup task");
@@ -212,7 +208,7 @@ enum dcp_rc prepare_task_for_seq(struct work_task *task, struct imm_seq *seq)
     return DCP_DONE;
 }
 
-enum dcp_rc run_viterbi(struct work *work, struct work_task *task)
+enum dcp_rc run_viterbi(struct work *work, struct task *task)
 {
     if (imm_dp_viterbi(&work->prof->alt.dp, task->alt.task, &task->alt.prod))
         return error(DCP_FAIL, "failed to run viterbi");
@@ -223,7 +219,7 @@ enum dcp_rc run_viterbi(struct work *work, struct work_task *task)
     return DCP_DONE;
 }
 
-enum dcp_rc write_product(struct work *work, struct work_task *task,
+enum dcp_rc write_product(struct work *work, struct task *task,
                           unsigned match_id, struct imm_seq seq)
 {
     enum dcp_rc rc = DCP_DONE;

@@ -4,7 +4,7 @@
 #include "dcp/pro_cfg.h"
 #include "dcp/pro_prof.h"
 #include "dcp/rc.h"
-#include "error.h"
+#include "logger.h"
 #include "pro_prof.h"
 #include "third-party/cmp.h"
 #include "xcmp.h"
@@ -123,8 +123,10 @@ enum dcp_rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
     rc = db_current_offset(&db->super, db->super.partition_offset + part);
     part++;
     unsigned size = 0;
-    while (!(rc = dcp_pro_db_read(db, prof)) && part < nfiles)
+    while (!db_end(&db->super) && part < nfiles)
     {
+        if ((rc = dcp_pro_db_read(db, prof))) return rc;
+
         size++;
         if (size >= xmath_partition_size(n, nfiles, part - 1))
         {
@@ -135,8 +137,11 @@ enum dcp_rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
         }
     }
 
-    while (!(rc = dcp_pro_db_read(db, prof)))
-        ;
+    while (!db_end(&db->super))
+    {
+        if (!(rc = dcp_pro_db_read(db, prof))) return rc;
+    }
+
     if (!db_end(&db->super)) return rc;
     rc = db_current_offset(&db->super, db->super.partition_offset + part);
 

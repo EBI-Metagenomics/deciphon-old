@@ -30,8 +30,15 @@
 
 #define EXEC_ERROR() error(DCP_FAIL, "failed to exec statement")
 
-#define BIND_TEXT_OR_CLEANUP(rc, stmt, pos, var)                               \
+#define BIND_STRING_OR_CLEANUP(rc, stmt, pos, var)                             \
     if (sqlite3_bind_text(stmt, pos, var, -1, SQLITE_TRANSIENT))               \
+    {                                                                          \
+        rc = error(DCP_FAIL, "failed to bind string");                         \
+        goto cleanup;                                                          \
+    }
+
+#define BIND_TEXT_OR_CLEANUP(rc, stmt, pos, len, var)                          \
+    if (sqlite3_bind_text(stmt, pos, var, len, SQLITE_TRANSIENT))              \
     {                                                                          \
         rc = error(DCP_FAIL, "failed to bind text");                           \
         goto cleanup;                                                          \
@@ -80,9 +87,5 @@
         rc = error(DCP_FAIL, "failed to prepare statement");                   \
         goto cleanup;                                                          \
     }
-
-#define COLUMN_TEXT(stmt, pos, var, size)                                      \
-    sqlite3_column_bytes(stmt, pos);                                           \
-    xstrlcpy(var, (char const *)sqlite3_column_text(stmt, pos), size);
 
 #endif

@@ -2,9 +2,9 @@
 #include "xstrlcpy.h"
 
 void dcp_seq_init(struct dcp_seq *seq, char const id[static 1],
-                  char const data[static 1])
+                  struct imm_str str)
 {
-    xstrlcpy(seq->name, id, DCP_SEQ_NAME_SIZE);
-    xstrlcpy(seq->data, data, DCP_SEQ_SIZE);
+    safe_strcpy(seq->name, id, DCP_SEQ_NAME_SIZE);
+    seq->str = str;
     cco_node_init(&seq->node);
 }

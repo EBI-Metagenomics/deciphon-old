@@ -13,8 +13,6 @@
 #include <sqlite3.h>
 #include <stdlib.h>
 
-#define XSIZE(var, member) ARRAY_SIZE(MEMBER_REF(var, member))
-
 #ifdef TAB
 #undef TAB
 #endif
@@ -87,7 +85,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_add(struct dcp_prod *prod)
+enum dcp_rc sched_prod_add(struct sched_prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     enum dcp_rc rc = DCP_DONE;
@@ -97,16 +95,20 @@ enum dcp_rc sched_prod_add(struct dcp_prod *prod)
     BIND_INT64_OR_CLEANUP(rc, stmt, 2, prod->seq_id);
     BIND_INT64_OR_CLEANUP(rc, stmt, 3, prod->match_id);
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 4, prod->prof_name);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 5, prod->abc_name);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 4, ARRAY_SIZE_OF(*prod, prof_name),
+                         prod->prof_name);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 5, ARRAY_SIZE_OF(*prod, abc_name),
+                         prod->abc_name);
 
     BIND_DOUBLE_OR_CLEANUP(rc, stmt, 6, prod->loglik);
     BIND_DOUBLE_OR_CLEANUP(rc, stmt, 7, prod->null_loglik);
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 8, prod->model);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 9, prod->version);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 8, ARRAY_SIZE_OF(*prod, model), prod->model);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 9, ARRAY_SIZE_OF(*prod, version),
+                         prod->version);
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 10, prod->match_data);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 10, (int)array_size(prod->match),
+                         array_data(prod->match));
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     prod->id = sqlite3_column_int64(stmt, 0);
@@ -141,7 +143,7 @@ cleanup:
     return rc;
 }
 
-enum dcp_rc sched_prod_get(struct dcp_prod *prod, int64_t prod_id)
+enum dcp_rc sched_prod_get(struct sched_prod *prod, int64_t prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
     enum dcp_rc rc = DCP_DONE;
@@ -156,16 +158,22 @@ enum dcp_rc sched_prod_get(struct dcp_prod *prod, int64_t prod_id)
     prod->seq_id = sqlite3_column_int64(stmt, 2);
     prod->match_id = sqlite3_column_int64(stmt, 3);
 
-    COLUMN_TEXT(stmt, 4, prod->prof_name, XSIZE(*prod, prof_name));
-    COLUMN_TEXT(stmt, 5, prod->abc_name, XSIZE(*prod, abc_name));
+    rc = xsql_get_text(stmt, 4, ARRAY_SIZE_OF(*prod, prof_name),
+                       prod->prof_name);
+    if (rc) goto cleanup;
+    rc = xsql_get_text(stmt, 5, ARRAY_SIZE_OF(*prod, abc_name), prod->abc_name);
+    if (rc) goto cleanup;
 
     prod->loglik = sqlite3_column_double(stmt, 6);
     prod->null_loglik = sqlite3_column_double(stmt, 7);
 
-    COLUMN_TEXT(stmt, 8, prod->model, XSIZE(*prod, model));
-    COLUMN_TEXT(stmt, 9, prod->version, XSIZE(*prod, version));
+    rc = xsql_get_text(stmt, 8, ARRAY_SIZE_OF(*prod, model), prod->model);
+    if (rc) goto cleanup;
+    rc = xsql_get_text(stmt, 9, ARRAY_SIZE_OF(*prod, version), prod->version);
+    if (rc) goto cleanup;
 
-    COLUMN_TEXT(stmt, 10, prod->match_data, XSIZE(*prod, match_data));
+    rc = xsql_get_text_as_array(stmt, 10, &prod->match);
+    if (rc) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
@@ -179,55 +187,55 @@ void sched_prod_module_del(void)
         sqlite3_finalize(stmts[i]);
 }
 
-void sched_prod_set_job_id(struct dcp_prod *prod, int64_t job_id)
+void sched_prod_set_job_id(struct sched_prod *prod, int64_t job_id)
 {
     prod->job_id = job_id;
 }
 
-void sched_prod_set_seq_id(struct dcp_prod *prod, int64_t seq_id)
+void sched_prod_set_seq_id(struct sched_prod *prod, int64_t seq_id)
 {
     prod->seq_id = seq_id;
 }
 
-void sched_prod_set_match_id(struct dcp_prod *prod, int64_t match_id)
+void sched_prod_set_match_id(struct sched_prod *prod, int64_t match_id)
 {
     prod->match_id = match_id;
 }
 
-void sched_prod_set_prof_name(struct dcp_prod *prod,
+void sched_prod_set_prof_name(struct sched_prod *prod,
                               char const prof_name[DCP_PROF_NAME_SIZE])
 {
     safe_strcpy(prod->prof_name, prof_name, DCP_PROF_NAME_SIZE);
 }
 
-void sched_prod_set_abc_name(struct dcp_prod *prod, char const *abc_name)
+void sched_prod_set_abc_name(struct sched_prod *prod, char const *abc_name)
 {
     safe_strcpy(prod->abc_name, abc_name, DCP_ABC_NAME_SIZE);
 }
 
-void sched_prod_set_loglik(struct dcp_prod *prod, double loglik)
+void sched_prod_set_loglik(struct sched_prod *prod, double loglik)
 {
     prod->loglik = loglik;
 }
 
-void sched_prod_set_null_loglik(struct dcp_prod *prod, double null_loglik)
+void sched_prod_set_null_loglik(struct sched_prod *prod, double null_loglik)
 {
     prod->null_loglik = null_loglik;
 }
 
-void sched_prod_set_model(struct dcp_prod *prod, char const *model)
+void sched_prod_set_model(struct sched_prod *prod, char const *model)
 {
     safe_strcpy(prod->model, model, DCP_MODEL_SIZE);
 }
 
-void sched_prod_set_version(struct dcp_prod *prod, char const *version)
+void sched_prod_set_version(struct sched_prod *prod, char const *version)
 {
     safe_strcpy(prod->version, version, DCP_VERSION_SIZE);
 }
 
 #define ERROR_WRITE error(DCP_IOERROR, "failed to write product")
 
-enum dcp_rc sched_prod_write_preamble(struct dcp_prod *p, FILE *restrict fd)
+enum dcp_rc sched_prod_write_preamble(struct sched_prod *p, FILE *restrict fd)
 {
     if (fprintf(fd, "%" PRId64 TAB, p->job_id) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%" PRId64 TAB, p->seq_id) < 0) return ERROR_WRITE;
@@ -292,29 +300,26 @@ enum dcp_rc sched_prod_write_nl(FILE *restrict fd)
     return DCP_DONE;
 }
 
-enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd)
+enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
 {
     enum dcp_rc rc = DCP_DONE;
     BEGIN_TRANSACTION_OR_RETURN(sched_db());
 
     struct sqlite3_stmt *stmt = stmts[INSERT];
 
-    struct tok tok = {0};
-    tok_init(&tok);
-
     do
     {
         RESET_OR_CLEANUP(rc, stmt);
-        rc = tok_next(&tok, fd);
+        rc = tok_next(tok, fd);
         if (rc) return rc;
-        if (tok.id == TOK_EOF) break;
+        if (tok_id(tok) == TOK_EOF) break;
 
         for (int i = 0; i < 10; i++)
         {
             if (col_type[i] == COL_TYPE_INT64)
             {
                 int64_t val = 0;
-                if (!to_int64(tok.value, &val))
+                if (!to_int64(tok_value(tok), &val))
                 {
                     error(DCP_PARSEERROR, "failed to parse int64");
                     goto cleanup;
@@ -324,7 +329,7 @@ enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd)
             else if (col_type[i] == COL_TYPE_DOUBLE)
             {
                 double val = 0;
-                if (!to_double(tok.value, &val))
+                if (!to_double(tok_value(tok), &val))
                 {
                     error(DCP_PARSEERROR, "failed to parse double");
                     goto cleanup;
@@ -333,11 +338,12 @@ enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd)
             }
             else if (col_type[i] == COL_TYPE_TEXT)
             {
-                BIND_TEXT_OR_CLEANUP(rc, stmt, i + 1, tok.value);
+                BIND_TEXT_OR_CLEANUP(rc, stmt, i + 1, (int)tok_size(tok),
+                                     tok_value(tok));
             }
-            rc = tok_next(&tok, fd);
+            rc = tok_next(tok, fd);
         }
-        assert(tok.id == TOK_NL);
+        assert(tok_id(tok) == TOK_NL);
         STEP_OR_CLEANUP(stmt, SQLITE_ROW);
         STEP_OR_CLEANUP(stmt, SQLITE_DONE);
     } while (true);

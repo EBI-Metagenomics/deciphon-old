@@ -24,7 +24,7 @@ void test_pro_prof_uniform(void)
     EQ(dcp_pro_prof_sample(&prof, 1, 2), DCP_DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-    struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->code->abc);
+    struct imm_seq seq = imm_seq(IMM_STR(str), dcp_super(&prof)->code->abc);
 
     EQ(dcp_pro_prof_setup(&prof, 0, true, false), DCP_ILLEGALARG);
     EQ(dcp_pro_prof_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);

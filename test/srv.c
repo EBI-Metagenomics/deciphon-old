@@ -16,8 +16,8 @@ int main(void)
     /* test_srv_reopen(); */
     /* test_srv_std_db(); */
     /* test_srv_submit_job(); */
-    /* test_srv_submit_and_fetch_job(1); */
-    test_srv_submit_and_fetch_job(4);
+    test_srv_submit_and_fetch_job(1);
+    /* test_srv_submit_and_fetch_job(4); */
     return hope_status();
 }
 
@@ -71,8 +71,8 @@ void test_srv_submit_job(void)
     struct dcp_job job = {0};
     dcp_job_init(&job, db_id);
     struct dcp_seq seq[2] = {0};
-    dcp_seq_init(seq + 0, "seq0", imm_str(imm_example1_seq).data);
-    dcp_seq_init(seq + 1, "seq1", imm_str(imm_example2_seq).data);
+    dcp_seq_init(seq + 0, "seq0", imm_str(imm_example1_seq));
+    dcp_seq_init(seq + 1, "seq1", imm_str(imm_example2_seq));
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
@@ -98,8 +98,8 @@ void test_srv_submit_and_fetch_job(unsigned num_threads)
     struct dcp_job job = {0};
     dcp_job_init(&job, db_id);
     struct dcp_seq seq[2] = {0};
-    dcp_seq_init(seq + 0, "seq0", imm_str(imm_example1_seq).data);
-    dcp_seq_init(seq + 1, "seq1", imm_str(imm_example2_seq).data);
+    dcp_seq_init(seq + 0, "seq0", imm_str(imm_example1_seq));
+    dcp_seq_init(seq + 1, "seq1", imm_str(imm_example2_seq));
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 

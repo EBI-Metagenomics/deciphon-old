@@ -46,6 +46,7 @@ add_custom_command(
 add_library(
   dcp
   sched_schema.c
+  src/array.c
   src/cli.c
   src/cli_daemon.c
   src/cli_info.c
@@ -55,7 +56,7 @@ add_library(
   src/db_handle.c
   src/db_pool.c
   src/job_state.c
-  src/log.c
+  src/logger.c
   src/meta.c
   src/model.c
   src/nuclt_dist.c
@@ -70,6 +71,7 @@ add_library(
   src/prod.c
   src/progress_file.c
   src/row.c
+  src/safe.c
   src/sched.c
   src/sched_db.c
   src/sched_job.c
@@ -87,7 +89,7 @@ add_library(
   src/work.c
   src/xcmp.c
   src/xfile.c
-  src/xstrlcpy.c
+  src/xsql.c
 )
 add_library(DCP::dcp ALIAS dcp)
 

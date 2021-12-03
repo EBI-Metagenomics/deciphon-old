@@ -23,8 +23,8 @@ void test_job(void)
 
     char const *str[2] = {"ATGAAACGCATTAGCACCACCATTACCACCAC",
                           "AAACGCATTAGCACCACCA"};
-    struct imm_seq seq[2] = {imm_seq(imm_str(str[0]), imm_super(nuclt)),
-                             imm_seq(imm_str(str[1]), imm_super(nuclt))};
+    struct imm_seq seq[2] = {imm_seq(IMM_STR(str[0]), imm_super(nuclt)),
+                             imm_seq(IMM_STR(str[1]), imm_super(nuclt))};
 
     struct dcp_seq seqs[2];
     dcp_seq_init(&seqs[0], seq[0]);
@@ -46,7 +46,7 @@ void test_job_wrong_abc(void)
     dcp_job_init(&job, &abc);
 
     char const str[] = "A";
-    struct imm_seq seq = imm_seq(imm_str(str), imm_super(nuclt1));
+    struct imm_seq seq = imm_seq(IMM_STR(str), imm_super(nuclt1));
 
     struct dcp_seq seqs;
     dcp_seq_init(&seqs, seq);

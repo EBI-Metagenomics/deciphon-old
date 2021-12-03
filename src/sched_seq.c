@@ -53,28 +53,18 @@ cleanup:
     return rc;
 }
 
-void sched_seq_setup(struct sched_seq *seq, char const *name,
-                     struct array *data)
-{
-    safe_strcpy(seq->name, name, DCP_SEQ_NAME_SIZE);
-    assert(array_size(data) <= INT_MAX);
-    seq->data = data;
-}
-
-enum dcp_rc sched_seq_add(struct sched_seq *seq)
+enum dcp_rc sched_seq_add(int64_t job_id, char const *name, unsigned len,
+                          char const *data)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     enum dcp_rc rc = DCP_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, seq->job_id);
-    BIND_STRING_OR_CLEANUP(rc, stmt, 2, seq->name);
-    assert(array_size(seq->data) <= INT_MAX);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 3, (int)array_size(seq->data),
-                         array_data(seq->data));
+    BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
+    BIND_STRING_OR_CLEANUP(rc, stmt, 2, name);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 3, (int)len, data);
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
-    seq->id = sqlite3_column_int64(stmt, 0);
     if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
 
 cleanup:
