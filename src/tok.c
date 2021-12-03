@@ -1,21 +1,42 @@
 #include "tok.h"
-#include "error.h"
+#include "logger.h"
+#include <stdlib.h>
 #include <string.h>
+
+struct tok
+{
+    unsigned id;
+    char const *value;
+    struct
+    {
+        unsigned number;
+        bool consumed;
+        char *ctx;
+        unsigned size;
+        char data[];
+    } line;
+};
 
 #define DELIM " \t\r"
 
-static void add_space_before_newline(char line[TOK_LINE_SIZE]);
-static enum dcp_rc next_line(FILE *restrict fd, char line[TOK_LINE_SIZE]);
+static void add_space_before_newline(char *line);
+static enum dcp_rc next_line(FILE *restrict fd, unsigned size, char *line);
 
-void tok_init(struct tok *tok)
+struct tok *tok_new(unsigned size)
 {
+    struct tok *tok = malloc(sizeof(*tok) + sizeof(char) * size);
+    if (!tok) return tok;
     tok->id = TOK_NL;
     tok->value = tok->line.data;
-    memset(tok->line.data, '\0', TOK_LINE_SIZE);
     tok->line.number = 0;
     tok->line.consumed = true;
-    tok->line.ctx = NULL;
+    tok->line.ctx = 0;
+    tok->line.size = size;
+    memset(tok->line.data, 0, size);
+    return tok;
 }
+
+void tok_del(struct tok const *tok) { free((void *)tok); }
 
 enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
 {
@@ -23,7 +44,7 @@ enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
 
     if (tok->line.consumed)
     {
-        if ((rc = next_line(fd, tok->line.data)))
+        if ((rc = next_line(fd, tok->line.size, tok->line.data)))
         {
             if (rc == DCP_END)
             {
@@ -52,9 +73,10 @@ enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
     return DCP_DONE;
 }
 
-static enum dcp_rc next_line(FILE *restrict fd, char line[TOK_LINE_SIZE])
+static enum dcp_rc next_line(FILE *restrict fd, unsigned size, char *line)
 {
-    if (!fgets(line, TOK_LINE_SIZE - 1, fd))
+    /* -1 to append space before newline if required */
+    if (!fgets(line, (int)(size - 1), fd))
     {
         if (feof(fd)) return DCP_END;
 
@@ -65,7 +87,7 @@ static enum dcp_rc next_line(FILE *restrict fd, char line[TOK_LINE_SIZE])
     return DCP_DONE;
 }
 
-static void add_space_before_newline(char line[TOK_LINE_SIZE])
+static void add_space_before_newline(char *line)
 {
     unsigned n = (unsigned)strlen(line);
     if (n > 0)
