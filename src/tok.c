@@ -49,18 +49,18 @@ void tok_del(struct tok const *tok) { free((void *)tok); }
 
 enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
 {
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
 
     if (tok->line.consumed)
     {
         if ((rc = next_line(fd, tok->line.size, tok->line.data)))
         {
-            if (rc == DCP_END)
+            if (rc == END)
             {
                 tok->value = NULL;
                 tok->id = TOK_EOF;
                 tok->line.data[0] = '\0';
-                return DCP_DONE;
+                return DONE;
             }
             return rc;
         }
@@ -70,7 +70,7 @@ enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
     else
         tok->value = strtok_r(NULL, DELIM, &tok->line.ctx);
 
-    if (!tok->value) return DCP_PARSEERROR;
+    if (!tok->value) return PARSEERROR;
 
     if (!strcmp(tok->value, "\n"))
         tok->id = TOK_NL;
@@ -79,7 +79,7 @@ enum dcp_rc tok_next(struct tok *tok, FILE *restrict fd)
 
     tok->line.consumed = tok->id == TOK_NL;
 
-    return DCP_DONE;
+    return DONE;
 }
 
 static enum dcp_rc next_line(FILE *restrict fd, unsigned size, char *line)
@@ -87,13 +87,13 @@ static enum dcp_rc next_line(FILE *restrict fd, unsigned size, char *line)
     /* -1 to append space before newline if required */
     if (!fgets(line, (int)(size - 1), fd))
     {
-        if (feof(fd)) return DCP_END;
+        if (feof(fd)) return END;
 
-        return error(DCP_IOERROR, "failed to read line");
+        return error(IOERROR, "failed to read line");
     }
 
     add_space_before_newline(line);
-    return DCP_DONE;
+    return DONE;
 }
 
 static void add_space_before_newline(char *line)

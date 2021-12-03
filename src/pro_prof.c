@@ -42,16 +42,16 @@ static enum dcp_rc alloc_match_nuclt_dists(struct dcp_pro_prof *prof)
     if (!ptr && size > 0)
     {
         free(prof->alt.match_ndists);
-        return error(DCP_OUTOFMEM, "failed to alloc nuclt dists");
+        return error(OUTOFMEM, "failed to alloc nuclt dists");
     }
     prof->alt.match_ndists = ptr;
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
                                bool multi_hits, bool hmmer3_compat)
 {
-    if (seq_size == 0) return error(DCP_ILLEGALARG, "sequence cannot be empty");
+    if (seq_size == 0) return error(ILLEGALARG, "sequence cannot be empty");
 
     imm_float L = (imm_float)seq_size;
 
@@ -108,25 +108,25 @@ enum dcp_rc dcp_pro_prof_setup(struct dcp_pro_prof *prof, unsigned seq_size,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, J), t.EC + t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, J), t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
                                 struct dcp_pro_model const *m)
 {
     if (p->code->nuclt != pro_model_nuclt(m))
-        return error(DCP_ILLEGALARG, "Different nucleotide alphabets.");
+        return error(ILLEGALARG, "Different nucleotide alphabets.");
 
     if (p->amino != pro_model_amino(m))
-        return error(DCP_ILLEGALARG, "Different amino alphabets.");
+        return error(ILLEGALARG, "Different amino alphabets.");
 
     struct pro_model_summary s = pro_model_summary(m);
 
     if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
-        return error(DCP_FAIL, "failed to hmm_reset");
+        return error(FAIL, "failed to hmm_reset");
 
     if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
-        return error(DCP_FAIL, "failed to hmm_reset");
+        return error(FAIL, "failed to hmm_reset");
 
     p->core_size = m->core_size;
     memcpy(p->consensus, m->consensus, m->core_size + 1);
@@ -149,7 +149,7 @@ enum dcp_rc dcp_pro_prof_absorb(struct dcp_pro_prof *p,
     p->alt.J = imm_state_idx(imm_super(s.alt.J));
     p->alt.C = imm_state_idx(imm_super(s.alt.C));
     p->alt.T = imm_state_idx(imm_super(s.alt.T));
-    return DCP_DONE;
+    return DONE;
 }
 
 struct dcp_prof *dcp_pro_prof_super(struct dcp_pro_prof *pro)
@@ -177,7 +177,7 @@ enum dcp_rc dcp_pro_prof_sample(struct dcp_pro_prof *p, unsigned seed,
     struct dcp_pro_model model;
     dcp_pro_model_init(&model, p->amino, p->code, p->cfg, lprobs);
 
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
 
     if ((rc = dcp_pro_model_setup(&model, core_size))) goto cleanup;
 
@@ -231,9 +231,9 @@ enum dcp_rc dcp_pro_prof_decode(struct dcp_pro_prof const *prof,
     struct imm_frame_cond cond = {prof->eps, &nucltd->nucltp, &nucltd->codonm};
 
     if (imm_lprob_is_nan(imm_frame_cond_decode(&cond, seq, codon)))
-        return error(DCP_ILLEGALARG, "failed to decode sequence");
+        return error(ILLEGALARG, "failed to decode sequence");
 
-    return DCP_DONE;
+    return DONE;
 }
 
 void dcp_pro_prof_write_dot(struct dcp_pro_prof const *p, FILE *restrict fp)
@@ -255,19 +255,19 @@ static void del(struct dcp_prof *prof)
 enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
-    if (imm_dp_read(&prof->null.dp, fd)) return DCP_FAIL;
-    if (imm_dp_read(&prof->alt.dp, fd)) return DCP_FAIL;
+    if (imm_dp_read(&prof->null.dp, fd)) return FAIL;
+    if (imm_dp_read(&prof->alt.dp, fd)) return FAIL;
 
     uint16_t core_size = 0;
     if (!cmp_read_u16(cmp, &core_size))
-        return error(DCP_IOERROR, "failed to read core size");
+        return error(IOERROR, "failed to read core size");
     if (core_size > DCP_PRO_MODEL_CORE_SIZE_MAX)
-        return error(DCP_PARSEERROR, "profile is too long");
+        return error(PARSEERROR, "profile is too long");
     prof->core_size = core_size;
 
     uint32_t u32 = (uint32_t)core_size + 1;
     if (!cmp_read_str(cmp, prof->consensus, &u32))
-        return error(DCP_IOERROR, "failed to read consensus");
+        return error(IOERROR, "failed to read consensus");
 
     enum dcp_rc rc = alloc_match_nuclt_dists(prof);
     if (rc) return rc;
@@ -282,21 +282,21 @@ enum dcp_rc pro_prof_read(struct dcp_pro_prof *prof, struct cmp_ctx_s *cmp)
             return rc;
         dcp_nuclt_dist_init(prof->alt.match_ndists + i, prof->code->nuclt);
     }
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof,
                            struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
-    if (imm_dp_write(&prof->null.dp, fd)) return DCP_FAIL;
-    if (imm_dp_write(&prof->alt.dp, fd)) return DCP_FAIL;
+    if (imm_dp_write(&prof->null.dp, fd)) return FAIL;
+    if (imm_dp_write(&prof->alt.dp, fd)) return FAIL;
 
     if (!cmp_write_u16(cmp, (uint16_t)prof->core_size))
-        return error(DCP_IOERROR, "failed to write core size");
+        return error(IOERROR, "failed to write core size");
 
     if (!cmp_write_str(cmp, prof->consensus, prof->core_size))
-        return error(DCP_IOERROR, "failed to write consensus");
+        return error(IOERROR, "failed to write consensus");
 
     enum dcp_rc rc = dcp_nuclt_dist_write(&prof->null.ndist, cmp);
     if (rc) return rc;
@@ -308,5 +308,5 @@ enum dcp_rc pro_prof_write(struct dcp_pro_prof const *prof,
         if ((rc = dcp_nuclt_dist_write(prof->alt.match_ndists + i, cmp)))
             return rc;
     }
-    return DCP_DONE;
+    return DONE;
 }

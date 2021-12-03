@@ -15,7 +15,7 @@ enum dcp_rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
         if (!dcp_pro_state_is_mute(step->state_id)) break;
     }
 
-    if (codec->idx >= imm_path_nsteps(codec->path)) return DCP_END;
+    if (codec->idx >= imm_path_nsteps(codec->path)) return END;
 
     unsigned size = step->seqlen;
     struct imm_seq frag = imm_subseq(seq, codec->start, size);

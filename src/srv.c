@@ -38,7 +38,7 @@ enum dcp_rc dcp_srv_open(char const *filepath, unsigned num_threads)
     db_pool_module_init();
     srv.num_threads = num_threads;
 
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     if ((rc = sched_setup(filepath))) return rc;
     rc = sched_open(filepath);
     return rc;
@@ -49,7 +49,7 @@ enum dcp_rc dcp_srv_close(void) { return sched_close(); }
 enum dcp_rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
 {
     if (!xfile_is_readable(filepath))
-        return error(DCP_IOERROR, "file is not readable");
+        return error(IOERROR, "file is not readable");
 
     struct sched_db db = {0};
     enum dcp_rc rc = sched_db_setup(&db, name, filepath);
@@ -57,7 +57,7 @@ enum dcp_rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
 
     struct sched_db db2 = {0};
     rc = sched_db_get_by_xxh64(&db2, db.xxh64);
-    if (rc == DCP_NOTFOUND)
+    if (rc == NOTFOUND)
     {
         rc = sched_db_add(&db);
         *id = db.id;
@@ -79,20 +79,20 @@ enum dcp_rc dcp_srv_job_state(int64_t job_id, enum dcp_job_state *state)
 
 enum dcp_rc dcp_srv_run(bool single_run)
 {
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     struct work work = {0};
     work_init(&work);
 
     info("Starting the server");
     while (!srv.signal.interrupt)
     {
-        if ((rc = work_next(&work)) == DCP_NOTFOUND)
+        if ((rc = work_next(&work)) == NOTFOUND)
         {
             if (single_run) break;
             elapsed_sleep(500);
             continue;
         }
-        if (rc != DCP_NEXT) return rc;
+        if (rc != NEXT) return rc;
 
         info("Found a new job");
         rc = work_run(&work, srv.num_threads);
@@ -101,16 +101,16 @@ enum dcp_rc dcp_srv_run(bool single_run)
     }
 
     info("Goodbye!");
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc dcp_srv_next_prod(int64_t job_id, int64_t *prod_id)
 {
     enum dcp_rc rc = sched_prod_next(job_id, prod_id);
-    if (rc == DCP_DONE) return rc;
-    if (rc != DCP_NEXT) return rc;
+    if (rc == DONE) return rc;
+    if (rc != NEXT) return rc;
     if ((rc = sched_prod_get(&srv.prod, *prod_id))) return rc;
-    return DCP_NEXT;
+    return NEXT;
 }
 
 struct prod const *dcp_srv_get_prod(void) { return &srv.prod; }

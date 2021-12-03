@@ -35,7 +35,7 @@ static enum dcp_rc cli_info(int argc, char **argv)
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
     printf("Version: " DCP_VERSION "\n");
     printf("Float size: %d\n", IMM_FLOAT_BYTES);
-    return DCP_DONE;
+    return DONE;
 }
 
 char const *argp_program_version = "dcp-info " DCP_VERSION;

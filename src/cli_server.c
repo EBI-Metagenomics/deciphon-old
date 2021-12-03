@@ -66,9 +66,9 @@ static void flush_nop(void *arg) {}
 
 static enum dcp_rc cli_server(int argc, char **argv)
 {
-    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return DCP_ILLEGALARG;
+    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
 
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     char const *schedfile = arguments.args[0];
     char const *dcpfile = arguments.args[1];
 

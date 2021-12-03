@@ -17,16 +17,16 @@ void dcp_std_prof_init(struct dcp_std_prof *prof, struct imm_code const *code)
 
 enum dcp_rc std_prof_read(struct dcp_std_prof *prof, FILE *restrict fd)
 {
-    if (imm_dp_read(&prof->dp.null, fd)) return DCP_FAIL;
-    if (imm_dp_read(&prof->dp.alt, fd)) return DCP_FAIL;
-    return DCP_DONE;
+    if (imm_dp_read(&prof->dp.null, fd)) return FAIL;
+    if (imm_dp_read(&prof->dp.alt, fd)) return FAIL;
+    return DONE;
 }
 
 enum dcp_rc std_prof_write(struct dcp_std_prof const *prof, FILE *restrict fd)
 {
-    if (imm_dp_write(&prof->dp.null, fd)) return DCP_FAIL;
-    if (imm_dp_write(&prof->dp.alt, fd)) return DCP_FAIL;
-    return DCP_DONE;
+    if (imm_dp_write(&prof->dp.null, fd)) return FAIL;
+    if (imm_dp_write(&prof->dp.alt, fd)) return FAIL;
+    return DONE;
 }
 
 static void del(struct dcp_prof *prof)

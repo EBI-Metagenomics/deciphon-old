@@ -2482,7 +2482,7 @@ enum dcp_rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
     FILE *out = fopen(path, "w");
     if (!out)
     {
-        rc = error(DCP_IOERROR, "failed to open file");
+        rc = error(IOERROR, "failed to open file");
         goto cleanup;
     }
 
@@ -2490,7 +2490,7 @@ enum dcp_rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
     char const *argv[] = {"sqldiff", "--schema", db0, db1};
     if (call_main(sizeof argv / sizeof(char *), argv, out))
     {
-        rc = error(DCP_FAIL, "failed to compare databases");
+        rc = error(FAIL, "failed to compare databases");
         goto cleanup;
     }
     long end = ftell(out);

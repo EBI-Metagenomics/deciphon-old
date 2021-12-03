@@ -27,7 +27,7 @@ enum
 {
     INSERT,
     SELECT,
-    NEXT
+    SELECT_NEXT
 };
 
 /* clang-format off */
@@ -53,7 +53,7 @@ static char const *const queries[] = {
 ",
     [SELECT] = "SELECT * FROM prod WHERE id = ?;\
 ",
-    [NEXT] = \
+    [SELECT_NEXT] = \
 "\
         SELECT\
             id FROM prod\
@@ -77,7 +77,7 @@ static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
 enum dcp_rc sched_prod_module_init(struct sqlite3 *db)
 {
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
         PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
 
@@ -88,7 +88,7 @@ cleanup:
 enum dcp_rc sched_prod_add(struct prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, prod->job_id);
@@ -120,15 +120,15 @@ cleanup:
 
 enum dcp_rc sched_prod_next(int64_t job_id, int64_t *prod_id)
 {
-    struct sqlite3_stmt *stmt = stmts[NEXT];
-    enum dcp_rc rc = DCP_DONE;
+    struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
+    enum dcp_rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, *prod_id);
     BIND_INT64_OR_CLEANUP(rc, stmt, 2, job_id);
 
     int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return DCP_DONE;
+    if (code == SQLITE_DONE) return DONE;
     if (code != SQLITE_ROW)
     {
         rc = STEP_ERROR();
@@ -137,7 +137,7 @@ enum dcp_rc sched_prod_next(int64_t job_id, int64_t *prod_id)
     *prod_id = sqlite3_column_int64(stmt, 0);
     if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
 
-    return DCP_NEXT;
+    return NEXT;
 
 cleanup:
     return rc;
@@ -146,7 +146,7 @@ cleanup:
 enum dcp_rc sched_prod_get(struct prod *prod, int64_t prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, prod_id);
@@ -233,7 +233,7 @@ void sched_prod_set_version(struct prod *prod, char const *version)
     safe_strcpy(prod->version, version, DCP_VERSION_SIZE);
 }
 
-#define ERROR_WRITE error(DCP_IOERROR, "failed to write product")
+#define ERROR_WRITE error(IOERROR, "failed to write product")
 
 enum dcp_rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
 {
@@ -251,7 +251,7 @@ enum dcp_rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
     if (fprintf(fd, "%s" TAB, p->model) < 0) return ERROR_WRITE;
     if (fprintf(fd, "%s" TAB, p->version) < 0) return ERROR_WRITE;
 
-    return DCP_DONE;
+    return DONE;
 }
 
 /* Output example
@@ -273,36 +273,36 @@ enum dcp_rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
 enum dcp_rc sched_prod_write_match(FILE *restrict fd, struct pro_match const *m)
 {
     if (fprintf(fd, "%.*s,", m->frag_size, m->frag) < 0)
-        return error(DCP_IOERROR, "failed to write frag");
+        return error(IOERROR, "failed to write frag");
 
     if (fprintf(fd, "%s,", m->state) < 0)
-        return error(DCP_IOERROR, "failed to write state");
+        return error(IOERROR, "failed to write state");
 
     if (fprintf(fd, "%s,", m->codon) < 0)
-        return error(DCP_IOERROR, "failed to write codon");
+        return error(IOERROR, "failed to write codon");
 
     if (fprintf(fd, "%s", m->amino) < 0)
-        return error(DCP_IOERROR, "failed to write amino");
+        return error(IOERROR, "failed to write amino");
 
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc sched_prod_write_match_sep(FILE *restrict fd)
 {
-    if (fputc(';', fd) == EOF) return error(DCP_IOERROR, "failed to write sep");
-    return DCP_DONE;
+    if (fputc(';', fd) == EOF) return error(IOERROR, "failed to write sep");
+    return DONE;
 }
 
 enum dcp_rc sched_prod_write_nl(FILE *restrict fd)
 {
     if (fputc('\n', fd) == EOF)
-        return error(DCP_IOERROR, "failed to write newline");
-    return DCP_DONE;
+        return error(IOERROR, "failed to write newline");
+    return DONE;
 }
 
 enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
 {
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     BEGIN_TRANSACTION_OR_RETURN(sched_db());
 
     struct sqlite3_stmt *stmt = stmts[INSERT];
@@ -321,7 +321,7 @@ enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
                 int64_t val = 0;
                 if (!to_int64(tok_value(tok), &val))
                 {
-                    error(DCP_PARSEERROR, "failed to parse int64");
+                    error(PARSEERROR, "failed to parse int64");
                     goto cleanup;
                 }
                 BIND_INT64_OR_CLEANUP(rc, stmt, i + 1, val);
@@ -331,7 +331,7 @@ enum dcp_rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
                 double val = 0;
                 if (!to_double(tok_value(tok), &val))
                 {
-                    error(DCP_PARSEERROR, "failed to parse double");
+                    error(PARSEERROR, "failed to parse double");
                     goto cleanup;
                 }
                 BIND_DOUBLE_OR_CLEANUP(rc, stmt, i + 1, val);

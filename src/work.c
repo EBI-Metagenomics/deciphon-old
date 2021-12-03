@@ -50,14 +50,14 @@ void work_init(struct work *work)
 
 enum dcp_rc work_next(struct work *work)
 {
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     int64_t job_id = 0;
 
     if ((rc = sched_job_next_pending(&job_id))) return rc;
     if ((rc = sched_job_get(&work->job, job_id))) return rc;
 
     work->db = db_pool_fetch(work->job.db_id);
-    if (!work->db) return error(DCP_FAIL, "reached limit of open db handles");
+    if (!work->db) return error(FAIL, "reached limit of open db handles");
 
     work->db_path[0] = 0;
     struct sched_db db = {0};
@@ -66,21 +66,21 @@ enum dcp_rc work_next(struct work *work)
 
     int64_t seq_id = 0;
     work->ntasks = 0;
-    while ((rc = sched_seq_next(job_id, &seq_id)) == DCP_NEXT)
+    while ((rc = sched_seq_next(job_id, &seq_id)) == NEXT)
     {
         struct task *task = &work->tasks[work->ntasks];
         if ((rc = task_setup(task, get_abc(work), seq_id))) goto cleanup;
 
         if (++work->ntasks >= ARRAY_SIZE(MEMBER_REF(*work, tasks)))
         {
-            rc = error(DCP_FAIL, "too many tasks");
+            rc = error(FAIL, "too many tasks");
             goto cleanup;
         }
     }
 
 cleanup:
     if (rc) return rc;
-    return DCP_NEXT;
+    return NEXT;
 }
 
 enum dcp_rc work_run(struct work *work, unsigned num_threads)
@@ -89,7 +89,7 @@ enum dcp_rc work_run(struct work *work, unsigned num_threads)
     if (rc) return rc;
 
     unsigned match_id = 1;
-    while ((rc = next_profile(work)) == DCP_NEXT)
+    while ((rc = next_profile(work)) == NEXT)
     {
         for (unsigned i = 0; i < work->ntasks; ++i)
         {
@@ -127,7 +127,7 @@ enum dcp_rc open_work(struct work *work, unsigned num_threads)
 
     rc = db_handle_open(work->db, work->db_path, num_threads);
     if (rc) goto cleanup;
-    return DCP_DONE;
+    return DONE;
 
 cleanup:
     close_work(work);
@@ -162,7 +162,7 @@ cleanup:
 
 enum dcp_rc next_profile(struct work *work)
 {
-    if (dcp_db_end(&work->db->pro.super)) return DCP_DONE;
+    if (dcp_db_end(&work->db->pro.super)) return DONE;
 
     struct dcp_pro_prof *prof = dcp_pro_db_profile(&work->db->pro);
 
@@ -171,7 +171,7 @@ enum dcp_rc next_profile(struct work *work)
 
     work->prof = prof;
 
-    return DCP_NEXT;
+    return NEXT;
 }
 
 enum dcp_rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
@@ -179,14 +179,14 @@ enum dcp_rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
     if (*task)
     {
         if (imm_task_reset(*task, dp))
-            return error(DCP_FAIL, "failed to reset task");
+            return error(FAIL, "failed to reset task");
     }
     else
     {
         if (!(*task = imm_task_new(dp)))
-            return error(DCP_FAIL, "failed to create task");
+            return error(FAIL, "failed to create task");
     }
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc prepare_task_for_prof(struct work *work, struct task *task)
@@ -199,29 +199,29 @@ enum dcp_rc prepare_task_for_prof(struct work *work, struct task *task)
 enum dcp_rc prepare_task_for_seq(struct task *task, struct imm_seq *seq)
 {
     if (imm_task_setup(task->alt.task, seq))
-        return error(DCP_FAIL, "failed to setup task");
+        return error(FAIL, "failed to setup task");
 
     if (imm_task_setup(task->null.task, seq))
-        return error(DCP_FAIL, "failed to setup task");
+        return error(FAIL, "failed to setup task");
 
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc run_viterbi(struct work *work, struct task *task)
 {
     if (imm_dp_viterbi(&work->prof->alt.dp, task->alt.task, &task->alt.prod))
-        return error(DCP_FAIL, "failed to run viterbi");
+        return error(FAIL, "failed to run viterbi");
 
     if (imm_dp_viterbi(&work->prof->null.dp, task->null.task, &task->null.prod))
-        return error(DCP_FAIL, "failed to run viterbi");
+        return error(FAIL, "failed to run viterbi");
 
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc write_product(struct work *work, struct task *task,
                           unsigned match_id, struct imm_seq seq)
 {
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     struct imm_codon codon = imm_codon_any(work->prof->code->nuclt);
 
     struct dcp_meta const *mt = &work->prof->super.mt;

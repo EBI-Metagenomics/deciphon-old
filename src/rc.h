@@ -3,15 +3,15 @@
 
 enum dcp_rc
 {
-    DCP_DONE,
-    DCP_END,
-    DCP_NEXT,
-    DCP_FAIL,
-    DCP_OUTOFMEM,
-    DCP_ILLEGALARG,
-    DCP_IOERROR,
-    DCP_PARSEERROR,
-    DCP_NOTFOUND,
+    DONE,
+    END,
+    NEXT,
+    FAIL,
+    OUTOFMEM,
+    ILLEGALARG,
+    IOERROR,
+    PARSEERROR,
+    NOTFOUND,
 };
 
 #endif

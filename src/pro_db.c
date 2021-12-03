@@ -18,21 +18,21 @@ static enum dcp_rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
     {
         float e = 0;
         if (!cmp_read_float(cmp, &e))
-            return error(DCP_IOERROR, "failed to read epsilon");
+            return error(IOERROR, "failed to read epsilon");
         *epsilon = (imm_float)e;
     }
     else
     {
         double e = 0;
         if (!cmp_read_double(cmp, &e))
-            return error(DCP_IOERROR, "failed to read epsilon");
+            return error(IOERROR, "failed to read epsilon");
         *epsilon = (imm_float)e;
     }
 
     if (*epsilon < 0 || *epsilon > 1)
-        return error(DCP_PARSEERROR, "invalid epsilon");
+        return error(PARSEERROR, "invalid epsilon");
 
-    return DCP_DONE;
+    return DONE;
 }
 
 static enum dcp_rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
@@ -42,16 +42,16 @@ static enum dcp_rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
     {
         float e = (float)epsilon;
         if (!cmp_write_float(cmp, e))
-            return error(DCP_IOERROR, "failed to write epsilon");
+            return error(IOERROR, "failed to write epsilon");
     }
     else
     {
         double e = (double)epsilon;
         if (!cmp_write_double(cmp, e))
-            return error(DCP_IOERROR, "failed to write epsilon");
+            return error(IOERROR, "failed to write epsilon");
     }
 
-    return DCP_DONE;
+    return DONE;
 }
 
 static enum dcp_rc read_entry_dist(struct cmp_ctx_s *cmp,
@@ -59,45 +59,45 @@ static enum dcp_rc read_entry_dist(struct cmp_ctx_s *cmp,
 {
     uint8_t val = 0;
     if (!cmp_read_u8(cmp, &val))
-        return error(DCP_IOERROR, "failed to read entry distribution");
+        return error(IOERROR, "failed to read entry distribution");
     *edist = val;
-    return DCP_DONE;
+    return DONE;
 }
 
 static enum dcp_rc write_entry_dist(struct cmp_ctx_s *cmp,
                                     enum dcp_entry_dist edist)
 {
     if (!cmp_write_u8(cmp, (uint8_t)edist))
-        return error(DCP_IOERROR, "failed to write entry distribution");
-    return DCP_DONE;
+        return error(IOERROR, "failed to write entry distribution");
+    return DONE;
 }
 
 static enum dcp_rc read_nuclt(FILE *restrict fd, struct imm_nuclt *nuclt)
 {
     if (imm_abc_read(&nuclt->super, fd))
-        return error(DCP_IOERROR, "failed to read nuclt alphabet");
-    return DCP_DONE;
+        return error(IOERROR, "failed to read nuclt alphabet");
+    return DONE;
 }
 
 static enum dcp_rc write_nuclt(FILE *restrict fd, struct imm_nuclt const *nuclt)
 {
     if (imm_abc_write(&nuclt->super, fd))
-        return error(DCP_IOERROR, "failed to write nuclt alphabet");
-    return DCP_DONE;
+        return error(IOERROR, "failed to write nuclt alphabet");
+    return DONE;
 }
 
 static enum dcp_rc read_amino(FILE *restrict fd, struct imm_amino *amino)
 {
     if (imm_abc_read(&amino->super, fd))
-        return error(DCP_IOERROR, "failed to read amino alphabet");
-    return DCP_DONE;
+        return error(IOERROR, "failed to read amino alphabet");
+    return DONE;
 }
 
 static enum dcp_rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
 {
     if (imm_abc_write(&amino->super, fd))
-        return error(DCP_IOERROR, "failed to write amino alphabet");
-    return DCP_DONE;
+        return error(IOERROR, "failed to write amino alphabet");
+    return DONE;
 }
 
 static void pro_db_init(struct dcp_pro_db *db)
@@ -116,7 +116,7 @@ enum dcp_rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
     unsigned n = db_nprofiles(&db->super);
     assert(nfiles <= n);
 
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     struct dcp_pro_prof *prof = dcp_pro_db_profile(db);
     unsigned part = 0;
     rc = db_current_offset(&db->super, db->super.partition_offset + part);
@@ -147,7 +147,7 @@ enum dcp_rc dcp_pro_db_setup_multi_readers(struct dcp_pro_db *db,
     if (!db_end(&db->super)) return rc;
     db->super.npartitions = nfiles;
     db_set_files(&db->super, nfiles, fp);
-    return DCP_DONE;
+    return DONE;
 }
 
 enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
@@ -158,7 +158,7 @@ enum dcp_rc dcp_pro_db_openr(struct dcp_pro_db *db, FILE *restrict fd)
     struct cmp_ctx_s *cmp = &db->super.file.cmp[0];
     imm_float *epsilon = &db->prof.cfg.epsilon;
 
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_prof_type(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
@@ -188,7 +188,7 @@ enum dcp_rc dcp_pro_db_openw(struct dcp_pro_db *db, FILE *restrict fd,
     unsigned float_size = db->super.float_size;
     imm_float epsilon = db->prof.cfg.epsilon;
 
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     if ((rc = db_openw(&db->super, fd))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_prof_type(&db->super))) goto cleanup;
@@ -230,7 +230,7 @@ struct dcp_pro_cfg dcp_pro_db_cfg(struct dcp_pro_db const *db)
 
 enum dcp_rc dcp_pro_db_read(struct dcp_pro_db *db, struct dcp_pro_prof *prof)
 {
-    if (db_end(&db->super)) return error(DCP_FAIL, "end of profiles");
+    if (db_end(&db->super)) return error(FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
     return pro_prof_read(prof, &db->super.file.cmp[0]);
@@ -240,7 +240,7 @@ enum dcp_rc dcp_pro_db_write(struct dcp_pro_db *db,
                              struct dcp_pro_prof const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
-    enum dcp_rc rc = DCP_DONE;
+    enum dcp_rc rc = DONE;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
     if ((rc = pro_prof_write(prof, &db->super.dp.cmp))) return rc;
     db->super.profiles.size++;
