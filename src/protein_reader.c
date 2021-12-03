@@ -4,18 +4,18 @@
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 
-void dcp_protein_reader_init(struct dcp_protein_reader *reader,
+void protein_reader_init(struct protein_reader *reader,
                          struct imm_amino const *amino,
                          struct imm_nuclt_code const *code,
-                         struct dcp_protein_cfg cfg, FILE *restrict fd)
+                         struct protein_cfg cfg, FILE *restrict fd)
 {
     hmr_init(&reader->hmr, fd);
     hmr_prof_init(&reader->prof, &reader->hmr);
     init_null_lprobs(reader->null_lprobs);
-    dcp_protein_model_init(&reader->model, amino, code, cfg, reader->null_lprobs);
+    protein_model_init(&reader->model, amino, code, cfg, reader->null_lprobs);
 }
 
-enum rc dcp_protein_reader_next(struct dcp_protein_reader *reader)
+enum rc protein_reader_next(struct protein_reader *reader)
 {
     enum hmr_rc hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
     if (hmr_rc == HMR_ENDFILE) return END;
@@ -24,12 +24,12 @@ enum rc dcp_protein_reader_next(struct dcp_protein_reader *reader)
 
     unsigned core_size = hmr_prof_length(&reader->prof);
     enum rc rc = DONE;
-    if ((rc = dcp_protein_model_setup(&reader->model, core_size))) return rc;
+    if ((rc = protein_model_setup(&reader->model, core_size))) return rc;
 
     hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);
     assert(hmr_rc != HMR_ENDFILE);
 
-    struct dcp_protein_trans t = {
+    struct protein_trans t = {
         .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
         .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
         .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
@@ -38,7 +38,7 @@ enum rc dcp_protein_reader_next(struct dcp_protein_reader *reader)
         .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
         .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
     };
-    rc = dcp_protein_model_add_trans(&reader->model, t);
+    rc = protein_model_add_trans(&reader->model, t);
     assert(!rc);
 
     unsigned node_idx = 0;
@@ -49,10 +49,10 @@ enum rc dcp_protein_reader_next(struct dcp_protein_reader *reader)
             match_lprobs[i] = (imm_float)reader->prof.node.match[i];
 
         char consensus = reader->prof.node.excess.cons;
-        rc = dcp_protein_model_add_node(&reader->model, match_lprobs, consensus);
+        rc = protein_model_add_node(&reader->model, match_lprobs, consensus);
         assert(!rc);
 
-        struct dcp_protein_trans t2 = {
+        struct protein_trans t2 = {
             .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
             .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
             .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
@@ -61,7 +61,7 @@ enum rc dcp_protein_reader_next(struct dcp_protein_reader *reader)
             .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
             .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
         };
-        rc = dcp_protein_model_add_trans(&reader->model, t2);
+        rc = protein_model_add_trans(&reader->model, t2);
         assert(!rc);
         ++node_idx;
     }
@@ -71,7 +71,7 @@ enum rc dcp_protein_reader_next(struct dcp_protein_reader *reader)
     return DONE;
 }
 
-struct meta dcp_protein_reader_meta(struct dcp_protein_reader const *reader)
+struct meta protein_reader_meta(struct protein_reader const *reader)
 {
     return meta(reader->prof.meta.name, reader->prof.meta.acc);
 }

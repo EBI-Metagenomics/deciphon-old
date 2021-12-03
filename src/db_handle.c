@@ -58,7 +58,7 @@ enum rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
     if (db->nfiles == 0)
     {
         if ((rc = open_files(db, 0, 1, path))) goto cleanup;
-        if ((rc = dcp_protein_db_openr(&db->pro, db->fp[0]))) goto cleanup;
+        if ((rc = protein_db_openr(&db->pro, db->fp[0]))) goto cleanup;
     }
     else
         db_rewind(&db->pro.super);
@@ -71,7 +71,7 @@ enum rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
     if (n > 0 && (rc = open_files(db, db->nfiles, db->nfiles + n, path)))
         goto cleanup;
 
-    rc = dcp_protein_db_setup_multi_readers(&db->pro, (unsigned)db->nfiles, db->fp);
+    rc = protein_db_setup_multi_readers(&db->pro, (unsigned)db->nfiles, db->fp);
     if (rc) goto cleanup;
     db_rewind(&db->pro.super);
 
@@ -86,7 +86,7 @@ cleanup:
 enum rc db_handle_close(struct db_handle *db)
 {
     db->open_since = 0;
-    enum rc rc = dcp_protein_db_close(&db->pro);
+    enum rc rc = protein_db_close(&db->pro);
     if (rc) return rc;
 
     if ((rc = close_files(db, 0, db->nfiles, false))) goto cleanup;

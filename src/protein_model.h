@@ -13,17 +13,17 @@
 #include "protein_xtrans.h"
 #include "rc.h"
 
-#define DCP_PROTEIN_MODEL_CORE_SIZE_MAX 2048
+#define PROTEIN_MODEL_CORE_SIZE_MAX 2048
 
 struct protein_model
 {
     struct imm_amino const *amino;
     struct imm_nuclt_code const *code;
-    struct dcp_protein_cfg cfg;
+    struct protein_cfg cfg;
     unsigned core_size;
-    struct dcp_protein_xnode xnode;
-    struct dcp_protein_xtrans xtrans;
-    char consensus[DCP_PROTEIN_MODEL_CORE_SIZE_MAX + 1];
+    struct protein_xnode xnode;
+    struct protein_xtrans xtrans;
+    char consensus[PROTEIN_MODEL_CORE_SIZE_MAX + 1];
 
     struct
     {
@@ -35,10 +35,10 @@ struct protein_model
     struct
     {
         unsigned node_idx;
-        struct dcp_protein_node *nodes;
+        struct protein_node *nodes;
         imm_float *locc;
         unsigned trans_idx;
-        struct dcp_protein_trans *trans;
+        struct protein_trans *trans;
         struct imm_hmm hmm;
 
         struct
@@ -48,22 +48,22 @@ struct protein_model
     } alt;
 };
 
-enum rc dcp_protein_model_add_node(struct protein_model *,
+enum rc protein_model_add_node(struct protein_model *,
                                imm_float const lp[IMM_AMINO_SIZE],
                                char consensus);
 
-enum rc dcp_protein_model_add_trans(struct protein_model *, struct dcp_protein_trans trans);
+enum rc protein_model_add_trans(struct protein_model *, struct protein_trans trans);
 
-void dcp_protein_model_del(struct protein_model const *);
+void protein_model_del(struct protein_model const *);
 
-void dcp_protein_model_init(struct protein_model *, struct imm_amino const *amino,
+void protein_model_init(struct protein_model *, struct imm_amino const *amino,
                         struct imm_nuclt_code const *code,
-                        struct dcp_protein_cfg cfg,
+                        struct protein_cfg cfg,
                         imm_float const null_lprobs[IMM_AMINO_SIZE]);
 
-enum rc dcp_protein_model_setup(struct protein_model *, unsigned core_size);
+enum rc protein_model_setup(struct protein_model *, unsigned core_size);
 
-void dcp_protein_model_write_dot(struct protein_model const *, FILE *restrict fp);
+void protein_model_write_dot(struct protein_model const *, FILE *restrict fp);
 
 struct protein_model_summary
 {

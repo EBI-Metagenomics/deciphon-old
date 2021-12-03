@@ -15,10 +15,10 @@ struct protein_prof
 
     struct imm_amino const *amino;
     struct imm_nuclt_code const *code;
-    struct dcp_protein_cfg cfg;
+    struct protein_cfg cfg;
     struct imm_frame_epsilon eps;
     unsigned core_size;
-    char consensus[DCP_PROTEIN_MODEL_CORE_SIZE_MAX + 1];
+    char consensus[PROTEIN_MODEL_CORE_SIZE_MAX + 1];
 
     struct
     {
@@ -42,33 +42,33 @@ struct protein_prof
     } alt;
 };
 
-void dcp_protein_prof_init(struct protein_prof *prof, struct imm_amino const *amino,
+void protein_prof_init(struct protein_prof *prof, struct imm_amino const *amino,
                        struct imm_nuclt_code const *code,
-                       struct dcp_protein_cfg cfg);
+                       struct protein_cfg cfg);
 
-enum rc dcp_protein_prof_setup(struct protein_prof *prof, unsigned seq_size,
+enum rc protein_prof_setup(struct protein_prof *prof, unsigned seq_size,
                            bool multi_hits, bool hmmer3_compat);
 
-enum rc dcp_protein_prof_absorb(struct protein_prof *prof,
+enum rc protein_prof_absorb(struct protein_prof *prof,
                             struct protein_model const *model);
 
-struct profile *dcp_protein_prof_super(struct protein_prof *pro);
+struct profile *protein_prof_super(struct protein_prof *pro);
 
-void dcp_protein_prof_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
+void protein_prof_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
 
-enum rc dcp_protein_prof_sample(struct protein_prof *prof, unsigned seed,
+enum rc protein_prof_sample(struct protein_prof *prof, unsigned seed,
                             unsigned core_size);
 
-enum rc dcp_protein_prof_decode(struct protein_prof const *prof,
+enum rc protein_prof_decode(struct protein_prof const *prof,
                             struct imm_seq const *seq, unsigned state_id,
                             struct imm_codon *codon);
 
-static inline void dcp_protein_prof_del(struct protein_prof *prof)
+static inline void protein_prof_del(struct protein_prof *prof)
 {
     if (prof) profile_del(&prof->super);
 }
 
-void dcp_protein_prof_write_dot(struct protein_prof const *prof, FILE *restrict fp);
+void protein_prof_write_dot(struct protein_prof const *prof, FILE *restrict fp);
 
 struct cmp_ctx_s;
 struct protein_prof;

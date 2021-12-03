@@ -19,7 +19,7 @@ enum profile_typeid
 {
     DCP_NULL_PROFILE,
     DCP_STANDARD_PROFILE,
-    DCP_PROTEIN_PROFILE,
+    PROTEIN_PROFILE,
 };
 
 struct profile;

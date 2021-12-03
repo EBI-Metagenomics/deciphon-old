@@ -9,16 +9,16 @@
 
 #define dcp_super(x)                                                           \
     _Generic((x), struct dcp_standard_profile *                                        \
-             : dcp_standard_profile_super, struct dcp_protein_prof *                       \
-             : dcp_protein_prof_super, struct dcp_standard_db *                         \
-             : dcp_standard_db_super, struct dcp_protein_db *                           \
-             : dcp_protein_db_super)(x)
+             : dcp_standard_profile_super, struct protein_prof *                       \
+             : protein_prof_super, struct dcp_standard_db *                         \
+             : dcp_standard_db_super, struct protein_db *                           \
+             : protein_db_super)(x)
 
 #define dcp_del(x)                                                             \
     _Generic((x), struct dcp_prof *                                            \
              : dcp_prof_del, struct dcp_standard_profile *                             \
-             : dcp_standard_profile_del, struct dcp_protein_prof *                         \
-             : dcp_protein_prof_del, struct dcp_protein_model *                        \
-             : dcp_protein_model_del)(x)
+             : dcp_standard_profile_del, struct protein_prof *                         \
+             : protein_prof_del, struct protein_model *                        \
+             : protein_model_del)(x)
 
 #endif

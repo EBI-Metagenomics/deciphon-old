@@ -22,7 +22,7 @@ struct db_handle
     union
     {
         struct dcp_standard_db std;
-        struct dcp_protein_db pro;
+        struct protein_db pro;
     };
 };
 

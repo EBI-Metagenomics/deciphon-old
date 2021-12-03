@@ -8,7 +8,7 @@ struct imm_codon;
 struct imm_path;
 struct imm_seq;
 
-struct dcp_protein_codec
+struct protein_codec
 {
     unsigned idx;
     unsigned start;
@@ -16,13 +16,13 @@ struct dcp_protein_codec
     struct imm_path const *path;
 };
 
-static inline struct dcp_protein_codec
-dcp_protein_codec_init(struct protein_prof const *prof, struct imm_path const *path)
+static inline struct protein_codec
+protein_codec_init(struct protein_prof const *prof, struct imm_path const *path)
 {
-    return (struct dcp_protein_codec){0, 0, prof, path};
+    return (struct protein_codec){0, 0, prof, path};
 }
 
-enum rc dcp_protein_codec_next(struct dcp_protein_codec *codec,
+enum rc protein_codec_next(struct protein_codec *codec,
                                struct imm_seq const *seq,
                                struct imm_codon *codon);
 

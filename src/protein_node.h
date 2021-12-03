@@ -4,7 +4,7 @@
 #include "imm/imm.h"
 #include "nuclt_dist.h"
 
-struct dcp_protein_node
+struct protein_node
 {
     union
     {

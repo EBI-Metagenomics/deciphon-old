@@ -205,7 +205,7 @@ enum rc db_read_prof_type(struct dcp_db *db)
     if (!cmp_read_u8(&db->file.cmp[0], &prof_type))
         return error(IOERROR, "failed to read profile type");
 
-    if (prof_type != DCP_STANDARD_PROFILE && prof_type != DCP_PROTEIN_PROFILE)
+    if (prof_type != DCP_STANDARD_PROFILE && prof_type != PROTEIN_PROFILE)
         return error(PARSEERROR, "wrong prof_type");
 
     db->prof_typeid = prof_type;

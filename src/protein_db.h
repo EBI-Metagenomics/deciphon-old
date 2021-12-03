@@ -8,7 +8,7 @@
 #include "protein_profile.h"
 #include <stdio.h>
 
-struct dcp_protein_db
+struct protein_db
 {
     struct dcp_db super;
     struct imm_amino amino;
@@ -17,33 +17,33 @@ struct dcp_protein_db
     struct protein_prof prof;
 };
 
-extern struct dcp_protein_db const dcp_protein_db_default;
+extern struct protein_db const protein_db_default;
 
-enum rc dcp_protein_db_setup_multi_readers(struct dcp_protein_db *db,
+enum rc protein_db_setup_multi_readers(struct protein_db *db,
                                            unsigned nfiles, FILE *fp[]);
 
-enum rc dcp_protein_db_openr(struct dcp_protein_db *db, FILE *restrict fp);
+enum rc protein_db_openr(struct protein_db *db, FILE *restrict fp);
 
-enum rc dcp_protein_db_openw(struct dcp_protein_db *db, FILE *restrict fp,
+enum rc protein_db_openw(struct protein_db *db, FILE *restrict fp,
                              struct imm_amino const *amino,
                              struct imm_nuclt const *nuclt,
-                             struct dcp_protein_cfg cfg);
+                             struct protein_cfg cfg);
 
-enum rc dcp_protein_db_close(struct dcp_protein_db *db);
+enum rc protein_db_close(struct protein_db *db);
 
-struct imm_amino const *dcp_protein_db_amino(struct dcp_protein_db const *db);
+struct imm_amino const *protein_db_amino(struct protein_db const *db);
 
-struct imm_nuclt const *dcp_protein_db_nuclt(struct dcp_protein_db const *db);
+struct imm_nuclt const *protein_db_nuclt(struct protein_db const *db);
 
-struct dcp_protein_cfg dcp_protein_db_cfg(struct dcp_protein_db const *db);
+struct protein_cfg protein_db_cfg(struct protein_db const *db);
 
-enum rc dcp_protein_db_read(struct dcp_protein_db *db, struct protein_prof *prof);
+enum rc protein_db_read(struct protein_db *db, struct protein_prof *prof);
 
-enum rc dcp_protein_db_write(struct dcp_protein_db *db,
+enum rc protein_db_write(struct protein_db *db,
                              struct protein_prof const *prof);
 
-struct protein_prof *dcp_protein_db_profile(struct dcp_protein_db *db);
+struct protein_prof *protein_db_profile(struct protein_db *db);
 
-struct dcp_db *dcp_protein_db_super(struct dcp_protein_db *db);
+struct dcp_db *protein_db_super(struct protein_db *db);
 
 #endif
