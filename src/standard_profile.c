@@ -1,13 +1,14 @@
-#include "std_prof.h"
+#include "standard_profile.h"
 #include "imm/imm.h"
 #include "meta.h"
 #include "prof.h"
 #include "rc.h"
-#include "std_prof.h"
+#include "standard_profile.h"
 
 static void del(struct profile *prof);
 
-void standard_profile_init(struct standard_profile *prof, struct imm_code const *code)
+void standard_profile_init(struct standard_profile *prof,
+                           struct imm_code const *code)
 {
     imm_dp_init(&prof->dp.null, code);
     imm_dp_init(&prof->dp.alt, code);
@@ -22,7 +23,8 @@ enum rc standard_profile_read(struct standard_profile *prof, FILE *restrict fd)
     return DONE;
 }
 
-enum rc standard_profile_write(struct standard_profile const *prof, FILE *restrict fd)
+enum rc standard_profile_write(struct standard_profile const *prof,
+                               FILE *restrict fd)
 {
     if (imm_dp_write(&prof->dp.null, fd)) return FAIL;
     if (imm_dp_write(&prof->dp.alt, fd)) return FAIL;

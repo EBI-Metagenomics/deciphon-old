@@ -79,7 +79,7 @@ add_library(
   src/sqldiff.c
   src/srv.c
   src/std_db.c
-  src/std_prof.c
+  src/standard_profile.c
   src/table.c
   src/task.c
   src/third-party/cmp.c

@@ -1,5 +1,5 @@
-#ifndef STD_PROF_H
-#define STD_PROF_H
+#ifndef STANDARD_PROFILE_H
+#define STANDARD_PROFILE_H
 
 #include "prof.h"
 #include "rc.h"

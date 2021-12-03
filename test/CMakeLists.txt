@@ -34,7 +34,7 @@ function(dcp_add_test name srcs)
   target_compile_definitions(${name} PUBLIC "TMPDIR=\"${TMPDIR}\"")
 endfunction()
 
-dcp_add_test(std_prof std_prof.c)
+dcp_add_test(standard_profile standard_profile.c)
 # dcp_add_test(std_db "std_db.c;std_db_examples.c")
 
 # dcp_add_test(pro_model pro_model.c)
