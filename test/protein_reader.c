@@ -1,5 +1,7 @@
-#include "dcp/dcp.h"
+#include "protein_reader.h"
 #include "hope/hope.h"
+#include "imm/imm.h"
+#include "protein_profile.h"
 
 static char const sequence[] =
     "GTGCTGGGCAGCAAAAGCCTGACCGCGAAAAGCCTGCTGGGCACCCTGGGCTTTCTGCAT"
@@ -35,16 +37,15 @@ int main(void)
     struct protein_reader reader;
     protein_reader_init(&reader, amino, &code, cfg, fd);
 
-    EQ(protein_reader_next(&reader), DCP_DONE);
+    EQ(protein_reader_next(&reader), DONE);
 
-    struct protein_prof prof;
+    struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
 
-    dcp_prof_nameit(dcp_super(&prof), meta("name", "acc"));
-    EQ(protein_profile_absorb(&prof, &reader.model), DCP_DONE);
+    profile_nameit(&prof.super, meta("name", "acc"));
+    EQ(protein_profile_absorb(&prof, &reader.model), DONE);
 
-    struct imm_seq seq =
-        imm_seq(imm_str(sequence), dcp_super(&prof)->code->abc);
+    struct imm_seq seq = imm_seq(imm_str(sequence), prof.super.code->abc);
 
     protein_profile_setup(&prof, imm_seq_size(&seq), true, false);
 
@@ -58,6 +59,6 @@ int main(void)
     imm_del(&prod);
 
     fclose(fd);
-    dcp_del(&prof);
+    protein_profile_del(&prof);
     return hope_status();
 }

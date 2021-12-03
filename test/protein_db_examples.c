@@ -1,6 +1,7 @@
 #include "protein_db_examples.h"
-#include "dcp/dcp.h"
 #include "hope/hope.h"
+#include "imm/imm.h"
+#include "protein_db.h"
 
 void protein_db_examples_new_ex1(char const *filepath)
 {
@@ -12,18 +13,18 @@ void protein_db_examples_new_ex1(char const *filepath)
 
     struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
     struct protein_db db = protein_db_default;
-    EQ(protein_db_openw(&db, fd, amino, nuclt, cfg), DCP_DONE);
+    EQ(protein_db_openw(&db, fd, amino, nuclt, cfg), DONE);
 
-    struct protein_prof *prof = protein_db_profile(&db);
+    struct protein_profile *prof = protein_db_profile(&db);
 
     protein_profile_sample(prof, 1, 2);
-    dcp_prof_nameit(dcp_super(prof), meta("NAME0", "ACC0"));
-    EQ(protein_db_write(&db, prof), DCP_DONE);
+    profile_nameit(&prof->super, meta("NAME0", "ACC0"));
+    EQ(protein_db_write(&db, prof), DONE);
 
     protein_profile_sample(prof, 2, 2);
-    dcp_prof_nameit(dcp_super(prof), meta("NAME1", "ACC1"));
-    EQ(protein_db_write(&db, prof), DCP_DONE);
+    profile_nameit(&prof->super, meta("NAME1", "ACC1"));
+    EQ(protein_db_write(&db, prof), DONE);
 
-    EQ(protein_db_close(&db), DCP_DONE);
+    EQ(protein_db_close(&db), DONE);
     fclose(fd);
 }
