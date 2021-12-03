@@ -69,4 +69,4 @@ jobs:
     - name: Install
       working-directory: ${{github.workspace}}/build
       shell: bash
-      run: $SUDO cmake --build . --target install --config $BUILD_TYPE
+      run: $SUDO cmake --build . --target install --config ${{env.BUILD_TYPE}}
