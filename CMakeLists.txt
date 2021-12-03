@@ -78,7 +78,7 @@ add_library(
   src/seq.c
   src/sqldiff.c
   src/srv.c
-  src/std_db.c
+  src/standard_db.c
   src/standard_profile.c
   src/table.c
   src/task.c

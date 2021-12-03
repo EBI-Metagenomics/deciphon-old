@@ -6,7 +6,7 @@
 #include "path.h"
 #include "pro_db.h"
 #include "rc.h"
-#include "std_db.h"
+#include "standard_db.h"
 #include <stdio.h>
 
 #define DB_HANDLE_MAX_FILES DCP_DB_HANDLE_MAX_FILES
@@ -21,7 +21,7 @@ struct db_handle
     uint64_t open_since;
     union
     {
-        struct dcp_std_db std;
+        struct dcp_standard_db std;
         struct dcp_pro_db pro;
     };
 };

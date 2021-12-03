@@ -1,4 +1,4 @@
-#include "std_db.h"
+#include "standard_db.h"
 #include "db.h"
 #include "logger.h"
 #include "rc.h"
@@ -18,14 +18,14 @@ static enum rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
     return DONE;
 }
 
-void dcp_std_db_init(struct dcp_std_db *db)
+void dcp_standard_db_init(struct dcp_standard_db *db)
 {
     db_init(&db->super, DCP_STD_PROFILE);
     db->abc = imm_abc_empty;
     standard_profile_init(&db->prof, &db->code);
 }
 
-enum rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
+enum rc dcp_standard_db_openr(struct dcp_standard_db *db, FILE *restrict fd)
 {
     db_openr(&db->super, fd);
 
@@ -42,7 +42,7 @@ enum rc dcp_std_db_openr(struct dcp_std_db *db, FILE *restrict fd)
     return rc;
 }
 
-enum rc dcp_std_db_openw(struct dcp_std_db *db, FILE *restrict fd,
+enum rc dcp_standard_db_openw(struct dcp_standard_db *db, FILE *restrict fd,
                          struct imm_code const *code)
 {
     db->code = *code;
@@ -62,19 +62,19 @@ cleanup:
     return rc;
 }
 
-enum rc dcp_std_db_close(struct dcp_std_db *db)
+enum rc dcp_standard_db_close(struct dcp_standard_db *db)
 {
     enum rc rc = db_close(&db->super);
     standard_profile_del(&db->prof);
     return rc;
 }
 
-struct imm_abc const *dcp_std_db_abc(struct dcp_std_db const *db)
+struct imm_abc const *dcp_standard_db_abc(struct dcp_standard_db const *db)
 {
     return &db->abc;
 }
 
-enum rc dcp_std_db_read(struct dcp_std_db *db, struct standard_profile *prof)
+enum rc dcp_standard_db_read(struct dcp_standard_db *db, struct standard_profile *prof)
 {
     if (db_end(&db->super)) return error(FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
@@ -82,7 +82,7 @@ enum rc dcp_std_db_read(struct dcp_std_db *db, struct standard_profile *prof)
     return standard_profile_read(prof, xcmp_fp(&db->super.file.cmp[0]));
 }
 
-enum rc dcp_std_db_write(struct dcp_std_db *db,
+enum rc dcp_standard_db_write(struct dcp_standard_db *db,
                          struct standard_profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
@@ -94,9 +94,9 @@ enum rc dcp_std_db_write(struct dcp_std_db *db,
     return rc;
 }
 
-struct standard_profile *dcp_std_db_profile(struct dcp_std_db *db)
+struct standard_profile *dcp_standard_db_profile(struct dcp_standard_db *db)
 {
     return &db->prof;
 }
 
-struct dcp_db *dcp_std_db_super(struct dcp_std_db *db) { return &db->super; }
+struct dcp_db *dcp_standard_db_super(struct dcp_standard_db *db) { return &db->super; }
