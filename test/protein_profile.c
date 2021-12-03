@@ -1,5 +1,7 @@
-#include "dcp/dcp.h"
+#include "protein_profile.h"
 #include "hope/hope.h"
+#include "imm/imm.h"
+#include "protein_codec.h"
 
 void test_protein_profile_uniform(void);
 void test_protein_profile_occupancy(void);
@@ -19,15 +21,15 @@ void test_protein_profile_uniform(void)
     imm_nuclt_code_init(&code, nuclt);
     struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
 
-    struct protein_prof prof;
+    struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
-    EQ(protein_profile_sample(&prof, 1, 2), DCP_DONE);
+    EQ(protein_profile_sample(&prof, 1, 2), DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-    struct imm_seq seq = imm_seq(IMM_STR(str), dcp_super(&prof)->code->abc);
+    struct imm_seq seq = imm_seq(IMM_STR(str), prof.super.code->abc);
 
-    EQ(protein_profile_setup(&prof, 0, true, false), DCP_ILLEGALARG);
-    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
+    EQ(protein_profile_setup(&prof, 0, true, false), ILLEGALARG);
+    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), DONE);
 
     struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.null.dp;
@@ -75,7 +77,7 @@ void test_protein_profile_uniform(void)
     EQ(name, "T");
 
     struct protein_codec codec = protein_codec_init(&prof, &prod.path);
-    enum dcp_rc rc = DCP_DONE;
+    enum rc rc = DONE;
 
     nuclt = prof.code->nuclt;
     struct imm_codon codons[10] = {
@@ -96,10 +98,10 @@ void test_protein_profile_uniform(void)
         EQ(codons[i].c, codon.c);
         ++i;
     }
-    EQ(rc, DCP_END);
+    EQ(rc, END);
     EQ(i, 10);
 
-    dcp_del(&prof);
+    protein_profile_del(&prof);
     imm_del(&prod);
     imm_del(task);
 }
@@ -112,14 +114,14 @@ void test_protein_profile_occupancy(void)
     imm_nuclt_code_init(&code, nuclt);
     struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
 
-    struct protein_prof prof;
+    struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
-    EQ(protein_profile_sample(&prof, 1, 2), DCP_DONE);
+    EQ(protein_profile_sample(&prof, 1, 2), DONE);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-    struct imm_seq seq = imm_seq(imm_str(str), dcp_super(&prof)->code->abc);
+    struct imm_seq seq = imm_seq(imm_str(str), prof.super.code->abc);
 
-    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), DCP_DONE);
+    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), DONE);
 
     struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.null.dp;
@@ -167,7 +169,7 @@ void test_protein_profile_occupancy(void)
     EQ(name, "T");
 
     struct protein_codec codec = protein_codec_init(&prof, &prod.path);
-    enum dcp_rc rc = DCP_DONE;
+    enum rc rc = DONE;
 
     nuclt = prof.code->nuclt;
     struct imm_codon codons[10] = {
@@ -188,10 +190,10 @@ void test_protein_profile_occupancy(void)
         EQ(codons[i].c, codon.c);
         ++i;
     }
-    EQ(rc, DCP_END);
+    EQ(rc, END);
     EQ(i, 10);
 
-    dcp_del(&prof);
+    protein_profile_del(&prof);
     imm_del(&prod);
     imm_del(task);
 }

@@ -52,7 +52,8 @@ enum rc protein_model_add_node(struct protein_model *,
                                imm_float const lp[IMM_AMINO_SIZE],
                                char consensus);
 
-enum rc protein_model_add_trans(struct protein_model *, struct protein_trans trans);
+enum rc protein_model_add_trans(struct protein_model *,
+                                struct protein_trans trans);
 
 void protein_model_del(struct protein_model const *);
 
@@ -90,6 +91,7 @@ struct protein_model;
 
 struct imm_amino const *protein_model_amino(struct protein_model const *m);
 struct imm_nuclt const *protein_model_nuclt(struct protein_model const *m);
-struct protein_model_summary protein_model_summary(struct protein_model const *m);
+struct protein_model_summary
+protein_model_summary(struct protein_model const *m);
 
 #endif

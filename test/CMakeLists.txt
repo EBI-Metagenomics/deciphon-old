@@ -38,7 +38,7 @@ dcp_add_test(standard_profile standard_profile.c)
 dcp_add_test(standard_db "standard_db.c;standard_db_examples.c")
 
 dcp_add_test(protein_model protein_model.c)
-# dcp_add_test(pro_prof pro_prof.c)
+dcp_add_test(protein_profile protein_profile.c)
 # dcp_add_test(pro_db "pro_db.c;pro_db_examples.c")
 # dcp_add_test(pro_reader pro_reader.c)
 # dcp_add_test(srv "srv.c;standard_db_examples.c;pro_db_examples.c;srv_data.c")
