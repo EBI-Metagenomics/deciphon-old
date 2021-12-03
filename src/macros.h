@@ -7,6 +7,6 @@
 #define ARRAY_SIZE_OF(var, member) ARRAY_SIZE(MEMBER_REF((var), member))
 
 #define __STRINGIFY(n) #n
-#define __LOCAL(n) __FILE__ ":" __STRINGIFY(n)
+#define LOCAL(n) __FILE__ ":" __STRINGIFY(n)
 
 #endif

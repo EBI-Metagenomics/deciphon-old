@@ -31,7 +31,7 @@ struct array *array_prealloc(struct array *arr, size_t size)
 {
     if (arr->capacity >= size) return arr;
 
-    struct array *dst = xreallocf(arr, sizeof(*dst) + sizeof(char) * size);
+    struct array *dst = safe_realloc(arr, sizeof(*dst) + sizeof(char) * size);
     if (dst)
     {
         dst->size = size;
@@ -55,7 +55,7 @@ struct array *array_shrink(struct array *arr)
 {
     if (arr->capacity == arr->size) return arr;
 
-    struct array *dst = xreallocf(arr, sizeof(*dst) + sizeof(char) * arr->size);
+    struct array *dst = safe_realloc(arr, sizeof(*dst) + sizeof(char) * arr->size);
     if (dst)
     {
         dst->size = arr->size;

@@ -18,7 +18,7 @@ bool path_change_or_add_ext(char str[static 1], size_t max_size,
 void path_basename(char *filename, char const *path)
 {
     char *p = glibc_basename(path);
-    xstrlcpy(filename, p, DCP_FILENAME_SIZE);
+    safe_strcpy(filename, p, DCP_FILENAME_SIZE);
 }
 
 void path_strip_ext(char str[static 1])

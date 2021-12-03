@@ -24,11 +24,11 @@ void table_set_headers(struct table *t, char const *cons, char const *seq,
                        char const *pcodon, char const *pamino,
                        char const *state)
 {
-    xstrlcpy(t->consensus.hdr, cons, MEMBER_SIZE(t->consensus, hdr));
-    xstrlcpy(t->sequence.hdr, seq, MEMBER_SIZE(t->sequence, hdr));
-    xstrlcpy(t->post_codon.hdr, pcodon, MEMBER_SIZE(t->post_codon, hdr));
-    xstrlcpy(t->post_amino.hdr, pamino, MEMBER_SIZE(t->post_amino, hdr));
-    xstrlcpy(t->state.hdr, state, MEMBER_SIZE(t->state, hdr));
+    safe_strcpy(t->consensus.hdr, cons, MEMBER_SIZE(t->consensus, hdr));
+    safe_strcpy(t->sequence.hdr, seq, MEMBER_SIZE(t->sequence, hdr));
+    safe_strcpy(t->post_codon.hdr, pcodon, MEMBER_SIZE(t->post_codon, hdr));
+    safe_strcpy(t->post_amino.hdr, pamino, MEMBER_SIZE(t->post_amino, hdr));
+    safe_strcpy(t->state.hdr, state, MEMBER_SIZE(t->state, hdr));
 
     fill_space(t->consensus.hdr, MEMBER_SIZE(t->consensus, hdr) - 1);
     fill_space(t->sequence.hdr, MEMBER_SIZE(t->sequence, hdr) - 1);

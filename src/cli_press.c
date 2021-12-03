@@ -21,7 +21,7 @@ struct arguments
 
 static bool infer_output_file(struct arguments *args)
 {
-    size_t n = xstrlcpy(args->output_file, args->input_file, PATH_MAX);
+    size_t n = safe_strcpy(args->output_file, args->input_file, PATH_MAX);
     if (n >= PATH_MAX) return false;
     return path_change_or_add_ext(args->output_file, PATH_MAX, ".dcp");
 }
@@ -37,7 +37,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         break;
 
     case 'o':
-        if (xstrlcpy(args->output_file, arg, PATH_MAX) >= PATH_MAX)
+        if (safe_strcpy(args->output_file, arg, PATH_MAX) >= PATH_MAX)
         {
             error(DCP_ILLEGALARG, "output path is too long");
             return ENAMETOOLONG;

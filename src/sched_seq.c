@@ -52,8 +52,7 @@ cleanup:
 
 void sched_seq_setup(struct sched_seq *seq, char const *name, char const *data)
 {
-    xstrlcpy(seq->name, name, DCP_SEQ_NAME_SIZE);
-    xstrlcpy(seq->data, data, DCP_MATCH_DATA_SIZE);
+    safe_strcpy(seq->name, name, DCP_SEQ_NAME_SIZE);
 }
 
 enum dcp_rc sched_seq_add(struct sched_seq *seq)

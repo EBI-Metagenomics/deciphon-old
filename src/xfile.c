@@ -16,7 +16,7 @@
 
 enum dcp_rc xfile_tmp_open(struct xfile_tmp *file)
 {
-    xstrlcpy(file->path, PATH_TEMP_TEMPLATE, MEMBER_SIZE(*file, path));
+    safe_strcpy(file->path, PATH_TEMP_TEMPLATE, MEMBER_SIZE(*file, path));
     file->fp = NULL;
     enum dcp_rc rc = xfile_mktemp(file->path);
     if (rc) return rc;

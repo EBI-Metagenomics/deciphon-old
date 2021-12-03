@@ -195,12 +195,12 @@ void sched_prod_set_match_id(struct dcp_prod *prod, int64_t match_id)
 void sched_prod_set_prof_name(struct dcp_prod *prod,
                               char const prof_name[DCP_PROF_NAME_SIZE])
 {
-    xstrlcpy(prod->prof_name, prof_name, DCP_PROF_NAME_SIZE);
+    safe_strcpy(prod->prof_name, prof_name, DCP_PROF_NAME_SIZE);
 }
 
 void sched_prod_set_abc_name(struct dcp_prod *prod, char const *abc_name)
 {
-    xstrlcpy(prod->abc_name, abc_name, DCP_ABC_NAME_SIZE);
+    safe_strcpy(prod->abc_name, abc_name, DCP_ABC_NAME_SIZE);
 }
 
 void sched_prod_set_loglik(struct dcp_prod *prod, double loglik)
@@ -215,12 +215,12 @@ void sched_prod_set_null_loglik(struct dcp_prod *prod, double null_loglik)
 
 void sched_prod_set_model(struct dcp_prod *prod, char const *model)
 {
-    xstrlcpy(prod->model, model, DCP_MODEL_SIZE);
+    safe_strcpy(prod->model, model, DCP_MODEL_SIZE);
 }
 
 void sched_prod_set_version(struct dcp_prod *prod, char const *version)
 {
-    xstrlcpy(prod->version, version, DCP_VERSION_SIZE);
+    safe_strcpy(prod->version, version, DCP_VERSION_SIZE);
 }
 
 #define ERROR_WRITE error(DCP_IOERROR, "failed to write product")

@@ -50,8 +50,8 @@ enum dcp_rc sched_db_setup(struct sched_db *db,
     enum dcp_rc rc = xfile_hash(fd, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
 
-    xstrlcpy(db->name, name, DCP_DB_NAME_SIZE);
-    xstrlcpy(db->filepath, filepath, DCP_PATH_SIZE);
+    safe_strcpy(db->name, name, DCP_DB_NAME_SIZE);
+    safe_strcpy(db->filepath, filepath, DCP_PATH_SIZE);
 
 cleanup:
     fclose(fd);
