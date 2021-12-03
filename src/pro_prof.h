@@ -5,7 +5,7 @@
 #include "meta.h"
 #include "pro_cfg.h"
 #include "pro_model.h"
-#include "prof.h"
+#include "profile.h"
 #include "rc.h"
 #include <stdio.h>
 

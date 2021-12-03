@@ -1,7 +1,7 @@
 #ifndef STANDARD_PROFILE_H
 #define STANDARD_PROFILE_H
 
-#include "prof.h"
+#include "profile.h"
 #include "rc.h"
 #include <stdio.h>
 

@@ -3,7 +3,7 @@
 #include "entry_dist.h"
 #include "logger.h"
 #include "pro_cfg.h"
-#include "pro_prof.h"
+#include "pro_profile.h"
 #include "rc.h"
 #include "third-party/cmp.h"
 #include "xcmp.h"

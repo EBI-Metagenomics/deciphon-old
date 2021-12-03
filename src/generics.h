@@ -3,7 +3,7 @@
 
 #include "pro_db.h"
 #include "pro_model.h"
-#include "pro_prof.h"
+#include "pro_profile.h"
 #include "standard_db.h"
 #include "standard_profile.h"
 

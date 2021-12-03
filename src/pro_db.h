@@ -5,7 +5,7 @@
 #include "entry_dist.h"
 #include "meta.h"
 #include "pro_cfg.h"
-#include "pro_prof.h"
+#include "pro_profile.h"
 #include <stdio.h>
 
 struct dcp_pro_db

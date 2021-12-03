@@ -2,7 +2,7 @@
 #include "imm/imm.h"
 #include "logger.h"
 #include "macros.h"
-#include "prof.h"
+#include "profile.h"
 #include "third-party/cmp.h"
 #include "xcmp.h"
 #include "xfile.h"

@@ -3,7 +3,7 @@
 
 #include "dcp_cmp.h"
 #include "meta.h"
-#include "prof.h"
+#include "profile.h"
 #include "prof_types.h"
 #include <sys/types.h>
 

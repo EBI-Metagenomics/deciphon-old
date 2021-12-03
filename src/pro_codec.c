@@ -1,6 +1,6 @@
 #include "pro_codec.h"
 #include "imm/imm.h"
-#include "pro_prof.h"
+#include "pro_profile.h"
 #include "pro_state.h"
 
 enum rc dcp_pro_codec_next(struct dcp_pro_codec *codec,
