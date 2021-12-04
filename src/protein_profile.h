@@ -22,15 +22,15 @@ struct protein_profile
 
     struct
     {
-        struct dcp_nuclt_dist ndist;
+        struct nuclt_dist ndist;
         struct imm_dp dp;
         unsigned R;
     } null;
 
     struct
     {
-        struct dcp_nuclt_dist *match_ndists;
-        struct dcp_nuclt_dist insert_ndist;
+        struct nuclt_dist *match_ndists;
+        struct nuclt_dist insert_ndist;
         struct imm_dp dp;
         unsigned S;
         unsigned N;

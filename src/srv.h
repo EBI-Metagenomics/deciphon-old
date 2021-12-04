@@ -8,15 +8,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct dcp_job;
+struct job;
 
-enum rc dcp_srv_open(char const *filepath, unsigned num_threads);
-enum rc dcp_srv_close(void);
-enum rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id);
-enum rc dcp_srv_submit_job(struct dcp_job *);
-enum rc dcp_srv_job_state(int64_t, enum dcp_job_state *);
-enum rc dcp_srv_run(bool single_run);
-enum rc dcp_srv_next_prod(int64_t job_id, int64_t *prod_id);
-struct prod const *dcp_srv_get_prod(void);
+enum rc server_open(char const *filepath, unsigned num_threads);
+enum rc server_close(void);
+enum rc server_add_db(char const *name, char const *filepath, int64_t *id);
+enum rc server_submit_job(struct job *);
+enum rc server_job_state(int64_t, enum job_state *);
+enum rc server_run(bool single_run);
+enum rc server_next_prod(int64_t job_id, int64_t *prod_id);
+struct prod const *server_get_prod(void);
 
 #endif

@@ -29,7 +29,7 @@ struct sched_job
 
 enum rc sched_job_module_init(struct sqlite3 *db);
 enum rc sched_job_add(struct sched_job *job);
-enum rc sched_job_state(int64_t job_id, enum dcp_job_state *state);
+enum rc sched_job_state(int64_t job_id, enum job_state *state);
 enum rc sched_job_next_pending(int64_t *job_id);
 enum rc sched_job_set_error(int64_t job_id, char const *error,
                                 int64_t exec_ended);

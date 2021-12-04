@@ -55,7 +55,7 @@ static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
 }
 
 static enum rc read_entry_dist(struct cmp_ctx_s *cmp,
-                               enum dcp_entry_dist *edist)
+                               enum entry_dist *edist)
 {
     uint8_t val = 0;
     if (!cmp_read_u8(cmp, &val))
@@ -65,7 +65,7 @@ static enum rc read_entry_dist(struct cmp_ctx_s *cmp,
 }
 
 static enum rc write_entry_dist(struct cmp_ctx_s *cmp,
-                                enum dcp_entry_dist edist)
+                                enum entry_dist edist)
 {
     if (!cmp_write_u8(cmp, (uint8_t)edist))
         return error(IOERROR, "failed to write entry distribution");

@@ -76,7 +76,7 @@ enum rc sched_close(void)
 
 struct sqlite3 *sched_db(void) { return sqlite3_db; }
 
-enum rc sched_submit_job(struct dcp_job *job)
+enum rc sched_submit_job(struct job *job)
 {
     BEGIN_TRANSACTION_OR_RETURN(sqlite3_db);
 
@@ -88,7 +88,7 @@ enum rc sched_submit_job(struct dcp_job *job)
 
     job->id = j.id;
     struct cco_iter iter = cco_queue_iter(&job->seqs);
-    struct dcp_seq *seq = NULL;
+    struct seq *seq = NULL;
     cco_iter_for_each_entry(seq, &iter, node)
     {
         if ((rc = sched_seq_add(j.id, seq->name, seq->str.len, seq->str.data)))

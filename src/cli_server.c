@@ -77,7 +77,7 @@ enum rc cli_server(int argc, char **argv)
     dcp_log_setup(print_log_put, NULL);
     log_setup(LOG_ERROR, syslog_print, flush_nop, NULL);
 
-    rc = dcp_srv_open(schedfile, 1);
+    rc = server_open(schedfile, 1);
     if (rc) goto cleanup;
 
     char db_name[DB_NAME_SIZE] = {0};
@@ -86,19 +86,19 @@ enum rc cli_server(int argc, char **argv)
     path_strip_ext(db_name);
 
     int64_t db_id = 0;
-    rc = dcp_srv_add_db(db_name, dcpfile, &db_id);
+    rc = server_add_db(db_name, dcpfile, &db_id);
     if (rc) goto cleanup;
 
-    rc = dcp_srv_run(false);
+    rc = server_run(false);
     if (rc) goto cleanup;
 
-    rc = dcp_srv_close();
+    rc = server_close();
     log_flush();
     closelog();
     return rc;
 
 cleanup:
-    dcp_srv_close();
+    server_close();
     log_flush();
     closelog();
     return rc;

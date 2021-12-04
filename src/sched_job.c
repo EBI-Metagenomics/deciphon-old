@@ -148,7 +148,7 @@ cleanup:
     return rc;
 }
 
-enum rc sched_job_state(int64_t job_id, enum dcp_job_state *state)
+enum rc sched_job_state(int64_t job_id, enum job_state *state)
 {
     struct sqlite3_stmt *stmt = stmts[GET_STATE];
     enum rc rc = DONE;

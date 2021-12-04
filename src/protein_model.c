@@ -28,7 +28,7 @@ bool have_finished_add(struct protein_model const *);
 void init_delete(struct imm_mute_state *, struct protein_model *);
 void init_insert(struct imm_frame_state *, struct protein_model *);
 void init_match(struct imm_frame_state *, struct protein_model *,
-                struct dcp_nuclt_dist *);
+                struct nuclt_dist *);
 
 enum rc init_null_xtrans(struct imm_hmm *, struct protein_xnode_null *);
 enum rc init_alt_xtrans(struct imm_hmm *, struct protein_xnode_alt *);
@@ -38,7 +38,7 @@ struct imm_codon_lprob codon_lprob(struct imm_amino const *,
                                    struct imm_amino_lprob const *,
                                    struct imm_nuclt const *);
 
-void setup_nuclt_dist(struct dcp_nuclt_dist *, struct imm_amino const *,
+void setup_nuclt_dist(struct nuclt_dist *, struct imm_amino const *,
                       struct imm_nuclt const *,
                       imm_float const[IMM_AMINO_SIZE]);
 
@@ -304,7 +304,7 @@ void init_insert(struct imm_frame_state *state, struct protein_model *m)
 }
 
 void init_match(struct imm_frame_state *state, struct protein_model *m,
-                struct dcp_nuclt_dist *d)
+                struct nuclt_dist *d)
 {
     imm_float e = m->cfg.epsilon;
     unsigned id = PROTEIN_ID_MATCH | (m->alt.node_idx + 1);
@@ -391,7 +391,7 @@ struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
     return codonp;
 }
 
-void setup_nuclt_dist(struct dcp_nuclt_dist *dist,
+void setup_nuclt_dist(struct nuclt_dist *dist,
                       struct imm_amino const *amino,
                       struct imm_nuclt const *nuclt,
                       imm_float const lprobs[IMM_AMINO_SIZE])

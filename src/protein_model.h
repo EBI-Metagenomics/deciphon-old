@@ -28,7 +28,7 @@ struct protein_model
     struct
     {
         imm_float lprobs[IMM_AMINO_SIZE];
-        struct dcp_nuclt_dist nucltd;
+        struct nuclt_dist nucltd;
         struct imm_hmm hmm;
     } null;
 
@@ -43,7 +43,7 @@ struct protein_model
 
         struct
         {
-            struct dcp_nuclt_dist nucltd;
+            struct nuclt_dist nucltd;
         } insert;
     } alt;
 };

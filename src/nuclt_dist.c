@@ -2,7 +2,7 @@
 #include "dcp_cmp.h"
 #include "xcmp.h"
 
-enum rc dcp_nuclt_dist_write(struct dcp_nuclt_dist const *ndist,
+enum rc nuclt_dist_write(struct nuclt_dist const *ndist,
                                  struct cmp_ctx_s *cmp)
 {
     enum rc rc = FAIL;
@@ -11,7 +11,7 @@ enum rc dcp_nuclt_dist_write(struct dcp_nuclt_dist const *ndist,
     return DONE;
 }
 
-enum rc dcp_nuclt_dist_read(struct dcp_nuclt_dist *ndist,
+enum rc nuclt_dist_read(struct nuclt_dist *ndist,
                                 struct cmp_ctx_s *cmp)
 {
     enum rc rc = FAIL;

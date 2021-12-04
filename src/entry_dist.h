@@ -1,11 +1,11 @@
-#ifndef DCP_ENTRY_DIST_H
-#define DCP_ENTRY_DIST_H
+#ifndef ENTRY_DIST_H
+#define ENTRY_DIST_H
 
-enum dcp_entry_dist
+enum entry_dist
 {
-    DCP_ENTRY_DIST_NULL,
-    DCP_ENTRY_DIST_UNIFORM,
-    DCP_ENTRY_DIST_OCCUPANCY,
+    ENTRY_DIST_NULL,
+    ENTRY_DIST_UNIFORM,
+    ENTRY_DIST_OCCUPANCY,
 };
 
 #endif

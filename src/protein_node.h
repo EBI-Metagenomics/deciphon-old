@@ -12,7 +12,7 @@ struct protein_node
         struct
         {
             struct imm_frame_state state;
-            struct dcp_nuclt_dist nucltd;
+            struct nuclt_dist nucltd;
         } match;
     };
     struct imm_frame_state I;

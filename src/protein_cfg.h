@@ -6,13 +6,13 @@
 
 struct protein_cfg
 {
-    enum dcp_entry_dist entry_dist;
+    enum entry_dist entry_dist;
     imm_float epsilon;
 };
 
 #define DCP_DEFAULT_EPSILON ((imm_float)0.01)
 
-static inline struct protein_cfg protein_cfg(enum dcp_entry_dist entry_dist,
+static inline struct protein_cfg protein_cfg(enum entry_dist entry_dist,
                                              imm_float epsilon)
 {
     assert(epsilon >= 0.0f && epsilon <= 1.0f);

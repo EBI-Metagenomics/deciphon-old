@@ -30,8 +30,8 @@ void protein_profile_init(struct protein_profile *p, struct imm_amino const *ami
     p->consensus[0] = '\0';
     imm_dp_init(&p->null.dp, &code->super);
     imm_dp_init(&p->alt.dp, &code->super);
-    dcp_nuclt_dist_init(&p->null.ndist, nuclt);
-    dcp_nuclt_dist_init(&p->alt.insert_ndist, nuclt);
+    nuclt_dist_init(&p->null.ndist, nuclt);
+    nuclt_dist_init(&p->alt.insert_ndist, nuclt);
     p->alt.match_ndists = NULL;
 }
 
@@ -211,7 +211,7 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
 {
     assert(!protein_state_is_mute(state_id));
 
-    struct dcp_nuclt_dist const *nucltd = NULL;
+    struct nuclt_dist const *nucltd = NULL;
     if (protein_state_is_insert(state_id))
     {
         nucltd = &prof->alt.insert_ndist;
@@ -268,15 +268,15 @@ enum rc protein_profile_read(struct protein_profile *prof, struct cmp_ctx_s *cmp
     enum rc rc = alloc_match_nuclt_dists(prof);
     if (rc) return rc;
 
-    if ((rc = dcp_nuclt_dist_read(&prof->null.ndist, cmp))) return rc;
+    if ((rc = nuclt_dist_read(&prof->null.ndist, cmp))) return rc;
 
-    if ((rc = dcp_nuclt_dist_read(&prof->alt.insert_ndist, cmp))) return rc;
+    if ((rc = nuclt_dist_read(&prof->alt.insert_ndist, cmp))) return rc;
 
     for (unsigned i = 0; i < prof->core_size; ++i)
     {
-        if ((rc = dcp_nuclt_dist_read(prof->alt.match_ndists + i, cmp)))
+        if ((rc = nuclt_dist_read(prof->alt.match_ndists + i, cmp)))
             return rc;
-        dcp_nuclt_dist_init(prof->alt.match_ndists + i, prof->code->nuclt);
+        nuclt_dist_init(prof->alt.match_ndists + i, prof->code->nuclt);
     }
     return DONE;
 }
@@ -293,14 +293,14 @@ enum rc protein_profile_write(struct protein_profile const *prof, struct cmp_ctx
     if (!cmp_write_str(cmp, prof->consensus, prof->core_size))
         return error(IOERROR, "failed to write consensus");
 
-    enum rc rc = dcp_nuclt_dist_write(&prof->null.ndist, cmp);
+    enum rc rc = nuclt_dist_write(&prof->null.ndist, cmp);
     if (rc) return rc;
 
-    if ((rc = dcp_nuclt_dist_write(&prof->alt.insert_ndist, cmp))) return rc;
+    if ((rc = nuclt_dist_write(&prof->alt.insert_ndist, cmp))) return rc;
 
     for (unsigned i = 0; i < prof->core_size; ++i)
     {
-        if ((rc = dcp_nuclt_dist_write(prof->alt.match_ndists + i, cmp)))
+        if ((rc = nuclt_dist_write(prof->alt.match_ndists + i, cmp)))
             return rc;
     }
     return DONE;

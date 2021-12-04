@@ -1,14 +1,14 @@
 #ifndef JOB_STATE_H
 #define JOB_STATE_H
 
-enum dcp_job_state
+enum job_state
 {
-    DCP_JOB_PEND,
-    DCP_JOB_RUN,
-    DCP_JOB_DONE,
-    DCP_JOB_FAIL
+    JOB_PEND,
+    JOB_RUN,
+    JOB_DONE,
+    JOB_FAIL
 };
 
-enum dcp_job_state job_state_resolve(char const *state);
+enum job_state job_state_resolve(char const *state);
 
 #endif

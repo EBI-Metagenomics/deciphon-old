@@ -4,8 +4,8 @@
 #include "macros.h"
 #include "rc.h"
 
-typedef void dcp_log_print_t(char const *msg, void *arg);
-void dcp_log_setup(dcp_log_print_t *print, void *arg);
+typedef void logger_print_t(char const *msg, void *arg);
+void logger_setup(logger_print_t *print, void *arg);
 
 #define __WARN_FMT(rc, msg) LOCAL(__LINE__) ":" #rc ": " msg
 enum rc __logger_warn(enum rc rc, char const *msg);

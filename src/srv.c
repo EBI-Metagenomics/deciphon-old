@@ -16,7 +16,7 @@
 #include "xfile.h"
 #include <signal.h>
 
-static struct dcp_srv
+static struct server
 {
     struct
     {
@@ -24,13 +24,13 @@ static struct dcp_srv
         struct sigaction action;
     } signal;
     unsigned num_threads;
-    struct dcp_job job;
+    struct job job;
     struct prod prod;
 } srv = {0};
 
 static void signal_interrupt(int signum) { srv.signal.interrupt = 1; }
 
-enum rc dcp_srv_open(char const *filepath, unsigned num_threads)
+enum rc server_open(char const *filepath, unsigned num_threads)
 {
     srv.signal.action.sa_handler = &signal_interrupt;
     sigemptyset(&srv.signal.action.sa_mask);
@@ -44,9 +44,9 @@ enum rc dcp_srv_open(char const *filepath, unsigned num_threads)
     return rc;
 }
 
-enum rc dcp_srv_close(void) { return sched_close(); }
+enum rc server_close(void) { return sched_close(); }
 
-enum rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
+enum rc server_add_db(char const *name, char const *filepath, int64_t *id)
 {
     if (!xfile_is_readable(filepath))
         return error(IOERROR, "file is not readable");
@@ -67,17 +67,17 @@ enum rc dcp_srv_add_db(char const *name, char const *filepath, int64_t *id)
     return rc;
 }
 
-enum rc dcp_srv_submit_job(struct dcp_job *job)
+enum rc server_submit_job(struct job *job)
 {
     return sched_submit_job(job);
 }
 
-enum rc dcp_srv_job_state(int64_t job_id, enum dcp_job_state *state)
+enum rc server_job_state(int64_t job_id, enum job_state *state)
 {
     return sched_job_state(job_id, state);
 }
 
-enum rc dcp_srv_run(bool single_run)
+enum rc server_run(bool single_run)
 {
     enum rc rc = DONE;
     struct work work = {0};
@@ -104,7 +104,7 @@ enum rc dcp_srv_run(bool single_run)
     return DONE;
 }
 
-enum rc dcp_srv_next_prod(int64_t job_id, int64_t *prod_id)
+enum rc server_next_prod(int64_t job_id, int64_t *prod_id)
 {
     enum rc rc = sched_prod_next(job_id, prod_id);
     if (rc == DONE) return rc;
@@ -113,4 +113,4 @@ enum rc dcp_srv_next_prod(int64_t job_id, int64_t *prod_id)
     return NEXT;
 }
 
-struct prod const *dcp_srv_get_prod(void) { return &srv.prod; }
+struct prod const *server_get_prod(void) { return &srv.prod; }

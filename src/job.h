@@ -1,12 +1,12 @@
-#ifndef DCP_JOB_H
-#define DCP_JOB_H
+#ifndef JOB_H
+#define JOB_H
 
 #include "cco/cco.h"
 #include "job_state.h"
 #include "seq.h"
 #include <stdbool.h>
 
-struct dcp_job
+struct job
 {
     int64_t id;
     int64_t db_id;
@@ -15,7 +15,7 @@ struct dcp_job
     struct cco_queue seqs;
 };
 
-static inline void dcp_job_init(struct dcp_job *job, int64_t db_id)
+static inline void job_init(struct job *job, int64_t db_id)
 {
     job->id = 0;
     job->db_id = db_id;
@@ -24,14 +24,14 @@ static inline void dcp_job_init(struct dcp_job *job, int64_t db_id)
     cco_queue_init(&job->seqs);
 }
 
-static inline void dcp_job_setup(struct dcp_job *job, bool multi_hits,
-                                 bool hmmer3_compat)
+static inline void job_setup(struct job *job, bool multi_hits,
+                             bool hmmer3_compat)
 {
     job->multi_hits = multi_hits;
     job->hmmer3_compat = hmmer3_compat;
 }
 
-static inline void dcp_job_add_seq(struct dcp_job *job, struct dcp_seq *seq)
+static inline void job_add_seq(struct job *job, struct seq *seq)
 {
     cco_queue_put(&job->seqs, &seq->node);
 }
