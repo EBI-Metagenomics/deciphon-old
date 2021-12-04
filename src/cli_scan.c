@@ -1,13 +1,14 @@
+#include "cli_scan.h"
 #include "cli.h"
 #include "fasta/fasta.h"
 #include "gff/gff.h"
 #include "imm/imm.h"
 #include "logger.h"
+#include "progress_file.h"
 #include "protein_codec.h"
 #include "protein_db.h"
 #include "protein_reader.h"
 #include "protein_state.h"
-#include "progress_file.h"
 #include "table.h"
 #include "tbl/tbl.h"
 #include <assert.h>
@@ -324,7 +325,7 @@ static void queries_setup(void)
     cli.queries.fa.target.desc = cli.pro.db.prof.super.mt.acc;
 }
 
-static enum rc cli_scan(int argc, char **argv)
+enum rc cli_scan(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
 
@@ -377,8 +378,3 @@ cleanup:
     }
     return rc;
 }
-
-char const *argp_program_version = "dcp-scan " DCP_VERSION;
-char const *argp_program_bug_address = CLI_BUG_ADDRESS;
-
-int main(int argc, char **argv) { return (int)cli_scan(argc, argv); }

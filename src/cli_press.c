@@ -1,3 +1,4 @@
+#include "cli_press.h"
 #include "cli.h"
 #include "logger.h"
 #include "path.h"
@@ -114,13 +115,13 @@ static enum rc cli_setup(struct arguments const *args)
 
     cli.db = protein_db_default;
 
-    enum rc rc = protein_db_openw(&cli.db, cli.output.fd, &imm_amino_iupac,
-                                      imm_super(&imm_dna_iupac),
-                                      PROTEIN_CFG_DEFAULT);
+    enum rc rc =
+        protein_db_openw(&cli.db, cli.output.fd, &imm_amino_iupac,
+                         imm_super(&imm_dna_iupac), PROTEIN_CFG_DEFAULT);
     if (rc) return rc;
 
     protein_reader_init(&cli.reader, &cli.db.amino, &cli.db.code,
-                            cli.db.prof.cfg, cli.input.fd);
+                        cli.db.prof.cfg, cli.input.fd);
 
     return DONE;
 }
@@ -135,7 +136,7 @@ static enum rc profile_write(void)
     return protein_db_write(&cli.db, &cli.db.prof);
 }
 
-static enum rc cli_press(int argc, char **argv)
+enum rc cli_press(int argc, char **argv)
 {
     struct arguments arguments = {0};
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
@@ -165,8 +166,3 @@ cleanup:
     cli_log_flush();
     return rc;
 }
-
-char const *argp_program_version = "dcp-press " DCP_VERSION;
-char const *argp_program_bug_address = CLI_BUG_ADDRESS;
-
-int main(int argc, char **argv) { return (int)cli_press(argc, argv); }

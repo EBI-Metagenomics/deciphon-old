@@ -1,5 +1,7 @@
-#include "dcp/dcp.h"
+#include "cli_press.h"
 #include "hope/hope.h"
+#include "imm/imm.h"
+#include "protein_db.h"
 
 void test_cli_press_write(void);
 void test_cli_press_read(void);
@@ -16,7 +18,7 @@ void test_cli_press_write(void)
     int argc = 4;
     char *argv[1024] = {"dcp-press", ASSETS "/Pfam-A.5.hmm", "-o",
                         TMPDIR "Pfam-A.5.dcp"};
-    EQ(dcp_cli_press(argc, argv), DCP_DONE);
+    EQ(cli_press(argc, argv), DONE);
 }
 
 void test_cli_press_read(void)
@@ -24,20 +26,19 @@ void test_cli_press_read(void)
     FILE *fd = fopen(TMPDIR "Pfam-A.5.dcp", "rb");
     NOTNULL(fd);
     struct protein_db db = protein_db_default;
-    EQ(protein_db_openr(&db, fd), DCP_DONE);
+    EQ(protein_db_openr(&db, fd), DONE);
 
-    EQ(dcp_db_float_size(dcp_super(&db)), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(dcp_super(&db)), PROTEIN_PROFILE);
+    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(dcp_db_prof_typeid(&db.super), PROTEIN_PROFILE);
     struct imm_nuclt const *nuclt = protein_db_nuclt(&db);
     struct imm_abc const *abc = imm_super(nuclt);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
-    EQ(dcp_db_nprofiles(dcp_super(&db)), 5);
+    EQ(dcp_db_nprofiles(&db.super), 5);
 
-    struct meta mt[5] = {
-        dcp_db_meta(dcp_super(&db), 0), dcp_db_meta(dcp_super(&db), 1),
-        dcp_db_meta(dcp_super(&db), 2), dcp_db_meta(dcp_super(&db), 3),
-        dcp_db_meta(dcp_super(&db), 4)};
+    struct meta mt[5] = {dcp_db_meta(&db.super, 0), dcp_db_meta(&db.super, 1),
+                         dcp_db_meta(&db.super, 2), dcp_db_meta(&db.super, 3),
+                         dcp_db_meta(&db.super, 4)};
 
     EQ(mt[0].name, "1-cysPrx_C");
     EQ(mt[0].acc, "PF10417.11");
@@ -56,22 +57,22 @@ void test_cli_press_read(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    struct protein_prof *p = protein_db_profile(&db);
-    while (!dcp_db_end(dcp_super(&db)))
+    struct protein_profile *p = protein_db_profile(&db);
+    while (!dcp_db_end(&db.super))
     {
-        EQ(protein_db_read(&db, p), DCP_DONE);
-        EQ(dcp_prof_typeid(dcp_super(p)), PROTEIN_PROFILE);
+        EQ(protein_db_read(&db, p), DONE);
+        EQ(profile_typeid(&p->super), PROTEIN_PROFILE);
         struct imm_task *task = imm_task_new(&p->alt.dp);
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
         EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
         EQ(imm_dp_viterbi(&p->alt.dp, task, &prod), IMM_SUCCESS);
-        CLOSE(prod.loglik, logliks[dcp_super(p)->idx]);
+        CLOSE(prod.loglik, logliks[p->super.idx]);
         imm_del(task);
         ++nprofs;
     }
     EQ(nprofs, 5);
 
     imm_del(&prod);
-    EQ(protein_db_close(&db), DCP_DONE);
+    EQ(protein_db_close(&db), DONE);
     fclose(fd);
 }

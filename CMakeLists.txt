@@ -51,6 +51,7 @@ add_library(
   src/cli_info.c
   src/cli_press.c
   src/cli_scan.c
+  src/cli_server.c
   src/db.c
   src/db_handle.c
   src/db_pool.c
@@ -145,17 +146,17 @@ target_compile_definitions(dcp PRIVATE _XOPEN_SOURCE=1)
 set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS};-D_XOPEN_SOURCE=1)
 
 # Command line interface programs
-add_executable(dcp-press src/cli_press.c)
+add_executable(dcp-press bin/press.c)
 target_link_libraries(dcp-press PUBLIC dcp)
 
-add_executable(dcp-info src/cli_info.c)
+add_executable(dcp-info bin/info.c)
 target_link_libraries(dcp-info PUBLIC dcp)
 
-add_executable(dcp-scan src/cli_scan.c)
+add_executable(dcp-scan bin/scan.c)
 target_link_libraries(dcp-scan PUBLIC dcp)
 
-add_executable(deciphond src/cli_server.c)
-target_link_libraries(deciphond PUBLIC dcp)
+add_executable(dcp-server bin/server.c)
+target_link_libraries(dcp-server PUBLIC dcp)
 
 cbp_install(dcp MERGED)
 install(FILES ${EXPORT_FILE} ${VERSION_FILE} DESTINATION include/dcp)

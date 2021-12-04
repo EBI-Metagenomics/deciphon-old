@@ -1,3 +1,4 @@
+#include "cli_server.h"
 #include "cli.h"
 #include "log/log.h"
 #include "logger.h"
@@ -64,7 +65,7 @@ static void print_log_put(char const *msg, void *arg)
 
 static void flush_nop(void *arg) {}
 
-static enum rc cli_server(int argc, char **argv)
+enum rc cli_server(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
 
@@ -102,6 +103,7 @@ cleanup:
     closelog();
     return rc;
 }
+
 void skeleton_daemon(void)
 {
     /* Fork off the parent process */
@@ -145,8 +147,3 @@ void skeleton_daemon(void)
     /* Open the log file */
     openlog("deciphond", LOG_PID, LOG_DAEMON);
 }
-
-char const *argp_program_version = "deciphond " DCP_VERSION;
-char const *argp_program_bug_address = CLI_BUG_ADDRESS;
-
-int main(int argc, char **argv) { return (int)cli_server(argc, argv); }

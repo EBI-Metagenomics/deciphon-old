@@ -19,15 +19,14 @@ struct protein_db
 
 extern struct protein_db const protein_db_default;
 
-enum rc protein_db_setup_multi_readers(struct protein_db *db,
-                                           unsigned nfiles, FILE *fp[]);
+enum rc protein_db_setup_multi_readers(struct protein_db *db, unsigned nfiles,
+                                       FILE *fp[]);
 
 enum rc protein_db_openr(struct protein_db *db, FILE *restrict fp);
 
 enum rc protein_db_openw(struct protein_db *db, FILE *restrict fp,
-                             struct imm_amino const *amino,
-                             struct imm_nuclt const *nuclt,
-                             struct protein_cfg cfg);
+                         struct imm_amino const *amino,
+                         struct imm_nuclt const *nuclt, struct protein_cfg cfg);
 
 enum rc protein_db_close(struct protein_db *db);
 
@@ -40,7 +39,7 @@ struct protein_cfg protein_db_cfg(struct protein_db const *db);
 enum rc protein_db_read(struct protein_db *db, struct protein_profile *prof);
 
 enum rc protein_db_write(struct protein_db *db,
-                             struct protein_profile const *prof);
+                         struct protein_profile const *prof);
 
 struct protein_profile *protein_db_profile(struct protein_db *db);
 

@@ -17,8 +17,7 @@
 enum rc open_work(struct work *work, unsigned num_threads);
 enum rc close_work(struct work *work);
 enum rc next_profile(struct work *work);
-enum rc prepare_task_for_dp(struct imm_task **task,
-                                struct imm_dp const *dp);
+enum rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp);
 enum rc prepare_task_for_prof(struct work *work, struct task *task);
 enum rc prepare_task_for_seq(struct task *task, struct imm_seq *seq);
 enum rc run_viterbi(struct work *work, struct task *task);
@@ -37,8 +36,8 @@ static inline void prepare_prod(struct task *task)
     imm_prod_reset(&task->alt.prod);
     imm_prod_reset(&task->null.prod);
 }
-enum rc write_product(struct work *work, struct task *task,
-                          unsigned match_id, struct imm_seq seq);
+enum rc write_product(struct work *work, struct task *task, unsigned match_id,
+                      struct imm_seq seq);
 
 void work_init(struct work *work)
 {
@@ -218,8 +217,8 @@ enum rc run_viterbi(struct work *work, struct task *task)
     return DONE;
 }
 
-enum rc write_product(struct work *work, struct task *task,
-                          unsigned match_id, struct imm_seq seq)
+enum rc write_product(struct work *work, struct task *task, unsigned match_id,
+                      struct imm_seq seq)
 {
     enum rc rc = DONE;
     struct imm_codon codon = imm_codon_any(work->prof->code->nuclt);
@@ -237,7 +236,7 @@ enum rc write_product(struct work *work, struct task *task,
     sched_prod_set_null_loglik(&task->prod, task->null.prod.loglik);
 
     sched_prod_set_model(&task->prod, "pro");
-    sched_prod_set_version(&task->prod, DCP_VERSION);
+    sched_prod_set_version(&task->prod, VERSION);
 
     rc = sched_prod_write_preamble(&task->prod, work->prod_file.fp);
     if (rc) return rc;
@@ -253,11 +252,12 @@ enum rc write_product(struct work *work, struct task *task,
         protein_match_init(&match);
         protein_match_set_frag(&match, step->seqlen, frag.str);
         protein_profile_state_name(step->state_id,
-                                protein_match_get_state_name(&match));
+                                   protein_match_get_state_name(&match));
 
         if (!protein_state_is_mute(step->state_id))
         {
-            rc = protein_profile_decode(work->prof, &frag, step->state_id, &codon);
+            rc = protein_profile_decode(work->prof, &frag, step->state_id,
+                                        &codon);
             if (rc) return rc;
             protein_match_set_codon(&match, codon);
             protein_match_set_amino(&match, imm_gc_decode(1, codon));
