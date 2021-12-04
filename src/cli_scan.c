@@ -337,7 +337,7 @@ enum rc cli_scan(int argc, char **argv)
     gff_write(&cli.output.gff);
 
     progress_file_start(&cli.progress, !arguments.quiet);
-    while (!(rc = dcp_db_end(&cli.pro.db.super)))
+    while (!(rc = db_end(&cli.pro.db.super)))
     {
         struct protein_profile *prof = protein_db_profile(&cli.pro.db);
         if ((rc = protein_db_read(&cli.pro.db, prof))) goto cleanup;

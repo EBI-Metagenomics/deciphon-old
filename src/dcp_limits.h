@@ -1,8 +1,8 @@
-#ifndef LIMITS_H
-#define LIMITS_H
+#ifndef DCP_LIMITS_H
+#define DCP_LIMITS_H
 
 #define DCP_ABC_NAME_SIZE 16
-#define DCP_DB_NAME_SIZE 64
+#define DB_NAME_SIZE 64
 #define DCP_ERROR_SIZE 256
 #define DCP_MODEL_SIZE 16
 #define DCP_FILENAME_SIZE 128

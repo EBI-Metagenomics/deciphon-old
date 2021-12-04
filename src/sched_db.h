@@ -10,12 +10,12 @@ struct sched_db
 {
     int64_t id;
     int64_t xxh64;
-    char name[DCP_DB_NAME_SIZE];
+    char name[DB_NAME_SIZE];
     char filepath[DCP_PATH_SIZE];
 };
 
 enum rc sched_db_setup(struct sched_db *db,
-                           char const name[DCP_DB_NAME_SIZE],
+                           char const name[DB_NAME_SIZE],
                            char const filepath[DCP_PATH_SIZE]);
 enum rc sched_db_module_init(struct sqlite3 *db);
 enum rc sched_db_add(struct sched_db *db);

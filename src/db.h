@@ -7,26 +7,26 @@
 #include "profile_types.h"
 #include <sys/types.h>
 
-#define DCP_DB_HANDLE_MAX_FILES 64
+#define DB_HANDLE_MAX_FILES 64
 
-enum dcp_db_mode
+enum db_mode
 {
     DB_OPEN_NULL,
     DB_OPEN_READ,
     DB_OPEN_WRITE,
 };
 
-struct dcp_db
+struct db
 {
     enum profile_typeid prof_typeid;
     unsigned float_size;
     unsigned npartitions;
     struct
     {
-        dcp_profile_idx_t size;
-        dcp_profile_idx_t curr_idx;
+        profile_idx_t size;
+        profile_idx_t curr_idx;
     } profiles;
-    off_t partition_offset[DCP_DB_HANDLE_MAX_FILES + 1];
+    off_t partition_offset[DB_HANDLE_MAX_FILES + 1];
     struct
     {
         uint32_t *offset;
@@ -44,53 +44,52 @@ struct dcp_db
     } dp;
     struct
     {
-        struct cmp_ctx_s cmp[DCP_DB_HANDLE_MAX_FILES];
-        enum dcp_db_mode mode;
+        struct cmp_ctx_s cmp[DB_HANDLE_MAX_FILES];
+        enum db_mode mode;
     } file;
 };
 
-extern struct dcp_db const dcp_db_default;
+extern struct db const db_default;
 
-unsigned dcp_db_float_size(struct dcp_db const *db);
-enum profile_typeid dcp_db_prof_typeid(struct dcp_db const *db);
-unsigned dcp_db_nprofiles(struct dcp_db const *db);
-struct meta dcp_db_meta(struct dcp_db const *db, unsigned idx);
-bool dcp_db_end(struct dcp_db const *db);
+unsigned db_float_size(struct db const *db);
+enum profile_typeid db_prof_typeid(struct db const *db);
+struct meta db_meta(struct db const *db, unsigned idx);
+bool db_end(struct db const *db);
 
-void db_init(struct dcp_db *db, enum profile_typeid prof_typeid);
+void db_init(struct db *db, enum profile_typeid prof_typeid);
 
-void db_openr(struct dcp_db *db, FILE *restrict fp);
-void db_set_files(struct dcp_db *db, unsigned nfiles, FILE *restrict fp[]);
-enum rc db_openw(struct dcp_db *db, FILE *restrict fp);
-enum rc db_close(struct dcp_db *db);
-bool db_end(struct dcp_db const *db);
+void db_openr(struct db *db, FILE *restrict fp);
+void db_set_files(struct db *db, unsigned nfiles, FILE *restrict fp[]);
+enum rc db_openw(struct db *db, FILE *restrict fp);
+enum rc db_close(struct db *db);
+bool db_end(struct db const *db);
 
-enum rc db_read_magic_number(struct dcp_db *db);
-enum rc db_write_magic_number(struct dcp_db *db);
+enum rc db_read_magic_number(struct db *db);
+enum rc db_write_magic_number(struct db *db);
 
-enum rc db_read_prof_type(struct dcp_db *db);
-enum rc db_write_prof_type(struct dcp_db *db);
+enum rc db_read_prof_type(struct db *db);
+enum rc db_write_prof_type(struct db *db);
 
-enum rc db_read_float_size(struct dcp_db *db);
-enum rc db_write_float_size(struct dcp_db *db);
+enum rc db_read_float_size(struct db *db);
+enum rc db_write_float_size(struct db *db);
 
-enum rc db_read_nprofiles(struct dcp_db *db);
-enum rc db_read_metadata(struct dcp_db *db);
+enum rc db_read_nprofiles(struct db *db);
+enum rc db_read_metadata(struct db *db);
 
-enum rc db_write_prof_meta(struct dcp_db *db, struct profile const *prof);
+enum rc db_write_prof_meta(struct db *db, struct profile const *prof);
 
-enum rc db_check_write_prof_ready(struct dcp_db const *db,
+enum rc db_check_write_prof_ready(struct db const *db,
                                   struct profile const *prof);
 
-struct meta db_meta(struct dcp_db const *db, unsigned idx);
+struct meta db_meta(struct db const *db, unsigned idx);
 
-enum rc db_current_offset(struct dcp_db *db, off_t *offset);
+enum rc db_current_offset(struct db *db, off_t *offset);
 
-enum rc db_record_first_partition_offset(struct dcp_db *db);
+enum rc db_record_first_partition_offset(struct db *db);
 
-enum rc db_rewind(struct dcp_db *db);
+enum rc db_rewind(struct db *db);
 
-static inline unsigned db_nprofiles(struct dcp_db const *db)
+static inline unsigned db_nprofiles(struct db const *db)
 {
     return db->profiles.size;
 }

@@ -11,7 +11,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (!fd)
         return 0;
 
-    struct dcp_db *db = dcp_db_openr(fd);
+    struct db *db = db_openr(fd);
     if (!db)
     {
         fclose(fd);
@@ -19,10 +19,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     }
 
     ;
-    struct dcp_profile prof = DCP_PROFILE_INIT(dcp_db_abc(db));
-    while (!dcp_db_end(db))
+    struct dcp_profile prof = DCP_PROFILE_INIT(db_abc(db));
+    while (!db_end(db))
     {
-        if (dcp_db_read(db, &prof))
+        if (db_read(db, &prof))
             break;
     }
 

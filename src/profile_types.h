@@ -9,7 +9,7 @@
 typedef uint32_t dcp_nprofiles_t;
 #define DCP_NPROFILES_MAX (1U << 20)
 
-typedef uint32_t dcp_profile_idx_t;
+typedef uint32_t profile_idx_t;
 #define DCP_PROFILE_NULL_IDX UINT32_MAX
 
 static_assert(sizeof(imm_state_id_t) == 2, "16 bits state_id.");

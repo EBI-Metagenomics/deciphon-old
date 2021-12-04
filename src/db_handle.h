@@ -9,7 +9,7 @@
 #include "standard_db.h"
 #include <stdio.h>
 
-#define DB_HANDLE_MAX_FILES DCP_DB_HANDLE_MAX_FILES
+#define DB_HANDLE_MAX_FILES 64
 
 struct db_handle
 {
@@ -28,7 +28,7 @@ struct db_handle
 
 void db_handle_init(struct db_handle *db, int64_t id);
 enum rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
-                           unsigned nfiles);
+                       unsigned nfiles);
 enum rc db_handle_close(struct db_handle *db);
 
 #endif

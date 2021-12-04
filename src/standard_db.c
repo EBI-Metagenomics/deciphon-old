@@ -100,7 +100,7 @@ struct standard_profile *dcp_standard_db_profile(struct dcp_standard_db *db)
     return &db->prof;
 }
 
-struct dcp_db *dcp_standard_db_super(struct dcp_standard_db *db)
+struct db *dcp_standard_db_super(struct dcp_standard_db *db)
 {
     return &db->super;
 }

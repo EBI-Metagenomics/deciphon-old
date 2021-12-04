@@ -25,15 +25,15 @@ void test_db_protein_openr(void)
     struct protein_db db = protein_db_default;
     EQ(protein_db_openr(&db, fd), DONE);
 
-    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(&db.super), PROTEIN_PROFILE);
+    EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(db_prof_typeid(&db.super), PROTEIN_PROFILE);
     struct imm_nuclt const *nuclt = protein_db_nuclt(&db);
     struct imm_abc const *abc = imm_super(nuclt);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
-    EQ(dcp_db_nprofiles(&db.super), 2);
+    EQ(db_nprofiles(&db.super), 2);
 
-    struct meta mt[2] = {dcp_db_meta(&db.super, 0), dcp_db_meta(&db.super, 1)};
+    struct meta mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -42,7 +42,7 @@ void test_db_protein_openr(void)
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
     struct protein_profile *p = protein_db_profile(&db);
-    while (!dcp_db_end(&db.super))
+    while (!db_end(&db.super))
     {
         EQ(protein_db_read(&db, p), DONE);
         EQ(profile_typeid(&p->super), PROTEIN_PROFILE);

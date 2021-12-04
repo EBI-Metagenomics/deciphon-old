@@ -42,7 +42,7 @@ static char const *const queries[] = {
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
 enum rc sched_db_setup(struct sched_db *db,
-                           char const name[DCP_DB_NAME_SIZE],
+                           char const name[DB_NAME_SIZE],
                            char const filepath[DCP_PATH_SIZE])
 {
     FILE *fd = fopen(filepath, "rb");
@@ -51,7 +51,7 @@ enum rc sched_db_setup(struct sched_db *db,
     enum rc rc = xfile_hash(fd, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
 
-    safe_strcpy(db->name, name, DCP_DB_NAME_SIZE);
+    safe_strcpy(db->name, name, DB_NAME_SIZE);
     safe_strcpy(db->filepath, filepath, DCP_PATH_SIZE);
 
 cleanup:

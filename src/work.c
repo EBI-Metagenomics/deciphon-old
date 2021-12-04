@@ -161,7 +161,7 @@ cleanup:
 
 enum rc next_profile(struct work *work)
 {
-    if (dcp_db_end(&work->db->pro.super)) return DONE;
+    if (db_end(&work->db->pro.super)) return DONE;
 
     struct protein_profile *prof = protein_db_profile(&work->db->pro);
 

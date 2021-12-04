@@ -251,4 +251,4 @@ struct protein_profile *protein_db_profile(struct protein_db *db)
     return &db->prof;
 }
 
-struct dcp_db *protein_db_super(struct protein_db *db) { return &db->super; }
+struct db *protein_db_super(struct protein_db *db) { return &db->super; }

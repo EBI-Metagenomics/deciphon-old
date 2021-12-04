@@ -28,17 +28,17 @@ void test_cli_press_read(void)
     struct protein_db db = protein_db_default;
     EQ(protein_db_openr(&db, fd), DONE);
 
-    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(&db.super), PROTEIN_PROFILE);
+    EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(db_prof_typeid(&db.super), PROTEIN_PROFILE);
     struct imm_nuclt const *nuclt = protein_db_nuclt(&db);
     struct imm_abc const *abc = imm_super(nuclt);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
-    EQ(dcp_db_nprofiles(&db.super), 5);
+    EQ(db_nprofiles(&db.super), 5);
 
-    struct meta mt[5] = {dcp_db_meta(&db.super, 0), dcp_db_meta(&db.super, 1),
-                         dcp_db_meta(&db.super, 2), dcp_db_meta(&db.super, 3),
-                         dcp_db_meta(&db.super, 4)};
+    struct meta mt[5] = {db_meta(&db.super, 0), db_meta(&db.super, 1),
+                         db_meta(&db.super, 2), db_meta(&db.super, 3),
+                         db_meta(&db.super, 4)};
 
     EQ(mt[0].name, "1-cysPrx_C");
     EQ(mt[0].acc, "PF10417.11");
@@ -58,7 +58,7 @@ void test_cli_press_read(void)
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
     struct protein_profile *p = protein_db_profile(&db);
-    while (!dcp_db_end(&db.super))
+    while (!db_end(&db.super))
     {
         EQ(protein_db_read(&db, p), DONE);
         EQ(profile_typeid(&p->super), PROTEIN_PROFILE);

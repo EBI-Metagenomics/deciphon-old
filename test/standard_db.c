@@ -47,8 +47,8 @@ void test_db_openr_empty(void)
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), DONE);
-    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
@@ -97,17 +97,17 @@ void test_db_openr_one_mute(void)
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), DONE);
-    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
     EQ(imm_abc_typeid(imm_super(imm_super(dna))), IMM_DNA);
 
-    EQ(dcp_db_nprofiles(&db.super), 1);
+    EQ(db_nprofiles(&db.super), 1);
 
-    struct meta mt = dcp_db_meta(&db.super, 0);
+    struct meta mt = db_meta(&db.super, 0);
 
     EQ(mt.name, "NAME0");
     EQ(mt.acc, "ACC0");
@@ -128,13 +128,13 @@ void test_db_openr_example1(void)
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), DONE);
-    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
     EQ(imm_abc_typeid(dcp_standard_db_abc(&db)), IMM_ABC);
 
-    EQ(dcp_db_nprofiles(&db.super), 2);
+    EQ(db_nprofiles(&db.super), 2);
 
-    struct meta mt[2] = {dcp_db_meta(&db.super, 0), dcp_db_meta(&db.super, 1)};
+    struct meta mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -143,7 +143,7 @@ void test_db_openr_example1(void)
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
     struct standard_profile *p = dcp_standard_db_profile(&db);
-    while (!dcp_db_end(&db.super))
+    while (!db_end(&db.super))
     {
         EQ(dcp_standard_db_read(&db, p), DONE);
         EQ(profile_typeid(&p->super), DCP_STANDARD_PROFILE);
@@ -178,14 +178,14 @@ void test_db_openr_example2(void)
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), DONE);
-    EQ(dcp_db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(dcp_db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
+    EQ(db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
-    EQ(dcp_db_nprofiles(&db.super), 2);
+    EQ(db_nprofiles(&db.super), 2);
 
-    struct meta mt[2] = {dcp_db_meta(&db.super, 0), dcp_db_meta(&db.super, 1)};
+    struct meta mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -194,7 +194,7 @@ void test_db_openr_example2(void)
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
     struct standard_profile *p = dcp_standard_db_profile(&db);
-    while (!dcp_db_end(&db.super))
+    while (!db_end(&db.super))
     {
         EQ(dcp_standard_db_read(&db, p), DONE);
         EQ(profile_typeid(&p->super), DCP_STANDARD_PROFILE);

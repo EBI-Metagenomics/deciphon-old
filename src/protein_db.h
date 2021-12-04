@@ -10,7 +10,7 @@
 
 struct protein_db
 {
-    struct dcp_db super;
+    struct db super;
     struct imm_amino amino;
     struct imm_nuclt nuclt;
     struct imm_nuclt_code code;
@@ -43,6 +43,6 @@ enum rc protein_db_write(struct protein_db *db,
 
 struct protein_profile *protein_db_profile(struct protein_db *db);
 
-struct dcp_db *protein_db_super(struct protein_db *db);
+struct db *protein_db_super(struct protein_db *db);
 
 #endif
