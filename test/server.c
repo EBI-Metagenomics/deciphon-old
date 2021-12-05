@@ -1,3 +1,4 @@
+#include "server.h"
 #include "hope/hope.h"
 #include "protein_db_examples.h"
 #include "rc.h"
@@ -23,19 +24,19 @@ int main(void)
 void test_srv_setup(void)
 {
     remove(TMPDIR "/setup.sqlite3");
-    EQ(server_open(TMPDIR "/setup.sqlite3", 1), DCP_DONE);
-    EQ(server_close(), DCP_DONE);
+    EQ(server_open(TMPDIR "/setup.sqlite3", 1), RC_DONE);
+    EQ(server_close(), RC_DONE);
 }
 
 void test_srv_reopen(void)
 {
     remove(TMPDIR "/reopen.sqlite3");
 
-    EQ(server_open(TMPDIR "/reopen.sqlite3", 1), DCP_DONE);
-    EQ(server_close(), DCP_DONE);
+    EQ(server_open(TMPDIR "/reopen.sqlite3", 1), RC_DONE);
+    EQ(server_close(), RC_DONE);
 
-    EQ(server_open(TMPDIR "/reopen.sqlite3", 1), DCP_DONE);
-    EQ(server_close(), DCP_DONE);
+    EQ(server_open(TMPDIR "/reopen.sqlite3", 1), RC_DONE);
+    EQ(server_close(), RC_DONE);
 }
 
 void test_srv_std_db(void)
@@ -45,13 +46,13 @@ void test_srv_std_db(void)
 
     remove(db_path);
 
-    EQ(server_open(db_path, 1), DCP_DONE);
+    EQ(server_open(db_path, 1), RC_DONE);
 
     std_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(server_add_db("std_example1", ex_path, &db_id), DCP_DONE);
+    EQ(server_add_db("std_example1", ex_path, &db_id), RC_DONE);
 
-    EQ(server_close(), DCP_DONE);
+    EQ(server_close(), RC_DONE);
 }
 
 void test_srv_submit_job(void)
@@ -60,11 +61,11 @@ void test_srv_submit_job(void)
     char const ex_path[] = TMPDIR "/std_example1.dcp";
     remove(db_path);
 
-    EQ(server_open(db_path, 1), DCP_DONE);
+    EQ(server_open(db_path, 1), RC_DONE);
 
     std_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(server_add_db("std_example1", ex_path, &db_id), DCP_DONE);
+    EQ(server_add_db("std_example1", ex_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job = {0};
@@ -75,10 +76,10 @@ void test_srv_submit_job(void)
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
-    EQ(server_submit_job(&job), DCP_DONE);
+    EQ(server_submit_job(&job), RC_DONE);
     EQ(job.id, 1);
 
-    EQ(server_close(), DCP_DONE);
+    EQ(server_close(), RC_DONE);
 }
 
 void test_srv_submit_and_fetch_job(unsigned num_threads)
@@ -87,11 +88,11 @@ void test_srv_submit_and_fetch_job(unsigned num_threads)
     char const ex_path[] = TMPDIR "/protein_example1.dcp";
     remove(db_path);
 
-    EQ(server_open(db_path, num_threads), DCP_DONE);
+    EQ(server_open(db_path, num_threads), RC_DONE);
 
     protein_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(server_add_db("protein_example1", ex_path, &db_id), DCP_DONE);
+    EQ(server_add_db("protein_example1", ex_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job = {0};
@@ -102,16 +103,16 @@ void test_srv_submit_and_fetch_job(unsigned num_threads)
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
-    EQ(server_submit_job(&job), DCP_DONE);
+    EQ(server_submit_job(&job), RC_DONE);
     EQ(job.id, 1);
 
     enum dcp_job_state state = 0;
-    EQ(server_job_state(job.id, &state), DCP_DONE);
+    EQ(server_job_state(job.id, &state), RC_DONE);
     EQ(state, DCP_JOB_PEND);
 
     EQ(server_job_state(2, &state), DCP_NOTFOUND);
 
-    EQ(server_run(true), DCP_DONE);
+    EQ(server_run(true), RC_DONE);
 
     int64_t prod_id = 0;
     EQ(server_next_prod(1, &prod_id), DCP_NEXT);
@@ -145,7 +146,7 @@ void test_srv_submit_and_fetch_job(unsigned num_threads)
     EQ(p->model, "pro");
     EQ(p->version, "0.0.4");
 
-    EQ(server_next_prod(1, &prod_id), DCP_DONE);
+    EQ(server_next_prod(1, &prod_id), RC_DONE);
 
-    EQ(server_close(), DCP_DONE);
+    EQ(server_close(), RC_DONE);
 }

@@ -12,6 +12,6 @@ struct seq
     struct cco_node node;
 };
 
-void seq_init(struct seq *seq, char const id[static 1], struct imm_str str);
+void seq_init(struct seq *seq, char const *name, struct imm_str str);
 
 #endif
