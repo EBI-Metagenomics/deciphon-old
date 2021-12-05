@@ -77,8 +77,8 @@ add_library(
   src/sched_prod.c
   src/sched_seq.c
   src/seq.c
+  src/server.c
   src/sqldiff.c
-  src/srv.c
   src/standard_db.c
   src/standard_profile.c
   src/table.c

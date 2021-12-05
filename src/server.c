@@ -1,4 +1,4 @@
-#include "srv.h"
+#include "server.h"
 #include "cco/cco.h"
 #include "db.h"
 #include "db_pool.h"
@@ -26,17 +26,17 @@ static struct server
     unsigned num_threads;
     struct job job;
     struct prod prod;
-} srv = {0};
+} server = {0};
 
-static void signal_interrupt(int signum) { srv.signal.interrupt = 1; }
+static void signal_interrupt(int signum) { server.signal.interrupt = 1; }
 
 enum rc server_open(char const *filepath, unsigned num_threads)
 {
-    srv.signal.action.sa_handler = &signal_interrupt;
-    sigemptyset(&srv.signal.action.sa_mask);
-    sigaction(SIGINT, &srv.signal.action, NULL);
+    server.signal.action.sa_handler = &signal_interrupt;
+    sigemptyset(&server.signal.action.sa_mask);
+    sigaction(SIGINT, &server.signal.action, NULL);
     db_pool_module_init();
-    srv.num_threads = num_threads;
+    server.num_threads = num_threads;
 
     enum rc rc = RC_DONE;
     if ((rc = sched_setup(filepath))) return rc;
@@ -67,10 +67,7 @@ enum rc server_add_db(char const *name, char const *filepath, int64_t *id)
     return rc;
 }
 
-enum rc server_submit_job(struct job *job)
-{
-    return sched_submit_job(job);
-}
+enum rc server_submit_job(struct job *job) { return sched_submit_job(job); }
 
 enum rc server_job_state(int64_t job_id, enum job_state *state)
 {
@@ -84,7 +81,7 @@ enum rc server_run(bool single_run)
     work_init(&work);
 
     info("Starting the server");
-    while (!srv.signal.interrupt)
+    while (!server.signal.interrupt)
     {
         if ((rc = work_next(&work)) == RC_NOTFOUND)
         {
@@ -95,7 +92,7 @@ enum rc server_run(bool single_run)
         if (rc != RC_NEXT) return rc;
 
         info("Found a new job");
-        rc = work_run(&work, srv.num_threads);
+        rc = work_run(&work, server.num_threads);
         if (rc) return rc;
         info("Finished a job");
     }
@@ -109,8 +106,8 @@ enum rc server_next_prod(int64_t job_id, int64_t *prod_id)
     enum rc rc = sched_prod_next(job_id, prod_id);
     if (rc == RC_DONE) return rc;
     if (rc != RC_NEXT) return rc;
-    if ((rc = sched_prod_get(&srv.prod, *prod_id))) return rc;
+    if ((rc = sched_prod_get(&server.prod, *prod_id))) return rc;
     return RC_NEXT;
 }
 
-struct prod const *server_get_prod(void) { return &srv.prod; }
+struct prod const *server_get_prod(void) { return &server.prod; }

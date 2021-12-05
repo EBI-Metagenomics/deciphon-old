@@ -33,7 +33,7 @@ static void profile_init(struct profile *prof, struct imm_code const *code,
                          struct meta mt, struct profile_vtable vtable)
 {
     prof->vtable = vtable;
-    prof->idx = DCP_PROFILE_NULL_IDX;
+    prof->idx = PROFILE_NULL_IDX;
     prof->code = code;
     prof->mt = mt;
 }

@@ -34,9 +34,9 @@ void test_db_openw_empty(void)
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
     NOTNULL(fd);
     struct standard_db db;
-    dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openw(&db, fd, &code), RC_DONE);
-    EQ(dcp_standard_db_close(&db), RC_DONE);
+    standard_db_init(&db);
+    EQ(standard_db_openw(&db, fd, &code), RC_DONE);
+    EQ(standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -45,16 +45,16 @@ void test_db_openr_empty(void)
     FILE *fd = fopen(TMPDIR "/empty.dcp", "rb");
     NOTNULL(fd);
     struct standard_db db;
-    dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
+    standard_db_init(&db);
+    EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
-    struct imm_abc const *abc = dcp_standard_db_abc(&db);
+    struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
     EQ(imm_abc_typeid(imm_super(imm_super(dna))), IMM_DNA);
-    EQ(dcp_standard_db_close(&db), RC_DONE);
+    EQ(standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -75,18 +75,18 @@ void test_db_openw_one_mute(void)
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
     NOTNULL(fd);
     struct standard_db db;
-    dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openw(&db, fd, &code), RC_DONE);
+    standard_db_init(&db);
+    EQ(standard_db_openw(&db, fd, &code), RC_DONE);
 
     struct standard_profile p;
     standard_profile_init(&p, &code);
     profile_nameit(&p.super, meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
-    EQ(dcp_standard_db_write(&db, &p), RC_DONE);
+    EQ(standard_db_write(&db, &p), RC_DONE);
 
     standard_profile_del(&p);
-    EQ(dcp_standard_db_close(&db), RC_DONE);
+    EQ(standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -95,11 +95,11 @@ void test_db_openr_one_mute(void)
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "rb");
     NOTNULL(fd);
     struct standard_db db;
-    dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
+    standard_db_init(&db);
+    EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
-    struct imm_abc const *abc = dcp_standard_db_abc(&db);
+    struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
@@ -112,7 +112,7 @@ void test_db_openr_one_mute(void)
     EQ(mt.name, "NAME0");
     EQ(mt.acc, "ACC0");
 
-    EQ(dcp_standard_db_close(&db), RC_DONE);
+    EQ(standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -126,11 +126,11 @@ void test_db_openr_example1(void)
     FILE *fd = fopen(TMPDIR "/example1.dcp", "rb");
     NOTNULL(fd);
     struct standard_db db;
-    dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
+    standard_db_init(&db);
+    EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
-    EQ(imm_abc_typeid(dcp_standard_db_abc(&db)), IMM_ABC);
+    EQ(imm_abc_typeid(standard_db_abc(&db)), IMM_ABC);
 
     EQ(db_nprofiles(&db.super), 2);
 
@@ -142,15 +142,15 @@ void test_db_openr_example1(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    struct standard_profile *p = dcp_standard_db_profile(&db);
+    struct standard_profile *p = standard_db_profile(&db);
     while (!db_end(&db.super))
     {
-        EQ(dcp_standard_db_read(&db, p), RC_DONE);
+        EQ(standard_db_read(&db, p), RC_DONE);
         EQ(profile_typeid(&p->super), STANDARD_PROFILE);
         if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);
-            struct imm_abc const *abc = dcp_standard_db_abc(&db);
+            struct imm_abc const *abc = standard_db_abc(&db);
             struct imm_seq seq = imm_seq(imm_str(imm_example1_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
             EQ(imm_dp_viterbi(&p->dp.alt, task, &prod), IMM_SUCCESS);
@@ -162,7 +162,7 @@ void test_db_openr_example1(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(dcp_standard_db_close(&db), RC_DONE);
+    EQ(standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -176,11 +176,11 @@ void test_db_openr_example2(void)
     FILE *fd = fopen(TMPDIR "/example2.dcp", "rb");
     NOTNULL(fd);
     struct standard_db db;
-    dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
+    standard_db_init(&db);
+    EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
-    struct imm_abc const *abc = dcp_standard_db_abc(&db);
+    struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     EQ(db_nprofiles(&db.super), 2);
@@ -193,10 +193,10 @@ void test_db_openr_example2(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    struct standard_profile *p = dcp_standard_db_profile(&db);
+    struct standard_profile *p = standard_db_profile(&db);
     while (!db_end(&db.super))
     {
-        EQ(dcp_standard_db_read(&db, p), RC_DONE);
+        EQ(standard_db_read(&db, p), RC_DONE);
         EQ(profile_typeid(&p->super), STANDARD_PROFILE);
         if (p->super.idx == 0)
         {
@@ -212,6 +212,6 @@ void test_db_openr_example2(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(dcp_standard_db_close(&db), RC_DONE);
+    EQ(standard_db_close(&db), RC_DONE);
     fclose(fd);
 }

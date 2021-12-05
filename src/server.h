@@ -1,5 +1,5 @@
-#ifndef SRV_H
-#define SRV_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #include "dcp_limits.h"
 #include "job_state.h"
