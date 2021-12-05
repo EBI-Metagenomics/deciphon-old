@@ -7,18 +7,17 @@
 #include <stdlib.h>
 
 enum rc xsql_get_text(struct sqlite3_stmt *stmt, int col, unsigned dst_size,
-                          char *dst)
+                      char *dst)
 {
     char const *str = (char const *)sqlite3_column_text(stmt, col);
     if (!str) return error(OUTOFMEM, "failed to fetch sqlite text");
     sqlite3_column_bytes(stmt, col);
-    assert((unsigned)len < dst_size);
     safe_strcpy(dst, str, dst_size);
     return DONE;
 }
 
 enum rc xsql_get_text_as_array(struct sqlite3_stmt *stmt, int col,
-                                   struct array **dst)
+                               struct array **dst)
 {
     char const *str = (char const *)sqlite3_column_text(stmt, col);
     if (!str) return error(OUTOFMEM, "failed to fetch sqlite text");

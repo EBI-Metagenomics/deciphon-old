@@ -82,7 +82,8 @@ enum rc protein_model_add_node(struct protein_model *m,
     return DONE;
 }
 
-enum rc protein_model_add_trans(struct protein_model *m, struct protein_trans trans)
+enum rc protein_model_add_trans(struct protein_model *m,
+                                struct protein_trans trans)
 {
     if (!have_called_setup(m))
         return error(FAIL, "Must call protein_model_setup first.");
@@ -168,7 +169,7 @@ enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
     if (!ptr && n > 0) return error(OUTOFMEM, "failed to alloc nodes");
     m->alt.nodes = ptr;
 
-    if (m->cfg.entry_dist == DCP_ENTRY_DIST_OCCUPANCY)
+    if (m->cfg.entry_dist == ENTRY_DIST_OCCUPANCY)
     {
         ptr = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
         if (!ptr && n > 0) return error(OUTOFMEM, "failed to alloc locc");
@@ -198,7 +199,8 @@ struct imm_nuclt const *protein_model_nuclt(struct protein_model const *m)
     return m->code->nuclt;
 }
 
-struct protein_model_summary protein_model_summary(struct protein_model const *m)
+struct protein_model_summary
+protein_model_summary(struct protein_model const *m)
 {
     assert(have_finished_add(m));
     return (struct protein_model_summary){
@@ -391,8 +393,7 @@ struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
     return codonp;
 }
 
-void setup_nuclt_dist(struct nuclt_dist *dist,
-                      struct imm_amino const *amino,
+void setup_nuclt_dist(struct nuclt_dist *dist, struct imm_amino const *amino,
                       struct imm_nuclt const *nuclt,
                       imm_float const lprobs[IMM_AMINO_SIZE])
 {
@@ -408,7 +409,7 @@ void setup_nuclt_dist(struct nuclt_dist *dist,
 
 enum rc setup_entry_trans(struct protein_model *m)
 {
-    if (m->cfg.entry_dist == DCP_ENTRY_DIST_UNIFORM)
+    if (m->cfg.entry_dist == ENTRY_DIST_UNIFORM)
     {
         imm_float M = (imm_float)m->core_size;
         imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;
@@ -423,7 +424,7 @@ enum rc setup_entry_trans(struct protein_model *m)
     }
     else
     {
-        assert(m->cfg.entry_dist == DCP_ENTRY_DIST_OCCUPANCY);
+        assert(m->cfg.entry_dist == ENTRY_DIST_OCCUPANCY);
         calculate_occupancy(m);
         struct imm_state *B = &m->xnode.alt.B.super;
         for (unsigned i = 0; i < m->core_size; ++i)

@@ -20,7 +20,7 @@ static enum rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
 
 void dcp_standard_db_init(struct dcp_standard_db *db)
 {
-    db_init(&db->super, DCP_STANDARD_PROFILE);
+    db_init(&db->super, STANDARD_PROFILE);
     db->abc = imm_abc_empty;
     standard_profile_init(&db->prof, &db->code);
 }
@@ -38,7 +38,7 @@ enum rc dcp_standard_db_openr(struct dcp_standard_db *db, FILE *restrict fd)
     if ((rc = db_read_metadata(&db->super))) return rc;
 
     imm_code_init(&db->code, &db->abc);
-    assert(db->super.prof_typeid == DCP_STD_PROFILE);
+    assert(db->super.prof_typeid == STANDARD_PROFILE);
     return rc;
 }
 

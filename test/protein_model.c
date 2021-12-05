@@ -10,7 +10,7 @@ int main(void)
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
     struct imm_nuclt_code code;
     imm_nuclt_code_init(&code, nuclt);
-    struct protein_cfg cfg = {DCP_ENTRY_DIST_OCCUPANCY, 0.01f};
+    struct protein_cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.01f};
     imm_float null_lprobs[IMM_AMINO_SIZE];
     imm_float null_lodds[IMM_AMINO_SIZE];
     imm_float match_lprobs1[IMM_AMINO_SIZE];

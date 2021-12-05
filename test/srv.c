@@ -1,7 +1,6 @@
-#include "dcp/dcp.h"
-#include "dcp/rc.h"
 #include "hope/hope.h"
 #include "protein_db_examples.h"
+#include "rc.h"
 #include "std_db_examples.h"
 
 void test_srv_setup(void);
@@ -24,19 +23,19 @@ int main(void)
 void test_srv_setup(void)
 {
     remove(TMPDIR "/setup.sqlite3");
-    EQ(dcp_srv_open(TMPDIR "/setup.sqlite3", 1), DCP_DONE);
-    EQ(dcp_srv_close(), DCP_DONE);
+    EQ(server_open(TMPDIR "/setup.sqlite3", 1), DCP_DONE);
+    EQ(server_close(), DCP_DONE);
 }
 
 void test_srv_reopen(void)
 {
     remove(TMPDIR "/reopen.sqlite3");
 
-    EQ(dcp_srv_open(TMPDIR "/reopen.sqlite3", 1), DCP_DONE);
-    EQ(dcp_srv_close(), DCP_DONE);
+    EQ(server_open(TMPDIR "/reopen.sqlite3", 1), DCP_DONE);
+    EQ(server_close(), DCP_DONE);
 
-    EQ(dcp_srv_open(TMPDIR "/reopen.sqlite3", 1), DCP_DONE);
-    EQ(dcp_srv_close(), DCP_DONE);
+    EQ(server_open(TMPDIR "/reopen.sqlite3", 1), DCP_DONE);
+    EQ(server_close(), DCP_DONE);
 }
 
 void test_srv_std_db(void)
@@ -46,13 +45,13 @@ void test_srv_std_db(void)
 
     remove(db_path);
 
-    EQ(dcp_srv_open(db_path, 1), DCP_DONE);
+    EQ(server_open(db_path, 1), DCP_DONE);
 
     std_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(dcp_srv_add_db("std_example1", ex_path, &db_id), DCP_DONE);
+    EQ(server_add_db("std_example1", ex_path, &db_id), DCP_DONE);
 
-    EQ(dcp_srv_close(), DCP_DONE);
+    EQ(server_close(), DCP_DONE);
 }
 
 void test_srv_submit_job(void)
@@ -61,11 +60,11 @@ void test_srv_submit_job(void)
     char const ex_path[] = TMPDIR "/std_example1.dcp";
     remove(db_path);
 
-    EQ(dcp_srv_open(db_path, 1), DCP_DONE);
+    EQ(server_open(db_path, 1), DCP_DONE);
 
     std_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(dcp_srv_add_db("std_example1", ex_path, &db_id), DCP_DONE);
+    EQ(server_add_db("std_example1", ex_path, &db_id), DCP_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job = {0};
@@ -76,10 +75,10 @@ void test_srv_submit_job(void)
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
-    EQ(dcp_srv_submit_job(&job), DCP_DONE);
+    EQ(server_submit_job(&job), DCP_DONE);
     EQ(job.id, 1);
 
-    EQ(dcp_srv_close(), DCP_DONE);
+    EQ(server_close(), DCP_DONE);
 }
 
 void test_srv_submit_and_fetch_job(unsigned num_threads)
@@ -88,11 +87,11 @@ void test_srv_submit_and_fetch_job(unsigned num_threads)
     char const ex_path[] = TMPDIR "/protein_example1.dcp";
     remove(db_path);
 
-    EQ(dcp_srv_open(db_path, num_threads), DCP_DONE);
+    EQ(server_open(db_path, num_threads), DCP_DONE);
 
     protein_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(dcp_srv_add_db("protein_example1", ex_path, &db_id), DCP_DONE);
+    EQ(server_add_db("protein_example1", ex_path, &db_id), DCP_DONE);
     EQ(db_id, 1);
 
     struct dcp_job job = {0};
@@ -103,22 +102,22 @@ void test_srv_submit_and_fetch_job(unsigned num_threads)
     dcp_job_add_seq(&job, seq + 0);
     dcp_job_add_seq(&job, seq + 1);
 
-    EQ(dcp_srv_submit_job(&job), DCP_DONE);
+    EQ(server_submit_job(&job), DCP_DONE);
     EQ(job.id, 1);
 
     enum dcp_job_state state = 0;
-    EQ(dcp_srv_job_state(job.id, &state), DCP_DONE);
+    EQ(server_job_state(job.id, &state), DCP_DONE);
     EQ(state, DCP_JOB_PEND);
 
-    EQ(dcp_srv_job_state(2, &state), DCP_NOTFOUND);
+    EQ(server_job_state(2, &state), DCP_NOTFOUND);
 
-    EQ(dcp_srv_run(true), DCP_DONE);
+    EQ(server_run(true), DCP_DONE);
 
     int64_t prod_id = 0;
-    EQ(dcp_srv_next_prod(1, &prod_id), DCP_NEXT);
+    EQ(server_next_prod(1, &prod_id), DCP_NEXT);
     EQ(prod_id, 1);
 
-    struct dcp_prod const *p = dcp_srv_get_prod();
+    struct dcp_prod const *p = server_get_prod();
 
     EQ(p->id, 1);
     EQ(p->seq_id, 2);
@@ -133,7 +132,7 @@ void test_srv_submit_and_fetch_job(unsigned num_threads)
     extern char const prod1_match_data[];
     EQ(p->match_data, prod1_match_data);
 
-    EQ(dcp_srv_next_prod(1, &prod_id), DCP_NEXT);
+    EQ(server_next_prod(1, &prod_id), DCP_NEXT);
     EQ(prod_id, 2);
 
     EQ(p->id, 2);
@@ -146,7 +145,7 @@ void test_srv_submit_and_fetch_job(unsigned num_threads)
     EQ(p->model, "pro");
     EQ(p->version, "0.0.4");
 
-    EQ(dcp_srv_next_prod(1, &prod_id), DCP_DONE);
+    EQ(server_next_prod(1, &prod_id), DCP_DONE);
 
-    EQ(dcp_srv_close(), DCP_DONE);
+    EQ(server_close(), DCP_DONE);
 }

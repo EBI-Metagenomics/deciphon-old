@@ -32,7 +32,7 @@ int main(void)
 
     FILE *fd = fopen(ASSETS "/PF02545.hmm", "r");
     NOTNULL(fd);
-    struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.01f);
+    struct protein_cfg cfg = protein_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
 
     struct protein_reader reader;
     protein_reader_init(&reader, amino, &code, cfg, fd);

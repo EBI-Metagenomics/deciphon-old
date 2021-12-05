@@ -19,7 +19,7 @@ void test_protein_profile_uniform(void)
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
     struct imm_nuclt_code code;
     imm_nuclt_code_init(&code, nuclt);
-    struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    struct protein_cfg cfg = protein_cfg(ENTRY_DIST_UNIFORM, 0.1f);
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
@@ -112,7 +112,7 @@ void test_protein_profile_occupancy(void)
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
     struct imm_nuclt_code code;
     imm_nuclt_code_init(&code, nuclt);
-    struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_OCCUPANCY, 0.1f);
+    struct protein_cfg cfg = protein_cfg(ENTRY_DIST_OCCUPANCY, 0.1f);
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);

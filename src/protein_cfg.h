@@ -10,7 +10,7 @@ struct protein_cfg
     imm_float epsilon;
 };
 
-#define DCP_DEFAULT_EPSILON ((imm_float)0.01)
+#define DEFAULT_EPSILON ((imm_float)0.01)
 
 static inline struct protein_cfg protein_cfg(enum entry_dist entry_dist,
                                              imm_float epsilon)
@@ -20,6 +20,6 @@ static inline struct protein_cfg protein_cfg(enum entry_dist entry_dist,
 }
 
 #define PROTEIN_CFG_DEFAULT                                                    \
-    (struct protein_cfg) { DCP_ENTRY_DIST_OCCUPANCY, DCP_DEFAULT_EPSILON }
+    (struct protein_cfg) { ENTRY_DIST_OCCUPANCY, DEFAULT_EPSILON }
 
 #endif

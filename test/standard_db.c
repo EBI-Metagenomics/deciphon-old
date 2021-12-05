@@ -48,7 +48,7 @@ void test_db_openr_empty(void)
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
@@ -98,7 +98,7 @@ void test_db_openr_one_mute(void)
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
@@ -129,7 +129,7 @@ void test_db_openr_example1(void)
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
     EQ(imm_abc_typeid(dcp_standard_db_abc(&db)), IMM_ABC);
 
     EQ(db_nprofiles(&db.super), 2);
@@ -146,7 +146,7 @@ void test_db_openr_example1(void)
     while (!db_end(&db.super))
     {
         EQ(dcp_standard_db_read(&db, p), DONE);
-        EQ(profile_typeid(&p->super), DCP_STANDARD_PROFILE);
+        EQ(profile_typeid(&p->super), STANDARD_PROFILE);
         if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);
@@ -179,7 +179,7 @@ void test_db_openr_example2(void)
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), DCP_STANDARD_PROFILE);
+    EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
@@ -197,7 +197,7 @@ void test_db_openr_example2(void)
     while (!db_end(&db.super))
     {
         EQ(dcp_standard_db_read(&db, p), DONE);
-        EQ(profile_typeid(&p->super), DCP_STANDARD_PROFILE);
+        EQ(profile_typeid(&p->super), STANDARD_PROFILE);
         if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);

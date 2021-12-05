@@ -11,7 +11,7 @@ void protein_db_examples_new_ex1(char const *filepath)
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
 
-    struct protein_cfg cfg = protein_cfg(DCP_ENTRY_DIST_UNIFORM, 0.1f);
+    struct protein_cfg cfg = protein_cfg(ENTRY_DIST_UNIFORM, 0.1f);
     struct protein_db db = protein_db_default;
     EQ(protein_db_openw(&db, fd, amino, nuclt, cfg), DONE);
 

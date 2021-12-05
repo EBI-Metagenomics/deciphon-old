@@ -2225,7 +2225,7 @@ static const char *all_tables_sql(void)
     {
         int rc;
 
-        sqlite3_exec(
+        rc = sqlite3_exec(
             g.db,
             "CREATE TEMP TABLE tblmap(module COLLATE nocase, postfix);"
             "INSERT INTO temp.tblmap VALUES"

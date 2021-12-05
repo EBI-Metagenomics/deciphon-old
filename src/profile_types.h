@@ -17,8 +17,8 @@ static_assert(sizeof(imm_state_id_t) == 2, "16 bits state_id.");
 
 enum profile_typeid
 {
-    DCP_NULL_PROFILE,
-    DCP_STANDARD_PROFILE,
+    NULL_PROFILE,
+    STANDARD_PROFILE,
     PROTEIN_PROFILE,
 };
 
