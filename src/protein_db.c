@@ -1,12 +1,12 @@
 #include "protein_db.h"
 #include "db.h"
+#include "dcp_cmp.h"
 #include "entry_dist.h"
 #include "logger.h"
 #include "protein_cfg.h"
 #include "protein_profile.h"
 #include "rc.h"
 #include "third-party/cmp.h"
-#include "xcmp.h"
 #include "xmath.h"
 
 struct protein_db const protein_db_default = {0};
@@ -54,8 +54,7 @@ static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
     return RC_DONE;
 }
 
-static enum rc read_entry_dist(struct cmp_ctx_s *cmp,
-                               enum entry_dist *edist)
+static enum rc read_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist *edist)
 {
     uint8_t val = 0;
     if (!cmp_read_u8(cmp, &val))
@@ -64,8 +63,7 @@ static enum rc read_entry_dist(struct cmp_ctx_s *cmp,
     return RC_DONE;
 }
 
-static enum rc write_entry_dist(struct cmp_ctx_s *cmp,
-                                enum entry_dist edist)
+static enum rc write_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist edist)
 {
     if (!cmp_write_u8(cmp, (uint8_t)edist))
         return error(RC_IOERROR, "failed to write entry distribution");
@@ -200,8 +198,8 @@ enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
     return rc;
 
 cleanup:
-    xcmp_close(&db->super.mt.file.cmp);
-    xcmp_close(&db->super.dp.cmp);
+    fclose(cmp_file(&db->super.mt.file.cmp));
+    fclose(cmp_file(&db->super.dp.cmp));
     return rc;
 }
 

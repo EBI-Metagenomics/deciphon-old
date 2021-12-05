@@ -9,7 +9,7 @@
 #include "rc.h"
 #include "third-party/cmp.h"
 #include "third-party/xrandom.h"
-#include "xcmp.h"
+#include "dcp_cmp.h"
 #include <assert.h>
 #include <stdlib.h>
 
@@ -252,7 +252,7 @@ static void del(struct profile *prof)
 enum rc protein_profile_read(struct protein_profile *prof,
                              struct cmp_ctx_s *cmp)
 {
-    FILE *fd = xcmp_fp(cmp);
+    FILE *fd = cmp_file(cmp);
     if (imm_dp_read(&prof->null.dp, fd)) return RC_FAIL;
     if (imm_dp_read(&prof->alt.dp, fd)) return RC_FAIL;
 
@@ -285,7 +285,7 @@ enum rc protein_profile_read(struct protein_profile *prof,
 enum rc protein_profile_write(struct protein_profile const *prof,
                               struct cmp_ctx_s *cmp)
 {
-    FILE *fd = xcmp_fp(cmp);
+    FILE *fd = cmp_file(cmp);
     if (imm_dp_write(&prof->null.dp, fd)) return RC_FAIL;
     if (imm_dp_write(&prof->alt.dp, fd)) return RC_FAIL;
 

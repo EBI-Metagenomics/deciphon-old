@@ -1,9 +1,9 @@
 #include "standard_db.h"
 #include "db.h"
+#include "dcp_cmp.h"
 #include "logger.h"
 #include "rc.h"
 #include "standard_profile.h"
-#include "xcmp.h"
 
 static enum rc read_abc(FILE *restrict fd, struct imm_abc *abc)
 {
@@ -44,7 +44,7 @@ enum rc standard_db_openr(struct standard_db *db, FILE *restrict fd)
 }
 
 enum rc standard_db_openw(struct standard_db *db, FILE *restrict fd,
-                              struct imm_code const *code)
+                          struct imm_code const *code)
 {
     db->code = *code;
 
@@ -58,8 +58,8 @@ enum rc standard_db_openw(struct standard_db *db, FILE *restrict fd,
     return rc;
 
 cleanup:
-    xcmp_close(&db->super.mt.file.cmp);
-    xcmp_close(&db->super.dp.cmp);
+    fclose(cmp_file(&db->super.mt.file.cmp));
+    fclose(cmp_file(&db->super.dp.cmp));
     return rc;
 }
 
@@ -75,22 +75,21 @@ struct imm_abc const *standard_db_abc(struct standard_db const *db)
     return &db->abc;
 }
 
-enum rc standard_db_read(struct standard_db *db,
-                             struct standard_profile *prof)
+enum rc standard_db_read(struct standard_db *db, struct standard_profile *prof)
 {
     if (db_end(&db->super)) return error(RC_FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
-    return standard_profile_read(prof, xcmp_fp(&db->super.file.cmp[0]));
+    return standard_profile_read(prof, cmp_file(&db->super.file.cmp[0]));
 }
 
 enum rc standard_db_write(struct standard_db *db,
-                              struct standard_profile const *prof)
+                          struct standard_profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum rc rc = RC_DONE;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
-    if ((rc = standard_profile_write(prof, xcmp_fp(&db->super.dp.cmp))))
+    if ((rc = standard_profile_write(prof, cmp_file(&db->super.dp.cmp))))
         return rc;
     db->super.profiles.size++;
     return rc;
@@ -101,7 +100,4 @@ struct standard_profile *standard_db_profile(struct standard_db *db)
     return &db->prof;
 }
 
-struct db *standard_db_super(struct standard_db *db)
-{
-    return &db->super;
-}
+struct db *standard_db_super(struct standard_db *db) { return &db->super; }

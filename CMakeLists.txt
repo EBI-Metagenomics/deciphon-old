@@ -55,6 +55,7 @@ add_library(
   src/db.c
   src/db_handle.c
   src/db_pool.c
+  src/dcp_cmp.c
   src/job_state.c
   src/logger.c
   src/meta.c
@@ -86,7 +87,6 @@ add_library(
   src/to.c
   src/tok.c
   src/work.c
-  src/xcmp.c
   src/xfile.c
   src/xsql.c
 )

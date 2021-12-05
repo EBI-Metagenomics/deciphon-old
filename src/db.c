@@ -1,10 +1,10 @@
 #include "db.h"
+#include "dcp_cmp.h"
 #include "imm/imm.h"
 #include "logger.h"
 #include "macros.h"
 #include "profile.h"
 #include "third-party/cmp.h"
-#include "xcmp.h"
 #include "xfile.h"
 #include <assert.h>
 #include <stdio.h>
@@ -23,7 +23,7 @@ static enum rc init_tmpmeta(struct db *db)
 {
     FILE *fd = tmpfile();
     if (!fd) return error(RC_IOERROR, "tmpfile() failed");
-    xcmp_setup(&db->mt.file.cmp, fd);
+    cmp_setup(&db->mt.file.cmp, fd);
     return RC_DONE;
 }
 
@@ -31,7 +31,7 @@ static enum rc init_tmpdp(struct db *db)
 {
     FILE *fd = tmpfile();
     if (!fd) return error(RC_IOERROR, "tmpfile() failed");
-    xcmp_setup(&db->dp.cmp, fd);
+    cmp_setup(&db->dp.cmp, fd);
     return RC_DONE;
 }
 
@@ -47,24 +47,24 @@ void db_init(struct db *db, enum profile_typeid prof_typeid)
     db->mt.name_length = NULL;
     db->mt.size = 0;
     db->mt.data = NULL;
-    db->mt.file.cmp = xcmp_init(NULL);
-    db->dp.cmp = xcmp_init(NULL);
+    cmp_setup(&db->mt.file.cmp, NULL);
+    cmp_setup(&db->dp.cmp, NULL);
     unsigned n = ARRAY_SIZE(MEMBER_REF(*db, partition_offset));
     for (unsigned i = 0; i < n; ++i)
-        db->file.cmp[i] = xcmp_init(NULL);
+        cmp_setup(&db->file.cmp[i], NULL);
     db->file.mode = DB_OPEN_NULL;
 }
 
 void db_openr(struct db *db, FILE *restrict fp)
 {
-    xcmp_setup(&db->file.cmp[0], fp);
+    cmp_setup(&db->file.cmp[0], fp);
     db->file.mode = DB_OPEN_READ;
 }
 
 void db_set_files(struct db *db, unsigned nfiles, FILE *restrict fp[])
 {
     for (unsigned i = 0; i < nfiles; ++i)
-        xcmp_setup(&db->file.cmp[i], fp[i]);
+        cmp_setup(&db->file.cmp[i], fp[i]);
 }
 
 enum rc db_openw(struct db *db, FILE *restrict fp)
@@ -72,7 +72,7 @@ enum rc db_openw(struct db *db, FILE *restrict fp)
     enum rc rc = init_tmpdp(db);
     if (rc) return rc;
 
-    xcmp_setup(&db->file.cmp[0], fp);
+    cmp_setup(&db->file.cmp[0], fp);
     db->file.mode = DB_OPEN_WRITE;
 
     return init_tmpmeta(db);
@@ -93,14 +93,14 @@ static enum rc flush_metadata(struct db *db)
         if (!cmp_read_str(&db->mt.file.cmp, name, &size))
             return error(RC_IOERROR, "failed to read name size");
 
-        if (!xcmp_write(cmp, name, size + 1))
+        if (!cmp_write(cmp, name, size + 1))
             return error(RC_IOERROR, "failed to write name");
 
         size = ARRAY_SIZE(acc);
         if (!cmp_read_str(&db->mt.file.cmp, acc, &size))
             return error(RC_IOERROR, "failed to read acc size");
 
-        if (!xcmp_write(cmp, acc, size + 1))
+        if (!cmp_write(cmp, acc, size + 1))
             return error(RC_IOERROR, "failed to write acc");
     }
 
@@ -135,20 +135,20 @@ static enum rc closew(struct db *db)
     if (!cmp_write_u32(&db->file.cmp[0], db->profiles.size))
         return error(RC_IOERROR, "failed to write number of profiles");
 
-    xcmp_rewind(&db->mt.file.cmp);
+    rewind(cmp_file(&db->mt.file.cmp));
     enum rc rc = RC_DONE;
     if ((rc = flush_metadata(db))) goto cleanup;
-    if (xcmp_close(&db->mt.file.cmp))
+    if (fclose(cmp_file(&db->mt.file.cmp)))
     {
         rc = error(RC_IOERROR, "failed to close metadata file");
         goto cleanup;
     }
 
-    xcmp_rewind(&db->dp.cmp);
-    if ((rc = xfile_copy(xcmp_fp(&db->file.cmp[0]), xcmp_fp(&db->dp.cmp))))
+    rewind(cmp_file(&db->dp.cmp));
+    if ((rc = xfile_copy(cmp_file(&db->file.cmp[0]), cmp_file(&db->dp.cmp))))
         goto cleanup;
 
-    if (xcmp_close(&db->dp.cmp))
+    if (fclose(cmp_file(&db->dp.cmp)))
     {
         rc = error(RC_IOERROR, "failed to close DP file");
         goto cleanup;
@@ -157,8 +157,8 @@ static enum rc closew(struct db *db)
     return rc;
 
 cleanup:
-    xcmp_close(&db->mt.file.cmp);
-    xcmp_close(&db->dp.cmp);
+    fclose(cmp_file(&db->mt.file.cmp));
+    fclose(cmp_file(&db->dp.cmp));
     return rc;
 }
 
@@ -284,7 +284,7 @@ static enum rc read_metadata_data(struct db *db)
         return error(RC_OUTOFMEM, "failed to alloc for mt.data");
 
     struct cmp_ctx_s *cmp = &db->file.cmp[0];
-    if (!xcmp_read(cmp, db->mt.data, db->mt.size))
+    if (!cmp_read(cmp, db->mt.data, db->mt.size))
     {
         cleanup_metadata_data(db);
         return error(RC_IOERROR, "failed to read metadata");
@@ -440,7 +440,7 @@ enum profile_typeid db_prof_typeid(struct db const *db)
 
 enum rc db_current_offset(struct db *db, off_t *offset)
 {
-    FILE *fp = xcmp_fp(&db->file.cmp[0]);
+    FILE *fp = cmp_file(&db->file.cmp[0]);
     if ((*offset = ftello(fp)) == -1)
         return error(RC_IOERROR, "failed to ftello");
     return RC_DONE;
@@ -455,7 +455,7 @@ enum rc db_rewind(struct db *db)
 {
     for (unsigned i = 0; i < db->npartitions; ++i)
     {
-        FILE *fp = xcmp_fp(&db->file.cmp[i]);
+        FILE *fp = cmp_file(&db->file.cmp[i]);
         if (fseek(fp, db->partition_offset[i], SEEK_SET) == -1)
             return error(RC_IOERROR, "failed to fseek");
     }
