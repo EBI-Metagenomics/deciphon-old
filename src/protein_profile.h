@@ -43,26 +43,24 @@ struct protein_profile
 };
 
 void protein_profile_init(struct protein_profile *prof,
-                       struct imm_amino const *amino,
-                       struct imm_nuclt_code const *code,
-                       struct protein_cfg cfg);
+                          struct imm_amino const *amino,
+                          struct imm_nuclt_code const *code,
+                          struct protein_cfg cfg);
 
 enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
-                           bool multi_hits, bool hmmer3_compat);
+                              bool multi_hits, bool hmmer3_compat);
 
 enum rc protein_profile_absorb(struct protein_profile *prof,
-                            struct protein_model const *model);
-
-struct profile *protein_profile_super(struct protein_profile *pro);
+                               struct protein_model const *model);
 
 void protein_profile_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
 
 enum rc protein_profile_sample(struct protein_profile *prof, unsigned seed,
-                            unsigned core_size);
+                               unsigned core_size);
 
 enum rc protein_profile_decode(struct protein_profile const *prof,
-                            struct imm_seq const *seq, unsigned state_id,
-                            struct imm_codon *codon);
+                               struct imm_seq const *seq, unsigned state_id,
+                               struct imm_codon *codon);
 
 static inline void protein_profile_del(struct protein_profile *prof)
 {
@@ -70,13 +68,13 @@ static inline void protein_profile_del(struct protein_profile *prof)
 }
 
 void protein_profile_write_dot(struct protein_profile const *prof,
-                            FILE *restrict fp);
+                               FILE *restrict fp);
 
 struct cmp_ctx_s;
-struct protein_profile;
 
-enum rc protein_profile_read(struct protein_profile *prof, struct cmp_ctx_s *ctx);
+enum rc protein_profile_read(struct protein_profile *prof,
+                             struct cmp_ctx_s *ctx);
 enum rc protein_profile_write(struct protein_profile const *prof,
-                           struct cmp_ctx_s *ctx);
+                              struct cmp_ctx_s *ctx);
 
 #endif

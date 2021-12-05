@@ -21,7 +21,7 @@ struct db_handle
     uint64_t open_since;
     union
     {
-        struct dcp_standard_db std;
+        struct standard_db std;
         struct protein_db pro;
     };
 };

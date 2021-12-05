@@ -13,7 +13,7 @@ void std_db_examples_new_ex1(char const *filepath)
     struct imm_example1 *m = &imm_example1;
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
-    struct dcp_standard_db db;
+    struct standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openw(&db, fd, &m->code), RC_DONE);
 
@@ -54,7 +54,7 @@ void std_db_examples_new_ex2(char const *filepath)
     struct imm_code const *code = &m->code;
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
-    struct dcp_standard_db db;
+    struct standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openw(&db, fd, code), RC_DONE);
 

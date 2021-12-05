@@ -3,9 +3,9 @@
 #include "imm/imm.h"
 #include "logger.h"
 #include "meta.h"
+#include "profile.h"
 #include "protein_model.h"
 #include "protein_profile.h"
-#include "profile.h"
 #include "rc.h"
 #include "third-party/cmp.h"
 #include "third-party/xrandom.h"
@@ -15,9 +15,10 @@
 
 static void del(struct profile *prof);
 
-void protein_profile_init(struct protein_profile *p, struct imm_amino const *amino,
-                       struct imm_nuclt_code const *code,
-                       struct protein_cfg cfg)
+void protein_profile_init(struct protein_profile *p,
+                          struct imm_amino const *amino,
+                          struct imm_nuclt_code const *code,
+                          struct protein_cfg cfg)
 {
     struct profile_vtable vtable = {del, PROTEIN_PROFILE};
     struct imm_nuclt const *nuclt = code->nuclt;
@@ -49,7 +50,7 @@ static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
 }
 
 enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
-                           bool multi_hits, bool hmmer3_compat)
+                              bool multi_hits, bool hmmer3_compat)
 {
     if (seq_size == 0) return error(RC_ILLEGALARG, "sequence cannot be empty");
 
@@ -111,7 +112,8 @@ enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
     return RC_DONE;
 }
 
-enum rc protein_profile_absorb(struct protein_profile *p, struct protein_model const *m)
+enum rc protein_profile_absorb(struct protein_profile *p,
+                               struct protein_model const *m)
 {
     if (p->code->nuclt != protein_model_nuclt(m))
         return error(RC_ILLEGALARG, "Different nucleotide alphabets.");
@@ -151,15 +153,13 @@ enum rc protein_profile_absorb(struct protein_profile *p, struct protein_model c
     return RC_DONE;
 }
 
-struct profile *protein_profile_super(struct protein_profile *pro) { return &pro->super; }
-
 void protein_profile_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
     protein_state_name(id, name);
 }
 
 enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,
-                            unsigned core_size)
+                               unsigned core_size)
 {
     assert(core_size >= 2);
     p->core_size = core_size;
@@ -206,8 +206,8 @@ cleanup:
 }
 
 enum rc protein_profile_decode(struct protein_profile const *prof,
-                            struct imm_seq const *seq, unsigned state_id,
-                            struct imm_codon *codon)
+                               struct imm_seq const *seq, unsigned state_id,
+                               struct imm_codon *codon)
 {
     assert(!protein_state_is_mute(state_id));
 
@@ -232,7 +232,8 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
     return RC_DONE;
 }
 
-void protein_profile_write_dot(struct protein_profile const *p, FILE *restrict fp)
+void protein_profile_write_dot(struct protein_profile const *p,
+                               FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, protein_state_name);
 }
@@ -248,7 +249,8 @@ static void del(struct profile *prof)
     }
 }
 
-enum rc protein_profile_read(struct protein_profile *prof, struct cmp_ctx_s *cmp)
+enum rc protein_profile_read(struct protein_profile *prof,
+                             struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_read(&prof->null.dp, fd)) return RC_FAIL;
@@ -274,14 +276,14 @@ enum rc protein_profile_read(struct protein_profile *prof, struct cmp_ctx_s *cmp
 
     for (unsigned i = 0; i < prof->core_size; ++i)
     {
-        if ((rc = nuclt_dist_read(prof->alt.match_ndists + i, cmp)))
-            return rc;
+        if ((rc = nuclt_dist_read(prof->alt.match_ndists + i, cmp))) return rc;
         nuclt_dist_init(prof->alt.match_ndists + i, prof->code->nuclt);
     }
     return RC_DONE;
 }
 
-enum rc protein_profile_write(struct protein_profile const *prof, struct cmp_ctx_s *cmp)
+enum rc protein_profile_write(struct protein_profile const *prof,
+                              struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
     if (imm_dp_write(&prof->null.dp, fd)) return RC_FAIL;
@@ -300,8 +302,7 @@ enum rc protein_profile_write(struct protein_profile const *prof, struct cmp_ctx
 
     for (unsigned i = 0; i < prof->core_size; ++i)
     {
-        if ((rc = nuclt_dist_write(prof->alt.match_ndists + i, cmp)))
-            return rc;
+        if ((rc = nuclt_dist_write(prof->alt.match_ndists + i, cmp))) return rc;
     }
     return RC_DONE;
 }

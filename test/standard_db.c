@@ -33,7 +33,7 @@ void test_db_openw_empty(void)
     imm_code_init(&code, abc);
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
     NOTNULL(fd);
-    struct dcp_standard_db db;
+    struct standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openw(&db, fd, &code), RC_DONE);
     EQ(dcp_standard_db_close(&db), RC_DONE);
@@ -44,7 +44,7 @@ void test_db_openr_empty(void)
 {
     FILE *fd = fopen(TMPDIR "/empty.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_standard_db db;
+    struct standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
@@ -74,7 +74,7 @@ void test_db_openw_one_mute(void)
 
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
     NOTNULL(fd);
-    struct dcp_standard_db db;
+    struct standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openw(&db, fd, &code), RC_DONE);
 
@@ -94,7 +94,7 @@ void test_db_openr_one_mute(void)
 {
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_standard_db db;
+    struct standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
@@ -125,7 +125,7 @@ void test_db_openr_example1(void)
 {
     FILE *fd = fopen(TMPDIR "/example1.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_standard_db db;
+    struct standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
@@ -175,7 +175,7 @@ void test_db_openr_example2(void)
 {
     FILE *fd = fopen(TMPDIR "/example2.dcp", "rb");
     NOTNULL(fd);
-    struct dcp_standard_db db;
+    struct standard_db db;
     dcp_standard_db_init(&db);
     EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
