@@ -15,7 +15,7 @@ enum rc protein_codec_next(struct protein_codec *codec,
         if (!protein_state_is_mute(step->state_id)) break;
     }
 
-    if (codec->idx >= imm_path_nsteps(codec->path)) return END;
+    if (codec->idx >= imm_path_nsteps(codec->path)) return RC_END;
 
     unsigned size = step->seqlen;
     struct imm_seq frag = imm_subseq(seq, codec->start, size);

@@ -18,7 +18,7 @@ void test_cli_press_write(void)
     int argc = 4;
     char *argv[1024] = {"dcp-press", ASSETS "/Pfam-A.5.hmm", "-o",
                         TMPDIR "Pfam-A.5.dcp"};
-    EQ(cli_press(argc, argv), DONE);
+    EQ(cli_press(argc, argv), RC_DONE);
 }
 
 void test_cli_press_read(void)
@@ -26,7 +26,7 @@ void test_cli_press_read(void)
     FILE *fd = fopen(TMPDIR "Pfam-A.5.dcp", "rb");
     NOTNULL(fd);
     struct protein_db db = protein_db_default;
-    EQ(protein_db_openr(&db, fd), DONE);
+    EQ(protein_db_openr(&db, fd), RC_DONE);
 
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), PROTEIN_PROFILE);
@@ -60,7 +60,7 @@ void test_cli_press_read(void)
     struct protein_profile *p = protein_db_profile(&db);
     while (!db_end(&db.super))
     {
-        EQ(protein_db_read(&db, p), DONE);
+        EQ(protein_db_read(&db, p), RC_DONE);
         EQ(profile_typeid(&p->super), PROTEIN_PROFILE);
         struct imm_task *task = imm_task_new(&p->alt.dp);
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
@@ -73,6 +73,6 @@ void test_cli_press_read(void)
     EQ(nprofs, 5);
 
     imm_del(&prod);
-    EQ(protein_db_close(&db), DONE);
+    EQ(protein_db_close(&db), RC_DONE);
     fclose(fd);
 }

@@ -18,21 +18,21 @@ static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
     {
         float e = 0;
         if (!cmp_read_float(cmp, &e))
-            return error(IOERROR, "failed to read epsilon");
+            return error(RC_IOERROR, "failed to read epsilon");
         *epsilon = (imm_float)e;
     }
     else
     {
         double e = 0;
         if (!cmp_read_double(cmp, &e))
-            return error(IOERROR, "failed to read epsilon");
+            return error(RC_IOERROR, "failed to read epsilon");
         *epsilon = (imm_float)e;
     }
 
     if (*epsilon < 0 || *epsilon > 1)
-        return error(PARSEERROR, "invalid epsilon");
+        return error(RC_PARSEERROR, "invalid epsilon");
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
@@ -42,16 +42,16 @@ static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
     {
         float e = (float)epsilon;
         if (!cmp_write_float(cmp, e))
-            return error(IOERROR, "failed to write epsilon");
+            return error(RC_IOERROR, "failed to write epsilon");
     }
     else
     {
         double e = (double)epsilon;
         if (!cmp_write_double(cmp, e))
-            return error(IOERROR, "failed to write epsilon");
+            return error(RC_IOERROR, "failed to write epsilon");
     }
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc read_entry_dist(struct cmp_ctx_s *cmp,
@@ -59,45 +59,45 @@ static enum rc read_entry_dist(struct cmp_ctx_s *cmp,
 {
     uint8_t val = 0;
     if (!cmp_read_u8(cmp, &val))
-        return error(IOERROR, "failed to read entry distribution");
+        return error(RC_IOERROR, "failed to read entry distribution");
     *edist = val;
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc write_entry_dist(struct cmp_ctx_s *cmp,
                                 enum entry_dist edist)
 {
     if (!cmp_write_u8(cmp, (uint8_t)edist))
-        return error(IOERROR, "failed to write entry distribution");
-    return DONE;
+        return error(RC_IOERROR, "failed to write entry distribution");
+    return RC_DONE;
 }
 
 static enum rc read_nuclt(FILE *restrict fd, struct imm_nuclt *nuclt)
 {
     if (imm_abc_read(&nuclt->super, fd))
-        return error(IOERROR, "failed to read nuclt alphabet");
-    return DONE;
+        return error(RC_IOERROR, "failed to read nuclt alphabet");
+    return RC_DONE;
 }
 
 static enum rc write_nuclt(FILE *restrict fd, struct imm_nuclt const *nuclt)
 {
     if (imm_abc_write(&nuclt->super, fd))
-        return error(IOERROR, "failed to write nuclt alphabet");
-    return DONE;
+        return error(RC_IOERROR, "failed to write nuclt alphabet");
+    return RC_DONE;
 }
 
 static enum rc read_amino(FILE *restrict fd, struct imm_amino *amino)
 {
     if (imm_abc_read(&amino->super, fd))
-        return error(IOERROR, "failed to read amino alphabet");
-    return DONE;
+        return error(RC_IOERROR, "failed to read amino alphabet");
+    return RC_DONE;
 }
 
 static enum rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
 {
     if (imm_abc_write(&amino->super, fd))
-        return error(IOERROR, "failed to write amino alphabet");
-    return DONE;
+        return error(RC_IOERROR, "failed to write amino alphabet");
+    return RC_DONE;
 }
 
 static void protein_db_init(struct protein_db *db)
@@ -116,7 +116,7 @@ enum rc protein_db_setup_multi_readers(struct protein_db *db, unsigned nfiles,
     unsigned n = db_nprofiles(&db->super);
     assert(nfiles <= n);
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     struct protein_profile *prof = protein_db_profile(db);
     unsigned part = 0;
     rc = db_current_offset(&db->super, db->super.partition_offset + part);
@@ -147,7 +147,7 @@ enum rc protein_db_setup_multi_readers(struct protein_db *db, unsigned nfiles,
     if (!db_end(&db->super)) return rc;
     db->super.npartitions = nfiles;
     db_set_files(&db->super, nfiles, fp);
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc protein_db_openr(struct protein_db *db, FILE *restrict fd)
@@ -158,7 +158,7 @@ enum rc protein_db_openr(struct protein_db *db, FILE *restrict fd)
     struct cmp_ctx_s *cmp = &db->super.file.cmp[0];
     imm_float *epsilon = &db->prof.cfg.epsilon;
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_prof_type(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
@@ -187,7 +187,7 @@ enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
     unsigned float_size = db->super.float_size;
     imm_float epsilon = db->prof.cfg.epsilon;
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     if ((rc = db_openw(&db->super, fd))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_prof_type(&db->super))) goto cleanup;
@@ -229,7 +229,7 @@ struct protein_cfg protein_db_cfg(struct protein_db const *db)
 
 enum rc protein_db_read(struct protein_db *db, struct protein_profile *prof)
 {
-    if (db_end(&db->super)) return error(FAIL, "end of profiles");
+    if (db_end(&db->super)) return error(RC_FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
     return protein_profile_read(prof, &db->super.file.cmp[0]);
@@ -239,7 +239,7 @@ enum rc protein_db_write(struct protein_db *db,
                          struct protein_profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
     if ((rc = protein_profile_write(prof, &db->super.dp.cmp))) return rc;
     db->super.profiles.size++;

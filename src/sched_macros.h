@@ -1,67 +1,67 @@
 #ifndef SCHED_MACROS_H
 #define SCHED_MACROS_H
 
-#define OPEN_ERROR() error(FAIL, "failed to open database")
+#define OPEN_ERROR() error(RC_FAIL, "failed to open database")
 
 #define OPEN_OR_CLEANUP(stmt)                                                  \
     if (sqlite3_reset(stmt))                                                   \
     {                                                                          \
-        rc = error(FAIL, "failed to open database");                           \
+        rc = error(RC_FAIL, "failed to open database");                        \
         goto cleanup;                                                          \
     }
 
-#define CLOSE_ERROR() error(FAIL, "failed to close database")
+#define CLOSE_ERROR() error(RC_FAIL, "failed to close database")
 
 #define RESET_OR_CLEANUP(rc, stmt)                                             \
     if (sqlite3_reset(stmt))                                                   \
     {                                                                          \
-        rc = error(FAIL, "failed to reset statement");                         \
+        rc = error(RC_FAIL, "failed to reset statement");                      \
         goto cleanup;                                                          \
     }
 
-#define STEP_ERROR() error(FAIL, "failed to step")
+#define STEP_ERROR() error(RC_FAIL, "failed to step")
 
 #define STEP_OR_CLEANUP(stmt, code)                                            \
     if (sqlite3_step(stmt) != code)                                            \
     {                                                                          \
-        rc = error(FAIL, "failed to step");                                    \
+        rc = error(RC_FAIL, "failed to step");                                 \
         goto cleanup;                                                          \
     }
 
-#define EXEC_ERROR() error(FAIL, "failed to exec statement")
+#define EXEC_ERROR() error(RC_FAIL, "failed to exec statement")
 
 #define BIND_STRING_OR_CLEANUP(rc, stmt, pos, var)                             \
     if (sqlite3_bind_text(stmt, pos, var, -1, SQLITE_TRANSIENT))               \
     {                                                                          \
-        rc = error(FAIL, "failed to bind string");                             \
+        rc = error(RC_FAIL, "failed to bind string");                          \
         goto cleanup;                                                          \
     }
 
 #define BIND_TEXT_OR_CLEANUP(rc, stmt, pos, len, var)                          \
     if (sqlite3_bind_text(stmt, pos, var, len, SQLITE_TRANSIENT))              \
     {                                                                          \
-        rc = error(FAIL, "failed to bind text");                               \
+        rc = error(RC_FAIL, "failed to bind text");                            \
         goto cleanup;                                                          \
     }
 
 #define BIND_INT_OR_CLEANUP(rc, stmt, pos, var)                                \
     if (sqlite3_bind_int(stmt, pos, var))                                      \
     {                                                                          \
-        rc = error(FAIL, "failed to bind int");                                \
+        rc = error(RC_FAIL, "failed to bind int");                             \
         goto cleanup;                                                          \
     }
 
 #define BIND_INT64_OR_CLEANUP(rc, stmt, pos, var)                              \
     if (sqlite3_bind_int64(stmt, pos, var))                                    \
     {                                                                          \
-        rc = error(FAIL, "failed to bind int64");                              \
+        rc = error(RC_FAIL, "failed to bind int64");                           \
         goto cleanup;                                                          \
     }
 
 #define BIND_DOUBLE_OR_CLEANUP(rc, stmt, pos, var)                             \
     if (sqlite3_bind_double(stmt, pos, var))                                   \
     {                                                                          \
-        rc = error(FAIL, "failed to bind double");                             \
+        rc = error(RC_FAIL, "failed to bind double");                          \
         goto cleanup;                                                          \
     }
 
@@ -84,7 +84,7 @@
 #define PREPARE_OR_CLEAN_UP(db, sql, stmt)                                     \
     if (sqlite3_prepare_v2(db, sql, -1, (stmt), 0))                            \
     {                                                                          \
-        rc = error(FAIL, "failed to prepare statement");                       \
+        rc = error(RC_FAIL, "failed to prepare statement");                    \
         goto cleanup;                                                          \
     }
 

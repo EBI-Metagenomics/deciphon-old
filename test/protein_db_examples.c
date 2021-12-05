@@ -13,18 +13,18 @@ void protein_db_examples_new_ex1(char const *filepath)
 
     struct protein_cfg cfg = protein_cfg(ENTRY_DIST_UNIFORM, 0.1f);
     struct protein_db db = protein_db_default;
-    EQ(protein_db_openw(&db, fd, amino, nuclt, cfg), DONE);
+    EQ(protein_db_openw(&db, fd, amino, nuclt, cfg), RC_DONE);
 
     struct protein_profile *prof = protein_db_profile(&db);
 
     protein_profile_sample(prof, 1, 2);
     profile_nameit(&prof->super, meta("NAME0", "ACC0"));
-    EQ(protein_db_write(&db, prof), DONE);
+    EQ(protein_db_write(&db, prof), RC_DONE);
 
     protein_profile_sample(prof, 2, 2);
     profile_nameit(&prof->super, meta("NAME1", "ACC1"));
-    EQ(protein_db_write(&db, prof), DONE);
+    EQ(protein_db_write(&db, prof), RC_DONE);
 
-    EQ(protein_db_close(&db), DONE);
+    EQ(protein_db_close(&db), RC_DONE);
     fclose(fd);
 }

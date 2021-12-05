@@ -23,7 +23,7 @@ void test_db_protein_openr(void)
     FILE *fd = fopen(TMPDIR "/db.dcp", "rb");
     NOTNULL(fd);
     struct protein_db db = protein_db_default;
-    EQ(protein_db_openr(&db, fd), DONE);
+    EQ(protein_db_openr(&db, fd), RC_DONE);
 
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), PROTEIN_PROFILE);
@@ -44,7 +44,7 @@ void test_db_protein_openr(void)
     struct protein_profile *p = protein_db_profile(&db);
     while (!db_end(&db.super))
     {
-        EQ(protein_db_read(&db, p), DONE);
+        EQ(protein_db_read(&db, p), RC_DONE);
         EQ(profile_typeid(&p->super), PROTEIN_PROFILE);
         if (p->super.idx == 0)
         {
@@ -60,6 +60,6 @@ void test_db_protein_openr(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(protein_db_close(&db), DONE);
+    EQ(protein_db_close(&db), RC_DONE);
     fclose(fd);
 }

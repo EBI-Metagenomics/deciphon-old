@@ -34,22 +34,22 @@ int main(void)
     struct protein_model model;
     protein_model_init(&model, amino, &code, cfg, null_lprobs);
 
-    EQ(protein_model_setup(&model, core_size), DONE);
+    EQ(protein_model_setup(&model, core_size), RC_DONE);
 
-    EQ(protein_model_add_node(&model, match_lprobs1, '-'), DONE);
-    EQ(protein_model_add_node(&model, match_lprobs2, '-'), DONE);
-    EQ(protein_model_add_node(&model, match_lprobs3, '-'), DONE);
+    EQ(protein_model_add_node(&model, match_lprobs1, '-'), RC_DONE);
+    EQ(protein_model_add_node(&model, match_lprobs2, '-'), RC_DONE);
+    EQ(protein_model_add_node(&model, match_lprobs3, '-'), RC_DONE);
 
-    EQ(protein_model_add_trans(&model, t[0]), DONE);
-    EQ(protein_model_add_trans(&model, t[1]), DONE);
-    EQ(protein_model_add_trans(&model, t[2]), DONE);
-    EQ(protein_model_add_trans(&model, t[3]), DONE);
+    EQ(protein_model_add_trans(&model, t[0]), RC_DONE);
+    EQ(protein_model_add_trans(&model, t[1]), RC_DONE);
+    EQ(protein_model_add_trans(&model, t[2]), RC_DONE);
+    EQ(protein_model_add_trans(&model, t[3]), RC_DONE);
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
 
     profile_nameit(&prof.super, meta("NAME0", "ACC0"));
-    EQ(protein_profile_absorb(&prof, &model), DONE);
+    EQ(protein_profile_absorb(&prof, &model), RC_DONE);
 
     protein_profile_del(&prof);
     protein_model_del(&model);

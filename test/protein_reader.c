@@ -37,13 +37,13 @@ int main(void)
     struct protein_reader reader;
     protein_reader_init(&reader, amino, &code, cfg, fd);
 
-    EQ(protein_reader_next(&reader), DONE);
+    EQ(protein_reader_next(&reader), RC_DONE);
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
 
     profile_nameit(&prof.super, meta("name", "acc"));
-    EQ(protein_profile_absorb(&prof, &reader.model), DONE);
+    EQ(protein_profile_absorb(&prof, &reader.model), RC_DONE);
 
     struct imm_seq seq = imm_seq(imm_str(sequence), prof.super.code->abc);
 

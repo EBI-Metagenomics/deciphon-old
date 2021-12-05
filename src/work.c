@@ -49,14 +49,14 @@ void work_init(struct work *work)
 
 enum rc work_next(struct work *work)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     int64_t job_id = 0;
 
     if ((rc = sched_job_next_pending(&job_id))) return rc;
     if ((rc = sched_job_get(&work->job, job_id))) return rc;
 
     work->db = db_pool_fetch(work->job.db_id);
-    if (!work->db) return error(FAIL, "reached limit of open db handles");
+    if (!work->db) return error(RC_FAIL, "reached limit of open db handles");
 
     work->db_path[0] = 0;
     struct sched_db db = {0};
@@ -65,21 +65,21 @@ enum rc work_next(struct work *work)
 
     int64_t seq_id = 0;
     work->ntasks = 0;
-    while ((rc = sched_seq_next(job_id, &seq_id)) == NEXT)
+    while ((rc = sched_seq_next(job_id, &seq_id)) == RC_NEXT)
     {
         struct task *task = &work->tasks[work->ntasks];
         if ((rc = task_setup(task, get_abc(work), seq_id))) goto cleanup;
 
         if (++work->ntasks >= ARRAY_SIZE(MEMBER_REF(*work, tasks)))
         {
-            rc = error(FAIL, "too many tasks");
+            rc = error(RC_FAIL, "too many tasks");
             goto cleanup;
         }
     }
 
 cleanup:
     if (rc) return rc;
-    return NEXT;
+    return RC_NEXT;
 }
 
 enum rc work_run(struct work *work, unsigned num_threads)
@@ -88,7 +88,7 @@ enum rc work_run(struct work *work, unsigned num_threads)
     if (rc) return rc;
 
     unsigned match_id = 1;
-    while ((rc = next_profile(work)) == NEXT)
+    while ((rc = next_profile(work)) == RC_NEXT)
     {
         for (unsigned i = 0; i < work->ntasks; ++i)
         {
@@ -126,7 +126,7 @@ enum rc open_work(struct work *work, unsigned num_threads)
 
     rc = db_handle_open(work->db, work->db_path, num_threads);
     if (rc) goto cleanup;
-    return DONE;
+    return RC_DONE;
 
 cleanup:
     close_work(work);
@@ -161,7 +161,7 @@ cleanup:
 
 enum rc next_profile(struct work *work)
 {
-    if (db_end(&work->db->pro.super)) return DONE;
+    if (db_end(&work->db->pro.super)) return RC_DONE;
 
     struct protein_profile *prof = protein_db_profile(&work->db->pro);
 
@@ -170,7 +170,7 @@ enum rc next_profile(struct work *work)
 
     work->prof = prof;
 
-    return NEXT;
+    return RC_NEXT;
 }
 
 enum rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
@@ -178,14 +178,14 @@ enum rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
     if (*task)
     {
         if (imm_task_reset(*task, dp))
-            return error(FAIL, "failed to reset task");
+            return error(RC_FAIL, "failed to reset task");
     }
     else
     {
         if (!(*task = imm_task_new(dp)))
-            return error(FAIL, "failed to create task");
+            return error(RC_FAIL, "failed to create task");
     }
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc prepare_task_for_prof(struct work *work, struct task *task)
@@ -198,29 +198,29 @@ enum rc prepare_task_for_prof(struct work *work, struct task *task)
 enum rc prepare_task_for_seq(struct task *task, struct imm_seq *seq)
 {
     if (imm_task_setup(task->alt.task, seq))
-        return error(FAIL, "failed to setup task");
+        return error(RC_FAIL, "failed to setup task");
 
     if (imm_task_setup(task->null.task, seq))
-        return error(FAIL, "failed to setup task");
+        return error(RC_FAIL, "failed to setup task");
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc run_viterbi(struct work *work, struct task *task)
 {
     if (imm_dp_viterbi(&work->prof->alt.dp, task->alt.task, &task->alt.prod))
-        return error(FAIL, "failed to run viterbi");
+        return error(RC_FAIL, "failed to run viterbi");
 
     if (imm_dp_viterbi(&work->prof->null.dp, task->null.task, &task->null.prod))
-        return error(FAIL, "failed to run viterbi");
+        return error(RC_FAIL, "failed to run viterbi");
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc write_product(struct work *work, struct task *task, unsigned match_id,
                       struct imm_seq seq)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     struct imm_codon codon = imm_codon_any(work->prof->code->nuclt);
 
     struct meta const *mt = &work->prof->super.mt;

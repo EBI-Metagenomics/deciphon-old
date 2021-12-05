@@ -46,7 +46,7 @@ enum rc sched_db_setup(struct sched_db *db,
                            char const filepath[DCP_PATH_SIZE])
 {
     FILE *fd = fopen(filepath, "rb");
-    if (!fd) return error(IOERROR, "failed to open file");
+    if (!fd) return error(RC_IOERROR, "failed to open file");
 
     enum rc rc = xfile_hash(fd, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
@@ -56,12 +56,12 @@ enum rc sched_db_setup(struct sched_db *db,
 
 cleanup:
     fclose(fd);
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc sched_db_module_init(struct sqlite3 *db)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
         PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
 
@@ -72,7 +72,7 @@ cleanup:
 enum rc sched_db_add(struct sched_db *db)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, db->xxh64);
@@ -93,15 +93,15 @@ static enum rc select_db(struct sched_db *db, int64_t by_value,
                              enum stmt select_stmt)
 {
     struct sqlite3_stmt *stmt = stmts[select_stmt];
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, by_value);
     int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return NOTFOUND;
+    if (code == SQLITE_DONE) return RC_NOTFOUND;
     if (code != SQLITE_ROW)
     {
-        rc = error(FAIL, "failed to step");
+        rc = error(RC_FAIL, "failed to step");
         goto cleanup;
     }
 

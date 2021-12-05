@@ -7,15 +7,16 @@
 
 static enum rc read_abc(FILE *restrict fd, struct imm_abc *abc)
 {
-    if (imm_abc_read(abc, fd)) return error(IOERROR, "failed to read alphabet");
-    return DONE;
+    if (imm_abc_read(abc, fd))
+        return error(RC_IOERROR, "failed to read alphabet");
+    return RC_DONE;
 }
 
 static enum rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
 {
     if (imm_abc_write(abc, fd))
-        return error(IOERROR, "failed to write alphabet");
-    return DONE;
+        return error(RC_IOERROR, "failed to write alphabet");
+    return RC_DONE;
 }
 
 void dcp_standard_db_init(struct dcp_standard_db *db)
@@ -29,7 +30,7 @@ enum rc dcp_standard_db_openr(struct dcp_standard_db *db, FILE *restrict fd)
 {
     db_openr(&db->super, fd);
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_prof_type(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
@@ -47,7 +48,7 @@ enum rc dcp_standard_db_openw(struct dcp_standard_db *db, FILE *restrict fd,
 {
     db->code = *code;
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     if ((rc = db_openw(&db->super, fd))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_prof_type(&db->super))) goto cleanup;
@@ -77,7 +78,7 @@ struct imm_abc const *dcp_standard_db_abc(struct dcp_standard_db const *db)
 enum rc dcp_standard_db_read(struct dcp_standard_db *db,
                              struct standard_profile *prof)
 {
-    if (db_end(&db->super)) return error(FAIL, "end of profiles");
+    if (db_end(&db->super)) return error(RC_FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
     prof->super.mt = db_meta(&db->super, prof->super.idx);
     return standard_profile_read(prof, xcmp_fp(&db->super.file.cmp[0]));
@@ -87,7 +88,7 @@ enum rc dcp_standard_db_write(struct dcp_standard_db *db,
                               struct standard_profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
     if ((rc = standard_profile_write(prof, xcmp_fp(&db->super.dp.cmp))))
         return rc;

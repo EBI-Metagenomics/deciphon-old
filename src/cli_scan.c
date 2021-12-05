@@ -171,7 +171,7 @@ static enum rc predict_codons(struct imm_seq const *seq)
     struct protein_codec codec = protein_codec_init(prof, path);
     struct imm_codon codon = imm_codon_any(prof->code->nuclt);
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     char *ocodon = cli.output.codon.seq;
     while (!(rc = protein_codec_next(&codec, seq, &codon)))
     {
@@ -180,7 +180,7 @@ static enum rc predict_codons(struct imm_seq const *seq)
         *(ocodon++) = imm_codon_csym(&codon);
     }
     *ocodon = '\0';
-    if (rc == END) rc = DONE;
+    if (rc == RC_END) rc = RC_DONE;
     return rc;
 }
 
@@ -205,8 +205,8 @@ static enum rc write_codons(char const *ocodon)
     char const *id = cli.queries.fa.target.id;
     char const *desc = cli.queries.fa.target.desc;
     if (fasta_write(&cli.output.codon.fa, fasta_target(id, desc, ocodon), 60))
-        return IOERROR;
-    return DONE;
+        return RC_IOERROR;
+    return RC_DONE;
 }
 
 static enum rc write_aminos(char const *oamino)
@@ -214,8 +214,8 @@ static enum rc write_aminos(char const *oamino)
     char const *id = cli.queries.fa.target.id;
     char const *desc = cli.queries.fa.target.desc;
     if (fasta_write(&cli.output.amino.fa, fasta_target(id, desc, oamino), 60))
-        return IOERROR;
-    return DONE;
+        return RC_IOERROR;
+    return RC_DONE;
 }
 
 static enum rc scan_queries(struct meta const *mt)
@@ -223,20 +223,20 @@ static enum rc scan_queries(struct meta const *mt)
     struct imm_prod null = imm_prod();
     struct protein_profile *prof = &cli.pro.db.prof;
     struct imm_task *task = imm_task_new(&prof->alt.dp);
-    if (!task) return error(FAIL, "failed to create task");
+    if (!task) return error(RC_FAIL, "failed to create task");
 
     enum fasta_rc fasta_rc = FASTA_SUCCESS;
     while (!(fasta_rc = fasta_read(&cli.queries.fa)))
     {
         struct imm_seq seq = seq_setup();
         if (imm_task_setup(task, &seq))
-            return error(FAIL, "failed to create task");
+            return error(RC_FAIL, "failed to create task");
 
         if (imm_dp_viterbi(&prof->alt.dp, task, &cli.pro.prod))
-            return error(FAIL, "failed to run viterbi");
+            return error(RC_FAIL, "failed to run viterbi");
 
         if (imm_dp_viterbi(&prof->null.dp, task, &null))
-            return error(FAIL, "failed to run viterbi");
+            return error(RC_FAIL, "failed to run viterbi");
 
         imm_float lrt = -2 * (null.loglik - cli.pro.prod.loglik);
         if (lrt < 100.0f) continue;
@@ -271,7 +271,7 @@ static enum rc scan_queries(struct meta const *mt)
 
     imm_del(task);
     imm_del(&null);
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc cli_setup(void)
@@ -283,25 +283,25 @@ static enum rc cli_setup(void)
     cli.output.nmatches = 0;
 
     if (!(cli.queries.fd = fopen(cli.queries.file, "r")))
-        return error(IOERROR, "failed to open queries file");
+        return error(RC_IOERROR, "failed to open queries file");
 
     progress_file_init(&cli.progress, cli.queries.fd);
 
     if (!(cli.pro.fd = fopen(cli.pro.file, "rb")))
-        return error(IOERROR, "failed to open db file");
+        return error(RC_IOERROR, "failed to open db file");
 
     cli.output.codon.file = default_ocodon;
     cli.output.amino.file = default_oamino;
     cli.output.file = default_output;
 
     if (!(cli.output.codon.fd = fopen(cli.output.codon.file, "w")))
-        return error(IOERROR, "failed to open codon file");
+        return error(RC_IOERROR, "failed to open codon file");
 
     if (!(cli.output.amino.fd = fopen(cli.output.amino.file, "w")))
-        return error(IOERROR, "failed to open amino file");
+        return error(RC_IOERROR, "failed to open amino file");
 
     if (!(cli.output.fd = fopen(cli.output.file, "w")))
-        return error(IOERROR, "failed to open output file");
+        return error(RC_IOERROR, "failed to open output file");
 
     fasta_init(&cli.output.codon.fa, cli.output.codon.fd, FASTA_WRITE);
     fasta_init(&cli.output.amino.fa, cli.output.amino.fd, FASTA_WRITE);
@@ -315,7 +315,7 @@ static enum rc cli_setup(void)
     enum rc rc = protein_db_openr(&cli.pro.db, cli.pro.fd);
     if (rc) return rc;
 
-    return DONE;
+    return RC_DONE;
 }
 
 static void queries_setup(void)
@@ -327,7 +327,7 @@ static void queries_setup(void)
 
 enum rc cli_scan(int argc, char **argv)
 {
-    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
+    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return RC_ILLEGALARG;
 
     enum rc rc = cli_setup();
     if (rc) goto cleanup;
@@ -347,7 +347,7 @@ enum rc cli_scan(int argc, char **argv)
         if ((rc = scan_queries(mt))) goto cleanup;
         progress_file_update(&cli.progress);
     }
-    if (rc != END) goto cleanup;
+    if (rc != RC_END) goto cleanup;
 
     rc = protein_db_close(&cli.pro.db);
 

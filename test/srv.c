@@ -1,7 +1,7 @@
 #include "hope/hope.h"
 #include "protein_db_examples.h"
 #include "rc.h"
-#include "std_db_examples.h"
+#include "standard_db_examples.h"
 
 void test_srv_setup(void);
 void test_srv_reopen(void);

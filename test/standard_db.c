@@ -35,8 +35,8 @@ void test_db_openw_empty(void)
     NOTNULL(fd);
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openw(&db, fd, &code), DONE);
-    EQ(dcp_standard_db_close(&db), DONE);
+    EQ(dcp_standard_db_openw(&db, fd, &code), RC_DONE);
+    EQ(dcp_standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -46,7 +46,7 @@ void test_db_openr_empty(void)
     NOTNULL(fd);
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openr(&db, fd), DONE);
+    EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
@@ -54,7 +54,7 @@ void test_db_openr_empty(void)
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
     EQ(imm_abc_typeid(imm_super(imm_super(dna))), IMM_DNA);
-    EQ(dcp_standard_db_close(&db), DONE);
+    EQ(dcp_standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -76,17 +76,17 @@ void test_db_openw_one_mute(void)
     NOTNULL(fd);
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openw(&db, fd, &code), DONE);
+    EQ(dcp_standard_db_openw(&db, fd, &code), RC_DONE);
 
     struct standard_profile p;
     standard_profile_init(&p, &code);
     profile_nameit(&p.super, meta("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
-    EQ(dcp_standard_db_write(&db, &p), DONE);
+    EQ(dcp_standard_db_write(&db, &p), RC_DONE);
 
     standard_profile_del(&p);
-    EQ(dcp_standard_db_close(&db), DONE);
+    EQ(dcp_standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -96,7 +96,7 @@ void test_db_openr_one_mute(void)
     NOTNULL(fd);
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openr(&db, fd), DONE);
+    EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
@@ -112,7 +112,7 @@ void test_db_openr_one_mute(void)
     EQ(mt.name, "NAME0");
     EQ(mt.acc, "ACC0");
 
-    EQ(dcp_standard_db_close(&db), DONE);
+    EQ(dcp_standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -127,7 +127,7 @@ void test_db_openr_example1(void)
     NOTNULL(fd);
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openr(&db, fd), DONE);
+    EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
     EQ(imm_abc_typeid(dcp_standard_db_abc(&db)), IMM_ABC);
@@ -145,7 +145,7 @@ void test_db_openr_example1(void)
     struct standard_profile *p = dcp_standard_db_profile(&db);
     while (!db_end(&db.super))
     {
-        EQ(dcp_standard_db_read(&db, p), DONE);
+        EQ(dcp_standard_db_read(&db, p), RC_DONE);
         EQ(profile_typeid(&p->super), STANDARD_PROFILE);
         if (p->super.idx == 0)
         {
@@ -162,7 +162,7 @@ void test_db_openr_example1(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(dcp_standard_db_close(&db), DONE);
+    EQ(dcp_standard_db_close(&db), RC_DONE);
     fclose(fd);
 }
 
@@ -177,7 +177,7 @@ void test_db_openr_example2(void)
     NOTNULL(fd);
     struct dcp_standard_db db;
     dcp_standard_db_init(&db);
-    EQ(dcp_standard_db_openr(&db, fd), DONE);
+    EQ(dcp_standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
     struct imm_abc const *abc = dcp_standard_db_abc(&db);
@@ -196,7 +196,7 @@ void test_db_openr_example2(void)
     struct standard_profile *p = dcp_standard_db_profile(&db);
     while (!db_end(&db.super))
     {
-        EQ(dcp_standard_db_read(&db, p), DONE);
+        EQ(dcp_standard_db_read(&db, p), RC_DONE);
         EQ(profile_typeid(&p->super), STANDARD_PROFILE);
         if (p->super.idx == 0)
         {
@@ -212,6 +212,6 @@ void test_db_openr_example2(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(dcp_standard_db_close(&db), DONE);
+    EQ(dcp_standard_db_close(&db), RC_DONE);
     fclose(fd);
 }

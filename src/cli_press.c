@@ -38,7 +38,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     case 'o':
         if (safe_strcpy(args->output_file, arg, PATH_MAX) >= PATH_MAX)
         {
-            error(ILLEGALARG, "output path is too long");
+            error(RC_ILLEGALARG, "output path is too long");
             return ENAMETOOLONG;
         }
         break;
@@ -58,7 +58,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         {
             if (!args->output_file[0] && !infer_output_file(args))
             {
-                error(ILLEGALARG, "output path would be too long");
+                error(RC_ILLEGALARG, "output path would be too long");
                 return ENAMETOOLONG;
             }
         }
@@ -106,10 +106,10 @@ static enum rc cli_setup(struct arguments const *args)
     cli.output.file = args->output_file;
 
     if (!(cli.input.fd = fopen(cli.input.file, "r")))
-        return error(IOERROR, "failed to open the hmm file");
+        return error(RC_IOERROR, "failed to open the hmm file");
 
     if (!(cli.output.fd = fopen(cli.output.file, "wb")))
-        return error(IOERROR, "failed to open the output file");
+        return error(RC_IOERROR, "failed to open the output file");
 
     progress_file_init(&cli.progress, cli.input.fd);
 
@@ -123,7 +123,7 @@ static enum rc cli_setup(struct arguments const *args)
     protein_reader_init(&cli.reader, &cli.db.amino, &cli.db.code,
                         cli.db.prof.cfg, cli.input.fd);
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc profile_write(void)
@@ -139,7 +139,7 @@ static enum rc profile_write(void)
 enum rc cli_press(int argc, char **argv)
 {
     struct arguments arguments = {0};
-    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return ILLEGALARG;
+    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return RC_ILLEGALARG;
 
     enum rc rc = cli_setup(&arguments);
     if (rc) goto cleanup;
@@ -151,7 +151,7 @@ enum rc cli_press(int argc, char **argv)
         progress_file_update(&cli.progress);
     }
 
-    if (rc != END)
+    if (rc != RC_END)
     {
         error(rc, "failed to parse HMM file");
         goto cleanup;

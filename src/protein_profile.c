@@ -42,16 +42,16 @@ static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
     if (!ptr && size > 0)
     {
         free(prof->alt.match_ndists);
-        return error(OUTOFMEM, "failed to alloc nuclt dists");
+        return error(RC_OUTOFMEM, "failed to alloc nuclt dists");
     }
     prof->alt.match_ndists = ptr;
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
                            bool multi_hits, bool hmmer3_compat)
 {
-    if (seq_size == 0) return error(ILLEGALARG, "sequence cannot be empty");
+    if (seq_size == 0) return error(RC_ILLEGALARG, "sequence cannot be empty");
 
     imm_float L = (imm_float)seq_size;
 
@@ -108,24 +108,24 @@ enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, J), t.EC + t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, J), t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc protein_profile_absorb(struct protein_profile *p, struct protein_model const *m)
 {
     if (p->code->nuclt != protein_model_nuclt(m))
-        return error(ILLEGALARG, "Different nucleotide alphabets.");
+        return error(RC_ILLEGALARG, "Different nucleotide alphabets.");
 
     if (p->amino != protein_model_amino(m))
-        return error(ILLEGALARG, "Different amino alphabets.");
+        return error(RC_ILLEGALARG, "Different amino alphabets.");
 
     struct protein_model_summary s = protein_model_summary(m);
 
     if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
-        return error(FAIL, "failed to hmm_reset");
+        return error(RC_FAIL, "failed to hmm_reset");
 
     if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
-        return error(FAIL, "failed to hmm_reset");
+        return error(RC_FAIL, "failed to hmm_reset");
 
     p->core_size = m->core_size;
     memcpy(p->consensus, m->consensus, m->core_size + 1);
@@ -148,7 +148,7 @@ enum rc protein_profile_absorb(struct protein_profile *p, struct protein_model c
     p->alt.J = imm_state_idx(imm_super(s.alt.J));
     p->alt.C = imm_state_idx(imm_super(s.alt.C));
     p->alt.T = imm_state_idx(imm_super(s.alt.T));
-    return DONE;
+    return RC_DONE;
 }
 
 struct profile *protein_profile_super(struct protein_profile *pro) { return &pro->super; }
@@ -173,7 +173,7 @@ enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,
     struct protein_model model;
     protein_model_init(&model, p->amino, p->code, p->cfg, lprobs);
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
 
     if ((rc = protein_model_setup(&model, core_size))) goto cleanup;
 
@@ -227,9 +227,9 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
     struct imm_frame_cond cond = {prof->eps, &nucltd->nucltp, &nucltd->codonm};
 
     if (imm_lprob_is_nan(imm_frame_cond_decode(&cond, seq, codon)))
-        return error(ILLEGALARG, "failed to decode sequence");
+        return error(RC_ILLEGALARG, "failed to decode sequence");
 
-    return DONE;
+    return RC_DONE;
 }
 
 void protein_profile_write_dot(struct protein_profile const *p, FILE *restrict fp)
@@ -251,19 +251,19 @@ static void del(struct profile *prof)
 enum rc protein_profile_read(struct protein_profile *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
-    if (imm_dp_read(&prof->null.dp, fd)) return FAIL;
-    if (imm_dp_read(&prof->alt.dp, fd)) return FAIL;
+    if (imm_dp_read(&prof->null.dp, fd)) return RC_FAIL;
+    if (imm_dp_read(&prof->alt.dp, fd)) return RC_FAIL;
 
     uint16_t core_size = 0;
     if (!cmp_read_u16(cmp, &core_size))
-        return error(IOERROR, "failed to read core size");
+        return error(RC_IOERROR, "failed to read core size");
     if (core_size > PROTEIN_MODEL_CORE_SIZE_MAX)
-        return error(PARSEERROR, "profile is too long");
+        return error(RC_PARSEERROR, "profile is too long");
     prof->core_size = core_size;
 
     uint32_t u32 = (uint32_t)core_size + 1;
     if (!cmp_read_str(cmp, prof->consensus, &u32))
-        return error(IOERROR, "failed to read consensus");
+        return error(RC_IOERROR, "failed to read consensus");
 
     enum rc rc = alloc_match_nuclt_dists(prof);
     if (rc) return rc;
@@ -278,20 +278,20 @@ enum rc protein_profile_read(struct protein_profile *prof, struct cmp_ctx_s *cmp
             return rc;
         nuclt_dist_init(prof->alt.match_ndists + i, prof->code->nuclt);
     }
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc protein_profile_write(struct protein_profile const *prof, struct cmp_ctx_s *cmp)
 {
     FILE *fd = xcmp_fp(cmp);
-    if (imm_dp_write(&prof->null.dp, fd)) return FAIL;
-    if (imm_dp_write(&prof->alt.dp, fd)) return FAIL;
+    if (imm_dp_write(&prof->null.dp, fd)) return RC_FAIL;
+    if (imm_dp_write(&prof->alt.dp, fd)) return RC_FAIL;
 
     if (!cmp_write_u16(cmp, (uint16_t)prof->core_size))
-        return error(IOERROR, "failed to write core size");
+        return error(RC_IOERROR, "failed to write core size");
 
     if (!cmp_write_str(cmp, prof->consensus, prof->core_size))
-        return error(IOERROR, "failed to write consensus");
+        return error(RC_IOERROR, "failed to write consensus");
 
     enum rc rc = nuclt_dist_write(&prof->null.ndist, cmp);
     if (rc) return rc;
@@ -303,5 +303,5 @@ enum rc protein_profile_write(struct protein_profile const *prof, struct cmp_ctx
         if ((rc = nuclt_dist_write(prof->alt.match_ndists + i, cmp)))
             return rc;
     }
-    return DONE;
+    return RC_DONE;
 }

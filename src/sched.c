@@ -43,14 +43,14 @@ enum rc sched_setup(char const filepath[DCP_PATH_SIZE])
 
     bool ok = false;
     if ((rc = check_integrity(filepath, &ok))) return rc;
-    if (!ok) return error(FAIL, "damaged sched database");
+    if (!ok) return error(RC_FAIL, "damaged sched database");
 
     return rc;
 }
 
 enum rc sched_open(char const filepath[DCP_PATH_SIZE])
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
 
     if (sqlite3_open(filepath, &sqlite3_db)) return OPEN_ERROR();
     if ((rc = sched_job_module_init(sqlite3_db))) goto cleanup;
@@ -71,7 +71,7 @@ enum rc sched_close(void)
     sched_prod_module_del();
     sched_seq_module_del();
     sched_job_module_del();
-    return sqlite3_close(sqlite3_db) ? CLOSE_ERROR() : DONE;
+    return sqlite3_close(sqlite3_db) ? CLOSE_ERROR() : RC_DONE;
 }
 
 struct sqlite3 *sched_db(void) { return sqlite3_db; }
@@ -80,7 +80,7 @@ enum rc sched_submit_job(struct job *job)
 {
     BEGIN_TRANSACTION_OR_RETURN(sqlite3_db);
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
 
     struct sched_job j = SCHED_JOB_INIT(job->db_id, job->multi_hits,
                                         job->hmmer3_compat, (int64_t)utc_now());
@@ -108,7 +108,7 @@ cleanup:
 enum rc check_integrity(char const *filepath, bool *ok)
 {
     PATH_TEMP_DEFINE(tmp);
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
 
     if ((rc = create_ground_truth_db(tmp))) return rc;
     if ((rc = sqldiff_compare(filepath, tmp, ok))) goto cleanup;
@@ -120,7 +120,7 @@ cleanup:
 
 enum rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath))
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     if ((rc = xfile_mktemp(filepath))) return rc;
     if ((rc = touch_db(filepath))) return rc;
     if ((rc = emerge_db(filepath))) return rc;
@@ -138,7 +138,7 @@ enum rc emerge_db(char const *filepath)
         sqlite3_close(db);
         return rc;
     }
-    return sqlite3_close(db) ? CLOSE_ERROR() : DONE;
+    return sqlite3_close(db) ? CLOSE_ERROR() : RC_DONE;
 }
 
 static int is_empty_cb(void *empty, int argc, char **argv, char **cols)
@@ -161,12 +161,12 @@ enum rc is_empty(char const *filepath, bool *empty)
         return rc;
     }
 
-    return sqlite3_close(db) ? CLOSE_ERROR() : DONE;
+    return sqlite3_close(db) ? CLOSE_ERROR() : RC_DONE;
 }
 
 enum rc touch_db(char const *filepath)
 {
     struct sqlite3 *db = NULL;
     if (sqlite3_open(filepath, &db)) return OPEN_ERROR();
-    return sqlite3_close(db) ? CLOSE_ERROR() : DONE;
+    return sqlite3_close(db) ? CLOSE_ERROR() : RC_DONE;
 }

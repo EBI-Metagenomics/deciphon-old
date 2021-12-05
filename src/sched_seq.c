@@ -45,7 +45,7 @@ static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
 enum rc sched_seq_module_init(struct sqlite3 *db)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
         PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
 
@@ -57,7 +57,7 @@ enum rc sched_seq_add(int64_t job_id, char const *name, unsigned len,
                           char const *data)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
@@ -74,14 +74,14 @@ cleanup:
 enum rc sched_seq_next(int64_t job_id, int64_t *seq_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, *seq_id);
     BIND_INT64_OR_CLEANUP(rc, stmt, 2, job_id);
 
     int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return DONE;
+    if (code == SQLITE_DONE) return RC_DONE;
     if (code != SQLITE_ROW)
     {
         rc = STEP_ERROR();
@@ -90,7 +90,7 @@ enum rc sched_seq_next(int64_t job_id, int64_t *seq_id)
     *seq_id = sqlite3_column_int64(stmt, 0);
     if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
 
-    return NEXT;
+    return RC_NEXT;
 
 cleanup:
     return rc;
@@ -99,7 +99,7 @@ cleanup:
 enum rc sched_seq_get(struct sched_seq *seq, int64_t id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, id);

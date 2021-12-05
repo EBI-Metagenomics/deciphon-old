@@ -21,12 +21,12 @@ void db_handle_init(struct db_handle *db, int64_t id)
 static enum rc close_files(struct db_handle *db, int start, int end,
                                bool ignore_error)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     for (int i = start; i < end; ++i)
     {
         if (fclose(db->fp[i]) && !ignore_error)
         {
-            rc = error(IOERROR, "failed to close db");
+            rc = error(RC_IOERROR, "failed to close db");
             break;
         }
         db->nfiles--;
@@ -37,12 +37,12 @@ static enum rc close_files(struct db_handle *db, int start, int end,
 static enum rc open_files(struct db_handle *db, int start, int end,
                               char path[DCP_PATH_SIZE])
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     for (int i = start; i < end; ++i)
     {
         if (!(db->fp[i] = fopen(path, "rb")))
         {
-            rc = error(IOERROR, "failed to open db");
+            rc = error(RC_IOERROR, "failed to open db");
             break;
         }
         db->nfiles++;
@@ -53,7 +53,7 @@ static enum rc open_files(struct db_handle *db, int start, int end,
 enum rc db_handle_open(struct db_handle *db, char path[DCP_PATH_SIZE],
                            unsigned nfiles)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     assert(nfiles > 0);
     if (db->nfiles == 0)
     {

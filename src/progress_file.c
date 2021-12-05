@@ -29,7 +29,7 @@ void progress_file_start(struct progress_file *p, bool enabled)
 
     if ((p->pos = ftello(p->fd)) == -1L)
     {
-        error(IOERROR, FTELL_FAILED_MSG);
+        error(RC_IOERROR, FTELL_FAILED_MSG);
         p->enabled = false;
         return;
     }
@@ -37,7 +37,7 @@ void progress_file_start(struct progress_file *p, bool enabled)
     off_t fs = 0;
     if (filesize(p->fd, &fs))
     {
-        error(IOERROR, "failed to get file size for progress display");
+        error(RC_IOERROR, "failed to get file size for progress display");
         p->enabled = false;
         return;
     }
@@ -47,7 +47,7 @@ void progress_file_start(struct progress_file *p, bool enabled)
 
     if (athr_start(&p->at, total, "Press", ATHR_BAR | ATHR_PERC | ATHR_ETA))
     {
-        error(IOERROR, "failed to athr_start for progress display");
+        error(RC_IOERROR, "failed to athr_start for progress display");
         p->enabled = false;
     }
 }
@@ -59,7 +59,7 @@ void progress_file_update(struct progress_file *p)
     off_t curr_pos = ftello(p->fd);
     if (curr_pos == -1L)
     {
-        error(IOERROR, FTELL_FAILED_MSG);
+        error(RC_IOERROR, FTELL_FAILED_MSG);
         p->enabled = false;
         athr_stop(&p->at);
         return;

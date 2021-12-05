@@ -18,17 +18,17 @@ void standard_profile_init(struct standard_profile *prof,
 
 enum rc standard_profile_read(struct standard_profile *prof, FILE *restrict fd)
 {
-    if (imm_dp_read(&prof->dp.null, fd)) return FAIL;
-    if (imm_dp_read(&prof->dp.alt, fd)) return FAIL;
-    return DONE;
+    if (imm_dp_read(&prof->dp.null, fd)) return RC_FAIL;
+    if (imm_dp_read(&prof->dp.alt, fd)) return RC_FAIL;
+    return RC_DONE;
 }
 
 enum rc standard_profile_write(struct standard_profile const *prof,
                                FILE *restrict fd)
 {
-    if (imm_dp_write(&prof->dp.null, fd)) return FAIL;
-    if (imm_dp_write(&prof->dp.alt, fd)) return FAIL;
-    return DONE;
+    if (imm_dp_write(&prof->dp.null, fd)) return RC_FAIL;
+    if (imm_dp_write(&prof->dp.alt, fd)) return RC_FAIL;
+    return RC_DONE;
 }
 
 static void del(struct profile *prof)

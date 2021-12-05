@@ -77,7 +77,7 @@ static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
 enum rc sched_prod_module_init(struct sqlite3 *db)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
         PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
 
@@ -88,7 +88,7 @@ cleanup:
 enum rc sched_prod_add(struct prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, prod->job_id);
@@ -121,14 +121,14 @@ cleanup:
 enum rc sched_prod_next(int64_t job_id, int64_t *prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, *prod_id);
     BIND_INT64_OR_CLEANUP(rc, stmt, 2, job_id);
 
     int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return DONE;
+    if (code == SQLITE_DONE) return RC_DONE;
     if (code != SQLITE_ROW)
     {
         rc = STEP_ERROR();
@@ -137,7 +137,7 @@ enum rc sched_prod_next(int64_t job_id, int64_t *prod_id)
     *prod_id = sqlite3_column_int64(stmt, 0);
     if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
 
-    return NEXT;
+    return RC_NEXT;
 
 cleanup:
     return rc;
@@ -146,7 +146,7 @@ cleanup:
 enum rc sched_prod_get(struct prod *prod, int64_t prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
     BIND_INT64_OR_CLEANUP(rc, stmt, 1, prod_id);
@@ -233,25 +233,33 @@ void sched_prod_set_version(struct prod *prod, char const *version)
     safe_strcpy(prod->version, version, DCP_VERSION_SIZE);
 }
 
-#define ERROR_WRITE error(IOERROR, "failed to write product")
-
-enum rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
+enum rc sched_prod_write_preamble(struct prod *p, FILE *restrict fp)
 {
-    if (fprintf(fd, "%" PRId64 TAB, p->job_id) < 0) return ERROR_WRITE;
-    if (fprintf(fd, "%" PRId64 TAB, p->seq_id) < 0) return ERROR_WRITE;
-    if (fprintf(fd, "%" PRId64 TAB, p->match_id) < 0) return ERROR_WRITE;
+#define echo(fmt, var) fprintf(fp, fmt, p->var) < 0
+#define Fd64 "%" PRId64 TAB
+#define Fs "%s" TAB
+#define Fg "%.17g" TAB
 
-    if (fprintf(fd, "%s" TAB, p->prof_name) < 0) return ERROR_WRITE;
-    if (fprintf(fd, "%s" TAB, p->abc_name) < 0) return ERROR_WRITE;
+    if (echo(Fd64, job_id)) return error(RC_IOERROR, "failed to write prod");
+    if (echo(Fd64, seq_id)) return error(RC_IOERROR, "failed to write prod");
+    if (echo(Fd64, match_id)) return error(RC_IOERROR, "failed to write prod");
+
+    if (echo(Fs, prof_name)) return error(RC_IOERROR, "failed to write prod");
+    if (echo(Fs, abc_name)) return error(RC_IOERROR, "failed to write prod");
 
     /* Reference: https://stackoverflow.com/a/21162120 */
-    if (fprintf(fd, "%.17g" TAB, p->loglik) < 0) return ERROR_WRITE;
-    if (fprintf(fd, "%.17g" TAB, p->null_loglik) < 0) return ERROR_WRITE;
+    if (echo(Fg, loglik)) return error(RC_IOERROR, "failed to write prod");
+    if (echo(Fg, null_loglik)) return error(RC_IOERROR, "failed to write prod");
 
-    if (fprintf(fd, "%s" TAB, p->model) < 0) return ERROR_WRITE;
-    if (fprintf(fd, "%s" TAB, p->version) < 0) return ERROR_WRITE;
+    if (echo(Fs, model)) return error(RC_IOERROR, "failed to write prod");
+    if (echo(Fs, version)) return error(RC_IOERROR, "failed to write prod");
 
-    return DONE;
+    return RC_DONE;
+
+#undef Fg
+#undef Fs
+#undef Fd64
+#undef echo
 }
 
 /* Output example
@@ -273,36 +281,36 @@ enum rc sched_prod_write_preamble(struct prod *p, FILE *restrict fd)
 enum rc sched_prod_write_match(FILE *restrict fd, struct protein_match const *m)
 {
     if (fprintf(fd, "%.*s,", m->frag_size, m->frag) < 0)
-        return error(IOERROR, "failed to write frag");
+        return error(RC_IOERROR, "failed to write frag");
 
     if (fprintf(fd, "%s,", m->state) < 0)
-        return error(IOERROR, "failed to write state");
+        return error(RC_IOERROR, "failed to write state");
 
     if (fprintf(fd, "%s,", m->codon) < 0)
-        return error(IOERROR, "failed to write codon");
+        return error(RC_IOERROR, "failed to write codon");
 
     if (fprintf(fd, "%s", m->amino) < 0)
-        return error(IOERROR, "failed to write amino");
+        return error(RC_IOERROR, "failed to write amino");
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc sched_prod_write_match_sep(FILE *restrict fd)
 {
-    if (fputc(';', fd) == EOF) return error(IOERROR, "failed to write sep");
-    return DONE;
+    if (fputc(';', fd) == EOF) return error(RC_IOERROR, "failed to write sep");
+    return RC_DONE;
 }
 
 enum rc sched_prod_write_nl(FILE *restrict fd)
 {
     if (fputc('\n', fd) == EOF)
-        return error(IOERROR, "failed to write newline");
-    return DONE;
+        return error(RC_IOERROR, "failed to write newline");
+    return RC_DONE;
 }
 
 enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     BEGIN_TRANSACTION_OR_RETURN(sched_db());
 
     struct sqlite3_stmt *stmt = stmts[INSERT];
@@ -321,7 +329,7 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
                 int64_t val = 0;
                 if (!to_int64(tok_value(tok), &val))
                 {
-                    error(PARSEERROR, "failed to parse int64");
+                    error(RC_PARSEERROR, "failed to parse int64");
                     goto cleanup;
                 }
                 BIND_INT64_OR_CLEANUP(rc, stmt, i + 1, val);
@@ -331,7 +339,7 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
                 double val = 0;
                 if (!to_double(tok_value(tok), &val))
                 {
-                    error(PARSEERROR, "failed to parse double");
+                    error(RC_PARSEERROR, "failed to parse double");
                     goto cleanup;
                 }
                 BIND_DOUBLE_OR_CLEANUP(rc, stmt, i + 1, val);

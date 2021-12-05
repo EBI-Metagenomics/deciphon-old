@@ -22,17 +22,17 @@ struct db const db_default = {0};
 static enum rc init_tmpmeta(struct db *db)
 {
     FILE *fd = tmpfile();
-    if (!fd) return error(IOERROR, "tmpfile() failed");
+    if (!fd) return error(RC_IOERROR, "tmpfile() failed");
     xcmp_setup(&db->mt.file.cmp, fd);
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc init_tmpdp(struct db *db)
 {
     FILE *fd = tmpfile();
-    if (!fd) return error(IOERROR, "tmpfile() failed");
+    if (!fd) return error(RC_IOERROR, "tmpfile() failed");
     xcmp_setup(&db->dp.cmp, fd);
-    return DONE;
+    return RC_DONE;
 }
 
 void db_init(struct db *db, enum profile_typeid prof_typeid)
@@ -83,7 +83,7 @@ static enum rc flush_metadata(struct db *db)
     struct cmp_ctx_s *cmp = &db->file.cmp[0];
 
     if (!cmp_write_u32(cmp, db->mt.size))
-        return error(IOERROR, "failed to write metadata size");
+        return error(RC_IOERROR, "failed to write metadata size");
 
     char name[MAX_NAME_SIZE + 1] = {0};
     char acc[MAX_ACC_SIZE + 1] = {0};
@@ -91,20 +91,20 @@ static enum rc flush_metadata(struct db *db)
     {
         uint32_t size = ARRAY_SIZE(name);
         if (!cmp_read_str(&db->mt.file.cmp, name, &size))
-            return error(IOERROR, "failed to read name size");
+            return error(RC_IOERROR, "failed to read name size");
 
         if (!xcmp_write(cmp, name, size + 1))
-            return error(IOERROR, "failed to write name");
+            return error(RC_IOERROR, "failed to write name");
 
         size = ARRAY_SIZE(acc);
         if (!cmp_read_str(&db->mt.file.cmp, acc, &size))
-            return error(IOERROR, "failed to read acc size");
+            return error(RC_IOERROR, "failed to read acc size");
 
         if (!xcmp_write(cmp, acc, size + 1))
-            return error(IOERROR, "failed to write acc");
+            return error(RC_IOERROR, "failed to write acc");
     }
 
-    return DONE;
+    return RC_DONE;
 }
 
 static void cleanup_metadata_data(struct db *db)
@@ -133,14 +133,14 @@ static enum rc closew(struct db *db)
     assert(db->file.mode == DB_OPEN_WRITE);
 
     if (!cmp_write_u32(&db->file.cmp[0], db->profiles.size))
-        return error(IOERROR, "failed to write number of profiles");
+        return error(RC_IOERROR, "failed to write number of profiles");
 
     xcmp_rewind(&db->mt.file.cmp);
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
     if ((rc = flush_metadata(db))) goto cleanup;
     if (xcmp_close(&db->mt.file.cmp))
     {
-        rc = error(IOERROR, "failed to close metadata file");
+        rc = error(RC_IOERROR, "failed to close metadata file");
         goto cleanup;
     }
 
@@ -150,7 +150,7 @@ static enum rc closew(struct db *db)
 
     if (xcmp_close(&db->dp.cmp))
     {
-        rc = error(IOERROR, "failed to close DP file");
+        rc = error(RC_IOERROR, "failed to close DP file");
         goto cleanup;
     }
 
@@ -166,7 +166,7 @@ enum rc db_close(struct db *db)
 {
     if (db->file.mode == DB_OPEN_WRITE) return closew(db);
     closer(db);
-    return DONE;
+    return RC_DONE;
 }
 
 bool db_end(struct db const *db)
@@ -183,54 +183,54 @@ enum rc db_read_magic_number(struct db *db)
 {
     uint64_t magic_number = 0;
     if (!cmp_read_u64(&db->file.cmp[0], &magic_number))
-        return error(IOERROR, "failed to read magic number");
+        return error(RC_IOERROR, "failed to read magic number");
 
     if (magic_number != MAGIC_NUMBER)
-        return error(PARSEERROR, "wrong file magic number");
+        return error(RC_PARSEERROR, "wrong file magic number");
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_write_magic_number(struct db *db)
 {
     if (!cmp_write_u64(&db->file.cmp[0], MAGIC_NUMBER))
-        return error(IOERROR, "failed to write magic number");
+        return error(RC_IOERROR, "failed to write magic number");
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_read_prof_type(struct db *db)
 {
     uint8_t prof_type = 0;
     if (!cmp_read_u8(&db->file.cmp[0], &prof_type))
-        return error(IOERROR, "failed to read profile type");
+        return error(RC_IOERROR, "failed to read profile type");
 
     if (prof_type != STANDARD_PROFILE && prof_type != PROTEIN_PROFILE)
-        return error(PARSEERROR, "wrong prof_type");
+        return error(RC_PARSEERROR, "wrong prof_type");
 
     db->prof_typeid = prof_type;
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_write_prof_type(struct db *db)
 {
     if (!cmp_write_u8(&db->file.cmp[0], (uint8_t)db->prof_typeid))
-        return error(IOERROR, "failed to write prof_type");
+        return error(RC_IOERROR, "failed to write prof_type");
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_read_float_size(struct db *db)
 {
     uint8_t float_bytes = 0;
     if (!cmp_read_u8(&db->file.cmp[0], &float_bytes))
-        return error(IOERROR, "failed to read float size");
+        return error(RC_IOERROR, "failed to read float size");
 
     if (float_bytes != 4 && float_bytes != 8)
-        return error(PARSEERROR, "invalid float size");
+        return error(RC_PARSEERROR, "invalid float size");
 
     db->float_size = float_bytes;
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_write_float_size(struct db *db)
@@ -239,31 +239,31 @@ enum rc db_write_float_size(struct db *db)
     assert(size == 4 || size == 8);
 
     if (!cmp_write_u8(&db->file.cmp[0], (uint8_t)size))
-        return error(IOERROR, "failed to write float size");
+        return error(RC_IOERROR, "failed to write float size");
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_read_nprofiles(struct db *db)
 {
     if (!cmp_read_u32(&db->file.cmp[0], &db->profiles.size))
-        return error(IOERROR, "failed to read number of profiles");
+        return error(RC_IOERROR, "failed to read number of profiles");
 
     if (db->profiles.size > MAX_NPROFILES)
-        return error(FAIL, "too many profiles");
+        return error(RC_FAIL, "too many profiles");
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc read_metadata_size(struct db *db)
 {
     if (!cmp_read_u32(&db->file.cmp[0], &db->mt.size))
-        return error(IOERROR, "failed to read metadata size");
+        return error(RC_IOERROR, "failed to read metadata size");
 
     if (db->mt.size > max_mt_data_size())
-        return error(FAIL, "mt.data size is too big");
+        return error(RC_FAIL, "mt.data size is too big");
 
-    return DONE;
+    return RC_DONE;
 }
 
 /* TODO: use it somewhere to make sure they are compatible */
@@ -271,9 +271,9 @@ static enum rc check_metadata_profile_compatibility(struct db const *db)
 {
     if ((db->mt.size > 0 && db->profiles.size == 0) ||
         (db->mt.size == 0 && db->profiles.size > 0))
-        return error(FAIL, "incompatible profiles and metadata");
+        return error(RC_FAIL, "incompatible profiles and metadata");
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc read_metadata_data(struct db *db)
@@ -281,22 +281,22 @@ static enum rc read_metadata_data(struct db *db)
     assert(db->mt.size > 0);
 
     if (!(db->mt.data = malloc(sizeof(char) * db->mt.size)))
-        return error(OUTOFMEM, "failed to alloc for mt.data");
+        return error(RC_OUTOFMEM, "failed to alloc for mt.data");
 
     struct cmp_ctx_s *cmp = &db->file.cmp[0];
     if (!xcmp_read(cmp, db->mt.data, db->mt.size))
     {
         cleanup_metadata_data(db);
-        return error(IOERROR, "failed to read metadata");
+        return error(RC_IOERROR, "failed to read metadata");
     }
 
     if (db->mt.data[db->mt.size - 1])
     {
         cleanup_metadata_data(db);
-        return error(PARSEERROR, "invalid metadata");
+        return error(RC_PARSEERROR, "invalid metadata");
     }
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc alloc_metadata_parsing(struct db *db)
@@ -306,16 +306,16 @@ static enum rc alloc_metadata_parsing(struct db *db)
     if (!(db->mt.offset = malloc(sizeof(*db->mt.offset) * (n + 1))))
     {
         cleanup_metadata_parsing(db);
-        return error(OUTOFMEM, "failed to alloc for mt.offset");
+        return error(RC_OUTOFMEM, "failed to alloc for mt.offset");
     }
 
     if (!(db->mt.name_length = malloc(sizeof(*db->mt.name_length) * n)))
     {
-        return error(OUTOFMEM, "failed to alloc for mt.name_length");
+        return error(RC_OUTOFMEM, "failed to alloc for mt.name_length");
         cleanup_metadata_parsing(db);
     }
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc parse_metadata(struct db *db)
@@ -329,16 +329,17 @@ static enum rc parse_metadata(struct db *db)
         unsigned offset = db->mt.offset[i];
         unsigned j = 0;
         if (offset + j >= db->mt.size)
-            return error(FAIL, "mt.data index overflow");
+            return error(RC_FAIL, "mt.data index overflow");
 
         /* Name */
         while (db->mt.data[offset + j++])
             ;
-        if (j - 1 > MAX_NAME_SIZE) return error(ILLEGALARG, "name is too long");
+        if (j - 1 > MAX_NAME_SIZE)
+            return error(RC_ILLEGALARG, "name is too long");
 
         db->mt.name_length[i] = (uint8_t)(j - 1);
         if (offset + j >= db->mt.size)
-            return error(FAIL, "mt.data index overflow");
+            return error(RC_FAIL, "mt.data index overflow");
 
         /* Accession */
         while (db->mt.data[offset + j++])
@@ -346,12 +347,12 @@ static enum rc parse_metadata(struct db *db)
         db->mt.offset[i + 1] = offset + j;
     }
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_read_metadata(struct db *db)
 {
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
 
     if ((rc = read_metadata_size(db))) goto cleanup;
 
@@ -362,7 +363,7 @@ enum rc db_read_metadata(struct db *db)
         if ((rc = parse_metadata(db))) goto cleanup;
     }
 
-    return DONE;
+    return RC_DONE;
 
 cleanup:
     cleanup_metadata_data(db);
@@ -375,11 +376,11 @@ static enum rc write_name(struct db *db, struct profile const *prof)
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
     if (!cmp_write_str(ctx, prof->mt.name, (uint32_t)strlen(prof->mt.name)))
-        return error(IOERROR, "failed to write profile name");
+        return error(RC_IOERROR, "failed to write profile name");
     /* +1 for null-terminated */
     db->mt.size += (uint32_t)strlen(prof->mt.name) + 1;
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc write_accession(struct db *db, struct profile const *prof)
@@ -387,40 +388,40 @@ static enum rc write_accession(struct db *db, struct profile const *prof)
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
     if (!cmp_write_str(ctx, prof->mt.acc, (uint32_t)strlen(prof->mt.acc)))
-        return error(IOERROR, "failed to write profile accession");
+        return error(RC_IOERROR, "failed to write profile accession");
     /* +1 for null-terminated */
     db->mt.size += (uint32_t)strlen(prof->mt.acc) + 1;
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_write_prof_meta(struct db *db, struct profile const *prof)
 {
-    if (prof->mt.name == NULL) return error(ILLEGALARG, "metadata not set");
+    if (prof->mt.name == NULL) return error(RC_ILLEGALARG, "metadata not set");
 
     if (strlen(prof->mt.name) > MAX_NAME_SIZE)
-        return error(ILLEGALARG, "profile name is too long");
+        return error(RC_ILLEGALARG, "profile name is too long");
 
     if (strlen(prof->mt.acc) > MAX_ACC_SIZE)
-        return error(ILLEGALARG, "profile accession is too long");
+        return error(RC_ILLEGALARG, "profile accession is too long");
 
-    enum rc rc = DONE;
+    enum rc rc = RC_DONE;
 
     if ((rc = write_name(db, prof))) return rc;
     if ((rc = write_accession(db, prof))) return rc;
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_check_write_prof_ready(struct db const *db,
                                   struct profile const *prof)
 {
     if (db->profiles.size == MAX_NPROFILES)
-        return error(FAIL, "too many profiles");
+        return error(RC_FAIL, "too many profiles");
 
-    if (prof->mt.name == NULL) return error(ILLEGALARG, "metadata not set");
+    if (prof->mt.name == NULL) return error(RC_ILLEGALARG, "metadata not set");
 
-    return DONE;
+    return RC_DONE;
 }
 
 struct meta db_meta(struct db const *db, unsigned idx)
@@ -440,8 +441,9 @@ enum profile_typeid db_prof_typeid(struct db const *db)
 enum rc db_current_offset(struct db *db, off_t *offset)
 {
     FILE *fp = xcmp_fp(&db->file.cmp[0]);
-    if ((*offset = ftello(fp)) == -1) return error(IOERROR, "failed to ftello");
-    return DONE;
+    if ((*offset = ftello(fp)) == -1)
+        return error(RC_IOERROR, "failed to ftello");
+    return RC_DONE;
 }
 
 enum rc db_record_first_partition_offset(struct db *db)
@@ -455,8 +457,8 @@ enum rc db_rewind(struct db *db)
     {
         FILE *fp = xcmp_fp(&db->file.cmp[i]);
         if (fseek(fp, db->partition_offset[i], SEEK_SET) == -1)
-            return error(IOERROR, "failed to fseek");
+            return error(RC_IOERROR, "failed to fseek");
     }
     db->profiles.curr_idx = 0;
-    return DONE;
+    return RC_DONE;
 }
