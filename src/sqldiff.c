@@ -21,7 +21,6 @@
 
 #include "sqldiff.h"
 #include "logger.h"
-#include "path.h"
 #include "sqlite3.h"
 #include "xfile.h"
 #include <assert.h>
@@ -2476,7 +2475,7 @@ static int call_main(int argc, char const **argv, FILE *out)
 
 enum rc sqldiff_compare(char const *db0, char const *db1, bool *equal)
 {
-    PATH_TEMP_DEFINE(path);
+    char path[] = XFILE_PATH_TEMP_TEMPLATE;
     enum rc rc = xfile_mktemp(path);
     if (rc) return rc;
 

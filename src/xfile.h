@@ -2,15 +2,16 @@
 #define XFILE_H
 
 #include "dcp_limits.h"
-#include "path.h"
 #include "rc.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
+#define XFILE_PATH_TEMP_TEMPLATE "/tmp/dcpXXXXXX"
+
 struct xfile_tmp
 {
-    PATH_TEMP_DECLARE(path);
+    char path[sizeof XFILE_PATH_TEMP_TEMPLATE];
     FILE *fp;
 };
 
@@ -23,5 +24,9 @@ bool xfile_is_readable(char const *filepath);
 enum rc xfile_mktemp(char *filepath);
 
 enum rc xfile_hash(FILE *restrict fp, uint64_t *hash);
+
+bool xfile_set_path_ext(char *str, size_t max_size, char const *ext);
+void xfile_basename(char *filename, char const *path);
+void xfile_strip_path_ext(char *str);
 
 #endif

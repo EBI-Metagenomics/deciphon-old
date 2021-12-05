@@ -2,8 +2,8 @@
 #include "cli.h"
 #include "log/log.h"
 #include "logger.h"
-#include "path.h"
 #include "server.h"
+#include "xfile.h"
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>
@@ -82,8 +82,8 @@ enum rc cli_server(int argc, char **argv)
 
     char db_name[DB_NAME_SIZE] = {0};
     static_assert(DB_NAME_SIZE <= DCP_FILENAME_SIZE, "Avoid overflow");
-    path_basename(db_name, dcpfile);
-    path_strip_ext(db_name);
+    xfile_basename(db_name, dcpfile);
+    xfile_strip_path_ext(db_name);
 
     int64_t db_id = 0;
     rc = server_add_db(db_name, dcpfile, &db_id);

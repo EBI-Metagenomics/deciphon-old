@@ -1,11 +1,11 @@
 #include "cli_press.h"
 #include "cli.h"
 #include "logger.h"
-#include "path.h"
 #include "progress_file.h"
 #include "protein_db.h"
 #include "protein_reader.h"
 #include "safe.h"
+#include "xfile.h"
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -22,7 +22,7 @@ static bool infer_output_file(struct arguments *args)
 {
     size_t n = safe_strcpy(args->output_file, args->input_file, PATH_MAX);
     if (n >= PATH_MAX) return false;
-    return path_change_or_add_ext(args->output_file, PATH_MAX, ".dcp");
+    return xfile_set_path_ext(args->output_file, PATH_MAX, ".dcp");
 }
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)

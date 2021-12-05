@@ -2,7 +2,6 @@
 #include "job.h"
 #include "logger.h"
 #include "macros.h"
-#include "path.h"
 #include "rc.h"
 #include "sched_db.h"
 #include "sched_job.h"
@@ -24,11 +23,11 @@ static struct sqlite3 *sqlite3_db = NULL;
 static_assert(SQLITE_VERSION_NUMBER >= 3035000, "We need RETURNING statement");
 
 enum rc check_integrity(char const *filepath, bool *ok);
-enum rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath));
+enum rc create_ground_truth_db(char *filepath);
 enum rc emerge_db(char const *filepath);
 enum rc is_empty(char const *filepath, bool *empty);
 enum rc submit_job(struct sqlite3_stmt *, struct sched_job *, int64_t db_id,
-                       int64_t *job_id);
+                   int64_t *job_id);
 enum rc touch_db(char const *filepath);
 
 enum rc sched_setup(char const filepath[DCP_PATH_SIZE])
@@ -107,7 +106,7 @@ cleanup:
 
 enum rc check_integrity(char const *filepath, bool *ok)
 {
-    PATH_TEMP_DEFINE(tmp);
+    char tmp[] = XFILE_PATH_TEMP_TEMPLATE;
     enum rc rc = RC_DONE;
 
     if ((rc = create_ground_truth_db(tmp))) return rc;
@@ -118,7 +117,7 @@ cleanup:
     return rc;
 }
 
-enum rc create_ground_truth_db(PATH_TEMP_DECLARE(filepath))
+enum rc create_ground_truth_db(char *filepath)
 {
     enum rc rc = RC_DONE;
     if ((rc = xfile_mktemp(filepath))) return rc;

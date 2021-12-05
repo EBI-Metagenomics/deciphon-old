@@ -3,10 +3,10 @@
 
 #include "cco/cco.h"
 #include "dcp_limits.h"
-#include "path.h"
 #include "protein_db.h"
 #include "rc.h"
 #include "standard_db.h"
+#include "xfile.h"
 #include <stdio.h>
 
 #define DB_HANDLE_MAX_FILES 64

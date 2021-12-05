@@ -59,7 +59,6 @@ add_library(
   src/logger.c
   src/meta.c
   src/nuclt_dist.c
-  src/path.c
   src/pool.c
   src/prod.c
   src/progress_file.c
@@ -132,6 +131,8 @@ target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
 target_compile_definitions(dcp PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 # https://stackoverflow.com/a/42597059
 target_compile_definitions(dcp PRIVATE _POSIX_C_SOURCE=200112L)
+# To make mkstemp available.
+target_compile_definitions(dcp PRIVATE __USE_XOPEN_EXTENDED)
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
