@@ -6,6 +6,7 @@
 #include "protein_reader.h"
 #include "safe.h"
 #include "xfile.h"
+#include <argp.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -101,7 +102,7 @@ static struct
 
 static enum rc cli_setup(struct arguments const *args)
 {
-    cli_log_setup();
+    cli_logger_setup();
     cli.input.file = args->input_file;
     cli.output.file = args->output_file;
 
@@ -163,6 +164,6 @@ cleanup:
     progress_file_stop(&cli.progress);
     fclose(cli.input.fd);
     fclose(cli.output.fd);
-    cli_log_flush();
+    cli_logger_flush();
     return rc;
 }

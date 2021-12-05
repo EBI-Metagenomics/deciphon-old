@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "server.h"
 #include "xfile.h"
+#include <argp.h>
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>

@@ -1,14 +1,8 @@
 #ifndef CLI_H
 #define CLI_H
 
-#include "athr/athr.h"
-#include "version.h"
-#include <argp.h>
-#include <stdbool.h>
-#include <stdio.h>
-
-void cli_log_setup(void);
-void cli_log_flush(void);
+void cli_logger_setup(void);
+void cli_logger_flush(void);
 
 #define CLI_BUG_ADDRESS "<https://github.com/EBI-Metagenomics/deciphon>"
 

@@ -11,6 +11,7 @@
 #include "protein_state.h"
 #include "table.h"
 #include "tbl/tbl.h"
+#include <argp.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -276,7 +277,7 @@ static enum rc scan_queries(struct meta const *mt)
 
 static enum rc cli_setup(void)
 {
-    cli_log_setup();
+    cli_logger_setup();
     cli.queries.file = arguments.args[0];
     cli.pro.file = arguments.args[1];
     cli.pro.prod = imm_prod();
@@ -359,7 +360,7 @@ cleanup:
     fclose(cli.output.codon.fd);
     fclose(cli.output.amino.fd);
     fclose(cli.output.fd);
-    cli_log_flush();
+    cli_logger_flush();
     if (!rc)
     {
         if (cli.output.nmatches == 0)

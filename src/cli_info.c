@@ -2,6 +2,8 @@
 #include "cli.h"
 #include "imm/imm.h"
 #include "rc.h"
+#include "version.h"
+#include <argp.h>
 
 struct arguments
 {
