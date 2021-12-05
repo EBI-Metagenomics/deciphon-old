@@ -1,6 +1,7 @@
 #ifndef TASK_H
 #define TASK_H
 
+#include "imm/imm.h"
 #include "prod.h"
 #include "sched_job.h"
 #include "sched_prod.h"
@@ -24,6 +25,6 @@ struct task
 };
 
 enum rc task_setup(struct task *task, struct imm_abc const *abc,
-                       int64_t seq_id);
+                   int64_t seq_id);
 
 #endif

@@ -47,6 +47,7 @@ add_library(
   dcp
   sched_schema.c
   src/array.c
+  src/bitops.c
   src/cli.c
   src/cli_info.c
   src/cli_press.c
