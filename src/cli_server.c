@@ -1,4 +1,3 @@
-#include "cli_server.h"
 #include "cli.h"
 #include "log/log.h"
 #include "logger.h"

@@ -1,4 +1,3 @@
-#include "cli_info.h"
 #include "cli.h"
 #include "imm/imm.h"
 #include "rc.h"

@@ -1,5 +1,4 @@
 #include "cli.h"
-#include "cli_scan.h"
 #include "version.h"
 
 char const *argp_program_version = "dcp-scan " VERSION;

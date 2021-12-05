@@ -1,4 +1,3 @@
-#include "cli_scan.h"
 #include "cli.h"
 #include "fasta/fasta.h"
 #include "gff/gff.h"
