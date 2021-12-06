@@ -1,7 +1,7 @@
 #include "sched.h"
 #include "job.h"
 #include "logger.h"
-#include "macros.h"
+#include "compiler.h"
 #include "rc.h"
 #include "sched_db.h"
 #include "sched_job.h"

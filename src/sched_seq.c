@@ -1,6 +1,6 @@
 #include "sched_seq.h"
+#include "compiler.h"
 #include "logger.h"
-#include "macros.h"
 #include "rc.h"
 #include "safe.h"
 #include "sched_macros.h"
@@ -62,7 +62,8 @@ enum rc sched_seq_add(int64_t job_id, char const *name, unsigned len,
 
     if ((rc = xsql_bind_i64(stmt, 0, job_id))) goto cleanup;
     if ((rc = xsql_bind_str(stmt, 1, name))) goto cleanup;
-    if ((rc = xsql_bind_txt(stmt, 2, len, data))) goto cleanup;
+    if ((rc = xsql_bind_txt(stmt, 2, (struct xsql_txt){len, data})))
+        goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
@@ -109,11 +110,11 @@ enum rc sched_seq_get(struct sched_seq *seq, int64_t id)
     seq->id = sqlite3_column_int64(stmt, 0);
     seq->job_id = sqlite3_column_int64(stmt, 1);
 
-    rc = xsql_get_txt(stmt, 2, ARRAY_SIZE_OF(*seq, name), seq->name);
-    if (rc) goto cleanup;
+    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*seq, name)))) goto cleanup;
 
-    rc = xsql_get_text_as_array(stmt, 3, &seq->data);
-    if (rc) goto cleanup;
+    struct xsql_txt txt = {0};
+    if ((rc = xsql_get_txt(stmt, 3, &txt))) goto cleanup;
+    if ((rc = xsql_txt_as_array(&txt, &seq->data))) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 

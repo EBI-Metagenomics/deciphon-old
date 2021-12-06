@@ -1,5 +1,5 @@
 #include "table.h"
-#include "macros.h"
+#include "compiler.h"
 #include "safe.h"
 #include <assert.h>
 #include <string.h>

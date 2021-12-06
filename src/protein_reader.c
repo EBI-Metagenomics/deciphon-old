@@ -1,5 +1,5 @@
 #include "protein_reader.h"
-#include "macros.h"
+#include "compiler.h"
 #include "rc.h"
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);

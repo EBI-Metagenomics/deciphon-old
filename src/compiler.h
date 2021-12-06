@@ -31,4 +31,12 @@
     (sizeof(x) == 2 ? 16U :\
     (sizeof(x) == 1 ? 8U : BUILD_BUG_ON_ZERO(0))))))))))
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#define MEMBER_REF(var, member) ((__typeof__(var) *)0)->member
+#define MEMBER_SIZE(var, member) sizeof(MEMBER_REF((var), member))
+#define ARRAY_SIZE_OF(var, member) ARRAY_SIZE(MEMBER_REF((var), member))
+
+#define __STRINGIFY(n) #n
+#define LOCAL(n) __FILE__ ":" __STRINGIFY(n)
+
 #endif

@@ -1,7 +1,7 @@
 #include "db_handle.h"
 #include "db.h"
 #include "logger.h"
-#include "macros.h"
+#include "compiler.h"
 #include "protein_db.h"
 #include "safe.h"
 #include "utc.h"

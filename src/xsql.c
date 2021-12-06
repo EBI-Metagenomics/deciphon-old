@@ -6,6 +6,13 @@
 #include <sqlite3.h>
 #include <stdlib.h>
 
+enum rc xsql_txt_as_array(struct xsql_txt const *txt, struct array **arr)
+{
+    *arr = array_put(*arr, txt->str, (size_t)(txt->len + 1));
+    if (!*arr) return error(RC_OUTOFMEM, "failed to convert txt to array");
+    return RC_DONE;
+}
+
 enum rc xsql_bind_dbl(struct sqlite3_stmt *stmt, int col, double val)
 {
     assert(col >= 0);
@@ -30,33 +37,30 @@ enum rc xsql_bind_str(struct sqlite3_stmt *stmt, int col, char const *str)
     return RC_DONE;
 }
 
-enum rc xsql_bind_txt(struct sqlite3_stmt *stmt, int col, unsigned len,
-                      char const *txt)
+enum rc xsql_bind_txt(struct sqlite3_stmt *stmt, int col, struct xsql_txt txt)
 {
     assert(col >= 0);
-    if (sqlite3_bind_text(stmt, col + 1, txt, (int)len, SQLITE_TRANSIENT))
+    if (sqlite3_bind_text(stmt, col + 1, txt.str, (int)txt.len,
+                          SQLITE_TRANSIENT))
         return error(RC_FAIL, "failed to bind text");
     return RC_DONE;
 }
 
-enum rc xsql_get_txt(struct sqlite3_stmt *stmt, int col, unsigned dst_size,
-                     char *dst)
+enum rc xsql_get_txt(struct sqlite3_stmt *stmt, int col, struct xsql_txt *txt)
+{
+    txt->str = (char const *)sqlite3_column_text(stmt, col);
+    if (!txt->str) return error(RC_OUTOFMEM, "failed to fetch sqlite text");
+    int ilen = sqlite3_column_bytes(stmt, col);
+    assert(ilen > 0);
+    txt->len = (unsigned)ilen;
+    return RC_DONE;
+}
+
+enum rc xsql_cpy_txt(struct sqlite3_stmt *stmt, int col, struct xsql_txt txt)
 {
     char const *str = (char const *)sqlite3_column_text(stmt, col);
     if (!str) return error(RC_OUTOFMEM, "failed to fetch sqlite text");
     sqlite3_column_bytes(stmt, col);
-    safe_strcpy(dst, str, dst_size);
-    return RC_DONE;
-}
-
-enum rc xsql_get_text_as_array(struct sqlite3_stmt *stmt, int col,
-                               struct array **dst)
-{
-    char const *str = (char const *)sqlite3_column_text(stmt, col);
-    if (!str) return error(RC_OUTOFMEM, "failed to fetch sqlite text");
-    int len = sqlite3_column_bytes(stmt, col);
-    struct array *arr = array_put(*dst, str, (size_t)(len + 1));
-    if (!arr) return error(RC_OUTOFMEM, "failed to copy sqlite text");
-    *dst = arr;
+    safe_strcpy((char *)txt.str, str, txt.len + 1);
     return RC_DONE;
 }

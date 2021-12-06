@@ -1,7 +1,7 @@
 #include "sched_prod.h"
 #include "array.h"
+#include "compiler.h"
 #include "logger.h"
-#include "macros.h"
 #include "protein_match.h"
 #include "safe.h"
 #include "sched.h"
@@ -85,26 +85,22 @@ enum rc sched_prod_add(struct prod *prod)
     if ((rc = xsql_bind_i64(stmt, 1, prod->seq_id))) goto cleanup;
     if ((rc = xsql_bind_i64(stmt, 2, prod->match_id))) goto cleanup;
 
-    if ((rc = xsql_bind_txt(stmt, 3, ARRAY_SIZE_OF(*prod, prof_name),
-                            prod->prof_name)))
+    if ((rc = xsql_bind_txt(stmt, 3, XSQL_TXT_OF(*prod, prof_name))))
         goto cleanup;
-    if ((rc = xsql_bind_txt(stmt, 4, ARRAY_SIZE_OF(*prod, abc_name),
-                            prod->abc_name)))
+    if ((rc = xsql_bind_txt(stmt, 4, XSQL_TXT_OF(*prod, abc_name))))
         goto cleanup;
 
     if ((rc = xsql_bind_dbl(stmt, 5, prod->loglik))) goto cleanup;
     if ((rc = xsql_bind_dbl(stmt, 6, prod->null_loglik))) goto cleanup;
 
-    if ((rc = xsql_bind_txt(stmt, 7, ARRAY_SIZE_OF(*prod, prof_typeid),
-                            prod->prof_typeid)))
+    if ((rc = xsql_bind_txt(stmt, 7, XSQL_TXT_OF(*prod, prof_typeid))))
         goto cleanup;
-    if ((rc = xsql_bind_txt(stmt, 8, ARRAY_SIZE_OF(*prod, version),
-                            prod->version)))
+    if ((rc = xsql_bind_txt(stmt, 8, XSQL_TXT_OF(*prod, version))))
         goto cleanup;
 
-    if ((rc = xsql_bind_txt(stmt, 9, (unsigned)array_size(prod->match),
-                            array_data(prod->match))))
-        goto cleanup;
+    struct xsql_txt match = {(unsigned)array_size(prod->match),
+                             array_data(prod->match)};
+    if ((rc = xsql_bind_txt(stmt, 9, match))) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     prod->id = sqlite3_column_int64(stmt, 0);
@@ -154,23 +150,22 @@ enum rc sched_prod_get(struct prod *prod, int64_t prod_id)
     prod->seq_id = sqlite3_column_int64(stmt, 2);
     prod->match_id = sqlite3_column_int64(stmt, 3);
 
-    rc =
-        xsql_get_txt(stmt, 4, ARRAY_SIZE_OF(*prod, prof_name), prod->prof_name);
+    rc = xsql_cpy_txt(stmt, 4, XSQL_TXT_OF(*prod, prof_name));
     if (rc) goto cleanup;
-    rc = xsql_get_txt(stmt, 5, ARRAY_SIZE_OF(*prod, abc_name), prod->abc_name);
+    rc = xsql_cpy_txt(stmt, 5, XSQL_TXT_OF(*prod, abc_name));
     if (rc) goto cleanup;
 
     prod->loglik = sqlite3_column_double(stmt, 6);
     prod->null_loglik = sqlite3_column_double(stmt, 7);
 
-    rc = xsql_get_txt(stmt, 8, ARRAY_SIZE_OF(*prod, prof_typeid),
-                      prod->prof_typeid);
+    rc = xsql_cpy_txt(stmt, 8, XSQL_TXT_OF(*prod, prof_typeid));
     if (rc) goto cleanup;
-    rc = xsql_get_txt(stmt, 9, ARRAY_SIZE_OF(*prod, version), prod->version);
+    rc = xsql_cpy_txt(stmt, 9, XSQL_TXT_OF(*prod, version));
     if (rc) goto cleanup;
 
-    rc = xsql_get_text_as_array(stmt, 10, &prod->match);
-    if (rc) goto cleanup;
+    struct xsql_txt txt = {0};
+    if ((rc = xsql_get_txt(stmt, 10, &txt))) goto cleanup;
+    if ((rc = xsql_txt_as_array(&txt, &prod->match))) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
@@ -345,9 +340,8 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
             }
             else if (col_type[i] == COL_TYPE_TEXT)
             {
-                if ((rc =
-                         xsql_bind_txt(stmt, i, tok_size(tok), tok_value(tok))))
-                    goto cleanup;
+                struct xsql_txt txt = {tok_size(tok), tok_value(tok)};
+                if ((rc = xsql_bind_txt(stmt, i, txt))) goto cleanup;
             }
             rc = tok_next(tok, fd);
         }

@@ -1,7 +1,7 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include "macros.h"
+#include "compiler.h"
 #include "rc.h"
 
 typedef void logger_print_t(char const *msg, void *arg);

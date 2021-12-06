@@ -1,6 +1,6 @@
 #include "sched_db.h"
+#include "compiler.h"
 #include "logger.h"
-#include "macros.h"
 #include "rc.h"
 #include "safe.h"
 #include "sched_macros.h"
@@ -75,11 +75,8 @@ enum rc sched_db_add(struct sched_db *db)
     RESET_OR_CLEANUP(rc, stmt);
 
     if ((rc = xsql_bind_i64(stmt, 0, db->xxh64))) goto cleanup;
-    if ((rc = xsql_get_txt(stmt, 1, ARRAY_SIZE_OF(*db, name), db->name)))
-        goto cleanup;
-    if ((rc =
-             xsql_get_txt(stmt, 2, ARRAY_SIZE_OF(*db, filepath), db->filepath)))
-        goto cleanup;
+    if ((rc = xsql_cpy_txt(stmt, 1, XSQL_TXT_OF(*db, name)))) goto cleanup;
+    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*db, filepath)))) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     db->id = sqlite3_column_int64(stmt, 0);
@@ -107,10 +104,8 @@ static enum rc select_db(struct sched_db *db, int64_t by_value,
 
     db->id = sqlite3_column_int64(stmt, 0);
     db->xxh64 = sqlite3_column_int64(stmt, 1);
-    rc = xsql_get_txt(stmt, 2, ARRAY_SIZE_OF(*db, name), db->name);
-    if (rc) goto cleanup;
-    rc = xsql_get_txt(stmt, 3, ARRAY_SIZE_OF(*db, filepath), db->filepath);
-    if (rc) goto cleanup;
+    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*db, name)))) goto cleanup;
+    if ((rc = xsql_cpy_txt(stmt, 3, XSQL_TXT_OF(*db, filepath)))) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 

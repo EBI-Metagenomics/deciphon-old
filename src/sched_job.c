@@ -1,7 +1,7 @@
 #include "sched_job.h"
+#include "compiler.h"
 #include "job_state.h"
 #include "logger.h"
-#include "macros.h"
 #include "rc.h"
 #include "safe.h"
 #include "sched_limits.h"
@@ -165,7 +165,7 @@ enum rc sched_job_state(int64_t job_id, enum job_state *state)
     }
 
     char tmp[SCHED_JOB_STATE_SIZE] = {0};
-    rc = xsql_get_txt(stmt, 0, SCHED_JOB_STATE_SIZE, tmp);
+    rc = xsql_cpy_txt(stmt, 0, (struct xsql_txt){SCHED_JOB_STATE_SIZE, tmp});
     if (rc) goto cleanup;
     *state = job_state_resolve(tmp);
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
@@ -188,10 +188,10 @@ enum rc sched_job_get(struct sched_job *job, int64_t job_id)
     job->db_id = sqlite3_column_int64(stmt, 1);
     job->multi_hits = sqlite3_column_int(stmt, 2);
     job->hmmer3_compat = sqlite3_column_int(stmt, 3);
-    rc = xsql_get_txt(stmt, 4, ARRAY_SIZE_OF(*job, state), job->state);
+    rc = xsql_cpy_txt(stmt, 4, XSQL_TXT_OF(*job, state));
     if (rc) goto cleanup;
 
-    rc = xsql_get_txt(stmt, 5, ARRAY_SIZE_OF(*job, error), job->error);
+    rc = xsql_cpy_txt(stmt, 5, XSQL_TXT_OF(*job, error));
     if (rc) goto cleanup;
     job->submission = sqlite3_column_int64(stmt, 6);
     job->exec_started = sqlite3_column_int64(stmt, 7);

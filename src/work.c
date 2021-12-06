@@ -2,7 +2,7 @@
 #include "db_handle.h"
 #include "db_pool.h"
 #include "logger.h"
-#include "macros.h"
+#include "compiler.h"
 #include "protein_match.h"
 #include "protein_state.h"
 #include "safe.h"

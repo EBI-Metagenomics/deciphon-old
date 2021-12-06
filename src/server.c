@@ -5,7 +5,7 @@
 #include "elapsed/elapsed.h"
 #include "job.h"
 #include "logger.h"
-#include "macros.h"
+#include "compiler.h"
 #include "protein_state.h"
 #include "rc.h"
 #include "sched.h"

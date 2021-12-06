@@ -3,7 +3,7 @@
 #include "dcp_limits.h"
 #include "imm/imm.h"
 #include "logger.h"
-#include "macros.h"
+#include "compiler.h"
 #include "profile.h"
 #include "xfile.h"
 #include <assert.h>
