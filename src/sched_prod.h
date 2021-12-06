@@ -26,7 +26,7 @@ void sched_prod_set_abc_name(struct prod *, char const *);
 void sched_prod_set_loglik(struct prod *, double);
 void sched_prod_set_null_loglik(struct prod *, double);
 
-void sched_prod_set_model(struct prod *, char const *);
+void sched_prod_set_prof_typeid(struct prod *, char const *);
 void sched_prod_set_version(struct prod *, char const *);
 
 enum rc sched_prod_write_preamble(struct prod *prod, FILE *restrict fd);

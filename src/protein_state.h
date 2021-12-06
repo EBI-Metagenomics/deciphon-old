@@ -6,7 +6,7 @@
 
 static inline unsigned protein_state_id_msb(unsigned id)
 {
-    return id & (3U << (DCP_BITS_PER_PROFILE_ID - 2));
+    return id & (3U << (DCP_BITS_PER_PROFILE_TYPEID - 2));
 }
 
 static inline bool protein_state_is_match(unsigned id)

@@ -36,11 +36,11 @@ static char const *const queries[] = {
 "\
         INSERT INTO prod\
             (\
-                job_id,          seq_id,   match_id,\
-                prof_name,     abc_name,            \
-                loglik,     null_loglik,            \
-                model,          version,            \
-                match_data                          \
+                job_id,           seq_id,   match_id,\
+                prof_name,      abc_name,            \
+                loglik,      null_loglik,            \
+                prof_typeid,     version,            \
+                match_data                           \
             )\
         VALUES\
             (\
@@ -103,7 +103,8 @@ enum rc sched_prod_add(struct prod *prod)
     BIND_DOUBLE_OR_CLEANUP(rc, stmt, 6, prod->loglik);
     BIND_DOUBLE_OR_CLEANUP(rc, stmt, 7, prod->null_loglik);
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 8, ARRAY_SIZE_OF(*prod, model), prod->model);
+    BIND_TEXT_OR_CLEANUP(rc, stmt, 8, ARRAY_SIZE_OF(*prod, prof_typeid),
+                         prod->prof_typeid);
     BIND_TEXT_OR_CLEANUP(rc, stmt, 9, ARRAY_SIZE_OF(*prod, version),
                          prod->version);
 
@@ -167,7 +168,8 @@ enum rc sched_prod_get(struct prod *prod, int64_t prod_id)
     prod->loglik = sqlite3_column_double(stmt, 6);
     prod->null_loglik = sqlite3_column_double(stmt, 7);
 
-    rc = xsql_get_text(stmt, 8, ARRAY_SIZE_OF(*prod, model), prod->model);
+    rc = xsql_get_text(stmt, 8, ARRAY_SIZE_OF(*prod, prof_typeid),
+                       prod->prof_typeid);
     if (rc) goto cleanup;
     rc = xsql_get_text(stmt, 9, ARRAY_SIZE_OF(*prod, version), prod->version);
     if (rc) goto cleanup;
@@ -223,9 +225,9 @@ void sched_prod_set_null_loglik(struct prod *prod, double null_loglik)
     prod->null_loglik = null_loglik;
 }
 
-void sched_prod_set_model(struct prod *prod, char const *model)
+void sched_prod_set_prof_typeid(struct prod *prod, char const *model)
 {
-    safe_strcpy(prod->model, model, DCP_PROFILE_TYPEID_SIZE);
+    safe_strcpy(prod->prof_typeid, model, DCP_PROFILE_TYPEID_SIZE);
 }
 
 void sched_prod_set_version(struct prod *prod, char const *version)
@@ -251,7 +253,7 @@ enum rc sched_prod_write_preamble(struct prod *p, FILE *restrict fp)
     if (echo(Fg, loglik)) return error(RC_IOERROR, "failed to write prod");
     if (echo(Fg, null_loglik)) return error(RC_IOERROR, "failed to write prod");
 
-    if (echo(Fs, model)) return error(RC_IOERROR, "failed to write prod");
+    if (echo(Fs, prof_typeid)) return error(RC_IOERROR, "failed to write prod");
     if (echo(Fs, version)) return error(RC_IOERROR, "failed to write prod");
 
     return RC_DONE;

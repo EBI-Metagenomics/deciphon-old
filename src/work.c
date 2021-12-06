@@ -235,7 +235,7 @@ enum rc write_product(struct work *work, struct task *task, unsigned match_id,
     sched_prod_set_loglik(&task->prod, task->alt.prod.loglik);
     sched_prod_set_null_loglik(&task->prod, task->null.prod.loglik);
 
-    sched_prod_set_model(&task->prod, "pro");
+    sched_prod_set_prof_typeid(&task->prod, "pro");
     sched_prod_set_version(&task->prod, VERSION);
 
     rc = sched_prod_write_preamble(&task->prod, work->prod_file.fp);

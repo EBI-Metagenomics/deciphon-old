@@ -18,7 +18,7 @@ struct prod
     double loglik;
     double null_loglik;
 
-    char model[DCP_PROFILE_TYPEID_SIZE];
+    char prof_typeid[DCP_PROFILE_TYPEID_SIZE];
     char version[DCP_VERSION_SIZE];
 
     struct array *match;

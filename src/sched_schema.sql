@@ -34,7 +34,7 @@ CREATE TABLE prod (
     loglik REAL NOT NULL,
     null_loglik REAL NOT NULL,
 
-    model TEXT NOT NULL,
+    prof_typeid TEXT NOT NULL,
     version TEXT NOT NULL,
 
     match_data TEXT NOT NULL
