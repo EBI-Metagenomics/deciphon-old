@@ -21,6 +21,7 @@ find_package(log REQUIRED)
 find_package(elapsed REQUIRED)
 find_package(gff REQUIRED)
 find_package(tbl REQUIRED)
+find_package(cmp REQUIRED)
 find_package(SQLite3 3.35.0 REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(xxHash REQUIRED)
@@ -56,13 +57,13 @@ add_library(
   src/db.c
   src/db_handle.c
   src/db_pool.c
-  src/dcp_cmp.c
   src/job_state.c
   src/logger.c
   src/meta.c
   src/nuclt_dist.c
   src/pool.c
   src/prod.c
+  src/profile.c
   src/progress_file.c
   src/protein_codec.c
   src/protein_db.c
@@ -84,7 +85,6 @@ add_library(
   src/standard_profile.c
   src/table.c
   src/task.c
-  src/third-party/cmp.c
   src/to.c
   src/tok.c
   src/work.c
@@ -120,6 +120,7 @@ target_link_libraries(dcp PUBLIC IMM::imm)
 target_link_libraries(dcp PUBLIC LOG::log)
 target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
 target_link_libraries(dcp PUBLIC GFF::gff)
+target_link_libraries(dcp PUBLIC CMP::cmp)
 target_link_libraries(dcp PUBLIC TBL::tbl)
 target_link_libraries(dcp PUBLIC SQLite::SQLite3)
 target_link_libraries(dcp PUBLIC xxHash::xxHash)

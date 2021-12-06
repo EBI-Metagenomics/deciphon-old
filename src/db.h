@@ -1,7 +1,7 @@
 #ifndef DB_H
 #define DB_H
 
-#include "dcp_cmp.h"
+#include "cmp/cmp.h"
 #include "meta.h"
 #include "profile.h"
 #include "profile_types.h"
@@ -23,8 +23,8 @@ struct db
     unsigned npartitions;
     struct
     {
-        profile_idx_t size;
-        profile_idx_t curr_idx;
+        uint32_t size;
+        uint32_t curr_idx;
     } profiles;
     off_t partition_offset[DB_HANDLE_MAX_FILES + 1];
     struct

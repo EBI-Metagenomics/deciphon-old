@@ -6,12 +6,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-typedef uint32_t nprofiles_t;
-#define NPROFILES_MAX (1U << 20)
-
-typedef uint32_t profile_idx_t;
-#define PROFILE_NULL_IDX UINT32_MAX
-
 static_assert(sizeof(imm_state_id_t) == 2, "16 bits state_id.");
 #define PROFILE_BITS_ID 16
 

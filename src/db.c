@@ -1,21 +1,16 @@
 #include "db.h"
-#include "dcp_cmp.h"
+#include "cmp/cmp.h"
+#include "dcp_limits.h"
 #include "imm/imm.h"
 #include "logger.h"
 #include "macros.h"
 #include "profile.h"
-#include "third-party/cmp.h"
 #include "xfile.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B
-
-#define MAX_NPROFILES (1U << 20)
-
-#define MAX_NAME_SIZE 63
-#define MAX_ACC_SIZE 31
 
 struct db const db_default = {0};
 
@@ -85,22 +80,24 @@ static enum rc flush_metadata(struct db *db)
     if (!cmp_write_u32(cmp, db->mt.size))
         return error(RC_IOERROR, "failed to write metadata size");
 
-    char name[MAX_NAME_SIZE + 1] = {0};
-    char acc[MAX_ACC_SIZE + 1] = {0};
+    char name[DCP_PROFILE_NAME_SIZE] = {0};
+    char acc[DCP_PROFILE_ACC_SIZE] = {0};
     for (unsigned i = 0; i < db->profiles.size; ++i)
     {
-        uint32_t size = ARRAY_SIZE(name);
-        if (!cmp_read_str(&db->mt.file.cmp, name, &size))
+        uint32_t len = ARRAY_SIZE(name) - 1;
+        if (!cmp_read_cstr(&db->mt.file.cmp, name, &len))
             return error(RC_IOERROR, "failed to read name size");
 
-        if (!cmp_write(cmp, name, size + 1))
+        /* write the null-terminated character */
+        if (!cmp_write(cmp, name, len + 1))
             return error(RC_IOERROR, "failed to write name");
 
-        size = ARRAY_SIZE(acc);
-        if (!cmp_read_str(&db->mt.file.cmp, acc, &size))
+        len = ARRAY_SIZE(acc) - 1;
+        if (!cmp_read_cstr(&db->mt.file.cmp, acc, &len))
             return error(RC_IOERROR, "failed to read acc size");
 
-        if (!cmp_write(cmp, acc, size + 1))
+        /* write the null-terminated character */
+        if (!cmp_write(cmp, acc, len + 1))
             return error(RC_IOERROR, "failed to write acc");
     }
 
@@ -176,7 +173,7 @@ bool db_end(struct db const *db)
 
 static inline uint32_t max_mt_data_size(void)
 {
-    return MAX_NPROFILES * (MAX_NAME_SIZE + MAX_ACC_SIZE + 2);
+    return DCP_MAX_NPROFILES * (DCP_PROFILE_NAME_SIZE + DCP_PROFILE_ACC_SIZE);
 }
 
 enum rc db_read_magic_number(struct db *db)
@@ -249,7 +246,7 @@ enum rc db_read_nprofiles(struct db *db)
     if (!cmp_read_u32(&db->file.cmp[0], &db->profiles.size))
         return error(RC_IOERROR, "failed to read number of profiles");
 
-    if (db->profiles.size > MAX_NPROFILES)
+    if (db->profiles.size > DCP_MAX_NPROFILES)
         return error(RC_FAIL, "too many profiles");
 
     return RC_DONE;
@@ -334,7 +331,7 @@ static enum rc parse_metadata(struct db *db)
         /* Name */
         while (db->mt.data[offset + j++])
             ;
-        if (j - 1 > MAX_NAME_SIZE)
+        if (j > DCP_PROFILE_NAME_SIZE)
             return error(RC_ILLEGALARG, "name is too long");
 
         db->mt.name_length[i] = (uint8_t)(j - 1);
@@ -399,10 +396,10 @@ enum rc db_write_prof_meta(struct db *db, struct profile const *prof)
 {
     if (prof->mt.name == NULL) return error(RC_ILLEGALARG, "metadata not set");
 
-    if (strlen(prof->mt.name) > MAX_NAME_SIZE)
+    if (strlen(prof->mt.name) >= DCP_PROFILE_NAME_SIZE)
         return error(RC_ILLEGALARG, "profile name is too long");
 
-    if (strlen(prof->mt.acc) > MAX_ACC_SIZE)
+    if (strlen(prof->mt.acc) >= DCP_PROFILE_ACC_SIZE)
         return error(RC_ILLEGALARG, "profile accession is too long");
 
     enum rc rc = RC_DONE;
@@ -416,7 +413,7 @@ enum rc db_write_prof_meta(struct db *db, struct profile const *prof)
 enum rc db_check_write_prof_ready(struct db const *db,
                                   struct profile const *prof)
 {
-    if (db->profiles.size == MAX_NPROFILES)
+    if (db->profiles.size == DCP_MAX_NPROFILES)
         return error(RC_FAIL, "too many profiles");
 
     if (prof->mt.name == NULL) return error(RC_ILLEGALARG, "metadata not set");

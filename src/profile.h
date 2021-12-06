@@ -4,8 +4,6 @@
 #include "meta.h"
 #include "profile_types.h"
 
-struct imm_abc;
-
 struct profile
 {
     struct profile_vtable vtable;
@@ -14,28 +12,13 @@ struct profile
     struct meta mt;
 };
 
-static inline void profile_del(struct profile *prof)
-{
-    if (prof) prof->vtable.del(prof);
-}
+void profile_del(struct profile *prof);
 
-static inline void profile_nameit(struct profile *prof, struct meta mt)
-{
-    prof->mt = mt;
-}
+void profile_nameit(struct profile *prof, struct meta mt);
 
-static inline enum profile_typeid profile_typeid(struct profile const *prof)
-{
-    return prof->vtable.typeid;
-}
+enum profile_typeid profile_typeid(struct profile const *prof);
 
-static void profile_init(struct profile *prof, struct imm_code const *code,
-                         struct meta mt, struct profile_vtable vtable)
-{
-    prof->vtable = vtable;
-    prof->idx = PROFILE_NULL_IDX;
-    prof->code = code;
-    prof->mt = mt;
-}
+void profile_init(struct profile *prof, struct imm_code const *code,
+                  struct meta mt, struct profile_vtable vtable);
 
 #endif

@@ -1,5 +1,5 @@
 #include "protein_profile.h"
-#include "dcp_cmp.h"
+#include "cmp/cmp.h"
 #include "imm/imm.h"
 #include "logger.h"
 #include "meta.h"
@@ -7,9 +7,7 @@
 #include "protein_model.h"
 #include "protein_profile.h"
 #include "rc.h"
-#include "third-party/cmp.h"
 #include "third-party/xrandom.h"
-#include "dcp_cmp.h"
 #include <assert.h>
 #include <stdlib.h>
 
@@ -263,8 +261,8 @@ enum rc protein_profile_read(struct protein_profile *prof,
         return error(RC_PARSEERROR, "profile is too long");
     prof->core_size = core_size;
 
-    uint32_t u32 = (uint32_t)core_size + 1;
-    if (!cmp_read_str(cmp, prof->consensus, &u32))
+    uint32_t u32 = (uint32_t)core_size;
+    if (!cmp_read_cstr(cmp, prof->consensus, &u32))
         return error(RC_IOERROR, "failed to read consensus");
 
     enum rc rc = alloc_match_nuclt_dists(prof);

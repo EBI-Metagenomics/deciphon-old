@@ -1,12 +1,11 @@
 #include "protein_db.h"
+#include "cmp/cmp.h"
 #include "db.h"
-#include "dcp_cmp.h"
 #include "entry_dist.h"
 #include "logger.h"
 #include "protein_cfg.h"
 #include "protein_profile.h"
 #include "rc.h"
-#include "third-party/cmp.h"
 #include "xmath.h"
 
 struct protein_db const protein_db_default = {0};
