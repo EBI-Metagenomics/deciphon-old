@@ -7,7 +7,7 @@
 enum dcp_limits
 {
     DCP_ABC_NAME_SIZE = 16,
-    DB_NAME_SIZE = 64,
+    DCP_DB_NAME_SIZE = 64,
     DCP_PROFILE_TYPEID_SIZE = 16,
     DCP_FILENAME_SIZE = 128,
     DCP_PATH_SIZE = 4096,
@@ -19,8 +19,7 @@ enum dcp_limits
     DCP_PROFILE_NAME_SIZE = 64,
     DCP_PROFILE_ACC_SIZE = 32,
     DCP_MAX_OPEN_DB_FILES = 64,
+    DCP_BITS_PER_PROFILE_ID = BITS_PER(imm_state_id_t),
 };
-
-#define PROFILE_BITS_ID BITS_PER(imm_state_id_t)
 
 #endif

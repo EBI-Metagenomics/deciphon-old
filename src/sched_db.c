@@ -41,9 +41,8 @@ static char const *const queries[] = {
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-enum rc sched_db_setup(struct sched_db *db,
-                           char const name[DB_NAME_SIZE],
-                           char const filepath[DCP_PATH_SIZE])
+enum rc sched_db_setup(struct sched_db *db, char const name[DCP_DB_NAME_SIZE],
+                       char const filepath[DCP_PATH_SIZE])
 {
     FILE *fd = fopen(filepath, "rb");
     if (!fd) return error(RC_IOERROR, "failed to open file");
@@ -51,7 +50,7 @@ enum rc sched_db_setup(struct sched_db *db,
     enum rc rc = xfile_hash(fd, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
 
-    safe_strcpy(db->name, name, DB_NAME_SIZE);
+    safe_strcpy(db->name, name, DCP_DB_NAME_SIZE);
     safe_strcpy(db->filepath, filepath, DCP_PATH_SIZE);
 
 cleanup:
@@ -90,7 +89,7 @@ cleanup:
 }
 
 static enum rc select_db(struct sched_db *db, int64_t by_value,
-                             enum stmt select_stmt)
+                         enum stmt select_stmt)
 {
     struct sqlite3_stmt *stmt = stmts[select_stmt];
     enum rc rc = RC_DONE;
