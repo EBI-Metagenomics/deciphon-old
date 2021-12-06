@@ -202,7 +202,7 @@ enum rc db_read_prof_type(struct db *db)
     if (!cmp_read_u8(&db->file.cmp[0], &prof_type))
         return error(RC_IOERROR, "failed to read profile type");
 
-    if (prof_type != STANDARD_PROFILE && prof_type != PROTEIN_PROFILE)
+    if (prof_type != PROFILE_STANDARD && prof_type != PROFILE_PROTEIN)
         return error(RC_PARSEERROR, "wrong prof_type");
 
     db->prof_typeid = prof_type;

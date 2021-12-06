@@ -41,8 +41,8 @@ static inline unsigned bitops_fls64(uint64_t x)
  */
 int bitops_fful(unsigned long word);
 
-#define BITOPS_MASK(nr) (1UL << ((nr) % SIZE_BITS_PER_LONG))
-#define BITOPS_WORD(nr) ((nr) / SIZE_BITS_PER_LONG)
+#define BITOPS_MASK(nr) (1UL << ((nr) % BITS_PER(long)))
+#define BITOPS_WORD(nr) ((nr) / BITS_PER(long))
 
 static inline void bitops_set(unsigned nr, volatile unsigned long *addr)
 {

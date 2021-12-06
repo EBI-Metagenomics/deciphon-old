@@ -29,7 +29,7 @@ void test_cli_press_read(void)
     EQ(protein_db_openr(&db, fd), RC_DONE);
 
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), PROTEIN_PROFILE);
+    EQ(db_prof_typeid(&db.super), PROFILE_PROTEIN);
     struct imm_nuclt const *nuclt = protein_db_nuclt(&db);
     struct imm_abc const *abc = imm_super(nuclt);
     EQ(imm_abc_typeid(abc), IMM_DNA);
@@ -61,7 +61,7 @@ void test_cli_press_read(void)
     while (!db_end(&db.super))
     {
         EQ(protein_db_read(&db, p), RC_DONE);
-        EQ(profile_typeid(&p->super), PROTEIN_PROFILE);
+        EQ(profile_typeid(&p->super), PROFILE_PROTEIN);
         struct imm_task *task = imm_task_new(&p->alt.dp);
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
         EQ(imm_task_setup(task, &seq), IMM_SUCCESS);

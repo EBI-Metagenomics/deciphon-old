@@ -1,8 +1,24 @@
 #ifndef PROFILE_H
 #define PROFILE_H
 
+#include "compiler.h"
+#include "imm/imm.h"
 #include "metadata.h"
-#include "profile_types.h"
+
+enum profile_typeid
+{
+    PROFILE_NULL,
+    PROFILE_STANDARD,
+    PROFILE_PROTEIN,
+};
+
+struct profile;
+
+struct profile_vtable
+{
+    void (*del)(struct profile *prof);
+    enum profile_typeid typeid;
+};
 
 struct profile
 {

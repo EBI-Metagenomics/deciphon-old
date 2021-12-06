@@ -99,7 +99,7 @@ static enum rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
 
 static void protein_db_init(struct protein_db *db)
 {
-    db_init(&db->super, PROTEIN_PROFILE);
+    db_init(&db->super, PROFILE_PROTEIN);
     db->amino = imm_amino_empty;
     db->nuclt = imm_nuclt_empty;
     db->code = imm_nuclt_code_empty;
@@ -167,7 +167,7 @@ enum rc protein_db_openr(struct protein_db *db, FILE *restrict fd)
     if ((rc = db_read_metadata(&db->super))) return rc;
 
     imm_code_init(&db->code.super, imm_super(&db->nuclt));
-    assert(db->super.prof_typeid == PROTEIN_PROFILE);
+    assert(db->super.prof_typeid == PROFILE_PROTEIN);
     return db_record_first_partition_offset(&db->super);
 }
 

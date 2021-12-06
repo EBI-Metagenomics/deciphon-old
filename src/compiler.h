@@ -10,4 +10,25 @@
 #define __has_builtin(x) (0)
 #endif
 
+/*
+ * Force a compilation error if condition is true, but also produce a
+ * result (of value 0 and type int), so the expression can be used
+ * e.g. in a structure initializer (or where-ever else comma expressions
+ * aren't permitted).
+ *
+ * Acknowledgement: Linux kernel developers.
+ */
+#define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int : (-!!(e)); })))
+
+/* clang-format off */
+#define BITS_PER(x) (\
+    (sizeof(x) == 8 ? 64U :\
+    (sizeof(x) == 7 ? 48U :\
+    (sizeof(x) == 6 ? 56U :\
+    (sizeof(x) == 5 ? 40U :\
+    (sizeof(x) == 4 ? 32U :\
+    (sizeof(x) == 3 ? 24U :\
+    (sizeof(x) == 2 ? 16U :\
+    (sizeof(x) == 1 ? 8U : BUILD_BUG_ON_ZERO(0))))))))))
+
 #endif

@@ -6,7 +6,7 @@
 #include <limits.h>
 #include <stdbool.h>
 
-#define POOL_SIZE SIZE_BITS_PER_INT
+#define POOL_SIZE BITS_PER(int)
 
 struct pool
 {

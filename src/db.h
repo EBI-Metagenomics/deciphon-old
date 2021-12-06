@@ -2,12 +2,10 @@
 #define DB_H
 
 #include "cmp/cmp.h"
+#include "dcp_limits.h"
 #include "metadata.h"
 #include "profile.h"
-#include "profile_types.h"
 #include <sys/types.h>
-
-#define DB_HANDLE_MAX_FILES 64
 
 enum db_mode
 {
@@ -26,7 +24,7 @@ struct db
         uint32_t size;
         uint32_t curr_idx;
     } profiles;
-    off_t partition_offset[DB_HANDLE_MAX_FILES + 1];
+    off_t partition_offset[DCP_MAX_OPEN_DB_FILES + 1];
     struct
     {
         uint32_t *offset;
@@ -44,7 +42,7 @@ struct db
     } dp;
     struct
     {
-        struct cmp_ctx_s cmp[DB_HANDLE_MAX_FILES];
+        struct cmp_ctx_s cmp[DCP_MAX_OPEN_DB_FILES];
         enum db_mode mode;
     } file;
 };

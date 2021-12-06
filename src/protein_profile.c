@@ -18,7 +18,7 @@ void protein_profile_init(struct protein_profile *p,
                           struct imm_nuclt_code const *code,
                           struct protein_cfg cfg)
 {
-    struct profile_vtable vtable = {del, PROTEIN_PROFILE};
+    struct profile_vtable vtable = {del, PROFILE_PROTEIN};
     struct imm_nuclt const *nuclt = code->nuclt;
     profile_init(&p->super, &code->super, metadata_unset(), vtable);
     p->code = code;

@@ -48,7 +48,7 @@ void test_db_openr_empty(void)
     standard_db_init(&db);
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
+    EQ(db_prof_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
@@ -98,7 +98,7 @@ void test_db_openr_one_mute(void)
     standard_db_init(&db);
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
+    EQ(db_prof_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
@@ -129,7 +129,7 @@ void test_db_openr_example1(void)
     standard_db_init(&db);
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
+    EQ(db_prof_typeid(&db.super), PROFILE_STANDARD);
     EQ(imm_abc_typeid(standard_db_abc(&db)), IMM_ABC);
 
     EQ(db_nprofiles(&db.super), 2);
@@ -146,7 +146,7 @@ void test_db_openr_example1(void)
     while (!db_end(&db.super))
     {
         EQ(standard_db_read(&db, p), RC_DONE);
-        EQ(profile_typeid(&p->super), STANDARD_PROFILE);
+        EQ(profile_typeid(&p->super), PROFILE_STANDARD);
         if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);
@@ -179,7 +179,7 @@ void test_db_openr_example2(void)
     standard_db_init(&db);
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), STANDARD_PROFILE);
+    EQ(db_prof_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
@@ -197,7 +197,7 @@ void test_db_openr_example2(void)
     while (!db_end(&db.super))
     {
         EQ(standard_db_read(&db, p), RC_DONE);
-        EQ(profile_typeid(&p->super), STANDARD_PROFILE);
+        EQ(profile_typeid(&p->super), PROFILE_STANDARD);
         if (p->super.idx == 0)
         {
             struct imm_task *task = imm_task_new(&p->dp.alt);

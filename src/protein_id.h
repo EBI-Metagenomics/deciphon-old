@@ -1,7 +1,7 @@
 #ifndef PROTEIN_ID_H
 #define PROTEIN_ID_H
 
-#include "profile_types.h"
+#include "dcp_limits.h"
 
 #define PROTEIN_ID_MATCH (0U << (PROFILE_BITS_ID - 2))
 #define PROTEIN_ID_INSERT (1U << (PROFILE_BITS_ID - 2))
