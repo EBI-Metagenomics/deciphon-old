@@ -2,7 +2,6 @@
 #define DCP_LIMITS_H
 
 #include "compiler.h"
-#include "imm/imm.h"
 
 enum dcp_limits
 {
@@ -19,7 +18,8 @@ enum dcp_limits
     DCP_PROFILE_NAME_SIZE = 64,
     DCP_PROFILE_ACC_SIZE = 32,
     DCP_MAX_OPEN_DB_FILES = 64,
-    DCP_BITS_PER_PROFILE_TYPEID = BITS_PER(imm_state_id_t),
+    /* DCP_BITS_PER_PROFILE_TYPEID = BITS_PER(imm_state_id_t), */
+    DCP_BITS_PER_PROFILE_TYPEID = 16,
 };
 
 #endif

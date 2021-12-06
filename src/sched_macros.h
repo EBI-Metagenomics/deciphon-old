@@ -30,41 +30,6 @@
 
 #define EXEC_ERROR() error(RC_FAIL, "failed to exec statement")
 
-#define BIND_STRING_OR_CLEANUP(rc, stmt, pos, var)                             \
-    if (sqlite3_bind_text(stmt, pos, var, -1, SQLITE_TRANSIENT))               \
-    {                                                                          \
-        rc = error(RC_FAIL, "failed to bind string");                          \
-        goto cleanup;                                                          \
-    }
-
-#define BIND_TEXT_OR_CLEANUP(rc, stmt, pos, len, var)                          \
-    if (sqlite3_bind_text(stmt, pos, var, len, SQLITE_TRANSIENT))              \
-    {                                                                          \
-        rc = error(RC_FAIL, "failed to bind text");                            \
-        goto cleanup;                                                          \
-    }
-
-#define BIND_INT_OR_CLEANUP(rc, stmt, pos, var)                                \
-    if (sqlite3_bind_int(stmt, pos, var))                                      \
-    {                                                                          \
-        rc = error(RC_FAIL, "failed to bind int");                             \
-        goto cleanup;                                                          \
-    }
-
-#define BIND_INT64_OR_CLEANUP(rc, stmt, pos, var)                              \
-    if (sqlite3_bind_int64(stmt, pos, var))                                    \
-    {                                                                          \
-        rc = error(RC_FAIL, "failed to bind int64");                           \
-        goto cleanup;                                                          \
-    }
-
-#define BIND_DOUBLE_OR_CLEANUP(rc, stmt, pos, var)                             \
-    if (sqlite3_bind_double(stmt, pos, var))                                   \
-    {                                                                          \
-        rc = error(RC_FAIL, "failed to bind double");                          \
-        goto cleanup;                                                          \
-    }
-
 #define EXEC_OR_CLEANUP(db, sql)                                               \
     if (sqlite3_exec(db, sql, 0, 0, 0))                                        \
     {                                                                          \

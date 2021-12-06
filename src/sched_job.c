@@ -78,15 +78,15 @@ enum rc sched_job_add(struct sched_job *job)
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, job->db_id);
-    BIND_INT_OR_CLEANUP(rc, stmt, 2, job->multi_hits);
-    BIND_INT_OR_CLEANUP(rc, stmt, 3, job->hmmer3_compat);
-    BIND_STRING_OR_CLEANUP(rc, stmt, 4, job->state);
+    if ((rc = xsql_bind_i64(stmt, 0, job->db_id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 1, job->multi_hits))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 2, job->hmmer3_compat))) goto cleanup;
+    if ((rc = xsql_bind_str(stmt, 3, job->state))) goto cleanup;
 
-    BIND_STRING_OR_CLEANUP(rc, stmt, 5, job->error);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 6, (int64_t)utc_now());
-    BIND_INT64_OR_CLEANUP(rc, stmt, 7, 0);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 8, 0);
+    if ((rc = xsql_bind_str(stmt, 4, job->error))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 5, (int64_t)utc_now()))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 6, 0))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 7, 0))) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     job->id = sqlite3_column_int64(stmt, 0);
@@ -102,7 +102,7 @@ enum rc sched_job_next_pending(int64_t *job_id)
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, (int64_t)utc_now());
+    if ((rc = xsql_bind_i64(stmt, 0, (int64_t)utc_now()))) goto cleanup;
     int code = sqlite3_step(stmt);
     if (code == SQLITE_DONE) return RC_NOTFOUND;
     if (code != SQLITE_ROW)
@@ -124,9 +124,9 @@ enum rc sched_job_set_error(int64_t job_id, char const *error,
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_STRING_OR_CLEANUP(rc, stmt, 1, error);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 2, exec_ended);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 3, job_id);
+    if ((rc = xsql_bind_str(stmt, 0, error))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 1, exec_ended))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 2, job_id))) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
@@ -140,8 +140,8 @@ enum rc sched_job_set_done(int64_t job_id, int64_t exec_ended)
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, exec_ended);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 2, job_id);
+    if ((rc = xsql_bind_i64(stmt, 0, exec_ended))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 1, job_id))) goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
@@ -155,7 +155,7 @@ enum rc sched_job_state(int64_t job_id, enum job_state *state)
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
+    if ((rc = xsql_bind_i64(stmt, 0, job_id))) goto cleanup;
     int code = sqlite3_step(stmt);
     if (code == SQLITE_DONE) return RC_NOTFOUND;
     if (code != SQLITE_ROW)
@@ -165,7 +165,7 @@ enum rc sched_job_state(int64_t job_id, enum job_state *state)
     }
 
     char tmp[SCHED_JOB_STATE_SIZE] = {0};
-    rc = xsql_get_text(stmt, 0, SCHED_JOB_STATE_SIZE, tmp);
+    rc = xsql_get_txt(stmt, 0, SCHED_JOB_STATE_SIZE, tmp);
     if (rc) goto cleanup;
     *state = job_state_resolve(tmp);
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);
@@ -180,7 +180,7 @@ enum rc sched_job_get(struct sched_job *job, int64_t job_id)
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, job_id);
+    if ((rc = xsql_bind_i64(stmt, 0, job_id))) goto cleanup;
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
 
     job->id = sqlite3_column_int64(stmt, 0);
@@ -188,10 +188,10 @@ enum rc sched_job_get(struct sched_job *job, int64_t job_id)
     job->db_id = sqlite3_column_int64(stmt, 1);
     job->multi_hits = sqlite3_column_int(stmt, 2);
     job->hmmer3_compat = sqlite3_column_int(stmt, 3);
-    rc = xsql_get_text(stmt, 4, ARRAY_SIZE_OF(*job, state), job->state);
+    rc = xsql_get_txt(stmt, 4, ARRAY_SIZE_OF(*job, state), job->state);
     if (rc) goto cleanup;
 
-    rc = xsql_get_text(stmt, 5, ARRAY_SIZE_OF(*job, error), job->error);
+    rc = xsql_get_txt(stmt, 5, ARRAY_SIZE_OF(*job, error), job->error);
     if (rc) goto cleanup;
     job->submission = sqlite3_column_int64(stmt, 6);
     job->exec_started = sqlite3_column_int64(stmt, 7);

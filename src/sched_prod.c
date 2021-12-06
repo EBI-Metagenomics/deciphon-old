@@ -13,16 +13,6 @@
 #include <sqlite3.h>
 #include <stdlib.h>
 
-#ifdef TAB
-#undef TAB
-#endif
-#define TAB "\t"
-
-#ifdef NL
-#undef NL
-#endif
-#define NL "\n"
-
 enum
 {
     INSERT,
@@ -91,25 +81,30 @@ enum rc sched_prod_add(struct prod *prod)
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, prod->job_id);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 2, prod->seq_id);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 3, prod->match_id);
+    if ((rc = xsql_bind_i64(stmt, 0, prod->job_id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 1, prod->seq_id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 2, prod->match_id))) goto cleanup;
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 4, ARRAY_SIZE_OF(*prod, prof_name),
-                         prod->prof_name);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 5, ARRAY_SIZE_OF(*prod, abc_name),
-                         prod->abc_name);
+    if ((rc = xsql_bind_txt(stmt, 3, ARRAY_SIZE_OF(*prod, prof_name),
+                            prod->prof_name)))
+        goto cleanup;
+    if ((rc = xsql_bind_txt(stmt, 4, ARRAY_SIZE_OF(*prod, abc_name),
+                            prod->abc_name)))
+        goto cleanup;
 
-    BIND_DOUBLE_OR_CLEANUP(rc, stmt, 6, prod->loglik);
-    BIND_DOUBLE_OR_CLEANUP(rc, stmt, 7, prod->null_loglik);
+    if ((rc = xsql_bind_dbl(stmt, 5, prod->loglik))) goto cleanup;
+    if ((rc = xsql_bind_dbl(stmt, 6, prod->null_loglik))) goto cleanup;
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 8, ARRAY_SIZE_OF(*prod, prof_typeid),
-                         prod->prof_typeid);
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 9, ARRAY_SIZE_OF(*prod, version),
-                         prod->version);
+    if ((rc = xsql_bind_txt(stmt, 7, ARRAY_SIZE_OF(*prod, prof_typeid),
+                            prod->prof_typeid)))
+        goto cleanup;
+    if ((rc = xsql_bind_txt(stmt, 8, ARRAY_SIZE_OF(*prod, version),
+                            prod->version)))
+        goto cleanup;
 
-    BIND_TEXT_OR_CLEANUP(rc, stmt, 10, (int)array_size(prod->match),
-                         array_data(prod->match));
+    if ((rc = xsql_bind_txt(stmt, 9, (unsigned)array_size(prod->match),
+                            array_data(prod->match))))
+        goto cleanup;
 
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
     prod->id = sqlite3_column_int64(stmt, 0);
@@ -125,8 +120,8 @@ enum rc sched_prod_next(int64_t job_id, int64_t *prod_id)
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, *prod_id);
-    BIND_INT64_OR_CLEANUP(rc, stmt, 2, job_id);
+    if ((rc = xsql_bind_i64(stmt, 0, *prod_id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 1, job_id))) goto cleanup;
 
     int code = sqlite3_step(stmt);
     if (code == SQLITE_DONE) return RC_DONE;
@@ -150,7 +145,7 @@ enum rc sched_prod_get(struct prod *prod, int64_t prod_id)
     enum rc rc = RC_DONE;
     RESET_OR_CLEANUP(rc, stmt);
 
-    BIND_INT64_OR_CLEANUP(rc, stmt, 1, prod_id);
+    if ((rc = xsql_bind_i64(stmt, 0, prod_id))) goto cleanup;
     STEP_OR_CLEANUP(stmt, SQLITE_ROW);
 
     prod->id = sqlite3_column_int64(stmt, 0);
@@ -159,19 +154,19 @@ enum rc sched_prod_get(struct prod *prod, int64_t prod_id)
     prod->seq_id = sqlite3_column_int64(stmt, 2);
     prod->match_id = sqlite3_column_int64(stmt, 3);
 
-    rc = xsql_get_text(stmt, 4, ARRAY_SIZE_OF(*prod, prof_name),
-                       prod->prof_name);
+    rc =
+        xsql_get_txt(stmt, 4, ARRAY_SIZE_OF(*prod, prof_name), prod->prof_name);
     if (rc) goto cleanup;
-    rc = xsql_get_text(stmt, 5, ARRAY_SIZE_OF(*prod, abc_name), prod->abc_name);
+    rc = xsql_get_txt(stmt, 5, ARRAY_SIZE_OF(*prod, abc_name), prod->abc_name);
     if (rc) goto cleanup;
 
     prod->loglik = sqlite3_column_double(stmt, 6);
     prod->null_loglik = sqlite3_column_double(stmt, 7);
 
-    rc = xsql_get_text(stmt, 8, ARRAY_SIZE_OF(*prod, prof_typeid),
-                       prod->prof_typeid);
+    rc = xsql_get_txt(stmt, 8, ARRAY_SIZE_OF(*prod, prof_typeid),
+                      prod->prof_typeid);
     if (rc) goto cleanup;
-    rc = xsql_get_text(stmt, 9, ARRAY_SIZE_OF(*prod, version), prod->version);
+    rc = xsql_get_txt(stmt, 9, ARRAY_SIZE_OF(*prod, version), prod->version);
     if (rc) goto cleanup;
 
     rc = xsql_get_text_as_array(stmt, 10, &prod->match);
@@ -237,6 +232,7 @@ void sched_prod_set_version(struct prod *prod, char const *version)
 
 enum rc sched_prod_write_preamble(struct prod *p, FILE *restrict fp)
 {
+#define TAB "\t"
 #define echo(fmt, var) fprintf(fp, fmt, p->var) < 0
 #define Fd64 "%" PRId64 TAB
 #define Fs "%s" TAB
@@ -262,6 +258,7 @@ enum rc sched_prod_write_preamble(struct prod *p, FILE *restrict fp)
 #undef Fs
 #undef Fd64
 #undef echo
+#undef TAB
 }
 
 /* Output example
@@ -334,7 +331,7 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
                     error(RC_PARSEERROR, "failed to parse int64");
                     goto cleanup;
                 }
-                BIND_INT64_OR_CLEANUP(rc, stmt, i + 1, val);
+                if ((rc = xsql_bind_i64(stmt, i, val))) goto cleanup;
             }
             else if (col_type[i] == COL_TYPE_DOUBLE)
             {
@@ -344,12 +341,13 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
                     error(RC_PARSEERROR, "failed to parse double");
                     goto cleanup;
                 }
-                BIND_DOUBLE_OR_CLEANUP(rc, stmt, i + 1, val);
+                if ((rc = xsql_bind_dbl(stmt, i, val))) goto cleanup;
             }
             else if (col_type[i] == COL_TYPE_TEXT)
             {
-                BIND_TEXT_OR_CLEANUP(rc, stmt, i + 1, (int)tok_size(tok),
-                                     tok_value(tok));
+                if ((rc =
+                         xsql_bind_txt(stmt, i, tok_size(tok), tok_value(tok))))
+                    goto cleanup;
             }
             rc = tok_next(tok, fd);
         }
