@@ -3,7 +3,7 @@
 
 #include "hmr/hmr.h"
 #include "imm/imm.h"
-#include "meta.h"
+#include "metadata.h"
 #include "protein_cfg.h"
 #include "protein_model.h"
 #include "rc.h"
@@ -24,6 +24,6 @@ void protein_reader_init(struct protein_reader *reader,
 
 enum rc protein_reader_next(struct protein_reader *reader);
 
-struct meta protein_reader_meta(struct protein_reader const *r);
+struct metadata protein_reader_meta(struct protein_reader const *r);
 
 #endif

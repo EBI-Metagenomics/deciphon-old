@@ -2,7 +2,7 @@
 #define DB_H
 
 #include "cmp/cmp.h"
-#include "meta.h"
+#include "metadata.h"
 #include "profile.h"
 #include "profile_types.h"
 #include <sys/types.h>
@@ -53,7 +53,7 @@ extern struct db const db_default;
 
 unsigned db_float_size(struct db const *db);
 enum profile_typeid db_prof_typeid(struct db const *db);
-struct meta db_meta(struct db const *db, unsigned idx);
+struct metadata db_meta(struct db const *db, unsigned idx);
 bool db_end(struct db const *db);
 
 void db_init(struct db *db, enum profile_typeid prof_typeid);
@@ -81,7 +81,7 @@ enum rc db_write_prof_meta(struct db *db, struct profile const *prof);
 enum rc db_check_write_prof_ready(struct db const *db,
                                   struct profile const *prof);
 
-struct meta db_meta(struct db const *db, unsigned idx);
+struct metadata db_meta(struct db const *db, unsigned idx);
 
 enum rc db_current_offset(struct db *db, off_t *offset);
 

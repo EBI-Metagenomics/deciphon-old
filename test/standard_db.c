@@ -80,7 +80,7 @@ void test_db_openw_one_mute(void)
 
     struct standard_profile p;
     standard_profile_init(&p, &code);
-    profile_nameit(&p.super, meta("NAME0", "ACC0"));
+    profile_nameit(&p.super, metadata("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(standard_db_write(&db, &p), RC_DONE);
@@ -107,7 +107,7 @@ void test_db_openr_one_mute(void)
 
     EQ(db_nprofiles(&db.super), 1);
 
-    struct meta mt = db_meta(&db.super, 0);
+    struct metadata mt = db_meta(&db.super, 0);
 
     EQ(mt.name, "NAME0");
     EQ(mt.acc, "ACC0");
@@ -134,7 +134,7 @@ void test_db_openr_example1(void)
 
     EQ(db_nprofiles(&db.super), 2);
 
-    struct meta mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
+    struct metadata mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -185,7 +185,7 @@ void test_db_openr_example2(void)
 
     EQ(db_nprofiles(&db.super), 2);
 
-    struct meta mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
+    struct metadata mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");

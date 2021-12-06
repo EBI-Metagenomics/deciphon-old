@@ -2,7 +2,7 @@
 #include "cmp/cmp.h"
 #include "imm/imm.h"
 #include "logger.h"
-#include "meta.h"
+#include "metadata.h"
 #include "profile.h"
 #include "protein_model.h"
 #include "protein_profile.h"
@@ -20,7 +20,7 @@ void protein_profile_init(struct protein_profile *p,
 {
     struct profile_vtable vtable = {del, PROTEIN_PROFILE};
     struct imm_nuclt const *nuclt = code->nuclt;
-    profile_init(&p->super, &code->super, meta_unset, vtable);
+    profile_init(&p->super, &code->super, metadata_unset(), vtable);
     p->code = code;
     p->amino = amino;
     p->cfg = cfg;

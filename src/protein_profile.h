@@ -2,7 +2,7 @@
 #define PROTEIN_PROFILE_H
 
 #include "imm/imm.h"
-#include "meta.h"
+#include "metadata.h"
 #include "profile.h"
 #include "protein_cfg.h"
 #include "protein_model.h"

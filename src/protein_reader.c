@@ -71,9 +71,9 @@ enum rc protein_reader_next(struct protein_reader *reader)
     return RC_DONE;
 }
 
-struct meta protein_reader_meta(struct protein_reader const *reader)
+struct metadata protein_reader_meta(struct protein_reader const *reader)
 {
-    return meta(reader->prof.meta.name, reader->prof.meta.acc);
+    return metadata(reader->prof.meta.name, reader->prof.meta.acc);
 }
 
 static void init_null_lprobs(imm_float lprobs[IMM_AMINO_SIZE])

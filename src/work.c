@@ -223,7 +223,7 @@ enum rc write_product(struct work *work, struct task *task, unsigned match_id,
     enum rc rc = RC_DONE;
     struct imm_codon codon = imm_codon_any(work->prof->code->nuclt);
 
-    struct meta const *mt = &work->prof->super.mt;
+    struct metadata const *mt = &work->prof->super.mt;
 
     sched_prod_set_job_id(&task->prod, work->job.id);
     sched_prod_set_seq_id(&task->prod, task->sched_seq.id);

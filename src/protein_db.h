@@ -3,7 +3,7 @@
 
 #include "db.h"
 #include "entry_dist.h"
-#include "meta.h"
+#include "metadata.h"
 #include "protein_cfg.h"
 #include "protein_profile.h"
 #include <stdio.h>

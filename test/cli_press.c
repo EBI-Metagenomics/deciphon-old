@@ -36,7 +36,7 @@ void test_cli_press_read(void)
 
     EQ(db_nprofiles(&db.super), 5);
 
-    struct meta mt[5] = {db_meta(&db.super, 0), db_meta(&db.super, 1),
+    struct metadata mt[5] = {db_meta(&db.super, 0), db_meta(&db.super, 1),
                          db_meta(&db.super, 2), db_meta(&db.super, 3),
                          db_meta(&db.super, 4)};
 

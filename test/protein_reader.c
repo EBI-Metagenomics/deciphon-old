@@ -42,7 +42,7 @@ int main(void)
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
 
-    profile_nameit(&prof.super, meta("name", "acc"));
+    profile_nameit(&prof.super, metadata("name", "acc"));
     EQ(protein_profile_absorb(&prof, &reader.model), RC_DONE);
 
     struct imm_seq seq = imm_seq(imm_str(sequence), prof.super.code->abc);

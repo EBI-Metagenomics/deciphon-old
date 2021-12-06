@@ -18,11 +18,11 @@ void protein_db_examples_new_ex1(char const *filepath)
     struct protein_profile *prof = protein_db_profile(&db);
 
     protein_profile_sample(prof, 1, 2);
-    profile_nameit(&prof->super, meta("NAME0", "ACC0"));
+    profile_nameit(&prof->super, metadata("NAME0", "ACC0"));
     EQ(protein_db_write(&db, prof), RC_DONE);
 
     protein_profile_sample(prof, 2, 2);
-    profile_nameit(&prof->super, meta("NAME1", "ACC1"));
+    profile_nameit(&prof->super, metadata("NAME1", "ACC1"));
     EQ(protein_db_write(&db, prof), RC_DONE);
 
     EQ(protein_db_close(&db), RC_DONE);

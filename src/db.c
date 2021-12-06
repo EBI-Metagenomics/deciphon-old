@@ -421,11 +421,11 @@ enum rc db_check_write_prof_ready(struct db const *db,
     return RC_DONE;
 }
 
-struct meta db_meta(struct db const *db, unsigned idx)
+struct metadata db_meta(struct db const *db, unsigned idx)
 {
     unsigned o = db->mt.offset[idx];
     unsigned size = (unsigned)(db->mt.name_length[idx] + 1);
-    return meta(db->mt.data + o, db->mt.data + o + size);
+    return metadata(db->mt.data + o, db->mt.data + o + size);
 }
 
 unsigned db_float_size(struct db const *db) { return db->float_size; }

@@ -1,6 +1,6 @@
 #include "standard_profile.h"
 #include "imm/imm.h"
-#include "meta.h"
+#include "metadata.h"
 #include "profile.h"
 #include "rc.h"
 #include "standard_profile.h"
@@ -13,7 +13,7 @@ void standard_profile_init(struct standard_profile *prof,
     imm_dp_init(&prof->dp.null, code);
     imm_dp_init(&prof->dp.alt, code);
     struct profile_vtable vtable = {del, STANDARD_PROFILE};
-    profile_init(&prof->super, code, meta_unset, vtable);
+    profile_init(&prof->super, code, metadata_unset(), vtable);
 }
 
 enum rc standard_profile_read(struct standard_profile *prof, FILE *restrict fd)

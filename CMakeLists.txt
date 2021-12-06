@@ -59,7 +59,6 @@ add_library(
   src/db_pool.c
   src/job_state.c
   src/logger.c
-  src/meta.c
   src/nuclt_dist.c
   src/pool.c
   src/prod.c
