@@ -4,6 +4,7 @@
 #include "macros.h"
 #include "rc.h"
 #include "safe.h"
+#include "sched_limits.h"
 #include "sched_macros.h"
 #include "utc.h"
 #include "xsql.h"
@@ -117,7 +118,7 @@ cleanup:
 }
 
 enum rc sched_job_set_error(int64_t job_id, char const *error,
-                                int64_t exec_ended)
+                            int64_t exec_ended)
 {
     struct sqlite3_stmt *stmt = stmts[SET_ERROR];
     enum rc rc = RC_DONE;
@@ -163,8 +164,8 @@ enum rc sched_job_state(int64_t job_id, enum job_state *state)
         goto cleanup;
     }
 
-    char tmp[DCP_STATE_SIZE] = {0};
-    rc = xsql_get_text(stmt, 0, DCP_STATE_SIZE, tmp);
+    char tmp[SCHED_JOB_STATE_SIZE] = {0};
+    rc = xsql_get_text(stmt, 0, SCHED_JOB_STATE_SIZE, tmp);
     if (rc) goto cleanup;
     *state = job_state_resolve(tmp);
     STEP_OR_CLEANUP(stmt, SQLITE_DONE);

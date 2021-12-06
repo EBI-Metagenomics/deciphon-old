@@ -1,0 +1,7 @@
+#ifndef SCHED_LIMITS_H
+#define SCHED_LIMITS_H
+
+#define SCHED_JOB_STATE_SIZE 5
+#define SCHED_JOB_ERROR_SIZE 256
+
+#endif

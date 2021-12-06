@@ -54,8 +54,8 @@ void skeleton_daemon(void);
 
 static void syslog_print(char const *msg, void *arg)
 {
-    printf("%.*s\n", DCP_ERROR_SIZE - 1, msg);
-    syslog(LOG_ERR, "%.*s", DCP_ERROR_SIZE - 1, msg);
+    printf("%s\n", msg);
+    syslog(LOG_ERR, "%s", msg);
 }
 
 static void print_log_put(char const *msg, void *arg)

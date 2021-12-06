@@ -225,7 +225,7 @@ void sched_prod_set_null_loglik(struct prod *prod, double null_loglik)
 
 void sched_prod_set_model(struct prod *prod, char const *model)
 {
-    safe_strcpy(prod->model, model, DCP_MODEL_SIZE);
+    safe_strcpy(prod->model, model, DCP_PROFILE_TYPEID_SIZE);
 }
 
 void sched_prod_set_version(struct prod *prod, char const *version)
