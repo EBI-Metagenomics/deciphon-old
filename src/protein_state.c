@@ -4,34 +4,34 @@
 unsigned protein_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
     unsigned msb = protein_state_id_msb(id);
-    if (msb == PROTEIN_ID_EXT)
+    if (msb == PROTEIN_EXT_STATE)
     {
-        if (id == PROTEIN_ID_R)
+        if (id == PROTEIN_R_STATE)
             name[0] = 'R';
-        else if (id == PROTEIN_ID_S)
+        else if (id == PROTEIN_S_STATE)
             name[0] = 'S';
-        else if (id == PROTEIN_ID_N)
+        else if (id == PROTEIN_N_STATE)
             name[0] = 'N';
-        else if (id == PROTEIN_ID_B)
+        else if (id == PROTEIN_B_STATE)
             name[0] = 'B';
-        else if (id == PROTEIN_ID_E)
+        else if (id == PROTEIN_E_STATE)
             name[0] = 'E';
-        else if (id == PROTEIN_ID_J)
+        else if (id == PROTEIN_J_STATE)
             name[0] = 'J';
-        else if (id == PROTEIN_ID_C)
+        else if (id == PROTEIN_C_STATE)
             name[0] = 'C';
-        else if (id == PROTEIN_ID_T)
+        else if (id == PROTEIN_T_STATE)
             name[0] = 'T';
         name[1] = '\0';
         return 1;
     }
     else
     {
-        if (msb == PROTEIN_ID_MATCH)
+        if (msb == PROTEIN_MATCH_STATE)
             name[0] = 'M';
-        else if (msb == PROTEIN_ID_INSERT)
+        else if (msb == PROTEIN_INSERT_STATE)
             name[0] = 'I';
-        else if (msb == PROTEIN_ID_DELETE)
+        else if (msb == PROTEIN_DELETE_STATE)
             name[0] = 'D';
         int ret = snprintf(name + 1, 7, "%d", protein_state_idx(id) + 1);
         assert(ret > 0);

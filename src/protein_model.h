@@ -5,7 +5,6 @@
 #include "imm/imm.h"
 #include "nuclt_dist.h"
 #include "protein_cfg.h"
-#include "protein_id.h"
 #include "protein_node.h"
 #include "protein_state.h"
 #include "protein_trans.h"
