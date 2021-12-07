@@ -1,40 +1,14 @@
 #include "tok.h"
+#include "compiler.h"
 #include "logger.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-
-struct tok
-{
-    unsigned id;
-    char const *value;
-    struct
-    {
-        unsigned number;
-        bool consumed;
-        char *ctx;
-        unsigned size;
-        char data[];
-    } line;
-};
 
 #define DELIM " \t\r"
 
 static void add_space_before_newline(char *line);
 static enum rc next_line(FILE *restrict fd, unsigned size, char *line);
-
-struct tok *tok_new(unsigned size)
-{
-    struct tok *tok = malloc(sizeof(*tok) + sizeof(char) * size);
-    if (!tok) return tok;
-    tok->id = TOK_NL;
-    tok->value = tok->line.data;
-    tok->line.number = 0;
-    tok->line.consumed = true;
-    tok->line.ctx = 0;
-    tok->line.size = size;
-    memset(tok->line.data, 0, size);
-    return tok;
-}
 
 enum tok_id tok_id(struct tok const *tok) { return tok->id; }
 
@@ -45,15 +19,13 @@ unsigned tok_size(struct tok const *tok)
     return (unsigned)strlen(tok->value);
 }
 
-void tok_del(struct tok const *tok) { free((void *)tok); }
-
 enum rc tok_next(struct tok *tok, FILE *restrict fd)
 {
     enum rc rc = RC_DONE;
 
     if (tok->line.consumed)
     {
-        if ((rc = next_line(fd, tok->line.size, tok->line.data)))
+        if ((rc = next_line(fd, MEMBER_SIZE(tok->line, data), tok->line.data)))
         {
             if (rc == RC_END)
             {
@@ -85,6 +57,7 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
 static enum rc next_line(FILE *restrict fd, unsigned size, char *line)
 {
     /* -1 to append space before newline if required */
+    assert(size > 0);
     if (!fgets(line, (int)(size - 1), fd))
     {
         if (feof(fd)) return RC_END;

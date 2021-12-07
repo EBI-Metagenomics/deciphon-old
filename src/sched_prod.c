@@ -63,6 +63,7 @@ enum
                   COL_TYPE_TEXT};
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
+static TOK_DECLARE(tok);
 
 enum rc sched_prod_module_init(struct sqlite3 *db)
 {
@@ -288,7 +289,7 @@ enum rc sched_prod_write_nl(FILE *restrict fd)
     return RC_DONE;
 }
 
-enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
+enum rc sched_prod_add_from_tsv(FILE *restrict fd)
 {
     enum rc rc = RC_DONE;
     if ((rc = xsql_begin_transaction(sched_db()))) goto cleanup;
@@ -298,16 +299,16 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
     do
     {
         if ((rc = xsql_reset(stmt))) goto cleanup;
-        rc = tok_next(tok, fd);
+        rc = tok_next(&tok, fd);
         if (rc) return rc;
-        if (tok_id(tok) == TOK_EOF) break;
+        if (tok_id(&tok) == TOK_EOF) break;
 
         for (int i = 0; i < 10; i++)
         {
             if (col_type[i] == COL_TYPE_INT64)
             {
                 int64_t val = 0;
-                if (!to_int64(tok_value(tok), &val))
+                if (!to_int64(tok_value(&tok), &val))
                 {
                     error(RC_PARSEERROR, "failed to parse int64");
                     goto cleanup;
@@ -317,7 +318,7 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
             else if (col_type[i] == COL_TYPE_DOUBLE)
             {
                 double val = 0;
-                if (!to_double(tok_value(tok), &val))
+                if (!to_double(tok_value(&tok), &val))
                 {
                     error(RC_PARSEERROR, "failed to parse double");
                     goto cleanup;
@@ -326,12 +327,12 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
             }
             else if (col_type[i] == COL_TYPE_TEXT)
             {
-                struct xsql_txt txt = {tok_size(tok), tok_value(tok)};
+                struct xsql_txt txt = {tok_size(&tok), tok_value(&tok)};
                 if ((rc = xsql_bind_txt(stmt, i, txt))) goto cleanup;
             }
-            rc = tok_next(tok, fd);
+            rc = tok_next(&tok, fd);
         }
-        assert(tok_id(tok) == TOK_NL);
+        assert(tok_id(&tok) == TOK_NL);
         rc = xsql_step(stmt);
         if (rc != RC_NEXT)
         {

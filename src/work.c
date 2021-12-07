@@ -1,14 +1,13 @@
 #include "work.h"
+#include "compiler.h"
 #include "db_handle.h"
 #include "db_pool.h"
 #include "logger.h"
-#include "compiler.h"
 #include "protein_match.h"
 #include "protein_state.h"
 #include "safe.h"
 #include "sched_db.h"
 #include "sched_job.h"
-#include "tok.h"
 #include "utc.h"
 #include "version.h"
 #include "xmath.h"
@@ -43,8 +42,6 @@ void work_init(struct work *work)
 {
     work->ntasks = 0;
     atomic_store(&work->failed, false);
-    /* TODO: review it */
-    work->tok = tok_new(64000);
 }
 
 enum rc work_next(struct work *work)
@@ -147,7 +144,7 @@ enum rc close_work(struct work *work)
     }
     else
     {
-        rc = sched_prod_add_from_tsv(work->prod_file.fp, work->tok);
+        rc = sched_prod_add_from_tsv(work->prod_file.fp);
         if (rc) goto cleanup;
         rc = sched_job_set_done(work->job.id, exec_ended);
         if (rc) goto cleanup;
@@ -155,7 +152,6 @@ enum rc close_work(struct work *work)
 
 cleanup:
     xfile_tmp_destroy(&work->prod_file);
-    tok_del(work->tok);
     return rc;
 }
 

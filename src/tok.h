@@ -11,10 +11,22 @@ enum tok_id
     TOK_EOF,
 };
 
-struct tok;
+struct tok
+{
+    unsigned id;
+    char const *value;
+    struct
+    {
+        unsigned number;
+        bool consumed;
+        char *ctx;
+        char data[128000];
+    } line;
+};
 
-struct tok *tok_new(unsigned size);
-void tok_del(struct tok const *tok);
+#define TOK_DECLARE(var)                                                       \
+    struct tok var = {TOK_NL, var.line.data, {0, true, 0, {0}}};
+
 enum tok_id tok_id(struct tok const *tok);
 char const *tok_value(struct tok const *tok);
 unsigned tok_size(struct tok const *tok);

@@ -5,10 +5,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-struct array;
 struct protein_match;
 struct sqlite3;
-struct tok;
 
 enum rc sched_prod_module_init(struct sqlite3 *db);
 enum rc sched_prod_add(struct prod *prod);
@@ -34,6 +32,6 @@ enum rc sched_prod_write_match(FILE *restrict fd, struct protein_match const *);
 enum rc sched_prod_write_match_sep(FILE *restrict fd);
 enum rc sched_prod_write_nl(FILE *restrict fd);
 
-enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok);
+enum rc sched_prod_add_from_tsv(FILE *restrict fd);
 
 #endif
