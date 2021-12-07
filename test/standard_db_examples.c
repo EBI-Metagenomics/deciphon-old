@@ -3,7 +3,7 @@
 #include "imm/imm.h"
 #include "standard_db.h"
 
-void std_db_examples_new_ex1(char const *filepath)
+void standard_db_examples_new_ex1(char const *filepath)
 {
     imm_example1_init();
 
@@ -42,7 +42,7 @@ void std_db_examples_new_ex1(char const *filepath)
     fclose(fd);
 }
 
-void std_db_examples_new_ex2(char const *filepath)
+void standard_db_examples_new_ex2(char const *filepath)
 {
     imm_example2_init();
 

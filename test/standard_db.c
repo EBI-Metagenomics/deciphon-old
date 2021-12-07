@@ -118,7 +118,7 @@ void test_db_openr_one_mute(void)
 
 void test_db_openw_example1(void)
 {
-    std_db_examples_new_ex1(TMPDIR "/example1.dcp");
+    standard_db_examples_new_ex1(TMPDIR "/example1.dcp");
 }
 
 void test_db_openr_example1(void)
@@ -168,7 +168,7 @@ void test_db_openr_example1(void)
 
 void test_db_openw_example2(void)
 {
-    std_db_examples_new_ex2(TMPDIR "/example2.dcp");
+    standard_db_examples_new_ex2(TMPDIR "/example2.dcp");
 }
 
 void test_db_openr_example2(void)

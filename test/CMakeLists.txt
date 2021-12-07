@@ -42,7 +42,7 @@ dcp_add_test(protein_profile protein_profile.c)
 dcp_add_test(protein_db "protein_db.c;protein_db_examples.c")
 dcp_add_test(protein_reader protein_reader.c)
 dcp_add_test(job job.c)
-# dcp_add_test(srv "srv.c;standard_db_examples.c;pro_db_examples.c;srv_data.c")
+dcp_add_test(server "server.c;standard_db_examples.c;protein_db_examples.c;server_data.c")
 
 # CLI
 dcp_add_test(cli_press cli_press.c)

@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static struct sqlite3 *sqlite3_db = NULL;
+static struct sqlite3 *sched = NULL;
 
 static_assert(SQLITE_VERSION_NUMBER >= 3035000, "We need RETURNING statement");
 
@@ -51,16 +51,16 @@ enum rc sched_open(char const filepath[DCP_PATH_SIZE])
 {
     enum rc rc = RC_DONE;
 
-    if ((rc = xsql_open(filepath, &sqlite3_db))) goto cleanup;
-    if ((rc = sched_job_module_init(sqlite3_db))) goto cleanup;
-    if ((rc = sched_seq_module_init(sqlite3_db))) goto cleanup;
-    if ((rc = sched_prod_module_init(sqlite3_db))) goto cleanup;
-    if ((rc = sched_db_module_init(sqlite3_db))) goto cleanup;
+    if ((rc = xsql_open(filepath, &sched))) goto cleanup;
+    if ((rc = sched_job_module_init(sched))) goto cleanup;
+    if ((rc = sched_seq_module_init(sched))) goto cleanup;
+    if ((rc = sched_prod_module_init(sched))) goto cleanup;
+    if ((rc = sched_db_module_init(sched))) goto cleanup;
 
     return rc;
 
 cleanup:
-    sqlite3_close(sqlite3_db);
+    xsql_close(sched, true);
     return rc;
 }
 
@@ -70,15 +70,15 @@ enum rc sched_close(void)
     sched_prod_module_del();
     sched_seq_module_del();
     sched_job_module_del();
-    return xsql_close(sqlite3_db, false);
+    return xsql_close(sched, false);
 }
 
-struct sqlite3 *sched_db(void) { return sqlite3_db; }
+struct sqlite3 *sched_db(void) { return sched; }
 
 enum rc sched_submit_job(struct job *job)
 {
     enum rc rc = RC_DONE;
-    if ((rc = xsql_begin_transaction(sqlite3_db))) return rc;
+    if ((rc = xsql_begin_transaction(sched))) return rc;
 
     struct sched_job j = SCHED_JOB_INIT(job->db_id, job->multi_hits,
                                         job->hmmer3_compat, (int64_t)utc_now());
@@ -94,8 +94,8 @@ enum rc sched_submit_job(struct job *job)
     }
 
 cleanup:
-    if (rc) return xsql_rollback_transaction(sqlite3_db);
-    return xsql_end_transaction(sqlite3_db);
+    if (rc) return xsql_rollback_transaction(sched);
+    return xsql_end_transaction(sched);
 }
 
 enum rc check_integrity(char const *filepath, bool *ok)
@@ -131,7 +131,7 @@ enum rc emerge_db(char const *filepath)
     return xsql_close(db, false);
 
 cleanup:
-    xsql_close(sqlite3_db, true);
+    xsql_close(sched, true);
     return rc;
 }
 
@@ -154,7 +154,7 @@ enum rc is_empty(char const *filepath, bool *empty)
     return xsql_close(db, false);
 
 cleanup:
-    xsql_close(sqlite3_db, true);
+    xsql_close(sched, true);
     return rc;
 }
 
@@ -166,6 +166,6 @@ enum rc touch_db(char const *filepath)
     return xsql_close(db, false);
 
 cleanup:
-    xsql_close(sqlite3_db, true);
+    xsql_close(sched, true);
     return rc;
 }
