@@ -63,6 +63,7 @@ add_library(
   src/pool.c
   src/prod.c
   src/profile.c
+  src/profile_reader.c
   src/progress_file.c
   src/protein_codec.c
   src/protein_db.c
