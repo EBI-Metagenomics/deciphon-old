@@ -83,7 +83,7 @@ enum rc sched_job_add(struct sched_job *job)
     if ((rc = xsql_bind_str(stmt, 3, job->state))) return rc;
 
     if ((rc = xsql_bind_str(stmt, 4, job->error))) return rc;
-    if ((rc = xsql_bind_i64(stmt, 5, (int64_t)utc_now()))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 5, job->submission))) return rc;
     if ((rc = xsql_bind_i64(stmt, 6, 0))) return rc;
     if ((rc = xsql_bind_i64(stmt, 7, 0))) return rc;
 
