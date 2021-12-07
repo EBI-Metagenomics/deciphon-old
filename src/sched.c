@@ -1,17 +1,17 @@
 #include "sched.h"
+#include "compiler.h"
 #include "job.h"
 #include "logger.h"
-#include "compiler.h"
 #include "rc.h"
 #include "sched_db.h"
 #include "sched_job.h"
-#include "sched_macros.h"
 #include "sched_prod.h"
 #include "sched_schema.h"
 #include "sched_seq.h"
 #include "sqldiff.h"
 #include "utc.h"
 #include "xfile.h"
+#include "xsql.h"
 #include <assert.h>
 #include <sqlite3.h>
 #include <stdbool.h>
@@ -51,7 +51,7 @@ enum rc sched_open(char const filepath[DCP_PATH_SIZE])
 {
     enum rc rc = RC_DONE;
 
-    if (sqlite3_open(filepath, &sqlite3_db)) return OPEN_ERROR();
+    if ((rc = xsql_open(filepath, &sqlite3_db))) goto cleanup;
     if ((rc = sched_job_module_init(sqlite3_db))) goto cleanup;
     if ((rc = sched_seq_module_init(sqlite3_db))) goto cleanup;
     if ((rc = sched_prod_module_init(sqlite3_db))) goto cleanup;
@@ -70,16 +70,15 @@ enum rc sched_close(void)
     sched_prod_module_del();
     sched_seq_module_del();
     sched_job_module_del();
-    return sqlite3_close(sqlite3_db) ? CLOSE_ERROR() : RC_DONE;
+    return xsql_close(sqlite3_db, false);
 }
 
 struct sqlite3 *sched_db(void) { return sqlite3_db; }
 
 enum rc sched_submit_job(struct job *job)
 {
-    BEGIN_TRANSACTION_OR_RETURN(sqlite3_db);
-
     enum rc rc = RC_DONE;
+    if ((rc = xsql_begin_transaction(sqlite3_db))) return rc;
 
     struct sched_job j = SCHED_JOB_INIT(job->db_id, job->multi_hits,
                                         job->hmmer3_compat, (int64_t)utc_now());
@@ -95,13 +94,8 @@ enum rc sched_submit_job(struct job *job)
     }
 
 cleanup:
-    if (rc)
-    {
-        ROLLBACK_TRANSACTION(sqlite3_db);
-        return rc;
-    }
-    END_TRANSACTION_OR_RETURN(sqlite3_db);
-    return rc;
+    if (rc) return xsql_rollback_transaction(sqlite3_db);
+    return xsql_end_transaction(sqlite3_db);
 }
 
 enum rc check_integrity(char const *filepath, bool *ok)
@@ -128,16 +122,17 @@ enum rc create_ground_truth_db(char *filepath)
 
 enum rc emerge_db(char const *filepath)
 {
+    enum rc rc = RC_DONE;
     struct sqlite3 *db = NULL;
-    if (sqlite3_open(filepath, &db)) return OPEN_ERROR();
+    if ((rc = xsql_open(filepath, &db))) goto cleanup;
 
-    if (sqlite3_exec(db, (char const *)sched_schema, 0, 0, 0))
-    {
-        enum rc rc = EXEC_ERROR();
-        sqlite3_close(db);
-        return rc;
-    }
-    return sqlite3_close(db) ? CLOSE_ERROR() : RC_DONE;
+    if ((rc = xsql_exec(db, (char const *)sched_schema, 0, 0))) goto cleanup;
+
+    return xsql_close(db, false);
+
+cleanup:
+    xsql_close(sqlite3_db, true);
+    return rc;
 }
 
 static int is_empty_cb(void *empty, int argc, char **argv, char **cols)
@@ -148,24 +143,29 @@ static int is_empty_cb(void *empty, int argc, char **argv, char **cols)
 
 enum rc is_empty(char const *filepath, bool *empty)
 {
+    enum rc rc = RC_DONE;
     struct sqlite3 *db = NULL;
-    if (sqlite3_open(filepath, &db)) return OPEN_ERROR();
+    if ((rc = xsql_open(filepath, &db))) goto cleanup;
 
     *empty = true;
     static char const *const sql = "SELECT name FROM sqlite_master;";
-    if (sqlite3_exec(db, sql, is_empty_cb, empty, 0))
-    {
-        enum rc rc = EXEC_ERROR();
-        sqlite3_close(db);
-        return rc;
-    }
+    if ((rc = xsql_exec(db, sql, is_empty_cb, empty))) goto cleanup;
 
-    return sqlite3_close(db) ? CLOSE_ERROR() : RC_DONE;
+    return xsql_close(db, false);
+
+cleanup:
+    xsql_close(sqlite3_db, true);
+    return rc;
 }
 
 enum rc touch_db(char const *filepath)
 {
+    enum rc rc = RC_DONE;
     struct sqlite3 *db = NULL;
-    if (sqlite3_open(filepath, &db)) return OPEN_ERROR();
-    return sqlite3_close(db) ? CLOSE_ERROR() : RC_DONE;
+    if ((rc = xsql_open(filepath, &db))) goto cleanup;
+    return xsql_close(db, false);
+
+cleanup:
+    xsql_close(sqlite3_db, true);
+    return rc;
 }

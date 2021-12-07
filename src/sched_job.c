@@ -5,7 +5,6 @@
 #include "rc.h"
 #include "safe.h"
 #include "sched_limits.h"
-#include "sched_macros.h"
 #include "utc.h"
 #include "xsql.h"
 #include <sqlite3.h>
@@ -66,55 +65,48 @@ enum rc sched_job_module_init(struct sqlite3 *db)
 {
     enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
-        PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
-
-cleanup:
-    return rc;
+    {
+        if ((rc = xsql_prepare(db, queries[i], stmts + i))) return rc;
+    }
+    return RC_DONE;
 }
 
 enum rc sched_job_add(struct sched_job *job)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, job->db_id))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 1, job->multi_hits))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 2, job->hmmer3_compat))) goto cleanup;
-    if ((rc = xsql_bind_str(stmt, 3, job->state))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 0, job->db_id))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 1, job->multi_hits))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 2, job->hmmer3_compat))) return rc;
+    if ((rc = xsql_bind_str(stmt, 3, job->state))) return rc;
 
-    if ((rc = xsql_bind_str(stmt, 4, job->error))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 5, (int64_t)utc_now()))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 6, 0))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 7, 0))) goto cleanup;
+    if ((rc = xsql_bind_str(stmt, 4, job->error))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 5, (int64_t)utc_now()))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 6, 0))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 7, 0))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    rc = xsql_step(stmt);
+    if (rc != RC_NEXT) return rc;
     job->id = sqlite3_column_int64(stmt, 0);
-    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 enum rc sched_job_next_pending(int64_t *job_id)
 {
     struct sqlite3_stmt *stmt = stmts[GET_PEND];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, (int64_t)utc_now()))) goto cleanup;
-    int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return RC_NOTFOUND;
-    if (code != SQLITE_ROW)
-    {
-        rc = STEP_ERROR();
-        goto cleanup;
-    }
+    if ((rc = xsql_bind_i64(stmt, 0, (int64_t)utc_now()))) return rc;
+
+    rc = xsql_step(stmt);
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) return rc;
+
     *job_id = sqlite3_column_int64(stmt, 0);
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 enum rc sched_job_set_error(int64_t job_id, char const *error,
@@ -122,66 +114,57 @@ enum rc sched_job_set_error(int64_t job_id, char const *error,
 {
     struct sqlite3_stmt *stmt = stmts[SET_ERROR];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_str(stmt, 0, error))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 1, exec_ended))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 2, job_id))) goto cleanup;
+    if ((rc = xsql_bind_str(stmt, 0, error))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 1, exec_ended))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 2, job_id))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 enum rc sched_job_set_done(int64_t job_id, int64_t exec_ended)
 {
     struct sqlite3_stmt *stmt = stmts[SET_DONE];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, exec_ended))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 1, job_id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 0, exec_ended))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 1, job_id))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 enum rc sched_job_state(int64_t job_id, enum job_state *state)
 {
     struct sqlite3_stmt *stmt = stmts[GET_STATE];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, job_id))) goto cleanup;
-    int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return RC_NOTFOUND;
-    if (code != SQLITE_ROW)
-    {
-        rc = STEP_ERROR();
-        goto cleanup;
-    }
+    if ((rc = xsql_bind_i64(stmt, 0, job_id))) return rc;
+
+    rc = xsql_step(stmt);
+    if (rc == RC_DONE) return rc;
+    if (rc != RC_NEXT) return rc;
 
     char tmp[SCHED_JOB_STATE_SIZE] = {0};
     rc = xsql_cpy_txt(stmt, 0, (struct xsql_txt){SCHED_JOB_STATE_SIZE, tmp});
-    if (rc) goto cleanup;
+    if (rc) return rc;
     *state = job_state_resolve(tmp);
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
 
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 enum rc sched_job_get(struct sched_job *job, int64_t job_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, job_id))) goto cleanup;
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    if ((rc = xsql_bind_i64(stmt, 0, job_id))) return rc;
+
+    rc = xsql_step(stmt);
+    if (rc != RC_NEXT) return error(RC_FAIL, "failed to get job");
 
     job->id = sqlite3_column_int64(stmt, 0);
 
@@ -189,18 +172,15 @@ enum rc sched_job_get(struct sched_job *job, int64_t job_id)
     job->multi_hits = sqlite3_column_int(stmt, 2);
     job->hmmer3_compat = sqlite3_column_int(stmt, 3);
     rc = xsql_cpy_txt(stmt, 4, XSQL_TXT_OF(*job, state));
-    if (rc) goto cleanup;
+    if (rc) return rc;
 
     rc = xsql_cpy_txt(stmt, 5, XSQL_TXT_OF(*job, error));
-    if (rc) goto cleanup;
+    if (rc) return rc;
     job->submission = sqlite3_column_int64(stmt, 6);
     job->exec_started = sqlite3_column_int64(stmt, 7);
     job->exec_ended = sqlite3_column_int64(stmt, 8);
 
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 void sched_job_module_del(void)

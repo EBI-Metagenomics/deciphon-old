@@ -3,7 +3,6 @@
 #include "logger.h"
 #include "rc.h"
 #include "safe.h"
-#include "sched_macros.h"
 #include "xsql.h"
 #include <assert.h>
 #include <limits.h>
@@ -47,10 +46,10 @@ enum rc sched_seq_module_init(struct sqlite3 *db)
 {
     enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
-        PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
-
-cleanup:
-    return rc;
+    {
+        if ((rc = xsql_prepare(db, queries[i], stmts + i))) return rc;
+    }
+    return RC_DONE;
 }
 
 enum rc sched_seq_add(int64_t job_id, char const *name, unsigned len,
@@ -58,68 +57,53 @@ enum rc sched_seq_add(int64_t job_id, char const *name, unsigned len,
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, job_id))) goto cleanup;
-    if ((rc = xsql_bind_str(stmt, 1, name))) goto cleanup;
-    if ((rc = xsql_bind_txt(stmt, 2, (struct xsql_txt){len, data})))
-        goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 0, job_id))) return rc;
+    if ((rc = xsql_bind_str(stmt, 1, name))) return rc;
+    if ((rc = xsql_bind_txt(stmt, 2, (struct xsql_txt){len, data}))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
-    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
-
-cleanup:
-    return rc;
+    return xsql_insert_step(stmt);
 }
 
 enum rc sched_seq_next(int64_t job_id, int64_t *seq_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, *seq_id))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 1, job_id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 0, *seq_id))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 1, job_id))) return rc;
 
-    int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return RC_DONE;
-    if (code != SQLITE_ROW)
-    {
-        rc = STEP_ERROR();
-        goto cleanup;
-    }
+    rc = xsql_step(stmt);
+    if (rc == RC_DONE) return rc;
+    if (rc != RC_NEXT) return rc;
     *seq_id = sqlite3_column_int64(stmt, 0);
-    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
 
-    return RC_NEXT;
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 enum rc sched_seq_get(struct sched_seq *seq, int64_t id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 0, id))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    rc = xsql_step(stmt);
+    if (rc != RC_NEXT) return error(RC_FAIL, "failed to get seq");
 
     seq->id = sqlite3_column_int64(stmt, 0);
     seq->job_id = sqlite3_column_int64(stmt, 1);
 
-    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*seq, name)))) goto cleanup;
+    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*seq, name)))) return rc;
 
     struct xsql_txt txt = {0};
-    if ((rc = xsql_get_txt(stmt, 3, &txt))) goto cleanup;
-    if ((rc = xsql_txt_as_array(&txt, &seq->data))) goto cleanup;
+    if ((rc = xsql_get_txt(stmt, 3, &txt))) return rc;
+    if ((rc = xsql_txt_as_array(&txt, &seq->data))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 void sched_seq_module_del(void)

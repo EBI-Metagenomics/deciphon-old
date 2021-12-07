@@ -5,7 +5,6 @@
 #include "protein_match.h"
 #include "safe.h"
 #include "sched.h"
-#include "sched_macros.h"
 #include "to.h"
 #include "tok.h"
 #include "xsql.h"
@@ -69,80 +68,70 @@ enum rc sched_prod_module_init(struct sqlite3 *db)
 {
     enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
-        PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
-
-cleanup:
-    return rc;
+    {
+        if ((rc = xsql_prepare(db, queries[i], stmts + i))) return rc;
+    }
+    return RC_DONE;
 }
 
 enum rc sched_prod_add(struct prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, prod->job_id))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 1, prod->seq_id))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 2, prod->match_id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 0, prod->job_id))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 1, prod->seq_id))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 2, prod->match_id))) return rc;
 
-    if ((rc = xsql_bind_txt(stmt, 3, XSQL_TXT_OF(*prod, prof_name))))
-        goto cleanup;
-    if ((rc = xsql_bind_txt(stmt, 4, XSQL_TXT_OF(*prod, abc_name))))
-        goto cleanup;
+    if ((rc = xsql_bind_txt(stmt, 3, XSQL_TXT_OF(*prod, prof_name)))) return rc;
+    if ((rc = xsql_bind_txt(stmt, 4, XSQL_TXT_OF(*prod, abc_name)))) return rc;
 
-    if ((rc = xsql_bind_dbl(stmt, 5, prod->loglik))) goto cleanup;
-    if ((rc = xsql_bind_dbl(stmt, 6, prod->null_loglik))) goto cleanup;
+    if ((rc = xsql_bind_dbl(stmt, 5, prod->loglik))) return rc;
+    if ((rc = xsql_bind_dbl(stmt, 6, prod->null_loglik))) return rc;
 
     if ((rc = xsql_bind_txt(stmt, 7, XSQL_TXT_OF(*prod, prof_typeid))))
-        goto cleanup;
-    if ((rc = xsql_bind_txt(stmt, 8, XSQL_TXT_OF(*prod, version))))
-        goto cleanup;
+        return rc;
+    if ((rc = xsql_bind_txt(stmt, 8, XSQL_TXT_OF(*prod, version)))) return rc;
 
     struct xsql_txt match = {(unsigned)array_size(prod->match),
                              array_data(prod->match)};
-    if ((rc = xsql_bind_txt(stmt, 9, match))) goto cleanup;
+    if ((rc = xsql_bind_txt(stmt, 9, match))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    rc = xsql_step(stmt);
+    if (rc != RC_NEXT) return rc;
     prod->id = sqlite3_column_int64(stmt, 0);
-    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 enum rc sched_prod_next(int64_t job_id, int64_t *prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, *prod_id))) goto cleanup;
-    if ((rc = xsql_bind_i64(stmt, 1, job_id))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 0, *prod_id))) return rc;
+    if ((rc = xsql_bind_i64(stmt, 1, job_id))) return rc;
 
-    int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return RC_DONE;
-    if (code != SQLITE_ROW)
-    {
-        rc = STEP_ERROR();
-        goto cleanup;
-    }
+    rc = xsql_step(stmt);
+    if (rc == RC_DONE) return rc;
+    if (rc != RC_NEXT) return rc;
+
     *prod_id = sqlite3_column_int64(stmt, 0);
-    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
-
+    if ((rc = xsql_end_step(stmt))) return rc;
     return RC_NEXT;
-
-cleanup:
-    return rc;
 }
 
 enum rc sched_prod_get(struct prod *prod, int64_t prod_id)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, prod_id))) goto cleanup;
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    if ((rc = xsql_bind_i64(stmt, 0, prod_id))) return rc;
+
+    rc = xsql_step(stmt);
+    if (rc != RC_NEXT) return error(RC_FAIL, "failed to get prod");
 
     prod->id = sqlite3_column_int64(stmt, 0);
 
@@ -151,26 +140,23 @@ enum rc sched_prod_get(struct prod *prod, int64_t prod_id)
     prod->match_id = sqlite3_column_int64(stmt, 3);
 
     rc = xsql_cpy_txt(stmt, 4, XSQL_TXT_OF(*prod, prof_name));
-    if (rc) goto cleanup;
+    if (rc) return rc;
     rc = xsql_cpy_txt(stmt, 5, XSQL_TXT_OF(*prod, abc_name));
-    if (rc) goto cleanup;
+    if (rc) return rc;
 
     prod->loglik = sqlite3_column_double(stmt, 6);
     prod->null_loglik = sqlite3_column_double(stmt, 7);
 
     rc = xsql_cpy_txt(stmt, 8, XSQL_TXT_OF(*prod, prof_typeid));
-    if (rc) goto cleanup;
+    if (rc) return rc;
     rc = xsql_cpy_txt(stmt, 9, XSQL_TXT_OF(*prod, version));
-    if (rc) goto cleanup;
+    if (rc) return rc;
 
     struct xsql_txt txt = {0};
-    if ((rc = xsql_get_txt(stmt, 10, &txt))) goto cleanup;
-    if ((rc = xsql_txt_as_array(&txt, &prod->match))) goto cleanup;
+    if ((rc = xsql_get_txt(stmt, 10, &txt))) return rc;
+    if ((rc = xsql_txt_as_array(&txt, &prod->match))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 void sched_prod_module_del(void)
@@ -305,13 +291,13 @@ enum rc sched_prod_write_nl(FILE *restrict fd)
 enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
 {
     enum rc rc = RC_DONE;
-    BEGIN_TRANSACTION_OR_RETURN(sched_db());
+    if ((rc = xsql_begin_transaction(sched_db()))) goto cleanup;
 
     struct sqlite3_stmt *stmt = stmts[INSERT];
 
     do
     {
-        RESET_OR_CLEANUP(rc, stmt);
+        if ((rc = xsql_reset(stmt))) goto cleanup;
         rc = tok_next(tok, fd);
         if (rc) return rc;
         if (tok_id(tok) == TOK_EOF) break;
@@ -346,16 +332,16 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd, struct tok *tok)
             rc = tok_next(tok, fd);
         }
         assert(tok_id(tok) == TOK_NL);
-        STEP_OR_CLEANUP(stmt, SQLITE_ROW);
-        STEP_OR_CLEANUP(stmt, SQLITE_DONE);
+        rc = xsql_step(stmt);
+        if (rc != RC_NEXT)
+        {
+            rc = error(RC_FAIL, "failed to add prod");
+            goto cleanup;
+        }
+        if ((rc = xsql_end_step(stmt))) goto cleanup;
     } while (true);
 
 cleanup:
-    if (rc)
-        ROLLBACK_TRANSACTION(sched_db());
-    else
-    {
-        END_TRANSACTION_OR_RETURN(sched_db());
-    }
-    return rc;
+    if (rc) return xsql_rollback_transaction(sched_db());
+    return xsql_end_transaction(sched_db());
 }

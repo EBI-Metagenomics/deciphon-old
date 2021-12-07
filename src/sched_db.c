@@ -3,7 +3,6 @@
 #include "logger.h"
 #include "rc.h"
 #include "safe.h"
-#include "sched_macros.h"
 #include "xfile.h"
 #include "xsql.h"
 #include <sqlite3.h>
@@ -62,28 +61,26 @@ enum rc sched_db_module_init(struct sqlite3 *db)
 {
     enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
-        PREPARE_OR_CLEAN_UP(db, queries[i], stmts + i);
-
-cleanup:
-    return rc;
+    {
+        if ((rc = xsql_prepare(db, queries[i], stmts + i))) return rc;
+    }
+    return RC_DONE;
 }
 
 enum rc sched_db_add(struct sched_db *db)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, db->xxh64))) goto cleanup;
-    if ((rc = xsql_cpy_txt(stmt, 1, XSQL_TXT_OF(*db, name)))) goto cleanup;
-    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*db, filepath)))) goto cleanup;
+    if ((rc = xsql_bind_i64(stmt, 0, db->xxh64))) return rc;
+    if ((rc = xsql_cpy_txt(stmt, 1, XSQL_TXT_OF(*db, name)))) return rc;
+    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*db, filepath)))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_ROW);
+    rc = xsql_step(stmt);
+    if (rc != RC_NEXT) return rc;
     db->id = sqlite3_column_int64(stmt, 0);
-    if (sqlite3_step(stmt) != SQLITE_DONE) rc = STEP_ERROR();
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 static enum rc select_db(struct sched_db *db, int64_t by_value,
@@ -91,26 +88,20 @@ static enum rc select_db(struct sched_db *db, int64_t by_value,
 {
     struct sqlite3_stmt *stmt = stmts[select_stmt];
     enum rc rc = RC_DONE;
-    RESET_OR_CLEANUP(rc, stmt);
+    if ((rc = xsql_reset(stmt))) return rc;
 
-    if ((rc = xsql_bind_i64(stmt, 0, by_value))) goto cleanup;
-    int code = sqlite3_step(stmt);
-    if (code == SQLITE_DONE) return RC_NOTFOUND;
-    if (code != SQLITE_ROW)
-    {
-        rc = error(RC_FAIL, "failed to step");
-        goto cleanup;
-    }
+    if ((rc = xsql_bind_i64(stmt, 0, by_value))) return rc;
+
+    rc = xsql_step(stmt);
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) return rc;
 
     db->id = sqlite3_column_int64(stmt, 0);
     db->xxh64 = sqlite3_column_int64(stmt, 1);
-    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*db, name)))) goto cleanup;
-    if ((rc = xsql_cpy_txt(stmt, 3, XSQL_TXT_OF(*db, filepath)))) goto cleanup;
+    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*db, name)))) return rc;
+    if ((rc = xsql_cpy_txt(stmt, 3, XSQL_TXT_OF(*db, filepath)))) return rc;
 
-    STEP_OR_CLEANUP(stmt, SQLITE_DONE);
-
-cleanup:
-    return rc;
+    return xsql_end_step(stmt);
 }
 
 enum rc sched_db_get_by_id(struct sched_db *db, int64_t id)

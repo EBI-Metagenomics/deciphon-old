@@ -49,7 +49,7 @@ enum rc xsql_bind_txt(struct sqlite3_stmt *stmt, int col, struct xsql_txt txt)
 enum rc xsql_get_txt(struct sqlite3_stmt *stmt, int col, struct xsql_txt *txt)
 {
     txt->str = (char const *)sqlite3_column_text(stmt, col);
-    if (!txt->str) return error(RC_OUTOFMEM, "failed to fetch sqlite text");
+    if (!txt->str) return error(RC_OUTOFMEM, "failed to fetch text");
     int ilen = sqlite3_column_bytes(stmt, col);
     assert(ilen > 0);
     txt->len = (unsigned)ilen;
@@ -59,8 +59,83 @@ enum rc xsql_get_txt(struct sqlite3_stmt *stmt, int col, struct xsql_txt *txt)
 enum rc xsql_cpy_txt(struct sqlite3_stmt *stmt, int col, struct xsql_txt txt)
 {
     char const *str = (char const *)sqlite3_column_text(stmt, col);
-    if (!str) return error(RC_OUTOFMEM, "failed to fetch sqlite text");
+    if (!str) return error(RC_OUTOFMEM, "failed to fetch text");
     sqlite3_column_bytes(stmt, col);
     safe_strcpy((char *)txt.str, str, txt.len + 1);
+    return RC_DONE;
+}
+
+enum rc xsql_open(char const *filepath, struct sqlite3 **db)
+{
+    if (sqlite3_open(filepath, db))
+        return error(RC_FAIL, "failed to open sqlite");
+    return RC_DONE;
+}
+
+enum rc xsql_close(struct sqlite3 *db, bool quiet)
+{
+    if (sqlite3_close(db))
+    {
+        if (!quiet) error(RC_FAIL, "failed to close sqlite");
+        return RC_FAIL;
+    }
+    return RC_DONE;
+}
+
+enum rc xsql_exec(struct sqlite3 *db, char const *sql, xsql_callback cb,
+                  void *cb_arg)
+{
+    if (sqlite3_exec(db, sql, cb, cb_arg, 0))
+        return error(RC_FAIL, "failed to exec statement");
+    return RC_DONE;
+}
+
+enum rc xsql_begin_transaction(struct sqlite3 *db)
+{
+    return xsql_exec(db, "BEGIN TRANSACTION;", 0, 0);
+}
+
+enum rc xsql_end_transaction(struct sqlite3 *db)
+{
+    return xsql_exec(db, "END TRANSACTION;", 0, 0);
+}
+
+enum rc xsql_rollback_transaction(struct sqlite3 *db)
+{
+    return xsql_exec(db, "ROLLBACK TRANSACTION;", 0, 0);
+}
+
+enum rc xsql_prepare(struct sqlite3 *db, char const *sql,
+                     struct sqlite3_stmt **stmt)
+{
+    if (sqlite3_prepare_v2(db, sql, -1, stmt, 0))
+        return error(RC_FAIL, "failed to prepare statement");
+    return RC_DONE;
+}
+
+enum rc xsql_reset(struct sqlite3_stmt *stmt)
+{
+    if (sqlite3_reset(stmt)) return error(RC_FAIL, "failed to reset statement");
+    return RC_DONE;
+}
+
+enum rc xsql_insert_step(struct sqlite3_stmt *stmt)
+{
+    if (xsql_step(stmt) != RC_NEXT) return error(RC_FAIL, "failed to insert");
+    return xsql_end_step(stmt);
+}
+
+enum rc xsql_step(struct sqlite3_stmt *stmt)
+{
+    int code = sqlite3_step(stmt);
+    if (code == SQLITE_DONE) return RC_DONE;
+    if (code == SQLITE_ROW) return RC_NEXT;
+    return error(RC_FAIL, "failed to step");
+}
+
+enum rc xsql_end_step(struct sqlite3_stmt *stmt)
+{
+    if (sqlite3_step(stmt) != SQLITE_DONE)
+        return error(RC_FAIL, "failed to end step");
     return RC_DONE;
 }
