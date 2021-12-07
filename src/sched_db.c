@@ -43,17 +43,17 @@ static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 enum rc sched_db_setup(struct sched_db *db, char const name[DCP_DB_NAME_SIZE],
                        char const filepath[DCP_PATH_SIZE])
 {
-    FILE *fd = fopen(filepath, "rb");
-    if (!fd) return error(RC_IOERROR, "failed to open file");
+    FILE *fp = fopen(filepath, "rb");
+    if (!fp) return error(RC_IOERROR, "failed to open file");
 
-    enum rc rc = xfile_hash(fd, (uint64_t *)&db->xxh64);
+    enum rc rc = xfile_hash(fp, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
 
     safe_strcpy(db->name, name, DCP_DB_NAME_SIZE);
     safe_strcpy(db->filepath, filepath, DCP_PATH_SIZE);
 
 cleanup:
-    fclose(fd);
+    fclose(fp);
     return RC_DONE;
 }
 
@@ -74,8 +74,8 @@ enum rc sched_db_add(struct sched_db *db)
     if ((rc = xsql_reset(stmt))) return rc;
 
     if ((rc = xsql_bind_i64(stmt, 0, db->xxh64))) return rc;
-    if ((rc = xsql_cpy_txt(stmt, 1, XSQL_TXT_OF(*db, name)))) return rc;
-    if ((rc = xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*db, filepath)))) return rc;
+    if ((rc = xsql_bind_txt(stmt, 1, XSQL_TXT_OF(*db, name)))) return rc;
+    if ((rc = xsql_bind_txt(stmt, 2, XSQL_TXT_OF(*db, filepath)))) return rc;
 
     rc = xsql_step(stmt);
     if (rc != RC_NEXT) return rc;

@@ -19,7 +19,7 @@ struct xsql_txt
 };
 
 #define XSQL_TXT_OF(var, member)                                               \
-    (struct xsql_txt) { ARRAY_SIZE_OF((var), member), (var).member }
+    (struct xsql_txt) { ARRAY_SIZE_OF((var), member) - 1, (var).member }
 
 enum rc xsql_txt_as_array(struct xsql_txt const *txt, struct array **arr);
 

@@ -40,8 +40,7 @@ enum rc server_open(char const *filepath, unsigned num_threads)
 
     enum rc rc = RC_DONE;
     if ((rc = sched_setup(filepath))) return rc;
-    rc = sched_open(filepath);
-    return rc;
+    return sched_open(filepath);
 }
 
 enum rc server_close(void) { return sched_close(); }

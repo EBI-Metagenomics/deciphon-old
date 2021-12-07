@@ -5,45 +5,45 @@
 #include "protein_db_examples.h"
 #include "standard_db_examples.h"
 
-void test_srv_setup(unsigned num_threads);
-void test_srv_reopen(void);
-void test_srv_standard_db(void);
-void test_srv_submit_job(void);
-void test_srv_submit_and_fetch_job(unsigned num_threads);
+void test_server_setup(unsigned num_threads);
+void test_server_reopen(void);
+void test_server_standard_db(void);
+void test_server_submit_job(void);
+void test_server_submit_and_fetch_job(unsigned num_threads);
 
 int main(void)
 {
-    test_srv_setup(1);
-    test_srv_setup(2);
-    /* test_srv_reopen(); */
-    /* test_srv_standard_db(); */
-    /* test_srv_submit_job(); */
-    /* test_srv_submit_and_fetch_job(1); */
-    /* test_srv_submit_and_fetch_job(4); */
+    test_server_setup(1);
+    test_server_setup(2);
+    test_server_reopen();
+    test_server_standard_db();
+    /* test_server_submit_job(); */
+    /* test_server_submit_and_fetch_job(1); */
+    /* test_server_submit_and_fetch_job(4); */
     return hope_status();
 }
 
-void test_srv_setup(unsigned num_threads)
+void test_server_setup(unsigned num_threads)
 {
-    remove(TMPDIR "/setup.sqlite3");
-    EQ(server_open(TMPDIR "/setup.sqlite3", num_threads), RC_DONE);
+    remove(TMPDIR "/setup.sched");
+    EQ(server_open(TMPDIR "/setup.sched", num_threads), RC_DONE);
     EQ(server_close(), RC_DONE);
 }
 
-void test_srv_reopen(void)
+void test_server_reopen(void)
 {
-    remove(TMPDIR "/reopen.sqlite3");
+    remove(TMPDIR "/reopen.sched");
 
-    EQ(server_open(TMPDIR "/reopen.sqlite3", 1), RC_DONE);
+    EQ(server_open(TMPDIR "/reopen.sched", 1), RC_DONE);
     EQ(server_close(), RC_DONE);
 
-    EQ(server_open(TMPDIR "/reopen.sqlite3", 1), RC_DONE);
+    EQ(server_open(TMPDIR "/reopen.sched", 1), RC_DONE);
     EQ(server_close(), RC_DONE);
 }
 
-void test_srv_standard_db(void)
+void test_server_standard_db(void)
 {
-    char const db_path[] = TMPDIR "/standard_db.sqlite3";
+    char const db_path[] = TMPDIR "/standard_db.sched";
     char const ex_path[] = TMPDIR "/standard_example1.dcp";
 
     remove(db_path);
@@ -57,9 +57,9 @@ void test_srv_standard_db(void)
     EQ(server_close(), RC_DONE);
 }
 
-void test_srv_submit_job(void)
+void test_server_submit_job(void)
 {
-    char const db_path[] = TMPDIR "/submit_job.sqlite3";
+    char const db_path[] = TMPDIR "/submit_job.sched";
     char const ex_path[] = TMPDIR "/standard_example1.dcp";
     remove(db_path);
 
@@ -84,9 +84,9 @@ void test_srv_submit_job(void)
     EQ(server_close(), RC_DONE);
 }
 
-void test_srv_submit_and_fetch_job(unsigned num_threads)
+void test_server_submit_and_fetch_job(unsigned num_threads)
 {
-    char const db_path[] = TMPDIR "/submit_and_fetch_job.sqlite3";
+    char const db_path[] = TMPDIR "/submit_and_fetch_job.sched";
     char const ex_path[] = TMPDIR "/protein_example1.dcp";
     remove(db_path);
 
