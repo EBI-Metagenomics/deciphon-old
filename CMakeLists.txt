@@ -95,7 +95,6 @@ add_library(DCP::dcp ALIAS dcp)
 cbp_hide_functions(dcp)
 cbp_set_warning_flags()
 cbp_ci_build_option()
-cbp_generate_export_header(dcp EXPORT_FILE)
 cbp_assert_null_is_zero_bits()
 
 option(OPENMP "Enable OpenMP" On)
@@ -160,8 +159,6 @@ target_link_libraries(dcp-scan PUBLIC dcp)
 add_executable(dcp-server bin/server.c)
 target_link_libraries(dcp-server PUBLIC dcp)
 
-cbp_install(dcp MERGED)
-install(FILES ${EXPORT_FILE} ${VERSION_FILE} DESTINATION include/dcp)
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
   ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
