@@ -37,8 +37,8 @@ void standard_db_examples_new_ex1(char const *filepath)
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(standard_db_write(&db, &p), RC_DONE);
 
-    standard_profile_del(&p);
-    EQ(standard_db_close(&db), RC_DONE);
+    profile_del((struct profile *)&p);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }
 
@@ -78,7 +78,7 @@ void standard_db_examples_new_ex2(char const *filepath)
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(standard_db_write(&db, &p), RC_DONE);
 
-    standard_profile_del(&p);
-    EQ(standard_db_close(&db), RC_DONE);
+    profile_del((struct profile *)&p);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }

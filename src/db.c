@@ -46,6 +46,8 @@ void db_init(struct db *db, struct db_vtable vtable)
     db->file.mode = DB_OPEN_NULL;
 }
 
+struct imm_abc const *db_abc(struct db const *db) { return db->vtable.abc(db); }
+
 void db_openr(struct db *db, FILE *restrict fp)
 {
     cmp_setup(&db->file.cmp, fp);

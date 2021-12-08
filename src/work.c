@@ -13,11 +13,10 @@
 
 enum rc open_work(struct work *work, unsigned num_threads);
 enum rc close_work(struct work *work);
-enum rc next_profile(struct work *work);
 enum rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp);
-enum rc prepare_task_for_prof(struct work *work, struct task *task);
+enum rc prepare_task_for_prof(struct task *task, struct profile const *profile);
 enum rc prepare_task_for_seq(struct task *task, struct imm_seq *seq);
-enum rc run_viterbi(struct work *work, struct task *task);
+enum rc run_viterbi(struct profile const *profile, struct task *task);
 static inline double compute_lrt(struct task const *task)
 {
     printf("Nul (%f) Alt (%f)\n", task->null.prod.loglik,
@@ -26,7 +25,7 @@ static inline double compute_lrt(struct task const *task)
 }
 static inline struct imm_abc const *get_abc(struct work const *work)
 {
-    return work->prof->super.code->abc;
+    return db_abc((struct db const *)&work->db);
 }
 static inline void prepare_prod(struct task *task)
 {
@@ -42,6 +41,16 @@ void work_init(struct work *work)
     atomic_store(&work->failed, false);
 }
 
+static enum rc copy_db_filepath(char *filepath, int64_t db_id)
+{
+    filepath[0] = 0;
+    struct sched_db db = {0};
+    enum rc rc = RC_DONE;
+    if ((rc = sched_db_get_by_id(&db, db_id))) return rc;
+    safe_strcpy(filepath, db.filepath, DCP_PATH_SIZE);
+    return rc;
+}
+
 enum rc work_next(struct work *work)
 {
     enum rc rc = RC_DONE;
@@ -49,31 +58,19 @@ enum rc work_next(struct work *work)
 
     if ((rc = sched_job_next_pending(&job_id))) return rc;
     if ((rc = sched_job_get(&work->job, job_id))) return rc;
-
-    /* work->db = db_pool_fetch(work->job.db_id); */
-    /* if (!work->db) return error(RC_FAIL, "reached limit"); */
-
-    work->db_path[0] = 0;
-    struct sched_db db = {0};
-    if ((rc = sched_db_get_by_id(&db, work->job.db_id))) return rc;
-    safe_strcpy(work->db_path, db.filepath, DCP_PATH_SIZE);
+    if ((rc = copy_db_filepath(work->db_path, work->job.db_id))) return rc;
 
     int64_t seq_id = 0;
     work->ntasks = 0;
     while ((rc = sched_seq_next(job_id, &seq_id)) == RC_NEXT)
     {
         struct task *task = &work->tasks[work->ntasks];
-        if ((rc = task_setup(task, get_abc(work), seq_id))) goto cleanup;
+        if ((rc = task_setup(task, get_abc(work), seq_id))) return rc;
 
         if (++work->ntasks >= ARRAY_SIZE(MEMBER_REF(*work, tasks)))
-        {
-            rc = error(RC_FAIL, "too many tasks");
-            goto cleanup;
-        }
+            return error(RC_FAIL, "too many tasks");
     }
 
-cleanup:
-    if (rc) return rc;
     return RC_NEXT;
 }
 
@@ -83,17 +80,19 @@ enum rc work_run(struct work *work, unsigned num_threads)
     if (rc) return rc;
 
     unsigned match_id = 1;
-    while ((rc = next_profile(work)) == RC_NEXT)
+    struct profile_reader *reader = &work->profile_reader;
+    while ((rc = profile_reader_next(reader, 0)) == RC_NEXT)
     {
+        struct profile *prof = profile_reader_profile(reader, 0);
         for (unsigned i = 0; i < work->ntasks; ++i)
         {
             struct task *task = &work->tasks[i];
             struct imm_seq seq = task->seq;
 
-            if ((rc = prepare_task_for_prof(work, task))) goto cleanup;
+            if ((rc = prepare_task_for_prof(task, prof))) goto cleanup;
             if ((rc = prepare_task_for_seq(task, &seq))) goto cleanup;
             prepare_prod(task);
-            if ((rc = run_viterbi(work, task))) goto cleanup;
+            if ((rc = run_viterbi(prof, task))) goto cleanup;
 
             double lrt = compute_lrt(&work->tasks[i]);
             printf("Match_id (%d), lrt (%f)\n", match_id, lrt);
@@ -117,21 +116,29 @@ cleanup:
 enum rc open_work(struct work *work, unsigned num_threads)
 {
     enum rc rc = xfile_tmp_open(&work->prod_file);
-    if (rc) goto cleanup;
+    if (rc) return rc;
 
-    rc = db_handle_open(work->db, work->db_path, num_threads);
-    if (rc) goto cleanup;
+    if (!(work->db_file = fopen(work->db_path, "rw")))
+    {
+        rc = error(RC_IOERROR, "failed to open db");
+        goto cleanup;
+    }
+    if ((rc = db_reader_openr(&work->db_reader, work->db_file))) goto cleanup;
+
+    rc = profile_reader_setup(&work->profile_reader,
+                              db_reader_db(&work->db_reader), num_threads);
+    return rc;
+
     return RC_DONE;
 
 cleanup:
-    close_work(work);
+    xfile_tmp_destroy(&work->prod_file);
     return rc;
 }
 
 enum rc close_work(struct work *work)
 {
-    enum rc rc = db_handle_close(work->db);
-    if (rc) goto cleanup;
+    enum rc rc = db_reader_close(&work->db_reader);
     if ((rc = xfile_tmp_rewind(&work->prod_file))) goto cleanup;
 
     int64_t exec_ended = (int64_t)utc_now();
@@ -153,20 +160,6 @@ cleanup:
     return rc;
 }
 
-enum rc next_profile(struct work *work)
-{
-    if (db_end(&work->db->pro.super)) return RC_DONE;
-
-    struct protein_profile *prof = protein_db_profile(&work->db->pro);
-
-    enum rc rc = protein_db_read(&work->db->pro, prof);
-    if (rc) return rc;
-
-    work->prof = prof;
-
-    return RC_NEXT;
-}
-
 enum rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
 {
     if (*task)
@@ -182,11 +175,11 @@ enum rc prepare_task_for_dp(struct imm_task **task, struct imm_dp const *dp)
     return RC_DONE;
 }
 
-enum rc prepare_task_for_prof(struct work *work, struct task *task)
+enum rc prepare_task_for_prof(struct task *task, struct profile const *profile)
 {
-    enum rc rc = prepare_task_for_dp(&task->alt.task, &work->prof->alt.dp);
+    enum rc rc = prepare_task_for_dp(&task->alt.task, profile_null_dp(profile));
     if (rc) return rc;
-    return prepare_task_for_dp(&task->null.task, &work->prof->null.dp);
+    return prepare_task_for_dp(&task->null.task, profile_alt_dp(profile));
 }
 
 enum rc prepare_task_for_seq(struct task *task, struct imm_seq *seq)
@@ -200,12 +193,14 @@ enum rc prepare_task_for_seq(struct task *task, struct imm_seq *seq)
     return RC_DONE;
 }
 
-enum rc run_viterbi(struct work *work, struct task *task)
+enum rc run_viterbi(struct profile const *profile, struct task *task)
 {
-    if (imm_dp_viterbi(&work->prof->alt.dp, task->alt.task, &task->alt.prod))
+    if (imm_dp_viterbi(profile_alt_dp(profile), task->alt.task,
+                       &task->alt.prod))
         return error(RC_FAIL, "failed to run viterbi");
 
-    if (imm_dp_viterbi(&work->prof->null.dp, task->null.task, &task->null.prod))
+    if (imm_dp_viterbi(profile_null_dp(profile), task->null.task,
+                       &task->null.prod))
         return error(RC_FAIL, "failed to run viterbi");
 
     return RC_DONE;
@@ -215,9 +210,12 @@ enum rc write_product(struct work *work, struct task *task, unsigned match_id,
                       struct imm_seq seq)
 {
     enum rc rc = RC_DONE;
-    struct imm_codon codon = imm_codon_any(work->prof->code->nuclt);
+    struct profile *p = profile_reader_profile(&work->profile_reader, 0);
+    /* TODO: generalized it */
+    struct protein_profile *prof = (struct protein_profile *)p;
+    struct imm_codon codon = imm_codon_any(prof->code->nuclt);
 
-    struct metadata const *mt = &work->prof->super.metadata;
+    struct metadata const *mt = &prof->super.metadata;
 
     sched_prod_set_job_id(&task->prod, work->job.id);
     sched_prod_set_seq_id(&task->prod, task->sched_seq.id);
@@ -250,8 +248,7 @@ enum rc write_product(struct work *work, struct task *task, unsigned match_id,
 
         if (!protein_state_is_mute(step->state_id))
         {
-            rc = protein_profile_decode(work->prof, &frag, step->state_id,
-                                        &codon);
+            rc = protein_profile_decode(prof, &frag, step->state_id, &codon);
             if (rc) return rc;
             protein_match_set_codon(&match, codon);
             protein_match_set_amino(&match, imm_gc_decode(1, codon));

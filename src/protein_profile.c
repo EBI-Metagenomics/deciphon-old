@@ -68,7 +68,20 @@ static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
     return RC_DONE;
 }
 
-static struct profile_vtable vtable = {del, read, PROFILE_PROTEIN};
+static struct imm_dp const *null_dp(struct profile const *prof)
+{
+    struct protein_profile *p = (struct protein_profile *)prof;
+    return &p->null.dp;
+}
+
+static struct imm_dp const *alt_dp(struct profile const *prof)
+{
+    struct protein_profile *p = (struct protein_profile *)prof;
+    return &p->alt.dp;
+}
+
+static struct profile_vtable vtable = {PROFILE_PROTEIN, del, read, null_dp,
+                                       alt_dp};
 
 void protein_profile_init(struct protein_profile *p,
                           struct imm_amino const *amino,

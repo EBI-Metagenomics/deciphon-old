@@ -105,8 +105,14 @@ void profile_reader_rewind(struct profile_reader *reader)
 
 enum rc profile_reader_next(struct profile_reader *reader, unsigned partition)
 {
-    struct profile *prof = (struct profile *)&reader->profiles[partition];
+    struct profile *prof = profile_reader_profile(reader, partition);
     return profile_read(prof, &reader->cmp[partition]);
+}
+
+struct profile *profile_reader_profile(struct profile_reader *reader,
+                                       unsigned partition)
+{
+    return (struct profile *)&reader->profiles[partition];
 }
 
 bool profile_reader_end(struct profile_reader *reader, unsigned partition)

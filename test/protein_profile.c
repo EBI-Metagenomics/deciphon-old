@@ -101,7 +101,7 @@ void test_protein_profile_uniform(void)
     EQ(rc, RC_END);
     EQ(i, 10);
 
-    protein_profile_del(&prof);
+    profile_del((struct profile *)&prof);
     imm_del(&prod);
     imm_del(task);
 }
@@ -193,7 +193,7 @@ void test_protein_profile_occupancy(void)
     EQ(rc, RC_END);
     EQ(i, 10);
 
-    protein_profile_del(&prof);
+    profile_del((struct profile *)&prof);
     imm_del(&prod);
     imm_del(task);
 }

@@ -51,7 +51,7 @@ int main(void)
     profile_set_name(&prof.super, metadata("NAME0", "ACC0"));
     EQ(protein_profile_absorb(&prof, &model), RC_DONE);
 
-    protein_profile_del(&prof);
+    profile_del((struct profile *)&prof);
     protein_model_del(&model);
     return hope_status();
 }

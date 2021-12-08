@@ -26,8 +26,6 @@ enum rc protein_db_openw(struct protein_db *db, FILE *restrict fp,
                          struct imm_amino const *amino,
                          struct imm_nuclt const *nuclt, struct protein_cfg cfg);
 
-enum rc protein_db_close(struct protein_db *db);
-
 struct imm_amino const *protein_db_amino(struct protein_db const *db);
 
 struct imm_nuclt const *protein_db_nuclt(struct protein_db const *db);

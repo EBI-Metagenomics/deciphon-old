@@ -59,6 +59,6 @@ int main(void)
     imm_del(&prod);
 
     fclose(fd);
-    protein_profile_del(&prof);
+    profile_del((struct profile *)&prof);
     return hope_status();
 }

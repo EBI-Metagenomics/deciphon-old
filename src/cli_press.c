@@ -157,7 +157,7 @@ enum rc cli_press(int argc, char **argv)
         goto cleanup;
     }
 
-    rc = protein_db_close(&cli.db);
+    rc = db_close((struct db *)&cli.db);
 
 cleanup:
     progress_file_stop(&cli.progress);

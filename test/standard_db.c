@@ -1,5 +1,7 @@
 #include "standard_db.h"
 #include "hope/hope.h"
+#include "profile_reader.h"
+#include "profile_types.h"
 #include "standard_db_examples.h"
 #include "standard_profile.h"
 
@@ -36,7 +38,7 @@ void test_db_openw_empty(void)
     struct standard_db db;
     standard_db_init(&db);
     EQ(standard_db_openw(&db, fd, &code), RC_DONE);
-    EQ(standard_db_close(&db), RC_DONE);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }
 
@@ -48,13 +50,13 @@ void test_db_openr_empty(void)
     standard_db_init(&db);
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), PROFILE_STANDARD);
+    EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
     EQ(imm_abc_typeid(imm_super(imm_super(dna))), IMM_DNA);
-    EQ(standard_db_close(&db), RC_DONE);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }
 
@@ -85,8 +87,8 @@ void test_db_openw_one_mute(void)
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(standard_db_write(&db, &p), RC_DONE);
 
-    standard_profile_del(&p);
-    EQ(standard_db_close(&db), RC_DONE);
+    profile_del((struct profile *)&p);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }
 
@@ -98,7 +100,7 @@ void test_db_openr_one_mute(void)
     standard_db_init(&db);
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), PROFILE_STANDARD);
+    EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
@@ -112,7 +114,7 @@ void test_db_openr_one_mute(void)
     EQ(mt.name, "NAME0");
     EQ(mt.acc, "ACC0");
 
-    EQ(standard_db_close(&db), RC_DONE);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }
 
@@ -129,12 +131,13 @@ void test_db_openr_example1(void)
     standard_db_init(&db);
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), PROFILE_STANDARD);
+    EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
     EQ(imm_abc_typeid(standard_db_abc(&db)), IMM_ABC);
 
     EQ(db_nprofiles(&db.super), 2);
 
-    struct metadata mt[2] = {db_metadata(&db.super, 0), db_metadata(&db.super, 1)};
+    struct metadata mt[2] = {db_metadata(&db.super, 0),
+                             db_metadata(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -142,18 +145,19 @@ void test_db_openr_example1(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    struct standard_profile *p = standard_db_profile(&db);
-    while (!db_end(&db.super))
+    enum rc rc = RC_DONE;
+    struct profile_reader reader;
+    while ((rc = profile_reader_next(&reader, 0)) != RC_END)
     {
-        EQ(standard_db_read(&db, p), RC_DONE);
-        EQ(profile_typeid(&p->super), PROFILE_STANDARD);
-        if (p->super.idx == 0)
+        struct profile *prof = profile_reader_profile(&reader, 0);
+        EQ(profile_typeid(prof), PROFILE_STANDARD);
+        if (nprofs == 0)
         {
-            struct imm_task *task = imm_task_new(&p->dp.alt);
+            struct imm_task *task = imm_task_new(profile_alt_dp(prof));
             struct imm_abc const *abc = standard_db_abc(&db);
             struct imm_seq seq = imm_seq(imm_str(imm_example1_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-            EQ(imm_dp_viterbi(&p->dp.alt, task, &prod), IMM_SUCCESS);
+            EQ(imm_dp_viterbi(profile_alt_dp(prof), task, &prod), IMM_SUCCESS);
             CLOSE(prod.loglik, -65826.0106185297);
             imm_del(task);
         }
@@ -162,7 +166,7 @@ void test_db_openr_example1(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(standard_db_close(&db), RC_DONE);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }
 
@@ -179,13 +183,14 @@ void test_db_openr_example2(void)
     standard_db_init(&db);
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), PROFILE_STANDARD);
+    EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = standard_db_abc(&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     EQ(db_nprofiles(&db.super), 2);
 
-    struct metadata mt[2] = {db_metadata(&db.super, 0), db_metadata(&db.super, 1)};
+    struct metadata mt[2] = {db_metadata(&db.super, 0),
+                             db_metadata(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -193,17 +198,19 @@ void test_db_openr_example2(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    struct standard_profile *p = standard_db_profile(&db);
-    while (!db_end(&db.super))
+    struct profile_reader reader;
+    EQ(profile_reader_setup(&reader, (struct db *)&db, 0), RC_DONE);
+    enum rc rc = RC_DONE;
+    while ((rc = profile_reader_next(&reader, 0)) != RC_END)
     {
-        EQ(standard_db_read(&db, p), RC_DONE);
-        EQ(profile_typeid(&p->super), PROFILE_STANDARD);
-        if (p->super.idx == 0)
+        struct profile *prof = profile_reader_profile(&reader, 0);
+        EQ(profile_typeid(prof), PROFILE_STANDARD);
+        if (nprofs == 0)
         {
-            struct imm_task *task = imm_task_new(&p->dp.alt);
+            struct imm_task *task = imm_task_new(profile_alt_dp(prof));
             struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-            EQ(imm_dp_viterbi(&p->dp.alt, task, &prod), IMM_SUCCESS);
+            EQ(imm_dp_viterbi(profile_alt_dp(prof), task, &prod), IMM_SUCCESS);
             CLOSE(prod.loglik, -1622.8488101101);
             imm_del(task);
         }
@@ -212,6 +219,6 @@ void test_db_openr_example2(void)
     EQ(nprofs, 2);
 
     imm_del(&prod);
-    EQ(standard_db_close(&db), RC_DONE);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }

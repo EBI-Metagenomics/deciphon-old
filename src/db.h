@@ -18,6 +18,7 @@ struct db_vtable
 {
     int typeid;
     enum rc (*close)(struct db *db);
+    struct imm_abc const *(*abc)(struct db const *db);
 };
 
 struct db
@@ -62,6 +63,7 @@ int db_typeid(struct db const *db);
 struct metadata db_metadata(struct db const *db, unsigned idx);
 
 void db_init(struct db *db, struct db_vtable vtable);
+struct imm_abc const *db_abc(struct db const *db);
 
 void db_openr(struct db *db, FILE *restrict fp);
 enum rc db_openw(struct db *db, FILE *restrict fp);

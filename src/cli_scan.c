@@ -354,7 +354,7 @@ enum rc cli_scan(int argc, char **argv)
     }
     if (rc != RC_END) goto cleanup;
 
-    rc = protein_db_close(&cli.pro.db);
+    rc = db_close((struct db *)&cli.pro.db);
 
 cleanup:
     progress_file_stop(&cli.progress);

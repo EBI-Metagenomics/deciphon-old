@@ -1,6 +1,7 @@
 #include "cli.h"
 #include "hope/hope.h"
 #include "imm/imm.h"
+#include "profile_reader.h"
 #include "protein_db.h"
 
 void test_cli_press_write(void);
@@ -29,16 +30,17 @@ void test_cli_press_read(void)
     EQ(protein_db_openr(&db, fd), RC_DONE);
 
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
-    EQ(db_prof_typeid(&db.super), PROFILE_PROTEIN);
+    EQ(db_profile_typeid(&db.super), PROFILE_PROTEIN);
     struct imm_nuclt const *nuclt = protein_db_nuclt(&db);
     struct imm_abc const *abc = imm_super(nuclt);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     EQ(db_nprofiles(&db.super), 5);
 
-    struct metadata mt[5] = {db_metadata(&db.super, 0), db_metadata(&db.super, 1),
-                         db_metadata(&db.super, 2), db_metadata(&db.super, 3),
-                         db_metadata(&db.super, 4)};
+    struct metadata mt[5] = {
+        db_metadata(&db.super, 0), db_metadata(&db.super, 1),
+        db_metadata(&db.super, 2), db_metadata(&db.super, 3),
+        db_metadata(&db.super, 4)};
 
     EQ(mt[0].name, "1-cysPrx_C");
     EQ(mt[0].acc, "PF10417.11");
@@ -57,11 +59,13 @@ void test_cli_press_read(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
+    struct profile_reader reader;
     struct protein_profile *p = protein_db_profile(&db);
-    while (!db_end(&db.super))
+    enum rc rc = RC_DONE;
+    while ((rc = profile_reader_next(&reader, 0)) != RC_END)
     {
-        EQ(protein_db_read(&db, p), RC_DONE);
-        EQ(profile_typeid(&p->super), PROFILE_PROTEIN);
+        struct profile *prof = profile_reader_profile(&reader, 0);
+        EQ(profile_typeid(prof), PROFILE_PROTEIN);
         struct imm_task *task = imm_task_new(&p->alt.dp);
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
         EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
@@ -73,6 +77,6 @@ void test_cli_press_read(void)
     EQ(nprofs, 5);
 
     imm_del(&prod);
-    EQ(protein_db_close(&db), RC_DONE);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }

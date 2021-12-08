@@ -26,7 +26,20 @@ static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
     return RC_DONE;
 }
 
-static struct profile_vtable vtable = {del, read, PROFILE_STANDARD};
+static struct imm_dp const *null_dp(struct profile const *prof)
+{
+    struct standard_profile *p = (struct standard_profile *)prof;
+    return &p->dp.null;
+}
+
+static struct imm_dp const *alt_dp(struct profile const *prof)
+{
+    struct standard_profile *p = (struct standard_profile *)prof;
+    return &p->dp.alt;
+}
+
+static struct profile_vtable vtable = {PROFILE_STANDARD, del, read, null_dp,
+                                       alt_dp};
 
 void standard_profile_init(struct standard_profile *prof,
                            struct imm_code const *code)

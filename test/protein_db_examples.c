@@ -25,6 +25,6 @@ void protein_db_examples_new_ex1(char const *filepath)
     profile_set_name(&prof->super, metadata("NAME1", "ACC1"));
     EQ(protein_db_write(&db, prof), RC_DONE);
 
-    EQ(protein_db_close(&db), RC_DONE);
+    EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }

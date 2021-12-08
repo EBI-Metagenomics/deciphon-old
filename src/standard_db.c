@@ -5,14 +5,15 @@
 #include "rc.h"
 #include "standard_profile.h"
 
-static enum rc close(struct db *db)
+static enum rc close(struct db *db) { return db_close(db); }
+
+static struct imm_abc const *abc(struct db const *db)
 {
-    struct standard_db *s = (struct standard_db *)db;
-    profile_del(&s->profile.super);
-    return db_close(db);
+    struct standard_db const *s = (struct standard_db *)db;
+    return &s->abc;
 }
 
-static struct db_vtable vtable = {DB_STANDARD, close};
+static struct db_vtable vtable = {DB_STANDARD, close, abc};
 
 static enum rc read_abc(FILE *restrict fd, struct imm_abc *abc)
 {
@@ -32,7 +33,6 @@ void standard_db_init(struct standard_db *db)
 {
     db_init(&db->super, vtable);
     db->abc = imm_abc_empty;
-    standard_profile_init(&db->profile, &db->code);
 }
 
 enum rc standard_db_openr(struct standard_db *db, FILE *restrict fp)
@@ -94,11 +94,6 @@ enum rc standard_db_write(struct standard_db *db,
         return rc;
     db->super.profiles.size++;
     return rc;
-}
-
-struct standard_profile *standard_db_profile(struct standard_db *db)
-{
-    return &db->profile;
 }
 
 struct db *standard_db_super(struct standard_db *db) { return &db->super; }

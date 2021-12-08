@@ -28,6 +28,6 @@ int main(void)
     EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_SUCCESS);
 
-    standard_profile_del(&prof);
+    profile_del((struct profile *)&prof);
     return hope_status();
 }
