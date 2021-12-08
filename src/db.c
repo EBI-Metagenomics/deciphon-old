@@ -158,17 +158,9 @@ cleanup:
 
 enum rc db_close(struct db *db)
 {
-    enum rc rc = RC_DONE;
-    if ((rc = db->vtable.close(db)))
-    {
-        cleanup(db);
-        return rc;
-    }
-
-    if (db->file.mode == DB_OPEN_WRITE) return closew(db);
-
-    closer(db);
-    return RC_DONE;
+    enum rc rc = db->vtable.close(db);
+    if (rc) cleanup(db);
+    return rc;
 }
 
 static inline uint32_t max_mt_data_size(void)
@@ -445,5 +437,12 @@ enum rc db_set_metadata_end(struct db *db)
     FILE *fp = cmp_file(&db->file.cmp);
     if ((db->profiles_block_offset = ftello(fp)) == -1)
         return error(RC_IOERROR, "failed to ftello");
+    return RC_DONE;
+}
+
+enum rc __db_close(struct db *db)
+{
+    if (db->file.mode == DB_OPEN_WRITE) return closew(db);
+    closer(db);
     return RC_DONE;
 }

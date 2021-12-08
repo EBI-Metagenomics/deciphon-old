@@ -32,8 +32,6 @@ void profile_init(struct profile *prof, struct imm_code const *code,
                   struct metadata mt, struct profile_vtable vtable)
 {
     prof->vtable = vtable;
-    /* TODO: it should not be here */
-    prof->idx = UINT_MAX;
     prof->code = code;
     prof->metadata = mt;
 }

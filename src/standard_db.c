@@ -5,7 +5,7 @@
 #include "rc.h"
 #include "standard_profile.h"
 
-static enum rc close(struct db *db) { return db_close(db); }
+static enum rc close(struct db *db) { return __db_close(db); }
 
 static struct imm_abc const *abc(struct db const *db)
 {

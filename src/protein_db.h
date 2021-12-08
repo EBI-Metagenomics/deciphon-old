@@ -15,7 +15,7 @@ struct protein_db
     struct imm_amino amino;
     struct imm_nuclt nuclt;
     struct imm_nuclt_code code;
-    struct protein_profile prof;
+    struct protein_cfg cfg;
 };
 
 extern struct protein_db const protein_db_default;
@@ -34,8 +34,6 @@ struct protein_cfg protein_db_cfg(struct protein_db const *db);
 
 enum rc protein_db_write(struct protein_db *db,
                          struct protein_profile const *prof);
-
-struct protein_profile *protein_db_profile(struct protein_db *db);
 
 struct db *protein_db_super(struct protein_db *db);
 

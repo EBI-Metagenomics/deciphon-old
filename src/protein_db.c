@@ -9,12 +9,7 @@
 #include "rc.h"
 #include "xmath.h"
 
-static enum rc close(struct db *db)
-{
-    struct protein_db *p = (struct protein_db *)db;
-    profile_del(&p->prof.super);
-    return db_close(db);
-}
+static enum rc close(struct db *db) { return __db_close(db); }
 
 static struct imm_abc const *abc(struct db const *db)
 {
@@ -120,7 +115,6 @@ static void protein_db_init(struct protein_db *db)
     db->nuclt = imm_nuclt_empty;
     db->code = imm_nuclt_code_empty;
     db->code.nuclt = &db->nuclt;
-    protein_profile_init(&db->prof, &db->amino, &db->code, PROTEIN_CFG_DEFAULT);
 }
 
 enum rc protein_db_openr(struct protein_db *db, FILE *restrict fp)
@@ -129,13 +123,13 @@ enum rc protein_db_openr(struct protein_db *db, FILE *restrict fp)
     db_openr(&db->super, fp);
 
     struct cmp_ctx_s *cmp = &db->super.file.cmp;
-    imm_float *epsilon = &db->prof.cfg.epsilon;
+    imm_float *epsilon = &db->cfg.epsilon;
 
     enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_prof_type(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
-    if ((rc = read_entry_dist(cmp, &db->prof.cfg.entry_dist))) return rc;
+    if ((rc = read_entry_dist(cmp, &db->cfg.entry_dist))) return rc;
     if ((rc = read_epsilon(cmp, db->super.float_size, epsilon))) return rc;
     if ((rc = read_nuclt(fp, &db->nuclt))) return rc;
     if ((rc = read_amino(fp, &db->amino))) return rc;
@@ -166,14 +160,14 @@ enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
 
     struct cmp_ctx_s *cmp = &db->super.file.cmp;
     unsigned float_size = db->super.float_size;
-    imm_float epsilon = db->prof.cfg.epsilon;
+    imm_float epsilon = db->cfg.epsilon;
 
     enum rc rc = RC_DONE;
     if ((rc = db_openw(&db->super, fd))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_prof_type(&db->super))) goto cleanup;
     if ((rc = db_write_float_size(&db->super))) goto cleanup;
-    if ((rc = write_entry_dist(cmp, db->prof.cfg.entry_dist))) goto cleanup;
+    if ((rc = write_entry_dist(cmp, db->cfg.entry_dist))) goto cleanup;
     if ((rc = write_epsilon(cmp, float_size, epsilon))) goto cleanup;
     if ((rc = write_nuclt(fd, &db->nuclt))) goto cleanup;
     if ((rc = write_amino(fd, &db->amino))) goto cleanup;
@@ -197,7 +191,7 @@ struct imm_nuclt const *protein_db_nuclt(struct protein_db const *db)
 
 struct protein_cfg protein_db_cfg(struct protein_db const *db)
 {
-    return db->prof.cfg;
+    return db->cfg;
 }
 
 enum rc protein_db_write(struct protein_db *db,
@@ -209,11 +203,6 @@ enum rc protein_db_write(struct protein_db *db,
     if ((rc = protein_profile_write(prof, &db->super.dp.cmp))) return rc;
     db->super.profiles.size++;
     return rc;
-}
-
-struct protein_profile *protein_db_profile(struct protein_db *db)
-{
-    return &db->prof;
 }
 
 struct db *protein_db_super(struct protein_db *db) { return &db->super; }

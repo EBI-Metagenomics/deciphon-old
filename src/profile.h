@@ -21,7 +21,6 @@ struct profile_vtable
 struct profile
 {
     struct profile_vtable vtable;
-    unsigned idx;
     struct imm_code const *code;
     struct metadata metadata;
 };

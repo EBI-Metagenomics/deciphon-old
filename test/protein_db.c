@@ -43,19 +43,18 @@ void test_db_protein_openr(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    struct protein_profile *p = protein_db_profile(&db);
     enum rc rc = RC_DONE;
     struct profile_reader reader;
     while ((rc = profile_reader_next(&reader, 0)) != RC_END)
     {
         struct profile *prof = profile_reader_profile(&reader, 0);
         EQ(profile_typeid(prof), PROFILE_PROTEIN);
-        if (p->super.idx == 0)
+        if (nprofs == 0)
         {
-            struct imm_task *task = imm_task_new(&p->alt.dp);
+            struct imm_task *task = imm_task_new(profile_alt_dp(prof));
             struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-            EQ(imm_dp_viterbi(&p->alt.dp, task, &prod), IMM_SUCCESS);
+            EQ(imm_dp_viterbi(profile_alt_dp(prof), task, &prod), IMM_SUCCESS);
             CLOSE(prod.loglik, -2720.38142805010);
             imm_del(task);
         }

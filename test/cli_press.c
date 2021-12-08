@@ -60,17 +60,16 @@ void test_cli_press_read(void)
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
     struct profile_reader reader;
-    struct protein_profile *p = protein_db_profile(&db);
+    struct profile *prof = profile_reader_profile(&reader, 0);
     enum rc rc = RC_DONE;
     while ((rc = profile_reader_next(&reader, 0)) != RC_END)
     {
-        struct profile *prof = profile_reader_profile(&reader, 0);
         EQ(profile_typeid(prof), PROFILE_PROTEIN);
-        struct imm_task *task = imm_task_new(&p->alt.dp);
+        struct imm_task *task = imm_task_new(profile_alt_dp(prof));
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
         EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-        EQ(imm_dp_viterbi(&p->alt.dp, task, &prod), IMM_SUCCESS);
-        CLOSE(prod.loglik, logliks[p->super.idx]);
+        EQ(imm_dp_viterbi(profile_alt_dp(prof), task, &prod), IMM_SUCCESS);
+        CLOSE(prod.loglik, logliks[nprofs]);
         imm_del(task);
         ++nprofs;
     }

@@ -106,9 +106,7 @@ static char const default_output[] = "output.gff";
 static struct imm_seq seq_setup(void)
 {
     char const *seq = cli.queries.fa.target.seq;
-    struct protein_profile *prof = &cli.pro.db.prof;
-    struct imm_abc const *abc = &prof->code->nuclt->super;
-    return imm_seq(imm_str(seq), abc);
+    return imm_seq(imm_str(seq), db_abc((struct db const *)&cli.pro.db));
 }
 
 static struct tbl_8x_ed table = {0};
@@ -120,6 +118,8 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     tbl_8x_ed_setup(&table, stdout, 128, 6, 32, TBL_RIGHT, 4, headers);
     char const *seq = sequence->str;
     struct imm_path const *path = &cli.pro.prod.path;
+    struct protein_profile *prof =
+        (struct protein_profile *)profile_reader_profile(&cli.pro.reader, 0);
 
     char const *ocodon = cli.output.codon.seq;
     char const *oamino = cli.output.amino.seq;
@@ -131,8 +131,7 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
         bool is_delete = protein_state_is_delete(step->state_id);
         char cons[2] = " ";
         if (is_match || is_delete)
-            cons[0] =
-                cli.pro.db.prof.consensus[protein_state_idx(step->state_id)];
+            cons[0] = prof->consensus[protein_state_idx(step->state_id)];
         else if (protein_state_is_insert(step->state_id))
             cons[0] = '.';
 
@@ -166,7 +165,8 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
 
 static enum rc predict_codons(struct imm_seq const *seq)
 {
-    struct protein_profile *prof = &cli.pro.db.prof;
+    struct protein_profile *prof =
+        (struct protein_profile *)profile_reader_profile(&cli.pro.reader, 0);
     struct imm_path const *path = &cli.pro.prod.path;
 
     struct protein_codec codec = protein_codec_init(prof, path);
@@ -189,7 +189,7 @@ static void decode_codons(void)
 {
     char *ocodon = cli.output.codon.seq;
     char *oamino = cli.output.amino.seq;
-    struct imm_codon codon = imm_codon_any(cli.pro.db.prof.code->nuclt);
+    struct imm_codon codon = imm_codon_any(&cli.pro.db.nuclt);
     struct imm_abc const *abc = &codon.nuclt->super;
     while (*ocodon)
     {
@@ -222,8 +222,8 @@ static enum rc write_aminos(char const *oamino)
 static enum rc scan_queries(struct metadata const *mt)
 {
     struct imm_prod null = imm_prod();
-    struct protein_profile *prof = &cli.pro.db.prof;
-    struct imm_task *task = imm_task_new(&prof->alt.dp);
+    struct profile *prof = profile_reader_profile(&cli.pro.reader, 0);
+    struct imm_task *task = imm_task_new(profile_alt_dp(prof));
     if (!task) return error(RC_FAIL, "failed to create task");
 
     enum fasta_rc fasta_rc = FASTA_SUCCESS;
@@ -233,10 +233,10 @@ static enum rc scan_queries(struct metadata const *mt)
         if (imm_task_setup(task, &seq))
             return error(RC_FAIL, "failed to create task");
 
-        if (imm_dp_viterbi(&prof->alt.dp, task, &cli.pro.prod))
+        if (imm_dp_viterbi(profile_alt_dp(prof), task, &cli.pro.prod))
             return error(RC_FAIL, "failed to run viterbi");
 
-        if (imm_dp_viterbi(&prof->null.dp, task, &null))
+        if (imm_dp_viterbi(profile_null_dp(prof), task, &null))
             return error(RC_FAIL, "failed to run viterbi");
 
         imm_float lrt = -2 * (null.loglik - cli.pro.prod.loglik);
@@ -325,7 +325,8 @@ static void queries_setup(void)
 {
     fasta_init(&cli.queries.fa, cli.queries.fd, FASTA_READ);
     rewind(cli.queries.fd);
-    cli.queries.fa.target.desc = cli.pro.db.prof.super.metadata.acc;
+    char const *acc = profile_reader_profile(&cli.pro.reader, 0)->metadata.acc;
+    cli.queries.fa.target.desc = acc;
 }
 
 enum rc cli_scan(int argc, char **argv)
@@ -340,15 +341,13 @@ enum rc cli_scan(int argc, char **argv)
     gff_write(&cli.output.gff);
 
     progress_file_start(&cli.progress, !arguments.quiet);
-    /* while (!(rc = db_end(&cli.pro.db.super))) */
-    while (1)
+    while ((rc = profile_reader_next(&cli.pro.reader, 0)) != RC_END)
     {
-        struct protein_profile *prof = protein_db_profile(&cli.pro.db);
-        /* if ((rc = protein_db_read(&cli.pro.db, prof))) goto cleanup; */
+        struct profile *prof = profile_reader_profile(&cli.pro.reader, 0);
         rc = profile_reader_next(&cli.pro.reader, 0);
 
         queries_setup();
-        struct metadata const *mt = &cli.pro.db.prof.super.metadata;
+        struct metadata const *mt = &prof->metadata;
         if ((rc = scan_queries(mt))) goto cleanup;
         progress_file_update(&cli.progress);
     }

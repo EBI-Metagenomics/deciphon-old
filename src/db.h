@@ -95,4 +95,6 @@ static inline unsigned db_nprofiles(struct db const *db)
     return db->profiles.size;
 }
 
+enum rc __db_close(struct db *db);
+
 #endif

@@ -96,6 +96,7 @@ static struct
     } output;
     struct progress_file progress;
     struct protein_db db;
+    struct protein_profile profile;
     struct protein_reader reader;
 } cli = {0};
 
@@ -120,20 +121,22 @@ static enum rc cli_setup(struct arguments const *args)
                          imm_super(&imm_dna_iupac), PROTEIN_CFG_DEFAULT);
     if (rc) return rc;
 
-    protein_reader_init(&cli.reader, &cli.db.amino, &cli.db.code,
-                        cli.db.prof.cfg, cli.input.fd);
+    protein_reader_init(&cli.reader, &cli.db.amino, &cli.db.code, cli.db.cfg,
+                        cli.input.fd);
+    protein_profile_init(&cli.profile, &cli.db.amino, &cli.db.code, cli.db.cfg);
 
     return RC_DONE;
 }
 
 static enum rc profile_write(void)
 {
-    profile_set_name(&cli.db.prof.super, protein_reader_meta(&cli.reader));
+    profile_set_name((struct profile *)&cli.profile,
+                     protein_reader_meta(&cli.reader));
 
-    enum rc rc = protein_profile_absorb(&cli.db.prof, &cli.reader.model);
+    enum rc rc = protein_profile_absorb(&cli.profile, &cli.reader.model);
     if (rc) return rc;
 
-    return protein_db_write(&cli.db, &cli.db.prof);
+    return protein_db_write(&cli.db, &cli.profile);
 }
 
 enum rc cli_press(int argc, char **argv)
