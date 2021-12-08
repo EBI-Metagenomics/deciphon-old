@@ -51,7 +51,7 @@ enum rc standard_db_openr(struct standard_db *db, FILE *restrict fp)
     if (db->super.vtable.typeid != DB_STANDARD)
         return error(RC_PARSEERROR, "wrong typeid");
 
-    return rc;
+    return db_set_metadata_end(&db->super);
 }
 
 static void cleanup(struct standard_db *db)
