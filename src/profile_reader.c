@@ -1,13 +1,20 @@
 #include "profile_reader.h"
+#include "db.h"
 
-unsigned profile_reader_nfiles(struct profile_reader const *reader)
+enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
+                             unsigned npartitions)
 {
-    return reader->nfiles;
+    reader->npartitions = npartitions;
+}
+
+unsigned profile_reader_npartitions(struct profile_reader const *reader)
+{
+    return reader->npartitions;
 }
 
 void profile_reader_rewind(struct profile_reader *reader)
 {
-    for (unsigned i = 0; i < reader->nfiles; ++i)
+    for (unsigned i = 0; i < reader->npartitions; ++i)
         rewind(reader->fp[i]);
 }
 

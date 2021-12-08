@@ -1,6 +1,7 @@
 #ifndef PROTEIN_MODEL_H
 #define PROTEIN_MODEL_H
 
+#include "dcp_limits.h"
 #include "entry_dist.h"
 #include "imm/imm.h"
 #include "nuclt_dist.h"
@@ -11,8 +12,6 @@
 #include "protein_xnode.h"
 #include "protein_xtrans.h"
 #include "rc.h"
-
-#define PROTEIN_MODEL_CORE_SIZE_MAX 2048
 
 struct protein_model
 {

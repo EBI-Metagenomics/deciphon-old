@@ -1,6 +1,7 @@
 #ifndef PROTEIN_PROFILE_H
 #define PROTEIN_PROFILE_H
 
+#include "dcp_limits.h"
 #include "imm/imm.h"
 #include "metadata.h"
 #include "profile.h"
@@ -61,11 +62,6 @@ enum rc protein_profile_sample(struct protein_profile *prof, unsigned seed,
 enum rc protein_profile_decode(struct protein_profile const *prof,
                                struct imm_seq const *seq, unsigned state_id,
                                struct imm_codon *codon);
-
-static inline void protein_profile_del(struct protein_profile *prof)
-{
-    if (prof) profile_del(&prof->super);
-}
 
 void protein_profile_write_dot(struct protein_profile const *prof,
                                FILE *restrict fp);

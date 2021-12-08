@@ -1,8 +1,18 @@
 #include "standard_db.h"
 #include "db.h"
+#include "db_types.h"
 #include "logger.h"
 #include "rc.h"
 #include "standard_profile.h"
+
+static enum rc close(struct db *db)
+{
+    struct standard_db *s = (struct standard_db *)db;
+    profile_del(&s->profile.super);
+    return db_close(db);
+}
+
+static struct db_vtable vtable = {DB_STANDARD, close};
 
 static enum rc read_abc(FILE *restrict fd, struct imm_abc *abc)
 {
@@ -20,9 +30,9 @@ static enum rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
 
 void standard_db_init(struct standard_db *db)
 {
-    db_init(&db->super, PROFILE_STANDARD);
+    db_init(&db->super, vtable);
     db->abc = imm_abc_empty;
-    standard_profile_init(&db->prof, &db->code);
+    standard_profile_init(&db->profile, &db->code);
 }
 
 enum rc standard_db_openr(struct standard_db *db, FILE *restrict fd)
@@ -38,8 +48,16 @@ enum rc standard_db_openr(struct standard_db *db, FILE *restrict fd)
     if ((rc = db_read_metadata(&db->super))) return rc;
 
     imm_code_init(&db->code, &db->abc);
-    assert(db->super.prof_typeid == PROFILE_STANDARD);
+    if (db->super.vtable.typeid != DB_STANDARD)
+        return error(RC_PARSEERROR, "wrong typeid");
+
     return rc;
+}
+
+static void cleanup(struct standard_db *db)
+{
+    fclose(cmp_file(&db->super.mt.file.cmp));
+    fclose(cmp_file(&db->super.dp.cmp));
 }
 
 enum rc standard_db_openw(struct standard_db *db, FILE *restrict fd,
@@ -57,15 +75,7 @@ enum rc standard_db_openw(struct standard_db *db, FILE *restrict fd,
     return rc;
 
 cleanup:
-    fclose(cmp_file(&db->super.mt.file.cmp));
-    fclose(cmp_file(&db->super.dp.cmp));
-    return rc;
-}
-
-enum rc standard_db_close(struct standard_db *db)
-{
-    enum rc rc = db_close(&db->super);
-    standard_profile_del(&db->prof);
+    cleanup(db);
     return rc;
 }
 
@@ -78,7 +88,7 @@ enum rc standard_db_read(struct standard_db *db, struct standard_profile *prof)
 {
     if (db_end(&db->super)) return error(RC_FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
-    prof->super.mt = db_meta(&db->super, prof->super.idx);
+    prof->super.metadata = db_meta(&db->super, prof->super.idx);
     return standard_profile_read(prof, cmp_file(&db->super.file.cmp[0]));
 }
 
@@ -96,7 +106,7 @@ enum rc standard_db_write(struct standard_db *db,
 
 struct standard_profile *standard_db_profile(struct standard_db *db)
 {
-    return &db->prof;
+    return &db->profile;
 }
 
 struct db *standard_db_super(struct standard_db *db) { return &db->super; }

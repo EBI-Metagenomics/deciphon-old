@@ -1,12 +1,22 @@
 #include "protein_db.h"
 #include "cmp/cmp.h"
 #include "db.h"
+#include "db_types.h"
 #include "entry_dist.h"
 #include "logger.h"
 #include "protein_cfg.h"
 #include "protein_profile.h"
 #include "rc.h"
 #include "xmath.h"
+
+static enum rc close(struct db *db)
+{
+    struct protein_db *s = (struct protein_db *)db;
+    profile_del(&s->prof.super);
+    return db_close(db);
+}
+
+static struct db_vtable vtable = {DB_PROTEIN, close};
 
 struct protein_db const protein_db_default = {0};
 
@@ -99,7 +109,7 @@ static enum rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
 
 static void protein_db_init(struct protein_db *db)
 {
-    db_init(&db->super, PROFILE_PROTEIN);
+    db_init(&db->super, vtable);
     db->amino = imm_amino_empty;
     db->nuclt = imm_nuclt_empty;
     db->code = imm_nuclt_code_empty;
@@ -167,8 +177,16 @@ enum rc protein_db_openr(struct protein_db *db, FILE *restrict fd)
     if ((rc = db_read_metadata(&db->super))) return rc;
 
     imm_code_init(&db->code.super, imm_super(&db->nuclt));
-    assert(db->super.prof_typeid == PROFILE_PROTEIN);
+    if (db->super.vtable.typeid != DB_PROTEIN)
+        return error(RC_PARSEERROR, "wrong typeid");
+
     return db_record_first_partition_offset(&db->super);
+}
+
+static void cleanup(struct protein_db *db)
+{
+    fclose(cmp_file(&db->super.mt.file.cmp));
+    fclose(cmp_file(&db->super.dp.cmp));
 }
 
 enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
@@ -197,15 +215,7 @@ enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
     return rc;
 
 cleanup:
-    fclose(cmp_file(&db->super.mt.file.cmp));
-    fclose(cmp_file(&db->super.dp.cmp));
-    return rc;
-}
-
-enum rc protein_db_close(struct protein_db *db)
-{
-    enum rc rc = db_close(&db->super);
-    protein_profile_del(&db->prof);
+    cleanup(db);
     return rc;
 }
 
@@ -228,7 +238,7 @@ enum rc protein_db_read(struct protein_db *db, struct protein_profile *prof)
 {
     if (db_end(&db->super)) return error(RC_FAIL, "end of profiles");
     prof->super.idx = db->super.profiles.curr_idx++;
-    prof->super.mt = db_meta(&db->super, prof->super.idx);
+    prof->super.metadata = db_meta(&db->super, prof->super.idx);
     return protein_profile_read(prof, &db->super.file.cmp[0]);
 }
 

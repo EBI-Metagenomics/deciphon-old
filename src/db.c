@@ -1,9 +1,9 @@
 #include "db.h"
 #include "cmp/cmp.h"
+#include "compiler.h"
 #include "dcp_limits.h"
 #include "imm/imm.h"
 #include "logger.h"
-#include "compiler.h"
 #include "profile.h"
 #include "xfile.h"
 #include <assert.h>
@@ -30,9 +30,9 @@ static enum rc init_tmpdp(struct db *db)
     return RC_DONE;
 }
 
-void db_init(struct db *db, enum profile_typeid prof_typeid)
+void db_init(struct db *db, struct db_vtable vtable)
 {
-    db->prof_typeid = prof_typeid;
+    db->vtable = vtable;
     db->float_size = IMM_FLOAT_BYTES;
     db->npartitions = 1;
     memset(db->partition_offset, 0, MEMBER_SIZE(*db, partition_offset));
@@ -125,6 +125,12 @@ static void closer(struct db *db)
     cleanup_metadata_parsing(db);
 }
 
+static void cleanup(struct db *db)
+{
+    fclose(cmp_file(&db->mt.file.cmp));
+    fclose(cmp_file(&db->dp.cmp));
+}
+
 static enum rc closew(struct db *db)
 {
     assert(db->file.mode == DB_OPEN_WRITE);
@@ -154,14 +160,21 @@ static enum rc closew(struct db *db)
     return rc;
 
 cleanup:
-    fclose(cmp_file(&db->mt.file.cmp));
-    fclose(cmp_file(&db->dp.cmp));
+    cleanup(db);
     return rc;
 }
 
 enum rc db_close(struct db *db)
 {
+    enum rc rc = RC_DONE;
+    if ((rc = db->vtable.close(db)))
+    {
+        cleanup(db);
+        return rc;
+    }
+
     if (db->file.mode == DB_OPEN_WRITE) return closew(db);
+
     closer(db);
     return RC_DONE;
 }
@@ -198,20 +211,17 @@ enum rc db_write_magic_number(struct db *db)
 
 enum rc db_read_prof_type(struct db *db)
 {
-    uint8_t prof_type = 0;
-    if (!cmp_read_u8(&db->file.cmp[0], &prof_type))
-        return error(RC_IOERROR, "failed to read profile type");
+    uint8_t prof_typeid = 0;
+    if (!cmp_read_u8(&db->file.cmp[0], &prof_typeid))
+        return error(RC_IOERROR, "failed to read profile typeid");
 
-    if (prof_type != PROFILE_STANDARD && prof_type != PROFILE_PROTEIN)
-        return error(RC_PARSEERROR, "wrong prof_type");
-
-    db->prof_typeid = prof_type;
+    db->vtable.typeid = (int)prof_typeid;
     return RC_DONE;
 }
 
 enum rc db_write_prof_type(struct db *db)
 {
-    if (!cmp_write_u8(&db->file.cmp[0], (uint8_t)db->prof_typeid))
+    if (!cmp_write_u8(&db->file.cmp[0], (uint8_t)db->vtable.typeid))
         return error(RC_IOERROR, "failed to write prof_type");
 
     return RC_DONE;
@@ -372,10 +382,11 @@ static enum rc write_name(struct db *db, struct profile const *prof)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
-    if (!cmp_write_str(ctx, prof->mt.name, (uint32_t)strlen(prof->mt.name)))
+    if (!cmp_write_str(ctx, prof->metadata.name,
+                       (uint32_t)strlen(prof->metadata.name)))
         return error(RC_IOERROR, "failed to write profile name");
     /* +1 for null-terminated */
-    db->mt.size += (uint32_t)strlen(prof->mt.name) + 1;
+    db->mt.size += (uint32_t)strlen(prof->metadata.name) + 1;
 
     return RC_DONE;
 }
@@ -384,22 +395,24 @@ static enum rc write_accession(struct db *db, struct profile const *prof)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
-    if (!cmp_write_str(ctx, prof->mt.acc, (uint32_t)strlen(prof->mt.acc)))
+    if (!cmp_write_str(ctx, prof->metadata.acc,
+                       (uint32_t)strlen(prof->metadata.acc)))
         return error(RC_IOERROR, "failed to write profile accession");
     /* +1 for null-terminated */
-    db->mt.size += (uint32_t)strlen(prof->mt.acc) + 1;
+    db->mt.size += (uint32_t)strlen(prof->metadata.acc) + 1;
 
     return RC_DONE;
 }
 
 enum rc db_write_prof_meta(struct db *db, struct profile const *prof)
 {
-    if (prof->mt.name == NULL) return error(RC_ILLEGALARG, "metadata not set");
+    if (prof->metadata.name == NULL)
+        return error(RC_ILLEGALARG, "metadata not set");
 
-    if (strlen(prof->mt.name) >= DCP_PROFILE_NAME_SIZE)
+    if (strlen(prof->metadata.name) >= DCP_PROFILE_NAME_SIZE)
         return error(RC_ILLEGALARG, "profile name is too long");
 
-    if (strlen(prof->mt.acc) >= DCP_PROFILE_ACC_SIZE)
+    if (strlen(prof->metadata.acc) >= DCP_PROFILE_ACC_SIZE)
         return error(RC_ILLEGALARG, "profile accession is too long");
 
     enum rc rc = RC_DONE;
@@ -416,7 +429,8 @@ enum rc db_check_write_prof_ready(struct db const *db,
     if (db->profiles.size == DCP_MAX_NPROFILES)
         return error(RC_FAIL, "too many profiles");
 
-    if (prof->mt.name == NULL) return error(RC_ILLEGALARG, "metadata not set");
+    if (prof->metadata.name == NULL)
+        return error(RC_ILLEGALARG, "metadata not set");
 
     return RC_DONE;
 }
@@ -429,11 +443,6 @@ struct metadata db_meta(struct db const *db, unsigned idx)
 }
 
 unsigned db_float_size(struct db const *db) { return db->float_size; }
-
-enum profile_typeid db_prof_typeid(struct db const *db)
-{
-    return db->prof_typeid;
-}
 
 enum rc db_current_offset(struct db *db, off_t *offset)
 {

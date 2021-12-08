@@ -322,7 +322,7 @@ static void queries_setup(void)
 {
     fasta_init(&cli.queries.fa, cli.queries.fd, FASTA_READ);
     rewind(cli.queries.fd);
-    cli.queries.fa.target.desc = cli.pro.db.prof.super.mt.acc;
+    cli.queries.fa.target.desc = cli.pro.db.prof.super.metadata.acc;
 }
 
 enum rc cli_scan(int argc, char **argv)
@@ -343,7 +343,7 @@ enum rc cli_scan(int argc, char **argv)
         if ((rc = protein_db_read(&cli.pro.db, prof))) goto cleanup;
 
         queries_setup();
-        struct metadata const *mt = &cli.pro.db.prof.super.mt;
+        struct metadata const *mt = &cli.pro.db.prof.super.metadata;
         if ((rc = scan_queries(mt))) goto cleanup;
         progress_file_update(&cli.progress);
     }

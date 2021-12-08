@@ -80,7 +80,7 @@ void test_db_openw_one_mute(void)
 
     struct standard_profile p;
     standard_profile_init(&p, &code);
-    profile_nameit(&p.super, metadata("NAME0", "ACC0"));
+    profile_set_name(&p.super, metadata("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(standard_db_write(&db, &p), RC_DONE);

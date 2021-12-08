@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "metadata.h"
 #include "profile.h"
+#include "profile_types.h"
 #include "protein_model.h"
 #include "protein_profile.h"
 #include "rc.h"
@@ -11,14 +12,24 @@
 #include <assert.h>
 #include <stdlib.h>
 
-static void del(struct profile *prof);
+static void del(struct profile *prof)
+{
+    if (prof)
+    {
+        struct protein_profile *p = (struct protein_profile *)prof;
+        free(p->alt.match_ndists);
+        imm_del(&p->null.dp);
+        imm_del(&p->alt.dp);
+    }
+}
+
+static struct profile_vtable vtable = {del, PROFILE_PROTEIN};
 
 void protein_profile_init(struct protein_profile *p,
                           struct imm_amino const *amino,
                           struct imm_nuclt_code const *code,
                           struct protein_cfg cfg)
 {
-    struct profile_vtable vtable = {del, PROFILE_PROTEIN};
     struct imm_nuclt const *nuclt = code->nuclt;
     profile_init(&p->super, &code->super, metadata_unset(), vtable);
     p->code = code;
@@ -234,17 +245,6 @@ void protein_profile_write_dot(struct protein_profile const *p,
                                FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, protein_state_name);
-}
-
-static void del(struct profile *prof)
-{
-    if (prof)
-    {
-        struct protein_profile *p = (struct protein_profile *)prof;
-        free(p->alt.match_ndists);
-        imm_del(&p->null.dp);
-        imm_del(&p->alt.dp);
-    }
 }
 
 enum rc protein_profile_read(struct protein_profile *prof,

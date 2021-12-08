@@ -14,9 +14,18 @@ enum db_mode
     DB_OPEN_WRITE,
 };
 
+struct db;
+
+struct db_vtable
+{
+    int typeid;
+    enum rc (*close)(struct db *db);
+};
+
 struct db
 {
-    enum profile_typeid prof_typeid;
+    struct db_vtable vtable;
+
     unsigned float_size;
     unsigned npartitions;
     struct
@@ -24,7 +33,6 @@ struct db
         uint32_t size;
         uint32_t curr_idx;
     } profiles;
-    off_t partition_offset[DCP_MAX_OPEN_DB_FILES + 1];
     struct
     {
         uint32_t *offset;
@@ -54,7 +62,7 @@ enum profile_typeid db_prof_typeid(struct db const *db);
 struct metadata db_meta(struct db const *db, unsigned idx);
 bool db_end(struct db const *db);
 
-void db_init(struct db *db, enum profile_typeid prof_typeid);
+void db_init(struct db *db, struct db_vtable vtable);
 
 void db_openr(struct db *db, FILE *restrict fp);
 void db_set_files(struct db *db, unsigned nfiles, FILE *restrict fp[]);

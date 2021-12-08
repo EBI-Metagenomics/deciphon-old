@@ -9,9 +9,10 @@
 struct standard_db
 {
     struct db super;
+
     struct imm_abc abc;
     struct imm_code code;
-    struct standard_profile prof;
+    struct standard_profile profile;
 };
 
 void standard_db_init(struct standard_db *db);

@@ -11,6 +11,7 @@
 struct protein_db
 {
     struct db super;
+
     struct imm_amino amino;
     struct imm_nuclt nuclt;
     struct imm_nuclt_code code;
@@ -18,9 +19,6 @@ struct protein_db
 };
 
 extern struct protein_db const protein_db_default;
-
-enum rc protein_db_setup_multi_readers(struct protein_db *db, unsigned nfiles,
-                                       FILE *fp[]);
 
 enum rc protein_db_openr(struct protein_db *db, FILE *restrict fp);
 

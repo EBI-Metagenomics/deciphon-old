@@ -24,7 +24,7 @@ int main(void)
 
     struct standard_profile prof;
     standard_profile_init(&prof, code);
-    profile_nameit(&prof.super, metadata("NAME1", "ACC1"));
+    profile_set_name(&prof.super, metadata("NAME1", "ACC1"));
     EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_SUCCESS);
 
