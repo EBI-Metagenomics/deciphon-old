@@ -9,6 +9,8 @@
 #include "rc.h"
 #include <stdio.h>
 
+/* TODO: change this name to something like
+ * hmmer3_protein_reader. */
 struct protein_reader
 {
     struct hmr hmr;

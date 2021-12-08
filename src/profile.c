@@ -6,6 +6,11 @@ void profile_del(struct profile *prof)
     if (prof) prof->vtable.del(prof);
 }
 
+enum rc profile_read(struct profile *prof, struct cmp_ctx_s *cmp)
+{
+    return prof->vtable.read(prof, cmp);
+}
+
 void profile_set_name(struct profile *prof, struct metadata mt)
 {
     prof->metadata = mt;

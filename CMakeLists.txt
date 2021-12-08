@@ -55,8 +55,7 @@ add_library(
   src/cli_scan.c
   src/cli_server.c
   src/db.c
-  src/db_handle.c
-  src/db_pool.c
+  src/db_reader.c
   src/job_state.c
   src/logger.c
   src/nuclt_dist.c

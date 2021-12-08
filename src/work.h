@@ -1,9 +1,13 @@
 #ifndef WORK_H
 #define WORK_H
 
+#include "db.h"
 #include "dcp_limits.h"
 #include "imm/imm.h"
 #include "job.h"
+#include "profile_reader.h"
+#include "protein_db.h"
+#include "standard_db.h"
 #include "task.h"
 #include "xfile.h"
 #include <stdatomic.h>
@@ -11,7 +15,6 @@
 
 #define WORK_MAX_NTASKS 64
 
-struct db_handle;
 struct tok;
 
 struct work
@@ -20,8 +23,12 @@ struct work
     unsigned ntasks;
     struct task tasks[WORK_MAX_NTASKS];
     char db_path[DCP_PATH_SIZE];
-    struct db_handle *db;
-    struct protein_profile const *prof;
+    union
+    {
+        struct standard_db std;
+        struct protein_db pro;
+    } db;
+    struct profile_reader reader;
     struct xfile_tmp prod_file;
     atomic_bool failed;
     struct tok *tok;

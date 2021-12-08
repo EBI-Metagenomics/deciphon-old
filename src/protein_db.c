@@ -117,52 +117,12 @@ static void protein_db_init(struct protein_db *db)
     protein_profile_init(&db->prof, &db->amino, &db->code, PROTEIN_CFG_DEFAULT);
 }
 
-enum rc protein_db_setup_multi_readers(struct protein_db *db, unsigned nfiles,
-                                       FILE *fp[])
-{
-    unsigned n = db_nprofiles(&db->super);
-    assert(nfiles <= n);
-
-    enum rc rc = RC_DONE;
-    struct protein_profile *prof = protein_db_profile(db);
-    unsigned part = 0;
-    rc = db_current_offset(&db->super, db->super.partition_offset + part);
-    part++;
-    unsigned size = 0;
-    while (!db_end(&db->super) && part < nfiles)
-    {
-        if ((rc = protein_db_read(db, prof))) return rc;
-
-        size++;
-        if (size >= xmath_partition_size(n, nfiles, part - 1))
-        {
-            rc = db_current_offset(&db->super,
-                                   db->super.partition_offset + part);
-            ++part;
-            size = 0;
-        }
-    }
-
-    while (!db_end(&db->super))
-    {
-        if (!(rc = protein_db_read(db, prof))) return rc;
-    }
-
-    if (!db_end(&db->super)) return rc;
-    rc = db_current_offset(&db->super, db->super.partition_offset + part);
-
-    if (!db_end(&db->super)) return rc;
-    db->super.npartitions = nfiles;
-    db_set_files(&db->super, nfiles, fp);
-    return RC_DONE;
-}
-
-enum rc protein_db_openr(struct protein_db *db, FILE *restrict fd)
+enum rc protein_db_openr(struct protein_db *db, FILE *restrict fp)
 {
     protein_db_init(db);
-    db_openr(&db->super, fd);
+    db_openr(&db->super, fp);
 
-    struct cmp_ctx_s *cmp = &db->super.file.cmp[0];
+    struct cmp_ctx_s *cmp = &db->super.file.cmp;
     imm_float *epsilon = &db->prof.cfg.epsilon;
 
     enum rc rc = RC_DONE;
@@ -171,8 +131,8 @@ enum rc protein_db_openr(struct protein_db *db, FILE *restrict fd)
     if ((rc = db_read_float_size(&db->super))) return rc;
     if ((rc = read_entry_dist(cmp, &db->prof.cfg.entry_dist))) return rc;
     if ((rc = read_epsilon(cmp, db->super.float_size, epsilon))) return rc;
-    if ((rc = read_nuclt(fd, &db->nuclt))) return rc;
-    if ((rc = read_amino(fd, &db->amino))) return rc;
+    if ((rc = read_nuclt(fp, &db->nuclt))) return rc;
+    if ((rc = read_amino(fp, &db->amino))) return rc;
     if ((rc = db_read_nprofiles(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
@@ -180,7 +140,7 @@ enum rc protein_db_openr(struct protein_db *db, FILE *restrict fd)
     if (db->super.vtable.typeid != DB_PROTEIN)
         return error(RC_PARSEERROR, "wrong typeid");
 
-    return db_record_first_partition_offset(&db->super);
+    return db_set_metadata_end(&db->super);
 }
 
 static void cleanup(struct protein_db *db)
@@ -198,7 +158,7 @@ enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
     db->nuclt = *nuclt;
     imm_nuclt_code_init(&db->code, &db->nuclt);
 
-    struct cmp_ctx_s *cmp = &db->super.file.cmp[0];
+    struct cmp_ctx_s *cmp = &db->super.file.cmp;
     unsigned float_size = db->super.float_size;
     imm_float epsilon = db->prof.cfg.epsilon;
 
@@ -232,14 +192,6 @@ struct imm_nuclt const *protein_db_nuclt(struct protein_db const *db)
 struct protein_cfg protein_db_cfg(struct protein_db const *db)
 {
     return db->prof.cfg;
-}
-
-enum rc protein_db_read(struct protein_db *db, struct protein_profile *prof)
-{
-    if (db_end(&db->super)) return error(RC_FAIL, "end of profiles");
-    prof->super.idx = db->super.profiles.curr_idx++;
-    prof->super.metadata = db_meta(&db->super, prof->super.idx);
-    return protein_profile_read(prof, &db->super.file.cmp[0]);
 }
 
 enum rc protein_db_write(struct protein_db *db,

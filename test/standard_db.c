@@ -107,7 +107,7 @@ void test_db_openr_one_mute(void)
 
     EQ(db_nprofiles(&db.super), 1);
 
-    struct metadata mt = db_meta(&db.super, 0);
+    struct metadata mt = db_metadata(&db.super, 0);
 
     EQ(mt.name, "NAME0");
     EQ(mt.acc, "ACC0");
@@ -134,7 +134,7 @@ void test_db_openr_example1(void)
 
     EQ(db_nprofiles(&db.super), 2);
 
-    struct metadata mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
+    struct metadata mt[2] = {db_metadata(&db.super, 0), db_metadata(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");
@@ -185,7 +185,7 @@ void test_db_openr_example2(void)
 
     EQ(db_nprofiles(&db.super), 2);
 
-    struct metadata mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
+    struct metadata mt[2] = {db_metadata(&db.super, 0), db_metadata(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");

@@ -33,7 +33,7 @@ void test_db_protein_openr(void)
 
     EQ(db_nprofiles(&db.super), 2);
 
-    struct metadata mt[2] = {db_meta(&db.super, 0), db_meta(&db.super, 1)};
+    struct metadata mt[2] = {db_metadata(&db.super, 0), db_metadata(&db.super, 1)};
     EQ(mt[0].name, "NAME0");
     EQ(mt[0].acc, "ACC0");
     EQ(mt[1].name, "NAME1");

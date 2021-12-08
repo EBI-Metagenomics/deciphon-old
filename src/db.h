@@ -2,10 +2,8 @@
 #define DB_H
 
 #include "cmp/cmp.h"
-#include "dcp_limits.h"
 #include "metadata.h"
 #include "profile.h"
-#include <sys/types.h>
 
 enum db_mode
 {
@@ -26,8 +24,9 @@ struct db
 {
     struct db_vtable vtable;
 
+    int profile_typeid;
     unsigned float_size;
-    unsigned npartitions;
+    off_t profiles_block_offset;
     struct
     {
         uint32_t size;
@@ -50,7 +49,7 @@ struct db
     } dp;
     struct
     {
-        struct cmp_ctx_s cmp[DCP_MAX_OPEN_DB_FILES];
+        struct cmp_ctx_s cmp;
         enum db_mode mode;
     } file;
 };
@@ -58,17 +57,15 @@ struct db
 extern struct db const db_default;
 
 unsigned db_float_size(struct db const *db);
-enum profile_typeid db_prof_typeid(struct db const *db);
-struct metadata db_meta(struct db const *db, unsigned idx);
-bool db_end(struct db const *db);
+int db_profile_typeid(struct db const *db);
+int db_typeid(struct db const *db);
+struct metadata db_metadata(struct db const *db, unsigned idx);
 
 void db_init(struct db *db, struct db_vtable vtable);
 
 void db_openr(struct db *db, FILE *restrict fp);
-void db_set_files(struct db *db, unsigned nfiles, FILE *restrict fp[]);
 enum rc db_openw(struct db *db, FILE *restrict fp);
 enum rc db_close(struct db *db);
-bool db_end(struct db const *db);
 
 enum rc db_read_magic_number(struct db *db);
 enum rc db_write_magic_number(struct db *db);
@@ -87,13 +84,9 @@ enum rc db_write_prof_meta(struct db *db, struct profile const *prof);
 enum rc db_check_write_prof_ready(struct db const *db,
                                   struct profile const *prof);
 
-struct metadata db_meta(struct db const *db, unsigned idx);
+off_t db_profiles_block_offset(struct db const *db);
 
-enum rc db_current_offset(struct db *db, off_t *offset);
-
-enum rc db_record_first_partition_offset(struct db *db);
-
-enum rc db_rewind(struct db *db);
+enum rc db_set_metadata_end(struct db *db);
 
 static inline unsigned db_nprofiles(struct db const *db)
 {

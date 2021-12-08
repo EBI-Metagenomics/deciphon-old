@@ -29,4 +29,6 @@ bool xfile_set_path_ext(char *str, size_t max_size, char const *ext);
 void xfile_basename(char *filename, char const *path);
 void xfile_strip_path_ext(char *str);
 
+FILE *xfile_open_from_fptr(FILE *fp, char const *mode);
+
 #endif

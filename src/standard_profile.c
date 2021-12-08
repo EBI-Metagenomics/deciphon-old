@@ -1,4 +1,5 @@
 #include "standard_profile.h"
+#include "cmp/cmp.h"
 #include "imm/imm.h"
 #include "metadata.h"
 #include "profile.h"
@@ -16,7 +17,16 @@ static void del(struct profile *prof)
     }
 }
 
-static struct profile_vtable vtable = {del, PROFILE_STANDARD};
+static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
+{
+    struct standard_profile *p = (struct standard_profile *)prof;
+    FILE *fp = cmp_file(cmp);
+    if (imm_dp_read(&p->dp.null, fp)) return RC_FAIL;
+    if (imm_dp_read(&p->dp.alt, fp)) return RC_FAIL;
+    return RC_DONE;
+}
+
+static struct profile_vtable vtable = {del, read, PROFILE_STANDARD};
 
 void standard_profile_init(struct standard_profile *prof,
                            struct imm_code const *code)
@@ -24,13 +34,6 @@ void standard_profile_init(struct standard_profile *prof,
     imm_dp_init(&prof->dp.null, code);
     imm_dp_init(&prof->dp.alt, code);
     profile_init(&prof->super, code, metadata_unset(), vtable);
-}
-
-enum rc standard_profile_read(struct standard_profile *prof, FILE *restrict fd)
-{
-    if (imm_dp_read(&prof->dp.null, fd)) return RC_FAIL;
-    if (imm_dp_read(&prof->dp.alt, fd)) return RC_FAIL;
-    return RC_DONE;
 }
 
 enum rc standard_profile_write(struct standard_profile const *prof,

@@ -36,9 +36,9 @@ void test_cli_press_read(void)
 
     EQ(db_nprofiles(&db.super), 5);
 
-    struct metadata mt[5] = {db_meta(&db.super, 0), db_meta(&db.super, 1),
-                         db_meta(&db.super, 2), db_meta(&db.super, 3),
-                         db_meta(&db.super, 4)};
+    struct metadata mt[5] = {db_metadata(&db.super, 0), db_metadata(&db.super, 1),
+                         db_metadata(&db.super, 2), db_metadata(&db.super, 3),
+                         db_metadata(&db.super, 4)};
 
     EQ(mt[0].name, "1-cysPrx_C");
     EQ(mt[0].acc, "PF10417.11");

@@ -2,7 +2,6 @@
 #include "cco/cco.h"
 #include "compiler.h"
 #include "db.h"
-#include "db_pool.h"
 #include "elapsed/elapsed.h"
 #include "job.h"
 #include "logger.h"
@@ -35,7 +34,6 @@ enum rc server_open(char const *filepath, unsigned num_threads)
     server.signal.action.sa_handler = &signal_interrupt;
     sigemptyset(&server.signal.action.sa_mask);
     sigaction(SIGINT, &server.signal.action, NULL);
-    db_pool_module_init();
     server.num_threads = num_threads;
 
     enum rc rc = RC_DONE;

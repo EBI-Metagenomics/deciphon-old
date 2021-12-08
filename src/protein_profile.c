@@ -7,7 +7,6 @@
 #include "profile_types.h"
 #include "protein_model.h"
 #include "protein_profile.h"
-#include "rc.h"
 #include "third-party/xrandom.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -23,7 +22,53 @@ static void del(struct profile *prof)
     }
 }
 
-static struct profile_vtable vtable = {del, PROFILE_PROTEIN};
+static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
+{
+    size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
+    void *ptr = realloc(prof->alt.match_ndists, size);
+    if (!ptr && size > 0)
+    {
+        free(prof->alt.match_ndists);
+        return error(RC_OUTOFMEM, "failed to alloc nuclt dists");
+    }
+    prof->alt.match_ndists = ptr;
+    return RC_DONE;
+}
+
+static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
+{
+    struct protein_profile *p = (struct protein_profile *)prof;
+    FILE *fd = cmp_file(cmp);
+    if (imm_dp_read(&p->null.dp, fd)) return RC_FAIL;
+    if (imm_dp_read(&p->alt.dp, fd)) return RC_FAIL;
+
+    uint16_t core_size = 0;
+    if (!cmp_read_u16(cmp, &core_size))
+        return error(RC_IOERROR, "failed to read core size");
+    if (core_size > PROTEIN_MODEL_CORE_SIZE_MAX)
+        return error(RC_PARSEERROR, "profile is too long");
+    p->core_size = core_size;
+
+    uint32_t u32 = (uint32_t)core_size;
+    if (!cmp_read_cstr(cmp, p->consensus, &u32))
+        return error(RC_IOERROR, "failed to read consensus");
+
+    enum rc rc = alloc_match_nuclt_dists(p);
+    if (rc) return rc;
+
+    if ((rc = nuclt_dist_read(&p->null.ndist, cmp))) return rc;
+
+    if ((rc = nuclt_dist_read(&p->alt.insert_ndist, cmp))) return rc;
+
+    for (unsigned i = 0; i < p->core_size; ++i)
+    {
+        if ((rc = nuclt_dist_read(p->alt.match_ndists + i, cmp))) return rc;
+        nuclt_dist_init(p->alt.match_ndists + i, p->code->nuclt);
+    }
+    return RC_DONE;
+}
+
+static struct profile_vtable vtable = {del, read, PROFILE_PROTEIN};
 
 void protein_profile_init(struct protein_profile *p,
                           struct imm_amino const *amino,
@@ -43,19 +88,6 @@ void protein_profile_init(struct protein_profile *p,
     nuclt_dist_init(&p->null.ndist, nuclt);
     nuclt_dist_init(&p->alt.insert_ndist, nuclt);
     p->alt.match_ndists = NULL;
-}
-
-static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
-{
-    size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
-    void *ptr = realloc(prof->alt.match_ndists, size);
-    if (!ptr && size > 0)
-    {
-        free(prof->alt.match_ndists);
-        return error(RC_OUTOFMEM, "failed to alloc nuclt dists");
-    }
-    prof->alt.match_ndists = ptr;
-    return RC_DONE;
 }
 
 enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
@@ -245,39 +277,6 @@ void protein_profile_write_dot(struct protein_profile const *p,
                                FILE *restrict fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, protein_state_name);
-}
-
-enum rc protein_profile_read(struct protein_profile *prof,
-                             struct cmp_ctx_s *cmp)
-{
-    FILE *fd = cmp_file(cmp);
-    if (imm_dp_read(&prof->null.dp, fd)) return RC_FAIL;
-    if (imm_dp_read(&prof->alt.dp, fd)) return RC_FAIL;
-
-    uint16_t core_size = 0;
-    if (!cmp_read_u16(cmp, &core_size))
-        return error(RC_IOERROR, "failed to read core size");
-    if (core_size > PROTEIN_MODEL_CORE_SIZE_MAX)
-        return error(RC_PARSEERROR, "profile is too long");
-    prof->core_size = core_size;
-
-    uint32_t u32 = (uint32_t)core_size;
-    if (!cmp_read_cstr(cmp, prof->consensus, &u32))
-        return error(RC_IOERROR, "failed to read consensus");
-
-    enum rc rc = alloc_match_nuclt_dists(prof);
-    if (rc) return rc;
-
-    if ((rc = nuclt_dist_read(&prof->null.ndist, cmp))) return rc;
-
-    if ((rc = nuclt_dist_read(&prof->alt.insert_ndist, cmp))) return rc;
-
-    for (unsigned i = 0; i < prof->core_size; ++i)
-    {
-        if ((rc = nuclt_dist_read(prof->alt.match_ndists + i, cmp))) return rc;
-        nuclt_dist_init(prof->alt.match_ndists + i, prof->code->nuclt);
-    }
-    return RC_DONE;
 }
 
 enum rc protein_profile_write(struct protein_profile const *prof,

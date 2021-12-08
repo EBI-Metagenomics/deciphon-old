@@ -3,10 +3,10 @@
 #include "gff/gff.h"
 #include "imm/imm.h"
 #include "logger.h"
+#include "profile_reader.h"
 #include "progress_file.h"
 #include "protein_codec.h"
 #include "protein_db.h"
-#include "protein_reader.h"
 #include "protein_state.h"
 #include "table.h"
 #include "tbl/tbl.h"
@@ -68,6 +68,7 @@ static struct
         char const *file;
         FILE *fd;
         struct protein_db db;
+        struct profile_reader reader;
         struct imm_prod prod;
     } pro;
 
@@ -314,6 +315,8 @@ static enum rc cli_setup(void)
 
     enum rc rc = protein_db_openr(&cli.pro.db, cli.pro.fd);
     if (rc) return rc;
+    rc = profile_reader_setup(&cli.pro.reader, &cli.pro.db.super, 1);
+    if (rc) return rc;
 
     return RC_DONE;
 }
@@ -337,10 +340,12 @@ enum rc cli_scan(int argc, char **argv)
     gff_write(&cli.output.gff);
 
     progress_file_start(&cli.progress, !arguments.quiet);
-    while (!(rc = db_end(&cli.pro.db.super)))
+    /* while (!(rc = db_end(&cli.pro.db.super))) */
+    while (1)
     {
         struct protein_profile *prof = protein_db_profile(&cli.pro.db);
-        if ((rc = protein_db_read(&cli.pro.db, prof))) goto cleanup;
+        /* if ((rc = protein_db_read(&cli.pro.db, prof))) goto cleanup; */
+        rc = profile_reader_next(&cli.pro.reader, 0);
 
         queries_setup();
         struct metadata const *mt = &cli.pro.db.prof.super.metadata;

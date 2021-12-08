@@ -35,15 +35,15 @@ void standard_db_init(struct standard_db *db)
     standard_profile_init(&db->profile, &db->code);
 }
 
-enum rc standard_db_openr(struct standard_db *db, FILE *restrict fd)
+enum rc standard_db_openr(struct standard_db *db, FILE *restrict fp)
 {
-    db_openr(&db->super, fd);
+    db_openr(&db->super, fp);
 
     enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_prof_type(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
-    if ((rc = read_abc(fd, &db->abc))) return rc;
+    if ((rc = read_abc(fp, &db->abc))) return rc;
     if ((rc = db_read_nprofiles(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
@@ -82,14 +82,6 @@ cleanup:
 struct imm_abc const *standard_db_abc(struct standard_db const *db)
 {
     return &db->abc;
-}
-
-enum rc standard_db_read(struct standard_db *db, struct standard_profile *prof)
-{
-    if (db_end(&db->super)) return error(RC_FAIL, "end of profiles");
-    prof->super.idx = db->super.profiles.curr_idx++;
-    prof->super.metadata = db_meta(&db->super, prof->super.idx);
-    return standard_profile_read(prof, cmp_file(&db->super.file.cmp[0]));
 }
 
 enum rc standard_db_write(struct standard_db *db,

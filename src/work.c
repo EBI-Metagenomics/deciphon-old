@@ -1,7 +1,5 @@
 #include "work.h"
 #include "compiler.h"
-#include "db_handle.h"
-#include "db_pool.h"
 #include "logger.h"
 #include "protein_match.h"
 #include "protein_state.h"
@@ -52,8 +50,8 @@ enum rc work_next(struct work *work)
     if ((rc = sched_job_next_pending(&job_id))) return rc;
     if ((rc = sched_job_get(&work->job, job_id))) return rc;
 
-    work->db = db_pool_fetch(work->job.db_id);
-    if (!work->db) return error(RC_FAIL, "reached limit of open db handles");
+    /* work->db = db_pool_fetch(work->job.db_id); */
+    /* if (!work->db) return error(RC_FAIL, "reached limit"); */
 
     work->db_path[0] = 0;
     struct sched_db db = {0};

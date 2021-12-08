@@ -4,12 +4,15 @@
 #include "compiler.h"
 #include "imm/imm.h"
 #include "metadata.h"
+#include "rc.h"
 
+struct cmp_ctx_s;
 struct profile;
 
 struct profile_vtable
 {
     void (*del)(struct profile *prof);
+    enum rc (*read)(struct profile *prof, struct cmp_ctx_s *);
     int typeid;
 };
 
@@ -22,6 +25,8 @@ struct profile
 };
 
 void profile_del(struct profile *prof);
+
+enum rc profile_read(struct profile *prof, struct cmp_ctx_s *cmp);
 
 void profile_set_name(struct profile *prof, struct metadata mt);
 
