@@ -53,6 +53,7 @@ macro(cbp_set_warning_flags)
       -Wno-unused-parameter
       -Wsign-conversion
       -Wno-unused-function
+      -Wmissing-field-initializers
     )
 
     if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU")
