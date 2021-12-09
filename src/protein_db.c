@@ -154,6 +154,7 @@ enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
     protein_db_init(db);
     db->amino = *amino;
     db->nuclt = *nuclt;
+    db->cfg = cfg;
     imm_nuclt_code_init(&db->code, &db->nuclt);
 
     struct cmp_ctx_s *cmp = &db->super.file.cmp;

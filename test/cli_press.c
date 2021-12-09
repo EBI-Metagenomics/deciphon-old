@@ -60,6 +60,7 @@ void test_cli_press_read(void)
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
     struct profile_reader reader;
+    EQ(profile_reader_setup(&reader, (struct db *)&db, 1), RC_DONE);
     struct profile *prof = profile_reader_profile(&reader, 0);
     enum rc rc = RC_DONE;
     while ((rc = profile_reader_next(&reader, 0)) != RC_END)
