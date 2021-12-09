@@ -76,6 +76,7 @@ void test_cli_press_read(void)
     }
     EQ(nprofs, 5);
 
+    profile_reader_del(&reader);
     imm_del(&prod);
     EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
