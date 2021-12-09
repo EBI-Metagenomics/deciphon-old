@@ -65,12 +65,12 @@ enum
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 static TOK_DECLARE(tok);
 
-enum rc sched_prod_module_init(struct sqlite3 *db)
+enum rc sched_prod_module_init(void)
 {
     enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
-        if ((rc = xsql_prepare(db, queries[i], stmts + i))) return rc;
+        if ((rc = xsql_prepare(sched, queries[i], stmts + i))) return rc;
     }
     return RC_DONE;
 }
@@ -292,7 +292,7 @@ enum rc sched_prod_write_nl(FILE *restrict fd)
 enum rc sched_prod_add_from_tsv(FILE *restrict fd)
 {
     enum rc rc = RC_DONE;
-    if ((rc = xsql_begin_transaction(sched_db()))) goto cleanup;
+    if ((rc = xsql_begin_transaction(sched))) goto cleanup;
 
     struct sqlite3_stmt *stmt = stmts[INSERT];
 
@@ -343,6 +343,6 @@ enum rc sched_prod_add_from_tsv(FILE *restrict fd)
     } while (true);
 
 cleanup:
-    if (rc) return xsql_rollback_transaction(sched_db());
-    return xsql_end_transaction(sched_db());
+    if (rc) return xsql_rollback_transaction(sched);
+    return xsql_end_transaction(sched);
 }

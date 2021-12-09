@@ -6,8 +6,6 @@
 #include "sched_limits.h"
 #include <stdint.h>
 
-struct sqlite3;
-
 struct sched_job
 {
     int64_t id;
@@ -28,7 +26,7 @@ struct sched_job
         0, db_id, multi_hits, hmmer3_compat, "pend", "", submission, 0, 0      \
     }
 
-enum rc sched_job_module_init(struct sqlite3 *db);
+enum rc sched_job_module_init(void);
 enum rc sched_job_add(struct sched_job *job);
 enum rc sched_job_state(int64_t job_id, enum job_state *state);
 enum rc sched_job_next_pending(int64_t *job_id);

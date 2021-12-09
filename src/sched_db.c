@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "rc.h"
 #include "safe.h"
+#include "sched.h"
 #include "xfile.h"
 #include "xsql.h"
 #include <sqlite3.h>
@@ -40,8 +41,8 @@ static char const *const queries[] = {
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-enum rc sched_db_setup(struct sched_db *db, char const name[DCP_DB_NAME_SIZE],
-                       char const filepath[DCP_PATH_SIZE])
+enum rc sched_db_setup(struct sched_db *db, char const *name,
+                       char const *filepath)
 {
     FILE *fp = fopen(filepath, "rb");
     if (!fp) return error(RC_IOERROR, "failed to open file");
@@ -57,12 +58,12 @@ cleanup:
     return RC_DONE;
 }
 
-enum rc sched_db_module_init(struct sqlite3 *db)
+enum rc sched_db_module_init(void)
 {
     enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
-        if ((rc = xsql_prepare(db, queries[i], stmts + i))) return rc;
+        if ((rc = xsql_prepare(sched, queries[i], stmts + i))) return rc;
     }
     return RC_DONE;
 }

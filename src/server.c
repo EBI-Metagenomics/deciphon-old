@@ -14,6 +14,7 @@
 #include "work.h"
 #include "xfile.h"
 #include <signal.h>
+#include <sqlite3.h>
 
 static struct server
 {

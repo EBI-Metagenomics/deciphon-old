@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static struct sqlite3 *sched = NULL;
+struct sqlite3 *sched = NULL;
 
 static_assert(SQLITE_VERSION_NUMBER >= 3035000, "We need RETURNING statement");
 
@@ -30,8 +30,12 @@ enum rc submit_job(struct sqlite3_stmt *, struct sched_job *, int64_t db_id,
                    int64_t *job_id);
 enum rc touch_db(char const *filepath);
 
-enum rc sched_setup(char const filepath[DCP_PATH_SIZE])
+enum rc sched_setup(char const *filepath)
 {
+    int thread_safe = sqlite3_threadsafe();
+    if (thread_safe == 0)
+        return error(RC_FAIL, "the provided sqlite3 is not thread-safe");
+
     enum rc rc = touch_db(filepath);
     if (rc) return rc;
 
@@ -52,10 +56,10 @@ enum rc sched_open(char const filepath[DCP_PATH_SIZE])
     enum rc rc = RC_DONE;
 
     if ((rc = xsql_open(filepath, &sched))) goto cleanup;
-    if ((rc = sched_job_module_init(sched))) goto cleanup;
-    if ((rc = sched_seq_module_init(sched))) goto cleanup;
-    if ((rc = sched_prod_module_init(sched))) goto cleanup;
-    if ((rc = sched_db_module_init(sched))) goto cleanup;
+    if ((rc = sched_job_module_init())) goto cleanup;
+    if ((rc = sched_seq_module_init())) goto cleanup;
+    if ((rc = sched_prod_module_init())) goto cleanup;
+    if ((rc = sched_db_module_init())) goto cleanup;
 
     return rc;
 
@@ -72,8 +76,6 @@ enum rc sched_close(void)
     sched_job_module_del();
     return xsql_close(sched, false);
 }
-
-struct sqlite3 *sched_db(void) { return sched; }
 
 enum rc sched_submit_job(struct job *job)
 {

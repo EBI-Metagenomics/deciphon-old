@@ -6,9 +6,8 @@
 #include <stdio.h>
 
 struct protein_match;
-struct sqlite3;
 
-enum rc sched_prod_module_init(struct sqlite3 *db);
+enum rc sched_prod_module_init(void);
 enum rc sched_prod_add(struct prod *prod);
 enum rc sched_prod_next(int64_t job_id, int64_t *prod_id);
 enum rc sched_prod_get(struct prod *prod, int64_t prod_id);

@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "rc.h"
 #include "safe.h"
+#include "sched.h"
 #include "xsql.h"
 #include <assert.h>
 #include <limits.h>
@@ -42,12 +43,12 @@ static char const *const queries[] = {
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-enum rc sched_seq_module_init(struct sqlite3 *db)
+enum rc sched_seq_module_init(void)
 {
     enum rc rc = RC_DONE;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
-        if ((rc = xsql_prepare(db, queries[i], stmts + i))) return rc;
+        if ((rc = xsql_prepare(sched, queries[i], stmts + i))) return rc;
     }
     return RC_DONE;
 }
