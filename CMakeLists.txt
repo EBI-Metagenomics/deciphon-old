@@ -9,6 +9,7 @@ project(
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include("${CMAKE_CURRENT_LIST_DIR}/external/cmake-boilerplate/cbp.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/external/cmake-scripts/sanitizers.cmake")
 cbp_set_rpath()
 
 find_package(Argp REQUIRED)
