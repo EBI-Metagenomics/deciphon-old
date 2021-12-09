@@ -1,13 +1,13 @@
-#include "protein_reader.h"
+#include "protein_hmmer3_reader.h"
 #include "compiler.h"
 #include "rc.h"
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 
-void protein_reader_init(struct protein_reader *reader,
-                         struct imm_amino const *amino,
-                         struct imm_nuclt_code const *code,
-                         struct protein_cfg cfg, FILE *restrict fd)
+void protein_hmmer3_reader_init(struct protein_hmmer3_reader *reader,
+                                struct imm_amino const *amino,
+                                struct imm_nuclt_code const *code,
+                                struct protein_cfg cfg, FILE *restrict fd)
 {
     hmr_init(&reader->hmr, fd);
     hmr_prof_init(&reader->prof, &reader->hmr);
@@ -15,7 +15,7 @@ void protein_reader_init(struct protein_reader *reader,
     protein_model_init(&reader->model, amino, code, cfg, reader->null_lprobs);
 }
 
-enum rc protein_reader_next(struct protein_reader *reader)
+enum rc protein_hmmer3_reader_next(struct protein_hmmer3_reader *reader)
 {
     enum hmr_rc hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
     if (hmr_rc == HMR_ENDFILE) return RC_END;
@@ -71,12 +71,13 @@ enum rc protein_reader_next(struct protein_reader *reader)
     return RC_DONE;
 }
 
-void protein_reader_del(struct protein_reader const *reader)
+void protein_hmmer3_reader_del(struct protein_hmmer3_reader const *reader)
 {
     protein_model_del(&reader->model);
 }
 
-struct metadata protein_reader_metadata(struct protein_reader const *reader)
+struct metadata
+protein_hmmer3_reader_metadata(struct protein_hmmer3_reader const *reader)
 {
     return metadata(reader->prof.meta.name, reader->prof.meta.acc);
 }

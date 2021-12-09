@@ -2,7 +2,7 @@
 #include "logger.h"
 #include "progress_file.h"
 #include "protein_db.h"
-#include "protein_reader.h"
+#include "protein_hmmer3_reader.h"
 #include "safe.h"
 #include "xfile.h"
 #include <argp.h>
@@ -97,7 +97,7 @@ static struct
     struct progress_file progress;
     struct protein_db db;
     struct protein_profile profile;
-    struct protein_reader reader;
+    struct protein_hmmer3_reader reader;
 } cli = {0};
 
 static enum rc cli_setup(struct arguments const *args)
@@ -119,8 +119,8 @@ static enum rc cli_setup(struct arguments const *args)
                          imm_super(&imm_dna_iupac), PROTEIN_CFG_DEFAULT);
     if (rc) return rc;
 
-    protein_reader_init(&cli.reader, &cli.db.amino, &cli.db.code, cli.db.cfg,
-                        cli.input.fd);
+    protein_hmmer3_reader_init(&cli.reader, &cli.db.amino, &cli.db.code,
+                               cli.db.cfg, cli.input.fd);
     protein_profile_init(&cli.profile, &cli.db.amino, &cli.db.code, cli.db.cfg);
 
     return RC_DONE;
@@ -129,7 +129,7 @@ static enum rc cli_setup(struct arguments const *args)
 static enum rc profile_write(void)
 {
     profile_set_name((struct profile *)&cli.profile,
-                     protein_reader_metadata(&cli.reader));
+                     protein_hmmer3_reader_metadata(&cli.reader));
 
     enum rc rc = protein_profile_absorb(&cli.profile, &cli.reader.model);
     if (rc) return rc;
@@ -146,7 +146,7 @@ enum rc cli_press(int argc, char **argv)
     if (rc) goto cleanup;
 
     progress_file_start(&cli.progress, !arguments.quiet);
-    while (!(rc = protein_reader_next(&cli.reader)))
+    while (!(rc = protein_hmmer3_reader_next(&cli.reader)))
     {
         rc = profile_write();
         progress_file_update(&cli.progress);

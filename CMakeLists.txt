@@ -68,7 +68,7 @@ add_library(
   src/protein_db.c
   src/protein_model.c
   src/protein_profile.c
-  src/protein_reader.c
+  src/protein_hmmer3_reader.c
   src/protein_state.c
   src/row.c
   src/safe.c

@@ -1,6 +1,6 @@
-#include "protein_reader.h"
 #include "hope/hope.h"
 #include "imm/imm.h"
+#include "protein_hmmer3_reader.h"
 #include "protein_profile.h"
 
 static char const sequence[] =
@@ -34,10 +34,10 @@ int main(void)
     NOTNULL(fd);
     struct protein_cfg cfg = protein_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
 
-    struct protein_reader reader;
-    protein_reader_init(&reader, amino, &code, cfg, fd);
+    struct protein_hmmer3_reader reader;
+    protein_hmmer3_reader_init(&reader, amino, &code, cfg, fd);
 
-    EQ(protein_reader_next(&reader), RC_DONE);
+    EQ(protein_hmmer3_reader_next(&reader), RC_DONE);
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
@@ -59,6 +59,8 @@ int main(void)
     imm_del(&prod);
 
     fclose(fd);
+    imm_task_del(task);
     profile_del((struct profile *)&prof);
+    protein_hmmer3_reader_del(&reader);
     return hope_status();
 }

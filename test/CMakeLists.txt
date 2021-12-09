@@ -40,7 +40,7 @@ dcp_add_test(standard_db "standard_db.c;standard_db_examples.c")
 dcp_add_test(protein_model protein_model.c)
 dcp_add_test(protein_profile protein_profile.c)
 dcp_add_test(protein_db "protein_db.c;protein_db_examples.c")
-dcp_add_test(protein_reader protein_reader.c)
+dcp_add_test(protein_hmmer3_reader protein_hmmer3_reader.c)
 dcp_add_test(job job.c)
 dcp_add_test(server "server.c;standard_db_examples.c;protein_db_examples.c;server_data.c")
 
