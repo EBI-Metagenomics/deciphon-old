@@ -19,8 +19,6 @@ static struct imm_abc const *abc(struct db const *db)
 
 static struct db_vtable vtable = {DB_PROTEIN, close, abc};
 
-struct protein_db const protein_db_default = {0};
-
 static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
                             imm_float *epsilon)
 {

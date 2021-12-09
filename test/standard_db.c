@@ -168,6 +168,7 @@ void test_db_openr_example1(void)
     EQ(rc, RC_END);
 
     imm_del(&prod);
+    profile_reader_del(&reader);
     EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }
@@ -222,6 +223,7 @@ void test_db_openr_example2(void)
     EQ(rc, RC_END);
 
     imm_del(&prod);
+    profile_reader_del(&reader);
     EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }

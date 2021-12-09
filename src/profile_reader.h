@@ -33,5 +33,6 @@ enum rc profile_reader_next(struct profile_reader *reader, unsigned partition);
 struct profile *profile_reader_profile(struct profile_reader *reader,
                                        unsigned partition);
 bool profile_reader_end(struct profile_reader *reader, unsigned partition);
+void profile_reader_del(struct profile_reader *reader);
 
 #endif

@@ -12,11 +12,9 @@ static void cleanup(struct profile_reader *reader)
         fclose(cmp_file(reader->cmp + i));
 }
 
-static enum rc open_files(struct profile_reader *reader, struct db *db,
-                          unsigned npartitions)
+static enum rc open_files(struct profile_reader *reader, struct db *db)
 {
-    reader->npartitions = 0;
-    for (unsigned i = 0; i < npartitions; ++i)
+    for (unsigned i = 0; i < reader->npartitions; ++i)
     {
         FILE *fp = xfile_open_from_fptr(cmp_file(&db->file.cmp), "rb");
         if (!fp)
@@ -25,22 +23,23 @@ static enum rc open_files(struct profile_reader *reader, struct db *db,
             if (rc) return rc;
         }
         cmp_setup(reader->cmp + i, fp);
-        if (reader->profile_typeid == PROFILE_STANDARD)
-        {
-            struct standard_db *db_std = (struct standard_db *)db;
-            standard_profile_init(&reader->profiles[i].std, &db_std->code);
-        }
-        else if (reader->profile_typeid == PROFILE_PROTEIN)
-        {
-            struct protein_db *db_pro = (struct protein_db *)db;
-            protein_profile_init(&reader->profiles[i].pro, &db_pro->amino,
-                                 &db_pro->code, db_pro->cfg);
-        }
-        else
-            assert(false);
-        reader->npartitions++;
     }
     return RC_DONE;
+}
+
+static void init_standard_profiles(struct profile_reader *reader,
+                                   struct standard_db *db)
+{
+    for (unsigned i = 0; i < reader->npartitions; ++i)
+        standard_profile_init(&reader->profiles[i].std, &db->code);
+}
+
+static void init_protein_profiles(struct profile_reader *reader,
+                                  struct protein_db *db)
+{
+    for (unsigned i = 0; i < reader->npartitions; ++i)
+        protein_profile_init(&reader->profiles[i].pro, &db->amino, &db->code,
+                             db->cfg);
 }
 
 static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
@@ -108,10 +107,19 @@ enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
         return error(RC_ILLEGALARG, "too many partitions");
 
     if (db_nprofiles(db) < npartitions) npartitions = db_nprofiles(db);
+    reader->npartitions = npartitions;
 
     enum rc rc = RC_DONE;
     reader->profile_typeid = (enum profile_typeid)db_profile_typeid(db);
-    if ((rc = open_files(reader, db, npartitions))) goto cleanup;
+    if ((rc = open_files(reader, db))) goto cleanup;
+
+    if (reader->profile_typeid == PROFILE_STANDARD)
+        init_standard_profiles(reader, (struct standard_db *)db);
+    else if (reader->profile_typeid == PROFILE_PROTEIN)
+        init_protein_profiles(reader, (struct protein_db *)db);
+    else
+        assert(false);
+
     if ((rc = partition_it(reader, db))) goto cleanup;
     if ((rc = profile_reader_rewind(reader))) goto cleanup;
     return rc;
@@ -157,4 +165,10 @@ struct profile *profile_reader_profile(struct profile_reader *reader,
 bool profile_reader_end(struct profile_reader *reader, unsigned partition)
 {
     return true;
+}
+
+void profile_reader_del(struct profile_reader *reader)
+{
+    for (unsigned i = 0; i < reader->npartitions; ++i)
+        profile_del((struct profile *)&reader->profiles[i]);
 }

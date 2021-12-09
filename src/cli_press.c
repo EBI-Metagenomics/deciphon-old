@@ -114,8 +114,6 @@ static enum rc cli_setup(struct arguments const *args)
 
     progress_file_init(&cli.progress, cli.input.fd);
 
-    cli.db = protein_db_default;
-
     enum rc rc =
         protein_db_openw(&cli.db, cli.output.fd, &imm_amino_iupac,
                          imm_super(&imm_dna_iupac), PROTEIN_CFG_DEFAULT);

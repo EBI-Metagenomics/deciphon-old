@@ -311,8 +311,6 @@ static enum rc cli_setup(void)
     cli.output.amino.seq[0] = '\0';
     gff_init(&cli.output.gff, cli.output.fd, GFF_WRITE);
 
-    cli.pro.db = protein_db_default;
-
     enum rc rc = protein_db_openr(&cli.pro.db, cli.pro.fd);
     if (rc) return rc;
     rc = profile_reader_setup(&cli.pro.reader, &cli.pro.db.super, 1);

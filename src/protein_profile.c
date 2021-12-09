@@ -207,9 +207,9 @@ enum rc protein_profile_absorb(struct protein_profile *p,
     return RC_DONE;
 }
 
-void protein_profile_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
+unsigned protein_profile_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
-    protein_state_name(id, name);
+    return protein_state_name(id, name);
 }
 
 enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,

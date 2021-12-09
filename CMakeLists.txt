@@ -130,9 +130,10 @@ target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPREC
 target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
 target_compile_definitions(dcp PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
 # https://stackoverflow.com/a/42597059
-target_compile_definitions(dcp PRIVATE _POSIX_C_SOURCE=200112L)
+# target_compile_definitions(dcp PRIVATE _POSIX_C_SOURCE=200112L)
 # To make mkstemp available.
-target_compile_definitions(dcp PRIVATE __USE_XOPEN_EXTENDED)
+# target_compile_definitions(dcp PRIVATE _USE_XOPEN_EXTENDED)
+target_compile_definitions(dcp PRIVATE _XOPEN_SOURCE=700)
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
 target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
@@ -142,9 +143,6 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in ${VERSION_FILE}
   @ONLY
 )
-
-target_compile_definitions(dcp PRIVATE _XOPEN_SOURCE=1)
-set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS};-D_XOPEN_SOURCE=1)
 
 # Command line interface programs
 add_executable(dcp-press bin/press.c)

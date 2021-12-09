@@ -26,7 +26,7 @@ void test_cli_press_read(void)
 {
     FILE *fd = fopen(TMPDIR "Pfam-A.5.dcp", "rb");
     NOTNULL(fd);
-    struct protein_db db = protein_db_default;
+    struct protein_db db = {0};
     EQ(protein_db_openr(&db, fd), RC_DONE);
 
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);

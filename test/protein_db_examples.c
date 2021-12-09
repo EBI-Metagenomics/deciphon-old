@@ -13,8 +13,8 @@ void protein_db_examples_new_ex1(char const *filepath)
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
 
-    struct protein_cfg cfg = protein_cfg(ENTRY_DIST_UNIFORM, 0.1f);
-    struct protein_db db = protein_db_default;
+    struct protein_cfg cfg = protein_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
+    struct protein_db db = {0};
     EQ(protein_db_openw(&db, fd, amino, nuclt, cfg), RC_DONE);
 
     struct protein_profile prof;
@@ -28,6 +28,7 @@ void protein_db_examples_new_ex1(char const *filepath)
     profile_set_name((struct profile *)&prof, metadata("NAME1", "ACC1"));
     EQ(protein_db_write(&db, &prof), RC_DONE);
 
+    profile_del((struct profile *)&prof);
     EQ(db_close((struct db *)&db), RC_DONE);
     fclose(fd);
 }
