@@ -160,6 +160,6 @@ void xfile_strip_path_ext(char *str)
 
 FILE *xfile_open_from_fptr(FILE *fp, char const *mode)
 {
-    int new_fd = fileno(fp);
-    return fdopen(new_fd, "rb");
+    int fd = fileno(fp);
+    return fdopen(fd, "rb");
 }

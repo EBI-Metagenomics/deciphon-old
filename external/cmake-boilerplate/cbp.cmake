@@ -19,13 +19,16 @@ function(cbp_install tgt hdr_place)
     EXPORT ${tgt}-targets
     FILE ${tgt}-targets.cmake
     NAMESPACE ${TGT}::
-    DESTINATION ${dst})
+    DESTINATION ${dst}
+  )
 
   include(CMakePackageConfigHelpers)
 
   set(cfg ${CMAKE_CURRENT_BINARY_DIR}/${tgt}-config.cmake)
-  configure_package_config_file(${tgt}-config.cmake.in ${cfg}
-                                INSTALL_DESTINATION ${dst})
+  configure_package_config_file(
+    ${tgt}-config.cmake.in ${cfg}
+    INSTALL_DESTINATION ${dst}
+  )
 
   set(ver ${CMAKE_CURRENT_BINARY_DIR}/${tgt}-config-version.cmake)
   write_basic_package_version_file(${ver} COMPATIBILITY SameMajorVersion)
@@ -39,20 +42,25 @@ macro(cbp_set_warning_flags)
     # https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/c5105?view=msvc-160
     set(WARNING_FLAGS /W3 /wd5105)
   else()
-    set(WARNING_FLAGS
-        -Wall
-        -Wextra
-        -Wstrict-prototypes
-        -Wshadow
-        -Wconversion
-        -Wmissing-prototypes
-        -Wno-unused-parameter
-        -Wsign-conversion
-        -Wno-unused-function)
+    set(
+      WARNING_FLAGS
+      -Wall
+      -Wextra
+      -Wstrict-prototypes
+      -Wshadow
+      -Wconversion
+      -Wmissing-prototypes
+      -Wno-unused-parameter
+      -Wsign-conversion
+      -Wno-unused-function
+    )
 
     if(NOT CMAKE_C_COMPILER_ID STREQUAL "GNU")
-      list(APPEND WARNING_FLAGS -Wno-gnu-designator -Wno-empty-translation-unit
-           -Wno-gnu-statement-expression -Wno-nullability-extension)
+      list(
+        APPEND WARNING_FLAGS -Wno-gnu-designator -Wno-empty-translation-unit
+        -Wno-gnu-statement-expression -Wno-nullability-extension
+        -Wconditional-uninitialized
+      )
     endif()
   endif()
 endmacro()
@@ -72,8 +80,10 @@ endmacro()
 macro(cbp_set_rpath)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
   # Set RPATH only if it's not a system directory
-  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
-       "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+  list(
+    FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES
+    "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir
+  )
   if("${isSystemDir}" STREQUAL "-1")
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
   endif()
@@ -102,13 +112,14 @@ macro(cbp_generate_export_header tgt export_file)
     EXPORT_MACRO_NAME
     ${TGT}_API
     EXPORT_FILE_NAME
-    ${${export_file}})
+    ${${export_file}}
+  )
 endmacro()
 
 macro(cbp_assert_null_is_zero_bits)
   include(CheckCSourceRuns)
   check_c_source_runs(
-  "
+    "
   #include <stddef.h>
   #include <stdint.h>
 
@@ -121,9 +132,10 @@ macro(cbp_assert_null_is_zero_bits)
     return !(v0 == v1);
   }
   "
-  NULL_IS_ZERO_BITS)
+    NULL_IS_ZERO_BITS
+  )
 
-  if (NULL_IS_ZERO_BITS)
+  if(NULL_IS_ZERO_BITS)
     message(STATUS "NULL is zero-bits represented.")
   else()
     message(FATAL_ERROR "NULL is not zero-bits represented.")

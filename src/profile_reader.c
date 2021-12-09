@@ -54,6 +54,13 @@ static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
     return RC_DONE;
 }
 
+static enum rc record_offset(FILE *fp, off_t *offset)
+{
+    if ((*offset = ftello(fp)) == -1)
+        return error(RC_IOERROR, "failed to ftello");
+    return RC_DONE;
+}
+
 static enum rc partition_it(struct profile_reader *reader, struct db *db)
 {
     enum rc rc = RC_DONE;
@@ -62,37 +69,27 @@ static enum rc partition_it(struct profile_reader *reader, struct db *db)
 
     struct cmp_ctx_s *cmp = &reader->cmp[0];
     FILE *fp = cmp_file(cmp);
-    unsigned part_idx = 1;
-    unsigned part_size = 0;
+    unsigned npartitions = reader->npartitions;
+    unsigned nprofiles = db_nprofiles(db);
+    unsigned i = 0;
+    unsigned size = 0;
     struct profile *prof = (struct profile *)&reader->profiles[0];
-    while (part_idx < reader->npartitions)
+    for (unsigned j = 0; j < nprofiles; ++j)
     {
         if ((rc = profile_read(prof, cmp))) goto cleanup;
 
-        part_size++;
-        unsigned n = db_nprofiles(db);
-        unsigned m = reader->npartitions;
-        if (part_size >= xmath_partition_size(n, m, part_idx - 1))
+        size++;
+        if (size >= xmath_partition_size(nprofiles, npartitions, i))
         {
-            if ((reader->partition_offset[++part_idx] = ftello(fp)) == -1)
-            {
-                rc = error(RC_IOERROR, "failed to ftello");
+            if ((rc = record_offset(fp, reader->partition_offset + ++i)))
                 goto cleanup;
-            }
 
-            part_size = 0;
+            size = 0;
         }
     }
-
-    while ((rc = profile_read(prof, cmp)) == RC_NEXT)
-        ;
-    if (rc) goto cleanup;
-
-    if ((reader->partition_offset[++part_idx] = ftello(fp)) == -1)
-    {
-        rc = error(RC_IOERROR, "failed to ftello");
+    assert(i == npartitions);
+    if ((rc = record_offset(fp, reader->partition_offset + npartitions)))
         goto cleanup;
-    }
 
     return RC_DONE;
 
@@ -110,12 +107,13 @@ enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
     if (npartitions > DCP_NUM_PARTITIONS)
         return error(RC_ILLEGALARG, "too many partitions");
 
-    if (db_nprofiles(db) > npartitions) npartitions = db_nprofiles(db);
+    if (db_nprofiles(db) < npartitions) npartitions = db_nprofiles(db);
 
     enum rc rc = RC_DONE;
     reader->profile_typeid = (enum profile_typeid)db_profile_typeid(db);
     if ((rc = open_files(reader, db, npartitions))) goto cleanup;
     if ((rc = partition_it(reader, db))) goto cleanup;
+    if ((rc = profile_reader_rewind(reader))) goto cleanup;
     return rc;
 
 cleanup:
@@ -133,10 +131,21 @@ enum rc profile_reader_rewind(struct profile_reader *reader)
     return __rewind(reader, reader->npartitions);
 }
 
+static enum rc reached_end(struct profile_reader *reader, unsigned partition)
+{
+    FILE *fp = cmp_file(reader->cmp + partition);
+    off_t offset = ftello(fp);
+    if (offset == -1) return error(RC_IOERROR, "failed to ftello");
+    if (offset == reader->partition_offset[partition + 1]) return RC_END;
+    return RC_NEXT;
+}
+
 enum rc profile_reader_next(struct profile_reader *reader, unsigned partition)
 {
     struct profile *prof = profile_reader_profile(reader, partition);
-    return profile_read(prof, &reader->cmp[partition]);
+    enum rc rc = reached_end(reader, partition);
+    if (rc == RC_NEXT) return profile_read(prof, &reader->cmp[partition]);
+    return rc;
 }
 
 struct profile *profile_reader_profile(struct profile_reader *reader,

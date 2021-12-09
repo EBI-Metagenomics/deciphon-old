@@ -51,7 +51,7 @@ void test_db_openr_empty(void)
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
-    struct imm_abc const *abc = standard_db_abc(&db);
+    struct imm_abc const *abc = db_abc((struct db *)&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
@@ -101,7 +101,7 @@ void test_db_openr_one_mute(void)
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
-    struct imm_abc const *abc = standard_db_abc(&db);
+    struct imm_abc const *abc = db_abc((struct db *)&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
@@ -132,7 +132,7 @@ void test_db_openr_example1(void)
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
-    EQ(imm_abc_typeid(standard_db_abc(&db)), IMM_ABC);
+    EQ(imm_abc_typeid(db_abc((struct db *)&db)), IMM_ABC);
 
     EQ(db_nprofiles(&db.super), 2);
 
@@ -155,7 +155,7 @@ void test_db_openr_example1(void)
         if (nprofs == 0)
         {
             struct imm_task *task = imm_task_new(profile_alt_dp(prof));
-            struct imm_abc const *abc = standard_db_abc(&db);
+            struct imm_abc const *abc = db_abc((struct db *)&db);
             struct imm_seq seq = imm_seq(imm_str(imm_example1_seq), abc);
             EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
             EQ(imm_dp_viterbi(profile_alt_dp(prof), task, &prod), IMM_SUCCESS);
@@ -165,6 +165,7 @@ void test_db_openr_example1(void)
         ++nprofs;
     }
     EQ(nprofs, 2);
+    EQ(rc, RC_END);
 
     imm_del(&prod);
     EQ(db_close((struct db *)&db), RC_DONE);
@@ -185,7 +186,7 @@ void test_db_openr_example2(void)
     EQ(standard_db_openr(&db, fd), RC_DONE);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
-    struct imm_abc const *abc = standard_db_abc(&db);
+    struct imm_abc const *abc = db_abc((struct db *)&db);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
     EQ(db_nprofiles(&db.super), 2);
@@ -218,6 +219,7 @@ void test_db_openr_example2(void)
         ++nprofs;
     }
     EQ(nprofs, 2);
+    EQ(rc, RC_END);
 
     imm_del(&prod);
     EQ(db_close((struct db *)&db), RC_DONE);
