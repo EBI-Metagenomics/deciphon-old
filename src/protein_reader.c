@@ -71,7 +71,12 @@ enum rc protein_reader_next(struct protein_reader *reader)
     return RC_DONE;
 }
 
-struct metadata protein_reader_meta(struct protein_reader const *reader)
+void protein_reader_del(struct protein_reader const *reader)
+{
+    protein_model_del(&reader->model);
+}
+
+struct metadata protein_reader_metadata(struct protein_reader const *reader)
 {
     return metadata(reader->prof.meta.name, reader->prof.meta.acc);
 }

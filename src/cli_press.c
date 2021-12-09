@@ -129,7 +129,7 @@ static enum rc cli_setup(struct arguments const *args)
 static enum rc profile_write(void)
 {
     profile_set_name((struct profile *)&cli.profile,
-                     protein_reader_meta(&cli.reader));
+                     protein_reader_metadata(&cli.reader));
 
     enum rc rc = protein_profile_absorb(&cli.profile, &cli.reader.model);
     if (rc) return rc;

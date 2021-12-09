@@ -25,7 +25,8 @@ void protein_reader_init(struct protein_reader *reader,
                          struct protein_cfg cfg, FILE *restrict fd);
 
 enum rc protein_reader_next(struct protein_reader *reader);
+void protein_reader_del(struct protein_reader const *reader);
 
-struct metadata protein_reader_meta(struct protein_reader const *r);
+struct metadata protein_reader_metadata(struct protein_reader const *r);
 
 #endif
