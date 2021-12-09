@@ -52,7 +52,7 @@ void test_server_standard_db(void)
 
     standard_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(server_add_db("standard_example1", ex_path, &db_id), RC_DONE);
+    EQ(server_add_db(ex_path, &db_id), RC_DONE);
 
     EQ(server_close(), RC_DONE);
 }
@@ -67,7 +67,7 @@ void test_server_submit_job(void)
 
     standard_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(server_add_db("standard_example1", ex_path, &db_id), RC_DONE);
+    EQ(server_add_db(ex_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     struct job job = {0};
@@ -94,7 +94,7 @@ void test_server_submit_and_fetch_job(unsigned num_threads)
 
     protein_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(server_add_db("protein_example1", ex_path, &db_id), RC_DONE);
+    EQ(server_add_db(ex_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     struct job job = {0};

@@ -44,25 +44,12 @@ enum rc server_open(char const *filepath, unsigned num_threads)
 
 enum rc server_close(void) { return sched_close(); }
 
-enum rc server_add_db(char const *name, char const *filepath, int64_t *id)
+enum rc server_add_db(char const *filepath, int64_t *id)
 {
     if (!xfile_is_readable(filepath))
         return error(RC_IOERROR, "file is not readable");
 
-    struct sched_db db = {0};
-    enum rc rc = sched_db_setup(&db, name, filepath);
-    if (rc) return rc;
-
-    struct sched_db db2 = {0};
-    rc = sched_db_get_by_xxh64(&db2, db.xxh64);
-    if (rc == RC_NOTFOUND)
-    {
-        rc = sched_db_add(&db);
-        *id = db.id;
-        return rc;
-    }
-    *id = db2.id;
-    return rc;
+    return sched_db_add(filepath, id);
 }
 
 enum rc server_submit_job(struct job *job) { return sched_submit_job(job); }

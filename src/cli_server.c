@@ -80,13 +80,8 @@ enum rc cli_server(int argc, char **argv)
     rc = server_open(schedfile, 1);
     if (rc) goto cleanup;
 
-    char db_name[DCP_DB_NAME_SIZE] = {0};
-    static_assert(DCP_DB_NAME_SIZE <= DCP_FILENAME_SIZE, "Avoid overflow");
-    xfile_basename(db_name, dcpfile);
-    xfile_strip_path_ext(db_name);
-
     int64_t db_id = 0;
-    rc = server_add_db(db_name, dcpfile, &db_id);
+    rc = server_add_db(dcpfile, &db_id);
     if (rc) goto cleanup;
 
     rc = server_run(false);

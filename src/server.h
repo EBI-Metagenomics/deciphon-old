@@ -12,7 +12,7 @@ struct job;
 
 enum rc server_open(char const *filepath, unsigned num_threads);
 enum rc server_close(void);
-enum rc server_add_db(char const *name, char const *filepath, int64_t *id);
+enum rc server_add_db(char const *filepath, int64_t *id);
 enum rc server_submit_job(struct job *);
 enum rc server_job_state(int64_t, enum job_state *);
 enum rc server_run(bool single_run);
