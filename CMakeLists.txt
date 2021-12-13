@@ -29,11 +29,10 @@ find_package(Argp REQUIRED)
 
 add_library(
   dcp
-  src/array.c
   src/bitops.c
-  # src/cli.c
-  # src/cli_info.c
-  # src/cli_press.c
+  src/cli.c
+  src/cli_info.c
+  src/cli_press.c
   # src/cli_scan.c
   # src/cli_server.c
   src/db.c
@@ -65,6 +64,7 @@ add_library(
   src/xfile.c
 )
 add_library(DCP::dcp ALIAS dcp)
+target_code_coverage(dcp)
 
 cbp_hide_functions(dcp)
 cbp_set_warning_flags()
@@ -146,4 +146,3 @@ add_subdirectory(test)
 # if(FUZZ)
 #   add_subdirectory(fuzz)
 # endif()
-# target_code_coverage(test_ AUTO ALL)

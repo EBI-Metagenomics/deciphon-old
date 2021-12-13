@@ -7,7 +7,6 @@
 #include "profile_types.h"
 #include "protein_model.h"
 #include "protein_profile.h"
-#include "third-party/xrandom.h"
 #include <assert.h>
 #include <stdlib.h>
 

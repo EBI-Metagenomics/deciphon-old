@@ -18,6 +18,7 @@ file(ARCHIVE_EXTRACT INPUT ${ASSETS}/Pfam-A.5.hmm.7z DESTINATION ${ASSETS})
 
 function(dcp_add_test name srcs)
   add_executable(${name} ${srcs})
+  target_code_coverage(${name} AUTO ALL)
   target_link_libraries(${name} PRIVATE DCP::dcp)
   target_link_libraries(${name} PRIVATE HOPE::hope)
   target_compile_options(${name} PRIVATE ${WARNING_FLAGS})
@@ -45,7 +46,7 @@ dcp_add_test(job job.c)
 # dcp_add_test(server "server.c;standard_db_examples.c;protein_db_examples.c;server_data.c")
 
 # CLI
-# dcp_add_test(cli_press cli_press.c)
+dcp_add_test(cli_press cli_press.c)
 
 # dcp_add_test(db_pp "db_pp.c;data.c") dcp_add_test(metadata metadata.c)
 # dcp_add_test(tasks "tasks.c;pfam24_results.c") dcp_add_test(very_long_seq
