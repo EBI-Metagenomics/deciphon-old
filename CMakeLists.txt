@@ -9,52 +9,33 @@ project(
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include("${CMAKE_CURRENT_LIST_DIR}/external/cmake-boilerplate/cbp.cmake")
-include("${CMAKE_CURRENT_LIST_DIR}/external/cmake-scripts/sanitizers.cmake")
 cbp_set_rpath()
+cbp_include_sanitizers()
+cbp_include_code_coverage()
+add_code_coverage_all_targets()
 
-find_package(Argp REQUIRED)
-find_package(Threads REQUIRED)
-find_package(athr REQUIRED)
-find_package(fasta REQUIRED)
-find_package(hmr REQUIRED)
-find_package(imm REQUIRED)
-find_package(log REQUIRED)
 find_package(elapsed REQUIRED)
-find_package(gff REQUIRED)
-find_package(tbl REQUIRED)
+find_package(athr REQUIRED)
+find_package(log REQUIRED)
+find_package(hmr REQUIRED)
+find_package(fasta REQUIRED)
 find_package(cmp REQUIRED)
-find_package(SQLite3 3.35.0 REQUIRED)
-find_package(PkgConfig REQUIRED)
-find_package(xxHash REQUIRED)
-
-find_program(XXD_FOUND "xxd")
-if(XXD_FOUND)
-  message(STATUS "Looking for xxd - found")
-else()
-  message(FATAL_ERROR "Looking for xxd - not found")
-endif()
-
-add_custom_command(
-  OUTPUT sched_schema.c
-  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed-file
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/sched_schema.sql
-  sched_schema
-  sched_schema.c
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tools/embed-file
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/sched_schema.sql
-  VERBATIM
-)
+find_package(imm REQUIRED)
+find_package(tbl REQUIRED)
+find_package(gff REQUIRED)
+find_package(dcp_sched REQUIRED)
+find_package(Threads REQUIRED)
+find_package(Argp REQUIRED)
 
 add_library(
   dcp
-  sched_schema.c
   src/array.c
   src/bitops.c
-  src/cli.c
-  src/cli_info.c
-  src/cli_press.c
-  src/cli_scan.c
-  src/cli_server.c
+  # src/cli.c
+  # src/cli_info.c
+  # src/cli_press.c
+  # src/cli_scan.c
+  # src/cli_server.c
   src/db.c
   src/db_reader.c
   src/job_state.c
@@ -73,23 +54,15 @@ add_library(
   src/protein_state.c
   src/row.c
   src/safe.c
-  src/sched.c
-  src/sched_db.c
-  src/sched_job.c
-  src/sched_prod.c
-  src/sched_seq.c
   src/seq.c
-  src/server.c
-  src/sqldiff.c
+  # src/server.c
   src/standard_db.c
   src/standard_profile.c
   src/table.c
-  src/task.c
   src/to.c
   src/tok.c
-  src/work.c
+  # src/work.c
   src/xfile.c
-  src/xsql.c
 )
 add_library(DCP::dcp ALIAS dcp)
 
@@ -110,34 +83,34 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_link_libraries(dcp PUBLIC $<$<NOT:$<BOOL:${ARGP_BUILTIN}>>:Argp::argp>)
-target_link_libraries(dcp PUBLIC Threads::Threads)
-target_link_libraries(dcp PUBLIC ATHR::athr)
-target_link_libraries(dcp PUBLIC FASTA::fasta)
-target_link_libraries(dcp PUBLIC HMR::hmr)
-target_link_libraries(dcp PUBLIC IMM::imm)
-target_link_libraries(dcp PUBLIC LOG::log)
+
 target_link_libraries(dcp PUBLIC ELAPSED::elapsed)
-target_link_libraries(dcp PUBLIC GFF::gff)
+target_link_libraries(dcp PUBLIC ATHR::athr)
+target_link_libraries(dcp PUBLIC LOG::log)
+target_link_libraries(dcp PUBLIC HMR::hmr)
+target_link_libraries(dcp PUBLIC FASTA::fasta)
 target_link_libraries(dcp PUBLIC CMP::cmp)
+target_link_libraries(dcp PUBLIC IMM::imm)
 target_link_libraries(dcp PUBLIC TBL::tbl)
-target_link_libraries(dcp PUBLIC SQLite::SQLite3)
-target_link_libraries(dcp PUBLIC xxHash::xxHash)
+target_link_libraries(dcp PUBLIC GFF::gff)
+target_link_libraries(dcp PUBLIC DCP_SCHED::dcp_sched)
+target_link_libraries(dcp PUBLIC Threads::Threads)
+target_link_libraries(dcp PUBLIC $<$<NOT:$<BOOL:${ARGP_BUILTIN}>>:Argp::argp>)
 target_link_libraries(dcp PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
+target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
+
 set_target_properties(dcp PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(dcp PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+
 target_compile_features(dcp PRIVATE c_std_11)
+
 target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:_CRT_NONSTDC_NO_DEPRECATE>)
 target_compile_definitions(dcp PRIVATE $<$<BOOL:${WIN32}>:__extension__>)
 target_compile_definitions(dcp PRIVATE SQLITE_OMIT_LOAD_EXTENSION)
-# https://stackoverflow.com/a/42597059
-# target_compile_definitions(dcp PRIVATE _POSIX_C_SOURCE=200112L)
-# To make mkstemp available.
-# target_compile_definitions(dcp PRIVATE _USE_XOPEN_EXTENDED)
 target_compile_definitions(dcp PRIVATE _XOPEN_SOURCE=700)
+
 target_compile_options(dcp PRIVATE ${WARNING_FLAGS})
 target_compile_options(dcp PRIVATE "-fverbose-asm")
-target_link_libraries(dcp INTERFACE $<$<BOOL:${UNIX}>:m>)
 
 set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version.h)
 configure_file(
@@ -146,29 +119,31 @@ configure_file(
 )
 
 # Command line interface programs
-add_executable(dcp-press bin/press.c)
-target_link_libraries(dcp-press PUBLIC dcp)
-
-add_executable(dcp-info bin/info.c)
-target_link_libraries(dcp-info PUBLIC dcp)
-
-add_executable(dcp-scan bin/scan.c)
-target_link_libraries(dcp-scan PUBLIC dcp)
-
-add_executable(dcp-server bin/server.c)
-target_link_libraries(dcp-server PUBLIC dcp)
-
-install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
-  ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
-  ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
-  ${CMAKE_CURRENT_BINARY_DIR}/dcp-server
-  PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-  DESTINATION bin
-)
+# add_executable(dcp-press bin/press.c)
+# target_link_libraries(dcp-press PUBLIC dcp)
+#
+# add_executable(dcp-info bin/info.c)
+# target_link_libraries(dcp-info PUBLIC dcp)
+#
+# add_executable(dcp-scan bin/scan.c)
+# target_link_libraries(dcp-scan PUBLIC dcp)
+#
+# add_executable(dcp-server bin/server.c)
+# target_link_libraries(dcp-server PUBLIC dcp)
+#
+# install(
+#   FILES ${VERSION_FILE}
+#   ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
+#   ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
+#   ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
+#   ${CMAKE_CURRENT_BINARY_DIR}/dcp-server
+#   PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+#   DESTINATION bin
+# )
 
 enable_testing()
 add_subdirectory(test)
 # if(FUZZ)
 #   add_subdirectory(fuzz)
 # endif()
+# target_code_coverage(test_ AUTO ALL)

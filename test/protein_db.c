@@ -49,9 +49,9 @@ void test_db_protein_openr(void)
     enum rc rc = RC_DONE;
     struct profile_reader reader;
     EQ(profile_reader_setup(&reader, (struct db *)&db, 1), RC_DONE);
-    while ((rc = profile_reader_next(&reader, 0)) != RC_END)
+    struct profile *prof = 0;
+    while ((rc = profile_reader_next(&reader, 0, &prof)) != RC_END)
     {
-        struct profile *prof = profile_reader_profile(&reader, 0);
         EQ(profile_typeid(prof), PROFILE_PROTEIN);
         struct imm_task *task = imm_task_new(profile_alt_dp(prof));
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);

@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <xxhash.h>
 
 #define BUFFSIZE (8 * 1024)
 
@@ -29,7 +28,7 @@ enum rc xfile_tmp_rewind(struct xfile_tmp *file)
     return RC_DONE;
 }
 
-void xfile_tmp_destroy(struct xfile_tmp *file)
+void xfile_tmp_del(struct xfile_tmp const *file)
 {
     fclose(file->fp);
     remove(file->path);
@@ -67,47 +66,6 @@ enum rc xfile_mktemp(char *filepath)
 {
     if (mkstemp(filepath) == -1) return error(RC_IOERROR, "mkstemp failed");
     return RC_DONE;
-}
-
-/* Are two types/vars the same type (ignoring qualifiers)? */
-#define same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
-
-static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
-
-enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
-{
-    enum rc rc = RC_DONE;
-    XXH64_state_t *const state = XXH64_createState();
-    if (!state)
-    {
-        rc = error(RC_OUTOFMEM, "not enough memory for hashing");
-        goto cleanup;
-    }
-    XXH64_reset(state, 0);
-
-    size_t n = 0;
-    unsigned char buffer[BUFFSIZE] = {0};
-    while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, fp)) > 0)
-    {
-        if (n < BUFFSIZE && ferror(fp))
-        {
-            rc = error(RC_IOERROR, "failed to read file");
-            goto cleanup;
-        }
-
-        XXH64_update(state, buffer, n);
-    }
-    if (ferror(fp))
-    {
-        rc = error(RC_IOERROR, "failed to read file");
-        goto cleanup;
-    }
-
-    *hash = XXH64_digest(state);
-
-cleanup:
-    XXH64_freeState(state);
-    return rc;
 }
 
 static char *glibc_basename(const char *filename)

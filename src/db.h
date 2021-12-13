@@ -72,7 +72,7 @@ enum rc db_close(struct db *db);
 enum rc db_read_magic_number(struct db *db);
 enum rc db_write_magic_number(struct db *db);
 
-enum rc db_read_prof_type(struct db *db);
+enum rc db_read_profile_typeid(struct db *db);
 enum rc db_write_prof_type(struct db *db);
 
 enum rc db_read_float_size(struct db *db);

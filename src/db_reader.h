@@ -17,7 +17,7 @@ struct db_reader
     } db;
 };
 
-enum rc db_reader_openr(struct db_reader *reader, FILE *fp);
+enum rc db_reader_open(struct db_reader *reader, FILE *fp);
 struct db *db_reader_db(struct db_reader *reader);
 enum rc db_reader_close(struct db_reader *reader);
 

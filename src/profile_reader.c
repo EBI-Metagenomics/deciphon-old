@@ -148,18 +148,13 @@ static enum rc reached_end(struct profile_reader *reader, unsigned partition)
     return RC_NEXT;
 }
 
-enum rc profile_reader_next(struct profile_reader *reader, unsigned partition)
+enum rc profile_reader_next(struct profile_reader *reader, unsigned partition,
+                            struct profile **profile)
 {
-    struct profile *prof = profile_reader_profile(reader, partition);
+    *profile = (struct profile *)&reader->profiles[partition];
     enum rc rc = reached_end(reader, partition);
-    if (rc == RC_NEXT) return profile_read(prof, &reader->cmp[partition]);
+    if (rc == RC_NEXT) return profile_read(*profile, &reader->cmp[partition]);
     return rc;
-}
-
-struct profile *profile_reader_profile(struct profile_reader *reader,
-                                       unsigned partition)
-{
-    return (struct profile *)&reader->profiles[partition];
 }
 
 bool profile_reader_end(struct profile_reader *reader, unsigned partition)

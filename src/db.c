@@ -188,7 +188,7 @@ enum rc db_write_magic_number(struct db *db)
     return RC_DONE;
 }
 
-enum rc db_read_prof_type(struct db *db)
+enum rc db_read_profile_typeid(struct db *db)
 {
     uint8_t prof_typeid = 0;
     if (!cmp_read_u8(&db->file.cmp, &prof_typeid))

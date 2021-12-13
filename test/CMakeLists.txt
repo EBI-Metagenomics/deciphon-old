@@ -42,10 +42,10 @@ dcp_add_test(protein_profile protein_profile.c)
 dcp_add_test(protein_db "protein_db.c;protein_db_examples.c")
 dcp_add_test(protein_hmmer3_reader protein_hmmer3_reader.c)
 dcp_add_test(job job.c)
-dcp_add_test(server "server.c;standard_db_examples.c;protein_db_examples.c;server_data.c")
+# dcp_add_test(server "server.c;standard_db_examples.c;protein_db_examples.c;server_data.c")
 
 # CLI
-dcp_add_test(cli_press cli_press.c)
+# dcp_add_test(cli_press cli_press.c)
 
 # dcp_add_test(db_pp "db_pp.c;data.c") dcp_add_test(metadata metadata.c)
 # dcp_add_test(tasks "tasks.c;pfam24_results.c") dcp_add_test(very_long_seq

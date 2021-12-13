@@ -18,7 +18,7 @@ int main(void)
     test_server_reopen();
     test_server_standard_db();
     test_server_submit_job();
-    /* test_server_submit_and_fetch_job(1); */
+    test_server_submit_and_fetch_job(1);
     /* test_server_submit_and_fetch_job(4); */
     return hope_status();
 }

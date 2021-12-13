@@ -17,13 +17,11 @@ struct xfile_tmp
 
 enum rc xfile_tmp_open(struct xfile_tmp *file);
 enum rc xfile_tmp_rewind(struct xfile_tmp *file);
-void xfile_tmp_destroy(struct xfile_tmp *file);
+void xfile_tmp_del(struct xfile_tmp const *file);
 
 enum rc xfile_copy(FILE *restrict dst, FILE *restrict src);
 bool xfile_is_readable(char const *filepath);
 enum rc xfile_mktemp(char *filepath);
-
-enum rc xfile_hash(FILE *restrict fp, uint64_t *hash);
 
 bool xfile_set_path_ext(char *str, size_t max_size, char const *ext);
 void xfile_basename(char *filename, char const *path);

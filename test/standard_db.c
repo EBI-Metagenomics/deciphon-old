@@ -148,9 +148,9 @@ void test_db_openr_example1(void)
     enum rc rc = RC_DONE;
     struct profile_reader reader;
     EQ(profile_reader_setup(&reader, (struct db *)&db, 1), RC_DONE);
-    while ((rc = profile_reader_next(&reader, 0)) != RC_END)
+    struct profile *prof = 0;
+    while ((rc = profile_reader_next(&reader, 0, &prof)) != RC_END)
     {
-        struct profile *prof = profile_reader_profile(&reader, 0);
         EQ(profile_typeid(prof), PROFILE_STANDARD);
         if (nprofs == 0)
         {
@@ -204,9 +204,9 @@ void test_db_openr_example2(void)
     struct profile_reader reader;
     EQ(profile_reader_setup(&reader, (struct db *)&db, 1), RC_DONE);
     enum rc rc = RC_DONE;
-    while ((rc = profile_reader_next(&reader, 0)) != RC_END)
+    struct profile *prof = 0;
+    while ((rc = profile_reader_next(&reader, 0, &prof)) != RC_END)
     {
-        struct profile *prof = profile_reader_profile(&reader, 0);
         EQ(profile_typeid(prof), PROFILE_STANDARD);
         if (nprofs == 0)
         {

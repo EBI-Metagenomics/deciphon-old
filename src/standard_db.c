@@ -41,7 +41,7 @@ enum rc standard_db_openr(struct standard_db *db, FILE *restrict fp)
 
     enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
-    if ((rc = db_read_prof_type(&db->super))) return rc;
+    if ((rc = db_read_profile_typeid(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
     if ((rc = read_abc(fp, &db->abc))) return rc;
     if ((rc = db_read_nprofiles(&db->super))) return rc;

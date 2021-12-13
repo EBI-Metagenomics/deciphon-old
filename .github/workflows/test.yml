@@ -18,33 +18,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-
-    - name: Install argp for MacOS
-      if: runner.os == 'macOS'
-      run: brew install argp-standalone xxhash
-
-    - name: Install xxhash for MacOS
-      if: runner.os == 'macOS'
-      run: brew install xxhash
-
-    - name: Install SQLite3 for Linux
-      if: runner.os == 'Linux'
-      run: |
-        wget https://www.sqlite.org/2021/sqlite-autoconf-3360000.tar.gz
-        tar xzf sqlite-autoconf-3360000.tar.gz
-        cd sqlite-autoconf-3360000
-        ./configure && make && sudo make install
-
-    - name: Install xxhash for Linux
-      if: runner.os == 'Linux'
-      run: |
-        wget https://github.com/Cyan4973/xxHash/archive/refs/tags/v0.8.0.tar.gz
-        tar xzf v0.8.0.tar.gz
-        cd xxHash-0.8.0
-        make
-        sudo make install
 
     - name: Check for sudo
       shell: bash
