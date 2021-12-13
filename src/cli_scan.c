@@ -111,6 +111,9 @@ static struct imm_seq seq_setup(void)
 
 static struct tbl_8x_ed table = {0};
 
+/* TODO: remove it */
+static struct profile *prof = 0;
+
 static void annotate(struct imm_seq const *sequence, char const *profile_name,
                      char const *seq_name)
 {
@@ -118,8 +121,6 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
     tbl_8x_ed_setup(&table, stdout, 128, 6, 32, TBL_RIGHT, 4, headers);
     char const *seq = sequence->str;
     struct imm_path const *path = &cli.pro.prod.path;
-    struct protein_profile *prof =
-        (struct protein_profile *)profile_reader_profile(&cli.pro.reader, 0);
 
     char const *ocodon = cli.output.codon.seq;
     char const *oamino = cli.output.amino.seq;
@@ -130,8 +131,9 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
         bool is_match = protein_state_is_match(step->state_id);
         bool is_delete = protein_state_is_delete(step->state_id);
         char cons[2] = " ";
+        struct protein_profile *p = (struct protein_profile *)prof;
         if (is_match || is_delete)
-            cons[0] = prof->consensus[protein_state_idx(step->state_id)];
+            cons[0] = p->consensus[protein_state_idx(step->state_id)];
         else if (protein_state_is_insert(step->state_id))
             cons[0] = '.';
 
@@ -165,12 +167,11 @@ static void annotate(struct imm_seq const *sequence, char const *profile_name,
 
 static enum rc predict_codons(struct imm_seq const *seq)
 {
-    struct protein_profile *prof =
-        (struct protein_profile *)profile_reader_profile(&cli.pro.reader, 0);
+    struct protein_profile *p = (struct protein_profile *)prof;
     struct imm_path const *path = &cli.pro.prod.path;
 
-    struct protein_codec codec = protein_codec_init(prof, path);
-    struct imm_codon codon = imm_codon_any(prof->code->nuclt);
+    struct protein_codec codec = protein_codec_init(p, path);
+    struct imm_codon codon = imm_codon_any(p->code->nuclt);
 
     enum rc rc = RC_DONE;
     char *ocodon = cli.output.codon.seq;
@@ -222,7 +223,6 @@ static enum rc write_aminos(char const *oamino)
 static enum rc scan_queries(struct metadata const *mt)
 {
     struct imm_prod null = imm_prod();
-    struct profile *prof = profile_reader_profile(&cli.pro.reader, 0);
     struct imm_task *task = imm_task_new(profile_alt_dp(prof));
     if (!task) return error(RC_FAIL, "failed to create task");
 
@@ -323,8 +323,7 @@ static void queries_setup(void)
 {
     fasta_init(&cli.queries.fa, cli.queries.fd, FASTA_READ);
     rewind(cli.queries.fd);
-    char const *acc = profile_reader_profile(&cli.pro.reader, 0)->metadata.acc;
-    cli.queries.fa.target.desc = acc;
+    cli.queries.fa.target.desc = prof->metadata.acc;
 }
 
 enum rc cli_scan(int argc, char **argv)
@@ -339,11 +338,8 @@ enum rc cli_scan(int argc, char **argv)
     gff_write(&cli.output.gff);
 
     progress_file_start(&cli.progress, !arguments.quiet);
-    while ((rc = profile_reader_next(&cli.pro.reader, 0)) != RC_END)
+    while ((rc = profile_reader_next(&cli.pro.reader, 0, &prof)) != RC_END)
     {
-        struct profile *prof = profile_reader_profile(&cli.pro.reader, 0);
-        rc = profile_reader_next(&cli.pro.reader, 0);
-
         queries_setup();
         struct metadata const *mt = &prof->metadata;
         if ((rc = scan_queries(mt))) goto cleanup;

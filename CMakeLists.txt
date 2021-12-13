@@ -33,7 +33,7 @@ add_library(
   src/cli.c
   src/cli_info.c
   src/cli_press.c
-  # src/cli_scan.c
+  src/cli_scan.c
   # src/cli_server.c
   src/db.c
   src/db_reader.c
