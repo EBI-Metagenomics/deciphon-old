@@ -13,6 +13,7 @@
 struct profile_reader
 {
     unsigned npartitions;
+    unsigned partition_size[DCP_NUM_PARTITIONS];
     off_t partition_offset[DCP_NUM_PARTITIONS + 1];
     struct cmp_ctx_s cmp[DCP_NUM_PARTITIONS];
     enum profile_typeid profile_typeid;
@@ -28,6 +29,8 @@ struct db;
 enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
                              unsigned npartitions);
 unsigned profile_reader_npartitions(struct profile_reader const *reader);
+unsigned profile_reader_partition_size(struct profile_reader const *reader,
+                                       unsigned partition);
 enum rc profile_reader_rewind(struct profile_reader *reader);
 enum rc profile_reader_next(struct profile_reader *reader, unsigned partition,
                             struct profile **profile);

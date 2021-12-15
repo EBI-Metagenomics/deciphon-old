@@ -26,15 +26,16 @@ find_package(gff REQUIRED)
 find_package(dcp_sched REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Argp REQUIRED)
+find_package(OpenMP)
 
 add_library(
   dcp
+  # src/cli_server.c
   src/bitops.c
   src/cli.c
   src/cli_info.c
   src/cli_press.c
   src/cli_scan.c
-  # src/cli_server.c
   src/db.c
   src/db_reader.c
   src/job_state.c
@@ -44,23 +45,27 @@ add_library(
   src/prod.c
   src/profile.c
   src/profile_reader.c
+  src/profile_types.c
   src/progress_file.c
   src/protein_codec.c
   src/protein_db.c
+  src/protein_hmmer3_reader.c
+  src/protein_match.c
   src/protein_model.c
   src/protein_profile.c
-  src/protein_hmmer3_reader.c
   src/protein_state.c
   src/row.c
   src/safe.c
   src/seq.c
-  # src/server.c
+  src/server.c
   src/standard_db.c
+  src/standard_match.c
   src/standard_profile.c
+  src/standard_state.c
   src/table.c
   src/to.c
   src/tok.c
-  # src/work.c
+  src/work.c
   src/xfile.c
 )
 add_library(DCP::dcp ALIAS dcp)
@@ -71,9 +76,14 @@ cbp_set_warning_flags()
 cbp_ci_build_option()
 cbp_assert_null_is_zero_bits()
 
-option(OPENMP "Enable OpenMP" On)
-if(OPENMP)
-  find_package(OpenMP)
+if(OpenMP_C_FOUND)
+  option(OPENMP "Enable OpenMP" On)
+  if(OPENMP)
+    find_package(OpenMP)
+    message(STATUS "OpenMP - Enabled")
+  else()
+    message(STATUS "OpenMP - Disabled")
+  endif()
 endif()
 
 target_include_directories(

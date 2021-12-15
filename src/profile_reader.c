@@ -80,9 +80,9 @@ static enum rc partition_it(struct profile_reader *reader, struct db *db)
         size++;
         if (size >= xmath_partition_size(nprofiles, npartitions, i))
         {
+            reader->partition_size[i] = size;
             if ((rc = record_offset(fp, reader->partition_offset + ++i)))
                 goto cleanup;
-
             size = 0;
         }
     }
@@ -134,6 +134,12 @@ unsigned profile_reader_npartitions(struct profile_reader const *reader)
     return reader->npartitions;
 }
 
+unsigned profile_reader_partition_size(struct profile_reader const *reader,
+                                       unsigned partition)
+{
+    return reader->partition_size[partition];
+}
+
 enum rc profile_reader_rewind(struct profile_reader *reader)
 {
     return __rewind(reader, reader->npartitions);
@@ -153,7 +159,12 @@ enum rc profile_reader_next(struct profile_reader *reader, unsigned partition,
 {
     *profile = (struct profile *)&reader->profiles[partition];
     enum rc rc = reached_end(reader, partition);
-    if (rc == RC_NEXT) return profile_read(*profile, &reader->cmp[partition]);
+    if (rc == RC_NEXT)
+    {
+        rc = profile_read(*profile, &reader->cmp[partition]);
+        if (rc) return rc;
+        return RC_NEXT;
+    }
     return rc;
 }
 

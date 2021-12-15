@@ -8,4 +8,6 @@ enum profile_typeid
     PROFILE_PROTEIN,
 };
 
+char const *profile_typeid_name(enum profile_typeid typeid);
+
 #endif

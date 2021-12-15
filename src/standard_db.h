@@ -14,8 +14,6 @@ struct standard_db
     struct imm_code code;
 };
 
-void standard_db_init(struct standard_db *db);
-
 enum rc standard_db_openr(struct standard_db *db, FILE *restrict fd);
 
 enum rc standard_db_openw(struct standard_db *db, FILE *restrict fd,

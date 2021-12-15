@@ -33,6 +33,7 @@ unsigned protein_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
             name[0] = 'I';
         else if (msb == PROTEIN_DELETE_STATE)
             name[0] = 'D';
+        /* TODO: replace it for a version that cannot cause error */
         int ret = snprintf(name + 1, 7, "%d", protein_state_idx(id) + 1);
         assert(ret > 0);
         return (unsigned)(ret + 1);

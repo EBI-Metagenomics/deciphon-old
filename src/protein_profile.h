@@ -54,8 +54,6 @@ enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
 enum rc protein_profile_absorb(struct protein_profile *prof,
                                struct protein_model const *model);
 
-unsigned protein_profile_state_name(unsigned id, char[IMM_STATE_NAME_SIZE]);
-
 enum rc protein_profile_sample(struct protein_profile *prof, unsigned seed,
                                unsigned core_size);
 

@@ -45,12 +45,12 @@ void test_protein_profile_uniform(void)
 
     EQ(imm_path_step(&prod.path, 0)->seqlen, 3);
     EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_R_STATE);
-    protein_profile_state_name(imm_path_step(&prod.path, 0)->state_id, name);
+    protein_state_name(imm_path_step(&prod.path, 0)->state_id, name);
     EQ(name, "R");
 
     EQ(imm_path_step(&prod.path, 10)->seqlen, 2);
     EQ(imm_path_step(&prod.path, 10)->state_id, PROTEIN_R_STATE);
-    protein_profile_state_name(imm_path_step(&prod.path, 10)->state_id, name);
+    protein_state_name(imm_path_step(&prod.path, 10)->state_id, name);
     EQ(name, "R");
 
     imm_prod_reset(&prod);
@@ -68,12 +68,12 @@ void test_protein_profile_uniform(void)
 
     EQ(imm_path_step(&prod.path, 0)->seqlen, 0);
     EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_S_STATE);
-    protein_profile_state_name(imm_path_step(&prod.path, 0)->state_id, name);
+    protein_state_name(imm_path_step(&prod.path, 0)->state_id, name);
     EQ(name, "S");
 
     EQ(imm_path_step(&prod.path, 13)->seqlen, 0);
     EQ(imm_path_step(&prod.path, 13)->state_id, PROTEIN_T_STATE);
-    protein_profile_state_name(imm_path_step(&prod.path, 13)->state_id, name);
+    protein_state_name(imm_path_step(&prod.path, 13)->state_id, name);
     EQ(name, "T");
 
     struct protein_codec codec = protein_codec_init(&prof, &prod.path);
@@ -137,12 +137,12 @@ void test_protein_profile_occupancy(void)
 
     EQ(imm_path_step(&prod.path, 0)->seqlen, 3);
     EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_R_STATE);
-    protein_profile_state_name(imm_path_step(&prod.path, 0)->state_id, name);
+    protein_state_name(imm_path_step(&prod.path, 0)->state_id, name);
     EQ(name, "R");
 
     EQ(imm_path_step(&prod.path, 10)->seqlen, 2);
     EQ(imm_path_step(&prod.path, 10)->state_id, PROTEIN_R_STATE);
-    protein_profile_state_name(imm_path_step(&prod.path, 10)->state_id, name);
+    protein_state_name(imm_path_step(&prod.path, 10)->state_id, name);
     EQ(name, "R");
 
     imm_prod_reset(&prod);
@@ -160,12 +160,12 @@ void test_protein_profile_occupancy(void)
 
     EQ(imm_path_step(&prod.path, 0)->seqlen, 0);
     EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_S_STATE);
-    protein_profile_state_name(imm_path_step(&prod.path, 0)->state_id, name);
+    protein_state_name(imm_path_step(&prod.path, 0)->state_id, name);
     EQ(name, "S");
 
     EQ(imm_path_step(&prod.path, 13)->seqlen, 0);
     EQ(imm_path_step(&prod.path, 13)->state_id, PROTEIN_T_STATE);
-    protein_profile_state_name(imm_path_step(&prod.path, 13)->state_id, name);
+    protein_state_name(imm_path_step(&prod.path, 13)->state_id, name);
     EQ(name, "T");
 
     struct protein_codec codec = protein_codec_init(&prof, &prod.path);

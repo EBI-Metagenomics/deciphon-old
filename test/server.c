@@ -1,28 +1,30 @@
 #include "server.h"
-#include "array.h"
 #include "hope/hope.h"
 #include "job.h"
 #include "protein_db_examples.h"
 #include "standard_db_examples.h"
 
-void test_server_setup(unsigned num_threads);
-void test_server_reopen(void);
-void test_server_standard_db(void);
+/* void test_server_setup(unsigned num_threads); */
+/* void test_server_reopen(void); */
+/* void test_server_standard_db(void); */
 void test_server_submit_job(void);
-void test_server_submit_and_fetch_job(unsigned num_threads);
+void test_server_submit_job_with_error(void);
+/* void test_server_submit_and_fetch_job(unsigned num_threads); */
 
 int main(void)
 {
-    test_server_setup(1);
-    test_server_setup(2);
-    test_server_reopen();
-    test_server_standard_db();
+    /* test_server_setup(1); */
+    /* test_server_setup(2); */
+    /* test_server_reopen(); */
+    /* test_server_standard_db(); */
     test_server_submit_job();
-    test_server_submit_and_fetch_job(1);
+    test_server_submit_job_with_error();
+    /* test_server_submit_and_fetch_job(1); */
     /* test_server_submit_and_fetch_job(4); */
     return hope_status();
 }
 
+#if 0
 void test_server_setup(unsigned num_threads)
 {
     remove(TMPDIR "/setup.sched");
@@ -56,10 +58,38 @@ void test_server_standard_db(void)
 
     EQ(server_close(), RC_DONE);
 }
+#endif
 
 void test_server_submit_job(void)
 {
     char const db_path[] = TMPDIR "/submit_job.sched";
+    char const ex_path[] = TMPDIR "/standard_example1.dcp";
+    remove(db_path);
+
+    EQ(server_open(db_path, 1), RC_DONE);
+
+    standard_db_examples_new_ex1(ex_path);
+    int64_t db_id = 0;
+    EQ(server_add_db(ex_path, &db_id), RC_DONE);
+    EQ(db_id, 1);
+
+    struct job job = {0};
+    job_init(&job, db_id);
+    struct seq seq = {0};
+    seq_init(&seq, "seq0", imm_str(imm_example1_seq));
+    job_add_seq(&job, &seq);
+
+    EQ(server_submit_job(&job), RC_DONE);
+    EQ(job.id, 1);
+
+    EQ(server_run(true), RC_DONE);
+
+    EQ(server_close(), RC_DONE);
+}
+
+void test_server_submit_job_with_error(void)
+{
+    char const db_path[] = TMPDIR "/submit_job_with_error.sched";
     char const ex_path[] = TMPDIR "/standard_example1.dcp";
     remove(db_path);
 
@@ -81,9 +111,12 @@ void test_server_submit_job(void)
     EQ(server_submit_job(&job), RC_DONE);
     EQ(job.id, 1);
 
+    EQ(server_run(true), RC_DONE);
+
     EQ(server_close(), RC_DONE);
 }
 
+#if 0
 void test_server_submit_and_fetch_job(unsigned num_threads)
 {
     char const db_path[] = TMPDIR "/submit_and_fetch_job.sched";
@@ -155,3 +188,4 @@ void test_server_submit_and_fetch_job(unsigned num_threads)
 
     EQ(server_close(), RC_DONE);
 }
+#endif

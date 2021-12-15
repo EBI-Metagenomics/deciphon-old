@@ -1,170 +1,35 @@
 #include "work.h"
-#include "compiler.h"
-#include "db_reader.h"
+#include "dcp_sched/sched.h"
+#include "imm/imm.h"
 #include "logger.h"
 #include "prod.h"
 #include "profile_reader.h"
 #include "protein_match.h"
-#include "protein_state.h"
-#include "safe.h"
-#include "sched_db.h"
-#include "sched_job.h"
-#include "sched_seq.h"
-#include "utc.h"
+#include "standard_match.h"
 #include "version.h"
-#include "xfile.h"
 #include "xmath.h"
-#include <libgen.h>
+#include "xomp.h"
 #include <stdatomic.h>
+#include <string.h>
 
-struct hypothesis
+static atomic_flag lock_work = ATOMIC_FLAG_INIT;
+static atomic_bool end_work = false;
+
+static void lock(void)
 {
-    struct imm_task *task;
-    struct imm_prod prod;
-};
-
-static struct work
-{
-    struct sched_job job;
-    struct sched_seq sched_seq;
-    struct imm_seq seq;
-    struct hypothesis alt;
-    struct hypothesis null;
-
-    struct
-    {
-        struct sched_db sched_db;
-        FILE *fp;
-        struct db_reader reader;
-    } db;
-
-    struct profile_reader profile_reader;
-
-    struct prod prod;
-    struct xfile_tmp prod_file;
-
-    atomic_bool failed;
-    struct tok *tok;
-} work = {0};
-
-static inline struct imm_abc const *abc(void)
-{
-    return db_abc((struct db const *)&work.db);
+    while (atomic_flag_test_and_set(&lock_work))
+        /* spin until the lock is acquired */;
 }
 
-enum rc write_product(struct work *work, struct task *task, unsigned match_id,
-                      struct imm_seq seq);
+static void unlock(void) { atomic_flag_clear(&lock_work); }
 
-void work_init(void) { atomic_store(&work.failed, false); }
-
-enum rc work_next(void)
+static void set_job_fail(int64_t job_id, char const *msg)
 {
-    enum rc rc = RC_DONE;
-    if ((rc = sched_job_next_pending(&work.job))) return rc;
-    if ((rc = sched_db_get_by_id(&work.db.sched_db, work.job.db_id))) return rc;
-    return RC_NEXT;
-}
-
-static void cleanup_files(void)
-{
-    profile_reader_del(&work.profile_reader);
-    xfile_tmp_del(&work.prod_file);
-}
-
-static enum rc open_readers(unsigned num_threads)
-{
-    enum rc rc = db_reader_open(&work.db.reader, work.db.fp);
-    if (rc) return rc;
-
-    struct db *db = db_reader_db(&work.db.reader);
-    rc = profile_reader_setup(&work.profile_reader, db, num_threads);
-    if (rc) db_reader_close(&work.db.reader);
-
-    return rc;
-}
-
-static enum rc open_db(void)
-{
-    if (!(work.db.fp = fopen(work.db.sched_db.filepath, "rb")))
-        return error(RC_IOERROR, "failed to open db");
-
-    enum rc rc = db_reader_open(&work.db.reader, work.db.fp);
-    if (rc) fclose(work.db.fp);
-    return rc;
-}
-
-static enum rc close_db(void)
-{
-    enum rc rc = db_reader_close(&work.db.reader);
-    if (rc) return rc;
-
-    if (fclose(work.db.fp)) return error(RC_IOERROR, "failed to fclose");
-    return rc;
-}
-
-static enum rc open_files(unsigned num_threads)
-{
-    enum rc rc = open_db();
-    if (rc) return rc;
-
-    struct db *db = db_reader_db(&work.db.reader);
-    rc = profile_reader_setup(&work.profile_reader, db, num_threads);
-    if (rc)
-    {
-        close_db();
-        return rc;
-    }
-
-    rc = xfile_tmp_open(&work.prod_file);
-    if (rc)
-    {
-        close_db();
-        profile_reader_del(&work.profile_reader);
-        return rc;
-    }
-
-    return rc;
-}
-
-static enum rc close_work(void)
-{
-    enum rc rc = db_reader_close(&work.db_reader);
-    if ((rc = xfile_tmp_rewind(&work.prod_file))) goto cleanup;
-
-    int64_t exec_ended = (int64_t)utc_now();
-    if (work.failed)
-    {
-        rc = sched_job_set_error(work.job.id, "some error", exec_ended);
-        if (rc) goto cleanup;
-    }
-    else
-    {
-        rc = sched_prod_add_from_tsv(work.prod_file.fp);
-        if (rc) goto cleanup;
-        rc = sched_job_set_done(work.job.id, exec_ended);
-        if (rc) goto cleanup;
-    }
-
-cleanup:
-    xfile_tmp_del(&work.prod_file);
-    return rc;
-}
-
-static struct imm_str as_imm_str(void)
-{
-    return imm_str(array_data(work.sched_seq.data));
-}
-
-static struct imm_seq as_imm_seq(void) { return imm_seq(as_imm_str(), abc()); }
-
-static bool check_sequence_alphabet(void)
-{
-    if (imm_abc_union_size(abc(), as_imm_str()) > 0)
-    {
-        warn(RC_ILLEGALARG, "out-of-alphabet characters");
-        return false;
-    }
-    return true;
+    lock();
+    end_work = true;
+    if (sched_set_job_fail(job_id, msg))
+        error(RC_FAIL, "failed to set job_fail");
+    unlock();
 }
 
 static enum rc reset_task(struct imm_task **task, struct imm_dp const *dp)
@@ -185,116 +50,144 @@ static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq)
     return RC_DONE;
 }
 
-enum rc work_run(unsigned num_threads)
+static enum rc run_on_partition(struct work *work, unsigned i)
 {
-    enum rc rc = open_files(num_threads);
-    if (rc) return rc;
-
-    work.sched_seq.id = 0;
-    while ((rc = sched_seq_next(work.job.id, &work.sched_seq)) == RC_NEXT)
+    struct profile *prof = 0;
+    struct hypothesis *null = &work->null;
+    struct hypothesis *alt = &work->alt;
+    enum rc rc = RC_DONE;
+    while ((rc = profile_reader_next(&work->reader, i, &prof)) == RC_NEXT)
     {
-        if (!check_sequence_alphabet()) goto cleanup;
-        struct imm_seq seq = as_imm_seq();
+        if (atomic_load(&end_work)) break;
 
-        unsigned match_id = 1;
-        struct profile_reader *reader = &work.profile_reader;
-        struct profile *prof = 0;
-        while ((rc = profile_reader_next(reader, 0, &prof)) == RC_NEXT)
-        {
-            if ((rc = reset_task(&work.null.task, profile_null_dp(prof))))
-                return rc;
+        if ((rc = reset_task(&null->task, profile_null_dp(prof)))) return rc;
 
-            if ((rc = reset_task(&work.alt.task, profile_alt_dp(prof))))
-                return rc;
+        if ((rc = reset_task(&alt->task, profile_alt_dp(prof)))) return rc;
 
-            if ((rc = setup_task(work.null.task, &seq))) return rc;
-            if ((rc = setup_task(work.alt.task, &seq))) return rc;
+        if ((rc = setup_task(null->task, &work->iseq))) return rc;
+        if ((rc = setup_task(alt->task, &work->iseq))) return rc;
 
-            imm_prod_reset(&work.null.prod);
-            imm_prod_reset(&work.alt.prod);
+        imm_prod_reset(&null->prod);
+        imm_prod_reset(&alt->prod);
 
-            if (imm_dp_viterbi(profile_null_dp(prof), work.null.task,
-                               &work.null.prod))
-                return error(RC_FAIL, "failed to run viterbi");
+        if (imm_dp_viterbi(profile_null_dp(prof), null->task, &null->prod))
+            return error(RC_FAIL, "failed to run viterbi");
 
-            if (imm_dp_viterbi(profile_alt_dp(prof), work.alt.task,
-                               &work.alt.prod))
-                return error(RC_FAIL, "failed to run viterbi");
+        if (imm_dp_viterbi(profile_alt_dp(prof), alt->task, &alt->prod))
+            return error(RC_FAIL, "failed to run viterbi");
 
-            double lrt = xmath_lrt(work.null.prod.loglik, work.alt.prod.loglik);
+        imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
-            if (lrt < 100.0f) continue;
+        if (!imm_lprob_is_finite(lrt) || lrt < 100.0f) continue;
 
-            if ((rc = write_product(work, task, match_id, seq))) goto cleanup;
-            match_id++;
-        }
+        struct metadata const *mt = &prof->metadata;
+        strcpy(work->prod->profile_name, mt->acc);
+        strcpy(work->prod->abc_name, "dna");
+
+        work->prod->alt_loglik = alt->prod.loglik;
+        work->prod->null_loglik = null->prod.loglik;
+
+        struct imm_path const *path = &alt->prod.path;
+        if ((rc = prod_write(work->prod + i, prof, &work->iseq, path, i,
+                             work->write_match_cb,
+                             (struct match *)&work->match)))
+            return rc;
     }
-
-    printf("\n");
-
-    return close_work(work);
-
-cleanup:
-    atomic_store(&work.failed, true);
-    close_work(work);
-    return rc;
+    return RC_DONE;
 }
 
-enum rc write_product(struct work *work, struct task *task, unsigned match_id,
-                      struct imm_seq seq)
+enum rc work_next(struct work *work)
 {
-    enum rc rc = RC_DONE;
-    struct profile *p = profile_reader_profile(&work.profile_reader, 0);
-    /* TODO: generalized it */
-    struct protein_profile *prof = (struct protein_profile *)p;
-    struct imm_codon codon = imm_codon_any(prof->code->nuclt);
+    int code = sched_next_pending_job(&work->job);
+    if (code == SCHED_NOTFOUND) return RC_DONE;
+    if (code != SCHED_DONE)
+        return error(RC_FAIL, "failed to get next pending job");
 
-    struct metadata const *mt = &prof->super.metadata;
+    char filepath[DCP_PATH_SIZE] = {0};
+    code = sched_cpy_db_filepath(DCP_PATH_SIZE, filepath, work->job.db_id);
+    if (code == SCHED_NOTFOUND) return error(RC_NOTFOUND, "db not found");
+    if (code != SCHED_DONE) return error(RC_FAIL, "failed to get db filepath");
 
-    sched_prod_set_job_id(&task->prod, work.job.id);
-    sched_prod_set_seq_id(&task->prod, task->sched_seq.id);
-    sched_prod_set_match_id(&task->prod, match_id);
+    if (!(work->db.fp = fopen(filepath, "rb")))
+        return error(RC_IOERROR, "failed to open db");
 
-    sched_prod_set_prof_name(&task->prod, mt->acc);
-    sched_prod_set_abc_name(&task->prod, "dna_iupac");
-
-    sched_prod_set_loglik(&task->prod, task->alt.prod.loglik);
-    sched_prod_set_null_loglik(&task->prod, task->null.prod.loglik);
-
-    sched_prod_set_prof_typeid(&task->prod, "pro");
-    sched_prod_set_version(&task->prod, VERSION);
-
-    rc = sched_prod_write_preamble(&task->prod, work.prod_file.fp);
-    if (rc) return rc;
-
-    unsigned start = 0;
-    struct imm_path const *path = &task->alt.prod.path;
-    for (unsigned idx = 0; idx < imm_path_nsteps(path); idx++)
+    enum rc rc = db_reader_open(&work->db.reader, work->db.fp);
+    if (rc)
     {
-        struct imm_step const *step = imm_path_step(path, idx);
-        struct imm_seq frag = imm_subseq(&seq, start, step->seqlen);
-
-        struct protein_match match = {0};
-        protein_match_init(&match);
-        protein_match_set_frag(&match, step->seqlen, frag.str);
-        protein_profile_state_name(step->state_id,
-                                   protein_match_get_state_name(&match));
-
-        if (!protein_state_is_mute(step->state_id))
-        {
-            rc = protein_profile_decode(prof, &frag, step->state_id, &codon);
-            if (rc) return rc;
-            protein_match_set_codon(&match, codon);
-            protein_match_set_amino(&match, imm_gc_decode(1, codon));
-        }
-        if (idx > 0 && idx + 1 <= imm_path_nsteps(path))
-        {
-            rc = sched_prod_write_match_sep(work.prod_file.fp);
-            if (rc) return rc;
-        }
-        if ((rc = sched_prod_write_match(work.prod_file.fp, &match))) return rc;
-        start += step->seqlen;
+        fclose(work->db.fp);
+        return rc;
     }
-    rc = sched_prod_write_nl(work.prod_file.fp);
-    return rc;
+
+    if (db_reader_db(&work->db.reader)->vtable.typeid == DB_PROTEIN)
+    {
+        work->write_match_cb = protein_match_write_cb;
+        work->profile_typeid = PROFILE_PROTEIN;
+    }
+    else if (db_reader_db(&work->db.reader)->vtable.typeid == DB_STANDARD)
+    {
+        work->write_match_cb = standard_match_write_cb;
+        work->profile_typeid = PROFILE_STANDARD;
+    }
+    else
+        assert(false);
+
+    return RC_NEXT;
+}
+
+enum rc work_run(struct work *work, unsigned num_threads)
+{
+    enum rc rc = profile_reader_setup(
+        &work->reader, db_reader_db(&work->db.reader), num_threads);
+    if (rc)
+    {
+        db_reader_close(&work->db.reader);
+        fclose(work->db.fp);
+        return rc;
+    }
+
+    work->abc = db_abc(db_reader_db(&work->db.reader));
+    sched_seq_init(&work->seq, work->job.id, "", "");
+    unsigned npartitions = profile_reader_npartitions(&work->reader);
+    int code = SCHED_DONE;
+    if (sched_begin_prod_submission(npartitions))
+    {
+        set_job_fail(work->job.id, "failed to begin product submission");
+        return RC_DONE;
+    }
+    while ((code = sched_seq_next(&work->seq)) == SCHED_NEXT)
+    {
+        if (imm_abc_union_size(work->abc, imm_str(work->seq.data)) > 0)
+        {
+            set_job_fail(work->job.id,
+                         "sequence has out-of-alphabet characters");
+            return RC_DONE;
+        }
+
+        work->iseq = imm_seq(imm_str(work->seq.data), work->abc);
+        /* _Pragma("omp parallel shared(work) if(0)") */
+        /* _Pragma("omp parallel shared(work) if(npartitions > 1)") */
+        {
+            /* _Pragma("omp single") */
+            {
+                for (unsigned i = 0; i < npartitions; ++i)
+                {
+                    work->prod[i].job_id = work->job.id;
+                    work->prod[i].seq_id = work->seq.id;
+                    strcpy(work->prod[i].profile_typeid,
+                           profile_typeid_name(work->profile_typeid));
+                    strcpy(work->prod[i].version, VERSION);
+                    /* _Pragma("omp task firstprivate(rc, i)") */
+                    {
+                        rc = run_on_partition(work, i);
+                    }
+                }
+            }
+        }
+    }
+    if (sched_end_prod_submission())
+    {
+        set_job_fail(work->job.id, "failed to end product submission");
+        return RC_DONE;
+    }
+    return RC_DONE;
 }

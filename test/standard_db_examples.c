@@ -14,7 +14,6 @@ void standard_db_examples_new_ex1(char const *filepath)
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
     struct standard_db db;
-    standard_db_init(&db);
     EQ(standard_db_openw(&db, fd, &m->code), RC_DONE);
 
     /* Profile 0 */
@@ -55,7 +54,6 @@ void standard_db_examples_new_ex2(char const *filepath)
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
     struct standard_db db;
-    standard_db_init(&db);
     EQ(standard_db_openw(&db, fd, code), RC_DONE);
 
     /* Profile 0 */

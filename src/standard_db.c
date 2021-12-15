@@ -29,7 +29,7 @@ static enum rc write_abc(FILE *restrict fd, struct imm_abc const *abc)
     return RC_DONE;
 }
 
-void standard_db_init(struct standard_db *db)
+static void standard_db_init(struct standard_db *db)
 {
     db_init(&db->super, vtable);
     db->abc = imm_abc_empty;
@@ -37,6 +37,7 @@ void standard_db_init(struct standard_db *db)
 
 enum rc standard_db_openr(struct standard_db *db, FILE *restrict fp)
 {
+    standard_db_init(db);
     db_openr(&db->super, fp);
 
     enum rc rc = RC_DONE;
@@ -63,6 +64,7 @@ static void cleanup(struct standard_db *db)
 enum rc standard_db_openw(struct standard_db *db, FILE *restrict fd,
                           struct imm_code const *code)
 {
+    standard_db_init(db);
     db->code = *code;
 
     enum rc rc = RC_DONE;

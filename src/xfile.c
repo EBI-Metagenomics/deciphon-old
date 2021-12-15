@@ -9,6 +9,7 @@
 
 #define BUFFSIZE (8 * 1024)
 
+#if 0
 enum rc xfile_tmp_open(struct xfile_tmp *file)
 {
     safe_strcpy(file->path, XFILE_PATH_TEMP_TEMPLATE,
@@ -33,6 +34,7 @@ void xfile_tmp_del(struct xfile_tmp const *file)
     fclose(file->fp);
     remove(file->path);
 }
+#endif
 
 enum rc xfile_copy(FILE *restrict dst, FILE *restrict src)
 {
@@ -62,11 +64,13 @@ bool xfile_is_readable(char const *filepath)
     return false;
 }
 
+#if 0
 enum rc xfile_mktemp(char *filepath)
 {
     if (mkstemp(filepath) == -1) return error(RC_IOERROR, "mkstemp failed");
     return RC_DONE;
 }
+#endif
 
 static char *glibc_basename(const char *filename)
 {
