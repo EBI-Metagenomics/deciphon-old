@@ -110,15 +110,18 @@ void server_set_lrt_threshold(imm_float lrt)
     server.work.lrt_threshold = lrt;
 }
 
-#if 0
-enum rc server_next_prod(int64_t job_id, int64_t *prod_id)
+enum rc server_get_sched_job(struct sched_job *job)
 {
-    enum rc rc = sched_prod_next(job_id, prod_id);
-    if (rc == RC_DONE) return rc;
-    if (rc != RC_NEXT) return rc;
-    if ((rc = sched_prod_get(&server.prod, *prod_id))) return rc;
+    if (sched_get_job(job)) return error(RC_FAIL, "failed to get job");
+    return RC_DONE;
+}
+
+enum rc server_next_sched_prod(struct sched_job const *job,
+                               struct sched_prod *prod)
+{
+
+    int rc = sched_prod_next(prod);
+    if (rc == SCHED_DONE) return RC_DONE;
+    if (rc != SCHED_NEXT) return error(RC_FAIL, "failed to get prod");
     return RC_NEXT;
 }
-#endif
-
-/* struct prod const *server_get_prod(void) { return &server.prod; } */

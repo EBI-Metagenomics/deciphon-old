@@ -90,6 +90,9 @@ void test_server_submit_standard_job(void)
 }
 #endif
 
+struct sched_job sched_job = {0};
+struct sched_prod sched_prod = {0};
+
 void test_server_submit_protein_job(void)
 {
     char const db_path[] = TMPDIR "/submit_protein_job.sched";
@@ -109,8 +112,8 @@ void test_server_submit_protein_job(void)
     struct seq seq[4 * 4 * 4] = {0};
     char letters[] = "ACGT";
     char strs[4 * 4 * 4][6];
-    unsigned j = 0;
-    server_set_lrt_threshold(4.f);
+    unsigned k = 0;
+    server_set_lrt_threshold(7.f);
     for (unsigned i0 = 0; i0 < 4; ++i0)
     {
         for (unsigned i1 = 0; i1 < 4; ++i1)
@@ -118,20 +121,20 @@ void test_server_submit_protein_job(void)
             for (unsigned i2 = 0; i2 < 4; ++i2)
             {
                 char name[8] = {0};
-                sprintf(name, "%d", j);
+                sprintf(name, "%d", k);
                 name[0] = 's';
                 name[1] = 'e';
                 name[2] = 'q';
                 name[4] = '0';
-                strs[j][0] = letters[i0];
-                strs[j][1] = letters[i1];
-                strs[j][2] = letters[i2];
-                strs[j][3] = letters[i0];
-                strs[j][4] = letters[i1];
-                strs[j][5] = 0;
-                seq_init(seq + j, name, imm_str(strs[j]));
-                job_add_seq(&job, seq + j);
-                ++j;
+                strs[k][0] = letters[i0];
+                strs[k][1] = letters[i1];
+                strs[k][2] = letters[i2];
+                strs[k][3] = letters[i0];
+                strs[k][4] = letters[i1];
+                strs[k][5] = 0;
+                seq_init(seq + k, name, imm_str(strs[k]));
+                job_add_seq(&job, seq + k);
+                ++k;
             }
         }
     }
@@ -140,6 +143,39 @@ void test_server_submit_protein_job(void)
     EQ(job.id, 1);
 
     EQ(server_run(true), RC_DONE);
+
+    sched_job.id = job.id;
+    EQ(server_get_sched_job(&sched_job), RC_DONE);
+    EQ(sched_job.error, "");
+    EQ(sched_job.multi_hits, true);
+    EQ(sched_job.hmmer3_compat, false);
+    EQ(sched_job.state, "done");
+
+    sched_prod.id = 0;
+    sched_prod.job_id = job.id;
+    while (server_next_sched_prod(&sched_job, &sched_prod) == RC_NEXT)
+    {
+        EQ(sched_prod.abc_name, "dna");
+        EQ(sched_prod.job_id, job.id);
+        if (sched_prod.seq_id == 4)
+        {
+            EQ(sched_prod.profile_name, "UNSET");
+            CLOSE(sched_prod.alt_loglik, -9.380424500);
+            CLOSE(sched_prod.null_loglik, -13.256095886);
+        }
+        else if (sched_prod.seq_id == 38)
+        {
+            EQ(sched_prod.profile_name, "UNSET");
+            CLOSE(sched_prod.alt_loglik, -9.601443291);
+            CLOSE(sched_prod.null_loglik, -13.496196747);
+        }
+        else if (sched_prod.seq_id == 39)
+        {
+            EQ(sched_prod.profile_name, "UNSET");
+            CLOSE(sched_prod.alt_loglik, -9.601497650);
+            CLOSE(sched_prod.null_loglik, -13.305152893);
+        }
+    }
 
     EQ(server_close(), RC_DONE);
 }

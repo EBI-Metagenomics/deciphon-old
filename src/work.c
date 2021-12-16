@@ -77,7 +77,6 @@ static enum rc run_on_partition(struct work *work, unsigned i)
             return error(RC_FAIL, "failed to run viterbi");
 
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
-        printf("%f\n", lrt);
 
         if (!imm_lprob_is_finite(lrt) || lrt < work->lrt_threshold) continue;
 
