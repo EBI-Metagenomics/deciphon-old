@@ -7,8 +7,9 @@
 /* void test_server_setup(unsigned num_threads); */
 /* void test_server_reopen(void); */
 /* void test_server_standard_db(void); */
-void test_server_submit_job(void);
-void test_server_submit_job_with_error(void);
+/* void test_server_submit_standard_job(void); */
+void test_server_submit_protein_job(void);
+/* void test_server_submit_job_with_error(void); */
 /* void test_server_submit_and_fetch_job(unsigned num_threads); */
 
 int main(void)
@@ -17,8 +18,9 @@ int main(void)
     /* test_server_setup(2); */
     /* test_server_reopen(); */
     /* test_server_standard_db(); */
-    test_server_submit_job();
-    test_server_submit_job_with_error();
+    /* test_server_submit_standard_job(); */
+    test_server_submit_protein_job();
+    /* test_server_submit_job_with_error(); */
     /* test_server_submit_and_fetch_job(1); */
     /* test_server_submit_and_fetch_job(4); */
     return hope_status();
@@ -58,12 +60,11 @@ void test_server_standard_db(void)
 
     EQ(server_close(), RC_DONE);
 }
-#endif
 
-void test_server_submit_job(void)
+void test_server_submit_standard_job(void)
 {
     char const db_path[] = TMPDIR "/submit_job.sched";
-    char const ex_path[] = TMPDIR "/standard_example1.dcp";
+    char const ex_path[] = TMPDIR "/submit_job.dcp";
     remove(db_path);
 
     EQ(server_open(db_path, 1), RC_DONE);
@@ -87,7 +88,63 @@ void test_server_submit_job(void)
 
     EQ(server_close(), RC_DONE);
 }
+#endif
 
+void test_server_submit_protein_job(void)
+{
+    char const db_path[] = TMPDIR "/submit_protein_job.sched";
+    char const ex_path[] = TMPDIR "/submit_protein_job.dcp";
+    remove(db_path);
+
+    EQ(server_open(db_path, 1), RC_DONE);
+
+    protein_db_examples_new_ex1(ex_path, 2);
+    int64_t db_id = 0;
+    EQ(server_add_db(ex_path, &db_id), RC_DONE);
+    EQ(db_id, 1);
+
+    struct job job = {0};
+    job_init(&job, db_id);
+
+    struct seq seq[4 * 4 * 4] = {0};
+    char letters[] = "ACGT";
+    char strs[4 * 4 * 4][6];
+    unsigned j = 0;
+    server_set_lrt_threshold(4.f);
+    for (unsigned i0 = 0; i0 < 4; ++i0)
+    {
+        for (unsigned i1 = 0; i1 < 4; ++i1)
+        {
+            for (unsigned i2 = 0; i2 < 4; ++i2)
+            {
+                char name[8] = {0};
+                sprintf(name, "%d", j);
+                name[0] = 's';
+                name[1] = 'e';
+                name[2] = 'q';
+                name[4] = '0';
+                strs[j][0] = letters[i0];
+                strs[j][1] = letters[i1];
+                strs[j][2] = letters[i2];
+                strs[j][3] = letters[i0];
+                strs[j][4] = letters[i1];
+                strs[j][5] = 0;
+                seq_init(seq + j, name, imm_str(strs[j]));
+                job_add_seq(&job, seq + j);
+                ++j;
+            }
+        }
+    }
+
+    EQ(server_submit_job(&job), RC_DONE);
+    EQ(job.id, 1);
+
+    EQ(server_run(true), RC_DONE);
+
+    EQ(server_close(), RC_DONE);
+}
+
+#if 0
 void test_server_submit_job_with_error(void)
 {
     char const db_path[] = TMPDIR "/submit_job_with_error.sched";
@@ -117,7 +174,6 @@ void test_server_submit_job_with_error(void)
     EQ(server_close(), RC_DONE);
 }
 
-#if 0
 void test_server_submit_and_fetch_job(unsigned num_threads)
 {
     char const db_path[] = TMPDIR "/submit_and_fetch_job.sched";
@@ -126,7 +182,7 @@ void test_server_submit_and_fetch_job(unsigned num_threads)
 
     EQ(server_open(db_path, num_threads), RC_DONE);
 
-    protein_db_examples_new_ex1(ex_path);
+    protein_db_examples_new_ex1(ex_path, 2);
     int64_t db_id = 0;
     EQ(server_add_db(ex_path, &db_id), RC_DONE);
     EQ(db_id, 1);

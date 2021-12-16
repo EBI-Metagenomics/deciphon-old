@@ -9,8 +9,6 @@
 struct protein_match
 {
     struct match match;
-
-    struct protein_profile const *profile;
 };
 
 int protein_match_write_cb(FILE *fp, void const *match);

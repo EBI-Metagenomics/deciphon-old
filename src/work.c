@@ -77,12 +77,13 @@ static enum rc run_on_partition(struct work *work, unsigned i)
             return error(RC_FAIL, "failed to run viterbi");
 
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
+        printf("%f\n", lrt);
 
-        if (!imm_lprob_is_finite(lrt) || lrt < 100.0f) continue;
+        if (!imm_lprob_is_finite(lrt) || lrt < work->lrt_threshold) continue;
 
         struct metadata const *mt = &prof->metadata;
         strcpy(work->prod->profile_name, mt->acc);
-        strcpy(work->prod->abc_name, "dna");
+        strcpy(work->prod->abc_name, work->abc_name);
 
         work->prod->alt_loglik = alt->prod.loglik;
         work->prod->null_loglik = null->prod.loglik;
@@ -148,6 +149,17 @@ enum rc work_run(struct work *work, unsigned num_threads)
     }
 
     work->abc = db_abc(db_reader_db(&work->db.reader));
+    if (work->abc->vtable.typeid == IMM_DNA)
+        strcpy(work->abc_name, "dna");
+    else if (work->abc->vtable.typeid == IMM_RNA)
+        strcpy(work->abc_name, "rna");
+    else
+    {
+        set_job_fail(work->job.id, "unknown alphabet");
+        return error(RC_ILLEGALARG, "unknown alphabet");
+    }
+
+    sched_seq_init(&work->seq, work->job.id, "", "");
     sched_seq_init(&work->seq, work->job.id, "", "");
     unsigned npartitions = profile_reader_npartitions(&work->reader);
     int code = SCHED_DONE;
@@ -171,6 +183,11 @@ enum rc work_run(struct work *work, unsigned num_threads)
         {
             /* _Pragma("omp single") */
             {
+                if (profile_reader_rewind(&work->reader))
+                {
+                    set_job_fail(work->job.id, "failed to rewind profile db");
+                    return RC_DONE;
+                }
                 for (unsigned i = 0; i < npartitions; ++i)
                 {
                     work->prod[i].job_id = work->job.id;
@@ -191,5 +208,8 @@ enum rc work_run(struct work *work, unsigned num_threads)
         set_job_fail(work->job.id, "failed to end product submission");
         return RC_DONE;
     }
+
+    if (sched_set_job_done(work->job.id))
+        error(RC_FAIL, "failed to set job_done");
     return RC_DONE;
 }

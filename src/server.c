@@ -37,6 +37,7 @@ enum rc server_open(char const *filepath, unsigned num_threads)
 
     if (sched_setup(filepath)) return error(RC_FAIL, "failed to setup sched");
     if (sched_open()) return error(RC_FAIL, "failed to open sched");
+    server.work.lrt_threshold = 100.0f;
     return RC_DONE;
 }
 
@@ -102,6 +103,11 @@ enum rc server_run(bool single_run)
 
     info("Goodbye!");
     return RC_DONE;
+}
+
+void server_set_lrt_threshold(imm_float lrt)
+{
+    server.work.lrt_threshold = lrt;
 }
 
 #if 0

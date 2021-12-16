@@ -17,6 +17,7 @@ enum rc server_add_db(char const *filepath, int64_t *id);
 enum rc server_submit_job(struct job *);
 enum rc server_job_state(int64_t job_id, enum sched_job_state *state);
 enum rc server_run(bool single_run);
+void server_set_lrt_threshold(imm_float lrt);
 /* enum rc server_next_prod(int64_t job_id, int64_t *prod_id); */
 /* struct prod const *server_get_prod(void); */
 

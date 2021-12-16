@@ -25,6 +25,7 @@ struct work
     struct imm_str str;
     struct imm_seq iseq;
     struct imm_abc const *abc;
+    char abc_name[6];
     struct profile_reader reader;
     enum profile_typeid profile_typeid;
     struct hypothesis null;
@@ -36,6 +37,8 @@ struct work
         struct standard_match std;
         struct protein_match pro;
     } match;
+
+    imm_float lrt_threshold;
 };
 
 enum rc work_next(struct work *work);

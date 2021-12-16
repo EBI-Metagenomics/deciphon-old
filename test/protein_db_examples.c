@@ -3,7 +3,7 @@
 #include "imm/imm.h"
 #include "protein_db.h"
 
-void protein_db_examples_new_ex1(char const *filepath)
+void protein_db_examples_new_ex1(char const *filepath, unsigned core_size)
 {
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
@@ -20,11 +20,11 @@ void protein_db_examples_new_ex1(char const *filepath)
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
 
-    protein_profile_sample(&prof, 1, 2);
+    protein_profile_sample(&prof, 1, core_size);
     profile_set_name((struct profile *)&prof, metadata("NAME0", "ACC0"));
     EQ(protein_db_write(&db, &prof), RC_DONE);
 
-    protein_profile_sample(&prof, 2, 2);
+    protein_profile_sample(&prof, 2, core_size);
     profile_set_name((struct profile *)&prof, metadata("NAME1", "ACC1"));
     EQ(protein_db_write(&db, &prof), RC_DONE);
 

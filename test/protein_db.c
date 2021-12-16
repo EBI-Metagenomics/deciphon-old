@@ -17,7 +17,7 @@ int main(void)
 void test_db_protein_openw(void)
 {
     remove(TMPDIR "/db.dcp");
-    protein_db_examples_new_ex1(TMPDIR "/db.dcp");
+    protein_db_examples_new_ex1(TMPDIR "/db.dcp", 2);
 }
 
 void test_db_protein_openr(void)

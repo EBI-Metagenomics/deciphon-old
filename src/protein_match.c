@@ -23,15 +23,16 @@
 
 int protein_match_write_cb(FILE *fp, void const *match)
 {
-    struct protein_match const *m = (struct protein_match const *)match;
-    struct protein_profile const *prof = m->profile;
-    struct imm_step const *step = m->match.step;
-    struct imm_codon codon = imm_codon_any(m->profile->code->nuclt);
+    struct match const *m = (struct match const *)match;
+    struct protein_profile const *prof =
+        (struct protein_profile const *)m->profile;
+    struct imm_step const *step = m->step;
+    struct imm_codon codon = imm_codon_any(prof->code->nuclt);
 
     char state[IMM_STATE_NAME_SIZE] = {0};
-    m->match.profile->state_name(step->state_id, state);
+    m->profile->state_name(step->state_id, state);
 
-    struct imm_seq const *f = m->match.frag;
+    struct imm_seq const *f = m->frag;
 
     char ccodon[4] = {0};
     char camino[2] = {0};
