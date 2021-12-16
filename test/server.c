@@ -68,7 +68,7 @@ void test_server_submit_job(void)
 
     EQ(server_open(db_path, 1), RC_DONE);
 
-    standard_db_examples_new_ex1(ex_path);
+    standard_db_examples_new_ex1(ex_path, 2);
     int64_t db_id = 0;
     EQ(server_add_db(ex_path, &db_id), RC_DONE);
     EQ(db_id, 1);
@@ -76,7 +76,8 @@ void test_server_submit_job(void)
     struct job job = {0};
     job_init(&job, db_id);
     struct seq seq = {0};
-    seq_init(&seq, "seq0", imm_str(imm_example1_seq));
+    seq_init(&seq, "seq0", imm_str("BMIME"));
+    /* seq_init(&seq, "seq0", imm_str(imm_example1_seq)); */
     job_add_seq(&job, &seq);
 
     EQ(server_submit_job(&job), RC_DONE);
@@ -95,7 +96,7 @@ void test_server_submit_job_with_error(void)
 
     EQ(server_open(db_path, 1), RC_DONE);
 
-    standard_db_examples_new_ex1(ex_path);
+    standard_db_examples_new_ex1(ex_path, 2);
     int64_t db_id = 0;
     EQ(server_add_db(ex_path, &db_id), RC_DONE);
     EQ(db_id, 1);

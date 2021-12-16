@@ -4,7 +4,7 @@
 
 int main(void)
 {
-    imm_example1_init();
+    imm_example1_init(IMM_EXAMPLE1_SIZE);
 
     struct imm_abc const *abc = &imm_example1.abc;
     struct imm_code const *code = &imm_example1.code;

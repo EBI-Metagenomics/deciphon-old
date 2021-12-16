@@ -8,9 +8,9 @@
 struct match;
 struct profile;
 
-enum rc prod_write(struct sched_prod const *prod, struct profile const *prof,
-                   struct imm_seq const *seq, struct imm_path const *path,
-                   unsigned partition, sched_prod_write_match_cb write_match_cb,
+enum rc prod_write(struct sched_prod const *prod, struct imm_seq const *seq,
+                   struct imm_path const *path, unsigned partition,
+                   sched_prod_write_match_cb write_match_cb,
                    struct match *match);
 
 #endif

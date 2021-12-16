@@ -21,6 +21,7 @@ struct profile_vtable
 struct profile
 {
     struct profile_vtable vtable;
+    imm_state_name *state_name;
     struct imm_code const *code;
     struct metadata metadata;
 };
@@ -36,6 +37,9 @@ struct imm_dp const *profile_null_dp(struct profile const *prof);
 struct imm_dp const *profile_alt_dp(struct profile const *prof);
 
 void profile_init(struct profile *prof, struct imm_code const *code,
-                  struct metadata mt, struct profile_vtable vtable);
+                  struct metadata mt, struct profile_vtable vtable,
+                  imm_state_name *state_name);
+
+void profile_set_state_name(struct profile *prof, imm_state_name *state_name);
 
 #endif

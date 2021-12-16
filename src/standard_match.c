@@ -2,6 +2,7 @@
 #include "dcp_sched/sched.h"
 #include "imm/imm.h"
 #include "logger.h"
+#include "profile.h"
 #include "standard_state.h"
 
 int standard_match_write_cb(FILE *fp, void const *match)
@@ -10,7 +11,7 @@ int standard_match_write_cb(FILE *fp, void const *match)
     struct standard_match const *m = (struct standard_match const *)match;
     struct imm_step const *step = m->match.step;
 
-    standard_state_name(step->state_id, state);
+    m->match.profile->state_name(step->state_id, state);
 
     struct imm_seq const *f = m->match.frag;
 

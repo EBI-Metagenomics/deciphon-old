@@ -6,6 +6,7 @@
 #include "profile_types.h"
 #include "rc.h"
 #include "standard_profile.h"
+#include "standard_state.h"
 
 static void del(struct profile *prof)
 {
@@ -46,7 +47,8 @@ void standard_profile_init(struct standard_profile *prof,
 {
     imm_dp_init(&prof->dp.null, code);
     imm_dp_init(&prof->dp.alt, code);
-    profile_init(&prof->super, code, metadata_unset(), vtable);
+    profile_init(&prof->super, code, metadata_unset(), vtable,
+                 standard_state_name);
 }
 
 enum rc standard_profile_write(struct standard_profile const *prof,

@@ -116,7 +116,7 @@ void test_db_openr_one_mute(void)
 
 void test_db_openw_example1(void)
 {
-    standard_db_examples_new_ex1(TMPDIR "/example1.dcp");
+    standard_db_examples_new_ex1(TMPDIR "/example1.dcp", IMM_EXAMPLE1_SIZE);
 }
 
 void test_db_openr_example1(void)

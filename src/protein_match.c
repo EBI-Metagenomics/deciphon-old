@@ -1,6 +1,7 @@
 #include "protein_match.h"
 #include "dcp_sched/sched.h"
 #include "logger.h"
+#include "profile.h"
 #include "protein_profile.h"
 #include "rc.h"
 
@@ -28,7 +29,7 @@ int protein_match_write_cb(FILE *fp, void const *match)
     struct imm_codon codon = imm_codon_any(m->profile->code->nuclt);
 
     char state[IMM_STATE_NAME_SIZE] = {0};
-    protein_state_name(step->state_id, state);
+    m->match.profile->state_name(step->state_id, state);
 
     struct imm_seq const *f = m->match.frag;
 

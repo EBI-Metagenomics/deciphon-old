@@ -88,7 +88,8 @@ void protein_profile_init(struct protein_profile *p,
                           struct protein_cfg cfg)
 {
     struct imm_nuclt const *nuclt = code->nuclt;
-    profile_init(&p->super, &code->super, metadata_unset(), vtable);
+    profile_init(&p->super, &code->super, metadata_unset(), vtable,
+                 protein_state_name);
     p->code = code;
     p->amino = amino;
     p->cfg = cfg;

@@ -3,9 +3,9 @@
 #include "imm/imm.h"
 #include "standard_db.h"
 
-void standard_db_examples_new_ex1(char const *filepath)
+void standard_db_examples_new_ex1(char const *filepath, unsigned core_size)
 {
-    imm_example1_init();
+    imm_example1_init(core_size);
 
     struct imm_hmm *null = &imm_example1.null.hmm;
     struct imm_hmm *alt = &imm_example1.hmm;
@@ -19,6 +19,7 @@ void standard_db_examples_new_ex1(char const *filepath)
     /* Profile 0 */
     struct standard_profile p;
     standard_profile_init(&p, &m->code);
+    profile_set_state_name((struct profile *)&p, imm_example1_state_name);
     profile_set_name(&p.super, metadata("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
@@ -59,6 +60,7 @@ void standard_db_examples_new_ex2(char const *filepath)
     /* Profile 0 */
     struct standard_profile p;
     standard_profile_init(&p, code);
+    profile_set_state_name((struct profile *)&p, imm_example1_state_name);
     profile_set_name(&p.super, metadata("NAME0", "ACC0"));
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);

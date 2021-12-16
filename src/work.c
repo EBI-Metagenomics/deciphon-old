@@ -88,7 +88,9 @@ static enum rc run_on_partition(struct work *work, unsigned i)
         work->prod->null_loglik = null->prod.loglik;
 
         struct imm_path const *path = &alt->prod.path;
-        if ((rc = prod_write(work->prod + i, prof, &work->iseq, path, i,
+        struct match *match = (struct match *)&work->match;
+        match->profile = prof;
+        if ((rc = prod_write(work->prod + i, &work->iseq, path, i,
                              work->write_match_cb,
                              (struct match *)&work->match)))
             return rc;
