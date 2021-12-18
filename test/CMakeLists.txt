@@ -16,6 +16,12 @@ file(
 )
 file(ARCHIVE_EXTRACT INPUT ${ASSETS}/Pfam-A.5.hmm.7z DESTINATION ${ASSETS})
 
+file(
+  DOWNLOAD ${URL}/pfam24.dcp.7z ${ASSETS}/pfam24.dcp.7z
+  EXPECTED_HASH SHA1=b5ef587d328ecff4db999ab92ae0b700fb7c4909
+)
+file(ARCHIVE_EXTRACT INPUT ${ASSETS}/pfam24.dcp.7z DESTINATION ${ASSETS})
+
 function(dcp_add_test name srcs)
   add_executable(${name} ${srcs})
   target_code_coverage(${name} AUTO ALL)
@@ -48,6 +54,7 @@ dcp_add_test(server "server.c;standard_db_examples.c;protein_db_examples.c;serve
 # CLI
 dcp_add_test(cli_press cli_press.c)
 
+dcp_add_test(pfam24 "pfam24.c")
 # dcp_add_test(db_pp "db_pp.c;data.c") dcp_add_test(metadata metadata.c)
 # dcp_add_test(tasks "tasks.c;pfam24_results.c") dcp_add_test(very_long_seq
 # "very_long_seq.c")

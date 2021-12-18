@@ -34,6 +34,6 @@ unsigned protein_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
             name[0] = 'I';
         else if (msb == PROTEIN_DELETE_STATE)
             name[0] = 'D';
-        return to_str(name, (uint16_t)(protein_state_idx(id) + 1));
+        return to_str(name + 1, (uint16_t)(protein_state_idx(id) + 1)) + 1;
     }
 }

@@ -26,7 +26,6 @@ find_package(gff REQUIRED)
 find_package(dcp_sched REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Argp REQUIRED)
-find_package(OpenMP)
 
 add_library(
   dcp
@@ -76,14 +75,12 @@ cbp_set_warning_flags()
 cbp_ci_build_option()
 cbp_assert_null_is_zero_bits()
 
-if(OpenMP_C_FOUND)
-  option(OPENMP "Enable OpenMP" On)
-  if(OPENMP)
-    find_package(OpenMP)
-    message(STATUS "OpenMP - Enabled")
-  else()
-    message(STATUS "OpenMP - Disabled")
-  endif()
+option(OPENMP "Enable OpenMP" On)
+if(OPENMP)
+  find_package(OpenMP REQUIRED)
+  message(STATUS "OpenMP - Enabled")
+else()
+  message(STATUS "OpenMP - Disabled")
 endif()
 
 target_include_directories(
@@ -129,8 +126,8 @@ configure_file(
 )
 
 # Command line interface programs
-# add_executable(dcp-press bin/press.c)
-# target_link_libraries(dcp-press PUBLIC dcp)
+add_executable(dcp-press bin/press.c)
+target_link_libraries(dcp-press PUBLIC dcp)
 #
 # add_executable(dcp-info bin/info.c)
 # target_link_libraries(dcp-info PUBLIC dcp)
