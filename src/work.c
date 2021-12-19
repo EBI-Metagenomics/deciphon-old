@@ -70,6 +70,10 @@ static enum rc run_on_partition(struct work *work, unsigned i)
         imm_prod_reset(&null->prod);
         imm_prod_reset(&alt->prod);
 
+        protein_profile_setup((struct protein_profile *)prof,
+                              imm_seq_size(&work->iseq), work->job.multi_hits,
+                              work->job.hmmer3_compat);
+
         if (imm_dp_viterbi(profile_null_dp(prof), null->task, &null->prod))
             return error(RC_FAIL, "failed to run viterbi");
 
@@ -80,8 +84,9 @@ static enum rc run_on_partition(struct work *work, unsigned i)
 
         if (!imm_lprob_is_finite(lrt) || lrt < work->lrt_threshold) continue;
 
-        struct metadata const mt = db_metadata(
-            (struct db const *)&work->db.reader.db, prof->idx_within_db);
+        struct metadata const mt =
+            db_metadata((struct db const *)&work->db.reader.db,
+                        (unsigned)prof->idx_within_db);
         strcpy(work->prod->profile_name, mt.acc);
         strcpy(work->prod->abc_name, work->abc_name);
 

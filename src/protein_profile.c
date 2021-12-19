@@ -52,6 +52,40 @@ static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
     if (!cmp_read_cstr(cmp, p->consensus, &u32))
         return error(RC_IOERROR, "failed to read consensus");
 
+    uint16_t state = 0;
+
+    if (!cmp_read_u16(cmp, &state))
+        return error(RC_IOERROR, "failed to read R state");
+    p->null.R = state;
+
+    if (!cmp_read_u16(cmp, &state))
+        return error(RC_IOERROR, "failed to read S state");
+    p->alt.S = state;
+
+    if (!cmp_read_u16(cmp, &state))
+        return error(RC_IOERROR, "failed to read N state");
+    p->alt.N = state;
+
+    if (!cmp_read_u16(cmp, &state))
+        return error(RC_IOERROR, "failed to read B state");
+    p->alt.B = state;
+
+    if (!cmp_read_u16(cmp, &state))
+        return error(RC_IOERROR, "failed to read E state");
+    p->alt.E = state;
+
+    if (!cmp_read_u16(cmp, &state))
+        return error(RC_IOERROR, "failed to read J state");
+    p->alt.J = state;
+
+    if (!cmp_read_u16(cmp, &state))
+        return error(RC_IOERROR, "failed to read C state");
+    p->alt.C = state;
+
+    if (!cmp_read_u16(cmp, &state))
+        return error(RC_IOERROR, "failed to read T state");
+    p->alt.T = state;
+
     enum rc rc = alloc_match_nuclt_dists(p);
     if (rc) return rc;
 
@@ -158,10 +192,10 @@ enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, C, C), t.CC);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, C, T), t.CT);
 
-    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, B), t.EC + t.CT);
-    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, J), t.EC + t.CC);
-    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, J), t.CC);
-    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.CT);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, B), t.EJ + t.JB);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, J), t.EJ + t.JJ);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, J), t.JJ);
+    imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.JB);
     return RC_DONE;
 }
 
@@ -298,6 +332,30 @@ enum rc protein_profile_write(struct protein_profile const *prof,
 
     if (!cmp_write_str(cmp, prof->consensus, prof->core_size))
         return error(RC_IOERROR, "failed to write consensus");
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->null.R))
+        return error(RC_IOERROR, "failed to write R state");
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->alt.S))
+        return error(RC_IOERROR, "failed to write S state");
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->alt.N))
+        return error(RC_IOERROR, "failed to write N state");
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->alt.B))
+        return error(RC_IOERROR, "failed to write B state");
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->alt.E))
+        return error(RC_IOERROR, "failed to write E state");
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->alt.J))
+        return error(RC_IOERROR, "failed to write J state");
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->alt.C))
+        return error(RC_IOERROR, "failed to write C state");
+
+    if (!cmp_write_u16(cmp, (uint16_t)prof->alt.T))
+        return error(RC_IOERROR, "failed to write T state");
 
     enum rc rc = nuclt_dist_write(&prof->null.ndist, cmp);
     if (rc) return rc;

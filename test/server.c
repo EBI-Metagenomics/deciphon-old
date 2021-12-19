@@ -91,7 +91,7 @@ void test_server_submit_standard_job(void)
 #endif
 
 struct sched_job sched_job = {0};
-struct sched_prod sched_prod = {0};
+struct sched_prod prod = {0};
 
 void test_server_submit_protein_job(void)
 {
@@ -151,29 +151,29 @@ void test_server_submit_protein_job(void)
     EQ(sched_job.hmmer3_compat, false);
     EQ(sched_job.state, "done");
 
-    sched_prod.id = 0;
-    sched_prod.job_id = job.id;
-    while (server_next_sched_prod(&sched_job, &sched_prod) == RC_NEXT)
+    prod.id = 0;
+    prod.job_id = job.id;
+    while (server_next_sched_prod(&sched_job, &prod) == RC_NEXT)
     {
-        EQ(sched_prod.abc_name, "dna");
-        EQ(sched_prod.job_id, job.id);
-        if (sched_prod.seq_id == 4)
+        EQ(prod.abc_name, "dna");
+        EQ(prod.job_id, job.id);
+        if (prod.seq_id == 4)
         {
-            EQ(sched_prod.profile_name, "ACC1");
-            CLOSE(sched_prod.alt_loglik, -9.380424500);
-            CLOSE(sched_prod.null_loglik, -13.256095886);
+            EQ(prod.profile_name, "ACC1");
+            CLOSE(prod.alt_loglik, -9.380424500);
+            CLOSE(prod.null_loglik, -13.256095886);
         }
-        else if (sched_prod.seq_id == 38)
+        else if (prod.seq_id == 38)
         {
-            EQ(sched_prod.profile_name, "ACC0");
-            CLOSE(sched_prod.alt_loglik, -9.601443291);
-            CLOSE(sched_prod.null_loglik, -13.496196747);
+            EQ(prod.profile_name, "ACC0");
+            CLOSE(prod.alt_loglik, -9.601443291);
+            CLOSE(prod.null_loglik, -13.496196747);
         }
-        else if (sched_prod.seq_id == 39)
+        else if (prod.seq_id == 39)
         {
-            EQ(sched_prod.profile_name, "ACC0");
-            CLOSE(sched_prod.alt_loglik, -9.601497650);
-            CLOSE(sched_prod.null_loglik, -13.305152893);
+            EQ(prod.profile_name, "ACC0");
+            CLOSE(prod.alt_loglik, -9.601497650);
+            CLOSE(prod.null_loglik, -13.305152893);
         }
     }
 

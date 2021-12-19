@@ -2,20 +2,23 @@
 #include "job.h"
 #include "server.h"
 
-void test_pfam24_sample(unsigned num_threads);
+void test_pfam24_sample(bool multi_hits, bool hmmer3_compat,
+                        unsigned num_threads);
 /* void test_wrong_alphabet(void); */
 
 struct sched_job sched_job = {0};
-struct sched_prod sched_prod = {0};
+struct sched_prod prod = {0};
 
 int main(void)
 {
-    test_pfam24_sample(1);
+    test_pfam24_sample(true, false, 1);
+    test_pfam24_sample(false, false, 1);
     /* test_wrong_alphabet(); */
     return hope_status();
 }
 
-void test_pfam24_sample(unsigned num_threads)
+void test_pfam24_sample(bool multi_hits, bool hmmer3_compat,
+                        unsigned num_threads)
 {
     char const *db_path = ASSETS "/pfam24.dcp";
     char const *sched_path = TMPDIR "/pfam24.sched";
@@ -29,6 +32,8 @@ void test_pfam24_sample(unsigned num_threads)
 
     struct job job = {0};
     job_init(&job, db_id);
+    job.multi_hits = multi_hits;
+    job.hmmer3_compat = hmmer3_compat;
 
     struct seq seq[2] = {0};
 
@@ -53,9 +58,90 @@ void test_pfam24_sample(unsigned num_threads)
     sched_job.id = job.id;
     EQ(server_get_sched_job(&sched_job), RC_DONE);
     EQ(sched_job.error, "");
-    EQ(sched_job.multi_hits, true);
-    EQ(sched_job.hmmer3_compat, false);
+    EQ(sched_job.multi_hits, multi_hits);
+    EQ(sched_job.hmmer3_compat, hmmer3_compat);
     EQ(sched_job.state, "done");
+
+    enum rc rc = RC_DONE;
+    prod.id = 0;
+    prod.job_id = sched_job.id;
+    while ((rc = server_next_sched_prod(&sched_job, &prod)) == RC_NEXT)
+    {
+        // printf("%s %s %s %s \n", prod.abc_name, prod.profile_name,
+        //        prod.profile_typeid, prod.version);
+        // printf("%.10f %.10f \n", prod.alt_loglik, prod.null_loglik);
+        // printf("%lld %s \n", prod.seq_id, prod.match);
+
+        if (prod.seq_id == 1 && strcmp(prod.profile_name, "PF08254.12") == 0 &&
+            job.multi_hits && !job.hmmer3_compat)
+        {
+            CLOSE(prod.alt_loglik, -68.01567077637);
+            CLOSE(prod.null_loglik, -84.16704559326);
+            EQ(prod.profile_typeid, "protein");
+            EQ(prod.abc_name, "dna");
+            EQ(prod.match,
+               ",S,,;,B,,;ATG,M1,ATG,M;CGC,M2,CGC,R;CGC,M3,CGC,R;AAC,M4,AAC,N;"
+               "CGC,M5,CGC,R;ATG,M6,ATG,M;ATT,M7,ATT,I;GCG,M8,GCG,A;ACC,M9,ACC,"
+               "T;ATT,M10,ATT,I;ATT,M11,ATT,I;ACC,M12,ACC,T;ACC,M13,ACC,T;ACC,"
+               "M14,ACC,T;ATT,M15,ATT,I;ACC,M16,ACC,T;ACC,M17,ACC,T;,E,,;CTG,C,"
+               "CTG,L;GGC,C,GGC,G;GCG,C,GCG,A;,T,,");
+        }
+        else if (prod.seq_id == 2 &&
+                 strcmp(prod.profile_name, "PF08254.12") == 0 &&
+                 job.multi_hits && !job.hmmer3_compat)
+        {
+            CLOSE(prod.alt_loglik, -138.90509033203);
+            CLOSE(prod.null_loglik, -171.99272155762);
+            EQ(prod.profile_typeid, "protein");
+            EQ(prod.abc_name, "dna");
+            EQ(prod.match,
+               ",S,,;,B,,;ATG,M1,ATG,M;CGC,M2,CGC,R;CGC,M3,CGC,R;AAC,M4,AAC,N;"
+               "CGC,M5,CGC,R;ATG,M6,ATG,M;ATT,M7,ATT,I;GCG,M8,GCG,A;ACC,M9,ACC,"
+               "T;ATT,M10,ATT,I;ATT,M11,ATT,I;ACC,M12,ACC,T;ACC,M13,ACC,T;ACC,"
+               "M14,ACC,T;ATT,M15,ATT,I;ACC,M16,ACC,T;ACC,M17,ACC,T;,E,,;CTG,J,"
+               "CTG,L;GGC,J,GGC,G;GCG,J,GCG,A;CAG,J,CAG,Q;,B,,;ATG,M1,ATG,M;"
+               "CGC,M2,CGC,R;CGC,M3,CGC,R;AAC,M4,AAC,N;CGC,M5,CGC,R;ATG,M6,ATG,"
+               "M;ATT,M7,ATT,I;GCG,M8,GCG,A;ACC,M9,ACC,T;ATT,M10,ATT,I;ATT,M11,"
+               "ATT,I;ACC,M12,ACC,T;ACC,M13,ACC,T;ACC,M14,ACC,T;ATT,M15,ATT,I;"
+               "ACC,M16,ACC,T;ACC,M17,ACC,T;,E,,;CTG,C,CTG,L;GGC,C,GGC,G;GCG,C,"
+               "GCG,A;,T,,");
+        }
+        else if (prod.seq_id == 1 &&
+                 strcmp(prod.profile_name, "PF08254.12") == 0 &&
+                 !job.multi_hits && !job.hmmer3_compat)
+        {
+            CLOSE(prod.alt_loglik, -68.05345916748);
+            CLOSE(prod.null_loglik, -84.16704559326);
+            EQ(prod.profile_typeid, "protein");
+            EQ(prod.abc_name, "dna");
+            EQ(prod.match,
+               ",S,,;,B,,;ATG,M1,ATG,M;CGC,M2,CGC,R;CGC,M3,CGC,R;AAC,M4,AAC,N;"
+               "CGC,M5,CGC,R;ATG,M6,ATG,M;ATT,M7,ATT,I;GCG,M8,GCG,A;ACC,M9,ACC,"
+               "T;ATT,M10,ATT,I;ATT,M11,ATT,I;ACC,M12,ACC,T;ACC,M13,ACC,T;ACC,"
+               "M14,ACC,T;ATT,M15,ATT,I;ACC,M16,ACC,T;ACC,M17,ACC,T;,E,,;CTG,C,"
+               "CTG,L;GGC,C,GGC,G;GCG,C,GCG,A;,T,,");
+        }
+        else if (prod.seq_id == 2 &&
+                 strcmp(prod.profile_name, "PF08254.12") == 0 &&
+                 !job.multi_hits && !job.hmmer3_compat)
+        {
+            CLOSE(prod.alt_loglik, -157.56034851074);
+            CLOSE(prod.null_loglik, -171.99272155762);
+            EQ(prod.profile_typeid, "protein");
+            EQ(prod.abc_name, "dna");
+            EQ(prod.match,
+               ",S,,;,B,,;ATG,M1,ATG,M;CGC,M2,CGC,R;CGC,M3,CGC,R;AAC,M4,AAC,N;"
+               "CGC,M5,CGC,R;ATG,M6,ATG,M;ATT,M7,ATT,I;GCG,M8,GCG,A;ACC,M9,ACC,"
+               "T;ATT,M10,ATT,I;ATT,M11,ATT,I;ACC,M12,ACC,T;ACC,M13,ACC,T;ACC,"
+               "M14,ACC,T;ATT,M15,ATT,I;ACC,M16,ACC,T;ACC,M17,ACC,T;,E,,;CTG,C,"
+               "CTG,L;GGC,C,GGC,G;GCG,C,GCG,A;CAG,C,CAG,Q;ATG,C,ATG,M;CGC,C,"
+               "CGC,R;CGC,C,CGC,R;AAC,C,AAC,N;CGC,C,CGC,R;ATG,C,ATG,M;ATT,C,"
+               "ATT,I;GCG,C,GCG,A;ACC,C,ACC,T;ATT,C,ATT,I;ATT,C,ATT,I;ACC,C,"
+               "ACC,T;ACC,C,ACC,T;ACC,C,ACC,T;ATT,C,ATT,I;ACC,C,ACC,T;ACC,C,"
+               "ACC,T;CTG,C,CTG,L;GGC,C,GGC,G;GCG,C,GCG,A;,T,,");
+        }
+    }
+
     EQ(server_close(), RC_DONE);
 
 #if 0

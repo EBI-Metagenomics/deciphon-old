@@ -119,7 +119,7 @@ enum rc server_get_sched_job(struct sched_job *job)
 enum rc server_next_sched_prod(struct sched_job const *job,
                                struct sched_prod *prod)
 {
-
+    prod->job_id = job->id;
     int rc = sched_prod_next(prod);
     if (rc == SCHED_DONE) return RC_DONE;
     if (rc != SCHED_NEXT) return error(RC_FAIL, "failed to get prod");
