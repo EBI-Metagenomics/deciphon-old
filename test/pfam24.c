@@ -56,7 +56,6 @@ void test_pfam24_sample(unsigned num_threads)
     EQ(sched_job.multi_hits, true);
     EQ(sched_job.hmmer3_compat, false);
     EQ(sched_job.state, "done");
-
     EQ(server_close(), RC_DONE);
 
 #if 0
