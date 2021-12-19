@@ -44,7 +44,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-static char doc[] = "Run daemon -- deciphond deciphon.sqlite3 pfam.dcp";
+static char doc[] = "Run daemon -- deciphond deciphon.sched pfam.dcp";
 static char args_doc[] = "SCHEDFILE DCPFILE";
 static struct argp_option options[] = {
     {"quiet", 'q', 0, 0, "Disable output", 0}, {0}};
