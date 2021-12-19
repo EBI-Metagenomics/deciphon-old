@@ -194,11 +194,11 @@ struct protein_cfg protein_db_cfg(struct protein_db const *db)
 }
 
 enum rc protein_db_write(struct protein_db *db,
-                         struct protein_profile const *prof)
+                         struct protein_profile const *prof, struct metadata mt)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum rc rc = RC_DONE;
-    if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
+    if ((rc = db_write_profile_metadata(&db->super, mt))) return rc;
     if ((rc = protein_profile_write(prof, &db->super.dp.cmp))) return rc;
     db->super.profiles.size++;
     return rc;

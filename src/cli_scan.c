@@ -323,7 +323,9 @@ static void queries_setup(void)
 {
     fasta_init(&cli.queries.fa, cli.queries.fd, FASTA_READ);
     rewind(cli.queries.fd);
-    cli.queries.fa.target.desc = prof->metadata.acc;
+    cli.queries.fa.target.desc = db_metadata((struct db const *)&cli.pro.db,
+                                             (unsigned)prof->idx_within_db)
+                                     .acc;
 }
 
 enum rc cli_scan(int argc, char **argv)
@@ -341,8 +343,9 @@ enum rc cli_scan(int argc, char **argv)
     while ((rc = profile_reader_next(&cli.pro.reader, 0, &prof)) != RC_END)
     {
         queries_setup();
-        struct metadata const *mt = &prof->metadata;
-        if ((rc = scan_queries(mt))) goto cleanup;
+        struct metadata mt = db_metadata((struct db const *)&cli.pro.db,
+                                         (unsigned)prof->idx_within_db);
+        if ((rc = scan_queries(&mt))) goto cleanup;
         progress_file_update(&cli.progress);
     }
     if (rc != RC_END) goto cleanup;

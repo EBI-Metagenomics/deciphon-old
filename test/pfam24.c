@@ -17,8 +17,7 @@ int main(void)
 
 void test_pfam24_sample(unsigned num_threads)
 {
-    // char const *db_path = ASSETS "/pfam24.dcp";
-    char const *db_path = "/Users/horta/code/deciphon/build/pfam24_0.1.dcp";
+    char const *db_path = ASSETS "/pfam24.dcp";
     char const *sched_path = TMPDIR "/pfam24.sched";
 
     remove(sched_path);

@@ -159,19 +159,19 @@ void test_server_submit_protein_job(void)
         EQ(sched_prod.job_id, job.id);
         if (sched_prod.seq_id == 4)
         {
-            EQ(sched_prod.profile_name, "UNSET");
+            EQ(sched_prod.profile_name, "ACC1");
             CLOSE(sched_prod.alt_loglik, -9.380424500);
             CLOSE(sched_prod.null_loglik, -13.256095886);
         }
         else if (sched_prod.seq_id == 38)
         {
-            EQ(sched_prod.profile_name, "UNSET");
+            EQ(sched_prod.profile_name, "ACC0");
             CLOSE(sched_prod.alt_loglik, -9.601443291);
             CLOSE(sched_prod.null_loglik, -13.496196747);
         }
         else if (sched_prod.seq_id == 39)
         {
-            EQ(sched_prod.profile_name, "UNSET");
+            EQ(sched_prod.profile_name, "ACC0");
             CLOSE(sched_prod.alt_loglik, -9.601497650);
             CLOSE(sched_prod.null_loglik, -13.305152893);
         }

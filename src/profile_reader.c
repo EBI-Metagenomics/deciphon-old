@@ -42,6 +42,16 @@ static void init_protein_profiles(struct profile_reader *reader,
                              db->cfg);
 }
 
+static void setup_profile_indices(struct profile_reader *reader)
+{
+    int offset = -1;
+    for (unsigned i = 0; i < reader->npartitions; ++i)
+    {
+        ((struct profile *)&reader->profiles[i])->idx_within_db = offset;
+        offset += reader->partition_size[i];
+    }
+}
+
 static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
 {
     for (unsigned i = 0; i < npartitions; ++i)
@@ -50,6 +60,7 @@ static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
         if (fseeko(fp, reader->partition_offset[i], SEEK_SET) == 1)
             return error(RC_IOERROR, "failed to fseeko");
     }
+    setup_profile_indices(reader);
     return RC_DONE;
 }
 
@@ -158,6 +169,7 @@ enum rc profile_reader_next(struct profile_reader *reader, unsigned partition,
                             struct profile **profile)
 {
     *profile = (struct profile *)&reader->profiles[partition];
+    (*profile)->idx_within_db++;
     enum rc rc = reached_end(reader, partition);
     if (rc == RC_NEXT)
     {

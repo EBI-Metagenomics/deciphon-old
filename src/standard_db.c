@@ -87,11 +87,12 @@ struct imm_abc const *standard_db_abc(struct standard_db const *db)
 }
 
 enum rc standard_db_write(struct standard_db *db,
-                          struct standard_profile const *prof)
+                          struct standard_profile const *prof,
+                          struct metadata mt)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     enum rc rc = RC_DONE;
-    if ((rc = db_write_prof_meta(&db->super, &prof->super))) return rc;
+    if ((rc = db_write_profile_metadata(&db->super, mt))) return rc;
     if ((rc = standard_profile_write(prof, cmp_file(&db->super.dp.cmp))))
         return rc;
     db->super.profiles.size++;

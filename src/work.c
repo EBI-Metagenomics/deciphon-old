@@ -80,8 +80,9 @@ static enum rc run_on_partition(struct work *work, unsigned i)
 
         if (!imm_lprob_is_finite(lrt) || lrt < work->lrt_threshold) continue;
 
-        struct metadata const *mt = &prof->metadata;
-        strcpy(work->prod->profile_name, mt->acc);
+        struct metadata const mt = db_metadata(
+            (struct db const *)&work->db.reader.db, prof->idx_within_db);
+        strcpy(work->prod->profile_name, mt.acc);
         strcpy(work->prod->abc_name, work->abc_name);
 
         work->prod->alt_loglik = alt->prod.loglik;

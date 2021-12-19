@@ -48,7 +48,6 @@ int main(void)
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
 
-    profile_set_name(&prof.super, metadata("NAME0", "ACC0"));
     EQ(protein_profile_absorb(&prof, &model), RC_DONE);
 
     profile_del((struct profile *)&prof);

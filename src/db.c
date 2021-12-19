@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* TODO: make sure there is no accession duplicates. */
+
 #define MAGIC_NUMBER 0x765C806BF0E8652B
 
 struct db const db_default = {0};
@@ -357,59 +359,44 @@ cleanup:
     return rc;
 }
 
-static enum rc write_name(struct db *db, struct profile const *prof)
+static enum rc write_name(struct db *db, struct metadata mt)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
-    if (!cmp_write_str(ctx, prof->metadata.name,
-                       (uint32_t)strlen(prof->metadata.name)))
+    if (!cmp_write_str(ctx, mt.name, (uint32_t)strlen(mt.name)))
         return error(RC_IOERROR, "failed to write profile name");
     /* +1 for null-terminated */
-    db->mt.size += (uint32_t)strlen(prof->metadata.name) + 1;
+    db->mt.size += (uint32_t)strlen(mt.name) + 1;
 
     return RC_DONE;
 }
 
-static enum rc write_accession(struct db *db, struct profile const *prof)
+static enum rc write_accession(struct db *db, struct metadata mt)
 {
     struct cmp_ctx_s *ctx = &db->mt.file.cmp;
 
-    if (!cmp_write_str(ctx, prof->metadata.acc,
-                       (uint32_t)strlen(prof->metadata.acc)))
+    if (!cmp_write_str(ctx, mt.acc, (uint32_t)strlen(mt.acc)))
         return error(RC_IOERROR, "failed to write profile accession");
     /* +1 for null-terminated */
-    db->mt.size += (uint32_t)strlen(prof->metadata.acc) + 1;
+    db->mt.size += (uint32_t)strlen(mt.acc) + 1;
 
     return RC_DONE;
 }
 
-enum rc db_write_prof_meta(struct db *db, struct profile const *prof)
+enum rc db_write_profile_metadata(struct db *db, struct metadata mt)
 {
-    if (prof->metadata.name == NULL)
-        return error(RC_ILLEGALARG, "metadata not set");
+    if (mt.name == NULL) return error(RC_ILLEGALARG, "metadata not set");
 
-    if (strlen(prof->metadata.name) >= DCP_PROFILE_NAME_SIZE)
+    if (strlen(mt.name) >= DCP_PROFILE_NAME_SIZE)
         return error(RC_ILLEGALARG, "profile name is too long");
 
-    if (strlen(prof->metadata.acc) >= DCP_PROFILE_ACC_SIZE)
+    if (strlen(mt.acc) >= DCP_PROFILE_ACC_SIZE)
         return error(RC_ILLEGALARG, "profile accession is too long");
 
     enum rc rc = RC_DONE;
 
-    if ((rc = write_name(db, prof))) return rc;
-    if ((rc = write_accession(db, prof))) return rc;
-
-    return RC_DONE;
-}
-
-enum rc db_check_write_prof_ready(struct db const *db,
-                                  struct profile const *prof)
-{
-    if (db->profiles.size == DCP_MAX_NPROFILES)
-        return error(RC_FAIL, "too many profiles");
-
-    if (prof->metadata.name == NULL)
-        return error(RC_ILLEGALARG, "metadata not set");
+    if ((rc = write_name(db, mt))) return rc;
+    if ((rc = write_accession(db, mt))) return rc;
 
     return RC_DONE;
 }

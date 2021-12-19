@@ -128,13 +128,11 @@ static enum rc cli_setup(struct arguments const *args)
 
 static enum rc profile_write(void)
 {
-    profile_set_name((struct profile *)&cli.profile,
-                     protein_hmmer3_reader_metadata(&cli.reader));
-
     enum rc rc = protein_profile_absorb(&cli.profile, &cli.reader.model);
     if (rc) return rc;
 
-    return protein_db_write(&cli.db, &cli.profile);
+    return protein_db_write(&cli.db, &cli.profile,
+                            protein_hmmer3_reader_metadata(&cli.reader));
 }
 
 enum rc cli_press(int argc, char **argv)
