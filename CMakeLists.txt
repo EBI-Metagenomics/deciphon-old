@@ -128,9 +128,9 @@ configure_file(
 # Command line interface programs
 add_executable(dcp-press bin/press.c)
 target_link_libraries(dcp-press PUBLIC dcp)
-#
-# add_executable(dcp-info bin/info.c)
-# target_link_libraries(dcp-info PUBLIC dcp)
+
+add_executable(dcp-info bin/info.c)
+target_link_libraries(dcp-info PUBLIC dcp)
 #
 # add_executable(dcp-scan bin/scan.c)
 # target_link_libraries(dcp-scan PUBLIC dcp)
@@ -138,15 +138,15 @@ target_link_libraries(dcp-press PUBLIC dcp)
 # add_executable(dcp-server bin/server.c)
 # target_link_libraries(dcp-server PUBLIC dcp)
 #
-# install(
-#   FILES ${VERSION_FILE}
-#   ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
-#   ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
-#   ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
-#   ${CMAKE_CURRENT_BINARY_DIR}/dcp-server
-#   PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-#   DESTINATION bin
-# )
+install(
+  FILES ${VERSION_FILE}
+  ${CMAKE_CURRENT_BINARY_DIR}/dcp-info
+  ${CMAKE_CURRENT_BINARY_DIR}/dcp-press
+  # ${CMAKE_CURRENT_BINARY_DIR}/dcp-scan
+  # ${CMAKE_CURRENT_BINARY_DIR}/dcp-server
+  PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+  DESTINATION bin
+)
 
 enable_testing()
 add_subdirectory(test)
