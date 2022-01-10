@@ -15,7 +15,7 @@
  */
 #define ilog2(x)                                                               \
     (__builtin_constant_p(x) ? ((x) < 2 ? 0 : 63 - __builtin_clzll(x))         \
-     : sizeof(x) <= 4        ? ilog2_u32(x)                                    \
+     : sizeof(x) <= 4        ? ilog2_u32((uint32_t)(x))                                    \
                              : ilog2_u64(x))
 
 static inline unsigned ilog2_u32(uint32_t n) { return bitops_fls32(n) - 1; }

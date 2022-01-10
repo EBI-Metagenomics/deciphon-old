@@ -1,7 +1,7 @@
 #ifndef XFILE_H
 #define XFILE_H
 
-#include "dcp_limits.h"
+#include "xlimits.h"
 #include "rc.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,17 +15,18 @@ struct xfile_tmp
     FILE *fp;
 };
 
-/* enum rc xfile_tmp_open(struct xfile_tmp *file); */
-/* enum rc xfile_tmp_rewind(struct xfile_tmp *file); */
-/* void xfile_tmp_del(struct xfile_tmp const *file); */
+enum rc xfile_hash(FILE *restrict fp, uint64_t *hash);
+
+enum rc xfile_tmp_open(struct xfile_tmp *file);
+void xfile_tmp_del(struct xfile_tmp const *file);
 
 enum rc xfile_copy(FILE *restrict dst, FILE *restrict src);
 bool xfile_is_readable(char const *filepath);
-/* enum rc xfile_mktemp(char *filepath); */
+enum rc xfile_mktemp(char *filepath);
 
-bool xfile_set_path_ext(char *str, size_t max_size, char const *ext);
+bool xfile_set_ext(size_t max_size, char *str, char const *ext);
 void xfile_basename(char *filename, char const *path);
-void xfile_strip_path_ext(char *str);
+void xfile_strip_ext(char *str);
 
 FILE *xfile_open_from_fptr(FILE *fp, char const *mode);
 

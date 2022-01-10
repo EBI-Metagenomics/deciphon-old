@@ -1,4 +1,4 @@
-#include "bitops.h"
+#include "common/bitops.h"
 
 unsigned bitops_fls32(uint32_t x)
 {

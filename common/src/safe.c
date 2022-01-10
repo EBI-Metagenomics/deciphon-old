@@ -1,4 +1,4 @@
-#include "safe.h"
+#include "common/safe.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

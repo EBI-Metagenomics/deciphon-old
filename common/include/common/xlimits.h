@@ -1,9 +1,9 @@
-#ifndef DCP_LIMITS_H
-#define DCP_LIMITS_H
+#ifndef XLIMITS_H
+#define XLIMITS_H
 
 #include "compiler.h"
 
-enum dcp_limits
+enum xlimits
 {
     DCP_ABC_NAME_SIZE = 16,
     DCP_PROFILE_TYPEID_SIZE = 16,

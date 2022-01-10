@@ -2,7 +2,6 @@
 #define BITOPS_H
 
 #include "compiler.h"
-#include "size.h"
 #include <stdint.h>
 
 /**
