@@ -1,5 +1,5 @@
 #include "seq_queue.h"
-#include "dcp_sched/limits.h"
+#include "sched/limits.h"
 #include "seq.h"
 
 struct seq_queue

@@ -1,7 +1,7 @@
 #ifndef DB_H
 #define DB_H
 
-#include "dcp_sched/limits.h"
+#include "sched/limits.h"
 #include <stdint.h>
 
 struct db

@@ -1,4 +1,4 @@
-#include "dcp_sched/sched.h"
+#include "sched/sched.h"
 #include "common/rc.h"
 #include "common/compiler.h"
 #include "db.h"
@@ -26,11 +26,11 @@ char sched_filepath[SCHED_PATH_SIZE] = {0};
 static_assert(SQLITE_VERSION_NUMBER >= MIN_SQLITE_VERSION,
               "Minimum sqlite requirement.");
 
-int emerge_db(char const *filepath);
-int is_empty(char const *filepath, bool *empty);
-int touch_db(char const *filepath);
+enum rc emerge_db(char const *filepath);
+enum rc is_empty(char const *filepath, bool *empty);
+enum rc touch_db(char const *filepath);
 
-int sched_setup(char const *filepath)
+enum rc sched_setup(char const *filepath)
 {
     safe_strcpy(sched_filepath, filepath, ARRAY_SIZE(sched_filepath));
 
@@ -48,7 +48,7 @@ int sched_setup(char const *filepath)
     return RC_DONE;
 }
 
-int sched_open(void)
+enum rc sched_open(void)
 {
     if (xsql_open(sched_filepath, &sched)) goto cleanup;
     if (job_module_init()) goto cleanup;
@@ -63,7 +63,7 @@ cleanup:
     return RC_FAIL;
 }
 
-int sched_close(void)
+enum rc sched_close(void)
 {
     db_module_del();
     prod_module_del();
@@ -72,16 +72,16 @@ int sched_close(void)
     return xsql_close(sched);
 }
 
-int sched_set_job_fail(int64_t job_id, char const *msg)
+enum rc sched_set_job_fail(int64_t job_id, char const *msg)
 {
     return job_set_error(job_id, msg, utc_now());
 }
-int sched_set_job_done(int64_t job_id)
+enum rc sched_set_job_done(int64_t job_id)
 {
     return job_set_done(job_id, utc_now());
 }
 
-int sched_add_db(char const *filepath, int64_t *id)
+enum rc sched_add_db(char const *filepath, int64_t *id)
 {
     char resolved[PATH_MAX] = {0};
     char *ptr = realpath(filepath, resolved);
@@ -100,7 +100,7 @@ int sched_add_db(char const *filepath, int64_t *id)
     return RC_FAIL;
 }
 
-int sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
+enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
 {
     struct db db = {0};
     int code = db_get_by_id(&db, id);
@@ -110,9 +110,9 @@ int sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
     return RC_DONE;
 }
 
-int sched_get_job(struct sched_job *job) { return job_get(job); }
+enum rc sched_get_job(struct sched_job *job) { return job_get(job); }
 
-int sched_begin_job_submission(struct sched_job *job)
+enum rc sched_begin_job_submission(struct sched_job *job)
 {
     if (xsql_begin_transaction(sched)) return RC_FAIL;
     seq_queue_init();
@@ -124,12 +124,12 @@ void sched_add_seq(struct sched_job *job, char const *name, char const *data)
     seq_queue_add(job->id, name, data);
 }
 
-int sched_rollback_job_submission(struct sched_job *job)
+enum rc sched_rollback_job_submission(struct sched_job *job)
 {
     return xsql_rollback_transaction(sched);
 }
 
-int sched_end_job_submission(struct sched_job *job)
+enum rc sched_end_job_submission(struct sched_job *job)
 {
     if (job_submit(job)) return RC_FAIL;
 
@@ -143,25 +143,25 @@ int sched_end_job_submission(struct sched_job *job)
     return xsql_end_transaction(sched);
 }
 
-int sched_begin_prod_submission(unsigned num_threads)
+enum rc sched_begin_prod_submission(unsigned num_threads)
 {
     assert(num_threads > 0);
     if (prod_begin_submission(num_threads)) return RC_FAIL;
     return RC_DONE;
 }
 
-int sched_end_prod_submission(void)
+enum rc sched_end_prod_submission(void)
 {
     if (prod_end_submission()) return RC_FAIL;
     return RC_DONE;
 }
 
-int sched_next_pending_job(struct sched_job *job)
+enum rc sched_next_pending_job(struct sched_job *job)
 {
     return job_next_pending(job);
 }
 
-int emerge_db(char const *filepath)
+enum rc emerge_db(char const *filepath)
 {
     int rc = 0;
     struct sqlite3 *db = NULL;
@@ -182,7 +182,7 @@ static int is_empty_cb(void *empty, int argc, char **argv, char **cols)
     return 0;
 }
 
-int is_empty(char const *filepath, bool *empty)
+enum rc is_empty(char const *filepath, bool *empty)
 {
     int rc = 0;
     struct sqlite3 *db = NULL;
@@ -199,7 +199,7 @@ cleanup:
     return rc;
 }
 
-int touch_db(char const *filepath)
+enum rc touch_db(char const *filepath)
 {
     struct sqlite3 *db = NULL;
     if (xsql_open(filepath, &db)) goto cleanup;

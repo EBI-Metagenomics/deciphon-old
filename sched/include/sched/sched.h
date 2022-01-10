@@ -1,35 +1,35 @@
 #ifndef DCP_SCHED_SCHED_H
 #define DCP_SCHED_SCHED_H
 
-#include "dcp_sched/export.h"
-#include "dcp_sched/job.h"
-#include "dcp_sched/limits.h"
-#include "dcp_sched/prod.h"
+#include "common/export.h"
+#include "sched/job.h"
+#include "sched/limits.h"
+#include "sched/prod.h"
 #include "common/rc.h"
-#include "dcp_sched/seq.h"
+#include "sched/seq.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-SCHED_API enum rc sched_setup(char const *filepath);
-SCHED_API enum rc sched_open(void);
-SCHED_API enum rc sched_close(void);
+EXPORT enum rc sched_setup(char const *filepath);
+EXPORT enum rc sched_open(void);
+EXPORT enum rc sched_close(void);
 
-SCHED_API enum rc sched_add_db(char const *filepath, int64_t *id);
-SCHED_API enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id);
-SCHED_API enum rc sched_get_job(struct sched_job *job);
+EXPORT enum rc sched_add_db(char const *filepath, int64_t *id);
+EXPORT enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id);
+EXPORT enum rc sched_get_job(struct sched_job *job);
 
-SCHED_API enum rc sched_set_job_fail(int64_t job_id, char const *msg);
-SCHED_API enum rc sched_set_job_done(int64_t job_id);
+EXPORT enum rc sched_set_job_fail(int64_t job_id, char const *msg);
+EXPORT enum rc sched_set_job_done(int64_t job_id);
 
-SCHED_API enum rc sched_begin_job_submission(struct sched_job *job);
-SCHED_API void sched_add_seq(struct sched_job *job, char const *name,
+EXPORT enum rc sched_begin_job_submission(struct sched_job *job);
+EXPORT void sched_add_seq(struct sched_job *job, char const *name,
                              char const *data);
-SCHED_API enum rc sched_rollback_job_submission(struct sched_job *job);
-SCHED_API enum rc sched_end_job_submission(struct sched_job *job);
+EXPORT enum rc sched_rollback_job_submission(struct sched_job *job);
+EXPORT enum rc sched_end_job_submission(struct sched_job *job);
 
-SCHED_API enum rc sched_begin_prod_submission(unsigned num_threads);
-SCHED_API enum rc sched_end_prod_submission(void);
+EXPORT enum rc sched_begin_prod_submission(unsigned num_threads);
+EXPORT enum rc sched_end_prod_submission(void);
 
-SCHED_API enum rc sched_next_pending_job(struct sched_job *job);
+EXPORT enum rc sched_next_pending_job(struct sched_job *job);
 
 #endif

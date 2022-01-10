@@ -1,9 +1,9 @@
 #ifndef PROD_H
 #define PROD_H
 
-#include "dcp_sched/limits.h"
-#include "dcp_sched/prod.h"
-#include "dcp_sched/sched.h"
+#include "sched/limits.h"
+#include "sched/prod.h"
+#include "sched/sched.h"
 #include <stdint.h>
 #include <stdio.h>
 

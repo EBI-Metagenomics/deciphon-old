@@ -1,9 +1,9 @@
-#ifndef DCP_SCHED_JOB_H
-#define DCP_SCHED_JOB_H
+#ifndef SCHED_JOB_H
+#define SCHED_JOB_H
 
-#include "dcp_sched/export.h"
-#include "dcp_sched/limits.h"
+#include "common/export.h"
 #include "common/rc.h"
+#include "sched/limits.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -30,9 +30,9 @@ struct sched_job
     int64_t exec_ended;
 };
 
-SCHED_API void sched_job_init(struct sched_job *job, int64_t db_id,
-                              bool multi_hits, bool hmmer3_compat);
+EXPORT void sched_job_init(struct sched_job *job, int64_t db_id,
+                           bool multi_hits, bool hmmer3_compat);
 
-SCHED_API enum rc sched_job_state(int64_t job_id, enum sched_job_state *state);
+EXPORT enum rc sched_job_state(int64_t job_id, enum sched_job_state *state);
 
 #endif

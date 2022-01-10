@@ -1,8 +1,8 @@
 #ifndef DCP_SCHED_SEQ_H
 #define DCP_SCHED_SEQ_H
 
-#include "dcp_sched/export.h"
-#include "dcp_sched/limits.h"
+#include "common/export.h"
+#include "sched/limits.h"
 #include "common/rc.h"
 #include <stdint.h>
 
@@ -14,8 +14,8 @@ struct sched_seq
     char data[SCHED_SEQ_SIZE];
 };
 
-SCHED_API void sched_seq_init(struct sched_seq *seq, int64_t job_id,
+EXPORT void sched_seq_init(struct sched_seq *seq, int64_t job_id,
                               char const *name, char const *data);
-SCHED_API enum rc sched_seq_next(struct sched_seq *seq);
+EXPORT enum rc sched_seq_next(struct sched_seq *seq);
 
 #endif

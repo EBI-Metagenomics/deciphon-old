@@ -1,8 +1,8 @@
 #ifndef SEQ_H
 #define SEQ_H
 
-#include "dcp_sched/limits.h"
-#include "dcp_sched/seq.h"
+#include "sched/limits.h"
+#include "sched/seq.h"
 #include <stdint.h>
 
 enum rc seq_module_init(void);
