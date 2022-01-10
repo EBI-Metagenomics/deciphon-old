@@ -3,13 +3,14 @@ project(common)
 find_package(xxHash REQUIRED)
 
 add_library(
-  ${PROJECT_NAME}
+  ${PROJECT_NAME} STATIC
   src/bitops.c
   src/logger.c
   src/safe.c
+  src/to.c
   src/xfile.c
 )
-add_library(DCP::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_include_directories(
   ${PROJECT_NAME}
@@ -17,6 +18,6 @@ target_include_directories(
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC xxHash::xxHash)
+target_link_libraries(${PROJECT_NAME} PRIVATE xxHash::xxHash)
 
 add_subdirectory(test)

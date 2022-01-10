@@ -1,5 +1,5 @@
-#ifndef SCHED_DB_H
-#define SCHED_DB_H
+#ifndef DB_H
+#define DB_H
 
 #include "dcp_sched/limits.h"
 #include <stdint.h>

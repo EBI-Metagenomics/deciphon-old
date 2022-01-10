@@ -1,12 +1,8 @@
 find_package(hope REQUIRED)
 
-set(ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets)
-file(MAKE_DIRECTORY ${ASSETS})
-
-function(common_add_test name srcs)
+function(sched_add_test name srcs)
   add_executable(${name} ${srcs})
-  target_code_coverage(${name} AUTO ALL)
-  target_link_libraries(${name} PRIVATE DECIPHON::common)
+  target_link_libraries(${name} PRIVATE DECIPHON::sched)
   target_link_libraries(${name} PRIVATE HOPE::hope)
   target_compile_options(${name} PRIVATE ${WARNING_FLAGS})
   target_compile_features(${name} PRIVATE c_std_11)
@@ -18,8 +14,12 @@ function(common_add_test name srcs)
     PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${TMPDIR}
   )
-  target_compile_definitions(${name} PUBLIC "ASSETS=\"${ASSETS}\"")
+  add_custom_command(
+    TARGET ${name}
+    PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${TMPDIR}/dir
+  )
   target_compile_definitions(${name} PUBLIC "TMPDIR=\"${TMPDIR}\"")
 endfunction()
 
-common_add_test(test_xfile "xfile.c")
+sched_add_test(test_sched sched.c)

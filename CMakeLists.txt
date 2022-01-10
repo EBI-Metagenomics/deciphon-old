@@ -20,8 +20,8 @@ cbp_assert_null_is_zero_bits()
 enable_testing()
 
 add_subdirectory(common)
-# add_subdirectory(dcp)
-# add_subdirectory(sched)
+add_subdirectory(sched)
+# add_subdirectory(core)
 # add_subdirectory(cli)
 
 # target_code_coverage(dcp)

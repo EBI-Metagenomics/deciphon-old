@@ -1,13 +1,14 @@
 #include "prod.h"
-#include "compiler.h"
+#include "common/compiler.h"
+#include "common/rc.h"
+#include "common/safe.h"
+#include "common/to.h"
+#include "common/xfile.h"
+#include "common/logger.h"
 #include "dcp_sched/prod.h"
-#include "dcp_sched/rc.h"
 #include "dcp_sched/sched.h"
-#include "safe.h"
 #include "sched.h"
-#include "to.h"
 #include "tok.h"
-#include "xfile.h"
 #include "xsql.h"
 #include <assert.h>
 #include <inttypes.h>
@@ -92,7 +93,7 @@ int prod_module_init(void)
 {
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
-        if (xsql_prepare(sched, queries[i], stmts + i)) return SCHED_FAIL;
+        if (xsql_prepare(sched, queries[i], stmts + i)) return RC_FAIL;
     }
     return 0;
 }
@@ -112,10 +113,10 @@ int prod_begin_submission(unsigned num_threads)
         if (xfile_tmp_open(prod_file + nthreads))
         {
             cleanup();
-            return SCHED_FAIL;
+            return RC_FAIL;
         }
     }
-    return SCHED_DONE;
+    return RC_DONE;
 }
 
 int sched_prod_write_begin(struct sched_prod const *prod, unsigned thread_num)
@@ -126,20 +127,20 @@ int sched_prod_write_begin(struct sched_prod const *prod, unsigned thread_num)
 #define Fs "%s" TAB
 #define Fg "%.17g" TAB
 
-    if (echo(Fd64, job_id)) return SCHED_FAIL;
-    if (echo(Fd64, seq_id)) return SCHED_FAIL;
+    if (echo(Fd64, job_id)) return RC_FAIL;
+    if (echo(Fd64, seq_id)) return RC_FAIL;
 
-    if (echo(Fs, profile_name)) return SCHED_FAIL;
-    if (echo(Fs, abc_name)) return SCHED_FAIL;
+    if (echo(Fs, profile_name)) return RC_FAIL;
+    if (echo(Fs, abc_name)) return RC_FAIL;
 
     /* Reference: https://stackoverflow.com/a/21162120 */
-    if (echo(Fg, alt_loglik)) return SCHED_FAIL;
-    if (echo(Fg, null_loglik)) return SCHED_FAIL;
+    if (echo(Fg, alt_loglik)) return RC_FAIL;
+    if (echo(Fg, null_loglik)) return RC_FAIL;
 
-    if (echo(Fs, profile_typeid)) return SCHED_FAIL;
-    if (echo(Fs, version)) return SCHED_FAIL;
+    if (echo(Fs, profile_typeid)) return RC_FAIL;
+    if (echo(Fs, version)) return RC_FAIL;
 
-    return SCHED_DONE;
+    return RC_DONE;
 
 #undef Fg
 #undef Fs
@@ -172,28 +173,33 @@ int sched_prod_write_match(sched_prod_write_match_cb *cb, void const *match,
 
 int sched_prod_write_match_sep(unsigned thread_num)
 {
-    if (fputc(';', prod_file[thread_num].fp) == EOF) return SCHED_FAIL;
-    return SCHED_DONE;
+    if (fputc(';', prod_file[thread_num].fp) == EOF) return RC_FAIL;
+    return RC_DONE;
 }
 
 int sched_prod_write_end(unsigned thread_num)
 {
-    if (fputc('\n', prod_file[thread_num].fp) == EOF) return SCHED_FAIL;
-    return SCHED_DONE;
+    if (fputc('\n', prod_file[thread_num].fp) == EOF) return RC_FAIL;
+    return RC_DONE;
 }
 
 static int submit_prod_file(FILE *restrict fp);
 
 int prod_end_submission(void)
 {
-    int rc = SCHED_FAIL;
+    int rc = RC_FAIL;
 
     for (unsigned i = 0; i < nthreads; ++i)
     {
-        if (xfile_tmp_rewind(prod_file + i)) goto cleanup;
+        if (fflush(prod_file[i].fp))
+        {
+            rc = error(RC_IOERROR, "failed to fflush");
+            goto cleanup;
+        }
+        rewind(prod_file[i].fp);
         if (submit_prod_file(prod_file[i].fp)) goto cleanup;
     }
-    rc = SCHED_DONE;
+    rc = RC_DONE;
 
 cleanup:
     cleanup();
@@ -203,11 +209,11 @@ cleanup:
 static int get_prod(struct sched_prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
-    if (xsql_reset(stmt)) return SCHED_FAIL;
+    if (xsql_reset(stmt)) return RC_FAIL;
 
-    if (xsql_bind_i64(stmt, 0, prod->id)) return SCHED_FAIL;
+    if (xsql_bind_i64(stmt, 0, prod->id)) return RC_FAIL;
 
-    if (xsql_step(stmt) != SCHED_NEXT) return SCHED_FAIL;
+    if (xsql_step(stmt) != RC_NEXT) return RC_FAIL;
 
     int i = 0;
     prod->id = sqlite3_column_int64(stmt, i++);
@@ -216,18 +222,17 @@ static int get_prod(struct sched_prod *prod)
     prod->seq_id = sqlite3_column_int64(stmt, i++);
 
     if (xsql_cpy_txt(stmt, i++, XSQL_TXT_OF(*prod, profile_name)))
-        return SCHED_FAIL;
-    if (xsql_cpy_txt(stmt, i++, XSQL_TXT_OF(*prod, abc_name)))
-        return SCHED_FAIL;
+        return RC_FAIL;
+    if (xsql_cpy_txt(stmt, i++, XSQL_TXT_OF(*prod, abc_name))) return RC_FAIL;
 
     prod->alt_loglik = sqlite3_column_double(stmt, i++);
     prod->null_loglik = sqlite3_column_double(stmt, i++);
 
     if (xsql_cpy_txt(stmt, i++, XSQL_TXT_OF(*prod, profile_typeid)))
-        return SCHED_FAIL;
-    if (xsql_cpy_txt(stmt, i++, XSQL_TXT_OF(*prod, version))) return SCHED_FAIL;
+        return RC_FAIL;
+    if (xsql_cpy_txt(stmt, i++, XSQL_TXT_OF(*prod, version))) return RC_FAIL;
 
-    if (xsql_cpy_txt(stmt, i++, XSQL_TXT_OF(*prod, match))) return SCHED_FAIL;
+    if (xsql_cpy_txt(stmt, i++, XSQL_TXT_OF(*prod, match))) return RC_FAIL;
 
     return xsql_end_step(stmt);
 }
@@ -235,21 +240,21 @@ static int get_prod(struct sched_prod *prod)
 int sched_prod_next(struct sched_prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
-    int rc = SCHED_DONE;
-    if (xsql_reset(stmt)) return SCHED_FAIL;
+    int rc = RC_DONE;
+    if (xsql_reset(stmt)) return RC_FAIL;
 
-    if (xsql_bind_i64(stmt, 0, prod->id)) return SCHED_FAIL;
-    if (xsql_bind_i64(stmt, 1, prod->job_id)) return SCHED_FAIL;
+    if (xsql_bind_i64(stmt, 0, prod->id)) return RC_FAIL;
+    if (xsql_bind_i64(stmt, 1, prod->job_id)) return RC_FAIL;
 
     rc = xsql_step(stmt);
-    if (rc == SCHED_DONE) return SCHED_DONE;
-    if (rc != SCHED_NEXT) return SCHED_FAIL;
+    if (rc == RC_DONE) return RC_DONE;
+    if (rc != RC_NEXT) return RC_FAIL;
 
     prod->id = sqlite3_column_int64(stmt, 0);
-    if (xsql_end_step(stmt)) return SCHED_FAIL;
+    if (xsql_end_step(stmt)) return RC_FAIL;
 
-    if (get_prod(prod)) return SCHED_FAIL;
-    return SCHED_NEXT;
+    if (get_prod(prod)) return RC_FAIL;
+    return RC_NEXT;
 }
 
 void prod_module_del(void)
@@ -292,12 +297,12 @@ static int submit_prod_file(FILE *restrict fp)
             if (tok_next(&tok, fp)) goto cleanup;
         }
         assert(tok_id(&tok) == TOK_NL);
-        if (xsql_step(stmt) != SCHED_DONE) goto cleanup;
+        if (xsql_step(stmt) != RC_DONE) goto cleanup;
     } while (true);
 
     return xsql_end_transaction(sched);
 
 cleanup:
     xsql_rollback_transaction(sched);
-    return SCHED_FAIL;
+    return RC_FAIL;
 }

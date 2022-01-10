@@ -1,14 +1,15 @@
 #include "dcp_sched/sched.h"
-#include "compiler.h"
+#include "common/rc.h"
+#include "common/compiler.h"
 #include "db.h"
 #include "job.h"
 #include "prod.h"
-#include "safe.h"
+#include "common/safe.h"
 #include "schema.h"
 #include "seq.h"
 #include "seq_queue.h"
-#include "utc.h"
-#include "xfile.h"
+#include "common/utc.h"
+#include "common/xfile.h"
 #include "xsql.h"
 #include <assert.h>
 #include <limits.h>
@@ -34,17 +35,17 @@ int sched_setup(char const *filepath)
     safe_strcpy(sched_filepath, filepath, ARRAY_SIZE(sched_filepath));
 
     int thread_safe = sqlite3_threadsafe();
-    if (thread_safe == 0) return SCHED_FAIL;
-    if (sqlite3_libversion_number() < MIN_SQLITE_VERSION) return SCHED_FAIL;
+    if (thread_safe == 0) return RC_FAIL;
+    if (sqlite3_libversion_number() < MIN_SQLITE_VERSION) return RC_FAIL;
 
-    if (touch_db(filepath)) return SCHED_FAIL;
+    if (touch_db(filepath)) return RC_FAIL;
 
     bool empty = false;
-    if (is_empty(filepath, &empty)) return SCHED_FAIL;
+    if (is_empty(filepath, &empty)) return RC_FAIL;
 
-    if (empty && emerge_db(filepath)) return SCHED_FAIL;
+    if (empty && emerge_db(filepath)) return RC_FAIL;
 
-    return SCHED_DONE;
+    return RC_DONE;
 }
 
 int sched_open(void)
@@ -55,11 +56,11 @@ int sched_open(void)
     if (prod_module_init()) goto cleanup;
     if (db_module_init()) goto cleanup;
 
-    return SCHED_DONE;
+    return RC_DONE;
 
 cleanup:
     xsql_close(sched);
-    return SCHED_FAIL;
+    return RC_FAIL;
 }
 
 int sched_close(void)
@@ -84,38 +85,38 @@ int sched_add_db(char const *filepath, int64_t *id)
 {
     char resolved[PATH_MAX] = {0};
     char *ptr = realpath(filepath, resolved);
-    if (!ptr) return SCHED_FAIL;
+    if (!ptr) return RC_FAIL;
 
     struct db db = {0};
     int rc = db_has(resolved, &db);
-    if (rc == SCHED_DONE)
+    if (rc == RC_DONE)
     {
         *id = db.id;
-        if (strcmp(db.filepath, resolved) == 0) return SCHED_DONE;
-        return SCHED_FAIL;
+        if (strcmp(db.filepath, resolved) == 0) return RC_DONE;
+        return RC_FAIL;
     }
 
-    if (rc == SCHED_NOTFOUND) return db_add(resolved, id);
-    return SCHED_FAIL;
+    if (rc == RC_NOTFOUND) return db_add(resolved, id);
+    return RC_FAIL;
 }
 
 int sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
 {
     struct db db = {0};
     int code = db_get_by_id(&db, id);
-    if (code == SCHED_NOTFOUND) return SCHED_NOTFOUND;
-    if (code != SCHED_DONE) return SCHED_FAIL;
+    if (code == RC_NOTFOUND) return RC_NOTFOUND;
+    if (code != RC_DONE) return RC_FAIL;
     safe_strcpy(filepath, db.filepath, size);
-    return SCHED_DONE;
+    return RC_DONE;
 }
 
 int sched_get_job(struct sched_job *job) { return job_get(job); }
 
 int sched_begin_job_submission(struct sched_job *job)
 {
-    if (xsql_begin_transaction(sched)) return SCHED_FAIL;
+    if (xsql_begin_transaction(sched)) return RC_FAIL;
     seq_queue_init();
-    return SCHED_DONE;
+    return RC_DONE;
 }
 
 void sched_add_seq(struct sched_job *job, char const *name, char const *data)
@@ -130,7 +131,7 @@ int sched_rollback_job_submission(struct sched_job *job)
 
 int sched_end_job_submission(struct sched_job *job)
 {
-    if (job_submit(job)) return SCHED_FAIL;
+    if (job_submit(job)) return RC_FAIL;
 
     for (unsigned i = 0; i < seq_queue_size(); ++i)
     {
@@ -145,14 +146,14 @@ int sched_end_job_submission(struct sched_job *job)
 int sched_begin_prod_submission(unsigned num_threads)
 {
     assert(num_threads > 0);
-    if (prod_begin_submission(num_threads)) return SCHED_FAIL;
-    return SCHED_DONE;
+    if (prod_begin_submission(num_threads)) return RC_FAIL;
+    return RC_DONE;
 }
 
 int sched_end_prod_submission(void)
 {
-    if (prod_end_submission()) return SCHED_FAIL;
-    return SCHED_DONE;
+    if (prod_end_submission()) return RC_FAIL;
+    return RC_DONE;
 }
 
 int sched_next_pending_job(struct sched_job *job)
@@ -206,5 +207,5 @@ int touch_db(char const *filepath)
 
 cleanup:
     xsql_close(sched);
-    return SCHED_FAIL;
+    return RC_FAIL;
 }

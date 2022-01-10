@@ -107,13 +107,13 @@ static enum rc run_on_partition(struct work *work, unsigned i)
 enum rc work_next(struct work *work)
 {
     int code = sched_next_pending_job(&work->job);
-    if (code == SCHED_NOTFOUND) return RC_DONE;
+    if (code == RC_NOTFOUND) return RC_DONE;
     if (code != SCHED_DONE)
         return error(RC_FAIL, "failed to get next pending job");
 
     char filepath[DCP_PATH_SIZE] = {0};
     code = sched_cpy_db_filepath(DCP_PATH_SIZE, filepath, work->job.db_id);
-    if (code == SCHED_NOTFOUND) return error(RC_NOTFOUND, "db not found");
+    if (code == RC_NOTFOUND) return error(RC_NOTFOUND, "db not found");
     if (code != SCHED_DONE) return error(RC_FAIL, "failed to get db filepath");
 
     if (!(work->db.fp = fopen(filepath, "rb")))

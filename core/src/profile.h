@@ -1,9 +1,9 @@
 #ifndef PROFILE_H
 #define PROFILE_H
 
-#include "compiler.h"
+#include "common/compiler.h"
 #include "imm/imm.h"
-#include "rc.h"
+#include "common/rc.h"
 
 struct cmp_ctx_s;
 struct profile;

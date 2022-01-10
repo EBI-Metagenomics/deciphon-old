@@ -1,6 +1,6 @@
 #include "tok.h"
-#include "compiler.h"
-#include "dcp_sched/rc.h"
+#include "common/compiler.h"
+#include "common/rc.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,21 +24,21 @@ int tok_next(struct tok *tok, FILE *restrict fd)
     if (tok->line.consumed)
     {
         int rc = next_line(fd, MEMBER_SIZE(tok->line, data), tok->line.data);
-        if (rc && rc == SCHED_NOTFOUND)
+        if (rc && rc == RC_NOTFOUND)
         {
             tok->value = NULL;
             tok->id = TOK_EOF;
             tok->line.data[0] = '\0';
-            return SCHED_DONE;
+            return RC_DONE;
         }
-        if (rc && rc != SCHED_NOTFOUND) return SCHED_FAIL;
+        if (rc && rc != RC_NOTFOUND) return RC_FAIL;
         tok->value = strtok_r(tok->line.data, DELIM, &tok->line.ctx);
         tok->line.number++;
     }
     else
         tok->value = strtok_r(NULL, DELIM, &tok->line.ctx);
 
-    if (!tok->value) return SCHED_FAIL;
+    if (!tok->value) return RC_FAIL;
 
     if (!strcmp(tok->value, "\n"))
         tok->id = TOK_NL;
@@ -47,7 +47,7 @@ int tok_next(struct tok *tok, FILE *restrict fd)
 
     tok->line.consumed = tok->id == TOK_NL;
 
-    return SCHED_DONE;
+    return RC_DONE;
 }
 
 static int next_line(FILE *restrict fd, unsigned size, char *line)
@@ -56,13 +56,13 @@ static int next_line(FILE *restrict fd, unsigned size, char *line)
     assert(size > 0);
     if (!fgets(line, (int)(size - 1), fd))
     {
-        if (feof(fd)) return SCHED_NOTFOUND;
+        if (feof(fd)) return RC_NOTFOUND;
 
-        return SCHED_FAIL;
+        return RC_FAIL;
     }
 
     add_space_before_newline(line);
-    return SCHED_DONE;
+    return RC_DONE;
 }
 
 static void add_space_before_newline(char *line)
