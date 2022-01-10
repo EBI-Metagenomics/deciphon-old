@@ -3,6 +3,7 @@
 
 #include "dcp_sched/export.h"
 #include "dcp_sched/limits.h"
+#include "common/rc.h"
 #include <stdint.h>
 
 struct sched_seq
@@ -15,6 +16,6 @@ struct sched_seq
 
 SCHED_API void sched_seq_init(struct sched_seq *seq, int64_t job_id,
                               char const *name, char const *data);
-SCHED_API int sched_seq_next(struct sched_seq *seq);
+SCHED_API enum rc sched_seq_next(struct sched_seq *seq);
 
 #endif

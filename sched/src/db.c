@@ -52,7 +52,7 @@ cleanup:
     return 0;
 }
 
-int db_module_init(void)
+enum rc db_module_init(void)
 {
     int rc = 0;
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
@@ -62,7 +62,7 @@ int db_module_init(void)
     return 0;
 }
 
-int db_add(char const *filepath, int64_t *id)
+enum rc db_add(char const *filepath, int64_t *id)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     struct db db = {0};
@@ -78,13 +78,13 @@ int db_add(char const *filepath, int64_t *id)
     return RC_DONE;
 }
 
-int db_has(char const *filepath, struct db *db)
+enum rc db_has(char const *filepath, struct db *db)
 {
     if (init_db(db, filepath)) return RC_FAIL;
     return db_get_by_xxh64(db, db->xxh64);
 }
 
-int db_hash(char const *filepath, int64_t *xxh64)
+enum rc db_hash(char const *filepath, int64_t *xxh64)
 {
     struct db db = {0};
     if (init_db(&db, filepath)) return RC_FAIL;
@@ -110,12 +110,12 @@ static int select_db(struct db *db, int64_t by_value, enum stmt select_stmt)
     return xsql_end_step(stmt);
 }
 
-int db_get_by_id(struct db *db, int64_t id)
+enum rc db_get_by_id(struct db *db, int64_t id)
 {
     return select_db(db, id, SELECT_BY_ID);
 }
 
-int db_get_by_xxh64(struct db *db, int64_t xxh64)
+enum rc db_get_by_xxh64(struct db *db, int64_t xxh64)
 {
     return select_db(db, xxh64, SELECT_BY_XXH64);
 }

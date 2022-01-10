@@ -68,7 +68,7 @@ static char const *const queries[] = {
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-int job_module_init(void)
+enum rc job_module_init(void)
 {
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
@@ -92,7 +92,7 @@ void sched_job_init(struct sched_job *job, int64_t db_id, bool multi_hits,
     job->exec_ended = 0;
 }
 
-int job_submit(struct sched_job *job)
+enum rc job_submit(struct sched_job *job)
 {
     job->submission = utc_now();
     struct sqlite3_stmt *stmt = stmts[INSERT];
@@ -132,7 +132,7 @@ static int next_pending_job_id(int64_t *job_id)
     return xsql_step(stmt) == RC_DONE ? RC_DONE : RC_FAIL;
 }
 
-int job_next_pending(struct sched_job *job)
+enum rc job_next_pending(struct sched_job *job)
 {
     int rc = next_pending_job_id(&job->id);
     if (rc == RC_NOTFOUND) return RC_NOTFOUND;
@@ -140,7 +140,7 @@ int job_next_pending(struct sched_job *job)
     return job_get(job);
 }
 
-int job_set_error(int64_t job_id, char const *error, int64_t exec_ended)
+enum rc job_set_error(int64_t job_id, char const *error, int64_t exec_ended)
 {
     struct sqlite3_stmt *stmt = stmts[SET_ERROR];
     if (xsql_reset(stmt)) return RC_FAIL;
@@ -152,7 +152,7 @@ int job_set_error(int64_t job_id, char const *error, int64_t exec_ended)
     return xsql_end_step(stmt);
 }
 
-int job_set_done(int64_t job_id, int64_t exec_ended)
+enum rc job_set_done(int64_t job_id, int64_t exec_ended)
 {
     struct sqlite3_stmt *stmt = stmts[SET_DONE];
     if (xsql_reset(stmt)) return RC_FAIL;
@@ -178,7 +178,7 @@ static enum sched_job_state resolve_job_state(char const *state)
     return 0;
 }
 
-int sched_job_state(int64_t job_id, enum sched_job_state *state)
+enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
 {
     struct sqlite3_stmt *stmt = stmts[GET_STATE];
     if (xsql_reset(stmt)) return RC_FAIL;
@@ -197,7 +197,7 @@ int sched_job_state(int64_t job_id, enum sched_job_state *state)
     return xsql_end_step(stmt);
 }
 
-int job_get(struct sched_job *job)
+enum rc job_get(struct sched_job *job)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT];
     if (xsql_reset(stmt)) return RC_FAIL;

@@ -5,8 +5,8 @@
 #include "dcp_sched/seq.h"
 #include <stdint.h>
 
-int seq_module_init(void);
-int seq_submit(struct sched_seq *seq);
+enum rc seq_module_init(void);
+enum rc seq_submit(struct sched_seq *seq);
 void seq_module_del(void);
 
 #endif

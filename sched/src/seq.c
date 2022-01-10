@@ -44,7 +44,7 @@ static char const *const queries[] = {
 
 static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-int seq_module_init(void)
+enum rc seq_module_init(void)
 {
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
@@ -62,7 +62,7 @@ void sched_seq_init(struct sched_seq *seq, int64_t job_id, char const *name,
     safe_strcpy(seq->data, data, ARRAY_SIZE_OF(*seq, data));
 }
 
-int seq_submit(struct sched_seq *seq)
+enum rc seq_submit(struct sched_seq *seq)
 {
     struct sqlite3_stmt *stmt = stmts[INSERT];
     if (xsql_reset(stmt)) return RC_FAIL;
@@ -110,7 +110,7 @@ static int get_seq(struct sched_seq *seq)
     return xsql_end_step(stmt);
 }
 
-int sched_seq_next(struct sched_seq *seq)
+enum rc sched_seq_next(struct sched_seq *seq)
 {
     int rc = next_seq_id(seq->job_id, &seq->id);
     if (rc == RC_NOTFOUND) return RC_DONE;

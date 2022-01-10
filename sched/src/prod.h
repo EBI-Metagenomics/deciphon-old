@@ -9,10 +9,10 @@
 
 struct protein_match;
 
-int prod_module_init(void);
+enum rc prod_module_init(void);
 
-int prod_begin_submission(unsigned num_threads);
-int prod_end_submission(void);
+enum rc prod_begin_submission(unsigned num_threads);
+enum rc prod_end_submission(void);
 
 void prod_module_del(void);
 

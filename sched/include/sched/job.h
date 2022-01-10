@@ -3,6 +3,7 @@
 
 #include "dcp_sched/export.h"
 #include "dcp_sched/limits.h"
+#include "common/rc.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -32,6 +33,6 @@ struct sched_job
 SCHED_API void sched_job_init(struct sched_job *job, int64_t db_id,
                               bool multi_hits, bool hmmer3_compat);
 
-SCHED_API int sched_job_state(int64_t job_id, enum sched_job_state *state);
+SCHED_API enum rc sched_job_state(int64_t job_id, enum sched_job_state *state);
 
 #endif

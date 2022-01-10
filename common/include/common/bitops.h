@@ -2,6 +2,7 @@
 #define BITOPS_H
 
 #include "compiler.h"
+#include "common/export.h"
 #include <stdint.h>
 
 /**
@@ -13,7 +14,7 @@
  *
  * Undefined if no set bit exists, so code should check against 0 first.
  */
-unsigned bitops_fls32(uint32_t x);
+EXPORT unsigned bitops_fls32(uint32_t x);
 
 /**
  * fls64 - find last (most-significant) set bit in a long word
@@ -23,7 +24,6 @@ unsigned bitops_fls32(uint32_t x);
  */
 static inline unsigned bitops_fls64(uint64_t x)
 {
-
 #if __has_builtin(__builtin_clzl)
     uint32_t h = (uint32_t)(x >> 32);
     return h ? bitops_fls32(h) + 32 : bitops_fls32((uint32_t)x);
@@ -38,7 +38,7 @@ static inline unsigned bitops_fls64(uint64_t x)
  *
  * Undefined if no bit exists, so code should check against 0 first.
  */
-int bitops_fful(unsigned long word);
+EXPORT int bitops_fful(unsigned long word);
 
 #define BITOPS_MASK(nr) (1UL << ((nr) % BITS_PER(long)))
 #define BITOPS_WORD(nr) ((nr) / BITS_PER(long))

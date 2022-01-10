@@ -19,7 +19,7 @@ unsigned tok_size(struct tok const *tok)
     return (unsigned)strlen(tok->value);
 }
 
-int tok_next(struct tok *tok, FILE *restrict fd)
+enum rc tok_next(struct tok *tok, FILE *restrict fd)
 {
     if (tok->line.consumed)
     {

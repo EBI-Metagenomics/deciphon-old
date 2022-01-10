@@ -89,7 +89,7 @@ void sched_prod_init(struct sched_prod *prod, int64_t job_id)
     prod->match[0] = 0;
 }
 
-int prod_module_init(void)
+enum rc prod_module_init(void)
 {
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
@@ -105,7 +105,7 @@ static void cleanup(void)
     nthreads = 0;
 }
 
-int prod_begin_submission(unsigned num_threads)
+enum rc prod_begin_submission(unsigned num_threads)
 {
     assert(num_threads <= SCHED_MAX_NUM_THREADS);
     for (nthreads = 0; nthreads < num_threads; ++nthreads)
@@ -119,7 +119,7 @@ int prod_begin_submission(unsigned num_threads)
     return RC_DONE;
 }
 
-int sched_prod_write_begin(struct sched_prod const *prod, unsigned thread_num)
+enum rc sched_prod_write_begin(struct sched_prod const *prod, unsigned thread_num)
 {
 #define TAB "\t"
 #define echo(fmt, var) fprintf(prod_file[thread_num].fp, fmt, prod->var) < 0
@@ -165,19 +165,19 @@ int sched_prod_write_begin(struct sched_prod const *prod, unsigned thread_num)
  *                      ---------------
  */
 
-int sched_prod_write_match(sched_prod_write_match_cb *cb, void const *match,
+enum rc sched_prod_write_match(sched_prod_write_match_cb *cb, void const *match,
                            unsigned thread_num)
 {
     return cb(prod_file[thread_num].fp, match);
 }
 
-int sched_prod_write_match_sep(unsigned thread_num)
+enum rc sched_prod_write_match_sep(unsigned thread_num)
 {
     if (fputc(';', prod_file[thread_num].fp) == EOF) return RC_FAIL;
     return RC_DONE;
 }
 
-int sched_prod_write_end(unsigned thread_num)
+enum rc sched_prod_write_end(unsigned thread_num)
 {
     if (fputc('\n', prod_file[thread_num].fp) == EOF) return RC_FAIL;
     return RC_DONE;
@@ -185,7 +185,7 @@ int sched_prod_write_end(unsigned thread_num)
 
 static int submit_prod_file(FILE *restrict fp);
 
-int prod_end_submission(void)
+enum rc prod_end_submission(void)
 {
     int rc = RC_FAIL;
 
@@ -237,7 +237,7 @@ static int get_prod(struct sched_prod *prod)
     return xsql_end_step(stmt);
 }
 
-int sched_prod_next(struct sched_prod *prod)
+enum rc sched_prod_next(struct sched_prod *prod)
 {
     struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
     int rc = RC_DONE;
