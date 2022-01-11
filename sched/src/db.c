@@ -1,127 +1,90 @@
 #include "db.h"
-#include "common/compiler.h"
+#include "common/logger.h"
 #include "common/rc.h"
 #include "common/safe.h"
-#include "sched.h"
 #include "common/xfile.h"
+#include "sched/sched.h"
+#include "stmt.h"
 #include "xsql.h"
 #include <sqlite3.h>
 #include <stdlib.h>
 
-enum stmt
-{
-    INSERT,
-    SELECT_BY_ID,
-    SELECT_BY_XXH64
-};
-
-/* clang-format off */
-static char const *const queries[] = {
-    [INSERT] = \
-"\
-        INSERT INTO db\
-            (\
-                xxh64, filepath\
-            )\
-        VALUES\
-            (\
-                ?, ?\
-            );\
-",
-    [SELECT_BY_ID] = "SELECT * FROM db WHERE id = ?;\
-",
-    [SELECT_BY_XXH64] = "SELECT * FROM db WHERE xxh64 = ?;\
-"};
-/* clang-format on */
-
 extern struct sqlite3 *sched;
-static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
 
-static int init_db(struct db *db, char const *filepath)
+static enum rc init_db(struct db *db, char const *filepath)
 {
     FILE *fp = fopen(filepath, "rb");
-    if (!fp) return RC_FAIL;
+    if (!fp) return failed_to(RC_IOERROR, "fopen");
 
-    int rc = xfile_hash(fp, (uint64_t *)&db->xxh64);
+    enum rc rc = xfile_hash(fp, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
 
     safe_strcpy(db->filepath, filepath, SCHED_PATH_SIZE);
 
 cleanup:
     fclose(fp);
-    return 0;
-}
-
-enum rc db_module_init(void)
-{
-    int rc = 0;
-    for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
-    {
-        if ((rc = xsql_prepare(sched, queries[i], stmts + i))) return rc;
-    }
-    return 0;
+    return rc;
 }
 
 enum rc db_add(char const *filepath, int64_t *id)
 {
-    struct sqlite3_stmt *stmt = stmts[INSERT];
+    struct sqlite3_stmt *st = stmt[DB_INSERT];
     struct db db = {0};
-    if (init_db(&db, filepath)) return RC_FAIL;
 
-    if (xsql_reset(stmt)) return RC_FAIL;
+    enum rc rc = init_db(&db, filepath);
+    if (rc) return rc;
 
-    if (xsql_bind_i64(stmt, 0, db.xxh64)) return RC_FAIL;
-    if (xsql_bind_txt(stmt, 1, XSQL_TXT_OF(db, filepath))) return RC_FAIL;
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_step(stmt) != RC_DONE) return RC_FAIL;
+    if (xsql_bind_i64(st, 0, db.xxh64)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_txt(st, 1, XSQL_TXT_OF(db, filepath)))
+        return failed_to(RC_FAIL, "bind");
+
+    if (xsql_step(st) != RC_DONE) return failed_to(RC_FAIL, "add db");
     *id = xsql_last_id(sched);
     return RC_DONE;
 }
 
 enum rc db_has(char const *filepath, struct db *db)
 {
-    if (init_db(db, filepath)) return RC_FAIL;
+    enum rc rc = init_db(db, filepath);
+    if (rc) return rc;
     return db_get_by_xxh64(db, db->xxh64);
 }
 
 enum rc db_hash(char const *filepath, int64_t *xxh64)
 {
     struct db db = {0};
-    if (init_db(&db, filepath)) return RC_FAIL;
+    enum rc rc = init_db(&db, filepath);
     *xxh64 = db.xxh64;
-    return RC_DONE;
+    return rc;
 }
 
-static int select_db(struct db *db, int64_t by_value, enum stmt select_stmt)
+static enum rc select_db(struct db *db, int64_t by_value, enum stmt select_stmt)
 {
-    struct sqlite3_stmt *stmt = stmts[select_stmt];
-    if (xsql_reset(stmt)) return RC_DONE;
+    struct sqlite3_stmt *st = stmt[select_stmt];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, by_value)) return RC_DONE;
+    if (xsql_bind_i64(st, 0, by_value)) return failed_to(RC_FAIL, "bind");
 
-    int rc = xsql_step(stmt);
+    int rc = xsql_step(st);
     if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) return RC_FAIL;
+    if (rc != RC_NEXT) return failed_to(RC_FAIL, "get db");
 
-    db->id = sqlite3_column_int64(stmt, 0);
-    db->xxh64 = sqlite3_column_int64(stmt, 1);
-    if (xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*db, filepath))) return RC_DONE;
+    db->id = sqlite3_column_int64(st, 0);
+    db->xxh64 = sqlite3_column_int64(st, 1);
+    if (xsql_cpy_txt(st, 2, XSQL_TXT_OF(*db, filepath))) return RC_DONE;
 
-    return xsql_end_step(stmt);
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
+    return RC_DONE;
 }
 
 enum rc db_get_by_id(struct db *db, int64_t id)
 {
-    return select_db(db, id, SELECT_BY_ID);
+    return select_db(db, id, DB_SELECT_BY_ID);
 }
 
 enum rc db_get_by_xxh64(struct db *db, int64_t xxh64)
 {
-    return select_db(db, xxh64, SELECT_BY_XXH64);
-}
-
-void db_module_del(void)
-{
-    for (unsigned i = 0; i < ARRAY_SIZE(stmts); ++i)
-        sqlite3_finalize(stmts[i]);
+    return select_db(db, xxh64, DB_SELECT_BY_XXH64);
 }

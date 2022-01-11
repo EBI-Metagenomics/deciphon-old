@@ -29,6 +29,7 @@ add_library(
   src/sched.c
   src/seq.c
   src/seq_queue.c
+  src/stmt.c
   src/tok.c
   src/xsql.c
 )

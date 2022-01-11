@@ -1,81 +1,18 @@
 #include "job.h"
-#include "common/rc.h"
 #include "common/compiler.h"
+#include "common/rc.h"
+#include "common/safe.h"
+#include "common/utc.h"
 #include "sched/job.h"
 #include "sched/sched.h"
-#include "common/safe.h"
-#include "sched.h"
 #include "seq.h"
-#include "common/utc.h"
+#include "stmt.h"
 #include "xsql.h"
 #include <sqlite3.h>
 #include <stdlib.h>
 #include <string.h>
 
 extern struct sqlite3 *sched;
-
-enum
-{
-    INSERT,
-    GET_PEND,
-    SET_RUN,
-    GET_STATE,
-    SELECT,
-    SET_ERROR,
-    SET_DONE
-};
-
-/* clang-format off */
-static char const *const queries[] = {
-    [INSERT] =\
-"\
-        INSERT INTO job\
-            (\
-                db_id, multi_hits, hmmer3_compat,      state,\
-                error, submission, exec_started,  exec_ended\
-            )\
-        VALUES\
-            (\
-                ?, ?, ?, ?,\
-                ?, ?, ?, ?\
-            );\
-",
-    [GET_PEND] = \
-"\
-    SELECT id FROM job WHERE state = 'pend' ORDER BY id LIMIT 1;\
-",
-    [SET_RUN] = \
-"\
-        UPDATE job SET\
-            state = 'run', exec_started = ?\
-        WHERE \
-            id = ?;\
-",
-    [GET_STATE] = "SELECT state FROM job WHERE id = ?;",
-    [SELECT] = "SELECT * FROM job WHERE id = ?;\
-",
-    [SET_ERROR] = \
-"\
-    UPDATE job SET\
-        state = 'fail', error = ?, exec_ended = ? WHERE id = ?;\
-",
-    [SET_DONE] = \
-"\
-    UPDATE job SET\
-        state = 'done', exec_ended = ? WHERE id = ?;\
-"};
-/* clang-format on */
-
-static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
-
-enum rc job_module_init(void)
-{
-    for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
-    {
-        if (xsql_prepare(sched, queries[i], stmts + i)) return RC_FAIL;
-    }
-    return RC_DONE;
-}
 
 void sched_job_init(struct sched_job *job, int64_t db_id, bool multi_hits,
                     bool hmmer3_compat)
@@ -95,41 +32,47 @@ void sched_job_init(struct sched_job *job, int64_t db_id, bool multi_hits,
 enum rc job_submit(struct sched_job *job)
 {
     job->submission = utc_now();
-    struct sqlite3_stmt *stmt = stmts[INSERT];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[JOB_INSERT];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, job->db_id)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 1, job->multi_hits)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 2, job->hmmer3_compat)) return RC_FAIL;
-    if (xsql_bind_str(stmt, 3, job->state)) return RC_FAIL;
+    if (xsql_bind_i64(st, 0, job->db_id)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 1, job->multi_hits))
+        return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 2, job->hmmer3_compat))
+        return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_str(st, 3, job->state)) return failed_to(RC_FAIL, "bind");
 
-    if (xsql_bind_str(stmt, 4, job->error)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 5, job->submission)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 6, job->exec_started)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 7, job->exec_ended)) return RC_FAIL;
+    if (xsql_bind_str(st, 4, job->error)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 5, job->submission))
+        return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 6, job->exec_started))
+        return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 7, job->exec_ended))
+        return failed_to(RC_FAIL, "bind");
 
-    if (xsql_step(stmt) != RC_DONE) return RC_FAIL;
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
     job->id = xsql_last_id(sched);
     return RC_DONE;
 }
 
 static int next_pending_job_id(int64_t *job_id)
 {
-    struct sqlite3_stmt *stmt = stmts[GET_PEND];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[JOB_GET_PEND];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    int rc = xsql_step(stmt);
+    int rc = xsql_step(st);
     if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) return RC_FAIL;
-    *job_id = sqlite3_column_int64(stmt, 0);
-    if (xsql_step(stmt)) return RC_FAIL;
+    if (rc != RC_NEXT) return failed_to(RC_FAIL, "get pend job");
+    *job_id = sqlite3_column_int64(st, 0);
+    if (xsql_step(st)) return failed_to(RC_FAIL, "get pend job");
 
-    stmt = stmts[SET_RUN];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    st = stmt[JOB_SET_RUN];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, utc_now())) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 1, *job_id)) return RC_FAIL;
-    return xsql_step(stmt) == RC_DONE ? RC_DONE : RC_FAIL;
+    if (xsql_bind_i64(st, 0, utc_now())) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 1, *job_id)) return failed_to(RC_FAIL, "bind");
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
+    return RC_DONE;
 }
 
 enum rc job_next_pending(struct sched_job *job)
@@ -142,25 +85,27 @@ enum rc job_next_pending(struct sched_job *job)
 
 enum rc job_set_error(int64_t job_id, char const *error, int64_t exec_ended)
 {
-    struct sqlite3_stmt *stmt = stmts[SET_ERROR];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[JOB_SET_ERROR];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_str(stmt, 0, error)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 1, exec_ended)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 2, job_id)) return RC_FAIL;
+    if (xsql_bind_str(st, 0, error)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 1, exec_ended)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 2, job_id)) return failed_to(RC_FAIL, "bind");
 
-    return xsql_end_step(stmt);
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
+    return RC_DONE;
 }
 
 enum rc job_set_done(int64_t job_id, int64_t exec_ended)
 {
-    struct sqlite3_stmt *stmt = stmts[SET_DONE];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[JOB_SET_DONE];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, exec_ended)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 1, job_id)) return RC_FAIL;
+    if (xsql_bind_i64(st, 0, exec_ended)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 1, job_id)) return failed_to(RC_FAIL, "bind");
 
-    return xsql_end_step(stmt);
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
+    return RC_DONE;
 }
 
 static enum sched_job_state resolve_job_state(char const *state)
@@ -174,55 +119,50 @@ static enum sched_job_state resolve_job_state(char const *state)
     else if (strcmp("fail", state) == 0)
         return SCHED_JOB_FAIL;
 
-    exit(EXIT_FAILURE);
-    return 0;
+    BUG();
 }
 
 enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
 {
-    struct sqlite3_stmt *stmt = stmts[GET_STATE];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[JOB_GET_STATE];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, job_id)) return RC_FAIL;
+    if (xsql_bind_i64(st, 0, job_id)) return failed_to(RC_FAIL, "bind");
 
-    int rc = xsql_step(stmt);
+    int rc = xsql_step(st);
     if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) return RC_FAIL;
+    if (rc != RC_NEXT) return failed_to(RC_FAIL, "get job state");
 
     char tmp[SCHED_JOB_STATE_SIZE] = {0};
-    rc = xsql_cpy_txt(stmt, 0, (struct xsql_txt){SCHED_JOB_STATE_SIZE, tmp});
+    rc = xsql_cpy_txt(st, 0, (struct xsql_txt){SCHED_JOB_STATE_SIZE, tmp});
     if (rc) return RC_FAIL;
     *state = resolve_job_state(tmp);
 
-    return xsql_end_step(stmt);
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
+    return RC_DONE;
 }
 
 enum rc job_get(struct sched_job *job)
 {
-    struct sqlite3_stmt *stmt = stmts[SELECT];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[JOB_SELECT];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, job->id)) return RC_FAIL;
+    if (xsql_bind_i64(st, 0, job->id)) return failed_to(RC_FAIL, "bind");
 
-    if (xsql_step(stmt) != RC_NEXT) return RC_FAIL;
+    if (xsql_step(st) != RC_NEXT) return RC_FAIL;
 
-    job->id = sqlite3_column_int64(stmt, 0);
+    job->id = sqlite3_column_int64(st, 0);
 
-    job->db_id = sqlite3_column_int64(stmt, 1);
-    job->multi_hits = sqlite3_column_int(stmt, 2);
-    job->hmmer3_compat = sqlite3_column_int(stmt, 3);
-    if (xsql_cpy_txt(stmt, 4, XSQL_TXT_OF(*job, state))) return RC_FAIL;
+    job->db_id = sqlite3_column_int64(st, 1);
+    job->multi_hits = sqlite3_column_int(st, 2);
+    job->hmmer3_compat = sqlite3_column_int(st, 3);
+    if (xsql_cpy_txt(st, 4, XSQL_TXT_OF(*job, state))) return RC_FAIL;
 
-    if (xsql_cpy_txt(stmt, 5, XSQL_TXT_OF(*job, error))) return RC_FAIL;
-    job->submission = sqlite3_column_int64(stmt, 6);
-    job->exec_started = sqlite3_column_int64(stmt, 7);
-    job->exec_ended = sqlite3_column_int64(stmt, 8);
+    if (xsql_cpy_txt(st, 5, XSQL_TXT_OF(*job, error))) return RC_FAIL;
+    job->submission = sqlite3_column_int64(st, 6);
+    job->exec_started = sqlite3_column_int64(st, 7);
+    job->exec_ended = sqlite3_column_int64(st, 8);
 
-    return xsql_end_step(stmt);
-}
-
-void job_module_del(void)
-{
-    for (unsigned i = 0; i < ARRAY_SIZE(stmts); ++i)
-        sqlite3_finalize(stmts[i]);
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
+    return RC_DONE;
 }

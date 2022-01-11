@@ -2,6 +2,7 @@
 #define XSQL_H
 
 #include "common/compiler.h"
+#include "common/logger.h"
 #include <inttypes.h>
 #include <stdbool.h>
 
@@ -35,10 +36,9 @@ enum rc xsql_end_transaction(struct sqlite3 *db);
 enum rc xsql_rollback_transaction(struct sqlite3 *db);
 
 enum rc xsql_prepare(struct sqlite3 *db, char const *sql,
-                 struct sqlite3_stmt **stmt);
+                     struct sqlite3_stmt **stmt);
 enum rc xsql_reset(struct sqlite3_stmt *stmt);
 enum rc xsql_step(struct sqlite3_stmt *stmt);
-enum rc xsql_end_step(struct sqlite3_stmt *stmt);
 
 int64_t xsql_last_id(struct sqlite3 *db);
 

@@ -16,18 +16,30 @@ enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
 {
     int rc = RC_FAIL;
     XXH64_state_t *const state = XXH64_createState();
-    if (!state) goto cleanup;
+    if (!state)
+    {
+        rc = error(RC_FAIL, "failed to create state");
+        goto cleanup;
+    }
     XXH64_reset(state, 0);
 
     size_t n = 0;
     unsigned char buffer[BUFFSIZE] = {0};
     while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, fp)) > 0)
     {
-        if (n < BUFFSIZE && ferror(fp)) goto cleanup;
+        if (n < BUFFSIZE && ferror(fp))
+        {
+            rc = failed_to(RC_IOERROR, "fread");
+            goto cleanup;
+        }
 
         XXH64_update(state, buffer, n);
     }
-    if (ferror(fp)) goto cleanup;
+    if (ferror(fp))
+    {
+        rc = failed_to(RC_IOERROR, "fread");
+        goto cleanup;
+    }
 
     rc = RC_DONE;
     *hash = XXH64_digest(state);
@@ -42,8 +54,12 @@ enum rc xfile_tmp_open(struct xfile_tmp *file)
     safe_strcpy(file->path, XFILE_PATH_TEMP_TEMPLATE,
                 ARRAY_SIZE_OF(*file, path));
     file->fp = 0;
-    if (xfile_mktemp(file->path)) return RC_FAIL;
-    if (!(file->fp = fopen(file->path, "wb+"))) return RC_FAIL;
+
+    enum rc rc = xfile_mktemp(file->path);
+    if (rc) return rc;
+
+    if (!(file->fp = fopen(file->path, "wb+"))) return failed_to(RC_IOERROR, "fopen");
+
     return RC_DONE;
 }
 
@@ -59,13 +75,11 @@ enum rc xfile_copy(FILE *restrict dst, FILE *restrict src)
     size_t n = 0;
     while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, src)) > 0)
     {
-        if (n < BUFFSIZE && ferror(src))
-            return error(RC_IOERROR, "failed to read file");
+        if (n < BUFFSIZE && ferror(src)) return failed_to(RC_IOERROR, "fread");
 
-        if (fwrite(buffer, sizeof(*buffer), n, dst) < n)
-            return error(RC_IOERROR, "failed to write file");
+        if (fwrite(buffer, sizeof(*buffer), n, dst) < n) return failed_to(RC_IOERROR, "fwrite");
     }
-    if (ferror(src)) return error(RC_IOERROR, "failed to read file");
+    if (ferror(src)) return failed_to(RC_IOERROR, "fread");
 
     return RC_DONE;
 }
@@ -93,34 +107,37 @@ static char *glibc_basename(const char *filename)
     return p ? p + 1 : (char *)filename;
 }
 
-static bool append_ext(char *str, size_t len, size_t max_size, char const *ext)
+static enum rc append_ext(char *str, size_t len, size_t max_size,
+                          char const *ext)
 {
     char *j = &str[len];
     size_t n = strlen(ext);
-    if (n + 1 + (size_t)(j - str) > max_size) return false;
+    if (n + 1 + (size_t)(j - str) > max_size)
+        return error(RC_OUTOFMEM, "not enough memory");
     *(j++) = *(ext++);
     *(j++) = *(ext++);
     *(j++) = *(ext++);
     *(j++) = *(ext++);
     *j = *ext;
-    return true;
+    return RC_DONE;
 }
 
-static bool change_ext(char *str, size_t pos, size_t max_size, char const *ext)
+static enum rc change_ext(char *str, size_t pos, size_t max_size,
+                          char const *ext)
 {
     char *j = &str[pos];
     while (j > str && *j != '.')
         --j;
-    if (j == str) return false;
+    if (j == str) return RC_FAIL;
     return append_ext(str, (size_t)(j - str), max_size, ext);
 }
 
-bool xfile_set_ext(size_t max_size, char *str, char const *ext)
+enum rc xfile_set_ext(size_t max_size, char *str, char const *ext)
 {
     size_t len = strlen(str);
-    if (!change_ext(str, len, max_size, ext))
+    if (change_ext(str, len, max_size, ext))
         return append_ext(str, len, max_size, ext);
-    return true;
+    return RC_DONE;
 }
 
 void xfile_basename(char *filename, char const *path)

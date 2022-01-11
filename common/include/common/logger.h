@@ -20,4 +20,6 @@ EXPORT void __logger_info(char const *msg);
 EXPORT enum rc __logger_error(enum rc rc, char const *msg);
 #define error(rc, msg) __logger_error(rc, __ERROR_FMT(rc, msg))
 
+#define failed_to(rc, func) error(rc, "failed to " func)
+
 #endif

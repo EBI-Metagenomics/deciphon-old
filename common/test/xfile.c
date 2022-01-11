@@ -128,16 +128,16 @@ void test_xfile_set_ext(void)
     char path1[5 + 1 + 4] = "file1.txt";
     char path2[5 + 1 + 2 * 4] = "file2.txt.pdf";
 
-    COND(!xfile_set_ext(sizeof path, path, ".pdf"));
+    EQ(xfile_set_ext(sizeof path, path, ".pdf"), RC_OUTOFMEM);
     EQ(path, "file");
 
-    COND(xfile_set_ext(sizeof path0, path0, ".pdf"));
+    EQ(xfile_set_ext(sizeof path0, path0, ".pdf"), RC_DONE);
     EQ(path0, "file0.pdf");
 
-    COND(xfile_set_ext(sizeof path1, path1, ".doc"));
+    EQ(xfile_set_ext(sizeof path1, path1, ".doc"), RC_DONE);
     EQ(path1, "file1.doc");
 
-    COND(xfile_set_ext(sizeof path2, path2, ".o"));
+    EQ(xfile_set_ext(sizeof path2, path2, ".o"), RC_DONE);
     EQ(path2, "file2.txt.o");
 }
 
@@ -160,5 +160,4 @@ void test_xfile_strip_ext(void)
     EQ(path0, "file");
     EQ(path1, "file");
     EQ(path2, "file.txt");
-
 }

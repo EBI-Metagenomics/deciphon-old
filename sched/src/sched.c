@@ -1,4 +1,5 @@
 #include "sched/sched.h"
+#include "stmt.h"
 #include "common/rc.h"
 #include "common/compiler.h"
 #include "db.h"
@@ -38,7 +39,7 @@ enum rc sched_setup(char const *filepath)
     if (thread_safe == 0) return RC_FAIL;
     if (sqlite3_libversion_number() < MIN_SQLITE_VERSION) return RC_FAIL;
 
-    if (touch_db(filepath)) return RC_FAIL;
+    if (touch_db(filepath)) return failed_to(RC_FAIL, "touch db");
 
     bool empty = false;
     if (is_empty(filepath, &empty)) return RC_FAIL;
@@ -51,10 +52,7 @@ enum rc sched_setup(char const *filepath)
 enum rc sched_open(void)
 {
     if (xsql_open(sched_filepath, &sched)) goto cleanup;
-    if (job_module_init()) goto cleanup;
-    if (seq_module_init()) goto cleanup;
-    if (prod_module_init()) goto cleanup;
-    if (db_module_init()) goto cleanup;
+    if (stmt_init()) goto cleanup;
 
     return RC_DONE;
 
@@ -65,10 +63,7 @@ cleanup:
 
 enum rc sched_close(void)
 {
-    db_module_del();
-    prod_module_del();
-    seq_module_del();
-    job_module_del();
+    stmt_del();
     return xsql_close(sched);
 }
 

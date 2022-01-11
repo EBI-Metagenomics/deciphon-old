@@ -1,57 +1,11 @@
 #include "seq.h"
 #include "common/rc.h"
-#include "common/compiler.h"
 #include "common/safe.h"
-#include "sched.h"
+#include "stmt.h"
 #include "xsql.h"
-#include <assert.h>
-#include <limits.h>
 #include <sqlite3.h>
-#include <stdint.h>
 
 extern struct sqlite3 *sched;
-
-enum
-{
-    INSERT,
-    SELECT,
-    SELECT_NEXT
-};
-
-/* clang-format off */
-static char const *const queries[] = {
-    [INSERT] = \
-"\
-        INSERT INTO seq\
-            (\
-                job_id, name, data\
-            )\
-        VALUES\
-            (\
-                ?, ?, ?\
-            );\
-",
-    [SELECT] = "SELECT id, job_id, name, upper(data) FROM seq WHERE id = ?;\
-",
-    [SELECT_NEXT] = \
-"\
-        SELECT\
-            id FROM seq\
-        WHERE\
-            id > ? AND job_id = ? ORDER BY id ASC LIMIT 1;\
-"};
-/* clang-format on */
-
-static struct sqlite3_stmt *stmts[ARRAY_SIZE(queries)] = {0};
-
-enum rc seq_module_init(void)
-{
-    for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
-    {
-        if (xsql_prepare(sched, queries[i], stmts + i)) return RC_FAIL;
-    }
-    return RC_DONE;
-}
 
 void sched_seq_init(struct sched_seq *seq, int64_t job_id, char const *name,
                     char const *data)
@@ -64,50 +18,52 @@ void sched_seq_init(struct sched_seq *seq, int64_t job_id, char const *name,
 
 enum rc seq_submit(struct sched_seq *seq)
 {
-    struct sqlite3_stmt *stmt = stmts[INSERT];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[SEQ_INSERT];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, seq->job_id)) return RC_FAIL;
-    if (xsql_bind_str(stmt, 1, seq->name)) return RC_FAIL;
-    if (xsql_bind_str(stmt, 2, seq->data)) return RC_FAIL;
+    if (xsql_bind_i64(st, 0, seq->job_id)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_str(st, 1, seq->name)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_str(st, 2, seq->data)) return failed_to(RC_FAIL, "bind");
 
-    if (xsql_step(stmt) != RC_DONE) return RC_FAIL;
+    if (xsql_step(st) != RC_DONE) return failed_to(RC_FAIL, "steo");
     seq->id = xsql_last_id(sched);
     return RC_DONE;
 }
 
 static int next_seq_id(int64_t job_id, int64_t *seq_id)
 {
-    struct sqlite3_stmt *stmt = stmts[SELECT_NEXT];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[SEQ_SELECT_NEXT];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, *seq_id)) return RC_FAIL;
-    if (xsql_bind_i64(stmt, 1, job_id)) return RC_FAIL;
+    if (xsql_bind_i64(st, 0, *seq_id)) return failed_to(RC_FAIL, "bind");
+    if (xsql_bind_i64(st, 1, job_id)) return failed_to(RC_FAIL, "bind");
 
-    int rc = xsql_step(stmt);
+    int rc = xsql_step(st);
     if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) return RC_FAIL;
-    *seq_id = sqlite3_column_int64(stmt, 0);
+    if (rc != RC_NEXT) return failed_to(RC_FAIL, "get next seq id");
+    *seq_id = sqlite3_column_int64(st, 0);
 
-    return xsql_end_step(stmt);
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
+    return RC_DONE;
 }
 
-static int get_seq(struct sched_seq *seq)
+static enum rc get_seq(struct sched_seq *seq)
 {
-    struct sqlite3_stmt *stmt = stmts[SELECT];
-    if (xsql_reset(stmt)) return RC_FAIL;
+    struct sqlite3_stmt *st = stmt[SEQ_SELECT];
+    if (xsql_reset(st)) return failed_to(RC_FAIL, "reset");
 
-    if (xsql_bind_i64(stmt, 0, seq->id)) return RC_FAIL;
+    if (xsql_bind_i64(st, 0, seq->id)) return failed_to(RC_FAIL, "bind");
 
-    if (xsql_step(stmt) != RC_NEXT) return RC_FAIL;
+    if (xsql_step(st) != RC_NEXT) failed_to(RC_FAIL, "get seq");
 
-    seq->id = sqlite3_column_int64(stmt, 0);
-    seq->job_id = sqlite3_column_int64(stmt, 1);
+    seq->id = sqlite3_column_int64(st, 0);
+    seq->job_id = sqlite3_column_int64(st, 1);
 
-    if (xsql_cpy_txt(stmt, 2, XSQL_TXT_OF(*seq, name))) return RC_FAIL;
-    if (xsql_cpy_txt(stmt, 3, XSQL_TXT_OF(*seq, data))) return RC_FAIL;
+    if (xsql_cpy_txt(st, 2, XSQL_TXT_OF(*seq, name))) return RC_FAIL;
+    if (xsql_cpy_txt(st, 3, XSQL_TXT_OF(*seq, data))) return RC_FAIL;
 
-    return xsql_end_step(stmt);
+    if (xsql_step(st)) return failed_to(RC_FAIL, "step");
+    return RC_DONE;
 }
 
 enum rc sched_seq_next(struct sched_seq *seq)
@@ -117,10 +73,4 @@ enum rc sched_seq_next(struct sched_seq *seq)
     if (rc != RC_DONE) return RC_FAIL;
     if (get_seq(seq)) return RC_FAIL;
     return RC_NEXT;
-}
-
-void seq_module_del(void)
-{
-    for (unsigned i = 0; i < ARRAY_SIZE(stmts); ++i)
-        sqlite3_finalize(stmts[i]);
 }

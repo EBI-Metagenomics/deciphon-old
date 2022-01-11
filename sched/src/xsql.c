@@ -1,7 +1,7 @@
 #include "xsql.h"
 #include "common/rc.h"
-#include <assert.h>
 #include "common/safe.h"
+#include <assert.h>
 #include <sqlite3.h>
 #include <stdlib.h>
 
@@ -63,7 +63,7 @@ enum rc xsql_close(struct sqlite3 *db)
 }
 
 enum rc xsql_exec(struct sqlite3 *db, char const *sql, xsql_callback cb,
-              void *cb_arg)
+                  void *cb_arg)
 {
     if (sqlite3_exec(db, sql, cb, cb_arg, 0)) return RC_FAIL;
     return RC_DONE;
@@ -85,7 +85,7 @@ enum rc xsql_rollback_transaction(struct sqlite3 *db)
 }
 
 enum rc xsql_prepare(struct sqlite3 *db, char const *sql,
-                 struct sqlite3_stmt **stmt)
+                     struct sqlite3_stmt **stmt)
 {
     if (sqlite3_prepare_v2(db, sql, -1, stmt, 0)) return RC_FAIL;
     return RC_DONE;
@@ -103,12 +103,6 @@ enum rc xsql_step(struct sqlite3_stmt *stmt)
     if (code == SQLITE_DONE) return RC_DONE;
     if (code == SQLITE_ROW) return RC_NEXT;
     return RC_FAIL;
-}
-
-enum rc xsql_end_step(struct sqlite3_stmt *stmt)
-{
-    if (sqlite3_step(stmt) != SQLITE_DONE) return RC_FAIL;
-    return RC_DONE;
 }
 
 int64_t xsql_last_id(struct sqlite3 *db)
