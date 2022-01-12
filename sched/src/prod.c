@@ -28,7 +28,7 @@ enum
 extern struct sqlite3 *sched;
 static TOK_DECLARE(tok);
 static unsigned nthreads = 0;
-static struct xfile_tmp prod_file[DCP_MAX_NUM_THREADS] = {0};
+static struct xfile_tmp prod_file[MAX_NUM_THREADS] = {0};
 
 void sched_prod_init(struct sched_prod *prod, int64_t job_id)
 {

@@ -14,16 +14,16 @@ struct sched_prod
     int64_t job_id;
     int64_t seq_id;
 
-    char profile_name[DCP_PROFILE_NAME_SIZE];
-    char abc_name[DCP_ABC_NAME_SIZE];
+    char profile_name[PROFILE_NAME_SIZE];
+    char abc_name[ABC_NAME_SIZE];
 
     double alt_loglik;
     double null_loglik;
 
-    char profile_typeid[DCP_PROFILE_TYPEID_SIZE];
-    char version[DCP_VERSION_SIZE];
+    char profile_typeid[PROFILE_TYPEID_SIZE];
+    char version[VERSION_SIZE];
 
-    char match[DCP_MATCH_SIZE];
+    char match[MATCH_SIZE];
 };
 
 typedef int(sched_prod_write_match_cb)(FILE *fp, void const *match);

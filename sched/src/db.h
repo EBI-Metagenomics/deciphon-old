@@ -8,7 +8,7 @@ struct db
 {
     int64_t id;
     int64_t xxh64;
-    char filepath[DCP_PATH_SIZE];
+    char filepath[PATH_SIZE];
 };
 
 enum rc db_add(char const *filepath, int64_t *id);

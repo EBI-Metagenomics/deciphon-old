@@ -128,8 +128,8 @@ enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
     if (rc == DONE) return NOTFOUND;
     if (rc != NEXT) return efail("get job state");
 
-    char tmp[DCP_JOB_STATE_SIZE] = {0};
-    rc = xsql_cpy_txt(st, 0, (struct xsql_txt){DCP_JOB_STATE_SIZE, tmp});
+    char tmp[JOB_STATE_SIZE] = {0};
+    rc = xsql_cpy_txt(st, 0, (struct xsql_txt){JOB_STATE_SIZE, tmp});
     if (rc) efail("copy txt");
     *state = resolve_job_state(tmp);
 

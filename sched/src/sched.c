@@ -20,7 +20,7 @@
 #include <string.h>
 
 struct sqlite3 *sched = NULL;
-char sched_filepath[DCP_PATH_SIZE] = {0};
+char sched_filepath[PATH_SIZE] = {0};
 
 #define MIN_SQLITE_VERSION 3031001
 

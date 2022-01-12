@@ -143,7 +143,7 @@ enum rc xfile_set_ext(size_t max_size, char *str, char const *ext)
 void xfile_basename(char *filename, char const *path)
 {
     char *p = glibc_basename(path);
-    safe_strcpy(filename, p, DCP_FILENAME_SIZE);
+    safe_strcpy(filename, p, FILENAME_SIZE);
 }
 
 void xfile_strip_ext(char *str)

@@ -22,9 +22,9 @@ struct sched_job
     int64_t db_id;
     int32_t multi_hits;
     int32_t hmmer3_compat;
-    char state[DCP_JOB_STATE_SIZE];
+    char state[JOB_STATE_SIZE];
 
-    char error[DCP_JOB_ERROR_SIZE];
+    char error[JOB_ERROR_SIZE];
     int64_t submission;
     int64_t exec_started;
     int64_t exec_ended;

@@ -10,8 +10,8 @@ struct sched_seq
 {
     int64_t id;
     int64_t job_id;
-    char name[DCP_SEQ_NAME_SIZE];
-    char data[DCP_SEQ_SIZE];
+    char name[SEQ_NAME_SIZE];
+    char data[SEQ_SIZE];
 };
 
 EXPORT void sched_seq_init(struct sched_seq *seq, int64_t job_id,
