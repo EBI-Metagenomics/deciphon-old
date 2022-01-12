@@ -36,17 +36,17 @@ enum rc sched_setup(char const *filepath)
     safe_strcpy(sched_filepath, filepath, ARRAY_SIZE(sched_filepath));
 
     int thread_safe = sqlite3_threadsafe();
-    if (thread_safe == 0) return RC_FAIL;
-    if (sqlite3_libversion_number() < MIN_SQLITE_VERSION) return RC_FAIL;
+    if (thread_safe == 0) return EFAIL;
+    if (sqlite3_libversion_number() < MIN_SQLITE_VERSION) return EFAIL;
 
-    if (touch_db(filepath)) return failed_to(RC_FAIL, "touch db");
+    if (touch_db(filepath)) return failed_to(EFAIL, "touch db");
 
     bool empty = false;
-    if (is_empty(filepath, &empty)) return RC_FAIL;
+    if (is_empty(filepath, &empty)) return EFAIL;
 
-    if (empty && emerge_db(filepath)) return RC_FAIL;
+    if (empty && emerge_db(filepath)) return EFAIL;
 
-    return RC_DONE;
+    return DONE;
 }
 
 enum rc sched_open(void)
@@ -54,11 +54,11 @@ enum rc sched_open(void)
     if (xsql_open(sched_filepath, &sched)) goto cleanup;
     if (stmt_init()) goto cleanup;
 
-    return RC_DONE;
+    return DONE;
 
 cleanup:
     xsql_close(sched);
-    return RC_FAIL;
+    return EFAIL;
 }
 
 enum rc sched_close(void)
@@ -80,38 +80,38 @@ enum rc sched_add_db(char const *filepath, int64_t *id)
 {
     char resolved[PATH_MAX] = {0};
     char *ptr = realpath(filepath, resolved);
-    if (!ptr) return RC_FAIL;
+    if (!ptr) return EFAIL;
 
     struct db db = {0};
     int rc = db_has(resolved, &db);
-    if (rc == RC_DONE)
+    if (rc == DONE)
     {
         *id = db.id;
-        if (strcmp(db.filepath, resolved) == 0) return RC_DONE;
-        return RC_FAIL;
+        if (strcmp(db.filepath, resolved) == 0) return DONE;
+        return EFAIL;
     }
 
-    if (rc == RC_NOTFOUND) return db_add(resolved, id);
-    return RC_FAIL;
+    if (rc == NOTFOUND) return db_add(resolved, id);
+    return EFAIL;
 }
 
 enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
 {
     struct db db = {0};
     int code = db_get_by_id(&db, id);
-    if (code == RC_NOTFOUND) return RC_NOTFOUND;
-    if (code != RC_DONE) return RC_FAIL;
+    if (code == NOTFOUND) return NOTFOUND;
+    if (code != DONE) return EFAIL;
     safe_strcpy(filepath, db.filepath, size);
-    return RC_DONE;
+    return DONE;
 }
 
 enum rc sched_get_job(struct sched_job *job) { return job_get(job); }
 
 enum rc sched_begin_job_submission(struct sched_job *job)
 {
-    if (xsql_begin_transaction(sched)) return RC_FAIL;
+    if (xsql_begin_transaction(sched)) return EFAIL;
     seq_queue_init();
-    return RC_DONE;
+    return DONE;
 }
 
 void sched_add_seq(struct sched_job *job, char const *name, char const *data)
@@ -126,7 +126,7 @@ enum rc sched_rollback_job_submission(struct sched_job *job)
 
 enum rc sched_end_job_submission(struct sched_job *job)
 {
-    if (job_submit(job)) return RC_FAIL;
+    if (job_submit(job)) return EFAIL;
 
     for (unsigned i = 0; i < seq_queue_size(); ++i)
     {
@@ -141,14 +141,14 @@ enum rc sched_end_job_submission(struct sched_job *job)
 enum rc sched_begin_prod_submission(unsigned num_threads)
 {
     assert(num_threads > 0);
-    if (prod_begin_submission(num_threads)) return RC_FAIL;
-    return RC_DONE;
+    if (prod_begin_submission(num_threads)) return EFAIL;
+    return DONE;
 }
 
 enum rc sched_end_prod_submission(void)
 {
-    if (prod_end_submission()) return RC_FAIL;
-    return RC_DONE;
+    if (prod_end_submission()) return EFAIL;
+    return DONE;
 }
 
 enum rc sched_next_pending_job(struct sched_job *job)
@@ -202,5 +202,5 @@ enum rc touch_db(char const *filepath)
 
 cleanup:
     xsql_close(sched);
-    return RC_FAIL;
+    return EFAIL;
 }

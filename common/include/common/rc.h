@@ -3,15 +3,15 @@
 
 enum rc
 {
-    RC_DONE,
-    RC_END,
-    RC_NEXT,
-    RC_FAIL,
-    RC_OUTOFMEM,
-    RC_ILLEGALARG,
-    RC_IOERROR,
-    RC_PARSEERROR,
-    RC_NOTFOUND,
+    DONE,
+    END,
+    NEXT,
+    EFAIL,
+    NOTFOUND,
+    ENOMEM,
+    EINVALARG,
+    EIO,
+    EPARSE,
 };
 
 #endif

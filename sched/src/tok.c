@@ -24,21 +24,21 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
     if (tok->line.consumed)
     {
         int rc = next_line(fd, MEMBER_SIZE(tok->line, data), tok->line.data);
-        if (rc && rc == RC_NOTFOUND)
+        if (rc && rc == NOTFOUND)
         {
             tok->value = NULL;
             tok->id = TOK_EOF;
             tok->line.data[0] = '\0';
-            return RC_DONE;
+            return DONE;
         }
-        if (rc && rc != RC_NOTFOUND) return RC_FAIL;
+        if (rc && rc != NOTFOUND) return EFAIL;
         tok->value = strtok_r(tok->line.data, DELIM, &tok->line.ctx);
         tok->line.number++;
     }
     else
         tok->value = strtok_r(NULL, DELIM, &tok->line.ctx);
 
-    if (!tok->value) return RC_FAIL;
+    if (!tok->value) return EFAIL;
 
     if (!strcmp(tok->value, "\n"))
         tok->id = TOK_NL;
@@ -47,7 +47,7 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
 
     tok->line.consumed = tok->id == TOK_NL;
 
-    return RC_DONE;
+    return DONE;
 }
 
 static int next_line(FILE *restrict fd, unsigned size, char *line)
@@ -56,13 +56,13 @@ static int next_line(FILE *restrict fd, unsigned size, char *line)
     assert(size > 0);
     if (!fgets(line, (int)(size - 1), fd))
     {
-        if (feof(fd)) return RC_NOTFOUND;
+        if (feof(fd)) return NOTFOUND;
 
-        return RC_FAIL;
+        return EFAIL;
     }
 
     add_space_before_newline(line);
-    return RC_DONE;
+    return DONE;
 }
 
 static void add_space_before_newline(char *line)

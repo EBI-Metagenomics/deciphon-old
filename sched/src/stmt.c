@@ -42,9 +42,9 @@ enum rc stmt_init(void)
 {
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
-        if (xsql_prepare(sched, queries[i], stmt + i)) return RC_FAIL;
+        if (xsql_prepare(sched, queries[i], stmt + i)) return EFAIL;
     }
-    return RC_DONE;
+    return DONE;
 }
 
 void stmt_del(void)
