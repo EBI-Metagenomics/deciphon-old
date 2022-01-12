@@ -1,5 +1,6 @@
 #include "tok.h"
 #include "common/compiler.h"
+#include "common/logger.h"
 #include "common/rc.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -8,7 +9,7 @@
 #define DELIM " \t\r"
 
 static void add_space_before_newline(char *line);
-static int next_line(FILE *restrict fd, unsigned size, char *line);
+static enum rc next_line(FILE *restrict fd, unsigned size, char *line);
 
 enum tok_id tok_id(struct tok const *tok) { return tok->id; }
 
@@ -23,7 +24,8 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
 {
     if (tok->line.consumed)
     {
-        int rc = next_line(fd, MEMBER_SIZE(tok->line, data), tok->line.data);
+        enum rc rc =
+            next_line(fd, MEMBER_SIZE(tok->line, data), tok->line.data);
         if (rc && rc == NOTFOUND)
         {
             tok->value = NULL;
@@ -31,14 +33,14 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
             tok->line.data[0] = '\0';
             return DONE;
         }
-        if (rc && rc != NOTFOUND) return EFAIL;
+        if (rc && rc != NOTFOUND) return efail("get line");
         tok->value = strtok_r(tok->line.data, DELIM, &tok->line.ctx);
         tok->line.number++;
     }
     else
         tok->value = strtok_r(NULL, DELIM, &tok->line.ctx);
 
-    if (!tok->value) return EFAIL;
+    if (!tok->value) return efail("get value");
 
     if (!strcmp(tok->value, "\n"))
         tok->id = TOK_NL;
@@ -50,7 +52,7 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
     return DONE;
 }
 
-static int next_line(FILE *restrict fd, unsigned size, char *line)
+static enum rc next_line(FILE *restrict fd, unsigned size, char *line)
 {
     /* -1 to append space before newline if required */
     assert(size > 0);
@@ -58,7 +60,7 @@ static int next_line(FILE *restrict fd, unsigned size, char *line)
     {
         if (feof(fd)) return NOTFOUND;
 
-        return EFAIL;
+        return eio("fgets");
     }
 
     add_space_before_newline(line);

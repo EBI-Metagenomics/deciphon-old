@@ -74,7 +74,7 @@ enum rc job_next_pending(struct sched_job *job)
 {
     int rc = next_pending_job_id(&job->id);
     if (rc == NOTFOUND) return NOTFOUND;
-    if (rc != DONE) return EFAIL;
+    if (rc != DONE) efail("get next pending job");
     return job_get(job);
 }
 
@@ -130,7 +130,7 @@ enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
 
     char tmp[SCHED_JOB_STATE_SIZE] = {0};
     rc = xsql_cpy_txt(st, 0, (struct xsql_txt){SCHED_JOB_STATE_SIZE, tmp});
-    if (rc) return EFAIL;
+    if (rc) efail("copy txt");
     *state = resolve_job_state(tmp);
 
     if (xsql_step(st)) return efail("step");
@@ -144,16 +144,16 @@ enum rc job_get(struct sched_job *job)
 
     if (xsql_bind_i64(st, 0, job->id)) return efail("bind");
 
-    if (xsql_step(st) != NEXT) return EFAIL;
+    if (xsql_step(st) != NEXT) efail("step");
 
     job->id = sqlite3_column_int64(st, 0);
 
     job->db_id = sqlite3_column_int64(st, 1);
     job->multi_hits = sqlite3_column_int(st, 2);
     job->hmmer3_compat = sqlite3_column_int(st, 3);
-    if (xsql_cpy_txt(st, 4, XSQL_TXT_OF(*job, state))) return EFAIL;
+    if (xsql_cpy_txt(st, 4, XSQL_TXT_OF(*job, state))) efail("copy txt");
 
-    if (xsql_cpy_txt(st, 5, XSQL_TXT_OF(*job, error))) return EFAIL;
+    if (xsql_cpy_txt(st, 5, XSQL_TXT_OF(*job, error))) efail("copy txt");
     job->submission = sqlite3_column_int64(st, 6);
     job->exec_started = sqlite3_column_int64(st, 7);
     job->exec_ended = sqlite3_column_int64(st, 8);

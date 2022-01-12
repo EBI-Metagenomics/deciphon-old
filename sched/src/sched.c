@@ -36,15 +36,16 @@ enum rc sched_setup(char const *filepath)
     safe_strcpy(sched_filepath, filepath, ARRAY_SIZE(sched_filepath));
 
     int thread_safe = sqlite3_threadsafe();
-    if (thread_safe == 0) return EFAIL;
-    if (sqlite3_libversion_number() < MIN_SQLITE_VERSION) return EFAIL;
+    if (thread_safe == 0) return efail("not thread safe");
+    if (sqlite3_libversion_number() < MIN_SQLITE_VERSION)
+        return efail("old sqlite3");
 
     if (touch_db(filepath)) return efail("touch db");
 
     bool empty = false;
-    if (is_empty(filepath, &empty)) return EFAIL;
+    if (is_empty(filepath, &empty)) BUG();
 
-    if (empty && emerge_db(filepath)) return EFAIL;
+    if (empty && emerge_db(filepath)) return efail("emerge db");
 
     return DONE;
 }
@@ -80,7 +81,7 @@ enum rc sched_add_db(char const *filepath, int64_t *id)
 {
     char resolved[PATH_MAX] = {0};
     char *ptr = realpath(filepath, resolved);
-    if (!ptr) return EFAIL;
+    if (!ptr) return efail("realpath");
 
     struct db db = {0};
     int rc = db_has(resolved, &db);
@@ -88,7 +89,7 @@ enum rc sched_add_db(char const *filepath, int64_t *id)
     {
         *id = db.id;
         if (strcmp(db.filepath, resolved) == 0) return DONE;
-        return EFAIL;
+        return efail("copy resolved filepath");
     }
 
     if (rc == NOTFOUND) return db_add(resolved, id);
@@ -126,7 +127,7 @@ enum rc sched_rollback_job_submission(struct sched_job *job)
 
 enum rc sched_end_job_submission(struct sched_job *job)
 {
-    if (job_submit(job)) return EFAIL;
+    if (job_submit(job)) return efail("submit job");
 
     for (unsigned i = 0; i < seq_queue_size(); ++i)
     {
@@ -202,5 +203,5 @@ enum rc touch_db(char const *filepath)
 
 cleanup:
     xsql_close(sched);
-    return EFAIL;
+    return efail("touch db");
 }

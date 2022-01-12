@@ -42,7 +42,8 @@ enum rc stmt_init(void)
 {
     for (unsigned i = 0; i < ARRAY_SIZE(queries); ++i)
     {
-        if (xsql_prepare(sched, queries[i], stmt + i)) return EFAIL;
+        if (xsql_prepare(sched, queries[i], stmt + i))
+            return efail("prepare stmt");
     }
     return DONE;
 }

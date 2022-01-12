@@ -64,7 +64,7 @@ enum rc prod_begin_submission(unsigned num_threads)
         if (xfile_tmp_open(prod_file + nthreads))
         {
             cleanup();
-            return EFAIL;
+            return efail("begin prod submission");
         }
     }
     return DONE;
@@ -79,18 +79,18 @@ enum rc sched_prod_write_begin(struct sched_prod const *prod,
 #define Fs "%s" TAB
 #define Fg "%.17g" TAB
 
-    if (echo(Fd64, job_id)) return EFAIL;
-    if (echo(Fd64, seq_id)) return EFAIL;
+    if (echo(Fd64, job_id)) efail("write prod");
+    if (echo(Fd64, seq_id)) efail("write prod");
 
-    if (echo(Fs, profile_name)) return EFAIL;
-    if (echo(Fs, abc_name)) return EFAIL;
+    if (echo(Fs, profile_name)) efail("write prod");
+    if (echo(Fs, abc_name)) efail("write prod");
 
     /* Reference: https://stackoverflow.com/a/21162120 */
-    if (echo(Fg, alt_loglik)) return EFAIL;
-    if (echo(Fg, null_loglik)) return EFAIL;
+    if (echo(Fg, alt_loglik)) efail("write prod");
+    if (echo(Fg, null_loglik)) efail("write prod");
 
-    if (echo(Fs, profile_typeid)) return EFAIL;
-    if (echo(Fs, version)) return EFAIL;
+    if (echo(Fs, profile_typeid)) efail("write prod");
+    if (echo(Fs, version)) efail("write prod");
 
     return DONE;
 
@@ -161,11 +161,11 @@ cleanup:
 static enum rc get_prod(struct sched_prod *prod)
 {
     struct sqlite3_stmt *st = stmt[PROD_SELECT];
-    if (xsql_reset(st)) return EFAIL;
+    if (xsql_reset(st)) return efail("reset");
 
-    if (xsql_bind_i64(st, 0, prod->id)) return EFAIL;
+    if (xsql_bind_i64(st, 0, prod->id)) return efail("bind");
 
-    if (xsql_step(st) != NEXT) return EFAIL;
+    if (xsql_step(st) != NEXT) return efail("step");
 
     int i = 0;
     prod->id = sqlite3_column_int64(st, i++);
@@ -173,33 +173,37 @@ static enum rc get_prod(struct sched_prod *prod)
     prod->job_id = sqlite3_column_int64(st, i++);
     prod->seq_id = sqlite3_column_int64(st, i++);
 
-    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, profile_name))) return EFAIL;
-    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, abc_name))) return EFAIL;
+#define ecpy efail("copy txt")
+
+    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, profile_name))) return ecpy;
+    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, abc_name))) return ecpy;
 
     prod->alt_loglik = sqlite3_column_double(st, i++);
     prod->null_loglik = sqlite3_column_double(st, i++);
 
-    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, profile_typeid))) return EFAIL;
-    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, version))) return EFAIL;
+    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, profile_typeid))) return ecpy;
+    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, version))) return ecpy;
 
-    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, match))) return EFAIL;
+    if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, match))) return ecpy;
 
     if (xsql_step(st)) return efail("step");
     return DONE;
+
+#undef ecpy
 }
 
 enum rc sched_prod_next(struct sched_prod *prod)
 {
     struct sqlite3_stmt *st = stmt[PROD_SELECT_NEXT];
     int rc = DONE;
-    if (xsql_reset(st)) return EFAIL;
+    if (xsql_reset(st)) return efail("reset");
 
-    if (xsql_bind_i64(st, 0, prod->id)) return EFAIL;
-    if (xsql_bind_i64(st, 1, prod->job_id)) return EFAIL;
+    if (xsql_bind_i64(st, 0, prod->id)) return efail("bind");
+    if (xsql_bind_i64(st, 1, prod->job_id)) return efail("bind");
 
     rc = xsql_step(st);
     if (rc == DONE) return DONE;
-    if (rc != NEXT) return EFAIL;
+    if (rc != NEXT) return efail("step");
 
     prod->id = sqlite3_column_int64(st, 0);
     if (xsql_step(st)) return efail("step");
