@@ -1,9 +1,9 @@
-#ifndef XLIMITS_H
-#define XLIMITS_H
+#ifndef LIMITS_H
+#define LIMITS_H
 
 #include "compiler.h"
 
-enum xlimits
+enum limits
 {
     DCP_ABC_NAME_SIZE = 16,
     DCP_PROFILE_TYPEID_SIZE = 16,
@@ -17,9 +17,13 @@ enum xlimits
     DCP_PROFILE_NAME_SIZE = 64,
     DCP_PROFILE_ACC_SIZE = 32,
     DCP_NUM_PARTITIONS = 64,
-    /* DCP_BITS_PER_PROFILE_TYPEID = BITS_PER(imm_state_id_t), */
     DCP_BITS_PER_PROFILE_TYPEID = 16,
     PROTEIN_MODEL_CORE_SIZE_MAX = 2048,
+    DCP_MATCH_SIZE = 5 * (1024 * 1024),
+    DCP_JOB_STATE_SIZE = 5,
+    DCP_JOB_ERROR_SIZE = 256,
+    DCP_MAX_NUM_THREADS = 64,
+    DCP_NUM_SEQS_PER_JOB = 64,
 };
 
 #endif

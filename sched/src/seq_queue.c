@@ -1,11 +1,11 @@
 #include "seq_queue.h"
-#include "sched/limits.h"
+#include "common/limits.h"
 #include "seq.h"
 
 struct seq_queue
 {
     unsigned curr;
-    struct sched_seq seq[SCHED_NUM_SEQS_PER_JOB];
+    struct sched_seq seq[DCP_NUM_SEQS_PER_JOB];
 } queue = {0};
 
 void seq_queue_init(void) { queue.curr = 0; }

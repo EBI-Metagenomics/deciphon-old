@@ -19,7 +19,7 @@ static enum rc init_db(struct db *db, char const *filepath)
     enum rc rc = xfile_hash(fp, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
 
-    safe_strcpy(db->filepath, filepath, SCHED_PATH_SIZE);
+    safe_strcpy(db->filepath, filepath, DCP_PATH_SIZE);
 
 cleanup:
     fclose(fp);

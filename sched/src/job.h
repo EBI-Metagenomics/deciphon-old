@@ -2,7 +2,6 @@
 #define JOB_H
 
 #include "sched/job.h"
-#include "sched/limits.h"
 #include <stdbool.h>
 #include <stdint.h>
 

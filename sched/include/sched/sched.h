@@ -2,10 +2,9 @@
 #define DCP_SCHED_SCHED_H
 
 #include "common/export.h"
-#include "sched/job.h"
-#include "sched/limits.h"
-#include "sched/prod.h"
 #include "common/rc.h"
+#include "sched/job.h"
+#include "sched/prod.h"
 #include "sched/seq.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -23,7 +22,7 @@ EXPORT enum rc sched_set_job_done(int64_t job_id);
 
 EXPORT enum rc sched_begin_job_submission(struct sched_job *job);
 EXPORT void sched_add_seq(struct sched_job *job, char const *name,
-                             char const *data);
+                          char const *data);
 EXPORT enum rc sched_rollback_job_submission(struct sched_job *job);
 EXPORT enum rc sched_end_job_submission(struct sched_job *job);
 

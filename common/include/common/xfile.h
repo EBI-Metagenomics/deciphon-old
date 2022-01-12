@@ -2,8 +2,8 @@
 #define XFILE_H
 
 #include "common/export.h"
+#include "common/limits.h"
 #include "rc.h"
-#include "xlimits.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

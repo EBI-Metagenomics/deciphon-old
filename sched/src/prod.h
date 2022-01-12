@@ -1,7 +1,7 @@
 #ifndef PROD_H
 #define PROD_H
 
-#include "sched/limits.h"
+#include "common/limits.h"
 #include "sched/prod.h"
 #include "sched/sched.h"
 #include <stdint.h>

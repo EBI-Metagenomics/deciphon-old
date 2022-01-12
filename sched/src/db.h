@@ -1,14 +1,14 @@
 #ifndef DB_H
 #define DB_H
 
-#include "sched/limits.h"
+#include "common/limits.h"
 #include <stdint.h>
 
 struct db
 {
     int64_t id;
     int64_t xxh64;
-    char filepath[SCHED_PATH_SIZE];
+    char filepath[DCP_PATH_SIZE];
 };
 
 enum rc db_add(char const *filepath, int64_t *id);
