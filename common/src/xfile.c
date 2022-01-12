@@ -29,7 +29,7 @@ enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
     {
         if (n < BUFFSIZE && ferror(fp))
         {
-            rc = failed_to(EIO, "fread");
+            rc = eio("fread");
             goto cleanup;
         }
 
@@ -37,7 +37,7 @@ enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
     }
     if (ferror(fp))
     {
-        rc = failed_to(EIO, "fread");
+        rc = eio("fread");
         goto cleanup;
     }
 
@@ -58,7 +58,7 @@ enum rc xfile_tmp_open(struct xfile_tmp *file)
     enum rc rc = xfile_mktemp(file->path);
     if (rc) return rc;
 
-    if (!(file->fp = fopen(file->path, "wb+"))) return failed_to(EIO, "fopen");
+    if (!(file->fp = fopen(file->path, "wb+"))) return eio("fopen");
 
     return DONE;
 }
@@ -75,11 +75,11 @@ enum rc xfile_copy(FILE *restrict dst, FILE *restrict src)
     size_t n = 0;
     while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, src)) > 0)
     {
-        if (n < BUFFSIZE && ferror(src)) return failed_to(EIO, "fread");
+        if (n < BUFFSIZE && ferror(src)) return eio("fread");
 
-        if (fwrite(buffer, sizeof(*buffer), n, dst) < n) return failed_to(EIO, "fwrite");
+        if (fwrite(buffer, sizeof(*buffer), n, dst) < n) return eio("fwrite");
     }
-    if (ferror(src)) return failed_to(EIO, "fread");
+    if (ferror(src)) return eio("fread");
 
     return DONE;
 }

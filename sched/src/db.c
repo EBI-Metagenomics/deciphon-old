@@ -14,7 +14,7 @@ extern struct sqlite3 *sched;
 static enum rc init_db(struct db *db, char const *filepath)
 {
     FILE *fp = fopen(filepath, "rb");
-    if (!fp) return failed_to(EIO, "fopen");
+    if (!fp) return eio("fopen");
 
     enum rc rc = xfile_hash(fp, (uint64_t *)&db->xxh64);
     if (rc) goto cleanup;
@@ -34,13 +34,12 @@ enum rc db_add(char const *filepath, int64_t *id)
     enum rc rc = init_db(&db, filepath);
     if (rc) return rc;
 
-    if (xsql_reset(st)) return failed_to(EFAIL, "reset");
+    if (xsql_reset(st)) return efail("reset");
 
-    if (xsql_bind_i64(st, 0, db.xxh64)) return failed_to(EFAIL, "bind");
-    if (xsql_bind_txt(st, 1, XSQL_TXT_OF(db, filepath)))
-        return failed_to(EFAIL, "bind");
+    if (xsql_bind_i64(st, 0, db.xxh64)) return efail("bind");
+    if (xsql_bind_txt(st, 1, XSQL_TXT_OF(db, filepath))) return efail("bind");
 
-    if (xsql_step(st) != DONE) return failed_to(EFAIL, "add db");
+    if (xsql_step(st) != DONE) return efail("add db");
     *id = xsql_last_id(sched);
     return DONE;
 }
@@ -63,19 +62,19 @@ enum rc db_hash(char const *filepath, int64_t *xxh64)
 static enum rc select_db(struct db *db, int64_t by_value, enum stmt select_stmt)
 {
     struct sqlite3_stmt *st = stmt[select_stmt];
-    if (xsql_reset(st)) return failed_to(EFAIL, "reset");
+    if (xsql_reset(st)) return efail("reset");
 
-    if (xsql_bind_i64(st, 0, by_value)) return failed_to(EFAIL, "bind");
+    if (xsql_bind_i64(st, 0, by_value)) return efail("bind");
 
     int rc = xsql_step(st);
     if (rc == DONE) return NOTFOUND;
-    if (rc != NEXT) return failed_to(EFAIL, "get db");
+    if (rc != NEXT) return efail("get db");
 
     db->id = sqlite3_column_int64(st, 0);
     db->xxh64 = sqlite3_column_int64(st, 1);
     if (xsql_cpy_txt(st, 2, XSQL_TXT_OF(*db, filepath))) return DONE;
 
-    if (xsql_step(st)) return failed_to(EFAIL, "step");
+    if (xsql_step(st)) return efail("step");
     return DONE;
 }
 

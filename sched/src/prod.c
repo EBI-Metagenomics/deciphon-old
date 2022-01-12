@@ -125,15 +125,13 @@ enum rc sched_prod_write_match(sched_prod_write_match_cb *cb, void const *match,
 
 enum rc sched_prod_write_match_sep(unsigned thread_num)
 {
-    if (fputc(';', prod_file[thread_num].fp) == EOF)
-        return failed_to(EIO, "fputc");
+    if (fputc(';', prod_file[thread_num].fp) == EOF) return eio("fputc");
     return DONE;
 }
 
 enum rc sched_prod_write_end(unsigned thread_num)
 {
-    if (fputc('\n', prod_file[thread_num].fp) == EOF)
-        return failed_to(EIO, "fputc");
+    if (fputc('\n', prod_file[thread_num].fp) == EOF) return eio("fputc");
     return DONE;
 }
 
@@ -147,7 +145,7 @@ enum rc prod_end_submission(void)
     {
         if (fflush(prod_file[i].fp))
         {
-            rc = failed_to(EIO, "fflush");
+            rc = eio("fflush");
             goto cleanup;
         }
         rewind(prod_file[i].fp);
@@ -186,7 +184,7 @@ static enum rc get_prod(struct sched_prod *prod)
 
     if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, match))) return EFAIL;
 
-    if (xsql_step(st)) return failed_to(EFAIL, "step");
+    if (xsql_step(st)) return efail("step");
     return DONE;
 }
 
@@ -204,7 +202,7 @@ enum rc sched_prod_next(struct sched_prod *prod)
     if (rc != NEXT) return EFAIL;
 
     prod->id = sqlite3_column_int64(st, 0);
-    if (xsql_step(st)) return failed_to(EFAIL, "step");
+    if (xsql_step(st)) return efail("step");
 
     if (get_prod(prod)) return EFAIL;
     return NEXT;
@@ -213,7 +211,7 @@ enum rc sched_prod_next(struct sched_prod *prod)
 #define CLEANUP()                                                              \
     do                                                                         \
     {                                                                          \
-        failed_to(EFAIL, "submit prod");                                       \
+        efail("submit prod");                                                  \
         goto cleanup;                                                          \
     } while (1)
 

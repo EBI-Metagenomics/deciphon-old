@@ -1,16 +1,16 @@
 #include "sched/sched.h"
-#include "stmt.h"
-#include "common/rc.h"
 #include "common/compiler.h"
+#include "common/rc.h"
+#include "common/safe.h"
+#include "common/utc.h"
+#include "common/xfile.h"
 #include "db.h"
 #include "job.h"
 #include "prod.h"
-#include "common/safe.h"
 #include "schema.h"
 #include "seq.h"
 #include "seq_queue.h"
-#include "common/utc.h"
-#include "common/xfile.h"
+#include "stmt.h"
 #include "xsql.h"
 #include <assert.h>
 #include <limits.h>
@@ -39,7 +39,7 @@ enum rc sched_setup(char const *filepath)
     if (thread_safe == 0) return EFAIL;
     if (sqlite3_libversion_number() < MIN_SQLITE_VERSION) return EFAIL;
 
-    if (touch_db(filepath)) return failed_to(EFAIL, "touch db");
+    if (touch_db(filepath)) return efail("touch db");
 
     bool empty = false;
     if (is_empty(filepath, &empty)) return EFAIL;
