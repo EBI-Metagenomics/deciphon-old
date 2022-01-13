@@ -163,9 +163,9 @@ function(cbp_bundle_static_library tgt_name bundled_tgt_name)
     get_target_property(public_dependencies ${input_target} ${_input_link_libraries})
     message(STATUS "public_dependencies: ${public_dependencies}")
     foreach(dependency IN LISTS public_dependencies)
-        message(STATUS "dependency: ${dependency}")
+      message(STATUS "dependency: ${dependency}")
       if(TARGET ${dependency})
-          message(STATUS "IT IS TARGET")
+        message(STATUS "IT IS TARGET")
         get_target_property(alias ${dependency} ALIASED_TARGET)
         message(STATUS "alias: ${alias}")
         if(TARGET ${alias})
@@ -283,15 +283,17 @@ function(cbp_bundle_static_library tgt_name bundled_tgt_name)
     message(FATAL_ERROR "Unknown bundle scenario!")
   endif()
 
-  add_custom_target(bundling_target ALL DEPENDS ${bundled_tgt_full_name})
-  add_dependencies(bundling_target ${tgt_name})
+  set(bundling_target bundling_${tgt_name})
+  add_custom_target(${bundling_target} ALL DEPENDS ${bundled_tgt_full_name})
+  add_dependencies(${bundling_target} ${tgt_name})
 
-  add_library(${bundled_tgt_name} STATIC IMPORTED)
+  add_library(${bundled_tgt_name} STATIC IMPORTED GLOBAL)
+  message(STATUS "add_library: ${bundled_tgt_name}")
   set_target_properties(
     ${bundled_tgt_name}
     PROPERTIES
     IMPORTED_LOCATION ${bundled_tgt_full_name}
     INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${tgt_name},INTERFACE_INCLUDE_DIRECTORIES>
   )
-  add_dependencies(${bundled_tgt_name} bundling_target)
+  add_dependencies(${bundled_tgt_name} ${bundling_target})
 endfunction()

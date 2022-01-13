@@ -1,5 +1,6 @@
 project(sched)
 
+set(SQLite3_USE_STATIC_LIBS ON)
 find_package(SQLite3 3.31.1 REQUIRED)
 
 find_program(XXD_FOUND "xxd")
@@ -21,7 +22,7 @@ add_custom_command(
 )
 
 add_library(
-  ${PROJECT_NAME} STATIC
+  ${PROJECT_NAME}_thin  STATIC
   schema.c
   src/db.c
   src/job.c
@@ -33,16 +34,17 @@ add_library(
   src/tok.c
   src/xsql.c
 )
-add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_include_directories(
-  ${PROJECT_NAME}
+  ${PROJECT_NAME}_thin
   PUBLIC $<INSTALL_INTERFACE:include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC DECIPHON::common)
-target_link_libraries(${PROJECT_NAME} PRIVATE SQLite::SQLite3)
+target_link_libraries(${PROJECT_NAME}_thin PUBLIC SQLite::SQLite3)
+target_link_libraries(${PROJECT_NAME}_thin PUBLIC DECIPHON::common)
+cbp_bundle_static_library(${PROJECT_NAME}_thin ${PROJECT_NAME})
+add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 add_subdirectory(test)
