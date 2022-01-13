@@ -30,7 +30,7 @@ void test_xfile_hash(void)
     fp = fopen(TMPDIR "/file.txt", "rb");
     NOTNULL(fp);
     uint64_t hash = 0;
-    EQ(xfile_hash(fp, &hash), DONE);
+    EQ(xfile_hash(fp, &hash), RC_DONE);
     EQ(hash, 14335752410685132726ULL);
 
     fclose(fp);
@@ -40,13 +40,13 @@ void test_xfile_hash(void)
 void test_xfile_tmp(void)
 {
     struct xfile_tmp file = {0};
-    EQ(xfile_tmp_open(&file), DONE);
+    EQ(xfile_tmp_open(&file), RC_DONE);
     EQ(fwrite("12345", 5, 1, file.fp), 1);
     EQ(fflush(file.fp), 0);
     rewind(file.fp);
 
     uint64_t hash = 0;
-    EQ(xfile_hash(file.fp, &hash), DONE);
+    EQ(xfile_hash(file.fp, &hash), RC_DONE);
     EQ(hash, 14335752410685132726ULL);
 
     xfile_tmp_del(&file);
@@ -128,16 +128,16 @@ void test_xfile_set_ext(void)
     char path1[5 + 1 + 4] = "file1.txt";
     char path2[5 + 1 + 2 * 4] = "file2.txt.pdf";
 
-    EQ(xfile_set_ext(sizeof path, path, ".pdf"), ENOMEM);
+    EQ(xfile_set_ext(sizeof path, path, ".pdf"), RC_ENOMEM);
     EQ(path, "file");
 
-    EQ(xfile_set_ext(sizeof path0, path0, ".pdf"), DONE);
+    EQ(xfile_set_ext(sizeof path0, path0, ".pdf"), RC_DONE);
     EQ(path0, "file0.pdf");
 
-    EQ(xfile_set_ext(sizeof path1, path1, ".doc"), DONE);
+    EQ(xfile_set_ext(sizeof path1, path1, ".doc"), RC_DONE);
     EQ(path1, "file1.doc");
 
-    EQ(xfile_set_ext(sizeof path2, path2, ".o"), DONE);
+    EQ(xfile_set_ext(sizeof path2, path2, ".o"), RC_DONE);
     EQ(path2, "file2.txt.o");
 }
 

@@ -1,13 +1,11 @@
-#ifndef DCP_SCHED_SCHED_H
-#define DCP_SCHED_SCHED_H
+#ifndef SCHED_SCHED_H
+#define SCHED_SCHED_H
 
 #include "common/export.h"
 #include "common/rc.h"
-#include "sched/job.h"
-#include "sched/prod.h"
-#include "sched/seq.h"
-#include <stdbool.h>
 #include <stdint.h>
+
+struct sched_job;
 
 EXPORT enum rc sched_setup(char const *filepath);
 EXPORT enum rc sched_open(void);

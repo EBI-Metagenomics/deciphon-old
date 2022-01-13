@@ -26,14 +26,14 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
     {
         enum rc rc =
             next_line(fd, MEMBER_SIZE(tok->line, data), tok->line.data);
-        if (rc && rc == NOTFOUND)
+        if (rc && rc == RC_NOTFOUND)
         {
             tok->value = NULL;
             tok->id = TOK_EOF;
             tok->line.data[0] = '\0';
-            return DONE;
+            return RC_DONE;
         }
-        if (rc && rc != NOTFOUND) return efail("get line");
+        if (rc && rc != RC_NOTFOUND) return efail("get line");
         tok->value = strtok_r(tok->line.data, DELIM, &tok->line.ctx);
         tok->line.number++;
     }
@@ -49,7 +49,7 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
 
     tok->line.consumed = tok->id == TOK_NL;
 
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc next_line(FILE *restrict fd, unsigned size, char *line)
@@ -58,13 +58,13 @@ static enum rc next_line(FILE *restrict fd, unsigned size, char *line)
     assert(size > 0);
     if (!fgets(line, (int)(size - 1), fd))
     {
-        if (feof(fd)) return NOTFOUND;
+        if (feof(fd)) return RC_NOTFOUND;
 
         return eio("fgets");
     }
 
     add_space_before_newline(line);
-    return DONE;
+    return RC_DONE;
 }
 
 static void add_space_before_newline(char *line)

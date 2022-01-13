@@ -1,4 +1,5 @@
 #include "job.h"
+#include "common/bug.h"
 #include "common/compiler.h"
 #include "common/rc.h"
 #include "common/safe.h"
@@ -9,6 +10,7 @@
 #include "stmt.h"
 #include "xsql.h"
 #include <sqlite3.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,7 +49,7 @@ enum rc job_submit(struct sched_job *job)
 
     if (xsql_step(st)) return efail("step");
     job->id = xsql_last_id(sched);
-    return DONE;
+    return RC_DONE;
 }
 
 static int next_pending_job_id(int64_t *job_id)
@@ -56,8 +58,8 @@ static int next_pending_job_id(int64_t *job_id)
     if (xsql_reset(st)) return efail("reset");
 
     int rc = xsql_step(st);
-    if (rc == DONE) return NOTFOUND;
-    if (rc != NEXT) return efail("get pend job");
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) return efail("get pend job");
     *job_id = sqlite3_column_int64(st, 0);
     if (xsql_step(st)) return efail("get pend job");
 
@@ -67,14 +69,14 @@ static int next_pending_job_id(int64_t *job_id)
     if (xsql_bind_i64(st, 0, utc_now())) return efail("bind");
     if (xsql_bind_i64(st, 1, *job_id)) return efail("bind");
     if (xsql_step(st)) return efail("step");
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc job_next_pending(struct sched_job *job)
 {
     int rc = next_pending_job_id(&job->id);
-    if (rc == NOTFOUND) return NOTFOUND;
-    if (rc != DONE) efail("get next pending job");
+    if (rc == RC_NOTFOUND) return RC_NOTFOUND;
+    if (rc != RC_DONE) efail("get next pending job");
     return job_get(job);
 }
 
@@ -88,7 +90,7 @@ enum rc job_set_error(int64_t job_id, char const *error, int64_t exec_ended)
     if (xsql_bind_i64(st, 2, job_id)) return efail("bind");
 
     if (xsql_step(st)) return efail("step");
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc job_set_done(int64_t job_id, int64_t exec_ended)
@@ -100,7 +102,7 @@ enum rc job_set_done(int64_t job_id, int64_t exec_ended)
     if (xsql_bind_i64(st, 1, job_id)) return efail("bind");
 
     if (xsql_step(st)) return efail("step");
-    return DONE;
+    return RC_DONE;
 }
 
 static enum sched_job_state resolve_job_state(char const *state)
@@ -125,8 +127,8 @@ enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
     if (xsql_bind_i64(st, 0, job_id)) return efail("bind");
 
     int rc = xsql_step(st);
-    if (rc == DONE) return NOTFOUND;
-    if (rc != NEXT) return efail("get job state");
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) return efail("get job state");
 
     char tmp[JOB_STATE_SIZE] = {0};
     rc = xsql_cpy_txt(st, 0, (struct xsql_txt){JOB_STATE_SIZE, tmp});
@@ -134,7 +136,7 @@ enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
     *state = resolve_job_state(tmp);
 
     if (xsql_step(st)) return efail("step");
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc job_get(struct sched_job *job)
@@ -144,7 +146,7 @@ enum rc job_get(struct sched_job *job)
 
     if (xsql_bind_i64(st, 0, job->id)) return efail("bind");
 
-    if (xsql_step(st) != NEXT) efail("step");
+    if (xsql_step(st) != RC_NEXT) efail("step");
 
     job->id = sqlite3_column_int64(st, 0);
 
@@ -159,5 +161,5 @@ enum rc job_get(struct sched_job *job)
     job->exec_ended = sqlite3_column_int64(st, 8);
 
     if (xsql_step(st)) return efail("step");
-    return DONE;
+    return RC_DONE;
 }

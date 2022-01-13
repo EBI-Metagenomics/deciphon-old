@@ -14,11 +14,11 @@ static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
 
 enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
 {
-    int rc = EFAIL;
+    int rc = RC_EFAIL;
     XXH64_state_t *const state = XXH64_createState();
     if (!state)
     {
-        rc = error(EFAIL, "failed to create state");
+        rc = error(RC_EFAIL, "failed to create state");
         goto cleanup;
     }
     XXH64_reset(state, 0);
@@ -41,7 +41,7 @@ enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
         goto cleanup;
     }
 
-    rc = DONE;
+    rc = RC_DONE;
     *hash = XXH64_digest(state);
 
 cleanup:
@@ -60,7 +60,7 @@ enum rc xfile_tmp_open(struct xfile_tmp *file)
 
     if (!(file->fp = fopen(file->path, "wb+"))) return eio("fopen");
 
-    return DONE;
+    return RC_DONE;
 }
 
 void xfile_tmp_del(struct xfile_tmp const *file)
@@ -81,7 +81,7 @@ enum rc xfile_copy(FILE *restrict dst, FILE *restrict src)
     }
     if (ferror(src)) return eio("fread");
 
-    return DONE;
+    return RC_DONE;
 }
 
 bool xfile_is_readable(char const *filepath)
@@ -97,8 +97,8 @@ bool xfile_is_readable(char const *filepath)
 
 enum rc xfile_mktemp(char *filepath)
 {
-    if (mkstemp(filepath) == -1) return error(EIO, "mkstemp failed");
-    return DONE;
+    if (mkstemp(filepath) == -1) return error(RC_EIO, "mkstemp failed");
+    return RC_DONE;
 }
 
 static char *glibc_basename(const char *filename)
@@ -113,13 +113,13 @@ static enum rc append_ext(char *str, size_t len, size_t max_size,
     char *j = &str[len];
     size_t n = strlen(ext);
     if (n + 1 + (size_t)(j - str) > max_size)
-        return error(ENOMEM, "not enough memory");
+        return error(RC_ENOMEM, "not enough memory");
     *(j++) = *(ext++);
     *(j++) = *(ext++);
     *(j++) = *(ext++);
     *(j++) = *(ext++);
     *j = *ext;
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc change_ext(char *str, size_t pos, size_t max_size,
@@ -128,7 +128,7 @@ static enum rc change_ext(char *str, size_t pos, size_t max_size,
     char *j = &str[pos];
     while (j > str && *j != '.')
         --j;
-    if (j == str) return EFAIL;
+    if (j == str) return RC_EFAIL;
     return append_ext(str, (size_t)(j - str), max_size, ext);
 }
 
@@ -137,7 +137,7 @@ enum rc xfile_set_ext(size_t max_size, char *str, char const *ext)
     size_t len = strlen(str);
     if (change_ext(str, len, max_size, ext))
         return append_ext(str, len, max_size, ext);
-    return DONE;
+    return RC_DONE;
 }
 
 void xfile_basename(char *filename, char const *path)

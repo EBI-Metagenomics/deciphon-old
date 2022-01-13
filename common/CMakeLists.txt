@@ -1,5 +1,6 @@
 project(common)
 
+set(xxHash_USE_STATIC_LIBS ON)
 find_package(xxHash REQUIRED)
 
 add_library(
@@ -27,6 +28,7 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE xxHash::xxHash)
+target_link_libraries(${PROJECT_NAME} PUBLIC xxHash::xxHash)
+cbp_bundle_static_library(${PROJECT_NAME} ${PROJECT_NAME}_bundled)
 
 add_subdirectory(test)

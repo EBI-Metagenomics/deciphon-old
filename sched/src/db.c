@@ -39,9 +39,9 @@ enum rc db_add(char const *filepath, int64_t *id)
     if (xsql_bind_i64(st, 0, db.xxh64)) return efail("bind");
     if (xsql_bind_txt(st, 1, XSQL_TXT_OF(db, filepath))) return efail("bind");
 
-    if (xsql_step(st) != DONE) return efail("add db");
+    if (xsql_step(st) != RC_DONE) return efail("add db");
     *id = xsql_last_id(sched);
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_has(char const *filepath, struct db *db)
@@ -67,15 +67,15 @@ static enum rc select_db(struct db *db, int64_t by_value, enum stmt select_stmt)
     if (xsql_bind_i64(st, 0, by_value)) return efail("bind");
 
     int rc = xsql_step(st);
-    if (rc == DONE) return NOTFOUND;
-    if (rc != NEXT) return efail("get db");
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) return efail("get db");
 
     db->id = sqlite3_column_int64(st, 0);
     db->xxh64 = sqlite3_column_int64(st, 1);
-    if (xsql_cpy_txt(st, 2, XSQL_TXT_OF(*db, filepath))) return DONE;
+    if (xsql_cpy_txt(st, 2, XSQL_TXT_OF(*db, filepath))) return RC_DONE;
 
     if (xsql_step(st)) return efail("step");
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc db_get_by_id(struct db *db, int64_t id)

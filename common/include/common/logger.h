@@ -20,7 +20,7 @@ EXPORT void __logger_info(char const *msg);
 EXPORT enum rc __logger_error(enum rc rc, char const *msg);
 #define error(rc, msg) __logger_error(rc, __ERROR_FMT(rc, msg))
 
-#define eio(what) error(EIO, "failed to " what)
-#define efail(what) error(EFAIL, "failed to " what)
+#define eio(what) error(RC_EIO, "failed to " what)
+#define efail(what) error(RC_EFAIL, "failed to " what)
 
 #endif

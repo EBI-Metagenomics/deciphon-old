@@ -1,7 +1,7 @@
 #ifndef BITOPS_H
 #define BITOPS_H
 
-#include "compiler.h"
+#include "common/compiler.h"
 #include "common/export.h"
 #include <stdint.h>
 

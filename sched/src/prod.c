@@ -67,7 +67,7 @@ enum rc prod_begin_submission(unsigned num_threads)
             return efail("begin prod submission");
         }
     }
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc sched_prod_write_begin(struct sched_prod const *prod,
@@ -92,7 +92,7 @@ enum rc sched_prod_write_begin(struct sched_prod const *prod,
     if (echo(Fs, profile_typeid)) efail("write prod");
     if (echo(Fs, version)) efail("write prod");
 
-    return DONE;
+    return RC_DONE;
 
 #undef Fg
 #undef Fs
@@ -126,20 +126,20 @@ enum rc sched_prod_write_match(sched_prod_write_match_cb *cb, void const *match,
 enum rc sched_prod_write_match_sep(unsigned thread_num)
 {
     if (fputc(';', prod_file[thread_num].fp) == EOF) return eio("fputc");
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc sched_prod_write_end(unsigned thread_num)
 {
     if (fputc('\n', prod_file[thread_num].fp) == EOF) return eio("fputc");
-    return DONE;
+    return RC_DONE;
 }
 
 static enum rc submit_prod_file(FILE *restrict fp);
 
 enum rc prod_end_submission(void)
 {
-    int rc = EFAIL;
+    int rc = RC_EFAIL;
 
     for (unsigned i = 0; i < nthreads; ++i)
     {
@@ -151,7 +151,7 @@ enum rc prod_end_submission(void)
         rewind(prod_file[i].fp);
         if ((rc = submit_prod_file(prod_file[i].fp))) goto cleanup;
     }
-    rc = DONE;
+    rc = RC_DONE;
 
 cleanup:
     cleanup();
@@ -165,7 +165,7 @@ static enum rc get_prod(struct sched_prod *prod)
 
     if (xsql_bind_i64(st, 0, prod->id)) return efail("bind");
 
-    if (xsql_step(st) != NEXT) return efail("step");
+    if (xsql_step(st) != RC_NEXT) return efail("step");
 
     int i = 0;
     prod->id = sqlite3_column_int64(st, i++);
@@ -187,7 +187,7 @@ static enum rc get_prod(struct sched_prod *prod)
     if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, match))) return ecpy;
 
     if (xsql_step(st)) return efail("step");
-    return DONE;
+    return RC_DONE;
 
 #undef ecpy
 }
@@ -195,21 +195,21 @@ static enum rc get_prod(struct sched_prod *prod)
 enum rc sched_prod_next(struct sched_prod *prod)
 {
     struct sqlite3_stmt *st = stmt[PROD_SELECT_NEXT];
-    int rc = DONE;
+    int rc = RC_DONE;
     if (xsql_reset(st)) return efail("reset");
 
     if (xsql_bind_i64(st, 0, prod->id)) return efail("bind");
     if (xsql_bind_i64(st, 1, prod->job_id)) return efail("bind");
 
     rc = xsql_step(st);
-    if (rc == DONE) return DONE;
-    if (rc != NEXT) return efail("step");
+    if (rc == RC_DONE) return RC_DONE;
+    if (rc != RC_NEXT) return efail("step");
 
     prod->id = sqlite3_column_int64(st, 0);
     if (xsql_step(st)) return efail("step");
 
-    if (get_prod(prod)) return EFAIL;
-    return NEXT;
+    if (get_prod(prod)) return RC_EFAIL;
+    return RC_NEXT;
 }
 
 #define CLEANUP()                                                              \
@@ -253,15 +253,15 @@ static enum rc submit_prod_file(FILE *restrict fp)
             if (tok_next(&tok, fp)) CLEANUP();
         }
         assert(tok_id(&tok) == TOK_NL);
-        if (xsql_step(st) != DONE) CLEANUP();
+        if (xsql_step(st) != RC_DONE) CLEANUP();
     } while (true);
 
     if (xsql_end_transaction(sched)) CLEANUP();
-    return DONE;
+    return RC_DONE;
 
 cleanup:
     xsql_rollback_transaction(sched);
-    return EFAIL;
+    return RC_EFAIL;
 }
 
 #undef CLEANUP

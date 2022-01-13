@@ -1,5 +1,8 @@
 #include "sched/sched.h"
 #include "hope/hope.h"
+#include "sched/job.h"
+#include "sched/prod.h"
+#include "sched/seq.h"
 
 struct sched_job job = {0};
 struct sched_seq seq = {0};
@@ -28,12 +31,12 @@ int main(void)
 void test_sched_reopen()
 {
     remove(TMPDIR "/reopen.sched");
-    EQ(sched_setup(TMPDIR "/reopen.sched"), DONE);
-    EQ(sched_open(), DONE);
-    EQ(sched_close(), DONE);
+    EQ(sched_setup(TMPDIR "/reopen.sched"), RC_DONE);
+    EQ(sched_open(), RC_DONE);
+    EQ(sched_close(), RC_DONE);
 
-    EQ(sched_open(), DONE);
-    EQ(sched_close(), DONE);
+    EQ(sched_open(), RC_DONE);
+    EQ(sched_close(), RC_DONE);
 }
 
 static void create_file1(char const *path)
@@ -79,26 +82,26 @@ void test_sched_add_db(void)
 
     remove(sched_path);
 
-    EQ(sched_setup(sched_path), DONE);
-    EQ(sched_open(), DONE);
+    EQ(sched_setup(sched_path), RC_DONE);
+    EQ(sched_open(), RC_DONE);
 
     int64_t db_id = 0;
-    EQ(sched_add_db(file1a, &db_id), DONE);
+    EQ(sched_add_db(file1a, &db_id), RC_DONE);
     EQ(db_id, 1);
-    EQ(sched_add_db(file1a, &db_id), DONE);
-    EQ(db_id, 1);
-
-    EQ(sched_add_db(file1b, &db_id), EFAIL);
-
-    EQ(sched_add_db(file1a_relative, &db_id), DONE);
+    EQ(sched_add_db(file1a, &db_id), RC_DONE);
     EQ(db_id, 1);
 
-    EQ(sched_add_db(file2, &db_id), DONE);
+    EQ(sched_add_db(file1b, &db_id), RC_EFAIL);
+
+    EQ(sched_add_db(file1a_relative, &db_id), RC_DONE);
+    EQ(db_id, 1);
+
+    EQ(sched_add_db(file2, &db_id), RC_DONE);
     EQ(db_id, 2);
 
-    EQ(sched_add_db(file3, &db_id), EFAIL);
+    EQ(sched_add_db(file3, &db_id), RC_EFAIL);
 
-    EQ(sched_close(), DONE);
+    EQ(sched_close(), RC_DONE);
 }
 
 void test_sched_submit_job(void)
@@ -109,26 +112,26 @@ void test_sched_submit_job(void)
     create_file1(db_path);
     remove(sched_path);
 
-    EQ(sched_setup(sched_path), DONE);
-    EQ(sched_open(), DONE);
+    EQ(sched_setup(sched_path), RC_DONE);
+    EQ(sched_open(), RC_DONE);
 
     int64_t db_id = 0;
-    EQ(sched_add_db(db_path, &db_id), DONE);
+    EQ(sched_add_db(db_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     sched_job_init(&job, db_id, true, false);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0", "ACAAGCAG");
     sched_add_seq(&job, "seq1", "ACTTGCCG");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
     sched_job_init(&job, db_id, true, true);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0_2", "XXGG");
     sched_add_seq(&job, "seq1_2", "YXYX");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
-    EQ(sched_close(), DONE);
+    EQ(sched_close(), RC_DONE);
 }
 
 void test_sched_submit_and_fetch_job()
@@ -139,32 +142,32 @@ void test_sched_submit_and_fetch_job()
     remove(sched_path);
     create_file1(db_path);
 
-    EQ(sched_setup(sched_path), DONE);
-    EQ(sched_open(), DONE);
+    EQ(sched_setup(sched_path), RC_DONE);
+    EQ(sched_open(), RC_DONE);
 
     int64_t db_id = 0;
-    EQ(sched_add_db(db_path, &db_id), DONE);
+    EQ(sched_add_db(db_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     sched_job_init(&job, db_id, true, false);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0", "ACAAGCAG");
     sched_add_seq(&job, "seq1", "ACTTGCCG");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
     sched_job_init(&job, db_id, true, true);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0_2", "XXGG");
     sched_add_seq(&job, "seq1_2", "YXYX");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
-    EQ(sched_next_pending_job(&job), DONE);
+    EQ(sched_next_pending_job(&job), RC_DONE);
     EQ(job.id, 1);
-    EQ(sched_next_pending_job(&job), DONE);
+    EQ(sched_next_pending_job(&job), RC_DONE);
     EQ(job.id, 2);
-    EQ(sched_next_pending_job(&job), NOTFOUND);
+    EQ(sched_next_pending_job(&job), RC_NOTFOUND);
 
-    EQ(sched_close(), DONE);
+    EQ(sched_close(), RC_DONE);
 }
 
 void test_sched_submit_and_fetch_seq()
@@ -175,42 +178,42 @@ void test_sched_submit_and_fetch_seq()
     remove(sched_path);
     create_file1(db_path);
 
-    EQ(sched_setup(sched_path), DONE);
-    EQ(sched_open(), DONE);
+    EQ(sched_setup(sched_path), RC_DONE);
+    EQ(sched_open(), RC_DONE);
 
     int64_t db_id = 0;
-    EQ(sched_add_db(db_path, &db_id), DONE);
+    EQ(sched_add_db(db_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     sched_job_init(&job, db_id, true, false);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0", "ACAAGCAG");
     sched_add_seq(&job, "seq1", "ACTTGCCG");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
     sched_job_init(&job, db_id, true, true);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0_2", "XXGG");
     sched_add_seq(&job, "seq1_2", "YXYX");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
-    EQ(sched_next_pending_job(&job), DONE);
+    EQ(sched_next_pending_job(&job), RC_DONE);
     EQ(job.id, 1);
 
     sched_seq_init(&seq, job.id, "", "");
-    EQ(sched_seq_next(&seq), NEXT);
+    EQ(sched_seq_next(&seq), RC_NEXT);
     EQ(seq.id, 1);
     EQ(seq.job_id, 1);
     EQ(seq.name, "seq0");
     EQ(seq.data, "ACAAGCAG");
-    EQ(sched_seq_next(&seq), NEXT);
+    EQ(sched_seq_next(&seq), RC_NEXT);
     EQ(seq.id, 2);
     EQ(seq.job_id, 1);
     EQ(seq.name, "seq1");
     EQ(seq.data, "ACTTGCCG");
-    EQ(sched_seq_next(&seq), DONE);
+    EQ(sched_seq_next(&seq), RC_DONE);
 
-    EQ(sched_close(), DONE);
+    EQ(sched_close(), RC_DONE);
 }
 
 struct match
@@ -222,9 +225,9 @@ struct match
 static int write_match_cb(FILE *fp, void const *match)
 {
     struct match const *m = match;
-    if (fprintf(fp, "%s,", m->state) < 0) return EFAIL;
-    if (fprintf(fp, "%s", m->codon) < 0) return EFAIL;
-    return DONE;
+    if (fprintf(fp, "%s,", m->state) < 0) return RC_EFAIL;
+    if (fprintf(fp, "%s", m->codon) < 0) return RC_EFAIL;
+    return RC_DONE;
 }
 
 void test_sched_submit_product(void)
@@ -235,28 +238,28 @@ void test_sched_submit_product(void)
     remove(sched_path);
     create_file1(db_path);
 
-    EQ(sched_setup(sched_path), DONE);
-    EQ(sched_open(), DONE);
+    EQ(sched_setup(sched_path), RC_DONE);
+    EQ(sched_open(), RC_DONE);
 
     int64_t db_id = 0;
-    EQ(sched_add_db(db_path, &db_id), DONE);
+    EQ(sched_add_db(db_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     sched_job_init(&job, db_id, true, false);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0", "ACAAGCAG");
     sched_add_seq(&job, "seq1", "ACTTGCCG");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
     sched_job_init(&job, db_id, true, true);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0_2", "XXGG");
     sched_add_seq(&job, "seq1_2", "YXYX");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
-    EQ(sched_next_pending_job(&job), DONE);
+    EQ(sched_next_pending_job(&job), RC_DONE);
 
-    EQ(sched_begin_prod_submission(1), DONE);
+    EQ(sched_begin_prod_submission(1), RC_DONE);
 
     prod.id = 0;
     prod.job_id = job.id;
@@ -272,11 +275,11 @@ void test_sched_submit_product(void)
     struct match match0 = {"state0", "GAC"};
     struct match match1 = {"state1", "GGC"};
 
-    EQ(sched_prod_write_begin(&prod, 0), DONE);
-    EQ(sched_prod_write_match(write_match_cb, &match0, 0), DONE);
-    EQ(sched_prod_write_match_sep(0), DONE);
-    EQ(sched_prod_write_match(write_match_cb, &match1, 0), DONE);
-    EQ(sched_prod_write_end(0), DONE);
+    EQ(sched_prod_write_begin(&prod, 0), RC_DONE);
+    EQ(sched_prod_write_match(write_match_cb, &match0, 0), RC_DONE);
+    EQ(sched_prod_write_match_sep(0), RC_DONE);
+    EQ(sched_prod_write_match(write_match_cb, &match1, 0), RC_DONE);
+    EQ(sched_prod_write_end(0), RC_DONE);
 
     prod.job_id = job.id;
     prod.seq_id = 2;
@@ -287,15 +290,15 @@ void test_sched_submit_product(void)
     prod.alt_loglik = -1111.;
     prod.null_loglik = -2222.;
 
-    EQ(sched_prod_write_begin(&prod, 0), DONE);
-    EQ(sched_prod_write_match(write_match_cb, &match0, 0), DONE);
-    EQ(sched_prod_write_match_sep(0), DONE);
-    EQ(sched_prod_write_match(write_match_cb, &match1, 0), DONE);
-    EQ(sched_prod_write_end(0), DONE);
+    EQ(sched_prod_write_begin(&prod, 0), RC_DONE);
+    EQ(sched_prod_write_match(write_match_cb, &match0, 0), RC_DONE);
+    EQ(sched_prod_write_match_sep(0), RC_DONE);
+    EQ(sched_prod_write_match(write_match_cb, &match1, 0), RC_DONE);
+    EQ(sched_prod_write_end(0), RC_DONE);
 
-    EQ(sched_end_prod_submission(), DONE);
+    EQ(sched_end_prod_submission(), RC_DONE);
 
-    EQ(sched_close(), DONE);
+    EQ(sched_close(), RC_DONE);
 }
 
 void test_sched_submit_and_fetch_product(void)
@@ -306,31 +309,31 @@ void test_sched_submit_and_fetch_product(void)
     remove(sched_path);
     create_file1(db_path);
 
-    EQ(sched_setup(sched_path), DONE);
-    EQ(sched_open(), DONE);
+    EQ(sched_setup(sched_path), RC_DONE);
+    EQ(sched_open(), RC_DONE);
 
     int64_t db_id = 0;
-    EQ(sched_add_db(db_path, &db_id), DONE);
+    EQ(sched_add_db(db_path, &db_id), RC_DONE);
     EQ(db_id, 1);
 
     sched_job_init(&job, db_id, true, false);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0", "ACAAGCAG");
     sched_add_seq(&job, "seq1", "ACTTGCCG");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
     sched_job_init(&job, db_id, true, true);
-    EQ(sched_begin_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
     sched_add_seq(&job, "seq0_2", "XXGG");
     sched_add_seq(&job, "seq1_2", "YXYX");
-    EQ(sched_end_job_submission(&job), DONE);
+    EQ(sched_end_job_submission(&job), RC_DONE);
 
-    EQ(sched_next_pending_job(&job), DONE);
+    EQ(sched_next_pending_job(&job), RC_DONE);
 
-    EQ(sched_begin_job_submission(&job), DONE);
-    EQ(sched_rollback_job_submission(&job), DONE);
+    EQ(sched_begin_job_submission(&job), RC_DONE);
+    EQ(sched_rollback_job_submission(&job), RC_DONE);
 
-    EQ(sched_begin_prod_submission(1), DONE);
+    EQ(sched_begin_prod_submission(1), RC_DONE);
 
     prod.id = 0;
     prod.job_id = job.id;
@@ -345,11 +348,11 @@ void test_sched_submit_and_fetch_product(void)
     struct match match0 = {"state0", "GAC"};
     struct match match1 = {"state1", "GGC"};
 
-    EQ(sched_prod_write_begin(&prod, 0), DONE);
-    EQ(sched_prod_write_match(write_match_cb, &match0, 0), DONE);
-    EQ(sched_prod_write_match_sep(0), DONE);
-    EQ(sched_prod_write_match(write_match_cb, &match1, 0), DONE);
-    EQ(sched_prod_write_end(0), DONE);
+    EQ(sched_prod_write_begin(&prod, 0), RC_DONE);
+    EQ(sched_prod_write_match(write_match_cb, &match0, 0), RC_DONE);
+    EQ(sched_prod_write_match_sep(0), RC_DONE);
+    EQ(sched_prod_write_match(write_match_cb, &match1, 0), RC_DONE);
+    EQ(sched_prod_write_end(0), RC_DONE);
 
     prod.job_id = job.id;
     prod.seq_id = 2;
@@ -360,29 +363,29 @@ void test_sched_submit_and_fetch_product(void)
     prod.alt_loglik = -1111.;
     prod.null_loglik = -2222.;
 
-    EQ(sched_prod_write_begin(&prod, 0), DONE);
-    EQ(sched_prod_write_match(write_match_cb, &match0, 0), DONE);
-    EQ(sched_prod_write_match_sep(0), DONE);
-    EQ(sched_prod_write_match(write_match_cb, &match1, 0), DONE);
-    EQ(sched_prod_write_end(0), DONE);
+    EQ(sched_prod_write_begin(&prod, 0), RC_DONE);
+    EQ(sched_prod_write_match(write_match_cb, &match0, 0), RC_DONE);
+    EQ(sched_prod_write_match_sep(0), RC_DONE);
+    EQ(sched_prod_write_match(write_match_cb, &match1, 0), RC_DONE);
+    EQ(sched_prod_write_end(0), RC_DONE);
 
-    EQ(sched_end_prod_submission(), DONE);
+    EQ(sched_end_prod_submission(), RC_DONE);
 
     enum sched_job_state state = 0;
 
-    EQ(sched_set_job_done(1), DONE);
-    EQ(sched_job_state(1, &state), DONE);
+    EQ(sched_set_job_done(1), RC_DONE);
+    EQ(sched_job_state(1, &state), RC_DONE);
     EQ(state, SCHED_JOB_DONE);
 
-    EQ(sched_set_job_fail(2, "error msg"), DONE);
-    EQ(sched_job_state(2, &state), DONE);
+    EQ(sched_set_job_fail(2, "error msg"), RC_DONE);
+    EQ(sched_job_state(2, &state), RC_DONE);
     EQ(state, SCHED_JOB_FAIL);
 
     sched_prod_init(&prod, 1);
-    EQ(sched_prod_next(&prod), NEXT);
+    EQ(sched_prod_next(&prod), RC_NEXT);
     EQ(prod.id, 1);
     EQ(prod.job_id, 1);
     EQ(prod.match, "state0,GAC;state1,GGC");
 
-    EQ(sched_close(), DONE);
+    EQ(sched_close(), RC_DONE);
 }

@@ -47,7 +47,7 @@ enum rc sched_setup(char const *filepath)
 
     if (empty && emerge_db(filepath)) return efail("emerge db");
 
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc sched_open(void)
@@ -55,11 +55,11 @@ enum rc sched_open(void)
     if (xsql_open(sched_filepath, &sched)) goto cleanup;
     if (stmt_init()) goto cleanup;
 
-    return DONE;
+    return RC_DONE;
 
 cleanup:
     xsql_close(sched);
-    return EFAIL;
+    return RC_EFAIL;
 }
 
 enum rc sched_close(void)
@@ -85,34 +85,34 @@ enum rc sched_add_db(char const *filepath, int64_t *id)
 
     struct db db = {0};
     int rc = db_has(resolved, &db);
-    if (rc == DONE)
+    if (rc == RC_DONE)
     {
         *id = db.id;
-        if (strcmp(db.filepath, resolved) == 0) return DONE;
+        if (strcmp(db.filepath, resolved) == 0) return RC_DONE;
         return efail("copy resolved filepath");
     }
 
-    if (rc == NOTFOUND) return db_add(resolved, id);
-    return EFAIL;
+    if (rc == RC_NOTFOUND) return db_add(resolved, id);
+    return RC_EFAIL;
 }
 
 enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
 {
     struct db db = {0};
     int code = db_get_by_id(&db, id);
-    if (code == NOTFOUND) return NOTFOUND;
-    if (code != DONE) return EFAIL;
+    if (code == RC_NOTFOUND) return RC_NOTFOUND;
+    if (code != RC_DONE) return RC_EFAIL;
     safe_strcpy(filepath, db.filepath, size);
-    return DONE;
+    return RC_DONE;
 }
 
 enum rc sched_get_job(struct sched_job *job) { return job_get(job); }
 
 enum rc sched_begin_job_submission(struct sched_job *job)
 {
-    if (xsql_begin_transaction(sched)) return EFAIL;
+    if (xsql_begin_transaction(sched)) return RC_EFAIL;
     seq_queue_init();
-    return DONE;
+    return RC_DONE;
 }
 
 void sched_add_seq(struct sched_job *job, char const *name, char const *data)
@@ -142,14 +142,14 @@ enum rc sched_end_job_submission(struct sched_job *job)
 enum rc sched_begin_prod_submission(unsigned num_threads)
 {
     assert(num_threads > 0);
-    if (prod_begin_submission(num_threads)) return EFAIL;
-    return DONE;
+    if (prod_begin_submission(num_threads)) return RC_EFAIL;
+    return RC_DONE;
 }
 
 enum rc sched_end_prod_submission(void)
 {
-    if (prod_end_submission()) return EFAIL;
-    return DONE;
+    if (prod_end_submission()) return RC_EFAIL;
+    return RC_DONE;
 }
 
 enum rc sched_next_pending_job(struct sched_job *job)
