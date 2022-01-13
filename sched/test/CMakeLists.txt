@@ -1,5 +1,13 @@
 find_package(hope REQUIRED)
 
+set(ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets)
+file(COPY assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+# file(MAKE_DIRECTORY ${ASSETS})
+# set(URL "https://deciphon.s3.eu-west-2.amazonaws.com")
+
+# file(ARCHIVE_EXTRACT INPUT ${ASSETS}/pfam24.dcp.7z DESTINATION ${ASSETS})
+
+
 function(sched_add_test name srcs)
   add_executable(${name} ${srcs})
   target_link_libraries(${name} PRIVATE DECIPHON::sched)
@@ -19,6 +27,7 @@ function(sched_add_test name srcs)
     PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${TMPDIR}/dir
   )
+  target_compile_definitions(${name} PUBLIC "ASSETS=\"${ASSETS}\"")
   target_compile_definitions(${name} PUBLIC "TMPDIR=\"${TMPDIR}\"")
 endfunction()
 

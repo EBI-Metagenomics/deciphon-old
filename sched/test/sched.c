@@ -15,6 +15,8 @@ void test_sched_submit_and_fetch_job(void);
 void test_sched_submit_and_fetch_seq(void);
 void test_sched_submit_product(void);
 void test_sched_submit_and_fetch_product(void);
+void test_sched_submit_job_from_file(void);
+void test_sched_submit_job_from_damaged_file(void);
 
 int main(void)
 {
@@ -25,6 +27,8 @@ int main(void)
     test_sched_submit_and_fetch_seq();
     test_sched_submit_product();
     test_sched_submit_and_fetch_product();
+    test_sched_submit_job_from_file();
+    test_sched_submit_job_from_damaged_file();
     return hope_status();
 }
 
@@ -386,6 +390,48 @@ void test_sched_submit_and_fetch_product(void)
     EQ(prod.id, 1);
     EQ(prod.job_id, 1);
     EQ(prod.match, "state0,GAC;state1,GGC");
+
+    EQ(sched_close(), RC_DONE);
+}
+
+void test_sched_submit_job_from_file(void)
+{
+    char const sched_path[] = TMPDIR "/submit_job_from_file.sched";
+    char const db_path[] = TMPDIR "/submit_job_from_file.dcp";
+
+    remove(sched_path);
+    create_file1(db_path);
+
+    EQ(sched_setup(sched_path), RC_DONE);
+    EQ(sched_open(), RC_DONE);
+
+    int64_t db_id = 0;
+    EQ(sched_add_db(db_path, &db_id), RC_DONE);
+    EQ(db_id, 1);
+
+    sched_job_init(&job, db_id, true, false);
+    EQ(sched_submit_job(&job, ASSETS "/consensus.fna"), RC_DONE);
+
+    EQ(sched_close(), RC_DONE);
+}
+
+void test_sched_submit_job_from_damaged_file(void)
+{
+    char const sched_path[] = TMPDIR "/submit_job_from_damaged_file.sched";
+    char const db_path[] = TMPDIR "/submit_job_from_damaged_file.dcp";
+
+    remove(sched_path);
+    create_file1(db_path);
+
+    EQ(sched_setup(sched_path), RC_DONE);
+    EQ(sched_open(), RC_DONE);
+
+    int64_t db_id = 0;
+    EQ(sched_add_db(db_path, &db_id), RC_DONE);
+    EQ(db_id, 1);
+
+    sched_job_init(&job, db_id, true, false);
+    EQ(sched_submit_job(&job, ASSETS "/damaged.fna"), RC_EFAIL);
 
     EQ(sched_close(), RC_DONE);
 }

@@ -5,6 +5,7 @@
 #include "common/utc.h"
 #include "common/xfile.h"
 #include "db.h"
+#include "fasta/fasta.h"
 #include "job.h"
 #include "prod.h"
 #include "schema.h"
@@ -108,9 +109,40 @@ enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
 
 enum rc sched_get_job(struct sched_job *job) { return job_get(job); }
 
+enum rc sched_submit_job(struct sched_job *job, char const *filepath)
+{
+    enum rc rc = RC_DONE;
+    FILE *fp = fopen(filepath, "rb");
+    if (!fp) return eio("fopen");
+
+    struct fasta fa = {0};
+    fasta_init(&fa, fp, FASTA_READ);
+
+    if ((rc = sched_begin_job_submission(job))) goto cleanup;
+
+    unsigned i = 0;
+    enum fasta_rc frc = FASTA_SUCCESS;
+    while (!(frc = fasta_read(&fa)))
+    {
+        sched_add_seq(job, fa.target.id, fa.target.seq);
+        i++;
+    }
+    if (frc != FASTA_ENDFILE)
+    {
+        rc = efail("consume fasta file");
+        sched_rollback_job_submission(job);
+        goto cleanup;
+    }
+    if ((rc = sched_end_job_submission(job))) goto cleanup;
+
+cleanup:
+    fclose(fp);
+    return rc;
+}
+
 enum rc sched_begin_job_submission(struct sched_job *job)
 {
-    if (xsql_begin_transaction(sched)) return RC_EFAIL;
+    if (xsql_begin_transaction(sched)) return efail("begin job submission");
     seq_queue_init();
     return RC_DONE;
 }
@@ -127,7 +159,7 @@ enum rc sched_rollback_job_submission(struct sched_job *job)
 
 enum rc sched_end_job_submission(struct sched_job *job)
 {
-    if (job_submit(job)) return efail("submit job");
+    if (job_submit(job)) return efail("end job submission");
 
     for (unsigned i = 0; i < seq_queue_size(); ++i)
     {

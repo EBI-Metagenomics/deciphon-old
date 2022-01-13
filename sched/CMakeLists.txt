@@ -22,7 +22,7 @@ add_custom_command(
 )
 
 add_library(
-  ${PROJECT_NAME}_thin  STATIC
+  ${PROJECT_NAME} STATIC
   schema.c
   src/db.c
   src/job.c
@@ -36,15 +36,16 @@ add_library(
 )
 
 target_include_directories(
-  ${PROJECT_NAME}_thin
+  ${PROJECT_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
-target_link_libraries(${PROJECT_NAME}_thin PUBLIC SQLite::SQLite3)
-target_link_libraries(${PROJECT_NAME}_thin PUBLIC DECIPHON::common)
-cbp_bundle_static_library(${PROJECT_NAME}_thin ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} PUBLIC SQLite::SQLite3)
+target_link_libraries(${PROJECT_NAME} PUBLIC DECIPHON::common)
+cbp_bundle_static_library(${PROJECT_NAME} ${PROJECT_NAME}_bundled)
 add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(DECIPHON::${PROJECT_NAME}_bundled ALIAS ${PROJECT_NAME}_bundled)
 
 add_subdirectory(test)
