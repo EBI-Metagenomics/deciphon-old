@@ -48,6 +48,7 @@ add_library(
   src/to.c
   src/tok.c
   src/work.c
+  src/rest.c
 )
 
 set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version.h)
