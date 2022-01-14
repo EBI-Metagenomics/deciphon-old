@@ -58,7 +58,7 @@ static void cleanup(void)
 
 enum rc prod_begin_submission(unsigned num_threads)
 {
-    assert(num_threads <= DCP_MAX_NUM_THREADS);
+    assert(num_threads <= MAX_NUM_THREADS);
     for (nthreads = 0; nthreads < num_threads; ++nthreads)
     {
         if (xfile_tmp_open(prod_file + nthreads))

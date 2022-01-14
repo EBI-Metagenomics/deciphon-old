@@ -6,6 +6,7 @@ add_library(
   src/logger.c
   src/safe.c
   src/to.c
+  src/rc.c
   src/xfile.c
 )
 

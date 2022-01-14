@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 from fastapi import FastAPI, Query
-from .sched import sched_add_db, sched_submit_job, sched_db_list
+from .sched import sched_add_db, sched_submit_job, sched_db_list, job_state, JobState
 from pydantic import BaseModel, Field
 from .sched import ReturnCode, DB
 
@@ -80,3 +80,18 @@ async def job_submit(job_submission: JobSubmission):
         job_submission.hmmer3_compat,
     )
     return JobSubmissionResponse(job_id=rd.val, rc=rd.rc, error=rd.error)
+
+
+class JobStatusResponse(BaseModel):
+    rc: ReturnCode
+    error: str = ""
+    state: JobState
+
+
+@app.get("/job/status", summary="query status of a job")
+async def job_status(job_id: int):
+    rd = job_state(job_id)
+    return JobStatusResponse(rc=rd.rc, error=rd.error, state=rd.val)
+    # print(job_id)
+    # rd = sched_submit_job()
+    # pass

@@ -45,6 +45,16 @@ ffibuilder.cdef(
     enum rc sched_add_db(char const *filepath, int64_t *id);
 
     enum rc sched_submit_job(struct sched_job *job, char const *filepath, char *error);
+
+    enum sched_job_state
+    {
+        SCHED_JOB_PEND,
+        SCHED_JOB_RUN,
+        SCHED_JOB_DONE,
+        SCHED_JOB_FAIL
+    };
+
+    enum rc sched_job_state(int64_t job_id, enum sched_job_state *state);
 """
 )
 

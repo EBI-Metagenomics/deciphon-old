@@ -34,6 +34,20 @@ class ReturnCode(str, Enum):
     RC_EPARSE = "eparse"
 
 
+class JS(IntEnum):
+    SCHED_JOB_PEND = 0
+    SCHED_JOB_RUN = 1
+    SCHED_JOB_DONE = 2
+    SCHED_JOB_FAIL = 3
+
+
+class JobState(str, Enum):
+    SCHED_JOB_PEND = "pend"
+    SCHED_JOB_RUN = "run"
+    SCHED_JOB_DONE = "done"
+    SCHED_JOB_FAIL = "fail"
+
+
 @dataclasses.dataclass
 class ReturnData(Generic[T]):
     rc: ReturnCode
@@ -109,7 +123,7 @@ def _sched_submit_job(sched_job, filepath: str):
     if rc == rc.RC_DONE:
         job_id = int(sched_job[0].id)
     elif len(err) == 0:
-            raise HTTPException(status_code=500, detail=f"failure at sched_submit_job")
+        raise HTTPException(status_code=500, detail=f"failure at sched_submit_job")
 
     return ReturnData(ReturnCode[rc.name], err, job_id)
 
@@ -125,6 +139,16 @@ def sched_submit_job(
         hmmer3_compat,
     )
     return _sched_submit_job(job, str(fasta_filepath.absolute()))
+
+
+def job_state(job_id: int):
+    state = ffi.new("enum sched_job_state[1]")
+    rc = RC(lib.sched_job_state(job_id, state))
+
+    if rc != rc.RC_DONE:
+        raise HTTPException(status_code=500, detail=f"failure at job_state")
+
+    return ReturnData(ReturnCode[rc.name], "", JobState[JS(int(state[0])).name])
 
 
 class Sched:

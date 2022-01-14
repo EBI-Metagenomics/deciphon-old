@@ -31,4 +31,7 @@ EXPORT void xfile_strip_ext(char *str);
 
 EXPORT FILE *xfile_open_from_fptr(FILE *fp, char const *mode);
 
+EXPORT bool xfile_exists(char const *filepath);
+EXPORT enum rc xfile_touch(char const *filepath);
+
 #endif

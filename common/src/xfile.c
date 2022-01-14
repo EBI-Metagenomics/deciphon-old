@@ -157,3 +157,14 @@ FILE *xfile_open_from_fptr(FILE *fp, char const *mode)
     int fd = fileno(fp);
     return fdopen(fd, "rb");
 }
+
+bool xfile_exists(char const *filepath) { return access(filepath, F_OK) == 0; }
+
+enum rc xfile_touch(char const *filepath)
+{
+    if (xfile_exists(filepath)) return RC_DONE;
+    FILE *fp = fopen(filepath, "wb");
+    if (!fp) return eio("fopen");
+    if (fclose(fp)) return eio("fclose");
+    return RC_DONE;
+}

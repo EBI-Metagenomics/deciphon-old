@@ -8,6 +8,7 @@ find_package(cmp REQUIRED)
 find_package(imm REQUIRED)
 find_package(gff REQUIRED)
 find_package(Threads REQUIRED)
+find_package(CURL REQUIRED)
 
 option(OPENMP "Enable OpenMP" On)
 if(OPENMP)
@@ -69,6 +70,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC GFF::gff)
 target_link_libraries(${PROJECT_NAME} PUBLIC Threads::Threads)
 target_link_libraries(${PROJECT_NAME} PRIVATE $<$<BOOL:${OpenMP_C_FOUND}>:OpenMP::OpenMP_C>)
 target_link_libraries(${PROJECT_NAME} INTERFACE $<$<BOOL:${UNIX}>:m>)
+target_link_libraries(${PROJECT_NAME} PUBLIC CURL::libcurl)
 
 target_compile_features(${PROJECT_NAME} PRIVATE c_std_11)
 

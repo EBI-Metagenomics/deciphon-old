@@ -30,7 +30,7 @@ static_assert(SQLITE_VERSION_NUMBER >= MIN_SQLITE_VERSION,
 
 enum rc emerge_db(char const *filepath);
 enum rc is_empty(char const *filepath, bool *empty);
-enum rc touch_db(char const *filepath);
+// enum rc touch_db(char const *filepath);
 
 enum rc sched_setup(char const *filepath)
 {
@@ -41,7 +41,8 @@ enum rc sched_setup(char const *filepath)
     if (sqlite3_libversion_number() < MIN_SQLITE_VERSION)
         return efail("old sqlite3");
 
-    if (touch_db(filepath)) return efail("touch db");
+    enum rc rc = xfile_touch(filepath);
+    if (rc) return rc;
 
     bool empty = false;
     if (is_empty(filepath, &empty)) BUG();
@@ -240,13 +241,16 @@ cleanup:
     return rc;
 }
 
-enum rc touch_db(char const *filepath)
-{
-    struct sqlite3 *db = NULL;
-    if (xsql_open(filepath, &db)) goto cleanup;
-    return xsql_close(db);
-
-cleanup:
-    xsql_close(sched);
-    return efail("touch db");
-}
+// enum rc touch_db(char const *filepath)
+// {
+//     if (!xfile_exists(filepath))
+//     {
+//     }
+//     struct sqlite3 *db = NULL;
+//     if (xsql_open(filepath, &db)) goto cleanup;
+//     return xsql_close(db);
+//
+// cleanup:
+//     xsql_close(sched);
+//     return efail("touch db");
+// }
