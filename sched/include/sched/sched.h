@@ -18,7 +18,8 @@ EXPORT enum rc sched_get_job(struct sched_job *job);
 EXPORT enum rc sched_set_job_fail(int64_t job_id, char const *msg);
 EXPORT enum rc sched_set_job_done(int64_t job_id);
 
-EXPORT enum rc sched_submit_job(struct sched_job *job, char const *filepath);
+EXPORT enum rc sched_submit_job(struct sched_job *job, char const *filepath,
+                                char *error);
 
 EXPORT enum rc sched_begin_job_submission(struct sched_job *job);
 EXPORT void sched_add_seq(struct sched_job *job, char const *name,

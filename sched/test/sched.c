@@ -410,7 +410,8 @@ void test_sched_submit_job_from_file(void)
     EQ(db_id, 1);
 
     sched_job_init(&job, db_id, true, false);
-    EQ(sched_submit_job(&job, ASSETS "/consensus.fna"), RC_DONE);
+    char error[128] = {0};
+    EQ(sched_submit_job(&job, ASSETS "/consensus.fna", error), RC_DONE);
 
     EQ(sched_close(), RC_DONE);
 }
@@ -431,7 +432,8 @@ void test_sched_submit_job_from_damaged_file(void)
     EQ(db_id, 1);
 
     sched_job_init(&job, db_id, true, false);
-    EQ(sched_submit_job(&job, ASSETS "/damaged.fna"), RC_EFAIL);
+    char error[128] = {0};
+    EQ(sched_submit_job(&job, ASSETS "/damaged.fna", error), RC_EFAIL);
 
     EQ(sched_close(), RC_DONE);
 }

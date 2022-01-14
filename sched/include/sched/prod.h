@@ -1,5 +1,5 @@
-#ifndef DCP_SCHED_PROD_H
-#define DCP_SCHED_PROD_H
+#ifndef SCHED_PROD_H
+#define SCHED_PROD_H
 
 #include "common/export.h"
 #include "common/limits.h"

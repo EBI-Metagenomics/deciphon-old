@@ -6,6 +6,7 @@
 enum stmt
 {
     DB_INSERT,
+    DB_SELECT_ALL,
     DB_SELECT_BY_ID,
     DB_SELECT_BY_XXH64,
     JOB_INSERT,

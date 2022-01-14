@@ -109,11 +109,22 @@ enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
 
 enum rc sched_get_job(struct sched_job *job) { return job_get(job); }
 
-enum rc sched_submit_job(struct sched_job *job, char const *filepath)
+enum rc sched_submit_job(struct sched_job *job, char const *filepath,
+                         char *error)
 {
     enum rc rc = RC_DONE;
     FILE *fp = fopen(filepath, "rb");
     if (!fp) return eio("fopen");
+
+    struct db db = {0};
+    rc = db_get_by_id(&db, job->db_id);
+    if (rc == RC_NOTFOUND)
+    {
+        rc = error(RC_EFAIL, "db id not found");
+        safe_strcpy(error, "database id not found", 128);
+        goto cleanup;
+    }
+    if (rc != RC_DONE) goto cleanup;
 
     struct fasta fa = {0};
     fasta_init(&fa, fp, FASTA_READ);
@@ -127,10 +138,12 @@ enum rc sched_submit_job(struct sched_job *job, char const *filepath)
         sched_add_seq(job, fa.target.id, fa.target.seq);
         i++;
     }
+    printf("frc: %d\n", frc);
     if (frc != FASTA_ENDFILE)
     {
         rc = efail("consume fasta file");
         sched_rollback_job_submission(job);
+        safe_strcpy(error, fa.error, 128);
         goto cleanup;
     }
     if ((rc = sched_end_job_submission(job))) goto cleanup;

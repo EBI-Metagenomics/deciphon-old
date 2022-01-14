@@ -19,6 +19,12 @@ cbp_ci_build_option()
 cbp_assert_null_is_zero_bits()
 enable_testing()
 
+set(xxHash_USE_STATIC_LIBS ON)
+find_package(xxHash REQUIRED)
+
+# set(fasta_USE_STATIC_LIBS ON)
+find_package(fasta REQUIRED)
+
 add_subdirectory(common)
 add_subdirectory(sched)
 # add_subdirectory(core)

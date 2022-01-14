@@ -8,6 +8,7 @@ static char const *const queries[] =
 {
     [DB_INSERT] = "INSERT INTO db (xxh64, filepath) VALUES (?, ?);",
 
+    [DB_SELECT_ALL]      = "SELECT * FROM db;",
     [DB_SELECT_BY_ID]    = "SELECT * FROM db WHERE    id = ?;",
     [DB_SELECT_BY_XXH64] = "SELECT * FROM db WHERE xxh64 = ?;",
 

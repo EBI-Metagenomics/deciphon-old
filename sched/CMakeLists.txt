@@ -44,6 +44,7 @@ target_include_directories(
 
 target_link_libraries(${PROJECT_NAME} PUBLIC SQLite::SQLite3)
 target_link_libraries(${PROJECT_NAME} PUBLIC DECIPHON::common)
+
 cbp_bundle_static_library(${PROJECT_NAME} ${PROJECT_NAME}_bundled)
 add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 add_library(DECIPHON::${PROJECT_NAME}_bundled ALIAS ${PROJECT_NAME}_bundled)

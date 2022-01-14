@@ -1,11 +1,5 @@
 project(common)
 
-set(xxHash_USE_STATIC_LIBS ON)
-find_package(xxHash REQUIRED)
-
-# set(fasta_USE_STATIC_LIBS ON)
-find_package(fasta REQUIRED)
-
 add_library(
   ${PROJECT_NAME} STATIC
   src/bitops.c
@@ -16,12 +10,13 @@ add_library(
 )
 
 include(GenerateExportHeader)
-# generate_export_header(
-#   ${PROJECT_NAME}_thin
-#   EXPORT_MACRO_NAME EXPORT
-#   EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/common/export.h
-#   INCLUDE_GUARD_NAME EXPORT_H
-# )
+add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+generate_export_header(
+  ${PROJECT_NAME}
+  EXPORT_MACRO_NAME EXPORT
+  EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/common/export.h
+  INCLUDE_GUARD_NAME EXPORT_H
+)
 
 target_include_directories(
   ${PROJECT_NAME}
@@ -32,14 +27,5 @@ target_include_directories(
 
 target_link_libraries(${PROJECT_NAME} PUBLIC xxHash::xxHash)
 target_link_libraries(${PROJECT_NAME} PUBLIC FASTA::fasta)
-
-# cbp_bundle_static_library(${PROJECT_NAME}_thin ${PROJECT_NAME})
-add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-generate_export_header(
-  ${PROJECT_NAME}
-  EXPORT_MACRO_NAME EXPORT
-  EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/common/export.h
-  INCLUDE_GUARD_NAME EXPORT_H
-)
 
 add_subdirectory(test)
