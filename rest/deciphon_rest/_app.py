@@ -66,8 +66,8 @@ class JobSubmissionResponse(BaseModel):
     error: str = ""
 
 
-@app.post("/submit/job", summary="submit a new job")
-async def submit_job(job_submission: JobSubmission):
+@app.post("/job/submit", summary="submit a new job")
+async def job_submit(job_submission: JobSubmission):
     f = tempfile.NamedTemporaryFile(delete=False)
     filepath = Path(f.name)
     f.write(job_submission.fasta_content.encode())

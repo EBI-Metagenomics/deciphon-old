@@ -27,7 +27,7 @@ find_package(fasta REQUIRED)
 
 add_subdirectory(common)
 add_subdirectory(sched)
-# add_subdirectory(core)
+add_subdirectory(worker)
 # add_subdirectory(cli)
 
 # target_code_coverage(dcp)
