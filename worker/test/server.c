@@ -1,6 +1,5 @@
 #include "server.h"
 #include "hope/hope.h"
-#include "sched/job.h"
 #include "job.h"
 #include "protein_db_examples.h"
 #include "standard_db_examples.h"

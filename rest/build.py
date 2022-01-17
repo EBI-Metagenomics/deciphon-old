@@ -26,6 +26,14 @@ ffibuilder.cdef(
         char name[128];
     };
 
+    struct sched_seq
+    {
+        int64_t id;
+        int64_t job_id;
+        char name[256];
+        char data[1048576];
+    };
+
     typedef void logger_print_t(char const *msg, void *arg);
     extern "Python" void logger_print(char const *msg, void *arg);
 
@@ -55,6 +63,10 @@ ffibuilder.cdef(
     };
 
     enum rc sched_job_state(int64_t job_id, enum sched_job_state *state);
+
+    enum rc sched_next_pending_job(struct sched_job *job);
+
+    enum rc sched_seq_next(struct sched_seq *seq);
 """
 )
 
@@ -66,6 +78,7 @@ ffibuilder.set_source(
      #include "sched/sched.h"
      #include "sched/db.h"
      #include "sched/job.h"
+     #include "sched/seq.h"
 """,
     language="c",
     libraries=["sched_bundled"],

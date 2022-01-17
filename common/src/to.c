@@ -16,3 +16,13 @@ bool to_int64(char const *str, int64_t *val)
     *val = (int64_t)v;
     return (v <= INT64_MAX || !(v == 0 && !(str[0] == '0' && str[1] == '\0')));
 }
+
+bool to_int64l(unsigned len, char const *str, int64_t *val)
+{
+    char *s = (char *)str;
+    char c = str[len];
+    s[len] = '\0';
+    bool ret = to_int64(str, val);
+    s[len] = c;
+    return ret;
+}

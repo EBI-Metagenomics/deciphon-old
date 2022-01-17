@@ -11,6 +11,6 @@ struct standard_match
     struct match match;
 };
 
-int standard_match_write_cb(FILE *fp, void const *match);
+enum rc standard_match_write_cb(FILE *fp, void const *match);
 
 #endif

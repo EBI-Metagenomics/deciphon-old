@@ -11,6 +11,6 @@ struct protein_match
     struct match match;
 };
 
-int protein_match_write_cb(FILE *fp, void const *match);
+enum rc protein_match_write_cb(FILE *fp, void const *match);
 
 #endif

@@ -1,9 +1,9 @@
 import tempfile
 from pathlib import Path
 from fastapi import FastAPI, Query
-from .sched import sched_add_db, sched_submit_job, sched_db_list, job_state, JobState
 from pydantic import BaseModel, Field
-from .sched import ReturnCode, DB
+from .sched import ReturnCode
+from . import sched
 
 __all__ = ["app"]
 
@@ -24,19 +24,19 @@ async def db_add(
         ..., title="file name of a deciphon database", example="pfam.dcp"
     )
 ):
-    rd = sched_add_db(file_name)
+    rd = sched.add_db(file_name)
     return DBAddResponse(db_id=rd.val, rc=rd.rc)
 
 
 class DBListResponse(BaseModel):
-    dbs: list[DB]
+    dbs: list[sched.DB]
     rc: ReturnCode
     error: str = ""
 
 
 @app.get("/db/list", response_model=DBListResponse, summary="list deciphon databases")
 async def db_list():
-    rd = sched_db_list()
+    rd = sched.db_list()
     return DBListResponse(dbs=rd.val, rc=rd.rc)
 
 
@@ -73,7 +73,7 @@ async def job_submit(job_submission: JobSubmission):
     f.write(job_submission.fasta_content.encode())
     f.close()
 
-    rd = sched_submit_job(
+    rd = sched.submit_job(
         job_submission.db_id,
         filepath,
         job_submission.multi_hits,
@@ -83,15 +83,36 @@ async def job_submit(job_submission: JobSubmission):
 
 
 class JobStatusResponse(BaseModel):
+    state: sched.JobState
     rc: ReturnCode
     error: str = ""
-    state: JobState
 
 
 @app.get("/job/status", summary="query status of a job")
 async def job_status(job_id: int):
-    rd = job_state(job_id)
-    return JobStatusResponse(rc=rd.rc, error=rd.error, state=rd.val)
-    # print(job_id)
-    # rd = sched_submit_job()
-    # pass
+    rd = sched.job_state(job_id)
+    return JobStatusResponse(state=rd.val, rc=rd.rc, error=rd.error)
+
+
+class JobNextPendResponse(BaseModel):
+    job: sched.PendJob
+    rc: ReturnCode
+    error: str = ""
+
+
+@app.get("/job/next_pend", summary="get next pending job")
+async def job_next_pend():
+    rd = sched.job_next_pend()
+    return JobNextPendResponse(job=rd.val, rc=rd.rc, error=rd.error)
+
+
+class SeqResponse(BaseModel):
+    seq: sched.Seq
+    rc: ReturnCode
+    error: str = ""
+
+
+@app.get("/seq/next", summary="get next seq")
+async def seq_next(seq_id: int, job_id: int):
+    rd = sched.next_seq(seq_id, job_id)
+    return SeqResponse(seq=rd.val, rc=rd.rc, error=rd.error)

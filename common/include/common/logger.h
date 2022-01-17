@@ -22,5 +22,6 @@ EXPORT enum rc __logger_error(enum rc rc, char const *msg);
 
 #define eio(what) error(RC_EIO, "failed to " what)
 #define efail(what) error(RC_EFAIL, "failed to " what)
+#define eparse(what) error(RC_EPARSE, "failed to " what)
 
 #endif

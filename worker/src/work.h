@@ -6,20 +6,26 @@
 #include "db_reader.h"
 #include "hypothesis.h"
 #include "imm/imm.h"
+#include "job.h"
+#include "prod.h"
 #include "profile_reader.h"
 #include "protein_match.h"
-#include "sched/job.h"
-#include "sched/prod.h"
-#include "sched/sched.h"
-#include "sched/seq.h"
 #include "standard_match.h"
 #include <stdint.h>
 
+struct sched_seq
+{
+    int64_t id;
+    int64_t job_id;
+    char name[SEQ_NAME_SIZE];
+    char data[SEQ_SIZE];
+};
+
 struct work
 {
-    struct sched_job job;
+    struct job job;
     struct sched_seq seq;
-    struct sched_prod prod[NUM_PARTITIONS];
+    struct prod prod[NUM_PARTITIONS];
     struct
     {
         struct db_reader reader;
@@ -34,7 +40,7 @@ struct work
     struct hypothesis null;
     struct hypothesis alt;
 
-    sched_prod_write_match_cb *write_match_cb;
+    prod_fwrite_match_cb *write_match_cb;
     union
     {
         struct standard_match std;

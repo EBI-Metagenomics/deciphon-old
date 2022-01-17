@@ -5,9 +5,7 @@
 #include "prod.h"
 #include "profile_reader.h"
 #include "protein_match.h"
-#include "sched/job.h"
-#include "sched/prod.h"
-#include "sched/sched.h"
+#include "rest.h"
 #include "standard_match.h"
 #include "version.h"
 #include "xomp.h"
@@ -29,7 +27,7 @@ static void set_job_fail(int64_t job_id, char const *msg)
 {
     lock();
     end_work = true;
-    if (sched_set_job_fail(job_id, msg))
+    if (rest_set_job_fail(job_id, msg))
         error(RC_EFAIL, "failed to set job_fail");
     unlock();
 }
@@ -98,7 +96,7 @@ static enum rc run_on_partition(struct work *work, unsigned i)
         struct imm_path const *path = &alt->prod.path;
         struct match *match = (struct match *)&work->match;
         match->profile = prof;
-        if ((rc = prod_write(work->prod + i, &work->iseq, path, i,
+        if ((rc = prod_fwrite(work->prod + i, &work->iseq, path, i,
                              work->write_match_cb,
                              (struct match *)&work->match)))
             return rc;
@@ -108,13 +106,13 @@ static enum rc run_on_partition(struct work *work, unsigned i)
 
 enum rc work_next(struct work *work)
 {
-    enum rc code = sched_next_pending_job(&work->job);
+    enum rc code = rest_next_pending_job(&work->job);
     if (code == RC_NOTFOUND) return RC_DONE;
     if (code != RC_DONE)
         return error(RC_EFAIL, "failed to get next pending job");
 
     char filepath[PATH_SIZE] = {0};
-    code = sched_cpy_db_filepath(PATH_SIZE, filepath, work->job.db_id);
+    code = rest_get_db_filepath(PATH_SIZE, filepath, work->job.db_id);
     if (code == RC_NOTFOUND) return error(RC_NOTFOUND, "db not found");
     if (code != RC_DONE) return error(RC_EFAIL, "failed to get db filepath");
 
@@ -166,16 +164,15 @@ enum rc work_run(struct work *work, unsigned num_threads)
         return error(RC_EINVAL, "unknown alphabet");
     }
 
-    sched_seq_init(&work->seq, work->job.id, "", "");
-    sched_seq_init(&work->seq, work->job.id, "", "");
+    // sched_seq_init(&work->seq, work->job.id, "", "");
     unsigned npartitions = profile_reader_npartitions(&work->reader);
     enum rc code = RC_DONE;
-    if (sched_begin_prod_submission(npartitions))
+    if (prod_fopen(npartitions))
     {
         set_job_fail(work->job.id, "failed to begin product submission");
         return RC_DONE;
     }
-    while ((code = sched_seq_next(&work->seq)) == RC_NEXT)
+    while ((code = rest_seq_next(&work->seq)) == RC_NEXT)
     {
         if (imm_abc_union_size(work->abc, imm_str(work->seq.data)) > 0)
         {
@@ -210,13 +207,13 @@ enum rc work_run(struct work *work, unsigned num_threads)
             }
         }
     }
-    if (sched_end_prod_submission())
+    if (prod_fclose())
     {
         set_job_fail(work->job.id, "failed to end product submission");
         return RC_DONE;
     }
 
-    if (sched_set_job_done(work->job.id))
+    if (rest_set_job_done(work->job.id))
         error(RC_EFAIL, "failed to set job_done");
     return RC_DONE;
 }

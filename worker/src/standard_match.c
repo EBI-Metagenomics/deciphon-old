@@ -1,11 +1,10 @@
 #include "standard_match.h"
-#include "sched/sched.h"
 #include "imm/imm.h"
 #include "common/logger.h"
 #include "profile.h"
 #include "standard_state.h"
 
-int standard_match_write_cb(FILE *fp, void const *match)
+enum rc standard_match_write_cb(FILE *fp, void const *match)
 {
     char state[IMM_STATE_NAME_SIZE] = {0};
     struct standard_match const *m = (struct standard_match const *)match;

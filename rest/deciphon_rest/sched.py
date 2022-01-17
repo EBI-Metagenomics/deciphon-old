@@ -1,4 +1,3 @@
-import tempfile
 from pathlib import Path
 from typing import TypeVar, Generic
 from fastapi import HTTPException
@@ -60,6 +59,20 @@ class DB(BaseModel):
     name: str
 
 
+class PendJob(BaseModel):
+    id: int = 0
+    db_id: int = 0
+    multi_hits: bool = False
+    hmmer3_compat: bool = False
+
+
+class Seq(BaseModel):
+    id: int = 0
+    job_id: int = 0
+    name: str = ""
+    data: str = ""
+
+
 @ffi.def_extern()
 def db_peek(sched_db, arg: list[DB]):
     dbs: list[DB] = ffi.from_handle(arg)
@@ -68,7 +81,7 @@ def db_peek(sched_db, arg: list[DB]):
     dbs.append(DB(id=id, name=name))
 
 
-def sched_db_list():
+def db_list():
     dbs: list[DB] = []
     arg = ffi.new_handle(dbs)
     rc = RC(lib.sched_db_list(lib.db_peek, arg))
@@ -78,7 +91,7 @@ def sched_db_list():
     return ReturnData(ReturnCode[rc.name], "", dbs)
 
 
-def sched_add_db(filepath: str):
+def add_db(filepath: str):
     db_id = ffi.new("int64_t[]", 1)
 
     rc = RC(lib.sched_add_db(filepath.encode(), db_id))
@@ -112,7 +125,7 @@ def sched_close():
     return ReturnData(ReturnCode[rc.name], "", None)
 
 
-def _sched_submit_job(sched_job, filepath: str):
+def _submit_job(sched_job, filepath: str):
     error = ffi.new("char[128]")
     rc = RC(lib.sched_submit_job(sched_job, filepath.encode(), error))
     err = ffi.string(error)
@@ -128,9 +141,7 @@ def _sched_submit_job(sched_job, filepath: str):
     return ReturnData(ReturnCode[rc.name], err, job_id)
 
 
-def sched_submit_job(
-    db_id: int, fasta_filepath: Path, multi_hits: bool, hmmer3_compat: bool
-):
+def submit_job(db_id: int, fasta_filepath: Path, multi_hits: bool, hmmer3_compat: bool):
     job = ffi.new("struct sched_job[1]")
     lib.sched_job_init(
         job,
@@ -138,7 +149,7 @@ def sched_submit_job(
         multi_hits,
         hmmer3_compat,
     )
-    return _sched_submit_job(job, str(fasta_filepath.absolute()))
+    return _submit_job(job, str(fasta_filepath.absolute()))
 
 
 def job_state(job_id: int):
@@ -149,6 +160,49 @@ def job_state(job_id: int):
         raise HTTPException(status_code=500, detail=f"failure at job_state")
 
     return ReturnData(ReturnCode[rc.name], "", JobState[JS(int(state[0])).name])
+
+
+def job_next_pend():
+    sched_job = ffi.new("struct sched_job[1]")
+    rc = RC(lib.sched_next_pending_job(sched_job))
+
+    job = PendJob()
+    if rc == rc.RC_NOTFOUND:
+        return ReturnData(ReturnCode[rc.name], "", job)
+
+    if rc != rc.RC_DONE:
+        raise HTTPException(status_code=500, detail=f"failure at next_pend_job")
+
+    job.id = int(sched_job[0].id)
+    job.db_id = int(sched_job[0].db_id)
+    job.multi_hits = bool(sched_job[0].multi_hits)
+    job.hmmer3_compat = bool(sched_job[0].hmmer3_compat)
+
+    return ReturnData(ReturnCode[rc.name], "", job)
+
+
+def next_seq(seq_id: int, job_id: int):
+    sched_seq = ffi.new("struct sched_seq[1]")
+    sched_seq[0].id = seq_id
+    sched_seq[0].job_id = job_id
+    rc = RC(lib.sched_seq_next(sched_seq))
+    print(rc)
+    print(rc)
+    print(rc)
+
+    seq = Seq()
+    if rc == rc.RC_DONE:
+        return ReturnData(ReturnCode[rc.name], "", seq)
+
+    if rc != rc.RC_NEXT:
+        raise HTTPException(status_code=500, detail=f"failure at next_seq")
+
+    seq.id = sched_seq[0].id
+    seq.job_id = sched_seq[0].job_id
+    seq.name = ffi.string(sched_seq[0].name)
+    seq.data = ffi.string(sched_seq[0].data)
+
+    return ReturnData(ReturnCode[rc.name], "", seq)
 
 
 class Sched:

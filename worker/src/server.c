@@ -12,7 +12,6 @@
 #include "job.h"
 #include "protein_state.h"
 #include "sched.h"
-#include "sched/sched.h"
 #include "table.h"
 #include "work.h"
 #include <signal.h>

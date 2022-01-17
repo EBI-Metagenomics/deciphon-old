@@ -1,5 +1,4 @@
 #include "protein_match.h"
-#include "sched/sched.h"
 #include "common/logger.h"
 #include "profile.h"
 #include "protein_profile.h"
@@ -21,7 +20,7 @@
  *                      ---------------
  */
 
-int protein_match_write_cb(FILE *fp, void const *match)
+enum rc protein_match_write_cb(FILE *fp, void const *match)
 {
     struct match const *m = (struct match const *)match;
     struct protein_profile const *prof =

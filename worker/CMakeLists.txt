@@ -39,7 +39,7 @@ add_library(
   src/protein_state.c
   src/row.c
   src/seq.c
-  src/server.c
+  # src/server.c
   src/standard_db.c
   src/standard_match.c
   src/standard_profile.c
@@ -47,7 +47,7 @@ add_library(
   src/table.c
   src/to.c
   src/tok.c
-  src/work.c
+  # src/work.c
   src/rest.c
 )
 
@@ -60,7 +60,6 @@ configure_file(
 add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC DECIPHON::common)
-target_link_libraries(${PROJECT_NAME} PUBLIC DECIPHON::sched)
 target_link_libraries(${PROJECT_NAME} PUBLIC ELAPSED::elapsed)
 target_link_libraries(${PROJECT_NAME} PUBLIC ATHR::athr)
 target_link_libraries(${PROJECT_NAME} PUBLIC LOG::log)
