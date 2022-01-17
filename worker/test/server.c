@@ -8,22 +8,15 @@
 /* void test_server_reopen(void); */
 /* void test_server_standard_db(void); */
 /* void test_server_submit_standard_job(void); */
-void test_server_submit_protein_job(void);
+// void test_server_submit_protein_job(void);
 /* void test_server_submit_job_with_error(void); */
 /* void test_server_submit_and_fetch_job(unsigned num_threads); */
-
-static void test_server_http_request()
-{
-    remove(TMPDIR "/setup.sched");
-    EQ(server_open(TMPDIR "/setup.sched", 1), RC_DONE);
-    server_run(true);
-    EQ(server_close(), RC_DONE);
-}
 
 
 int main(void)
 {
-    test_server_http_request();
+    server_run(true, 1, "http://127.0.0.1:8000");
+
     /* test_server_setup(1); */
     /* test_server_setup(2); */
     /* test_server_reopen(); */
@@ -98,7 +91,6 @@ void test_server_submit_standard_job(void)
 
     EQ(server_close(), RC_DONE);
 }
-#endif
 
 struct sched_job sched_job = {0};
 struct sched_prod prod = {0};
@@ -190,7 +182,6 @@ void test_server_submit_protein_job(void)
     EQ(server_close(), RC_DONE);
 }
 
-#if 0
 void test_server_submit_job_with_error(void)
 {
     char const db_path[] = TMPDIR "/submit_job_with_error.sched";

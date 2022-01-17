@@ -3,8 +3,17 @@
 
 #include "common/limits.h"
 #include "common/rc.h"
-#include "work.h"
 #include <stdint.h>
+#include <stdbool.h>
+
+struct sched_seq
+{
+    int64_t id;
+    int64_t job_id;
+    char name[SEQ_NAME_SIZE];
+    char data[SEQ_SIZE];
+};
+
 
 struct rest_job_state
 {
@@ -23,6 +32,7 @@ struct rest_pend_job
 
 extern struct rest_job_state job_state;
 
+void rest_set_url(char const *url);
 enum rc rest_job_state(int64_t job_id);
 enum rc rest_set_job_fail(int64_t job_id, char const *error);
 enum rc rest_set_job_done(int64_t job_id);

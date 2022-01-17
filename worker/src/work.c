@@ -106,7 +106,7 @@ static enum rc run_on_partition(struct work *work, unsigned i)
 
 enum rc work_next(struct work *work)
 {
-    enum rc code = rest_next_pending_job(&work->job);
+    enum rc code = rest_next_pend_job(&work->job);
     if (code == RC_NOTFOUND) return RC_DONE;
     if (code != RC_DONE)
         return error(RC_EFAIL, "failed to get next pending job");
@@ -172,7 +172,7 @@ enum rc work_run(struct work *work, unsigned num_threads)
         set_job_fail(work->job.id, "failed to begin product submission");
         return RC_DONE;
     }
-    while ((code = rest_seq_next(&work->seq)) == RC_NEXT)
+    while ((code = rest_next_seq(&work->seq)) == RC_NEXT)
     {
         if (imm_abc_union_size(work->abc, imm_str(work->seq.data)) > 0)
         {

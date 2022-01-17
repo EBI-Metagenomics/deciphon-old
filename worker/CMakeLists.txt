@@ -39,15 +39,14 @@ add_library(
   src/protein_state.c
   src/row.c
   src/seq.c
-  # src/server.c
+  src/server.c
   src/standard_db.c
   src/standard_match.c
   src/standard_profile.c
   src/standard_state.c
   src/table.c
-  src/to.c
   src/tok.c
-  # src/work.c
+  src/work.c
   src/rest.c
 )
 

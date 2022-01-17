@@ -40,6 +40,22 @@ async def db_list():
     return DBListResponse(dbs=rd.val, rc=rd.rc)
 
 
+class DBFilepathResponse(BaseModel):
+    filepath: str
+    rc: ReturnCode
+    error: str = ""
+
+
+@app.get(
+    "/db/filepath",
+    response_model=DBFilepathResponse,
+    summary="get deciphon database filepath",
+)
+async def db_filepath(db_id: int):
+    rd = sched.db_filepath(db_id)
+    return DBFilepathResponse(filepath=rd.val, rc=rd.rc, error=rd.error)
+
+
 fasta_example = """>Homoserine_dh-consensus
 CCTATCATTTCGACGCTCAAGGAGTCGCTGACAGGTGACCGTATTACTCGAATCGAAGGG
 ATATTAAACGGCACCCTGAATTACATTCTCACTGAGATGGAGGAAGAGGGGGCTTCATTC

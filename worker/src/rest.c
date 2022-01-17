@@ -3,6 +3,7 @@
 #include "common/jsmn.h"
 #include "common/logger.h"
 #include "common/rc.h"
+#include "common/safe.h"
 #include "common/to.h"
 #include "common/xmath.h"
 #include <curl/curl.h>
@@ -10,6 +11,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+static char rest_url[1024] = {0};
+static char base_url[1024] = {0};
 
 static struct answer
 {
@@ -25,13 +29,42 @@ static struct answer
 
 struct rest_job_state job_state = {0};
 
-enum rc rest_set_job_fail(int64_t job_id, char const *error) {}
+void rest_set_url(char const *url)
+{
+    safe_strcpy(base_url, url, ARRAY_SIZE(base_url));
+}
 
-enum rc rest_set_job_done(int64_t job_id) {}
+static int jsoneq(const char *json, jsmntok_t *tok, const char *s)
+{
+    if (tok->type == JSMN_STRING && (int)strlen(s) == tok->end - tok->start &&
+        strncmp(json + tok->start, s, (unsigned)(tok->end - tok->start)) == 0)
+    {
+        return 0;
+    }
+    return -1;
+}
 
-enum rc rest_get_db_filepath(unsigned size, char *filepath, int64_t id) {}
+static inline unsigned tokl(jsmntok_t const *tok)
+{
+    return (unsigned)(tok->end - tok->start);
+}
 
-enum rc rest_seq_next(struct sched_seq *seq) {}
+static inline char const *tokv(jsmntok_t const *tok)
+{
+    return answer.data + tok->start;
+}
+
+static enum rc parse_rc(jsmntok_t const *tok, enum rc *rc)
+{
+    return rc_from_str(tokl(tok), tokv(tok), rc);
+}
+
+static void parse_error(jsmntok_t const *tok, char *error)
+{
+    unsigned len = xmath_min(JOB_ERROR_SIZE - 1, tokl(tok));
+    memcpy(error, tokv(tok), len);
+    error[len] = 0;
+}
 
 static size_t answer_callback(void *contents, size_t size, size_t nmemb,
                               void *userp)
@@ -68,37 +101,84 @@ static size_t answer_callback(void *contents, size_t size, size_t nmemb,
 
     return realsize;
 }
-static int jsoneq(const char *json, jsmntok_t *tok, const char *s)
+
+static enum rc parse_filepath(unsigned size, char *filepath)
 {
-    if (tok->type == JSMN_STRING && (int)strlen(s) == tok->end - tok->start &&
-        strncmp(json + tok->start, s, (unsigned)(tok->end - tok->start)) == 0)
+    struct answer *a = (struct answer *)&answer;
+    enum rc rc = RC_DONE;
+    for (unsigned i = 1; i < (unsigned)a->json.r; i++)
     {
-        return 0;
+        if (jsoneq(a->data, &a->json.tok[i], "rc") == 0)
+        {
+            if ((rc = parse_rc(a->json.tok + i + 1, &job_state.rc))) return rc;
+            i++;
+        }
+        else if (jsoneq(a->data, &a->json.tok[i], "error") == 0)
+        {
+            parse_error(a->json.tok + i + 1, job_state.error);
+            i++;
+        }
+        else if (jsoneq(a->data, &a->json.tok[i], "filepath") == 0)
+        {
+            unsigned len = xmath_min(size - 1, tokl(a->json.tok + i + 1));
+            memcpy(filepath, tokv(a->json.tok + i + 1), len);
+            filepath[len] = 0;
+            i++;
+        }
+        else
+        {
+            printf("Unexpected key: %.*s\n", tokl(a->json.tok + i),
+                   tokv(a->json.tok + i));
+            return error(RC_EINVAL, "unexpected json key");
+        }
     }
-    return -1;
+    return RC_DONE;
 }
 
-static inline unsigned tokl(jsmntok_t const *tok)
+enum rc rest_set_job_fail(int64_t job_id, char const *error) {}
+
+enum rc rest_set_job_done(int64_t job_id) {}
+
+enum rc rest_get_db_filepath(unsigned size, char *filepath, int64_t id)
 {
-    return (unsigned)(tok->end - tok->start);
+    struct answer *a = (struct answer *)&answer;
+    jsmn_init(&a->json.parser);
+    a->data = malloc(1);
+    a->size = 0;
+    CURL *curl = curl_easy_init();
+    if (!curl) return efail("curl_easy_init");
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Accept: application/json");
+
+    sprintf(rest_url, "%s/db/filepath?db_id=%" PRId64, base_url, id);
+    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, answer_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, 0);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+    CURLcode res = curl_easy_perform(curl);
+
+    if (res != CURLE_OK)
+    {
+        fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                curl_easy_strerror(res));
+    }
+    else
+    {
+        printf("%lu bytes retrieved\n", (unsigned long)a->size);
+        printf("%s\n", a->data);
+        parse_filepath(size, filepath);
+    }
+
+    curl_easy_cleanup(curl);
+    free(a->data);
+
+    curl_global_cleanup();
+    return RC_DONE;
 }
 
-static inline char const *tokv(jsmntok_t const *tok)
-{
-    return answer.data + tok->start;
-}
-
-static enum rc parse_rc(jsmntok_t const *tok, enum rc *rc)
-{
-    return rc_from_str(tokl(tok), tokv(tok), rc);
-}
-
-static void parse_error(jsmntok_t const *tok, char *error)
-{
-    unsigned len = xmath_min(JOB_ERROR_SIZE - 1, tokl(tok));
-    memcpy(error, tokv(tok), len);
-    error[len] = 0;
-}
+enum rc rest_seq_next(struct sched_seq *seq) {}
 
 static enum rc parse_job_state(void)
 {
@@ -134,8 +214,6 @@ static enum rc parse_job_state(void)
     return RC_DONE;
 }
 
-char url[1024] = {0};
-
 enum rc rest_job_state(int64_t job_id)
 {
     struct answer *a = (struct answer *)&answer;
@@ -147,8 +225,8 @@ enum rc rest_job_state(int64_t job_id)
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Accept: application/json");
 
-    sprintf(url, "http://127.0.0.1:8000/job/status?job_id=%" PRId64, job_id);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    sprintf(rest_url, "%s/job/status?job_id=%" PRId64, base_url, job_id);
+    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, answer_callback);
@@ -289,8 +367,8 @@ enum rc rest_next_pend_job(struct rest_pend_job *job)
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Accept: application/json");
 
-    sprintf(url, "http://127.0.0.1:8000/job/next_pend");
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    sprintf(rest_url, "%s/job/next_pend", base_url);
+    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, answer_callback);
@@ -412,10 +490,9 @@ enum rc rest_next_seq(struct sched_seq *seq)
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Accept: application/json");
 
-    sprintf(url,
-            "http://127.0.0.1:8000/seq/next?seq_id=%" PRId64 "&job_id=%" PRId64,
-            seq->id, seq->job_id);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
+    sprintf(rest_url, "%s/seq/next?seq_id=%" PRId64 "&job_id=%" PRId64,
+            base_url, seq->id, seq->job_id);
+    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, answer_callback);

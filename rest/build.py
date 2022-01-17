@@ -67,6 +67,8 @@ ffibuilder.cdef(
     enum rc sched_next_pending_job(struct sched_job *job);
 
     enum rc sched_seq_next(struct sched_seq *seq);
+
+    enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id);
 """
 )
 

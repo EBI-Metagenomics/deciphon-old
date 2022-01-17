@@ -50,6 +50,7 @@ dcp_add_test(protein_db "protein_db.c;protein_db_examples.c")
 dcp_add_test(protein_hmmer3_reader protein_hmmer3_reader.c)
 dcp_add_test(job job.c)
 dcp_add_test(rest rest.c)
+dcp_add_test(server server.c)
 # dcp_add_test(server "server.c;standard_db_examples.c;protein_db_examples.c;server_data.c")
 # dcp_add_test(pfam24 "pfam24.c")
 

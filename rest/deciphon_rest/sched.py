@@ -91,6 +91,19 @@ def db_list():
     return ReturnData(ReturnCode[rc.name], "", dbs)
 
 
+def db_filepath(db_id: int):
+    filepath = ffi.new("char[4096]")
+    rc = RC(lib.sched_cpy_db_filepath(4096, filepath, db_id))
+
+    if rc == rc.RC_NOTFOUND:
+        return ReturnData(ReturnCode[rc.name], "", "")
+
+    if rc != rc.RC_DONE:
+        raise HTTPException(status_code=500, detail=f"failure at db_filepath")
+
+    return ReturnData(ReturnCode[rc.name], "", ffi.string(filepath).decode())
+
+
 def add_db(filepath: str):
     db_id = ffi.new("int64_t[]", 1)
 

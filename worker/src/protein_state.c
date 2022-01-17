@@ -1,6 +1,6 @@
 #include "protein_state.h"
 #include "protein_model.h"
-#include "to.h"
+#include "common/to.h"
 
 unsigned protein_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {

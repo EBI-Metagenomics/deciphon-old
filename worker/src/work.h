@@ -8,22 +8,15 @@
 #include "imm/imm.h"
 #include "job.h"
 #include "prod.h"
+#include "rest.h"
 #include "profile_reader.h"
 #include "protein_match.h"
 #include "standard_match.h"
 #include <stdint.h>
 
-struct sched_seq
-{
-    int64_t id;
-    int64_t job_id;
-    char name[SEQ_NAME_SIZE];
-    char data[SEQ_SIZE];
-};
-
 struct work
 {
-    struct job job;
+    struct rest_pend_job job;
     struct sched_seq seq;
     struct prod prod[NUM_PARTITIONS];
     struct
