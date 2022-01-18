@@ -99,3 +99,14 @@ extern "Python" void seq_set_cb(struct sched_seq *seq, void *arg);
 
 enum rc sched_get_job_seqs(int64_t job_id, sched_seq_set_cb cb,
                            struct sched_seq *seq, void *arg);
+
+typedef bool(sched_seq_get_cb)(struct sched_seq **seq, void *arg);
+extern "Python" bool seq_get_cb(struct sched_seq **seq, void *arg);
+
+enum rc sched_submit_job2(struct sched_job *job, sched_seq_get_cb cb,
+                          void *arg);
+
+enum rc sched_begin_job_submission(struct sched_job *job);
+void sched_add_seq(struct sched_job *job, char const *name, char const *data);
+enum rc sched_rollback_job_submission(struct sched_job *job);
+enum rc sched_end_job_submission(struct sched_job *job);

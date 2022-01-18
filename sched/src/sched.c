@@ -193,8 +193,27 @@ cleanup:
     return rc;
 }
 
+enum rc sched_submit_job2(struct sched_job *job, sched_seq_get_cb cb, void *arg)
+{
+    enum rc rc = RC_DONE;
+
+    struct sched_db db = {0};
+    rc = db_get_by_id(&db, job->db_id);
+    if (rc == RC_NOTFOUND) return error(RC_EFAIL, "db id not found");
+    if (rc != RC_DONE) return rc;
+
+    if ((rc = sched_begin_job_submission(job))) return rc;
+
+    struct sched_seq *seq = 0;
+    while (cb(&seq, arg))
+        sched_add_seq(job, seq->name, seq->data);
+
+    return sched_end_job_submission(job);
+}
+
 enum rc sched_begin_job_submission(struct sched_job *job)
 {
+    sched_job_init(job, job->db_id, job->multi_hits, job->hmmer3_compat);
     if (xsql_begin_transaction(sched)) return efail("begin job submission");
     seq_queue_init();
     return RC_DONE;

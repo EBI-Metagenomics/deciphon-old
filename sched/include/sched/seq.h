@@ -4,6 +4,7 @@
 #include "common/export.h"
 #include "common/limits.h"
 #include "common/rc.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 struct sched_seq
@@ -15,6 +16,7 @@ struct sched_seq
 };
 
 typedef void(sched_seq_set_cb)(struct sched_seq *seq, void *arg);
+typedef bool(sched_seq_get_cb)(struct sched_seq **seq, void *arg);
 
 EXPORT void sched_seq_init(struct sched_seq *seq, int64_t job_id,
                            char const *name, char const *data);
