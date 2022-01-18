@@ -3,10 +3,13 @@
 
 #include "common/export.h"
 #include "common/rc.h"
+#include "sched/prod.h"
+#include "sched/seq.h"
 #include <stdint.h>
 
 struct sched_db;
 struct sched_job;
+struct sched_prod;
 struct sched_seq;
 
 EXPORT enum rc sched_setup(char const *filepath);
@@ -18,6 +21,13 @@ EXPORT enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id);
 EXPORT enum rc sched_get_job(struct sched_job *job);
 EXPORT enum rc sched_get_seq(struct sched_seq *seq);
 EXPORT enum rc sched_get_db(struct sched_db *db);
+EXPORT enum rc sched_get_prod(struct sched_prod *prod);
+
+EXPORT enum rc sched_get_job_prods(int64_t job_id, sched_prod_set_cb cb,
+                                   struct sched_prod *prod, void *arg);
+
+EXPORT enum rc sched_get_job_seqs(int64_t job_id, sched_seq_set_cb cb,
+                                  struct sched_seq *seq, void *arg);
 
 EXPORT enum rc sched_set_job_fail(int64_t job_id, char const *msg);
 EXPORT enum rc sched_set_job_done(int64_t job_id);

@@ -12,6 +12,7 @@ class Seq(BaseModel):
     name: str = ""
     data: str = ""
 
+
 # class SeqIn(BaseModel):
 #     name: str = ""
 #     data: str = ""
@@ -21,12 +22,21 @@ class Seq(BaseModel):
 #     seqs: List[SeqIn]
 
 
-@app.get("/seq/{seq_id}")
-def get_seq(seq_id: int):
-    sched_seq = ffi.new("struct sched_seq *")
-    sched_seq[0].id = seq_id
+def create_seq(cseq) -> Seq:
+    seq = Seq()
+    seq.id = int(cseq[0].id)
+    seq.job_id = int(cseq[0].job_id)
+    seq.name = ffi.string(cseq[0].name).decode()
+    seq.data = ffi.string(cseq[0].data).decode()
+    return seq
 
-    rd = return_data(lib.sched_get_seq(sched_seq))
+
+@app.get("/seqs/{seq_id}")
+def get_seq(seq_id: int):
+    cseq = ffi.new("struct sched_seq *")
+    cseq[0].id = seq_id
+
+    rd = return_data(lib.sched_get_seq(cseq))
 
     if rd.rc == ReturnCode.RC_NOTFOUND:
         raise HTTPException(status.HTTP_404_NOT_FOUND, rd)
@@ -34,28 +44,23 @@ def get_seq(seq_id: int):
     if rd.rc != ReturnCode.RC_DONE:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
 
-    seq = Seq()
-    seq.id = int(sched_seq[0].id)
-    seq.job_id = int(sched_seq[0].job_id)
-    seq.name = ffi.string(sched_seq[0].name).decode()
-    seq.data = ffi.string(sched_seq[0].data).decode()
-    return seq
+    return create_seq(cseq)
 
 
 # @app.post("/seq/")
 # def post_seq(seq_in_list: SeqInList):
 #     sched_seq = ffi.new("struct sched_seq[1]")
-    # sched_seq[0].id = 0
-    # sched_seq[0].job_id = seq.job_id
-    # sched_seq[0].name = seq.name
-    # sched_seq[0].data = seq.data
-    #
-    # rd = return_data(lib.sched_seq_db(filepath.encode(), seq_id))
-    #
-    # if rd.rc != ReturnCode.RC_DONE:
-    #     raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
-    #
-    # return get_seq(int(seq_id[0]))
+# sched_seq[0].id = 0
+# sched_seq[0].job_id = seq.job_id
+# sched_seq[0].name = seq.name
+# sched_seq[0].data = seq.data
+#
+# rd = return_data(lib.sched_seq_db(filepath.encode(), seq_id))
+#
+# if rd.rc != ReturnCode.RC_DONE:
+#     raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
+#
+# return get_seq(int(seq_id[0]))
 
 # def next_seq(seq_id: int, job_id: int):
 #     sched_seq = ffi.new("struct sched_seq[1]")

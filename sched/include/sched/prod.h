@@ -26,6 +26,8 @@ struct sched_prod
     char match[MATCH_SIZE];
 };
 
+typedef void(sched_prod_set_cb)(struct sched_prod *prod, void *arg);
+
 typedef int(sched_prod_write_match_cb)(FILE *fp, void const *match);
 
 EXPORT void sched_prod_init(struct sched_prod *prod, int64_t job_id);

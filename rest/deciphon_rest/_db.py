@@ -11,7 +11,7 @@ class DB(BaseModel):
     filepath: str = ""
 
 
-@app.get("/db/{db_id}")
+@app.get("/dbs/{db_id}")
 def get_db(db_id: int):
     sched_db = ffi.new("struct sched_db *")
     sched_db[0].id = db_id
@@ -31,7 +31,7 @@ def get_db(db_id: int):
     )
 
 
-@app.post("/db/")
+@app.post("/dbs/")
 def post_db(filepath: str):
     db_id = ffi.new("int64_t *")
     rd = return_data(lib.sched_add_db(filepath.encode(), db_id))

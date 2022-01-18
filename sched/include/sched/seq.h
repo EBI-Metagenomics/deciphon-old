@@ -14,6 +14,8 @@ struct sched_seq
     char data[SEQ_SIZE];
 };
 
+typedef void(sched_seq_set_cb)(struct sched_seq *seq, void *arg);
+
 EXPORT void sched_seq_init(struct sched_seq *seq, int64_t job_id,
                            char const *name, char const *data);
 EXPORT enum rc sched_seq_next(struct sched_seq *seq);

@@ -264,4 +264,38 @@ cleanup:
     return RC_EFAIL;
 }
 
+enum rc prod_get(struct sched_prod *prod)
+{
+#define ecpy efail("copy txt")
+
+    struct sqlite3_stmt *st = stmt[PROD_SELECT];
+    if (xsql_reset(st)) return efail("reset");
+
+    if (xsql_bind_i64(st, 0, prod->id)) return efail("bind");
+
+    enum rc rc = xsql_step(st);
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) efail("get prod");
+
+    prod->id = sqlite3_column_int64(st, 0);
+    prod->job_id = sqlite3_column_int64(st, 1);
+    prod->seq_id = sqlite3_column_int64(st, 2);
+
+    if (xsql_cpy_txt(st, 3, XSQL_TXT_OF(*prod, profile_name))) return ecpy;
+    if (xsql_cpy_txt(st, 4, XSQL_TXT_OF(*prod, abc_name))) return ecpy;
+
+    prod->alt_loglik = sqlite3_column_double(st, 5);
+    prod->null_loglik = sqlite3_column_double(st, 6);
+
+    if (xsql_cpy_txt(st, 7, XSQL_TXT_OF(*prod, profile_typeid))) return ecpy;
+    if (xsql_cpy_txt(st, 8, XSQL_TXT_OF(*prod, version))) return ecpy;
+
+    if (xsql_cpy_txt(st, 9, XSQL_TXT_OF(*prod, match))) return ecpy;
+
+    if (xsql_step(st)) return efail("step");
+    return RC_DONE;
+
+#undef ecpy
+}
+
 #undef CLEANUP

@@ -114,6 +114,41 @@ enum rc sched_get_seq(struct sched_seq *seq) { return seq_get(seq); }
 
 enum rc sched_get_db(struct sched_db *db) { return db_get_by_id(db, db->id); }
 
+enum rc sched_get_prod(struct sched_prod *prod) { return prod_get(prod); }
+
+enum rc sched_get_job_prods(int64_t job_id, sched_prod_set_cb cb,
+                            struct sched_prod *prod, void *arg)
+{
+    struct sched_job job = {0};
+    job.id = job_id;
+    enum rc rc = job_get(&job);
+    if (rc) return rc;
+
+    sched_prod_init(prod, job_id);
+    while ((rc = sched_prod_next(prod)) == RC_NEXT)
+    {
+        cb(prod, arg);
+    }
+    return rc;
+}
+
+enum rc sched_get_job_seqs(int64_t job_id, sched_seq_set_cb cb,
+                           struct sched_seq *seq, void *arg)
+{
+    struct sched_job job = {0};
+    job.id = job_id;
+    enum rc rc = job_get(&job);
+    if (rc) return rc;
+
+    seq->id = 0;
+    seq->job_id = job_id;
+    while ((rc = sched_seq_next(seq)) == RC_NEXT)
+    {
+        cb(seq, arg);
+    }
+    return rc;
+}
+
 enum rc sched_submit_job(struct sched_job *job, char const *filepath,
                          char *error)
 {

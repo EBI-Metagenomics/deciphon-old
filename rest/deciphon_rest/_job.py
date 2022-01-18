@@ -1,8 +1,10 @@
 from typing import List
 from ._csched import lib, ffi
+from ._prod import Prod, create_prod
+from ._seq import Seq, create_seq
 from pydantic import BaseModel
 from fastapi import HTTPException, status
-from ._rc import RC, return_data
+from ._rc import ReturnCode, return_data
 from ._app import app
 
 
@@ -32,21 +34,22 @@ class JobIn(BaseModel):
     seqs: List[SeqIn]
 
 
-@app.get("/job/{job_id}")
+@app.get("/jobs/{job_id}")
 def get_job(job_id: int):
     sched_job = ffi.new("struct sched_job *")
     sched_job[0].id = job_id
 
     rd = return_data(lib.sched_get_job(sched_job))
 
-    if rd.rc == RC.RC_NOTFOUND:
+    if rd.rc == ReturnCode.RC_NOTFOUND:
         raise HTTPException(status.HTTP_404_NOT_FOUND, rd)
 
-    if rd.rc != RC.RC_DONE:
+    if rd.rc != ReturnCode.RC_DONE:
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
 
     job = Job()
 
+    job.id = int(sched_job[0].id)
     job.db_id = int(sched_job[0].db_id)
     job.multi_hits = bool(sched_job[0].multi_hits)
     job.hmmer3_compat = bool(sched_job[0].hmmer3_compat)
@@ -60,14 +63,60 @@ def get_job(job_id: int):
     return job
 
 
-@app.post("/job/")
+@app.post("/jobs/")
 def post_job(job: JobIn):
     pass
 
 
+@ffi.def_extern()
+def prod_set_cb(cprod, arg):
+    prods = ffi.from_handle(arg)
+    prods.append(create_prod(cprod))
+
+
+@app.get("/jobs/{job_id}/prods")
+def get_job_prods(job_id: int):
+    cprod = ffi.new("struct sched_prod *")
+    prods: List[Prod] = []
+    rd = return_data(
+        lib.sched_get_job_prods(job_id, lib.prod_set_cb, cprod, ffi.new_handle(prods))
+    )
+
+    if rd.rc == ReturnCode.RC_NOTFOUND:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, rd)
+
+    if rd.rc != ReturnCode.RC_DONE:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
+
+    return prods
+
+
+@ffi.def_extern()
+def seq_set_cb(cseq, arg):
+    seqs = ffi.from_handle(arg)
+    seqs.append(create_seq(cseq))
+
+
+@app.get("/jobs/{job_id}/seqs")
+def get_job_seqs(job_id: int):
+    cseq = ffi.new("struct sched_seq *")
+    seqs: List[Seq] = []
+    rd = return_data(
+        lib.sched_get_job_seqs(job_id, lib.seq_set_cb, cseq, ffi.new_handle(seqs))
+    )
+
+    if rd.rc == ReturnCode.RC_NOTFOUND:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, rd)
+
+    if rd.rc != ReturnCode.RC_DONE:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
+
+    return seqs
+
+
 # def _submit_job(sched_job, filepath: str):
 #     error = ffi.new("char[128]")
-#     rc = RC(lib.sched_submit_job(sched_job, filepath.encode(), error))
+#     rc = ReturnCode(lib.sched_submit_job(sched_job, filepath.encode(), error))
 #     err = ffi.string(error)
 #     job_id = 0
 #     if rc == rc.RC_DONE:
