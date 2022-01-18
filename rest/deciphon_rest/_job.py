@@ -1,3 +1,4 @@
+from re import L
 from typing import List, Any, Optional
 
 from ._csched import lib, ffi
@@ -5,9 +6,17 @@ from ._prod import Prod, create_prod
 from ._seq import Seq, create_seq
 from pydantic import BaseModel
 from fastapi import HTTPException, status, Body
-from ._rc import ReturnCode, return_data
+from ._rc import ReturnCode, return_data, ReturnData
 from ._prod import ProdIn, get_prod, prod_in_example
 from ._app import app
+from enum import Enum
+
+
+class JobState(str, Enum):
+    pend = "pend"
+    run = "run"
+    done = "done"
+    fail = "fail"
 
 
 class Job(BaseModel):
@@ -16,7 +25,7 @@ class Job(BaseModel):
     db_id: int = 0
     multi_hits: bool = False
     hmmer3_compat: bool = False
-    state: str = ""
+    state: JobState = JobState.pend
 
     error: str = ""
     submission: int = 0
@@ -102,7 +111,21 @@ def create_job(cjob):
     return job
 
 
-@app.get("/jobs/{job_id}")
+@app.get("/jobs/next_pend", response_model=Job)
+def get_next_pend_job():
+    cjob = ffi.new("struct sched_job *")
+    rd = return_data(lib.sched_next_pend_job(cjob))
+
+    if rd.rc == ReturnCode.RC_NOTFOUND:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, rd)
+
+    if rd.rc != ReturnCode.RC_DONE:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
+
+    return create_job(cjob)
+
+
+@app.get("/jobs/{job_id}", response_model=Job)
 def get_job(job_id: int):
     cjob = ffi.new("struct sched_job *")
     cjob[0].id = job_id
@@ -116,6 +139,28 @@ def get_job(job_id: int):
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
 
     return create_job(cjob)
+
+
+@app.patch("/jobs/{job_id}", response_model=Job)
+def update_job(job_id: int, state: JobState):
+    job = get_job(job_id)
+
+    if job.state == state:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            ReturnData(rc=ReturnCode.RC_EINVAL, error="redundant job state update"),
+        )
+
+    if job.state == JobState.pend and state == JobState.run:
+        rd = return_data(lib.sched_set_job_run(job_id))
+        if rd.rc != ReturnCode.RC_DONE:
+            raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
+        return get_job(job_id)
+
+    raise HTTPException(
+        status.HTTP_403_FORBIDDEN,
+        ReturnData(rc=ReturnCode.RC_EINVAL, error="invalid job state update"),
+    )
 
 
 @app.post("/jobs")

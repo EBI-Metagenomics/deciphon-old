@@ -52,12 +52,26 @@ enum rc job_submit(struct sched_job *job)
     return RC_DONE;
 }
 
-static int next_pending_job_id(int64_t *job_id)
+static enum rc next_pend_job_id(int64_t *job_id)
 {
     struct sqlite3_stmt *st = stmt[JOB_GET_PEND];
     if (xsql_reset(st)) return efail("reset");
 
-    int rc = xsql_step(st);
+    enum rc rc = xsql_step(st);
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) return efail("get pend job");
+    *job_id = sqlite3_column_int64(st, 0);
+    if (xsql_step(st)) return efail("get pend job");
+
+    return RC_DONE;
+}
+
+static enum rc next_pending_job_id(int64_t *job_id)
+{
+    struct sqlite3_stmt *st = stmt[JOB_GET_PEND];
+    if (xsql_reset(st)) return efail("reset");
+
+    enum rc rc = xsql_step(st);
     if (rc == RC_DONE) return RC_NOTFOUND;
     if (rc != RC_NEXT) return efail("get pend job");
     *job_id = sqlite3_column_int64(st, 0);
@@ -72,12 +86,32 @@ static int next_pending_job_id(int64_t *job_id)
     return RC_DONE;
 }
 
+enum rc job_next_pend(struct sched_job *job)
+{
+    enum rc rc = next_pend_job_id(&job->id);
+    if (rc == RC_NOTFOUND) return RC_NOTFOUND;
+    if (rc != RC_DONE) efail("get next pend job");
+    return job_get(job);
+}
+
 enum rc job_next_pending(struct sched_job *job)
 {
-    int rc = next_pending_job_id(&job->id);
+    enum rc rc = next_pending_job_id(&job->id);
     if (rc == RC_NOTFOUND) return RC_NOTFOUND;
     if (rc != RC_DONE) efail("get next pending job");
     return job_get(job);
+}
+
+enum rc job_set_run(int64_t job_id, int64_t exec_started)
+{
+    struct sqlite3_stmt *st = stmt[JOB_SET_RUN];
+    if (xsql_reset(st)) return efail("reset");
+
+    if (xsql_bind_i64(st, 0, exec_started)) return efail("bind");
+    if (xsql_bind_i64(st, 1, job_id)) return efail("bind");
+
+    if (xsql_step(st)) return efail("step");
+    return RC_DONE;
 }
 
 enum rc job_set_error(int64_t job_id, char const *error, int64_t exec_ended)
@@ -126,7 +160,7 @@ enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
 
     if (xsql_bind_i64(st, 0, job_id)) return efail("bind");
 
-    int rc = xsql_step(st);
+    enum rc rc = xsql_step(st);
     if (rc == RC_DONE) return RC_NOTFOUND;
     if (rc != RC_NEXT) return efail("get job state");
 

@@ -70,6 +70,11 @@ enum rc sched_close(void)
     return xsql_close(sched);
 }
 
+enum rc sched_set_job_run(int64_t job_id)
+{
+    return job_set_run(job_id, utc_now());
+}
+
 enum rc sched_set_job_fail(int64_t job_id, char const *msg)
 {
     return job_set_error(job_id, msg, utc_now());
@@ -254,6 +259,11 @@ enum rc sched_end_prod_submission(void)
 {
     if (prod_end_submission()) return RC_EFAIL;
     return RC_DONE;
+}
+
+enum rc sched_next_pend_job(struct sched_job *job)
+{
+    return job_next_pend(job);
 }
 
 enum rc sched_next_pending_job(struct sched_job *job)

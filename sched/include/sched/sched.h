@@ -29,6 +29,7 @@ EXPORT enum rc sched_get_job_prods(int64_t job_id, sched_prod_set_cb cb,
 EXPORT enum rc sched_get_job_seqs(int64_t job_id, sched_seq_set_cb cb,
                                   struct sched_seq *seq, void *arg);
 
+EXPORT enum rc sched_set_job_run(int64_t job_id);
 EXPORT enum rc sched_set_job_fail(int64_t job_id, char const *msg);
 EXPORT enum rc sched_set_job_done(int64_t job_id);
 
@@ -46,6 +47,7 @@ EXPORT enum rc sched_end_job_submission(struct sched_job *job);
 EXPORT enum rc sched_begin_prod_submission(unsigned num_threads);
 EXPORT enum rc sched_end_prod_submission(void);
 
+EXPORT enum rc sched_next_pend_job(struct sched_job *job);
 EXPORT enum rc sched_next_pending_job(struct sched_job *job);
 
 #endif

@@ -76,6 +76,7 @@ enum rc sched_job_state(int64_t job_id, enum sched_job_state *state);
 
 enum rc sched_get_seq(struct sched_seq *seq);
 
+enum rc sched_next_pend_job(struct sched_job *job);
 enum rc sched_next_pending_job(struct sched_job *job);
 
 enum rc sched_seq_next(struct sched_seq *seq);
@@ -112,3 +113,5 @@ enum rc sched_rollback_job_submission(struct sched_job *job);
 enum rc sched_end_job_submission(struct sched_job *job);
 
 enum rc sched_prod_submit(struct sched_prod *prod);
+
+enum rc sched_set_job_run(int64_t job_id);

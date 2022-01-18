@@ -19,7 +19,7 @@ static char const *const queries[] =
     [JOB_GET_STATE] = "SELECT state FROM job WHERE    id = ?;",
     [JOB_SELECT]    = "SELECT     * FROM job WHERE    id = ?;",
 
-    [JOB_SET_RUN]   = "UPDATE job SET state =  'run', exec_started = ?                 WHERE id = ?;",
+    [JOB_SET_RUN]   = "UPDATE job SET state =  'run', exec_started = ?                 WHERE id = ? AND state = 'pend';",
     [JOB_SET_ERROR] = "UPDATE job SET state = 'fail', error        = ?, exec_ended = ? WHERE id = ?;",
     [JOB_SET_DONE]  = "UPDATE job SET state = 'done', exec_ended   = ?                 WHERE id = ?;",
 
