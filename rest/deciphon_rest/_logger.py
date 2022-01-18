@@ -7,6 +7,7 @@ class Logger:
         self._msg: str = ""
 
     def put(self, msg):
+        print(msg)
         self._msg = msg
 
     def pop(self):

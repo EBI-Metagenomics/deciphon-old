@@ -110,3 +110,5 @@ enum rc sched_begin_job_submission(struct sched_job *job);
 void sched_add_seq(struct sched_job *job, char const *name, char const *data);
 enum rc sched_rollback_job_submission(struct sched_job *job);
 enum rc sched_end_job_submission(struct sched_job *job);
+
+enum rc sched_prod_submit(struct sched_prod *prod);

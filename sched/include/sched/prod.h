@@ -40,4 +40,6 @@ EXPORT enum rc sched_prod_write_match(sched_prod_write_match_cb *cb,
 EXPORT enum rc sched_prod_write_match_sep(unsigned thread_num);
 EXPORT enum rc sched_prod_write_end(unsigned thread_num);
 
+EXPORT enum rc sched_prod_submit(struct sched_prod *prod);
+
 #endif

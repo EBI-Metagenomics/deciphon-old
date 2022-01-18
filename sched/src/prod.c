@@ -298,4 +298,28 @@ enum rc prod_get(struct sched_prod *prod)
 #undef ecpy
 }
 
+enum rc sched_prod_submit(struct sched_prod *prod)
+{
+    struct sqlite3_stmt *st = stmt[PROD_INSERT];
+    if (xsql_reset(st)) return efail("reset");
+
+    if (xsql_bind_i64(st, 0, prod->job_id)) return efail("bind");
+    if (xsql_bind_i64(st, 1, prod->seq_id)) return efail("bind");
+
+    if (xsql_bind_str(st, 2, prod->profile_name)) return efail("bind");
+    if (xsql_bind_str(st, 3, prod->abc_name)) return efail("bind");
+
+    if (xsql_bind_dbl(st, 4, prod->alt_loglik)) return efail("bind");
+    if (xsql_bind_dbl(st, 5, prod->null_loglik)) return efail("bind");
+
+    if (xsql_bind_str(st, 6, prod->profile_typeid)) return efail("bind");
+    if (xsql_bind_str(st, 7, prod->version)) return efail("bind");
+
+    if (xsql_bind_str(st, 8, prod->match)) return efail("bind");
+
+    if (xsql_step(st) != RC_DONE) return efail("step");
+    prod->id = xsql_last_id(sched);
+    return RC_DONE;
+}
+
 #undef CLEANUP

@@ -6,6 +6,7 @@ from ._seq import Seq, create_seq
 from pydantic import BaseModel
 from fastapi import HTTPException, status, Body
 from ._rc import ReturnCode, return_data
+from ._prod import ProdIn, get_prod, prod_in_example
 from ._app import app
 
 
@@ -26,7 +27,6 @@ class Job(BaseModel):
 class SeqIn(BaseModel):
     name: str = ""
     data: str = ""
-    # _cseq: Optional[Any] = None
 
 
 class JobIn(BaseModel):
@@ -118,7 +118,7 @@ def get_job(job_id: int):
     return create_job(cjob)
 
 
-@app.post("/jobs/")
+@app.post("/jobs")
 def post_job(job: JobIn = Body(None, example=job_in_example)):
     cjob = ffi.new("struct sched_job *")
 
@@ -187,25 +187,13 @@ def get_job_seqs(job_id: int):
     return seqs
 
 
-# def _submit_job(sched_job, filepath: str):
-#     error = ffi.new("char[128]")
-#     rc = ReturnCode(lib.sched_submit_job(sched_job, filepath.encode(), error))
-#     err = ffi.string(error)
-#     job_id = 0
-#     if rc == rc.RC_DONE:
-#         job_id = int(sched_job[0].id)
-#     elif len(err) == 0:
-#         raise HTTPException(status_code=500, detail=f"failure at sched_submit_job")
-#
-#     return ReturnData(Return(rc=ReturnCode[rc.name], error=err), job_id)
-#
-#
-# def submit_job(db_id: int, fasta_filepath: Path, multi_hits: bool, hmmer3_compat: bool):
-#     job = ffi.new("struct sched_job[1]")
-#     lib.sched_job_init(
-#         job,
-#         db_id,
-#         multi_hits,
-#         hmmer3_compat,
-#     )
-#     return _submit_job(job, str(fasta_filepath.absolute()))
+@app.post("/jobs/{job_id}/prods")
+def post_prod(job_id: int, prod_in: ProdIn = Body(None, example=prod_in_example)):
+    cprod = prod_in._create_cdata()
+    cprod[0].job_id = job_id
+    rd = return_data(lib.sched_prod_submit(cprod))
+
+    if rd.rc != ReturnCode.RC_DONE:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
+
+    return get_prod(int(cprod[0].id))

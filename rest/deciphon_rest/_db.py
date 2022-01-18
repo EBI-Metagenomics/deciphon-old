@@ -31,7 +31,7 @@ def get_db(db_id: int):
     )
 
 
-@app.post("/dbs/")
+@app.post("/dbs")
 def post_db(filepath: str):
     db_id = ffi.new("int64_t *")
     rd = return_data(lib.sched_add_db(filepath.encode(), db_id))
