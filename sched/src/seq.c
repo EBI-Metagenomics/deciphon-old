@@ -47,7 +47,7 @@ static int next_seq_id(int64_t job_id, int64_t *seq_id)
     return RC_DONE;
 }
 
-static enum rc get_seq(struct sched_seq *seq)
+enum rc seq_get(struct sched_seq *seq)
 {
 #define ecpy efail("copy txt")
 
@@ -56,7 +56,9 @@ static enum rc get_seq(struct sched_seq *seq)
 
     if (xsql_bind_i64(st, 0, seq->id)) return efail("bind");
 
-    if (xsql_step(st) != RC_NEXT) efail("get seq");
+    enum rc rc = xsql_step(st);
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) efail("get seq");
 
     seq->id = sqlite3_column_int64(st, 0);
     seq->job_id = sqlite3_column_int64(st, 1);
@@ -75,6 +77,6 @@ enum rc sched_seq_next(struct sched_seq *seq)
     int rc = next_seq_id(seq->job_id, &seq->id);
     if (rc == RC_NOTFOUND) return RC_DONE;
     if (rc != RC_DONE) return efail("get next seq");
-    if (get_seq(seq)) return efail("get next seq");
+    if (seq_get(seq)) return efail("get next seq");
     return RC_NEXT;
 }

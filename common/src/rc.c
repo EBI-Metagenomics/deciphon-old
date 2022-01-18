@@ -1,4 +1,5 @@
 #include "common/rc.h"
+#include "common/logger.h"
 #include <string.h>
 
 static char const name[9][9] = {"done",   "end", "next",   "notfound", "efail",
@@ -14,5 +15,5 @@ enum rc rc_from_str(unsigned len, char const *str, enum rc *rc)
             return RC_DONE;
         }
     }
-    return RC_EINVAL;
+    return error(RC_EINVAL, "invalid return code");
 }

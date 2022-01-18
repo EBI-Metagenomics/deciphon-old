@@ -91,8 +91,8 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
     server.num_threads = num_threads;
     server.work.lrt_threshold = 100.0f;
 
-    enum rc rc = RC_DONE;
-    rest_set_url(url);
+    enum rc rc = rest_open(url);
+    if (rc) return rc;
 
     info("Starting the server");
     while (!server.signal.interrupt)
@@ -107,13 +107,15 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
         if (rc != RC_NEXT) return rc;
 
         info("Found a new job");
-        // rc = work_run(&server.work, server.num_threads);
-        // if (rc) return rc;
-        // info("Finished a job");
+        rc = work_run(&server.work, server.num_threads);
+        if (rc) goto cleanup;
+        info("Finished a job");
     }
 
     info("Goodbye!");
-    return RC_DONE;
+cleanup:
+    rest_close();
+    return rc;
 }
 
 void server_set_lrt_threshold(imm_float lrt)

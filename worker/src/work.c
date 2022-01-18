@@ -97,8 +97,8 @@ static enum rc run_on_partition(struct work *work, unsigned i)
         struct match *match = (struct match *)&work->match;
         match->profile = prof;
         if ((rc = prod_fwrite(work->prod + i, &work->iseq, path, i,
-                             work->write_match_cb,
-                             (struct match *)&work->match)))
+                              work->write_match_cb,
+                              (struct match *)&work->match)))
             return rc;
     }
     return RC_DONE;
@@ -106,20 +106,22 @@ static enum rc run_on_partition(struct work *work, unsigned i)
 
 enum rc work_next(struct work *work)
 {
-    enum rc code = rest_next_pend_job(&work->job);
-    if (code == RC_NOTFOUND) return RC_DONE;
-    if (code != RC_DONE)
-        return error(RC_EFAIL, "failed to get next pending job");
+    enum rc rc = rest_next_pend_job(&work->job);
+    if (rc) return rc;
+
+    if (rest_ret.rc == RC_NOTFOUND) return RC_DONE;
+    if (rest_ret.rc != RC_DONE) return efail("get next pending job");
 
     char filepath[PATH_SIZE] = {0};
-    code = rest_get_db_filepath(PATH_SIZE, filepath, work->job.db_id);
-    if (code == RC_NOTFOUND) return error(RC_NOTFOUND, "db not found");
-    if (code != RC_DONE) return error(RC_EFAIL, "failed to get db filepath");
+    rc = rest_get_db_filepath(PATH_SIZE, filepath, work->job.db_id);
+    if (rc) return rc;
 
-    if (!(work->db.fp = fopen(filepath, "rb")))
-        return error(RC_EIO, "failed to open db");
+    if (rest_ret.rc == RC_NOTFOUND) return error(RC_NOTFOUND, "db not found");
+    if (rest_ret.rc != RC_DONE) return efail("get db filepath");
 
-    enum rc rc = db_reader_open(&work->db.reader, work->db.fp);
+    if (!(work->db.fp = fopen(filepath, "rb"))) return eio("open db");
+
+    rc = db_reader_open(&work->db.reader, work->db.fp);
     if (rc)
     {
         fclose(work->db.fp);
@@ -140,6 +142,12 @@ enum rc work_next(struct work *work)
         assert(false);
 
     return RC_NEXT;
+}
+
+static enum rc next_seq(struct sched_seq *seq)
+{
+    enum rc rc = rest_next_seq(seq);
+    // if (rest_rc)
 }
 
 enum rc work_run(struct work *work, unsigned num_threads)
@@ -166,14 +174,15 @@ enum rc work_run(struct work *work, unsigned num_threads)
 
     // sched_seq_init(&work->seq, work->job.id, "", "");
     unsigned npartitions = profile_reader_npartitions(&work->reader);
-    enum rc code = RC_DONE;
     if (prod_fopen(npartitions))
     {
         set_job_fail(work->job.id, "failed to begin product submission");
         return RC_DONE;
     }
-    while ((code = rest_next_seq(&work->seq)) == RC_NEXT)
+    while (!rest_next_seq(&work->seq))
     {
+        if (rest_ret.rc != RC_NEXT) break;
+
         if (imm_abc_union_size(work->abc, imm_str(work->seq.data)) > 0)
         {
             set_job_fail(work->job.id,

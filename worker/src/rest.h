@@ -3,8 +3,8 @@
 
 #include "common/limits.h"
 #include "common/rc.h"
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 struct sched_seq
 {
@@ -13,7 +13,6 @@ struct sched_seq
     char name[SEQ_NAME_SIZE];
     char data[SEQ_SIZE];
 };
-
 
 struct rest_job_state
 {
@@ -30,10 +29,18 @@ struct rest_pend_job
     bool hmmer3_compat;
 };
 
+struct rest_ret
+{
+    enum rc rc;
+    char error[ERROR_SIZE];
+};
+
+extern struct rest_ret rest_ret;
 extern struct rest_job_state job_state;
 
-void rest_set_url(char const *url);
-enum rc rest_job_state(int64_t job_id);
+enum rc rest_open(char const *url);
+void rest_close(void);
+// enum rc rest_job_state(int64_t job_id);
 enum rc rest_set_job_fail(int64_t job_id, char const *error);
 enum rc rest_set_job_done(int64_t job_id);
 enum rc rest_next_pend_job(struct rest_pend_job *job);

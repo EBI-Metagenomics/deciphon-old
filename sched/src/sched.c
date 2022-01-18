@@ -85,7 +85,7 @@ enum rc sched_add_db(char const *filepath, int64_t *id)
     char *ptr = realpath(filepath, resolved);
     if (!ptr) return efail("realpath");
 
-    struct db db = {0};
+    struct sched_db db = {0};
     int rc = db_has(resolved, &db);
     if (rc == RC_DONE)
     {
@@ -100,7 +100,7 @@ enum rc sched_add_db(char const *filepath, int64_t *id)
 
 enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
 {
-    struct db db = {0};
+    struct sched_db db = {0};
     int code = db_get_by_id(&db, id);
     if (code == RC_NOTFOUND) return RC_NOTFOUND;
     if (code != RC_DONE) return RC_EFAIL;
@@ -110,6 +110,10 @@ enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id)
 
 enum rc sched_get_job(struct sched_job *job) { return job_get(job); }
 
+enum rc sched_get_seq(struct sched_seq *seq) { return seq_get(seq); }
+
+enum rc sched_get_db(struct sched_db *db) { return db_get_by_id(db, db->id); }
+
 enum rc sched_submit_job(struct sched_job *job, char const *filepath,
                          char *error)
 {
@@ -117,7 +121,7 @@ enum rc sched_submit_job(struct sched_job *job, char const *filepath,
     FILE *fp = fopen(filepath, "rb");
     if (!fp) return eio("fopen");
 
-    struct db db = {0};
+    struct sched_db db = {0};
     rc = db_get_by_id(&db, job->db_id);
     if (rc == RC_NOTFOUND)
     {

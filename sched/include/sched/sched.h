@@ -5,7 +5,9 @@
 #include "common/rc.h"
 #include <stdint.h>
 
+struct sched_db;
 struct sched_job;
+struct sched_seq;
 
 EXPORT enum rc sched_setup(char const *filepath);
 EXPORT enum rc sched_open(void);
@@ -14,6 +16,8 @@ EXPORT enum rc sched_close(void);
 EXPORT enum rc sched_add_db(char const *filepath, int64_t *id);
 EXPORT enum rc sched_cpy_db_filepath(unsigned size, char *filepath, int64_t id);
 EXPORT enum rc sched_get_job(struct sched_job *job);
+EXPORT enum rc sched_get_seq(struct sched_seq *seq);
+EXPORT enum rc sched_get_db(struct sched_db *db);
 
 EXPORT enum rc sched_set_job_fail(int64_t job_id, char const *msg);
 EXPORT enum rc sched_set_job_done(int64_t job_id);

@@ -146,7 +146,9 @@ enum rc job_get(struct sched_job *job)
 
     if (xsql_bind_i64(st, 0, job->id)) return efail("bind");
 
-    if (xsql_step(st) != RC_NEXT) efail("step");
+    enum rc rc = xsql_step(st);
+    if (rc == RC_DONE) return RC_NOTFOUND;
+    if (rc != RC_NEXT) efail("get job");
 
     job->id = sqlite3_column_int64(st, 0);
 
