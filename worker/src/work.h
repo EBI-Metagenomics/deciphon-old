@@ -16,7 +16,7 @@
 
 struct work
 {
-    struct rest_pend_job job;
+    struct sched_job job;
     struct sched_seq seq;
     struct prod prod[NUM_PARTITIONS];
     struct

@@ -21,6 +21,11 @@ static char base_url[1024] = {0};
 //
 static CURL *curl = 0;
 
+static char const job_states[][5] = {[SCHED_JOB_PEND] = "pend",
+                                     [SCHED_JOB_RUN] = "run",
+                                     [SCHED_JOB_DONE] = "done",
+                                     [SCHED_JOB_FAIL] = "fail"};
+
 static struct answer
 {
     struct
@@ -73,6 +78,18 @@ static size_t answer_callback(void *contents, size_t size, size_t nmemb,
     a->json.ntoks = (unsigned)r;
     return a->size;
 }
+// curl_easy_reset
+
+static void set_default_opts(void)
+{
+    curl_easy_reset(curl);
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Accept: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, answer_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, 0);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+}
 
 enum rc rest_open(char const *url)
 {
@@ -85,12 +102,7 @@ enum rc rest_open(char const *url)
     curl = curl_easy_init();
     if (!curl) return efail("curl_easy_init");
 
-    struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, "Accept: application/json");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, answer_callback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, 0);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+    set_default_opts();
 
     return RC_DONE;
 }
@@ -117,6 +129,31 @@ static void cpy_str(unsigned dst_sz, char *dst, jsmntok_t const *tok)
     unsigned len = xmath_min(dst_sz - 1, tokl(tok));
     memcpy(dst, tokv(tok), len);
     dst[len] = 0;
+}
+
+static bool is_number(jsmntok_t const *tok)
+{
+    char *c = answer.data + tok->start;
+    return (tok->type == JSMN_PRIMITIVE && *c != 'n' && *c != 't' && *c != 'f');
+}
+
+static bool is_boolean(jsmntok_t const *tok)
+{
+    char *c = answer.data + tok->start;
+    return (tok->type == JSMN_PRIMITIVE && (*c == 't' || *c == 'f'));
+}
+
+static bool to_bool(jsmntok_t const *tok)
+{
+    char *c = answer.data + tok->start;
+    return *c == 't';
+}
+
+static enum rc bind_int64(jsmntok_t const *tok, int64_t *val)
+{
+    if (!is_number(tok)) return error(RC_EINVAL, "expected number");
+    if (!to_int64l(tokl(tok), tokv(tok), val)) return eparse("parse number");
+    return RC_DONE;
 }
 
 static bool jeq(jsmntok_t const *tok, const char *s)
@@ -146,6 +183,32 @@ static enum rc parse_ret(unsigned nitems, jsmntok_t const *tok)
         else if (jeq(tok + i, "error"))
         {
             cpy_str(JOB_ERROR_SIZE, rest_ret.error, tok + i + 1);
+        }
+        else
+            return error(RC_EINVAL, "unexpected json key");
+    }
+    return RC_DONE;
+}
+
+static enum rc parse_db(unsigned ntoks, jsmntok_t const *tok,
+                        struct sched_db *db)
+{
+    if (ntoks != 2 * 3 + 1) return error(RC_EINVAL, "expected three items");
+
+    enum rc rc = RC_DONE;
+    for (unsigned i = 1; i < ntoks; i += 2)
+    {
+        if (jeq(tok + i, "id"))
+        {
+            if ((rc = bind_int64(tok + i + 1, &db->id))) return rc;
+        }
+        else if (jeq(tok + i, "xxh64"))
+        {
+            if ((rc = bind_int64(tok + i + 1, &db->xxh64))) return rc;
+        }
+        else if (jeq(tok + i, "filepath"))
+        {
+            cpy_str(PATH_SIZE, db->filepath, tok + i + 1);
         }
         else
             return error(RC_EINVAL, "unexpected json key");
@@ -186,7 +249,8 @@ enum rc rest_set_job_fail(int64_t job_id, char const *error)
     if (curl_easy_perform(curl) != CURLE_OK) return efail("curl_easy_perform");
 
     printf("%.*s\n", (int)answer.size, answer.data);
-    // return parse_filepath(answer.json.ntoks, answer.json.tok, path_size, path);
+    // return parse_filepath(answer.json.ntoks, answer.json.tok, path_size,
+    // path);
 }
 
 enum rc rest_set_job_done(int64_t job_id) {}
@@ -200,6 +264,24 @@ enum rc rest_get_db_filepath(unsigned path_size, char *path, int64_t id)
 
     printf("%.*s\n", (int)answer.size, answer.data);
     return parse_filepath(answer.json.ntoks, answer.json.tok, path_size, path);
+}
+
+enum rc rest_get_db(struct sched_db *db)
+{
+    set_default_opts();
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+
+    sprintf(rest_url, "%s/dbs/%" PRId64, base_url, db->id);
+    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
+
+    if (curl_easy_perform(curl) != CURLE_OK) return efail("curl_easy_perform");
+
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    if (http_code == 404) return error(RC_NOTFOUND, "db not found");
+
+    printf("%.*s\n", (int)answer.size, answer.data);
+    return parse_db(answer.json.ntoks, answer.json.tok, db);
 }
 
 // static enum rc parse_job_state(void)
@@ -275,24 +357,6 @@ enum rc rest_get_db_filepath(unsigned path_size, char *path, int64_t id)
 //     return RC_DONE;
 // }
 
-static bool is_number(jsmntok_t const *tok)
-{
-    char *c = answer.data + tok->start;
-    return (tok->type == JSMN_PRIMITIVE && *c != 'n' && *c != 't' && *c != 'f');
-}
-
-static bool is_boolean(jsmntok_t const *tok)
-{
-    char *c = answer.data + tok->start;
-    return (tok->type == JSMN_PRIMITIVE && (*c == 't' || *c == 'f'));
-}
-
-static bool to_bool(jsmntok_t const *tok)
-{
-    char *c = answer.data + tok->start;
-    return *c == 't';
-}
-
 static enum rc parse_pend_job(unsigned nitems, jsmntok_t const *tok,
                               struct rest_pend_job *job)
 {
@@ -362,15 +426,96 @@ static enum rc parse_next_pend_job(unsigned ntoks, jsmntok_t const *tok,
     return RC_DONE;
 }
 
-enum rc rest_next_pend_job(struct rest_pend_job *job)
+static enum rc parse_job(unsigned ntoks, jsmntok_t const *tok,
+                         struct sched_job *job)
 {
-    sprintf(rest_url, "%s/job/next_pend", base_url);
+    if (ntoks != 2 * 9 + 1) return error(RC_EINVAL, "expected nine items");
+
+    enum rc rc = RC_DONE;
+    for (unsigned i = 1; i < ntoks; i += 2)
+    {
+        if (jeq(tok + i, "id"))
+        {
+            if ((rc = bind_int64(tok + i + 1, &job->id))) return rc;
+        }
+        else if (jeq(tok + i, "db_id"))
+        {
+            if ((rc = bind_int64(tok + i + 1, &job->db_id))) return rc;
+        }
+        else if (jeq(tok + i, "multi_hits"))
+        {
+            if (!is_boolean(tok + i + 1))
+                return error(RC_EINVAL, "expected bool");
+            job->multi_hits = to_bool(tok + i + 1);
+        }
+        else if (jeq(tok + i, "hmmer3_compat"))
+        {
+            if (!is_boolean(tok + i + 1))
+                return error(RC_EINVAL, "expected bool");
+            job->hmmer3_compat = to_bool(tok + i + 1);
+        }
+        else if (jeq(tok + i, "state"))
+        {
+            cpy_str(JOB_STATE_SIZE, job->state, tok + i + 1);
+        }
+        else if (jeq(tok + i, "error"))
+        {
+            cpy_str(JOB_ERROR_SIZE, job->error, tok + i + 1);
+        }
+        else if (jeq(tok + i, "submission"))
+        {
+            if ((rc = bind_int64(tok + i + 1, &job->submission))) return rc;
+        }
+        else if (jeq(tok + i, "exec_started"))
+        {
+            if ((rc = bind_int64(tok + i + 1, &job->exec_started))) return rc;
+        }
+        else if (jeq(tok + i, "exec_ended"))
+        {
+            if ((rc = bind_int64(tok + i + 1, &job->exec_ended))) return rc;
+        }
+        else
+            return error(RC_EINVAL, "unexpected json key");
+    }
+    return RC_DONE;
+}
+
+enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state)
+{
+    set_default_opts();
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+
+    sprintf(rest_url, "%s/jobs/%" PRId64 "?state=%s", base_url, job->id,
+            job_states[state]);
     curl_easy_setopt(curl, CURLOPT_URL, rest_url);
 
     if (curl_easy_perform(curl) != CURLE_OK) return efail("curl_easy_perform");
 
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    if (http_code == 403) return error(RC_EINVAL, "redundant job state update");
+    if (http_code == 500) return error(RC_EFAIL, "server error");
+
     printf("%.*s\n", (int)answer.size, answer.data);
-    return parse_next_pend_job(answer.json.ntoks, answer.json.tok, job);
+    return parse_job(answer.json.ntoks, answer.json.tok, job);
+}
+
+enum rc rest_next_pend_job(struct sched_job *job)
+{
+    set_default_opts();
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+
+    sprintf(rest_url, "%s/jobs/next_pend", base_url);
+    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
+
+    if (curl_easy_perform(curl) != CURLE_OK) return efail("curl_easy_perform");
+
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    if (http_code == 404) return RC_NOTFOUND;
+
+    printf("%.*s\n", (int)answer.size, answer.data);
+    return parse_job(answer.json.ntoks, answer.json.tok, job);
 }
 
 static enum rc parse_seq(unsigned nitems, jsmntok_t const *tok,

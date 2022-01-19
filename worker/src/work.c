@@ -108,18 +108,15 @@ enum rc work_next(struct work *work)
 {
     enum rc rc = rest_next_pend_job(&work->job);
     if (rc) return rc;
-
-    if (rest_ret.rc == RC_NOTFOUND) return RC_DONE;
-    if (rest_ret.rc != RC_DONE) return efail("get next pending job");
-
-    char filepath[PATH_SIZE] = {0};
-    rc = rest_get_db_filepath(PATH_SIZE, filepath, work->job.db_id);
+    rc = rest_set_job_state(&work->job, SCHED_JOB_RUN);
     if (rc) return rc;
 
-    if (rest_ret.rc == RC_NOTFOUND) return error(RC_NOTFOUND, "db not found");
-    if (rest_ret.rc != RC_DONE) return efail("get db filepath");
+    struct sched_db db = {0};
+    db.id = work->job.db_id;
+    rc = rest_get_db(&db);
+    if (rc) return rc;
 
-    if (!(work->db.fp = fopen(filepath, "rb"))) return eio("open db");
+    if (!(work->db.fp = fopen(db.filepath, "rb"))) return eio("open db");
 
     rc = db_reader_open(&work->db.reader, work->db.fp);
     if (rc)
