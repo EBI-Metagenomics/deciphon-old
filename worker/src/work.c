@@ -169,17 +169,16 @@ enum rc work_run(struct work *work, unsigned num_threads)
         return error(RC_EINVAL, "unknown alphabet");
     }
 
-    // sched_seq_init(&work->seq, work->job.id, "", "");
+    work->seq.id = 0;
+    work->seq.job_id = work->job.id;
     unsigned npartitions = profile_reader_npartitions(&work->reader);
     if (prod_fopen(npartitions))
     {
         set_job_fail(work->job.id, "failed to begin product submission");
         return RC_DONE;
     }
-    while (!rest_next_seq(&work->seq))
+    while (!(rc = rest_next_seq(&work->seq)))
     {
-        if (rest_ret.rc != RC_NEXT) break;
-
         if (imm_abc_union_size(work->abc, imm_str(work->seq.data)) > 0)
         {
             set_job_fail(work->job.id,

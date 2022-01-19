@@ -15,7 +15,7 @@
 
 int main(void)
 {
-    server_run(true, 1, "http://127.0.0.1:8000");
+    server_run(false, 1, "http://127.0.0.1:8000");
 
     /* test_server_setup(1); */
     /* test_server_setup(2); */

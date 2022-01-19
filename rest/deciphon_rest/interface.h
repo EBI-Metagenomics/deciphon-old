@@ -1,3 +1,6 @@
+FILE *fdopen(int, const char *);
+int fclose(FILE *);
+
 struct sched_job
 {
     int64_t id;
@@ -115,3 +118,5 @@ enum rc sched_end_job_submission(struct sched_job *job);
 enum rc sched_prod_submit(struct sched_prod *prod);
 
 enum rc sched_set_job_run(int64_t job_id);
+
+enum rc sched_submit_prod_file(FILE *fp);

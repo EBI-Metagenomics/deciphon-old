@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 static char rest_url[1024] = {0};
 static char base_url[1024] = {0};
@@ -83,9 +84,6 @@ static size_t answer_callback(void *contents, size_t size, size_t nmemb,
 static void set_default_opts(void)
 {
     curl_easy_reset(curl);
-    struct curl_slist *headers = NULL;
-    headers = curl_slist_append(headers, "Accept: application/json");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, answer_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, 0);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
@@ -269,6 +267,9 @@ enum rc rest_get_db_filepath(unsigned path_size, char *path, int64_t id)
 enum rc rest_get_db(struct sched_db *db)
 {
     set_default_opts();
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Accept: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
 
     sprintf(rest_url, "%s/dbs/%" PRId64, base_url, db->id);
@@ -281,6 +282,7 @@ enum rc rest_get_db(struct sched_db *db)
     if (http_code == 404) return error(RC_NOTFOUND, "db not found");
 
     printf("%.*s\n", (int)answer.size, answer.data);
+    curl_slist_free_all(headers);
     return parse_db(answer.json.ntoks, answer.json.tok, db);
 }
 
@@ -483,6 +485,9 @@ static enum rc parse_job(unsigned ntoks, jsmntok_t const *tok,
 enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state)
 {
     set_default_opts();
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Accept: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
 
     sprintf(rest_url, "%s/jobs/%" PRId64 "?state=%s", base_url, job->id,
@@ -497,12 +502,16 @@ enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state)
     if (http_code == 500) return error(RC_EFAIL, "server error");
 
     printf("%.*s\n", (int)answer.size, answer.data);
+    curl_slist_free_all(headers);
     return parse_job(answer.json.ntoks, answer.json.tok, job);
 }
 
 enum rc rest_next_pend_job(struct sched_job *job)
 {
     set_default_opts();
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Accept: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
 
     sprintf(rest_url, "%s/jobs/next_pend", base_url);
@@ -515,37 +524,33 @@ enum rc rest_next_pend_job(struct sched_job *job)
     if (http_code == 404) return RC_NOTFOUND;
 
     printf("%.*s\n", (int)answer.size, answer.data);
+    curl_slist_free_all(headers);
     return parse_job(answer.json.ntoks, answer.json.tok, job);
 }
 
 static enum rc parse_seq(unsigned nitems, jsmntok_t const *tok,
-                         struct sched_seq *job)
+                         struct sched_seq *seq)
 {
-    if (nitems != 4) return error(RC_EINVAL, "expected four items");
+    if (nitems != 4 * 2 + 1) return error(RC_EINVAL, "expected five items");
 
-    for (unsigned i = 1; i < nitems * 2; i += 2)
+    enum rc rc = RC_DONE;
+    for (unsigned i = 1; i < nitems; i += 2)
     {
         if (jeq(tok + i, "id"))
         {
-            if (!is_number(tok + i + 1))
-                return error(RC_EINVAL, "expected number");
-            if (!to_int64l(tokl(tok + i + 1), tokv(tok + i + 1), &job->id))
-                return eparse("parse number");
+            if ((rc = bind_int64(tok + i + 1, &seq->id))) return rc;
         }
         else if (jeq(tok + i, "job_id"))
         {
-            if (!is_number(tok + i + 1))
-                return error(RC_EINVAL, "expected number");
-            if (!to_int64l(tokl(tok + i + 1), tokv(tok + i + 1), &job->job_id))
-                return eparse("parse number");
+            if ((rc = bind_int64(tok + i + 1, &seq->job_id))) return rc;
         }
         else if (jeq(tok + i, "name"))
         {
-            cpy_str(SEQ_NAME_SIZE, job->name, tok + i + 1);
+            cpy_str(SEQ_NAME_SIZE, seq->name, tok + i + 1);
         }
         else if (jeq(tok + i, "data"))
         {
-            cpy_str(SEQ_SIZE, job->data, tok + i + 1);
+            cpy_str(SEQ_SIZE, seq->data, tok + i + 1);
         }
         else
             return error(RC_EINVAL, "unexpected json key");
@@ -553,6 +558,7 @@ static enum rc parse_seq(unsigned nitems, jsmntok_t const *tok,
     return RC_DONE;
 }
 
+#if 0
 static enum rc parse_next_seq(unsigned ntoks, jsmntok_t const *tok,
                               struct sched_seq *seq)
 {
@@ -582,6 +588,7 @@ static enum rc parse_next_seq(unsigned ntoks, jsmntok_t const *tok,
     }
     return RC_DONE;
 }
+#endif
 
 // HEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEREEEEEEEEEEEEEEEEEEEEEEEEEEEE
 // long http_code = 0;
@@ -589,12 +596,156 @@ static enum rc parse_next_seq(unsigned ntoks, jsmntok_t const *tok,
 
 enum rc rest_next_seq(struct sched_seq *seq)
 {
-    sprintf(rest_url, "%s/seq/next?seq_id=%" PRId64 "&job_id=%" PRId64,
-            base_url, seq->id, seq->job_id);
+    set_default_opts();
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Accept: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+
+    sprintf(rest_url, "%s/jobs/%" PRId64 "/seqs/next/%" PRId64, base_url,
+            seq->job_id, seq->id);
     curl_easy_setopt(curl, CURLOPT_URL, rest_url);
 
     if (curl_easy_perform(curl) != CURLE_OK) return efail("curl_easy_perform");
 
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    if (http_code == 404) return RC_NOTFOUND;
+    if (http_code == 500) return error(RC_EFAIL, "server error");
+
     printf("%.*s\n", (int)answer.size, answer.data);
-    return parse_next_seq(answer.json.ntoks, answer.json.tok, seq);
+    curl_slist_free_all(headers);
+    return parse_seq(answer.json.ntoks, answer.json.tok, seq);
+}
+
+static void dump(const char *text, FILE *stream, unsigned char *ptr,
+                 size_t size)
+{
+    size_t i;
+    size_t c;
+    unsigned int width = 0x10;
+
+    fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n", text, (long)size,
+            (long)size);
+
+    for (i = 0; i < size; i += width)
+    {
+        fprintf(stream, "%4.4lx: ", (long)i);
+
+        /* show hex to the left */
+        for (c = 0; c < width; c++)
+        {
+            if (i + c < size)
+                fprintf(stream, "%02x ", ptr[i + c]);
+            else
+                fputs("   ", stream);
+        }
+
+        /* show data on the right */
+        for (c = 0; (c < width) && (i + c < size); c++)
+        {
+            char x =
+                (ptr[i + c] >= 0x20 && ptr[i + c] < 0x80) ? ptr[i + c] : '.';
+            fputc(x, stream);
+        }
+
+        fputc('\n', stream); /* newline */
+    }
+}
+
+static int my_trace(CURL *handle, curl_infotype type, char *data, size_t size,
+                    void *userp)
+{
+    const char *text;
+    (void)handle; /* prevent compiler warning */
+    (void)userp;
+
+    switch (type)
+    {
+    case CURLINFO_TEXT:
+        fprintf(stderr, "== Info: %s", data);
+    default: /* in case a new one is introduced to shock us */
+        return 0;
+
+    case CURLINFO_HEADER_OUT:
+        text = "=> Send header";
+        break;
+    case CURLINFO_DATA_OUT:
+        text = "=> Send data";
+        break;
+    case CURLINFO_SSL_DATA_OUT:
+        text = "=> Send SSL data";
+        break;
+    case CURLINFO_HEADER_IN:
+        text = "<= Recv header";
+        break;
+    case CURLINFO_DATA_IN:
+        text = "<= Recv data";
+        break;
+    case CURLINFO_SSL_DATA_IN:
+        text = "<= Recv SSL data";
+        break;
+    }
+
+    dump(text, stderr, (unsigned char *)data, size);
+    return 0;
+}
+
+enum rc rest_submit_prods_file(char const *filepath)
+{
+    // struct stat file_info = {0};
+    /* to get the file size */
+    // if (fstat(fileno(fp), &file_info) != 0) return eio("fstat");
+
+    set_default_opts();
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Accept: application/json");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
+    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    // curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+
+    /* set where to read from (on Windows you need to use READFUNCTION too) */
+    // curl_easy_setopt(curl, CURLOPT_READDATA, fp);
+
+    /* and give the size of the upload (optional) */
+    // curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE,
+    //                  (curl_off_t)file_info.st_size);
+
+    curl_mime *form = NULL;
+    curl_mimepart *field = NULL;
+    form = curl_mime_init(curl);
+
+    field = curl_mime_addpart(form);
+    curl_mime_name(field, "name");
+    curl_mime_data(field, "prods_file", CURL_ZERO_TERMINATED);
+
+    field = curl_mime_addpart(form);
+    curl_mime_name(field, "prods_file");
+    curl_mime_filedata(field, filepath);
+    curl_mime_type(field, "text/tab-separated-values");
+
+    field = curl_mime_addpart(form);
+    curl_mime_name(field, "filename");
+    curl_mime_data(field, "prods.tsv", CURL_ZERO_TERMINATED);
+
+    sprintf(rest_url, "%s/prods/upload", base_url);
+    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
+    curl_easy_setopt(curl, CURLOPT_MIMEPOST, form);
+
+    if (curl_easy_perform(curl) != CURLE_OK)
+    {
+        curl_mime_free(form);
+        curl_slist_free_all(headers);
+        return efail("curl_easy_perform");
+    }
+    // curl_mime_free(form);
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    curl_mime_free(form);
+    curl_slist_free_all(headers);
+    printf("HTTP CODE: %ld\n", http_code);
+    if (http_code != 200) return efail("upload file");
+
+    return RC_DONE;
 }

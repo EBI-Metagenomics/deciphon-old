@@ -135,8 +135,6 @@ enum rc sched_prod_write_end(unsigned thread_num)
     return RC_DONE;
 }
 
-static enum rc submit_prod_file(FILE *restrict fp);
-
 enum rc prod_end_submission(void)
 {
     int rc = RC_EFAIL;
@@ -149,7 +147,7 @@ enum rc prod_end_submission(void)
             goto cleanup;
         }
         rewind(prod_file[i].fp);
-        if ((rc = submit_prod_file(prod_file[i].fp))) goto cleanup;
+        if ((rc = sched_submit_prod_file(prod_file[i].fp))) goto cleanup;
     }
     rc = RC_DONE;
 
@@ -169,7 +167,6 @@ static enum rc get_prod(struct sched_prod *prod)
 
     int i = 0;
     prod->id = sqlite3_column_int64(st, i++);
-
     prod->job_id = sqlite3_column_int64(st, i++);
     prod->seq_id = sqlite3_column_int64(st, i++);
 
@@ -219,8 +216,9 @@ enum rc sched_prod_next(struct sched_prod *prod)
         goto cleanup;                                                          \
     } while (1)
 
-static enum rc submit_prod_file(FILE *restrict fp)
+enum rc sched_submit_prod_file(FILE *fp)
 {
+    enum rc rc = RC_DONE;
     if (xsql_begin_transaction(sched)) CLEANUP();
 
     struct sqlite3_stmt *st = stmt[PROD_INSERT];
@@ -229,6 +227,7 @@ static enum rc submit_prod_file(FILE *restrict fp)
     {
         if (xsql_reset(st)) CLEANUP();
         if (tok_next(&tok, fp)) CLEANUP();
+        printf("TOK_NEXT_VALUE1: %s\n", tok_value(&tok));
         if (tok_id(&tok) == TOK_EOF) break;
 
         for (int i = 0; i < (int)ARRAY_SIZE(col_type); i++)
@@ -251,8 +250,14 @@ static enum rc submit_prod_file(FILE *restrict fp)
                 if (xsql_bind_txt(st, i, txt)) CLEANUP();
             }
             if (tok_next(&tok, fp)) CLEANUP();
+            printf("TOK_NEXT_VALUE2: %s\n", tok_value(&tok));
         }
-        assert(tok_id(&tok) == TOK_NL);
+        if (tok_id(&tok) != TOK_NL)
+        {
+            printf("TOK_VALUE: %s\n", tok_value(&tok));
+            rc = error(RC_EPARSE, "expected newline");
+            goto cleanup;
+        }
         if (xsql_step(st) != RC_DONE) CLEANUP();
     } while (true);
 
@@ -261,7 +266,7 @@ static enum rc submit_prod_file(FILE *restrict fp)
 
 cleanup:
     xsql_rollback_transaction(sched);
-    return RC_EFAIL;
+    return rc;
 }
 
 enum rc prod_get(struct sched_prod *prod)

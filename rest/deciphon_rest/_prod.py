@@ -40,6 +40,7 @@ class ProdIn(BaseModel):
 
     def _create_cdata(self):
         cprod = ffi.new("struct sched_prod *")
+        cprod[0].id = 0
         cprod[0].seq_id = self.seq_id
         cprod[0].profile_name = self.profile_name.encode()
         cprod[0].abc_name = self.abc_name.encode()
@@ -65,6 +66,7 @@ prod_in_example = ProdIn(
 
 def create_prod(cprod) -> Prod:
     prod = Prod()
+    prod.id = int(cprod[0].id)
     prod.job_id = int(cprod[0].job_id)
     prod.seq_id = int(cprod[0].seq_id)
 

@@ -1,3 +1,4 @@
+import os
 from re import L
 from typing import List, Any, Optional
 
@@ -5,7 +6,7 @@ from ._csched import lib, ffi
 from ._prod import Prod, create_prod
 from ._seq import Seq, create_seq
 from pydantic import BaseModel
-from fastapi import HTTPException, status, Body
+from fastapi import HTTPException, status, Body, File, UploadFile
 from ._rc import ReturnCode, return_data, ReturnData
 from ._prod import ProdIn, get_prod, prod_in_example
 from ._app import app
@@ -215,6 +216,22 @@ def seq_set_cb(cseq, arg):
     seqs.append(create_seq(cseq))
 
 
+@app.get("/jobs/{job_id}/seqs/next/{seq_id}")
+def get_next_job_seq(job_id: int, seq_id: int):
+    cseq = ffi.new("struct sched_seq *")
+    cseq[0].id = seq_id
+    cseq[0].job_id = job_id
+    rd = return_data(lib.sched_seq_next(cseq))
+
+    if rd.rc == ReturnCode.RC_NOTFOUND:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, rd)
+
+    if rd.rc != ReturnCode.RC_DONE:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
+
+    return create_seq(cseq)
+
+
 @app.get("/jobs/{job_id}/seqs")
 def get_job_seqs(job_id: int):
     cseq = ffi.new("struct sched_seq *")
@@ -230,6 +247,18 @@ def get_job_seqs(job_id: int):
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
 
     return seqs
+
+
+@app.post("/prods/upload")
+def upload_prods_file(prods_file: UploadFile = File(...)):
+    print(f"prods_file.filename: {prods_file.filename}")
+    prods_file.file.flush()
+    fd = os.dup(prods_file.file.fileno())
+    fp = lib.fdopen(fd, b"rb")
+    rd = return_data(lib.sched_submit_prod_file(fp))
+
+    if rd.rc != ReturnCode.RC_DONE:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, rd)
 
 
 @app.post("/jobs/{job_id}/prods")

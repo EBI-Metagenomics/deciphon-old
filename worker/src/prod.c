@@ -4,6 +4,7 @@
 #include "imm/imm.h"
 #include "match.h"
 #include "profile.h"
+#include "rest.h"
 #include <inttypes.h>
 
 static unsigned nthreads = 0;
@@ -100,8 +101,7 @@ enum rc prod_fclose(void)
             goto cleanup;
         }
         rewind(prod_file[i].fp);
-        // REST send prod file
-        // if ((rc = submit_prod_file(prod_file[i].fp))) goto cleanup;
+        if ((rc = rest_submit_prods_file(prod_file[i].path))) goto cleanup;
     }
     rc = RC_DONE;
 

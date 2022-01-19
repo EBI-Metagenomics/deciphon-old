@@ -50,4 +50,6 @@ EXPORT enum rc sched_end_prod_submission(void);
 EXPORT enum rc sched_next_pend_job(struct sched_job *job);
 EXPORT enum rc sched_next_pending_job(struct sched_job *job);
 
+EXPORT enum rc sched_submit_prod_file(FILE *fp);
+
 #endif

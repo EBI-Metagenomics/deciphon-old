@@ -5,6 +5,7 @@
 #include "common/rc.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 struct sched_seq
 {
@@ -78,5 +79,6 @@ enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state);
 enum rc rest_get_db_filepath(unsigned size, char *filepath, int64_t id);
 enum rc rest_get_db(struct sched_db *db);
 enum rc rest_next_seq(struct sched_seq *seq);
+enum rc rest_submit_prods_file(char const *filepath);
 
 #endif

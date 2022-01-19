@@ -8,6 +8,7 @@ fastapi = "*"
 uvicorn = "*"
 cffi = "*"
 fasta-reader = "*"
+python-multipart = "*"
 
 
 [dev-packages]

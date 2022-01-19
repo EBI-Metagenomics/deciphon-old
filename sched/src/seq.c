@@ -75,8 +75,7 @@ enum rc seq_get(struct sched_seq *seq)
 enum rc sched_seq_next(struct sched_seq *seq)
 {
     int rc = next_seq_id(seq->job_id, &seq->id);
-    if (rc == RC_NOTFOUND) return RC_DONE;
-    if (rc != RC_DONE) return efail("get next seq");
-    if (seq_get(seq)) return efail("get next seq");
-    return RC_NEXT;
+    if (rc == RC_NOTFOUND) return RC_NOTFOUND;
+    if (rc != RC_DONE) return rc;
+    return seq_get(seq);
 }

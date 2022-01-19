@@ -1,4 +1,4 @@
-project(worker)
+project(worker VERSION 0.0.1 LANGUAGES C)
 
 find_package(elapsed REQUIRED)
 find_package(athr REQUIRED)
