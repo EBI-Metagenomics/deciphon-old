@@ -1,9 +1,11 @@
 from typing import List
-from ._csched import lib, ffi
-from pydantic import BaseModel
+
 from fastapi import HTTPException, status
-from ._rc import RC, return_data
+from pydantic import BaseModel
+
 from ._app import app
+from ._csched import ffi, lib
+from ._rc import RC, return_data
 
 
 class Prod(BaseModel):

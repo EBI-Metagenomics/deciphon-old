@@ -1,4 +1,8 @@
-project(sched)
+project(
+  sched
+  VERSION 0.0.1
+  LANGUAGES C
+)
 
 set(SQLite3_USE_STATIC_LIBS ON)
 find_package(SQLite3 3.31.1 REQUIRED)

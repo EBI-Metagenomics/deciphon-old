@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
-from ._app import app
+
+from .app import app
 
 
 @app.exception_handler(HTTPException)

@@ -1,9 +1,10 @@
+from enum import Enum, IntEnum
+
 from fastapi import HTTPException, status
 from pydantic import BaseModel
-from ._csched import lib, ffi
-from ._rc import ReturnCode, return_data
-from enum import Enum, IntEnum
-from ._logger import logger
+
+from ._csched import lib
+from .rc import ReturnCode, return_data
 
 
 class JS(IntEnum):

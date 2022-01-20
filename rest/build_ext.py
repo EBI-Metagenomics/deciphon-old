@@ -1,13 +1,10 @@
-from cffi import FFI
 import os
 from os.path import join
 
+from cffi import FFI
+
 
 ffibuilder = FFI()
-
-# typedef void sched_db_peek_t(struct sched_db const *db, void *arg);
-# extern "Python" void db_peek(struct sched_db const *db, void *arg);
-# enum rc sched_db_list(sched_db_peek_t *peek, void *arg);
 
 folder = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,7 +12,7 @@ with open(join(folder, "deciphon_rest", "interface.h"), "r") as f:
     ffibuilder.cdef(f.read())
 
 ffibuilder.set_source(
-    "deciphon_rest._csched",
+    "deciphon_rest.csched",
     """
      #include "common/logger.h"
      #include "common/limits.h"

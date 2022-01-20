@@ -1,8 +1,9 @@
-from ._csched import lib, ffi
-from pydantic import BaseModel
 from fastapi import HTTPException, status
-from ._rc import ReturnCode, return_data
-from ._app import app
+from pydantic import BaseModel
+
+from ._csched import ffi, lib
+from .app import app
+from .rc import ReturnCode, return_data
 
 
 class DB(BaseModel):
