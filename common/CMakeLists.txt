@@ -1,4 +1,11 @@
-project(common)
+project(
+  common
+  VERSION 0.0.1
+  LANGUAGES C
+)
+
+set(xxHash_USE_STATIC_LIBS ON)
+find_package(xxHash REQUIRED)
 
 add_library(
   ${PROJECT_NAME} STATIC
@@ -27,6 +34,5 @@ target_include_directories(
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC xxHash::xxHash)
-target_link_libraries(${PROJECT_NAME} PUBLIC FASTA::fasta)
 
 add_subdirectory(test)

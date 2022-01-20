@@ -6,7 +6,7 @@ from fastapi import Body, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
 from .app import app
-from ._csched import ffi, lib
+from .csched import ffi, lib
 from .prod import Prod, create_prod
 from .prod import ProdIn, get_prod, prod_in_example
 from .rc import ReturnCode, ReturnData, return_data

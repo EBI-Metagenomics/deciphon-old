@@ -8,8 +8,14 @@ fastapi = "*"
 uvicorn = "*"
 cffi = "*"
 python-multipart = "*"
+setuptools = "*"
+setuptools-scm = "*"
 
 [dev-packages]
+pytest = "*"
+pyright = "*"
+black = "*"
+isort = "*"
 
 [requires]
 python_version = "3.9"

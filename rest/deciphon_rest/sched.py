@@ -3,7 +3,7 @@ from enum import Enum, IntEnum
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 
-from ._csched import lib
+from .csched import lib
 from .rc import ReturnCode, return_data
 
 

@@ -3,9 +3,9 @@ from typing import List
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 
-from ._app import app
-from ._csched import ffi, lib
-from ._rc import RC, return_data
+from .app import app
+from .csched import ffi, lib
+from .rc import RC, return_data
 
 
 class Prod(BaseModel):

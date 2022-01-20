@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum
 from pydantic import BaseModel
-from ._logger import logger
+from .logger import logger
 
 
 class RC(IntEnum):

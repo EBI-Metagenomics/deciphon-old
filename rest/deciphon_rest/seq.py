@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 
-from ._csched import ffi, lib
+from .csched import ffi, lib
 from .app import app
 from .rc import ReturnCode, return_data
 

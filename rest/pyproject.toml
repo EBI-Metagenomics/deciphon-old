@@ -1,6 +1,6 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["setuptools", "setuptools_scm", "wheel", "cffi"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "deciphon_rest"
@@ -13,3 +13,6 @@ dependencies = ["fastapi", "uvicorn", "cffi", "python-multipart"]
 
 [project.urls]
 Home = "http://github.com/EBI-Metagenomics/deciphon"
+
+[tool.setuptools_scm]
+write_to = "deciphon_rest/_version.py"
