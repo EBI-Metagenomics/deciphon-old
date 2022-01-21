@@ -204,9 +204,9 @@ static enum rc parse_db(unsigned ntoks, jsmntok_t const *tok,
         {
             if ((rc = bind_int64(tok + i + 1, &db->xxh64))) return rc;
         }
-        else if (jeq(tok + i, "filepath"))
+        else if (jeq(tok + i, "filename"))
         {
-            cpy_str(PATH_SIZE, db->filepath, tok + i + 1);
+            cpy_str(PATH_SIZE, db->filename, tok + i + 1);
         }
         else
             return error(RC_EINVAL, "unexpected json key");
@@ -214,6 +214,7 @@ static enum rc parse_db(unsigned ntoks, jsmntok_t const *tok,
     return RC_DONE;
 }
 
+#if 0
 static enum rc parse_filepath(unsigned ntoks, jsmntok_t const *tok,
                               unsigned path_size, char *path)
 {
@@ -238,31 +239,20 @@ static enum rc parse_filepath(unsigned ntoks, jsmntok_t const *tok,
     }
     return RC_DONE;
 }
+#endif
 
-enum rc rest_set_job_fail(int64_t job_id, char const *error)
-{
-    sprintf(rest_url, "%s/job/set_fail?job_id=%" PRId64, base_url, job_id);
-    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
-
-    if (curl_easy_perform(curl) != CURLE_OK) return efail("curl_easy_perform");
-
-    printf("%.*s\n", (int)answer.size, answer.data);
-    // return parse_filepath(answer.json.ntoks, answer.json.tok, path_size,
-    // path);
-}
-
-enum rc rest_set_job_done(int64_t job_id) {}
-
-enum rc rest_get_db_filepath(unsigned path_size, char *path, int64_t id)
-{
-    sprintf(rest_url, "%s/db/filepath?db_id=%" PRId64, base_url, id);
-    curl_easy_setopt(curl, CURLOPT_URL, rest_url);
-
-    if (curl_easy_perform(curl) != CURLE_OK) return efail("curl_easy_perform");
-
-    printf("%.*s\n", (int)answer.size, answer.data);
-    return parse_filepath(answer.json.ntoks, answer.json.tok, path_size, path);
-}
+// enum rc rest_get_db_filepath(unsigned path_size, char *path, int64_t id)
+// {
+//     sprintf(rest_url, "%s/db/filepath?db_id=%" PRId64, base_url, id);
+//     curl_easy_setopt(curl, CURLOPT_URL, rest_url);
+//
+//     if (curl_easy_perform(curl) != CURLE_OK) return
+//     efail("curl_easy_perform");
+//
+//     printf("%.*s\n", (int)answer.size, answer.data);
+//     return parse_filepath(answer.json.ntoks, answer.json.tok, path_size,
+//     path);
+// }
 
 enum rc rest_get_db(struct sched_db *db)
 {
@@ -482,7 +472,8 @@ static enum rc parse_job(unsigned ntoks, jsmntok_t const *tok,
     return RC_DONE;
 }
 
-enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state)
+enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
+                           char const *error)
 {
     set_default_opts();
     struct curl_slist *headers = NULL;
@@ -490,8 +481,10 @@ enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state)
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
 
-    sprintf(rest_url, "%s/jobs/%" PRId64 "?state=%s", base_url, job->id,
-            job_states[state]);
+    char *eerr = curl_easy_escape(curl, error, 0);
+
+    sprintf(rest_url, "%s/jobs/%" PRId64 "?state=%s&error=%s", base_url, job->id,
+            job_states[state], eerr);
     curl_easy_setopt(curl, CURLOPT_URL, rest_url);
 
     if (curl_easy_perform(curl) != CURLE_OK) return efail("curl_easy_perform");
@@ -503,6 +496,7 @@ enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state)
 
     printf("%.*s\n", (int)answer.size, answer.data);
     curl_slist_free_all(headers);
+    curl_free(eerr);
     return parse_job(answer.json.ntoks, answer.json.tok, job);
 }
 

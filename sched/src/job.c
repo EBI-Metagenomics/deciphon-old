@@ -4,9 +4,12 @@
 #include "common/rc.h"
 #include "common/safe.h"
 #include "common/utc.h"
+#include "prod.h"
 #include "sched/job.h"
+#include "sched/prod.h"
 #include "sched/sched.h"
 #include "seq.h"
+#include "seq_queue.h"
 #include "stmt.h"
 #include "xsql.h"
 #include <sqlite3.h>
@@ -29,6 +32,20 @@ void sched_job_init(struct sched_job *job, int64_t db_id, bool multi_hits,
     job->submission = 0;
     job->exec_started = 0;
     job->exec_ended = 0;
+}
+
+enum rc sched_job_set_run(int64_t job_id)
+{
+    return job_set_run(job_id, utc_now());
+}
+
+enum rc sched_job_set_fail(int64_t job_id, char const *msg)
+{
+    return job_set_error(job_id, msg, utc_now());
+}
+enum rc sched_job_set_done(int64_t job_id)
+{
+    return job_set_done(job_id, utc_now());
 }
 
 enum rc job_submit(struct sched_job *job)
@@ -91,7 +108,7 @@ enum rc job_next_pend(struct sched_job *job)
     enum rc rc = next_pend_job_id(&job->id);
     if (rc == RC_NOTFOUND) return RC_NOTFOUND;
     if (rc != RC_DONE) efail("get next pend job");
-    return job_get(job);
+    return sched_job_get(job);
 }
 
 enum rc job_next_pending(struct sched_job *job)
@@ -99,7 +116,7 @@ enum rc job_next_pending(struct sched_job *job)
     enum rc rc = next_pending_job_id(&job->id);
     if (rc == RC_NOTFOUND) return RC_NOTFOUND;
     if (rc != RC_DONE) efail("get next pending job");
-    return job_get(job);
+    return sched_job_get(job);
 }
 
 enum rc job_set_run(int64_t job_id, int64_t exec_started)
@@ -173,7 +190,7 @@ enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
     return RC_DONE;
 }
 
-enum rc job_get(struct sched_job *job)
+enum rc sched_job_get(struct sched_job *job)
 {
     struct sqlite3_stmt *st = stmt[JOB_SELECT];
     if (xsql_reset(st)) return efail("reset");
@@ -198,4 +215,70 @@ enum rc job_get(struct sched_job *job)
 
     if (xsql_step(st)) return efail("step");
     return RC_DONE;
+}
+
+enum rc sched_job_get_prods(int64_t job_id, sched_prod_set_cb cb,
+                            struct sched_prod *prod, void *arg)
+{
+    struct sched_job job = {0};
+    job.id = job_id;
+    enum rc rc = sched_job_get(&job);
+    if (rc) return rc;
+
+    sched_prod_init(prod, job_id);
+    while ((rc = prod_next(prod)) == RC_NEXT)
+    {
+        cb(prod, arg);
+    }
+    return rc;
+}
+
+enum rc sched_job_get_seqs(int64_t job_id, sched_seq_set_cb cb,
+                           struct sched_seq *seq, void *arg)
+{
+    struct sched_job job = {0};
+    job.id = job_id;
+    enum rc rc = sched_job_get(&job);
+    if (rc) return rc;
+
+    seq->id = 0;
+    seq->job_id = job_id;
+    while ((rc = sched_seq_next(seq)) == RC_NEXT)
+    {
+        cb(seq, arg);
+    }
+    return rc;
+}
+
+enum rc sched_job_begin_submission(struct sched_job *job)
+{
+    sched_job_init(job, job->db_id, job->multi_hits, job->hmmer3_compat);
+    if (xsql_begin_transaction(sched)) return efail("begin job submission");
+    seq_queue_init();
+    return RC_DONE;
+}
+
+void sched_job_add_seq(struct sched_job *job, char const *name,
+                       char const *data)
+{
+    seq_queue_add(job->id, name, data);
+}
+
+enum rc sched_job_rollback_submission(struct sched_job *job)
+{
+    return xsql_rollback_transaction(sched);
+}
+
+enum rc sched_job_end_submission(struct sched_job *job)
+{
+    if (job_submit(job)) return efail("end job submission");
+
+    for (unsigned i = 0; i < seq_queue_size(); ++i)
+    {
+        struct sched_seq *seq = seq_queue_get(i);
+        seq->job_id = job->id;
+        if (seq_submit(seq)) return xsql_rollback_transaction(sched);
+    }
+
+    return xsql_end_transaction(sched);
 }

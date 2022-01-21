@@ -1,7 +1,7 @@
 #include "cli.h"
 #include "imm/imm.h"
 #include "log/log.h"
-#include "logger.h"
+#include "common/logger.h"
 #include <stdio.h>
 
 static void wrap_log_put(char const *msg, void *arg)

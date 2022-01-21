@@ -19,10 +19,13 @@ cbp_ci_build_option()
 cbp_assert_null_is_zero_bits()
 enable_testing()
 
+set(xxHash_USE_STATIC_LIBS ON)
+find_package(xxHash REQUIRED)
+
 add_subdirectory(common)
 add_subdirectory(sched)
 add_subdirectory(worker)
-# add_subdirectory(cli)
+add_subdirectory(cli)
 
 # target_code_coverage(dcp)
 # cbp_hide_functions(dcp)

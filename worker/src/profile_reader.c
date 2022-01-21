@@ -1,10 +1,10 @@
 #include "profile_reader.h"
-#include "db.h"
 #include "common/logger.h"
-#include "protein_db.h"
-#include "standard_db.h"
 #include "common/xfile.h"
 #include "common/xmath.h"
+#include "db.h"
+#include "protein_db.h"
+#include "standard_db.h"
 
 static void cleanup(struct profile_reader *reader)
 {
@@ -66,8 +66,7 @@ static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
 
 static enum rc record_offset(FILE *fp, off_t *offset)
 {
-    if ((*offset = ftello(fp)) == -1)
-        return error(RC_EIO, "failed to ftello");
+    if ((*offset = ftello(fp)) == -1) return error(RC_EIO, "failed to ftello");
     return RC_DONE;
 }
 
@@ -111,12 +110,12 @@ cleanup:
 enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
                              unsigned npartitions)
 {
-    if (npartitions == 0)
-        return error(RC_EINVAL, "can't have zero partitions");
+    if (npartitions == 0) return error(RC_EINVAL, "can't have zero partitions");
 
     if (npartitions > NUM_PARTITIONS)
         return error(RC_EINVAL, "too many partitions");
 
+    printf("Number of profiles: %d\n", db_nprofiles(db));
     if (db_nprofiles(db) < npartitions) npartitions = db_nprofiles(db);
     reader->npartitions = npartitions;
 
@@ -132,6 +131,14 @@ enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
         assert(false);
 
     if ((rc = partition_it(reader, db))) goto cleanup;
+    for (unsigned i = 0; i < npartitions; ++i)
+    {
+        printf("partition_size[%d]: %d\n", i, reader->partition_size[i]);
+    }
+    for (unsigned i = 0; i < npartitions + 1; ++i)
+    {
+        printf("partition_offset[%d]: %lld\n", i, reader->partition_offset[i]);
+    }
     if ((rc = profile_reader_rewind(reader))) goto cleanup;
     return rc;
 
@@ -160,6 +167,7 @@ static enum rc reached_end(struct profile_reader *reader, unsigned partition)
 {
     FILE *fp = cmp_file(reader->cmp + partition);
     off_t offset = ftello(fp);
+    printf("ftello of part %d: %lld\n", partition, offset);
     if (offset == -1) return error(RC_EIO, "failed to ftello");
     if (offset == reader->partition_offset[partition + 1]) return RC_END;
     return RC_NEXT;

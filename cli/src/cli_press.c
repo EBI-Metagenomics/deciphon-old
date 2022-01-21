@@ -1,10 +1,11 @@
 #include "cli.h"
-#include "logger.h"
+#include "common/logger.h"
+#include "common/rc.h"
+#include "common/safe.h"
+#include "common/xfile.h"
 #include "progress_file.h"
 #include "protein_db.h"
 #include "protein_hmmer3_reader.h"
-#include "safe.h"
-#include "xfile.h"
 #include <argp.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -22,7 +23,7 @@ static bool infer_output_file(struct arguments *args)
 {
     size_t n = safe_strcpy(args->output_file, args->input_file, PATH_MAX);
     if (n >= PATH_MAX) return false;
-    return xfile_set_path_ext(args->output_file, PATH_MAX, ".dcp");
+    return !xfile_set_ext(PATH_MAX, args->output_file, ".dcp");
 }
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
@@ -38,7 +39,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     case 'o':
         if (safe_strcpy(args->output_file, arg, PATH_MAX) >= PATH_MAX)
         {
-            error(RC_ILLEGALARG, "output path is too long");
+            error(RC_EINVAL, "output path is too long");
             return ENAMETOOLONG;
         }
         break;
@@ -58,7 +59,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         {
             if (!args->output_file[0] && !infer_output_file(args))
             {
-                error(RC_ILLEGALARG, "output path would be too long");
+                error(RC_EINVAL, "output path would be too long");
                 return ENAMETOOLONG;
             }
         }
@@ -107,10 +108,10 @@ static enum rc cli_setup(struct arguments const *args)
     cli.output.file = args->output_file;
 
     if (!(cli.input.fd = fopen(cli.input.file, "r")))
-        return error(RC_IOERROR, "failed to open the hmm file");
+        return error(RC_EIO, "failed to open the hmm file");
 
     if (!(cli.output.fd = fopen(cli.output.file, "wb")))
-        return error(RC_IOERROR, "failed to open the output file");
+        return error(RC_EIO, "failed to open the output file");
 
     progress_file_init(&cli.progress, cli.input.fd);
 
@@ -138,7 +139,7 @@ static enum rc profile_write(void)
 enum rc cli_press(int argc, char **argv)
 {
     struct arguments arguments = {0};
-    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return RC_ILLEGALARG;
+    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return RC_EINVAL;
 
     enum rc rc = cli_setup(&arguments);
     if (rc) goto cleanup;

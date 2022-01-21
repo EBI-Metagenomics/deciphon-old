@@ -47,7 +47,7 @@ static int next_seq_id(int64_t job_id, int64_t *seq_id)
     return RC_DONE;
 }
 
-enum rc seq_get(struct sched_seq *seq)
+enum rc sched_seq_get(struct sched_seq *seq)
 {
 #define ecpy efail("copy txt")
 
@@ -77,5 +77,5 @@ enum rc sched_seq_next(struct sched_seq *seq)
     int rc = next_seq_id(seq->job_id, &seq->id);
     if (rc == RC_NOTFOUND) return RC_NOTFOUND;
     if (rc != RC_DONE) return rc;
-    return seq_get(seq);
+    return sched_seq_get(seq);
 }

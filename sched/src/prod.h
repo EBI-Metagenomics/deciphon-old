@@ -9,8 +9,9 @@
 
 struct protein_match;
 
-enum rc prod_begin_submission(unsigned num_threads);
+enum rc prod_begin_submission(unsigned nfiles);
 enum rc prod_end_submission(void);
 enum rc prod_get(struct sched_prod *prod);
+enum rc prod_next(struct sched_prod *prod);
 
 #endif

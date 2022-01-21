@@ -57,7 +57,7 @@ struct sched_db
 {
     int64_t id;
     int64_t xxh64;
-    char filepath[PATH_SIZE];
+    char filename[FILENAME_SIZE];
 };
 
 struct rest_ret
@@ -72,11 +72,9 @@ extern struct rest_job_state job_state;
 enum rc rest_open(char const *url);
 void rest_close(void);
 // enum rc rest_job_state(int64_t job_id);
-enum rc rest_set_job_fail(int64_t job_id, char const *error);
-enum rc rest_set_job_done(int64_t job_id);
 enum rc rest_next_pend_job(struct sched_job *job);
-enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state);
-enum rc rest_get_db_filepath(unsigned size, char *filepath, int64_t id);
+enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state, char const *error);
+// enum rc rest_get_db_filepath(unsigned size, char *filepath, int64_t id);
 enum rc rest_get_db(struct sched_db *db);
 enum rc rest_next_seq(struct sched_seq *seq);
 enum rc rest_submit_prods_file(char const *filepath);

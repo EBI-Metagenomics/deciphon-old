@@ -105,6 +105,7 @@ enum rc xsql_step(struct sqlite3_stmt *stmt)
     fflush(stdout);
     if (code == SQLITE_DONE) return RC_DONE;
     if (code == SQLITE_ROW) return RC_NEXT;
+    if (code == SQLITE_CONSTRAINT) return RC_EINVAL;
     return RC_EFAIL;
 }
 

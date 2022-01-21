@@ -56,20 +56,6 @@ static void cleanup(void)
     nthreads = 0;
 }
 
-enum rc prod_begin_submission(unsigned num_threads)
-{
-    assert(num_threads <= MAX_NUM_THREADS);
-    for (nthreads = 0; nthreads < num_threads; ++nthreads)
-    {
-        if (xfile_tmp_open(prod_file + nthreads))
-        {
-            cleanup();
-            return efail("begin prod submission");
-        }
-    }
-    return RC_DONE;
-}
-
 enum rc sched_prod_write_begin(struct sched_prod const *prod,
                                unsigned thread_num)
 {
@@ -135,27 +121,6 @@ enum rc sched_prod_write_end(unsigned thread_num)
     return RC_DONE;
 }
 
-enum rc prod_end_submission(void)
-{
-    int rc = RC_EFAIL;
-
-    for (unsigned i = 0; i < nthreads; ++i)
-    {
-        if (fflush(prod_file[i].fp))
-        {
-            rc = eio("fflush");
-            goto cleanup;
-        }
-        rewind(prod_file[i].fp);
-        if ((rc = sched_submit_prod_file(prod_file[i].fp))) goto cleanup;
-    }
-    rc = RC_DONE;
-
-cleanup:
-    cleanup();
-    return rc;
-}
-
 static enum rc get_prod(struct sched_prod *prod)
 {
     struct sqlite3_stmt *st = stmt[PROD_SELECT];
@@ -189,7 +154,7 @@ static enum rc get_prod(struct sched_prod *prod)
 #undef ecpy
 }
 
-enum rc sched_prod_next(struct sched_prod *prod)
+enum rc prod_next(struct sched_prod *prod)
 {
     struct sqlite3_stmt *st = stmt[PROD_SELECT_NEXT];
     int rc = RC_DONE;
@@ -209,24 +174,24 @@ enum rc sched_prod_next(struct sched_prod *prod)
     return RC_NEXT;
 }
 
-#define CLEANUP()                                                              \
+#define CLEANUP(X)                                                             \
     do                                                                         \
     {                                                                          \
-        efail("submit prod");                                                  \
+        rc = X;                                                                \
         goto cleanup;                                                          \
     } while (1)
 
-enum rc sched_submit_prod_file(FILE *fp)
+enum rc sched_prod_add_file(FILE *fp)
 {
     enum rc rc = RC_DONE;
-    if (xsql_begin_transaction(sched)) CLEANUP();
+    if (xsql_begin_transaction(sched)) CLEANUP(efail("submit prod"));
 
     struct sqlite3_stmt *st = stmt[PROD_INSERT];
 
     do
     {
-        if (xsql_reset(st)) CLEANUP();
-        if (tok_next(&tok, fp)) CLEANUP();
+        if (xsql_reset(st)) CLEANUP(efail("submit prod"));
+        if (tok_next(&tok, fp)) CLEANUP(eparse("parse prods file"));
         printf("TOK_NEXT_VALUE1: %s\n", tok_value(&tok));
         if (tok_id(&tok) == TOK_EOF) break;
 
@@ -235,21 +200,23 @@ enum rc sched_submit_prod_file(FILE *fp)
             if (col_type[i] == COL_TYPE_INT64)
             {
                 int64_t val = 0;
-                if (!to_int64(tok_value(&tok), &val)) CLEANUP();
-                if (xsql_bind_i64(st, i, val)) CLEANUP();
+                if (!to_int64(tok_value(&tok), &val))
+                    CLEANUP(eparse("parse prods file"));
+                if (xsql_bind_i64(st, i, val)) CLEANUP(efail("submit prod"));
             }
             else if (col_type[i] == COL_TYPE_DOUBLE)
             {
                 double val = 0;
-                if (!to_double(tok_value(&tok), &val)) CLEANUP();
-                if (xsql_bind_dbl(st, i, val)) CLEANUP();
+                if (!to_double(tok_value(&tok), &val))
+                    CLEANUP(eparse("parse prods file"));
+                if (xsql_bind_dbl(st, i, val)) CLEANUP(efail("submit prod"));
             }
             else if (col_type[i] == COL_TYPE_TEXT)
             {
                 struct xsql_txt txt = {tok_size(&tok), tok_value(&tok)};
-                if (xsql_bind_txt(st, i, txt)) CLEANUP();
+                if (xsql_bind_txt(st, i, txt)) CLEANUP(efail("submit prod"));
             }
-            if (tok_next(&tok, fp)) CLEANUP();
+            if (tok_next(&tok, fp)) CLEANUP(eparse("parse prods file"));
             printf("TOK_NEXT_VALUE2: %s\n", tok_value(&tok));
         }
         if (tok_id(&tok) != TOK_NL)
@@ -258,10 +225,12 @@ enum rc sched_submit_prod_file(FILE *fp)
             rc = error(RC_EPARSE, "expected newline");
             goto cleanup;
         }
-        if (xsql_step(st) != RC_DONE) CLEANUP();
+        rc = xsql_step(st);
+        if (rc == RC_EINVAL) CLEANUP(error(RC_EINVAL, "constraint violation"));
+        if (rc != RC_DONE) CLEANUP(efail("submit prod"));
     } while (true);
 
-    if (xsql_end_transaction(sched)) CLEANUP();
+    if (xsql_end_transaction(sched)) CLEANUP(efail("submit prod"));
     return RC_DONE;
 
 cleanup:
@@ -269,7 +238,7 @@ cleanup:
     return rc;
 }
 
-enum rc prod_get(struct sched_prod *prod)
+enum rc sched_prod_get(struct sched_prod *prod)
 {
 #define ecpy efail("copy txt")
 
@@ -303,7 +272,7 @@ enum rc prod_get(struct sched_prod *prod)
 #undef ecpy
 }
 
-enum rc sched_prod_submit(struct sched_prod *prod)
+enum rc sched_prod_add(struct sched_prod *prod)
 {
     struct sqlite3_stmt *st = stmt[PROD_INSERT];
     if (xsql_reset(st)) return efail("reset");

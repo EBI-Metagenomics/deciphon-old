@@ -1,7 +1,7 @@
 #ifndef CLI_H
 #define CLI_H
 
-#include "rc.h"
+#include "common/rc.h"
 
 #define CLI_BUG_ADDRESS "<https://github.com/EBI-Metagenomics/deciphon>"
 
