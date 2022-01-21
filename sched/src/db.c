@@ -105,6 +105,42 @@ enum rc sched_db_add(struct sched_db *db, char const *filename)
     return rc;
 }
 
+static enum rc db_next(struct sched_db *db)
+{
+#define ecpy efail("copy txt")
+
+    struct sqlite3_stmt *st = stmt[DB_SELECT_NEXT];
+    int rc = RC_DONE;
+    if (xsql_reset(st)) return efail("reset");
+
+    if (xsql_bind_i64(st, 0, db->id)) return efail("bind");
+
+    rc = xsql_step(st);
+    if (rc == RC_DONE) return RC_DONE;
+    if (rc != RC_NEXT) return efail("step");
+
+    db->id = sqlite3_column_int64(st, 0);
+    db->xxh64 = sqlite3_column_int64(st, 1);
+    if (xsql_cpy_txt(st, 2, XSQL_TXT_OF(*db, filename))) return ecpy;
+    if (xsql_step(st)) return efail("step");
+
+    return RC_NEXT;
+
+#undef ecpy
+}
+
+enum rc sched_db_get_all(sched_db_set_cb cb, struct sched_db *db, void *arg)
+{
+    enum rc rc = RC_DONE;
+
+    sched_db_init(db);
+    while ((rc = db_next(db)) == RC_NEXT)
+    {
+        cb(db, arg);
+    }
+    return rc;
+}
+
 enum rc db_has(char const *filename, struct sched_db *db)
 {
     enum rc rc = init_db(db, filename);

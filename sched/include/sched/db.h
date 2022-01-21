@@ -12,8 +12,12 @@ struct sched_db
     char filename[FILENAME_SIZE];
 };
 
+typedef void(sched_db_set_cb)(struct sched_db *db, void *arg);
+
 EXPORT void sched_db_init(struct sched_db *db);
 EXPORT enum rc sched_db_get(struct sched_db *db);
 EXPORT enum rc sched_db_add(struct sched_db *db, char const *filename);
+EXPORT enum rc sched_db_get_all(sched_db_set_cb cb, struct sched_db *db,
+                                void *arg);
 
 #endif

@@ -8,10 +8,10 @@ static char const *const queries[] =
 {
     [DB_INSERT] = "INSERT INTO db (xxh64, filename) VALUES (?, ?);",
 
-    [DB_SELECT_ALL]         = "SELECT * FROM db;",
     [DB_SELECT_BY_ID]       = "SELECT * FROM db WHERE       id = ?;",
     [DB_SELECT_BY_XXH64]    = "SELECT * FROM db WHERE    xxh64 = ?;",
     [DB_SELECT_BY_FILENAME] = "SELECT * FROM db WHERE filename = ?;",
+    [DB_SELECT_NEXT]        = "SELECT * FROM db WHERE id > ? ORDER BY id ASC LIMIT 1;",
 
     [JOB_INSERT] = "INSERT INTO job (db_id, multi_hits, hmmer3_compat, state, error, submission, exec_started, exec_ended)"
                    "VALUES          (    ?,          ?,             ?,     ?,     ?,          ?,            ?,          ?);",
