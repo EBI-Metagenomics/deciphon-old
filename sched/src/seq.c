@@ -25,7 +25,7 @@ enum rc seq_submit(struct sched_seq *seq)
     if (xsql_bind_str(st, 1, seq->name)) return efail("bind");
     if (xsql_bind_str(st, 2, seq->data)) return efail("bind");
 
-    if (xsql_step(st) != RC_DONE) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     seq->id = xsql_last_id(sched);
     return RC_DONE;
 }
@@ -38,12 +38,12 @@ static int next_seq_id(int64_t job_id, int64_t *seq_id)
     if (xsql_bind_i64(st, 0, *seq_id)) return efail("bind");
     if (xsql_bind_i64(st, 1, job_id)) return efail("bind");
 
-    int rc = xsql_step(st);
-    if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) return efail("get next seq id");
+    enum rc rc = xsql_step(st);
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) return efail("get next seq id");
     *seq_id = sqlite3_column_int64(st, 0);
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 }
 
@@ -57,8 +57,8 @@ enum rc sched_seq_get(struct sched_seq *seq)
     if (xsql_bind_i64(st, 0, seq->id)) return efail("bind");
 
     enum rc rc = xsql_step(st);
-    if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) efail("get seq");
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) efail("get seq");
 
     seq->id = sqlite3_column_int64(st, 0);
     seq->job_id = sqlite3_column_int64(st, 1);
@@ -66,15 +66,17 @@ enum rc sched_seq_get(struct sched_seq *seq)
     if (xsql_cpy_txt(st, 2, XSQL_TXT_OF(*seq, name))) return ecpy;
     if (xsql_cpy_txt(st, 3, XSQL_TXT_OF(*seq, data))) return ecpy;
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 
 #undef ecpy
 }
 
+#include <stdio.h>
 enum rc sched_seq_next(struct sched_seq *seq)
 {
-    int rc = next_seq_id(seq->job_id, &seq->id);
+    enum rc rc = next_seq_id(seq->job_id, &seq->id);
+    printf("sched_seq_next: seq->id: %lld\n", seq->id);
     if (rc == RC_NOTFOUND) return RC_NOTFOUND;
     if (rc != RC_DONE) return rc;
     return sched_seq_get(seq);

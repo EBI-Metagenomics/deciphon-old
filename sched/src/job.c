@@ -64,7 +64,7 @@ enum rc job_submit(struct sched_job *job)
     if (xsql_bind_i64(st, 6, job->exec_started)) return efail("bind");
     if (xsql_bind_i64(st, 7, job->exec_ended)) return efail("bind");
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     job->id = xsql_last_id(sched);
     return RC_DONE;
 }
@@ -75,11 +75,11 @@ static enum rc next_pend_job_id(int64_t *job_id)
     if (xsql_reset(st)) return efail("reset");
 
     enum rc rc = xsql_step(st);
-    if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) return efail("get pend job");
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) return efail("get pend job");
     *job_id = sqlite3_column_int64(st, 0);
-    if (xsql_step(st)) return efail("get pend job");
 
+    if (xsql_step(st) != RC_END) return efail("get pend job");
     return RC_DONE;
 }
 
@@ -89,17 +89,17 @@ static enum rc next_pending_job_id(int64_t *job_id)
     if (xsql_reset(st)) return efail("reset");
 
     enum rc rc = xsql_step(st);
-    if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) return efail("get pend job");
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) return efail("get pend job");
     *job_id = sqlite3_column_int64(st, 0);
-    if (xsql_step(st)) return efail("get pend job");
+    if (xsql_step(st) != RC_END) return efail("get pend job");
 
     st = stmt[JOB_SET_RUN];
     if (xsql_reset(st)) return efail("reset");
 
     if (xsql_bind_i64(st, 0, utc_now())) return efail("bind");
     if (xsql_bind_i64(st, 1, *job_id)) return efail("bind");
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 }
 
@@ -127,7 +127,7 @@ enum rc job_set_run(int64_t job_id, int64_t exec_started)
     if (xsql_bind_i64(st, 0, exec_started)) return efail("bind");
     if (xsql_bind_i64(st, 1, job_id)) return efail("bind");
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 }
 
@@ -140,7 +140,7 @@ enum rc job_set_error(int64_t job_id, char const *error, int64_t exec_ended)
     if (xsql_bind_i64(st, 1, exec_ended)) return efail("bind");
     if (xsql_bind_i64(st, 2, job_id)) return efail("bind");
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 }
 
@@ -152,7 +152,7 @@ enum rc job_set_done(int64_t job_id, int64_t exec_ended)
     if (xsql_bind_i64(st, 0, exec_ended)) return efail("bind");
     if (xsql_bind_i64(st, 1, job_id)) return efail("bind");
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 }
 
@@ -178,15 +178,15 @@ enum rc sched_job_state(int64_t job_id, enum sched_job_state *state)
     if (xsql_bind_i64(st, 0, job_id)) return efail("bind");
 
     enum rc rc = xsql_step(st);
-    if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) return efail("get job state");
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) return efail("get job state");
 
     char tmp[JOB_STATE_SIZE] = {0};
     rc = xsql_cpy_txt(st, 0, (struct xsql_txt){JOB_STATE_SIZE, tmp});
     if (rc) efail("copy txt");
     *state = resolve_job_state(tmp);
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 }
 
@@ -198,8 +198,8 @@ enum rc sched_job_get(struct sched_job *job)
     if (xsql_bind_i64(st, 0, job->id)) return efail("bind");
 
     enum rc rc = xsql_step(st);
-    if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) efail("get job");
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) efail("get job");
 
     job->id = sqlite3_column_int64(st, 0);
 
@@ -213,7 +213,7 @@ enum rc sched_job_get(struct sched_job *job)
     job->exec_started = sqlite3_column_int64(st, 7);
     job->exec_ended = sqlite3_column_int64(st, 8);
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 }
 
@@ -226,11 +226,11 @@ enum rc sched_job_get_prods(int64_t job_id, sched_prod_set_cb cb,
     if (rc) return rc;
 
     sched_prod_init(prod, job_id);
-    while ((rc = prod_next(prod)) == RC_NEXT)
+    while ((rc = prod_next(prod)) == RC_DONE)
     {
         cb(prod, arg);
     }
-    return rc;
+    return rc == RC_NOTFOUND ? RC_DONE : rc;
 }
 
 enum rc sched_job_get_seqs(int64_t job_id, sched_seq_set_cb cb,
@@ -243,11 +243,11 @@ enum rc sched_job_get_seqs(int64_t job_id, sched_seq_set_cb cb,
 
     seq->id = 0;
     seq->job_id = job_id;
-    while ((rc = sched_seq_next(seq)) == RC_NEXT)
+    while ((rc = sched_seq_next(seq)) == RC_DONE)
     {
         cb(seq, arg);
     }
-    return rc;
+    return rc == RC_NOTFOUND ? RC_DONE : rc;
 }
 
 enum rc sched_job_begin_submission(struct sched_job *job)

@@ -128,7 +128,9 @@ static enum rc get_prod(struct sched_prod *prod)
 
     if (xsql_bind_i64(st, 0, prod->id)) return efail("bind");
 
-    if (xsql_step(st) != RC_NEXT) return efail("step");
+    enum rc rc = xsql_step(st);
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) return efail("get db");
 
     int i = 0;
     prod->id = sqlite3_column_int64(st, i++);
@@ -148,7 +150,7 @@ static enum rc get_prod(struct sched_prod *prod)
 
     if (xsql_cpy_txt(st, i++, XSQL_TXT_OF(*prod, match))) return ecpy;
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 
 #undef ecpy
@@ -157,21 +159,19 @@ static enum rc get_prod(struct sched_prod *prod)
 enum rc prod_next(struct sched_prod *prod)
 {
     struct sqlite3_stmt *st = stmt[PROD_SELECT_NEXT];
-    int rc = RC_DONE;
     if (xsql_reset(st)) return efail("reset");
 
     if (xsql_bind_i64(st, 0, prod->id)) return efail("bind");
     if (xsql_bind_i64(st, 1, prod->job_id)) return efail("bind");
 
-    rc = xsql_step(st);
-    if (rc == RC_DONE) return RC_DONE;
-    if (rc != RC_NEXT) return efail("step");
+    enum rc rc = xsql_step(st);
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) return efail("step");
 
     prod->id = sqlite3_column_int64(st, 0);
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
 
-    if (get_prod(prod)) return RC_EFAIL;
-    return RC_NEXT;
+    return get_prod(prod);
 }
 
 #define CLEANUP(X)                                                             \
@@ -227,7 +227,7 @@ enum rc sched_prod_add_file(FILE *fp)
         }
         rc = xsql_step(st);
         if (rc == RC_EINVAL) CLEANUP(error(RC_EINVAL, "constraint violation"));
-        if (rc != RC_DONE) CLEANUP(efail("submit prod"));
+        if (rc != RC_END) CLEANUP(efail("submit prod"));
     } while (true);
 
     if (xsql_end_transaction(sched)) CLEANUP(efail("submit prod"));
@@ -248,8 +248,8 @@ enum rc sched_prod_get(struct sched_prod *prod)
     if (xsql_bind_i64(st, 0, prod->id)) return efail("bind");
 
     enum rc rc = xsql_step(st);
-    if (rc == RC_DONE) return RC_NOTFOUND;
-    if (rc != RC_NEXT) efail("get prod");
+    if (rc == RC_END) return RC_NOTFOUND;
+    if (rc != RC_DONE) efail("get prod");
 
     prod->id = sqlite3_column_int64(st, 0);
     prod->job_id = sqlite3_column_int64(st, 1);
@@ -266,7 +266,7 @@ enum rc sched_prod_get(struct sched_prod *prod)
 
     if (xsql_cpy_txt(st, 9, XSQL_TXT_OF(*prod, match))) return ecpy;
 
-    if (xsql_step(st)) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     return RC_DONE;
 
 #undef ecpy
@@ -291,7 +291,7 @@ enum rc sched_prod_add(struct sched_prod *prod)
 
     if (xsql_bind_str(st, 8, prod->match)) return efail("bind");
 
-    if (xsql_step(st) != RC_DONE) return efail("step");
+    if (xsql_step(st) != RC_END) return efail("step");
     prod->id = xsql_last_id(sched);
     return RC_DONE;
 }

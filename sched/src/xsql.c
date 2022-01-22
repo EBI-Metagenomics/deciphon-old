@@ -97,14 +97,11 @@ enum rc xsql_reset(struct sqlite3_stmt *stmt)
     return RC_DONE;
 }
 
-#include <stdio.h>
 enum rc xsql_step(struct sqlite3_stmt *stmt)
 {
     int code = sqlite3_step(stmt);
-    printf("Code: %d\n", code);
-    fflush(stdout);
-    if (code == SQLITE_DONE) return RC_DONE;
-    if (code == SQLITE_ROW) return RC_NEXT;
+    if (code == SQLITE_DONE) return RC_END;
+    if (code == SQLITE_ROW) return RC_DONE;
     if (code == SQLITE_CONSTRAINT) return RC_EINVAL;
     return RC_EFAIL;
 }
