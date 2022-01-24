@@ -8,7 +8,7 @@
 #define DELIM " \t\r"
 
 static void add_space_before_newline(char *line);
-static enum rc next_line(FILE *restrict fd, unsigned size, char *line);
+static enum rc next_line(FILE *fp, unsigned size, char *line);
 
 enum tok_id tok_id(struct tok const *tok) { return tok->id; }
 
@@ -19,13 +19,13 @@ unsigned tok_size(struct tok const *tok)
     return (unsigned)strlen(tok->value);
 }
 
-enum rc tok_next(struct tok *tok, FILE *restrict fd)
+enum rc tok_next(struct tok *tok, FILE *fp)
 {
     enum rc rc = RC_DONE;
 
     if (tok->line.consumed)
     {
-        if ((rc = next_line(fd, MEMBER_SIZE(tok->line, data), tok->line.data)))
+        if ((rc = next_line(fp, MEMBER_SIZE(tok->line, data), tok->line.data)))
         {
             if (rc == RC_END)
             {
@@ -54,13 +54,13 @@ enum rc tok_next(struct tok *tok, FILE *restrict fd)
     return RC_DONE;
 }
 
-static enum rc next_line(FILE *restrict fd, unsigned size, char *line)
+static enum rc next_line(FILE *fp, unsigned size, char *line)
 {
     /* -1 to append space before newline if required */
     assert(size > 0);
-    if (!fgets(line, (int)(size - 2), fd))
+    if (!fgets(line, (int)(size - 2), fp))
     {
-        if (feof(fd)) return RC_END;
+        if (feof(fp)) return RC_END;
 
         return error(RC_EIO, "failed to read line");
     }

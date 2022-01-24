@@ -65,8 +65,8 @@ struct metadata db_metadata(struct db const *db, unsigned idx);
 void db_init(struct db *db, struct db_vtable vtable);
 struct imm_abc const *db_abc(struct db const *db);
 
-void db_openr(struct db *db, FILE *restrict fp);
-enum rc db_openw(struct db *db, FILE *restrict fp);
+void db_openr(struct db *db, FILE *fp);
+enum rc db_openw(struct db *db, FILE *fp);
 enum rc db_close(struct db *db);
 
 enum rc db_read_magic_number(struct db *db);

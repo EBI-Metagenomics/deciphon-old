@@ -1,10 +1,10 @@
 #include "standard_profile.h"
 #include "cmp/cmp.h"
+#include "common/rc.h"
 #include "imm/imm.h"
 #include "metadata.h"
 #include "profile.h"
 #include "profile_types.h"
-#include "common/rc.h"
 #include "standard_profile.h"
 #include "standard_state.h"
 
@@ -50,10 +50,9 @@ void standard_profile_init(struct standard_profile *prof,
     profile_init(&prof->super, code, vtable, standard_state_name);
 }
 
-enum rc standard_profile_write(struct standard_profile const *prof,
-                               FILE *restrict fd)
+enum rc standard_profile_write(struct standard_profile const *prof, FILE *fp)
 {
-    if (imm_dp_write(&prof->dp.null, fd)) return RC_EFAIL;
-    if (imm_dp_write(&prof->dp.alt, fd)) return RC_EFAIL;
+    if (imm_dp_write(&prof->dp.null, fp)) return RC_EFAIL;
+    if (imm_dp_write(&prof->dp.alt, fp)) return RC_EFAIL;
     return RC_DONE;
 }

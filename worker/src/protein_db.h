@@ -18,9 +18,9 @@ struct protein_db
     struct protein_cfg cfg;
 };
 
-enum rc protein_db_openr(struct protein_db *db, FILE *restrict fp);
+enum rc protein_db_openr(struct protein_db *db, FILE *fp);
 
-enum rc protein_db_openw(struct protein_db *db, FILE *restrict fp,
+enum rc protein_db_openw(struct protein_db *db, FILE *fp,
                          struct imm_amino const *amino,
                          struct imm_nuclt const *nuclt, struct protein_cfg cfg);
 

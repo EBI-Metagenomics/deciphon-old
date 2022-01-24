@@ -78,30 +78,30 @@ static enum rc write_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist edist)
     return RC_DONE;
 }
 
-static enum rc read_nuclt(FILE *restrict fd, struct imm_nuclt *nuclt)
+static enum rc read_nuclt(FILE *fp, struct imm_nuclt *nuclt)
 {
-    if (imm_abc_read(&nuclt->super, fd))
+    if (imm_abc_read(&nuclt->super, fp))
         return error(RC_EIO, "failed to read nuclt alphabet");
     return RC_DONE;
 }
 
-static enum rc write_nuclt(FILE *restrict fd, struct imm_nuclt const *nuclt)
+static enum rc write_nuclt(FILE *fp, struct imm_nuclt const *nuclt)
 {
-    if (imm_abc_write(&nuclt->super, fd))
+    if (imm_abc_write(&nuclt->super, fp))
         return error(RC_EIO, "failed to write nuclt alphabet");
     return RC_DONE;
 }
 
-static enum rc read_amino(FILE *restrict fd, struct imm_amino *amino)
+static enum rc read_amino(FILE *fp, struct imm_amino *amino)
 {
-    if (imm_abc_read(&amino->super, fd))
+    if (imm_abc_read(&amino->super, fp))
         return error(RC_EIO, "failed to read amino alphabet");
     return RC_DONE;
 }
 
-static enum rc write_amino(FILE *restrict fd, struct imm_amino const *amino)
+static enum rc write_amino(FILE *fp, struct imm_amino const *amino)
 {
-    if (imm_abc_write(&amino->super, fd))
+    if (imm_abc_write(&amino->super, fp))
         return error(RC_EIO, "failed to write amino alphabet");
     return RC_DONE;
 }
@@ -115,7 +115,7 @@ static void protein_db_init(struct protein_db *db)
     db->code.nuclt = &db->nuclt;
 }
 
-enum rc protein_db_openr(struct protein_db *db, FILE *restrict fp)
+enum rc protein_db_openr(struct protein_db *db, FILE *fp)
 {
     protein_db_init(db);
     db_openr(&db->super, fp);
@@ -147,7 +147,7 @@ static void cleanup(struct protein_db *db)
     fclose(cmp_file(&db->super.dp.cmp));
 }
 
-enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
+enum rc protein_db_openw(struct protein_db *db, FILE *fp,
                          struct imm_amino const *amino,
                          struct imm_nuclt const *nuclt, struct protein_cfg cfg)
 {
@@ -162,14 +162,14 @@ enum rc protein_db_openw(struct protein_db *db, FILE *restrict fd,
     imm_float epsilon = db->cfg.epsilon;
 
     enum rc rc = RC_DONE;
-    if ((rc = db_openw(&db->super, fd))) goto cleanup;
+    if ((rc = db_openw(&db->super, fp))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_prof_type(&db->super))) goto cleanup;
     if ((rc = db_write_float_size(&db->super))) goto cleanup;
     if ((rc = write_entry_dist(cmp, db->cfg.entry_dist))) goto cleanup;
     if ((rc = write_epsilon(cmp, float_size, epsilon))) goto cleanup;
-    if ((rc = write_nuclt(fd, &db->nuclt))) goto cleanup;
-    if ((rc = write_amino(fd, &db->amino))) goto cleanup;
+    if ((rc = write_nuclt(fp, &db->nuclt))) goto cleanup;
+    if ((rc = write_amino(fp, &db->amino))) goto cleanup;
 
     return rc;
 

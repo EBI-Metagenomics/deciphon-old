@@ -8,6 +8,11 @@
 #include <unistd.h>
 #include <xxhash.h>
 
+#ifdef __APPLE__
+#include <fcntl.h>
+#include <sys/syslimits.h>
+#endif
+
 #define BUFFSIZE (8 * 1024)
 
 static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
@@ -155,7 +160,15 @@ void xfile_strip_ext(char *str)
 FILE *xfile_open_from_fptr(FILE *fp, char const *mode)
 {
     int fd = fileno(fp);
-    return fdopen(fd, "rb");
+    char filepath[PATH_MAX] = {0};
+
+#ifdef __APPLE__
+    if (fcntl(fd, F_GETPATH, filepath) == -1) return NULL;
+#else
+    sprintf(filepath, "/proc/self/fd/%d", fd);
+#endif
+
+    return fopen(filepath, mode);
 }
 
 bool xfile_exists(char const *filepath) { return access(filepath, F_OK) == 0; }

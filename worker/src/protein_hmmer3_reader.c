@@ -7,9 +7,9 @@ static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 void protein_hmmer3_reader_init(struct protein_hmmer3_reader *reader,
                                 struct imm_amino const *amino,
                                 struct imm_nuclt_code const *code,
-                                struct protein_cfg cfg, FILE *restrict fd)
+                                struct protein_cfg cfg, FILE *fp)
 {
-    hmr_init(&reader->hmr, fd);
+    hmr_init(&reader->hmr, fp);
     hmr_prof_init(&reader->prof, &reader->hmr);
     init_null_lprobs(reader->null_lprobs);
     protein_model_init(&reader->model, amino, code, cfg, reader->null_lprobs);

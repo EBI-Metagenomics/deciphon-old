@@ -54,11 +54,11 @@ bool table_add(struct table *tbl, char cons, unsigned seq_size,
     return true;
 }
 
-static inline bool flush(struct table_row *trow, FILE *restrict fd)
+static inline bool flush(struct table_row *trow, FILE *fp)
 {
-    if (EOF == fputs(trow->hdr, fd)) return false;
-    if (EOF == fputc(' ', fd)) return false;
-    return row_flush(&trow->row, fd);
+    if (EOF == fputs(trow->hdr, fp)) return false;
+    if (EOF == fputc(' ', fp)) return false;
+    return row_flush(&trow->row, fp);
 }
 
 bool table_flush(struct table *tbl)

@@ -18,17 +18,17 @@ struct db const db_default = {0};
 
 static enum rc init_tmpmeta(struct db *db)
 {
-    FILE *fd = tmpfile();
-    if (!fd) return error(RC_EIO, "tmpfile() failed");
-    cmp_setup(&db->mt.file.cmp, fd);
+    FILE *fp = tmpfile();
+    if (!fp) return error(RC_EIO, "tmpfile() failed");
+    cmp_setup(&db->mt.file.cmp, fp);
     return RC_DONE;
 }
 
 static enum rc init_tmpdp(struct db *db)
 {
-    FILE *fd = tmpfile();
-    if (!fd) return error(RC_EIO, "tmpfile() failed");
-    cmp_setup(&db->dp.cmp, fd);
+    FILE *fp = tmpfile();
+    if (!fp) return error(RC_EIO, "tmpfile() failed");
+    cmp_setup(&db->dp.cmp, fp);
     return RC_DONE;
 }
 
@@ -50,13 +50,13 @@ void db_init(struct db *db, struct db_vtable vtable)
 
 struct imm_abc const *db_abc(struct db const *db) { return db->vtable.abc(db); }
 
-void db_openr(struct db *db, FILE *restrict fp)
+void db_openr(struct db *db, FILE *fp)
 {
     cmp_setup(&db->file.cmp, fp);
     db->file.mode = DB_OPEN_READ;
 }
 
-enum rc db_openw(struct db *db, FILE *restrict fp)
+enum rc db_openw(struct db *db, FILE *fp)
 {
     enum rc rc = init_tmpdp(db);
     if (rc) return rc;
@@ -322,8 +322,7 @@ static enum rc parse_metadata(struct db *db)
         /* Name */
         while (db->mt.data[offset + j++])
             ;
-        if (j > PROFILE_NAME_SIZE)
-            return error(RC_EINVAL, "name is too long");
+        if (j > PROFILE_NAME_SIZE) return error(RC_EINVAL, "name is too long");
 
         db->mt.name_length[i] = (uint8_t)(j - 1);
         if (offset + j >= db->mt.size)

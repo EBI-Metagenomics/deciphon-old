@@ -59,7 +59,10 @@ static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
         FILE *fp = cmp_file(reader->cmp + i);
         if (fseeko(fp, reader->partition_offset[i], SEEK_SET) == 1)
             return error(RC_EIO, "failed to fseeko");
+        printf("ftello: %lld\n", ftello(fp));
     }
+    printf("ftello: %lld\n", ftello(cmp_file(reader->cmp + 0)));
+    printf("ftello: %lld\n", ftello(cmp_file(reader->cmp + 1)));
     setup_profile_indices(reader);
     return RC_DONE;
 }
@@ -167,7 +170,6 @@ static enum rc reached_end(struct profile_reader *reader, unsigned partition)
 {
     FILE *fp = cmp_file(reader->cmp + partition);
     off_t offset = ftello(fp);
-    printf("ftello of part %d: %lld\n", partition, offset);
     if (offset == -1) return error(RC_EIO, "failed to ftello");
     if (offset == reader->partition_offset[partition + 1]) return RC_END;
     return RC_NEXT;

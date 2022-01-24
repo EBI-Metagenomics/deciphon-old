@@ -44,7 +44,7 @@ static inline void row_reset(struct row *row)
 
 void row_add(struct row *row, char const *src, unsigned size);
 
-bool row_flush(struct row *row, FILE *restrict fd);
+bool row_flush(struct row *row, FILE *fp);
 
 static inline bool row_full(struct row const *row)
 {

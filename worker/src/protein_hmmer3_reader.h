@@ -1,12 +1,12 @@
 #ifndef PROTEIN_HMMER3_READER_H
 #define PROTEIN_HMMER3_READER_H
 
+#include "common/rc.h"
 #include "hmr/hmr.h"
 #include "imm/imm.h"
 #include "metadata.h"
 #include "protein_cfg.h"
 #include "protein_model.h"
-#include "common/rc.h"
 #include <stdio.h>
 
 struct protein_hmmer3_reader
@@ -20,7 +20,7 @@ struct protein_hmmer3_reader
 void protein_hmmer3_reader_init(struct protein_hmmer3_reader *reader,
                                 struct imm_amino const *amino,
                                 struct imm_nuclt_code const *code,
-                                struct protein_cfg cfg, FILE *restrict fd);
+                                struct protein_cfg cfg, FILE *fp);
 
 enum rc protein_hmmer3_reader_next(struct protein_hmmer3_reader *reader);
 void protein_hmmer3_reader_del(struct protein_hmmer3_reader const *reader);

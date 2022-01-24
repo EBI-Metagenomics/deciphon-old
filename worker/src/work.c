@@ -178,7 +178,6 @@ enum rc work_run(struct work *work, unsigned num_threads)
         set_job_fail(&work->job, "failed to begin product submission");
         return RC_DONE;
     }
-    printf("Ponto 1\n");
     printf("Number of partitions: %d\n", npartitions);
     fflush(stdout);
     while (!(rc = rest_next_seq(&work->seq)))
@@ -188,7 +187,6 @@ enum rc work_run(struct work *work, unsigned num_threads)
             set_job_fail(&work->job, "sequence has out-of-alphabet characters");
             return RC_DONE;
         }
-        printf("Ponto 2\n");
         fflush(stdout);
 
         work->iseq = imm_seq(imm_str(work->seq.data), work->abc);

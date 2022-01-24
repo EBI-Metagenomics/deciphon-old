@@ -62,7 +62,7 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
                                struct imm_codon *codon);
 
 void protein_profile_write_dot(struct protein_profile const *prof,
-                               FILE *restrict fp);
+                               FILE *fp);
 
 struct cmp_ctx_s;
 

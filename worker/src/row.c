@@ -16,10 +16,10 @@ void row_add(struct row *row, char const *src, unsigned size)
     row->data[row->pos] = '\0';
 }
 
-bool row_flush(struct row *row, FILE *restrict fd)
+bool row_flush(struct row *row, FILE *fp)
 {
-    if (EOF == fputs(row->data + 1, fd)) return false;
-    if (EOF == fputc('\n', fd)) return false;
+    if (EOF == fputs(row->data + 1, fp)) return false;
+    if (EOF == fputc('\n', fp)) return false;
     row_reset(row);
     return true;
 }

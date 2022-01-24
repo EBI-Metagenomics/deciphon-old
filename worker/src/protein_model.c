@@ -155,8 +155,7 @@ static void model_reset(struct protein_model *model)
 
 enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
 {
-    if (core_size == 0)
-        return error(RC_EINVAL, "`core_size` cannot be zero.");
+    if (core_size == 0) return error(RC_EINVAL, "`core_size` cannot be zero.");
 
     if (core_size > PROTEIN_MODEL_CORE_SIZE_MAX)
         return error(RC_EINVAL, "`core_size` is too big.");
@@ -185,7 +184,7 @@ enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
     return add_xnodes(m);
 }
 
-void protein_model_write_dot(struct protein_model const *m, FILE *restrict fp)
+void protein_model_write_dot(struct protein_model const *m, FILE *fp)
 {
     imm_hmm_write_dot(&m->alt.hmm, fp, protein_state_name);
 }
@@ -223,7 +222,8 @@ enum rc add_xnodes(struct protein_model *m)
     struct protein_xnode *n = &m->xnode;
 
     if (imm_hmm_add_state(&m->null.hmm, &n->null.R.super)) return RC_EFAIL;
-    if (imm_hmm_set_start(&m->null.hmm, &n->null.R.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_start(&m->null.hmm, &n->null.R.super, LOG1))
+        return RC_EFAIL;
 
     if (imm_hmm_add_state(&m->alt.hmm, &n->alt.S.super)) return RC_EFAIL;
     if (imm_hmm_add_state(&m->alt.hmm, &n->alt.N.super)) return RC_EFAIL;

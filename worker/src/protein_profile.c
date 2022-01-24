@@ -37,9 +37,9 @@ static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
 static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
 {
     struct protein_profile *p = (struct protein_profile *)prof;
-    FILE *fd = cmp_file(cmp);
-    if (imm_dp_read(&p->null.dp, fd)) return RC_EFAIL;
-    if (imm_dp_read(&p->alt.dp, fd)) return RC_EFAIL;
+    FILE *fp = cmp_file(cmp);
+    if (imm_dp_read(&p->null.dp, fp)) return RC_EFAIL;
+    if (imm_dp_read(&p->alt.dp, fp)) return RC_EFAIL;
 
     uint16_t core_size = 0;
     if (!cmp_read_u16(cmp, &core_size))
@@ -314,8 +314,7 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
     return RC_DONE;
 }
 
-void protein_profile_write_dot(struct protein_profile const *p,
-                               FILE *restrict fp)
+void protein_profile_write_dot(struct protein_profile const *p, FILE *fp)
 {
     imm_dp_write_dot(&p->alt.dp, fp, protein_state_name);
 }
@@ -323,9 +322,9 @@ void protein_profile_write_dot(struct protein_profile const *p,
 enum rc protein_profile_write(struct protein_profile const *prof,
                               struct cmp_ctx_s *cmp)
 {
-    FILE *fd = cmp_file(cmp);
-    if (imm_dp_write(&prof->null.dp, fd)) return RC_EFAIL;
-    if (imm_dp_write(&prof->alt.dp, fd)) return RC_EFAIL;
+    FILE *fp = cmp_file(cmp);
+    if (imm_dp_write(&prof->null.dp, fp)) return RC_EFAIL;
+    if (imm_dp_write(&prof->alt.dp, fp)) return RC_EFAIL;
 
     if (!cmp_write_u16(cmp, (uint16_t)prof->core_size))
         return error(RC_EIO, "failed to write core size");

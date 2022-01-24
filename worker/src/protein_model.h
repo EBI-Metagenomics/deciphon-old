@@ -62,7 +62,7 @@ void protein_model_init(struct protein_model *, struct imm_amino const *amino,
 
 enum rc protein_model_setup(struct protein_model *, unsigned core_size);
 
-void protein_model_write_dot(struct protein_model const *, FILE *restrict fp);
+void protein_model_write_dot(struct protein_model const *, FILE *fp);
 
 struct protein_model_summary
 {

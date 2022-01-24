@@ -739,7 +739,7 @@ enum rc rest_submit_prods_file(char const *filepath)
     curl_mime_free(form);
     curl_slist_free_all(headers);
     printf("HTTP CODE: %ld\n", http_code);
-    if (http_code != 200) return efail("upload file");
+    if (http_code != 201) return efail("upload file");
 
     return RC_DONE;
 }
