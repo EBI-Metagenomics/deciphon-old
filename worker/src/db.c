@@ -413,15 +413,14 @@ int db_profile_typeid(struct db const *db) { return db->profile_typeid; }
 
 int db_typeid(struct db const *db) { return db->vtable.typeid; }
 
-off_t db_profiles_block_offset(struct db const *db)
+int64_t db_profiles_block_offset(struct db const *db)
 {
     return db->profiles_block_offset;
 }
 
 enum rc db_set_metadata_end(struct db *db)
 {
-    FILE *fp = cmp_file(&db->file.cmp);
-    if ((db->profiles_block_offset = ftello(fp)) == -1)
+    if ((db->profiles_block_offset = cmp_ftell(&db->file.cmp)) == -1)
         return error(RC_EIO, "failed to ftello");
     return RC_DONE;
 }

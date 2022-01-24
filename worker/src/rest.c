@@ -617,7 +617,7 @@ static void dump(const char *text, FILE *stream, unsigned char *ptr,
 {
     size_t i;
     size_t c;
-    unsigned int width = 0x10;
+    unsigned int width = 0x30;
 
     fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n", text, (long)size,
             (long)size);
@@ -626,6 +626,7 @@ static void dump(const char *text, FILE *stream, unsigned char *ptr,
     {
         fprintf(stream, "%4.4lx: ", (long)i);
 
+#if 0
         /* show hex to the left */
         for (c = 0; c < width; c++)
         {
@@ -634,6 +635,7 @@ static void dump(const char *text, FILE *stream, unsigned char *ptr,
             else
                 fputs("   ", stream);
         }
+#endif
 
         /* show data on the right */
         for (c = 0; (c < width) && (i + c < size); c++)

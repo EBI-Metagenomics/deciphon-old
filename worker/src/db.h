@@ -27,7 +27,7 @@ struct db
 
     int profile_typeid;
     unsigned float_size;
-    off_t profiles_block_offset;
+    int64_t profiles_block_offset;
     struct
     {
         uint32_t size;
@@ -83,7 +83,7 @@ enum rc db_read_metadata(struct db *db);
 
 enum rc db_write_profile_metadata(struct db *db, struct metadata mt);
 
-off_t db_profiles_block_offset(struct db const *db);
+int64_t db_profiles_block_offset(struct db const *db);
 
 enum rc db_set_metadata_end(struct db *db);
 

@@ -52,26 +52,20 @@ static enum rc select_db_str(struct sched_db *db, char const *by_value,
                              enum stmt select_stmt)
 {
     struct sqlite3_stmt *st = stmt[select_stmt];
-    printf("Ponto 1\n");
     if (xsql_reset(st)) return efail("reset");
 
-    printf("Ponto 2\n");
     if (xsql_bind_str(st, 0, by_value)) return efail("bind");
 
-    printf("Ponto 3\n");
     enum rc rc = xsql_step(st);
     if (rc == RC_END) return RC_NOTFOUND;
     if (rc != RC_DONE) return efail("get db");
 
-    printf("Ponto 4\n");
     db->id = sqlite3_column_int64(st, 0);
     db->xxh64 = sqlite3_column_int64(st, 1);
     if (xsql_cpy_txt(st, 2, XSQL_TXT_OF(*db, filename)))
         return efail("copy txt");
 
-    printf("Ponto 5\n");
     if (xsql_step(st) != RC_END) return efail("step");
-    printf("Ponto 6\n");
     return RC_DONE;
 }
 

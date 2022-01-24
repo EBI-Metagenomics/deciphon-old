@@ -3,9 +3,9 @@
 
 #include "cmp/cmp.h"
 #include "common/limits.h"
+#include "common/rc.h"
 #include "profile_types.h"
 #include "protein_profile.h"
-#include "common/rc.h"
 #include "standard_profile.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -14,7 +14,7 @@ struct profile_reader
 {
     unsigned npartitions;
     unsigned partition_size[NUM_PARTITIONS];
-    off_t partition_offset[NUM_PARTITIONS + 1];
+    int64_t partition_offset[NUM_PARTITIONS + 1];
     struct cmp_ctx_s cmp[NUM_PARTITIONS];
     enum profile_typeid profile_typeid;
     union

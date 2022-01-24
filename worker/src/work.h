@@ -8,17 +8,29 @@
 #include "imm/imm.h"
 #include "job.h"
 #include "prod.h"
-#include "rest.h"
 #include "profile_reader.h"
 #include "protein_match.h"
+#include "rest.h"
 #include "standard_match.h"
 #include <stdint.h>
+
+struct work_priv
+{
+    struct prod prod;
+    struct hypothesis null;
+    struct hypothesis alt;
+    union
+    {
+        struct standard_match std;
+        struct protein_match pro;
+    } match;
+};
 
 struct work
 {
     struct sched_job job;
     struct sched_seq seq;
-    struct prod prod[NUM_PARTITIONS];
+    struct work_priv priv[NUM_PARTITIONS];
     struct
     {
         struct db_reader reader;
@@ -30,16 +42,8 @@ struct work
     char abc_name[6];
     struct profile_reader reader;
     enum profile_typeid profile_typeid;
-    struct hypothesis null;
-    struct hypothesis alt;
 
     prod_fwrite_match_cb *write_match_cb;
-    union
-    {
-        struct standard_match std;
-        struct protein_match pro;
-    } match;
-
     imm_float lrt_threshold;
 };
 

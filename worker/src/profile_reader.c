@@ -56,20 +56,17 @@ static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
 {
     for (unsigned i = 0; i < npartitions; ++i)
     {
-        FILE *fp = cmp_file(reader->cmp + i);
-        if (fseeko(fp, reader->partition_offset[i], SEEK_SET) == 1)
-            return error(RC_EIO, "failed to fseeko");
-        printf("ftello: %lld\n", ftello(fp));
+        if (cmp_fseek(reader->cmp + i, reader->partition_offset[i], SEEK_SET))
+            return error(RC_EIO, "failed to fseek");
     }
-    printf("ftello: %lld\n", ftello(cmp_file(reader->cmp + 0)));
-    printf("ftello: %lld\n", ftello(cmp_file(reader->cmp + 1)));
     setup_profile_indices(reader);
     return RC_DONE;
 }
 
-static enum rc record_offset(FILE *fp, off_t *offset)
+static enum rc record_offset(struct cmp_ctx_s *cmp, int64_t *offset)
 {
-    if ((*offset = ftello(fp)) == -1) return error(RC_EIO, "failed to ftello");
+    if ((*offset = cmp_ftell(cmp)) == -1)
+        return error(RC_EIO, "failed to ftello");
     return RC_DONE;
 }
 
@@ -80,7 +77,6 @@ static enum rc partition_it(struct profile_reader *reader, struct db *db)
     if ((rc = __rewind(reader, 1))) return rc;
 
     struct cmp_ctx_s *cmp = &reader->cmp[0];
-    FILE *fp = cmp_file(cmp);
     unsigned npartitions = reader->npartitions;
     unsigned nprofiles = db_nprofiles(db);
     unsigned i = 0;
@@ -94,13 +90,13 @@ static enum rc partition_it(struct profile_reader *reader, struct db *db)
         if (size >= xmath_partition_size(nprofiles, npartitions, i))
         {
             reader->partition_size[i] = size;
-            if ((rc = record_offset(fp, reader->partition_offset + ++i)))
+            if ((rc = record_offset(cmp, reader->partition_offset + ++i)))
                 goto cleanup;
             size = 0;
         }
     }
     assert(i == npartitions);
-    if ((rc = record_offset(fp, reader->partition_offset + npartitions)))
+    if ((rc = record_offset(cmp, reader->partition_offset + npartitions)))
         goto cleanup;
 
     return RC_DONE;
@@ -168,8 +164,7 @@ enum rc profile_reader_rewind(struct profile_reader *reader)
 
 static enum rc reached_end(struct profile_reader *reader, unsigned partition)
 {
-    FILE *fp = cmp_file(reader->cmp + partition);
-    off_t offset = ftello(fp);
+    int64_t offset = cmp_ftell(reader->cmp + partition);
     if (offset == -1) return error(RC_EIO, "failed to ftello");
     if (offset == reader->partition_offset[partition + 1]) return RC_END;
     return RC_NEXT;

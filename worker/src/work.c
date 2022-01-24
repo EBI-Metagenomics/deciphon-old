@@ -50,16 +50,16 @@ static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq)
     return RC_DONE;
 }
 
-static enum rc run_on_partition(struct work *work, unsigned i)
+static enum rc run_on_partition(struct work *work, struct work_priv *priv,
+                                unsigned i)
 {
     struct profile *prof = 0;
-    struct hypothesis *null = &work->null;
-    struct hypothesis *alt = &work->alt;
+    struct hypothesis *null = &priv->null;
+    struct hypothesis *alt = &priv->alt;
     enum rc rc = RC_DONE;
     while ((rc = profile_reader_next(&work->reader, i, &prof)) == RC_NEXT)
     {
         printf(".");
-        fflush(stdout);
         if (atomic_load(&end_work)) break;
 
         if ((rc = reset_task(&null->task, profile_null_dp(prof)))) return rc;
@@ -89,18 +89,18 @@ static enum rc run_on_partition(struct work *work, unsigned i)
         struct metadata const mt =
             db_metadata((struct db const *)&work->db.reader.db,
                         (unsigned)prof->idx_within_db);
-        strcpy(work->prod->profile_name, mt.acc);
-        strcpy(work->prod->abc_name, work->abc_name);
+        strcpy(priv->prod.profile_name, mt.acc);
+        strcpy(priv->prod.abc_name, work->abc_name);
 
-        work->prod->alt_loglik = alt->prod.loglik;
-        work->prod->null_loglik = null->prod.loglik;
+        priv->prod.alt_loglik = alt->prod.loglik;
+        priv->prod.null_loglik = null->prod.loglik;
 
         struct imm_path const *path = &alt->prod.path;
-        struct match *match = (struct match *)&work->match;
+        struct match *match = (struct match *)&priv->match;
         match->profile = prof;
-        if ((rc = prod_fwrite(work->prod + i, &work->iseq, path, i,
+        if ((rc = prod_fwrite(&priv->prod, &work->iseq, path, i,
                               work->write_match_cb,
-                              (struct match *)&work->match)))
+                              (struct match *)&work->priv->match)))
             return rc;
     }
     printf("\n");
@@ -146,10 +146,8 @@ enum rc work_next(struct work *work)
 
 enum rc work_run(struct work *work, unsigned num_threads)
 {
-    info("Really 1");
     enum rc rc = profile_reader_setup(
         &work->reader, db_reader_db(&work->db.reader), num_threads);
-    info("Really 2");
     if (rc)
     {
         db_reader_close(&work->db.reader);
@@ -157,7 +155,6 @@ enum rc work_run(struct work *work, unsigned num_threads)
         return rc;
     }
 
-    info("Really 3");
     work->abc = db_abc(db_reader_db(&work->db.reader));
     if (work->abc->vtable.typeid == IMM_DNA)
         strcpy(work->abc_name, "dna");
@@ -169,7 +166,6 @@ enum rc work_run(struct work *work, unsigned num_threads)
         return error(RC_EINVAL, "unknown alphabet");
     }
 
-    info("Really 4");
     work->seq.id = 0;
     work->seq.job_id = work->job.id;
     unsigned npartitions = profile_reader_npartitions(&work->reader);
@@ -178,8 +174,6 @@ enum rc work_run(struct work *work, unsigned num_threads)
         set_job_fail(&work->job, "failed to begin product submission");
         return RC_DONE;
     }
-    printf("Number of partitions: %d\n", npartitions);
-    fflush(stdout);
     while (!(rc = rest_next_seq(&work->seq)))
     {
         if (imm_abc_union_size(work->abc, imm_str(work->seq.data)) > 0)
@@ -187,36 +181,40 @@ enum rc work_run(struct work *work, unsigned num_threads)
             set_job_fail(&work->job, "sequence has out-of-alphabet characters");
             return RC_DONE;
         }
-        fflush(stdout);
 
         work->iseq = imm_seq(imm_str(work->seq.data), work->abc);
-        // _Pragma("omp parallel shared(work) if(npartitions > 1)")
+        // _Pragma("omp parallel default(none) shared(work, npartitions)
+        // if(npartitions > 1)")
+        // {
+        //     _Pragma("omp single")
+        //     {
+        if (profile_reader_rewind(&work->reader))
         {
-            // _Pragma("omp single")
+            set_job_fail(&work->job, "failed to rewind profile db");
+        }
+        else
+        {
+#pragma omp parallel for
+            for (unsigned i = 0; i < npartitions; ++i)
             {
-                if (profile_reader_rewind(&work->reader))
-                {
-                    set_job_fail(&work->job, "failed to rewind profile db");
-                }
-                else
-                {
-                    printf("Ponto 3\n");
-                    fflush(stdout);
-                    for (unsigned i = 0; i < npartitions; ++i)
-                    {
-                        work->prod[i].job_id = work->job.id;
-                        work->prod[i].seq_id = work->seq.id;
-                        strcpy(work->prod[i].profile_typeid,
-                               profile_typeid_name(work->profile_typeid));
-                        strcpy(work->prod[i].version, VERSION);
-                        // _Pragma("omp task firstprivate(rc, i)")
-                        {
-                            rc = run_on_partition(work, i);
-                        }
-                    }
-                }
+                work->priv[i].prod.job_id = work->job.id;
+                work->priv[i].prod.seq_id = work->seq.id;
+                strcpy(work->priv[i].prod.profile_typeid,
+                       profile_typeid_name(work->profile_typeid));
+                strcpy(work->priv[i].prod.version, VERSION);
+
+                // _Pragma("omp task firstprivate(i)")
+                // {
+                printf("Partition: %d\n", i);
+                fflush(stdout);
+                run_on_partition(work, work->priv + i, i);
+                printf("Depois Partition: %d\n", i);
+                fflush(stdout);
+                // }
             }
         }
+        //     }
+        // }
     }
     if (prod_fclose())
     {
