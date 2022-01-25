@@ -15,8 +15,7 @@ static struct imm_abc const *abc(struct db const *db)
     return &p->nuclt.super;
 }
 
-static enum rc write_profile(struct cmp_ctx_s *dst, struct profile const *prof,
-                             struct metadata mt)
+static enum rc write_profile(struct cmp_ctx_s *dst, struct profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     struct protein_profile const *p = (struct protein_profile const *)prof;

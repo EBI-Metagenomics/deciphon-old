@@ -108,6 +108,11 @@ static enum rc closew(struct db *db)
     if (!cmp_write_u32(&db->file.cmp, (uint32_t)db->nprofiles))
         return eio("write number of profiles");
 
+    fflush(cmp_file(&db->file.cmp));
+    fflush(cmp_file(&db->tmp.prof_cmp));
+    fflush(cmp_file(&db->tmp.mt_cmp));
+    fflush(cmp_file(&db->tmp.dp_cmp));
+
     if ((rc = copy_tmp_prof(&db->file.cmp, &db->tmp.prof_cmp, db->nprofiles)))
         goto cleanup;
 
@@ -203,12 +208,13 @@ enum rc db_write_float_size(struct db *db)
 
 enum rc db_read_nprofiles(struct db *db)
 {
-    uint32_t nprofiles = (uint32_t)db->nprofiles;
+    uint32_t nprofiles = 0;
     if (!cmp_read_u32(&db->file.cmp, &nprofiles))
         return eio("read number of profiles");
 
-    if (db->nprofiles > MAX_NPROFILES)
-        return error(RC_EFAIL, "too many profiles");
+    if (nprofiles > MAX_NPROFILES) return error(RC_EFAIL, "too many profiles");
+
+    db->nprofiles = nprofiles;
 
     return RC_DONE;
 }
@@ -260,7 +266,7 @@ enum rc db_write_profile(struct db *db, struct profile const *prof,
     rc = db_mt_write(&db->mt, mt, &db->tmp.mt_cmp);
     if (rc) return rc;
 
-    rc = db->vtable.write_profile(&db->tmp.dp_cmp, prof, mt);
+    rc = db->vtable.write_profile(&db->tmp.dp_cmp, prof);
     if (rc) return rc;
 
     db->nprofiles++;

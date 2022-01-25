@@ -20,8 +20,7 @@ struct db_vtable
 {
     int typeid;
     struct imm_abc const *(*abc)(struct db const *db);
-    enum rc (*write_profile)(struct cmp_ctx_s *dst, struct profile const *prof,
-                             struct metadata mt);
+    enum rc (*write_profile)(struct cmp_ctx_s *dst, struct profile const *prof);
 };
 
 struct db
