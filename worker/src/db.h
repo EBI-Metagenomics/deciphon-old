@@ -70,6 +70,7 @@ enum rc db_read_float_size(struct db *db);
 enum rc db_write_float_size(struct db *db);
 
 enum rc db_read_nprofiles(struct db *db);
+enum rc db_read_profile_offsets(struct db *db);
 enum rc db_read_metadata(struct db *db);
 
 enum rc db_write_profile_metadata(struct db *db, struct metadata mt);

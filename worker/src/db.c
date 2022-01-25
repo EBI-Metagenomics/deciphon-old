@@ -14,22 +14,37 @@
 
 #define MAGIC_NUMBER 0x765C806BF0E8652B
 
-static enum rc copy_tmp_mt(struct cmp_ctx_s *dst, struct db_tmp *db,
+static enum rc copy_tmp_prof(struct cmp_ctx_s *dst, struct cmp_ctx_s *tmp,
+                             unsigned nprofiles)
+{
+    rewind(cmp_file(tmp));
+    for (unsigned i = 0; i <= nprofiles; ++i)
+    {
+        int64_t offset = 0;
+        if (!cmp_read_s64(tmp, &offset)) return eio("read offset");
+        if (!cmp_write_s64(dst, offset)) return eio("write offset");
+    }
+
+    return RC_DONE;
+}
+
+static enum rc copy_tmp_mt(struct cmp_ctx_s *dst, struct cmp_ctx_s *tmp,
                            unsigned nprofiles)
 {
+    rewind(cmp_file(tmp));
+
     char name[PROFILE_NAME_SIZE] = {0};
     char acc[PROFILE_ACC_SIZE] = {0};
     for (unsigned i = 0; i < nprofiles; ++i)
     {
         uint32_t len = ARRAY_SIZE(name) - 1;
-        if (!cmp_read_cstr(&db->mt_cmp, name, &len))
-            return eio("read name size");
+        if (!cmp_read_cstr(tmp, name, &len)) return eio("read name size");
 
         /* write the null-terminated character */
         if (!cmp_write(dst, name, len + 1)) return eio("write name");
 
         len = ARRAY_SIZE(acc) - 1;
-        if (!cmp_read_cstr(&db->mt_cmp, acc, &len)) return eio("read acc size");
+        if (!cmp_read_cstr(tmp, acc, &len)) return eio("read acc size");
 
         /* write the null-terminated character */
         if (!cmp_write(dst, acc, len + 1)) return eio("write acc");
@@ -69,6 +84,7 @@ enum rc db_openw(struct db *db, FILE *fp)
 static void closer(struct db *db)
 {
     db_mt_cleanup(&db->mt);
+    free(db->profile_offsets);
     assert(db->file.mode == DB_OPEN_READ);
 }
 
@@ -83,7 +99,7 @@ static enum rc write_profile_offset(struct db *db, int64_t offset)
 static enum rc closew(struct db *db)
 {
     assert(db->file.mode == DB_OPEN_WRITE);
-    int64_t offset = cmp_ftell(&db->file.cmp);
+    int64_t offset = cmp_ftell(&db->tmp.dp_cmp);
     if (offset < 0) eio("ftell");
 
     enum rc rc = write_profile_offset(db, offset);
@@ -92,11 +108,13 @@ static enum rc closew(struct db *db)
     if (!cmp_write_u32(&db->file.cmp, (uint32_t)db->nprofiles))
         return eio("write number of profiles");
 
+    if ((rc = copy_tmp_prof(&db->file.cmp, &db->tmp.prof_cmp, db->nprofiles)))
+        goto cleanup;
+
     if (!cmp_write_u32(&db->file.cmp, db->mt.size))
         return eio("write metadata size");
 
-    rewind(cmp_file(&db->tmp.mt_cmp));
-    if ((rc = copy_tmp_mt(&db->file.cmp, &db->tmp, db->nprofiles)))
+    if ((rc = copy_tmp_mt(&db->file.cmp, &db->tmp.mt_cmp, db->nprofiles)))
         goto cleanup;
 
     rewind(cmp_file(&db->tmp.dp_cmp));
@@ -205,6 +223,26 @@ static enum rc check_metadata_profile_compatibility(struct db const *db)
     return RC_DONE;
 }
 
+enum rc db_read_profile_offsets(struct db *db)
+{
+    size_t sz = sizeof(*db->profile_offsets) * (db->nprofiles + 1);
+    db->profile_offsets = malloc(sz);
+
+    if (!db->profile_offsets) return error(RC_ENOMEM, "no memory for offsets");
+
+    for (unsigned i = 0; i <= db->nprofiles; ++i)
+    {
+        if (!cmp_read_s64(&db->file.cmp, db->profile_offsets + i))
+        {
+            enum rc rc = eio("read profile offset");
+            free(db->profile_offsets);
+            db->profile_offsets = 0;
+            return rc;
+        }
+    }
+    return RC_DONE;
+}
+
 enum rc db_read_metadata(struct db *db)
 {
     return db_mt_read(&db->mt, db->nprofiles, &db->file.cmp);
@@ -213,7 +251,7 @@ enum rc db_read_metadata(struct db *db)
 enum rc db_write_profile(struct db *db, struct profile const *prof,
                          struct metadata mt)
 {
-    int64_t offset = cmp_ftell(&db->file.cmp);
+    int64_t offset = cmp_ftell(&db->tmp.dp_cmp);
     if (offset < 0) eio("ftell");
 
     enum rc rc = write_profile_offset(db, offset);
@@ -222,7 +260,7 @@ enum rc db_write_profile(struct db *db, struct profile const *prof,
     rc = db_mt_write(&db->mt, mt, &db->tmp.mt_cmp);
     if (rc) return rc;
 
-    rc = db->vtable.write_profile(&db->file.cmp, prof, mt);
+    rc = db->vtable.write_profile(&db->tmp.dp_cmp, prof, mt);
     if (rc) return rc;
 
     db->nprofiles++;

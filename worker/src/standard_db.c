@@ -51,6 +51,7 @@ enum rc standard_db_openr(struct standard_db *db, FILE *fp)
     if ((rc = db_read_float_size(&db->super))) return rc;
     if ((rc = read_abc(fp, &db->abc))) return rc;
     if ((rc = db_read_nprofiles(&db->super))) return rc;
+    if ((rc = db_read_profile_offsets(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
     imm_code_init(&db->code, &db->abc);

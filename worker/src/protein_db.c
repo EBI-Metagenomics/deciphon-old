@@ -138,6 +138,7 @@ enum rc protein_db_openr(struct protein_db *db, FILE *fp)
     if ((rc = read_nuclt(fp, &db->nuclt))) return rc;
     if ((rc = read_amino(fp, &db->amino))) return rc;
     if ((rc = db_read_nprofiles(&db->super))) return rc;
+    if ((rc = db_read_profile_offsets(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
     imm_code_init(&db->code.super, imm_super(&db->nuclt));
