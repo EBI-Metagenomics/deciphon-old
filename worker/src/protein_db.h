@@ -30,10 +30,6 @@ struct imm_nuclt const *protein_db_nuclt(struct protein_db const *db);
 
 struct protein_cfg protein_db_cfg(struct protein_db const *db);
 
-enum rc protein_db_write(struct protein_db *db,
-                         struct protein_profile const *prof,
-                         struct metadata mt);
-
 struct db *protein_db_super(struct protein_db *db);
 
 #endif

@@ -21,10 +21,6 @@ enum rc standard_db_openw(struct standard_db *db, FILE *fp,
 
 struct imm_abc const *standard_db_abc(struct standard_db const *db);
 
-enum rc standard_db_write(struct standard_db *db,
-                          struct standard_profile const *prof,
-                          struct metadata mt);
-
 struct db *standard_db_super(struct standard_db *db);
 
 #endif

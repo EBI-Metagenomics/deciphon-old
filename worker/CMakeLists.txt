@@ -21,6 +21,8 @@ endif()
 add_library(
   ${PROJECT_NAME}
   src/db.c
+  src/db_mt.c
+  src/db_tmp.c
   src/db_reader.c
   src/job_state.c
   src/nuclt_dist.c

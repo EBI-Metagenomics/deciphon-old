@@ -21,10 +21,14 @@ void protein_db_examples_new_ex1(char const *filepath, unsigned core_size)
     protein_profile_init(&prof, amino, &code, cfg);
 
     protein_profile_sample(&prof, 1, core_size);
-    EQ(protein_db_write(&db, &prof, metadata("NAME0", "ACC0")), RC_DONE);
+    EQ(db_write_profile((struct db *)&db, (struct profile const *)&prof,
+                        metadata("NAME0", "ACC0")),
+       RC_DONE);
 
     protein_profile_sample(&prof, 2, core_size);
-    EQ(protein_db_write(&db, &prof, metadata("NAME1", "ACC1")), RC_DONE);
+    EQ(db_write_profile((struct db *)&db, (struct profile const *)&prof,
+                        metadata("NAME1", "ACC1")),
+       RC_DONE);
 
     profile_del((struct profile *)&prof);
     EQ(db_close((struct db *)&db), RC_DONE);

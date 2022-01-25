@@ -9,15 +9,21 @@
 #include "protein_cfg.h"
 #include "protein_profile.h"
 
-static enum rc close(struct db *db) { return __db_close(db); }
-
 static struct imm_abc const *abc(struct db const *db)
 {
     struct protein_db const *p = (struct protein_db *)db;
     return &p->nuclt.super;
 }
 
-static struct db_vtable vtable = {DB_PROTEIN, close, abc};
+static enum rc write_profile(struct cmp_ctx_s *dst, struct profile const *prof,
+                             struct metadata mt)
+{
+    /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
+    struct protein_profile const *p = (struct protein_profile const *)prof;
+    return protein_profile_write(p, dst);
+}
+
+static struct db_vtable vtable = {DB_PROTEIN, abc, write_profile};
 
 static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
                             imm_float *epsilon)
@@ -141,12 +147,6 @@ enum rc protein_db_openr(struct protein_db *db, FILE *fp)
     return db_set_metadata_end(&db->super);
 }
 
-static void cleanup(struct protein_db *db)
-{
-    fclose(cmp_file(&db->super.mt.file.cmp));
-    fclose(cmp_file(&db->super.dp.cmp));
-}
-
 enum rc protein_db_openw(struct protein_db *db, FILE *fp,
                          struct imm_amino const *amino,
                          struct imm_nuclt const *nuclt, struct protein_cfg cfg)
@@ -174,7 +174,7 @@ enum rc protein_db_openw(struct protein_db *db, FILE *fp,
     return rc;
 
 cleanup:
-    cleanup(db);
+    db_cleanup((struct db *)&db);
     return rc;
 }
 
@@ -191,17 +191,6 @@ struct imm_nuclt const *protein_db_nuclt(struct protein_db const *db)
 struct protein_cfg protein_db_cfg(struct protein_db const *db)
 {
     return db->cfg;
-}
-
-enum rc protein_db_write(struct protein_db *db,
-                         struct protein_profile const *prof, struct metadata mt)
-{
-    /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
-    enum rc rc = RC_DONE;
-    if ((rc = db_write_profile_metadata(&db->super, mt))) return rc;
-    if ((rc = protein_profile_write(prof, &db->super.dp.cmp))) return rc;
-    db->super.profiles.size++;
-    return rc;
 }
 
 struct db *protein_db_super(struct protein_db *db) { return &db->super; }

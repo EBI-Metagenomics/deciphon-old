@@ -22,7 +22,9 @@ void standard_db_examples_new_ex1(char const *filepath, unsigned core_size)
     profile_set_state_name((struct profile *)&p, imm_example1_state_name);
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
-    EQ(standard_db_write(&db, &p, metadata("NAME0", "ACC0")), RC_DONE);
+    EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
+                        metadata("NAME0", "ACC0")),
+       RC_DONE);
 
     /* Profile 1 */
     struct imm_mute_state state;
@@ -33,7 +35,9 @@ void standard_db_examples_new_ex1(char const *filepath, unsigned core_size)
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
-    EQ(standard_db_write(&db, &p, metadata("NAME1", "ACC1")), RC_DONE);
+    EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
+                        metadata("NAME1", "ACC1")),
+       RC_DONE);
 
     profile_del((struct profile *)&p);
     EQ(db_close((struct db *)&db), RC_DONE);
@@ -61,7 +65,9 @@ void standard_db_examples_new_ex2(char const *filepath)
     profile_set_state_name((struct profile *)&p, imm_example1_state_name);
     EQ(imm_hmm_reset_dp(null, imm_super(&m->null.n), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
-    EQ(standard_db_write(&db, &p, metadata("NAME0", "ACC0")), RC_DONE);
+    EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
+                        metadata("NAME0", "ACC0")),
+       RC_DONE);
 
     /* Profile 1 */
     struct imm_mute_state state;
@@ -72,7 +78,9 @@ void standard_db_examples_new_ex2(char const *filepath)
     EQ(imm_hmm_set_start(&hmm, imm_super(&state), imm_log(0.3)), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
-    EQ(standard_db_write(&db, &p, metadata("NAME1", "ACC1")), RC_DONE);
+    EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
+                        metadata("NAME1", "ACC1")),
+       RC_DONE);
 
     profile_del((struct profile *)&p);
     EQ(db_close((struct db *)&db), RC_DONE);

@@ -2,6 +2,8 @@
 #define DB_H
 
 #include "cmp/cmp.h"
+#include "db_mt.h"
+#include "db_tmp.h"
 #include "metadata.h"
 #include "profile.h"
 
@@ -17,8 +19,9 @@ struct db;
 struct db_vtable
 {
     int typeid;
-    enum rc (*close)(struct db *db);
     struct imm_abc const *(*abc)(struct db const *db);
+    enum rc (*write_profile)(struct cmp_ctx_s *dst, struct profile const *prof,
+                             struct metadata mt);
 };
 
 struct db
@@ -27,35 +30,22 @@ struct db
 
     int profile_typeid;
     unsigned float_size;
+    unsigned nprofiles;
+
+    // TODO: remove it
     int64_t profiles_block_offset;
-    struct
-    {
-        uint32_t size;
-        uint32_t curr_idx;
-    } profiles;
-    struct
-    {
-        uint32_t *offset;
-        uint8_t *name_length;
-        uint32_t size;
-        char *data;
-        struct
-        {
-            struct cmp_ctx_s cmp;
-        } file;
-    } mt;
-    struct
-    {
-        struct cmp_ctx_s cmp;
-    } dp;
+    int64_t *profile_offsets;
+
+    struct db_mt mt;
+
     struct
     {
         struct cmp_ctx_s cmp;
         enum db_mode mode;
     } file;
-};
 
-extern struct db const db_default;
+    struct db_tmp tmp;
+};
 
 unsigned db_float_size(struct db const *db);
 int db_profile_typeid(struct db const *db);
@@ -68,6 +58,7 @@ struct imm_abc const *db_abc(struct db const *db);
 void db_openr(struct db *db, FILE *fp);
 enum rc db_openw(struct db *db, FILE *fp);
 enum rc db_close(struct db *db);
+void db_cleanup(struct db *db);
 
 enum rc db_read_magic_number(struct db *db);
 enum rc db_write_magic_number(struct db *db);
@@ -82,6 +73,8 @@ enum rc db_read_nprofiles(struct db *db);
 enum rc db_read_metadata(struct db *db);
 
 enum rc db_write_profile_metadata(struct db *db, struct metadata mt);
+enum rc db_write_profile(struct db *db, struct profile const *prof,
+                         struct metadata mt);
 
 int64_t db_profiles_block_offset(struct db const *db);
 
@@ -89,9 +82,7 @@ enum rc db_set_metadata_end(struct db *db);
 
 static inline unsigned db_nprofiles(struct db const *db)
 {
-    return db->profiles.size;
+    return db->nprofiles;
 }
-
-enum rc __db_close(struct db *db);
 
 #endif

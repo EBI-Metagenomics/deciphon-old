@@ -132,7 +132,8 @@ static enum rc profile_write(void)
     enum rc rc = protein_profile_absorb(&cli.profile, &cli.reader.model);
     if (rc) return rc;
 
-    return protein_db_write(&cli.db, &cli.profile,
+    return db_write_profile((struct db *)&cli.db,
+                            (struct profile const *)&cli.profile,
                             protein_hmmer3_reader_metadata(&cli.reader));
 }
 

@@ -81,7 +81,9 @@ void test_db_openw_one_mute(void)
     standard_profile_init(&p, &code);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
-    EQ(standard_db_write(&db, &p, metadata("NAME0", "ACC0")), RC_DONE);
+    EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
+                        metadata("NAME0", "ACC0")),
+       RC_DONE);
 
     profile_del((struct profile *)&p);
     EQ(db_close((struct db *)&db), RC_DONE);
