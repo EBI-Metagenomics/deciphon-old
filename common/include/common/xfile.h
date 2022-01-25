@@ -16,6 +16,9 @@ struct xfile_tmp
     FILE *fp;
 };
 
+EXPORT enum rc xfile_size(char const *filepath, int64_t *size);
+EXPORT enum rc xfile_psize(FILE *fp, int64_t *size);
+EXPORT enum rc xfile_dsize(int fd, int64_t *size);
 EXPORT enum rc xfile_hash(FILE *restrict fp, uint64_t *hash);
 
 EXPORT enum rc xfile_tmp_open(struct xfile_tmp *file);
@@ -29,6 +32,7 @@ EXPORT enum rc xfile_set_ext(size_t max_size, char *str, char const *ext);
 EXPORT void xfile_basename(char *filename, char const *path);
 EXPORT void xfile_strip_ext(char *str);
 
+EXPORT enum rc xfile_filepath_from_fptr(FILE *fp, char *filepath);
 EXPORT FILE *xfile_open_from_fptr(FILE *fp, char const *mode);
 
 EXPORT bool xfile_exists(char const *filepath);

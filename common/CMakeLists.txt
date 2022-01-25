@@ -34,5 +34,7 @@ target_include_directories(
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC xxHash::xxHash)
+target_compile_definitions(${PROJECT_NAME} PRIVATE _XOPEN_SOURCE=700)
+target_compile_definitions(${PROJECT_NAME} PRIVATE _DARWIN_C_SOURCE)
 
 add_subdirectory(test)

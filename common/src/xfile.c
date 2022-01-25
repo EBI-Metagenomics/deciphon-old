@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <xxhash.h>
 
@@ -16,6 +17,39 @@
 #define BUFFSIZE (8 * 1024)
 
 static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
+
+enum rc xfile_size(char const *filepath, int64_t *size)
+{
+    struct stat st = {0};
+    if (stat(filepath, &st) == 1) return eio("stat");
+    assert(sizeof(st.st_size) == 8);
+    off_t sz = st.st_size;
+    *size = (int64_t)sz;
+    return RC_DONE;
+}
+
+enum rc xfile_psize(FILE *fp, int64_t *size)
+{
+    off_t old = ftello(fp);
+    if (old == -1) return eio("ftello");
+    if (fseeko(fp, 0, SEEK_END) == -1) return eio("fseeko");
+    off_t sz = ftello(fp);
+    if (sz == -1) return eio("fseeko");
+    if (fseeko(fp, old, SEEK_SET) == -1) return eio("fseeko");
+    *size = (int64_t)sz;
+    return RC_DONE;
+}
+
+enum rc xfile_dsize(int fd, int64_t *size)
+{
+    struct stat st = {0};
+    if (fsync(fd) == -1) return eio("fsync");
+    if (fstat(fd, &st) == 1) return eio("fstat");
+    assert(sizeof(st.st_size) == 8);
+    off_t sz = st.st_size;
+    *size = (int64_t)sz;
+    return RC_DONE;
+}
 
 enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
 {
@@ -157,17 +191,22 @@ void xfile_strip_ext(char *str)
     if (ret) *ret = 0;
 }
 
-FILE *xfile_open_from_fptr(FILE *fp, char const *mode)
+enum rc xfile_filepath_from_fptr(FILE *fp, char *filepath)
 {
     int fd = fileno(fp);
-    char filepath[PATH_MAX] = {0};
-
 #ifdef __APPLE__
-    if (fcntl(fd, F_GETPATH, filepath) == -1) return NULL;
+    if (fcntl(fd, F_GETPATH, filepath) == -1) return eio("F_GET_PATH");
 #else
     sprintf(filepath, "/proc/self/fd/%d", fd);
 #endif
+    return RC_DONE;
+}
 
+FILE *xfile_open_from_fptr(FILE *fp, char const *mode)
+{
+    char filepath[PATH_MAX] = {0};
+    enum rc rc = xfile_filepath_from_fptr(fp, filepath);
+    if (rc) return NULL;
     return fopen(filepath, mode);
 }
 

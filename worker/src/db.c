@@ -15,14 +15,15 @@
 #define MAGIC_NUMBER 0x765C806BF0E8652B
 
 static enum rc copy_tmp_prof(struct cmp_ctx_s *dst, struct cmp_ctx_s *tmp,
-                             unsigned nprofiles)
+                             unsigned nprofiles, int64_t base_offset)
 {
     rewind(cmp_file(tmp));
     for (unsigned i = 0; i <= nprofiles; ++i)
     {
         int64_t offset = 0;
         if (!cmp_read_s64(tmp, &offset)) return eio("read offset");
-        if (!cmp_write_s64(dst, offset)) return eio("write offset");
+        if (!cmp_write_s64(dst, base_offset + offset))
+            return eio("write offset");
     }
 
     return RC_DONE;
@@ -96,31 +97,56 @@ static enum rc write_profile_offset(struct db *db, int64_t offset)
     return RC_DONE;
 }
 
+static enum rc write_last_offset(struct db *db)
+{
+    int64_t last_offset = cmp_ftell(&db->tmp.dp_cmp);
+    if (last_offset < 0) eio("ftell");
+
+    return write_profile_offset(db, last_offset);
+}
+
+static enum rc write_nprofiles(struct db *db)
+{
+    unsigned nprofs = db->nprofiles;
+    if (!cmp_write_u32(&db->file.cmp, (uint32_t)nprofs))
+        return eio("write number of profiles");
+    return RC_DONE;
+}
+
+static enum rc profiles_block_offset(struct db *db, int64_t *base)
+{
+    struct cmp_ctx_s *cmps[] = {&db->file.cmp, &db->tmp.prof_cmp,
+                                &db->tmp.mt_cmp};
+    *base = 0;
+    for (unsigned i = 0; i < ARRAY_SIZE(cmps); ++i)
+    {
+        int64_t b = cmp_ftell(cmps[i]);
+        if (b < 0) return eio("cmp_ftell");
+        *base += b;
+    }
+    return RC_DONE;
+}
+
 static enum rc closew(struct db *db)
 {
     assert(db->file.mode == DB_OPEN_WRITE);
-    int64_t offset = cmp_ftell(&db->tmp.dp_cmp);
-    if (offset < 0) eio("ftell");
 
-    enum rc rc = write_profile_offset(db, offset);
+    enum rc rc = write_last_offset(db);
     if (rc) return rc;
 
-    if (!cmp_write_u32(&db->file.cmp, (uint32_t)db->nprofiles))
-        return eio("write number of profiles");
+    if ((rc = write_nprofiles(db))) return rc;
 
-    fflush(cmp_file(&db->file.cmp));
-    fflush(cmp_file(&db->tmp.prof_cmp));
-    fflush(cmp_file(&db->tmp.mt_cmp));
-    fflush(cmp_file(&db->tmp.dp_cmp));
+    int64_t base = 0;
+    if ((rc = profiles_block_offset(db, &base))) return rc;
 
-    if ((rc = copy_tmp_prof(&db->file.cmp, &db->tmp.prof_cmp, db->nprofiles)))
+    unsigned n = db->nprofiles;
+    if ((rc = copy_tmp_prof(&db->file.cmp, &db->tmp.prof_cmp, n, base)))
         goto cleanup;
 
     if (!cmp_write_u32(&db->file.cmp, db->mt.size))
         return eio("write metadata size");
 
-    if ((rc = copy_tmp_mt(&db->file.cmp, &db->tmp.mt_cmp, db->nprofiles)))
-        goto cleanup;
+    if ((rc = copy_tmp_mt(&db->file.cmp, &db->tmp.mt_cmp, n))) goto cleanup;
 
     rewind(cmp_file(&db->tmp.dp_cmp));
     if ((rc = xfile_copy(cmp_file(&db->file.cmp), cmp_file(&db->tmp.dp_cmp))))
