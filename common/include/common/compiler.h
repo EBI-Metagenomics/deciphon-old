@@ -38,4 +38,7 @@
 /* Are two types/vars the same type (ignoring qualifiers)? */
 #define same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 
+#define __ARRSIZE(x) (sizeof(x) / sizeof(x[0]))
+#define __STRADDR(x) ((char const *)(char const(*)[__CMP_ARRSIZE(x)]){&(x)})
+
 #endif

@@ -1,8 +1,10 @@
 #include "standard_db.h"
+#include "cmp_key.h"
 #include "common/logger.h"
 #include "common/rc.h"
 #include "db.h"
 #include "db_types.h"
+#include "profile_types.h"
 #include "standard_profile.h"
 
 static struct imm_abc const *abc(struct db const *db)
@@ -15,27 +17,31 @@ static enum rc write_profile(struct cmp_ctx_s *dst, struct profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     struct standard_profile const *p = (struct standard_profile const *)prof;
-    return standard_profile_write(p, cmp_file(dst));
+    return standard_profile_write(p, dst);
 }
 
-static struct db_vtable vtable = {DB_STANDARD, abc, write_profile};
+static struct db_vtable vtable = {DB_STANDARD, abc, write_profile, 6};
 
-static enum rc read_abc(FILE *fp, struct imm_abc *abc)
+static enum rc read_abc(struct cmp_ctx_s *cmp, struct imm_abc *abc)
 {
-    if (imm_abc_read(abc, fp)) return error(RC_EIO, "failed to read alphabet");
+    if (!cmp_write_str(cmp, "abc", 3)) eio("write abc key");
+    if (imm_abc_read(abc, cmp_file(cmp)))
+        return error(RC_EIO, "failed to read abc");
     return RC_DONE;
 }
 
-static enum rc write_abc(FILE *fp, struct imm_abc const *abc)
+static enum rc write_abc(struct cmp_ctx_s *cmp, struct imm_abc const *abc)
 {
-    if (imm_abc_write(abc, fp))
-        return error(RC_EIO, "failed to write alphabet");
+    if (!CMP_KEY_SKIP(cmp, "abc")) eio("skip abc key");
+    if (imm_abc_write(abc, cmp_file(cmp)))
+        return error(RC_EIO, "failed to write abc");
     return RC_DONE;
 }
 
 static void standard_db_init(struct standard_db *db)
 {
     db_init(&db->super, vtable);
+    db->super.profile_typeid = PROFILE_STANDARD;
     db->abc = imm_abc_empty;
 }
 
@@ -44,13 +50,14 @@ enum rc standard_db_openr(struct standard_db *db, FILE *fp)
     standard_db_init(db);
     db_openr(&db->super, fp);
 
+    struct cmp_ctx_s *cmp = &db->super.file.cmp;
+
     enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_profile_typeid(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
-    if ((rc = read_abc(fp, &db->abc))) return rc;
-    if ((rc = db_read_nprofiles(&db->super))) return rc;
-    if ((rc = db_read_profile_offsets(&db->super))) return rc;
+    if ((rc = read_abc(cmp, &db->abc))) return rc;
+    if ((rc = db_read_profile_sizes(&db->super))) return rc;
     if ((rc = db_read_metadata(&db->super))) return rc;
 
     imm_code_init(&db->code, &db->abc);
@@ -66,12 +73,14 @@ enum rc standard_db_openw(struct standard_db *db, FILE *fp,
     standard_db_init(db);
     db->code = *code;
 
+    struct cmp_ctx_s *hdr = &db->super.tmp.hdr;
+
     enum rc rc = RC_DONE;
     if ((rc = db_openw(&db->super, fp))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
-    if ((rc = db_write_prof_type(&db->super))) goto cleanup;
+    if ((rc = db_write_profile_typeid(&db->super))) goto cleanup;
     if ((rc = db_write_float_size(&db->super))) goto cleanup;
-    if ((rc = write_abc(fp, db->code.abc))) goto cleanup;
+    if ((rc = write_abc(hdr, db->code.abc))) goto cleanup;
 
     return rc;
 

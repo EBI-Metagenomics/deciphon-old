@@ -21,6 +21,7 @@ struct db_vtable
     int typeid;
     struct imm_abc const *(*abc)(struct db const *db);
     enum rc (*write_profile)(struct cmp_ctx_s *dst, struct profile const *prof);
+    unsigned header_size;
 };
 
 struct db
@@ -32,7 +33,6 @@ struct db
     unsigned nprofiles;
 
     // TODO: remove it
-    int64_t profiles_block_offset;
     int64_t *profile_offsets;
 
     struct db_mt mt;
@@ -63,20 +63,17 @@ enum rc db_read_magic_number(struct db *db);
 enum rc db_write_magic_number(struct db *db);
 
 enum rc db_read_profile_typeid(struct db *db);
-enum rc db_write_prof_type(struct db *db);
+enum rc db_write_profile_typeid(struct db *db);
 
 enum rc db_read_float_size(struct db *db);
 enum rc db_write_float_size(struct db *db);
 
-enum rc db_read_nprofiles(struct db *db);
-enum rc db_read_profile_offsets(struct db *db);
+enum rc db_read_profile_sizes(struct db *db);
 enum rc db_read_metadata(struct db *db);
 
 enum rc db_write_profile_metadata(struct db *db, struct metadata mt);
 enum rc db_write_profile(struct db *db, struct profile const *prof,
                          struct metadata mt);
-
-int64_t db_profiles_block_offset(struct db const *db);
 
 enum rc db_set_metadata_end(struct db *db);
 

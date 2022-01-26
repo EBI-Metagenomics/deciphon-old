@@ -13,7 +13,7 @@ where `null` has been used to denote Bin objects.
 {
   "header": {
     "magic_number": 50928,
-    "profile_type": 2,
+    "profile_typeid": 2,
     "float_bytes": 4,
     "entry_dist": 1,
     "epsilon": 0.01,
@@ -55,11 +55,11 @@ Let N be the number of profiles.
 
 ## Header
 
-header.magic_number: Integer (u16) (0xC6F0)
-header.profile_type: Integer (u8) (1 or 2)
+header.magic_number: Integer (s16) (0xC6F0)
+header.profile_typeid: Integer (s8) (1 or 2)
 header.float_bytes : Integer (u8) (4 or 8)
 header.entry_dist : Integer (u8) (1 or 2)
-header.epsilon : Float (f4/f8)
+header.epsilon : Float (f4/f8) (optional)
 header.abc : Bin (imm_abc)
 header.amino : Bin (imm_amino) (optional)
 header.profile_size: Array(Integer) (N u64 elements)
@@ -73,6 +73,15 @@ metadata: Array(Bin) (N profile-specific metadata elements described as follows)
     |    Name    | Accession  |    Name    | Accession  |   |    Name    | Accession  |
     +============+============+============+============+...+============+============+
     |  c-string  |  c-string  |  c-string  |  c-string  |   |  c-string  |  c-string  |
+    +============+============+============+============+   +============+============+
+
+### Temporary metadata
+
+    +---------------------------------------------------+   +-------------------------+
+    |        Profile 1        |        Profile 2        |   |        Profile N        |
+    |    Name    | Accession  |    Name    | Accession  |   |    Name    | Accession  |
+    +============+============+============+============+...+============+============+
+    |   String   |   String   |   String   |   String   |   |   String   |   String   |
     +============+============+============+============+   +============+============+
 
 ## Profile

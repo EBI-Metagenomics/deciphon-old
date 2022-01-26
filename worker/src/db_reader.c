@@ -1,5 +1,6 @@
 #include "db_reader.h"
 #include "profile_types.h"
+#include "cmp_key.h"
 
 enum rc db_reader_open(struct db_reader *reader, FILE *fp)
 {
@@ -8,6 +9,10 @@ enum rc db_reader_open(struct db_reader *reader, FILE *fp)
     /* TODO: implement a db_file_typeid instead */
     db_init(db, vtable);
     db_openr(db, fp);
+
+    CMP_KEY_SKIP(&db->file.cmp, "header");
+    uint32_t size = 0;
+    cmp_read_map(&db->file.cmp, &size);
 
     enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(db))) return rc;

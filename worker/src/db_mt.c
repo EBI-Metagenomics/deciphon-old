@@ -1,4 +1,5 @@
 #include "db_mt.h"
+#include "cmp_key.h"
 #include "cmp/cmp.h"
 #include "common/limits.h"
 #include "common/logger.h"
@@ -125,7 +126,13 @@ enum rc db_mt_read(struct db_mt *db, unsigned nprofiles, struct cmp_ctx_s *cmp)
 {
     enum rc rc = RC_DONE;
 
-    if ((rc = read_metadata_size(db, cmp))) goto cleanup;
+    if (!CMP_KEY_SKIP(cmp, "metadata")) eio("skip key");
+    uint32_t size = 0;
+    cmp_read_bin_size(cmp, &size);
+    if (size > max_mt_data_size())
+        return error(RC_EFAIL, "mt.data size is too big");
+    db->size = size;
+    // if ((rc = read_metadata_size(db, cmp))) goto cleanup;
 
     if (db->size > 0)
     {
@@ -147,7 +154,7 @@ static enum rc write_name(struct db_mt *db, struct metadata mt,
 {
     if (!cmp_write_str(dst, mt.name, (uint32_t)strlen(mt.name)))
         return eio("write profile name");
-    /* +1 for null-terminated */
+    /* +1 for null-terminated string */
     db->size += (uint32_t)strlen(mt.name) + 1;
 
     return RC_DONE;
@@ -158,7 +165,7 @@ static enum rc write_accession(struct db_mt *db, struct metadata mt,
 {
     if (!cmp_write_str(dst, mt.acc, (uint32_t)strlen(mt.acc)))
         return eio("write profile accession");
-    /* +1 for null-terminated */
+    /* +1 for null-terminated string */
     db->size += (uint32_t)strlen(mt.acc) + 1;
 
     return RC_DONE;

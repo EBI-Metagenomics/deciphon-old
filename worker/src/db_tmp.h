@@ -7,15 +7,15 @@
 
 struct db_tmp
 {
-    uint32_t prof_size;
     union
     {
-        struct cmp_ctx_s cmps[3];
+        struct cmp_ctx_s cmps[4];
         struct
         {
-            struct cmp_ctx_s prof_cmp;
-            struct cmp_ctx_s mt_cmp;
-            struct cmp_ctx_s dp_cmp;
+            struct cmp_ctx_s hdr;
+            struct cmp_ctx_s mt;
+            struct cmp_ctx_s size;
+            struct cmp_ctx_s prof;
         } __attribute__((packed));
     };
 };

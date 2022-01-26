@@ -73,7 +73,7 @@ static enum rc record_offset(struct cmp_ctx_s *cmp, int64_t *offset)
 static enum rc partition_it(struct profile_reader *reader, struct db *db)
 {
     enum rc rc = RC_DONE;
-    reader->partition_offset[0] = db_profiles_block_offset(db);
+    reader->partition_offset[0] = db->profile_offsets[0];
     if ((rc = __rewind(reader, 1))) return rc;
 
     struct cmp_ctx_s *cmp = &reader->cmp[0];
