@@ -1,6 +1,59 @@
 Deciphon file
 =============
 
+Please, see file-format.json for an JSON example that
+roughly specify it.
+
+Let N be the number of profiles.
+
+The file is a serialized MessagePack Map object having three key-value pairs.
+
+    String("header")  : defined bellow
+    String("metadata"): defined bellow
+    String("profile") : defined bellow
+
+Header
+------
+
+header.magic_number: Integer         (u64)
+header.profile_type: Integer         (u8)
+header.float_bytes : Integer         (u8)
+header.entry_dist  : Integer         (u8)
+header.epsilon     : Float           (f4/f8)
+header.abc         : Bin             (imm_abc)
+header.amino       : Bin             (imm_amino)
+header.profile_size: Array[Integer]  (N u64 elements)
+
+Metadata
+--------
+
+metadata: Array[Bin] (N profile-specific metadata elements described as follows)
+
+    +---------------------------------------------------+   +-------------------------+
+    |        Profile 1        |        Profile 2        |   |        Profile N        |
+    |    Name    | Accession  |    Name    | Accession  |   |    Name    | Accession  |
+    +============+============+============+============+...+============+============+
+    |  c-string  |  c-string  |  c-string  |  c-string  |   |  c-string  |  c-string  |
+    +============+============+============+============+   +============+============+
+
+Profile
+-------
+
+profile: Array[Map] (N profile-compact definition described as follows)
+
+    null: Bin (imm_dp)
+    alt: Bin (imm_dp)
+    R: Integer (u16)
+    S: Integer (u16)
+    N: Integer (u16)
+    B: Integer (u16)
+    E: Integer (u16)
+    J: Integer (u16)
+    C: Integer (u16)
+    T: Integer (u16)
+
+
+
 Let `n` be the number of profiles.
 
 |-----------------------------------------------------------|
