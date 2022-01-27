@@ -1,12 +1,12 @@
 #include "protein_db.h"
 #include "cmp/cmp.h"
-#include "cmp_key.h"
 #include "common/logger.h"
 #include "common/rc.h"
 #include "common/xmath.h"
 #include "db.h"
 #include "db_types.h"
 #include "entry_dist.h"
+#include "js.h"
 #include "profile_types.h"
 #include "protein_cfg.h"
 #include "protein_profile.h"
@@ -29,7 +29,7 @@ static struct db_vtable vtable = {DB_PROTEIN, abc, write_profile, 8};
 static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
                             imm_float *epsilon)
 {
-    if (!CMP_KEY_SKIP(cmp, "epsilon")) eio("skip key");
+    if (!JS_XPEC_STR(cmp, "epsilon")) eio("skip key");
     double e = 0;
     if (!cmp_read_decimal(cmp, &e)) return eio("read epsilon");
     *epsilon = (imm_float)e;
@@ -43,7 +43,7 @@ static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
 static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
                              imm_float epsilon)
 {
-    if (!CMP_WRITE_STR(cmp, "epsilon")) eio("write epsilon key");
+    if (!JS_WRITE_STR(cmp, "epsilon")) eio("write epsilon key");
 
     assert(float_bytes == 4 || float_bytes == 8);
     double e = 0;
@@ -57,7 +57,7 @@ static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
 
 static enum rc read_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist *edist)
 {
-    if (!CMP_KEY_SKIP(cmp, "entry_dist")) eio("skip key");
+    if (!JS_XPEC_STR(cmp, "entry_dist")) eio("skip key");
     uint64_t val = 0;
     if (!cmp_read_uinteger(cmp, &val)) return eio("read entry_dist");
     *edist = (enum entry_dist)val;
@@ -66,7 +66,7 @@ static enum rc read_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist *edist)
 
 static enum rc write_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist edist)
 {
-    if (!CMP_WRITE_STR(cmp, "entry_dist")) eio("write entry_dist key");
+    if (!JS_WRITE_STR(cmp, "entry_dist")) eio("write entry_dist key");
     if (!cmp_write_uinteger(cmp, (uint64_t)edist))
         return eio("write entry distribution");
     return RC_DONE;
@@ -74,7 +74,7 @@ static enum rc write_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist edist)
 
 static enum rc read_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt *nuclt)
 {
-    if (!CMP_KEY_SKIP(cmp, "abc")) eio("skip abc key");
+    if (!JS_XPEC_STR(cmp, "abc")) eio("skip abc key");
     if (imm_abc_read(&nuclt->super, cmp_file(cmp)))
         return eio("read nuclt abc");
     return RC_DONE;
@@ -82,7 +82,7 @@ static enum rc read_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt *nuclt)
 
 static enum rc write_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt const *nuclt)
 {
-    if (!CMP_WRITE_STR(cmp, "abc")) eio("write abc key");
+    if (!JS_WRITE_STR(cmp, "abc")) eio("write abc key");
     if (imm_abc_write(&nuclt->super, cmp_file(cmp)))
         return eio("write nuclt abc");
     return RC_DONE;
@@ -90,7 +90,7 @@ static enum rc write_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt const *nuclt)
 
 static enum rc read_amino(struct cmp_ctx_s *cmp, struct imm_amino *amino)
 {
-    if (!CMP_KEY_SKIP(cmp, "amino")) eio("skip amino key");
+    if (!JS_XPEC_STR(cmp, "amino")) eio("skip amino key");
     if (imm_abc_read(&amino->super, cmp_file(cmp)))
         return eio("read amino abc");
     return RC_DONE;
@@ -98,7 +98,7 @@ static enum rc read_amino(struct cmp_ctx_s *cmp, struct imm_amino *amino)
 
 static enum rc write_amino(struct cmp_ctx_s *cmp, struct imm_amino const *amino)
 {
-    if (!CMP_WRITE_STR(cmp, "amino")) eio("write amino key");
+    if (!JS_WRITE_STR(cmp, "amino")) eio("write amino key");
     if (imm_abc_write(&amino->super, cmp_file(cmp)))
         return eio("write amino abc");
     return RC_DONE;
@@ -123,7 +123,7 @@ enum rc protein_db_openr(struct protein_db *db, FILE *fp)
     imm_float *epsilon = &db->cfg.epsilon;
 
     enum rc rc = RC_DONE;
-    cmp_skip_str(cmp);
+    JS_XPEC_STR(cmp, "header");
 
     uint32_t size = 0;
     cmp_read_map(&db->super.file.cmp, &size);

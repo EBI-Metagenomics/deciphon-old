@@ -1,8 +1,8 @@
 #include "protein_profile.h"
 #include "cmp/cmp.h"
-#include "cmp_key.h"
 #include "common/logger.h"
 #include "imm/imm.h"
+#include "js.h"
 #include "metadata.h"
 #include "profile.h"
 #include "profile_types.h"
@@ -44,67 +44,67 @@ static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
 
     FILE *fp = cmp_file(cmp);
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "null")) return eio("skip key");
     if (imm_dp_read(&p->null.dp, fp)) return RC_EFAIL;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "alt")) return eio("skip key");
     if (imm_dp_read(&p->alt.dp, fp)) return RC_EFAIL;
 
     uint64_t u64 = 0;
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "core_size")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &u64)) return eio("read core size");
     if (u64 > PROTEIN_MODEL_CORE_SIZE_MAX)
         return error(RC_EPARSE, "profile is too long");
     p->core_size = (unsigned)u64;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "consensus")) return eio("skip key");
     u32 = (uint32_t)p->core_size;
-    if (!cmp_read_cstr(cmp, p->consensus, &u32)) return eio("read consensus");
+    if (!js_read_str(cmp, p->consensus, &u32)) return eio("read consensus");
 
     uint64_t s = 0;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "R")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &s)) return eio("read R state");
     p->null.R = (unsigned)s;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "S")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &s)) return eio("read S state");
     p->alt.S = (unsigned)s;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "N")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &s)) return eio("read N state");
     p->alt.N = (unsigned)s;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "B")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &s)) return eio("read B state");
     p->alt.B = (unsigned)s;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "E")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &s)) return eio("read E state");
     p->alt.E = (unsigned)s;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "J")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &s)) return eio("read J state");
     p->alt.J = (unsigned)s;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "C")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &s)) return eio("read C state");
     p->alt.C = (unsigned)s;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "T")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &s)) return eio("read T state");
     p->alt.T = (unsigned)s;
 
     enum rc rc = alloc_match_nuclt_dists(p);
     if (rc) return rc;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "null_ndist")) return eio("skip key");
     if ((rc = nuclt_dist_read(&p->null.ndist, cmp))) return rc;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "alt_insert_ndist")) return eio("skip key");
     if ((rc = nuclt_dist_read(&p->alt.insert_ndist, cmp))) return rc;
 
-    if (!cmp_skip_str(cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(cmp, "alt_match_ndist")) return eio("skip key");
     cmp_read_array(cmp, &u32);
     assert(u32 == p->core_size);
     for (unsigned i = 0; i < p->core_size; ++i)
@@ -340,53 +340,53 @@ enum rc protein_profile_write(struct protein_profile const *prof,
 
     FILE *fp = cmp_file(cmp);
 
-    if (!CMP_WRITE_STR(cmp, "null")) return eio("write null key");
+    if (!JS_WRITE_STR(cmp, "null")) return eio("write null key");
     if (imm_dp_write(&prof->null.dp, fp)) return RC_EFAIL;
 
-    if (!CMP_WRITE_STR(cmp, "alt")) return eio("write alt key");
+    if (!JS_WRITE_STR(cmp, "alt")) return eio("write alt key");
     if (imm_dp_write(&prof->alt.dp, fp)) return RC_EFAIL;
 
-    if (!CMP_WRITE_STR(cmp, "core_size")) return eio("write core_size key");
+    if (!JS_WRITE_STR(cmp, "core_size")) return eio("write core_size key");
     if (!cmp_write_uinteger(cmp, prof->core_size))
         return eio("write core_size");
 
-    if (!CMP_WRITE_STR(cmp, "consensus")) return eio("write consensus key");
+    if (!JS_WRITE_STR(cmp, "consensus")) return eio("write consensus key");
     if (!cmp_write_str(cmp, prof->consensus, prof->core_size))
         return eio("write consensus");
 
-    if (!CMP_WRITE_STR(cmp, "R")) return eio("write R state key");
+    if (!JS_WRITE_STR(cmp, "R")) return eio("write R state key");
     if (!cmp_write_uinteger(cmp, prof->null.R)) return eio("write R state");
 
-    if (!CMP_WRITE_STR(cmp, "S")) return eio("write S state key");
+    if (!JS_WRITE_STR(cmp, "S")) return eio("write S state key");
     if (!cmp_write_uinteger(cmp, prof->alt.S)) return eio("write S state");
 
-    if (!CMP_WRITE_STR(cmp, "N")) return eio("write N state key");
+    if (!JS_WRITE_STR(cmp, "N")) return eio("write N state key");
     if (!cmp_write_uinteger(cmp, prof->alt.N)) return eio("write N state");
 
-    if (!CMP_WRITE_STR(cmp, "B")) return eio("write B state key");
+    if (!JS_WRITE_STR(cmp, "B")) return eio("write B state key");
     if (!cmp_write_uinteger(cmp, prof->alt.B)) return eio("write B state");
 
-    if (!CMP_WRITE_STR(cmp, "E")) return eio("write E state key");
+    if (!JS_WRITE_STR(cmp, "E")) return eio("write E state key");
     if (!cmp_write_uinteger(cmp, prof->alt.E)) return eio("write E state");
 
-    if (!CMP_WRITE_STR(cmp, "J")) return eio("write J state key");
+    if (!JS_WRITE_STR(cmp, "J")) return eio("write J state key");
     if (!cmp_write_uinteger(cmp, prof->alt.J)) return eio("write J state");
 
-    if (!CMP_WRITE_STR(cmp, "C")) return eio("write C state key");
+    if (!JS_WRITE_STR(cmp, "C")) return eio("write C state key");
     if (!cmp_write_uinteger(cmp, prof->alt.C)) return eio("write C state");
 
-    if (!CMP_WRITE_STR(cmp, "T")) return eio("write T state key");
+    if (!JS_WRITE_STR(cmp, "T")) return eio("write T state key");
     if (!cmp_write_uinteger(cmp, prof->alt.T)) return eio("write T state");
 
-    if (!CMP_WRITE_STR(cmp, "null_ndist")) return eio("write null_ndist key");
+    if (!JS_WRITE_STR(cmp, "null_ndist")) return eio("write null_ndist key");
     enum rc rc = nuclt_dist_write(&prof->null.ndist, cmp);
     if (rc) return rc;
 
-    if (!CMP_WRITE_STR(cmp, "alt_insert_ndist"))
+    if (!JS_WRITE_STR(cmp, "alt_insert_ndist"))
         return eio("write alt_insert_ndist key");
     if ((rc = nuclt_dist_write(&prof->alt.insert_ndist, cmp))) return rc;
 
-    if (!CMP_WRITE_STR(cmp, "alt_match_ndist"))
+    if (!JS_WRITE_STR(cmp, "alt_match_ndist"))
         return eio("write alt_match_ndist key");
     if (!cmp_write_array(cmp, prof->core_size))
         return eio("write array length");

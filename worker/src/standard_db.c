@@ -1,5 +1,5 @@
 #include "standard_db.h"
-#include "cmp_key.h"
+#include "js.h"
 #include "common/logger.h"
 #include "common/rc.h"
 #include "db.h"
@@ -32,7 +32,7 @@ static enum rc read_abc(struct cmp_ctx_s *cmp, struct imm_abc *abc)
 
 static enum rc write_abc(struct cmp_ctx_s *cmp, struct imm_abc const *abc)
 {
-    if (!CMP_KEY_SKIP(cmp, "abc")) eio("skip abc key");
+    if (!JS_XPEC_STR(cmp, "abc")) eio("skip abc key");
     if (imm_abc_write(abc, cmp_file(cmp)))
         return error(RC_EIO, "failed to write abc");
     return RC_DONE;

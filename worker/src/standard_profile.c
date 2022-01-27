@@ -1,9 +1,9 @@
 #include "standard_profile.h"
 #include "cmp/cmp.h"
-#include "cmp_key.h"
 #include "common/logger.h"
 #include "common/rc.h"
 #include "imm/imm.h"
+#include "js.h"
 #include "metadata.h"
 #include "profile.h"
 #include "profile_types.h"
@@ -57,10 +57,10 @@ enum rc standard_profile_write(struct standard_profile const *prof,
 {
     FILE *fp = cmp_file(cmp);
 
-    if (!CMP_WRITE_STR(cmp, "null")) return eio("write null state key");
+    if (!JS_WRITE_STR(cmp, "null")) return eio("write null state key");
     if (imm_dp_write(&prof->dp.null, fp)) return RC_EFAIL;
 
-    if (!CMP_WRITE_STR(cmp, "alt")) return eio("write alt state key");
+    if (!JS_WRITE_STR(cmp, "alt")) return eio("write alt state key");
     if (imm_dp_write(&prof->dp.alt, fp)) return RC_EFAIL;
 
     return RC_DONE;

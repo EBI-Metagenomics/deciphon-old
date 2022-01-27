@@ -1,8 +1,8 @@
 #include "db_mt.h"
-#include "cmp_key.h"
 #include "cmp/cmp.h"
 #include "common/limits.h"
 #include "common/logger.h"
+#include "js.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -126,7 +126,7 @@ enum rc db_mt_read(struct db_mt *db, unsigned nprofiles, struct cmp_ctx_s *cmp)
 {
     enum rc rc = RC_DONE;
 
-    if (!CMP_KEY_SKIP(cmp, "metadata")) eio("skip key");
+    if (!JS_XPEC_STR(cmp, "metadata")) eio("skip key");
     uint32_t size = 0;
     cmp_read_bin_size(cmp, &size);
     if (size > max_mt_data_size())

@@ -22,9 +22,10 @@ add_library(
   ${PROJECT_NAME}
   src/db.c
   src/db_mt.c
-  src/db_tmp.c
   src/db_reader.c
+  src/db_tmp.c
   src/job_state.c
+  src/js.c
   src/nuclt_dist.c
   src/pool.c
   src/prod.c
@@ -39,6 +40,7 @@ add_library(
   src/protein_model.c
   src/protein_profile.c
   src/protein_state.c
+  src/rest.c
   src/row.c
   src/seq.c
   src/server.c
@@ -49,7 +51,6 @@ add_library(
   src/table.c
   src/tok.c
   src/work.c
-  src/rest.c
 )
 
 set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version.h)

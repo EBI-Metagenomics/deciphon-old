@@ -1,12 +1,12 @@
 #include "db.h"
 #include "cmp/cmp.h"
-#include "cmp_key.h"
 #include "common/compiler.h"
 #include "common/limits.h"
 #include "common/logger.h"
 #include "common/rc.h"
 #include "common/xfile.h"
 #include "imm/imm.h"
+#include "js.h"
 #include "profile.h"
 #include <assert.h>
 #include <stdio.h>
@@ -41,13 +41,13 @@ static enum rc copy_tmp_mt(struct cmp_ctx_s *dst, struct cmp_ctx_s *tmp,
     for (unsigned i = 0; i < nprofiles; ++i)
     {
         uint32_t len = ARRAY_SIZE(name) - 1;
-        if (!cmp_read_cstr(tmp, name, &len)) return eio("read name size");
+        if (!js_read_str(tmp, name, &len)) return eio("read name size");
 
         /* write the null-terminated character */
         if (!cmp_write(dst, name, len + 1)) return eio("write name");
 
         len = ARRAY_SIZE(acc) - 1;
-        if (!cmp_read_cstr(tmp, acc, &len)) return eio("read acc size");
+        if (!js_read_str(tmp, acc, &len)) return eio("read acc size");
 
         /* write the null-terminated character */
         if (!cmp_write(dst, acc, len + 1)) return eio("write acc");
@@ -129,7 +129,7 @@ static enum rc closew(struct db *db)
         goto cleanup;
     }
 
-    if (!CMP_WRITE_STR(&db->tmp.hdr, "profile_size"))
+    if (!JS_WRITE_STR(&db->tmp.hdr, "profile_size"))
     {
         rc = eio("write profile_size key");
         goto cleanup;
@@ -144,7 +144,7 @@ static enum rc closew(struct db *db)
         goto cleanup;
 
     rewind(cmp_file(&db->tmp.hdr));
-    if (!CMP_WRITE_STR(&db->file.cmp, "header"))
+    if (!JS_WRITE_STR(&db->file.cmp, "header"))
     {
         rc = eio("write header key");
         goto cleanup;
@@ -152,7 +152,7 @@ static enum rc closew(struct db *db)
     if ((rc = xfile_copy(cmp_file(&db->file.cmp), cmp_file(&db->tmp.hdr))))
         goto cleanup;
 
-    if (!CMP_WRITE_STR(&db->file.cmp, "metadata"))
+    if (!JS_WRITE_STR(&db->file.cmp, "metadata"))
     {
         rc = eio("write metadata key");
         goto cleanup;
@@ -168,7 +168,7 @@ static enum rc closew(struct db *db)
     if ((rc = copy_tmp_mt(&db->file.cmp, &db->tmp.mt, db->nprofiles)))
         goto cleanup;
 
-    if (!CMP_WRITE_STR(&db->file.cmp, "profile"))
+    if (!JS_WRITE_STR(&db->file.cmp, "profile"))
     {
         rc = eio("write profile key");
         goto cleanup;
@@ -198,21 +198,21 @@ void db_cleanup(struct db *db)
 static enum rc db_write_header_key(struct cmp_ctx_s *cmp, unsigned size)
 {
     if (!cmp_write_map(cmp, size)) eio("write header map size");
-    if (!CMP_WRITE_STR(cmp, "header")) eio("write header map key");
+    if (!JS_WRITE_STR(cmp, "header")) eio("write header map key");
     return RC_DONE;
 }
 
 static enum rc db_write_profile_key(struct cmp_ctx_s *cmp, unsigned size)
 {
     if (!cmp_write_map(cmp, size)) eio("write profile map size");
-    if (!CMP_WRITE_STR(cmp, "profile")) eio("write profile map key");
+    if (!JS_WRITE_STR(cmp, "profile")) eio("write profile map key");
     return RC_DONE;
 }
 
 enum rc db_read_magic_number(struct db *db)
 {
     struct cmp_ctx_s *cmp = &db->file.cmp;
-    if (!CMP_KEY_SKIP(cmp, "magic_number")) return eio("skip magic_number key");
+    if (!JS_XPEC_STR(cmp, "magic_number")) return eio("skip magic_number key");
 
     int64_t magic_number = 0;
     if (!cmp_read_integer(cmp, &magic_number)) return eio("read magic number");
@@ -226,7 +226,7 @@ enum rc db_read_magic_number(struct db *db)
 enum rc db_write_magic_number(struct db *db)
 {
     struct cmp_ctx_s *cmp = &db->tmp.hdr;
-    if (!CMP_WRITE_STR(cmp, "magic_number")) eio("write magic_number map key");
+    if (!JS_WRITE_STR(cmp, "magic_number")) eio("write magic_number map key");
     if (!cmp_write_integer(cmp, MAGIC_NUMBER)) eio("write magic number");
     return RC_DONE;
 }
@@ -234,7 +234,7 @@ enum rc db_write_magic_number(struct db *db)
 enum rc db_read_profile_typeid(struct db *db)
 {
     struct cmp_ctx_s *cmp = &db->file.cmp;
-    if (!CMP_KEY_SKIP(cmp, "profile_typeid"))
+    if (!JS_XPEC_STR(cmp, "profile_typeid"))
         return eio("skip profile_typeid key");
     int64_t v = 0;
     if (!cmp_read_integer(cmp, &v)) return eio("read profile typeid");
@@ -245,7 +245,7 @@ enum rc db_read_profile_typeid(struct db *db)
 enum rc db_write_profile_typeid(struct db *db)
 {
     struct cmp_ctx_s *cmp = &db->tmp.hdr;
-    if (!CMP_WRITE_STR(cmp, "profile_typeid"))
+    if (!JS_WRITE_STR(cmp, "profile_typeid"))
         eio("write profile_typeid map key");
     if (!cmp_write_integer(cmp, db->profile_typeid))
         return eio("write profile_typeid");
@@ -255,7 +255,7 @@ enum rc db_write_profile_typeid(struct db *db)
 enum rc db_read_float_size(struct db *db)
 {
     struct cmp_ctx_s *cmp = &db->file.cmp;
-    if (!CMP_KEY_SKIP(cmp, "float_size")) return eio("skip float_size key");
+    if (!JS_XPEC_STR(cmp, "float_size")) return eio("skip float_size key");
 
     uint64_t v = 0;
     if (!cmp_read_uinteger(cmp, &v)) return eio("read float size");
@@ -268,7 +268,7 @@ enum rc db_read_float_size(struct db *db)
 enum rc db_write_float_size(struct db *db)
 {
     struct cmp_ctx_s *cmp = &db->tmp.hdr;
-    if (!CMP_WRITE_STR(cmp, "float_size")) eio("write float_size map key");
+    if (!JS_WRITE_STR(cmp, "float_size")) eio("write float_size map key");
 
     unsigned size = IMM_FLOAT_BYTES;
     assert(size == 4 || size == 8);
@@ -289,7 +289,7 @@ static enum rc check_metadata_profile_compatibility(struct db const *db)
 enum rc db_read_profile_sizes(struct db *db)
 {
     struct cmp_ctx_s *cmp = &db->file.cmp;
-    if (!CMP_KEY_SKIP(cmp, "profile_size")) eio("skip profile_size key");
+    if (!JS_XPEC_STR(cmp, "profile_size")) eio("skip profile_size key");
 
     uint32_t n = 0;
     if (!cmp_read_array(cmp, &n)) return eio("read array size");
@@ -358,7 +358,7 @@ int db_typeid(struct db const *db) { return db->vtable.typeid; }
 
 enum rc db_set_metadata_end(struct db *db)
 {
-    if (!cmp_skip_str(&db->file.cmp)) return eio("skip key");
+    if (!JS_XPEC_STR(&db->file.cmp, "profile")) return eio("skip key");
     int64_t off = cmp_ftell(&db->file.cmp);
     for (unsigned i = 0; i <= db->nprofiles; ++i)
         db->profile_offsets[i] += off;
