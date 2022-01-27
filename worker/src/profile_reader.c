@@ -106,6 +106,28 @@ cleanup:
     return rc;
 }
 
+static void partition_it2(struct profile_reader *reader, struct db *db)
+{
+    reader->partition_offset[0] = db->profile_offsets[0];
+
+    unsigned npartitions = reader->npartitions;
+    unsigned nprofiles = db_nprofiles(db);
+    unsigned i = 0;
+    unsigned size = 0;
+    for (unsigned j = 0; j < nprofiles; ++j)
+    {
+        size++;
+        if (size >= xmath_partition_size(nprofiles, npartitions, i))
+        {
+            reader->partition_size[i] = size;
+            reader->partition_offset[++i] = db->profile_offsets[j + 1];
+            size = 0;
+        }
+    }
+    assert(i == npartitions);
+    reader->partition_offset[npartitions] = db->profile_offsets[nprofiles];
+}
+
 enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
                              unsigned npartitions)
 {
@@ -129,7 +151,8 @@ enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
     else
         assert(false);
 
-    if ((rc = partition_it(reader, db))) goto cleanup;
+    // if ((rc = partition_it(reader, db))) goto cleanup;
+    partition_it2(reader, db);
     for (unsigned i = 0; i < npartitions; ++i)
     {
         printf("partition_size[%d]: %d\n", i, reader->partition_size[i]);
