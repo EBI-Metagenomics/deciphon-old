@@ -29,4 +29,4 @@ enum rc __logger_warn(enum rc rc, char const *msg)
     return rc;
 }
 
-void __logger_info(char const *msg) { log_print(msg); }
+// void __logger_info(char const *msg) { log_print(msg); }

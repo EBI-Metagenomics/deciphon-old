@@ -14,6 +14,7 @@ add_library(
   src/safe.c
   src/to.c
   src/rc.c
+  src/info.c
   src/xfile.c
 )
 

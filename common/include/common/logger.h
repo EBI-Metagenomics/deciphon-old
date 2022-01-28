@@ -12,9 +12,9 @@ EXPORT void logger_setup(logger_print_t *print, void *arg);
 EXPORT enum rc __logger_warn(enum rc rc, char const *msg);
 #define warn(rc, msg) __logger_warn(rc, __WARN_FMT(rc, msg))
 
-#define __INFO_FMT(msg) LOCAL(__LINE__) ":" msg
-EXPORT void __logger_info(char const *msg);
-#define info(msg) __logger_info(__INFO_FMT(msg))
+// #define __INFO_FMT(msg) LOCAL(__LINE__) ":" msg
+// EXPORT void __logger_info(char const *msg);
+// #define info(msg) __logger_info(__INFO_FMT(msg))
 
 #define __ERROR_FMT(rc, msg) LOCAL(__LINE__) ":" #rc ": " msg
 EXPORT enum rc __logger_error(enum rc rc, char const *msg);

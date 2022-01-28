@@ -697,9 +697,8 @@ enum rc rest_submit_prods_file(char const *filepath)
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Accept: application/json");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
-    curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-    // curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+    // curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
+    // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 
     /* set where to read from (on Windows you need to use READFUNCTION too) */
     // curl_easy_setopt(curl, CURLOPT_READDATA, fp);
@@ -740,7 +739,6 @@ enum rc rest_submit_prods_file(char const *filepath)
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     curl_mime_free(form);
     curl_slist_free_all(headers);
-    printf("HTTP CODE: %ld\n", http_code);
     if (http_code != 201) return efail("upload file");
 
     return RC_DONE;

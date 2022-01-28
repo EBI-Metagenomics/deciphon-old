@@ -151,16 +151,7 @@ enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
     else
         assert(false);
 
-    // if ((rc = partition_it(reader, db))) goto cleanup;
     partition_it2(reader, db);
-    for (unsigned i = 0; i < npartitions; ++i)
-    {
-        printf("partition_size[%d]: %d\n", i, reader->partition_size[i]);
-    }
-    for (unsigned i = 0; i < npartitions + 1; ++i)
-    {
-        printf("partition_offset[%d]: %lld\n", i, reader->partition_offset[i]);
-    }
     if ((rc = profile_reader_rewind(reader))) goto cleanup;
     return rc;
 

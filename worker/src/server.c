@@ -1,4 +1,5 @@
 #include "server.h"
+#include "common/info.h"
 #include "cco/cco.h"
 #include "common/compiler.h"
 #include "common/logger.h"
@@ -94,12 +95,11 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
     enum rc rc = rest_open(url);
     if (rc) return rc;
 
-    info("Starting the server");
+    info("Starting the server (%d threads)", num_threads);
     while (!server.signal.interrupt)
     {
         if ((rc = work_next(&server.work)) == RC_NOTFOUND)
         {
-            info("not found");
             if (single_run) break;
             elapsed_sleep(500);
             continue;

@@ -59,7 +59,6 @@ static enum rc run_on_partition(struct work *work, struct work_priv *priv,
     enum rc rc = RC_DONE;
     while ((rc = profile_reader_next(&work->reader, i, &prof)) == RC_NEXT)
     {
-        printf(".");
         if (atomic_load(&end_work)) break;
 
         if ((rc = reset_task(&null->task, profile_null_dp(prof)))) return rc;
@@ -103,7 +102,6 @@ static enum rc run_on_partition(struct work *work, struct work_priv *priv,
                               (struct match *)&work->priv->match)))
             return rc;
     }
-    printf("\n");
     return RC_DONE;
 }
 
@@ -205,11 +203,7 @@ enum rc work_run(struct work *work, unsigned num_threads)
 
                 // _Pragma("omp task firstprivate(i)")
                 // {
-                printf("Partition: %d\n", i);
-                fflush(stdout);
                 run_on_partition(work, work->priv + i, i);
-                printf("Depois Partition: %d\n", i);
-                fflush(stdout);
                 // }
             }
         }
