@@ -9,6 +9,10 @@
 #include <unistd.h>
 #include <xxhash.h>
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
 #ifdef __APPLE__
 #include <fcntl.h>
 #include <sys/syslimits.h>
