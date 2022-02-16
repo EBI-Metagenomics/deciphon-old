@@ -1,9 +1,9 @@
 #include "standard_db.h"
-#include "js.h"
 #include "common/logger.h"
 #include "common/rc.h"
 #include "db.h"
 #include "db_types.h"
+#include "js.h"
 #include "profile_types.h"
 #include "standard_profile.h"
 
@@ -25,8 +25,7 @@ static struct db_vtable vtable = {DB_STANDARD, abc, write_profile, 6};
 static enum rc read_abc(struct cmp_ctx_s *cmp, struct imm_abc *abc)
 {
     if (!cmp_write_str(cmp, "abc", 3)) eio("write abc key");
-    if (imm_abc_read(abc, cmp_file(cmp)))
-        return error(RC_EIO, "failed to read abc");
+    if (imm_abc_read_cmp(abc, cmp)) return error(RC_EIO, "failed to read abc");
     return RC_DONE;
 }
 

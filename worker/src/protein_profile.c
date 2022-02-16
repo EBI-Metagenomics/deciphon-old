@@ -42,13 +42,11 @@ static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
     if (!cmp_read_map(cmp, &u32)) eio("read profile map size");
     assert(u32 == 15);
 
-    FILE *fp = cmp_file(cmp);
-
     if (!JS_XPEC_STR(cmp, "null")) return eio("skip key");
-    if (imm_dp_read(&p->null.dp, fp)) return RC_EFAIL;
+    if (imm_dp_read_cmp(&p->null.dp, cmp)) return RC_EFAIL;
 
     if (!JS_XPEC_STR(cmp, "alt")) return eio("skip key");
-    if (imm_dp_read(&p->alt.dp, fp)) return RC_EFAIL;
+    if (imm_dp_read_cmp(&p->alt.dp, cmp)) return RC_EFAIL;
 
     uint64_t u64 = 0;
     if (!JS_XPEC_STR(cmp, "core_size")) return eio("skip key");

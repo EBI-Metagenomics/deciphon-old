@@ -75,8 +75,7 @@ static enum rc write_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist edist)
 static enum rc read_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt *nuclt)
 {
     if (!JS_XPEC_STR(cmp, "abc")) eio("skip abc key");
-    if (imm_abc_read(&nuclt->super, cmp_file(cmp)))
-        return eio("read nuclt abc");
+    if (imm_abc_read_cmp(&nuclt->super, cmp)) return eio("read nuclt abc");
     return RC_DONE;
 }
 
@@ -91,8 +90,7 @@ static enum rc write_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt const *nuclt)
 static enum rc read_amino(struct cmp_ctx_s *cmp, struct imm_amino *amino)
 {
     if (!JS_XPEC_STR(cmp, "amino")) eio("skip amino key");
-    if (imm_abc_read(&amino->super, cmp_file(cmp)))
-        return eio("read amino abc");
+    if (imm_abc_read_cmp(&amino->super, cmp)) return eio("read amino abc");
     return RC_DONE;
 }
 

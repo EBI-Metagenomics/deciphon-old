@@ -16,7 +16,7 @@ enum rc nuclt_dist_read(struct nuclt_dist *ndist, struct cmp_ctx_s *cmp)
     uint32_t size = 0;
     cmp_read_array(cmp, &size);
     assert(size == 2);
-    if (imm_nuclt_lprob_read(&ndist->nucltp, cmp_file(cmp))) return rc;
-    if (imm_codon_marg_read(&ndist->codonm, cmp_file(cmp))) return rc;
+    if (imm_nuclt_lprob_read_cmp(&ndist->nucltp, cmp)) return rc;
+    if (imm_codon_marg_read_cmp(&ndist->codonm, cmp)) return rc;
     return RC_DONE;
 }

@@ -23,9 +23,8 @@ static void del(struct profile *prof)
 static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
 {
     struct standard_profile *p = (struct standard_profile *)prof;
-    FILE *fp = cmp_file(cmp);
-    if (imm_dp_read(&p->dp.null, fp)) return RC_EFAIL;
-    if (imm_dp_read(&p->dp.alt, fp)) return RC_EFAIL;
+    if (imm_dp_read_cmp(&p->dp.null, cmp)) return RC_EFAIL;
+    if (imm_dp_read_cmp(&p->dp.alt, cmp)) return RC_EFAIL;
     return RC_DONE;
 }
 
