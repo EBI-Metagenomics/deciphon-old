@@ -1,9 +1,9 @@
 #ifndef DB_READER_H
 #define DB_READER_H
 
+#include "common/rc.h"
 #include "db_types.h"
 #include "protein_db.h"
-#include "common/rc.h"
 #include "standard_db.h"
 #include <stdio.h>
 
@@ -17,7 +17,9 @@ struct db_reader
     } db;
 };
 
-enum rc db_reader_open(struct db_reader *reader, FILE *fp);
+struct lip_io_file;
+
+enum rc db_reader_open(struct db_reader *reader, struct lip_io_file *io);
 struct db *db_reader_db(struct db_reader *reader);
 enum rc db_reader_close(struct db_reader *reader);
 

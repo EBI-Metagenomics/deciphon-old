@@ -13,13 +13,14 @@ struct db_mt
     char *data;
 };
 
-struct cmp_ctx_s;
+struct lip_io_file;
 
 void db_mt_init(struct db_mt *db);
 void db_mt_cleanup(struct db_mt *db);
-enum rc db_mt_read(struct db_mt *db, unsigned nprofiles, struct cmp_ctx_s *cmp);
+enum rc db_mt_read(struct db_mt *db, unsigned nprofiles,
+                   struct lip_io_file *cmp);
 enum rc db_mt_write(struct db_mt *db, struct metadata mt,
-                    struct cmp_ctx_s *dst);
+                    struct lip_io_file *dst);
 struct metadata db_mt_metadata(struct db_mt const *db, unsigned idx);
 
 #endif

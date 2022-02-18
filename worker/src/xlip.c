@@ -84,11 +84,11 @@ error:
     return false;
 }
 
-void xlip_write_cstr(struct lip_io_file *io, char const str[])
+bool xlip_write_cstr(struct lip_io_file *io, char const str[])
 {
     unsigned size = (unsigned)strlen(str);
-    lip_write_str_size(io, size);
-    lip_write_str_data(io, size, str);
+    if (!lip_write_str_size(io, size)) return false;
+    return lip_write_str_data(io, size, str);
 }
 
 void xlip_read_cstr(struct lip_io_file *io, unsigned size, char str[])

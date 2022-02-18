@@ -63,7 +63,7 @@ static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
     return RC_DONE;
 }
 
-static enum rc record_offset(struct cmp_ctx_s *cmp, int64_t *offset)
+static enum rc record_offset(struct lip_io_file *cmp, int64_t *offset)
 {
     if ((*offset = cmp_ftell(cmp)) == -1)
         return error(RC_EIO, "failed to ftello");
@@ -76,7 +76,7 @@ static enum rc partition_it(struct profile_reader *reader, struct db *db)
     reader->partition_offset[0] = db->profile_offsets[0];
     if ((rc = __rewind(reader, 1))) return rc;
 
-    struct cmp_ctx_s *cmp = &reader->cmp[0];
+    struct lip_io_file *cmp = &reader->cmp[0];
     unsigned npartitions = reader->npartitions;
     unsigned nprofiles = db_nprofiles(db);
     unsigned i = 0;

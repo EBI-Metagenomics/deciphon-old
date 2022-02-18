@@ -63,11 +63,11 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
 
 void protein_profile_write_dot(struct protein_profile const *prof, FILE *fp);
 
-struct cmp_ctx_s;
+struct lip_io_file;
 
 enum rc protein_profile_read(struct protein_profile *prof,
-                             struct cmp_ctx_s *cmp);
+                             struct lip_io_file *cmp);
 enum rc protein_profile_write(struct protein_profile const *prof,
-                              struct cmp_ctx_s *cmp);
+                              struct lip_io_file *cmp);
 
 #endif

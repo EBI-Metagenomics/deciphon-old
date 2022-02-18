@@ -1,18 +1,18 @@
 #include "db_reader.h"
-#include "js.h"
 #include "profile_types.h"
+#include "xlip.h"
 
-enum rc db_reader_open(struct db_reader *reader, FILE *fp)
+enum rc db_reader_open(struct db_reader *reader, struct lip_io_file *io)
 {
     struct db_vtable vtable = {0};
     struct db *db = (struct db *)&reader->db;
     /* TODO: implement a db_file_typeid instead */
     db_init(db, vtable);
-    db_openr(db, fp);
+    db_openr(db, io);
 
-    JS_XPEC_STR(&db->file.cmp, "header");
-    uint32_t size = 0;
-    cmp_read_map(&db->file.cmp, &size);
+    if (xlip_expect_key(&db->file.cmp, "header")) return RC_EPARSE;
+    unsigned size = 0;
+    lip_read_map_size(&db->file.cmp, &size);
 
     enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(db))) return rc;
@@ -25,11 +25,11 @@ enum rc db_reader_open(struct db_reader *reader, FILE *fp)
     else
         assert(false);
 
-    rewind(fp);
+    rewind(io->fp);
     if (reader->typeid == DB_STANDARD)
-        return standard_db_openr(&reader->db.std, fp);
+        return standard_db_openr(&reader->db.std, io);
     else if (reader->typeid == DB_PROTEIN)
-        return protein_db_openr(&reader->db.pro, fp);
+        return protein_db_openr(&reader->db.pro, io);
     else
         assert(false);
 

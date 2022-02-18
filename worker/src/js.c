@@ -1,19 +1,18 @@
 #include "js.h"
-#include "cmp/cmp.h"
 #include <assert.h>
 #include <stdint.h>
 
-bool js_write_int(struct cmp_ctx_s *ctx, int64_t u)
+bool js_write_int(struct lip_io_file *ctx, int64_t u)
 {
     return cmp_write_integer(ctx, u);
 }
 
-bool js_write_uint(struct cmp_ctx_s *ctx, uint64_t u)
+bool js_write_uint(struct lip_io_file *ctx, uint64_t u)
 {
     return cmp_write_uinteger(ctx, u);
 }
 
-bool js_read_i64(struct cmp_ctx_s *ctx, int64_t *u)
+bool js_read_i64(struct lip_io_file *ctx, int64_t *u)
 {
     int64_t d = 0;
     if (!cmp_read_integer(ctx, &d)) return false;
@@ -21,7 +20,7 @@ bool js_read_i64(struct cmp_ctx_s *ctx, int64_t *u)
     return true;
 }
 
-bool js_read_i32(struct cmp_ctx_s *ctx, int32_t *u)
+bool js_read_i32(struct lip_io_file *ctx, int32_t *u)
 {
     int64_t d = 0;
     if (!cmp_read_integer(ctx, &d)) return false;
@@ -29,7 +28,7 @@ bool js_read_i32(struct cmp_ctx_s *ctx, int32_t *u)
     return d <= INT32_MAX;
 }
 
-bool js_read_i16(struct cmp_ctx_s *ctx, int16_t *u)
+bool js_read_i16(struct lip_io_file *ctx, int16_t *u)
 {
     int64_t d = 0;
     if (!cmp_read_integer(ctx, &d)) return false;
@@ -37,7 +36,7 @@ bool js_read_i16(struct cmp_ctx_s *ctx, int16_t *u)
     return d <= INT16_MAX;
 }
 
-bool js_read_i8(struct cmp_ctx_s *ctx, int8_t *u)
+bool js_read_i8(struct lip_io_file *ctx, int8_t *u)
 {
     int64_t d = 0;
     if (!cmp_read_integer(ctx, &d)) return false;
@@ -45,7 +44,7 @@ bool js_read_i8(struct cmp_ctx_s *ctx, int8_t *u)
     return d <= INT8_MAX;
 }
 
-bool js_read_u64(struct cmp_ctx_s *ctx, uint64_t *u)
+bool js_read_u64(struct lip_io_file *ctx, uint64_t *u)
 {
     uint64_t d = 0;
     if (!cmp_read_uinteger(ctx, &d)) return false;
@@ -53,7 +52,7 @@ bool js_read_u64(struct cmp_ctx_s *ctx, uint64_t *u)
     return true;
 }
 
-bool js_read_u32(struct cmp_ctx_s *ctx, uint32_t *u)
+bool js_read_u32(struct lip_io_file *ctx, uint32_t *u)
 {
     uint64_t d = 0;
     if (!cmp_read_uinteger(ctx, &d)) return false;
@@ -61,7 +60,7 @@ bool js_read_u32(struct cmp_ctx_s *ctx, uint32_t *u)
     return d <= UINT32_MAX;
 }
 
-bool js_read_u16(struct cmp_ctx_s *ctx, uint16_t *u)
+bool js_read_u16(struct lip_io_file *ctx, uint16_t *u)
 {
     uint64_t d = 0;
     if (!cmp_read_uinteger(ctx, &d)) return false;
@@ -69,7 +68,7 @@ bool js_read_u16(struct cmp_ctx_s *ctx, uint16_t *u)
     return d <= UINT16_MAX;
 }
 
-bool js_read_u8(struct cmp_ctx_s *ctx, uint8_t *u)
+bool js_read_u8(struct lip_io_file *ctx, uint8_t *u)
 {
     uint64_t d = 0;
     if (!cmp_read_uinteger(ctx, &d)) return false;
@@ -83,25 +82,25 @@ static inline void make_sure_cstring(char const *str, uint32_t size)
         assert(str[i]);
 }
 
-bool js_write_str(struct cmp_ctx_s *ctx, char const *str, uint32_t size)
+bool js_write_str(struct lip_io_file *ctx, char const *str, uint32_t size)
 {
     make_sure_cstring(str, size);
     return cmp_write_str(ctx, str, size);
 }
 
-bool js_read_str_size(struct cmp_ctx_s *ctx, uint32_t *size)
+bool js_read_str_size(struct lip_io_file *ctx, uint32_t *size)
 {
     return cmp_read_str_size(ctx, size);
 }
 
-bool js_read_str(struct cmp_ctx_s *ctx, char *str, uint32_t *size)
+bool js_read_str(struct lip_io_file *ctx, char *str, uint32_t *size)
 {
     bool ok = cmp_read_str(ctx, str, size);
     make_sure_cstring(str, *size);
     return ok;
 }
 
-bool js_xpec_str(struct cmp_ctx_s *ctx, char const *str, uint32_t size)
+bool js_xpec_str(struct lip_io_file *ctx, char const *str, uint32_t size)
 {
     uint32_t sz = 0;
     if (!js_read_str_size(ctx, &sz)) return false;
@@ -117,12 +116,12 @@ bool js_xpec_str(struct cmp_ctx_s *ctx, char const *str, uint32_t size)
     return str[sz] == 0;
 }
 
-bool js_write_map(struct cmp_ctx_s *ctx, uint32_t size)
+bool js_write_map(struct lip_io_file *ctx, uint32_t size)
 {
     return cmp_write_map(ctx, size);
 }
 
-bool js_xpec_map(struct cmp_ctx_s *ctx, uint32_t size)
+bool js_xpec_map(struct lip_io_file *ctx, uint32_t size)
 {
     uint32_t u32 = 0;
     if (!cmp_read_map(ctx, &u32)) return false;

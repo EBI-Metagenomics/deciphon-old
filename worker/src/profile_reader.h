@@ -1,7 +1,6 @@
 #ifndef PROFILE_READER_H
 #define PROFILE_READER_H
 
-#include "cmp/cmp.h"
 #include "common/limits.h"
 #include "common/rc.h"
 #include "profile_types.h"
@@ -15,7 +14,7 @@ struct profile_reader
     unsigned npartitions;
     unsigned partition_size[NUM_PARTITIONS];
     int64_t partition_offset[NUM_PARTITIONS + 1];
-    struct cmp_ctx_s cmp[NUM_PARTITIONS];
+    struct lip_io_file cmp[NUM_PARTITIONS];
     enum profile_typeid profile_typeid;
     union
     {

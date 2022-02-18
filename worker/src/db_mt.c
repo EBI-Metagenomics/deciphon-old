@@ -1,9 +1,10 @@
 #include "db_mt.h"
-#include "cmp/cmp.h"
 #include "common/limits.h"
 #include "common/logger.h"
 #include "js.h"
+#include "xlip.h"
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -35,14 +36,14 @@ void db_mt_cleanup(struct db_mt *db)
     cleanup_metadata_parsing(db);
 }
 
-static enum rc read_metadata_data(struct db_mt *db, struct cmp_ctx_s *cmp)
+static enum rc read_metadata_data(struct db_mt *db, struct lip_io_file *io)
 {
     assert(db->size > 0);
 
     if (!(db->data = malloc(sizeof(char) * db->size)))
         return error(RC_ENOMEM, "failed to alloc for mt.data");
 
-    if (!cmp_read(cmp, db->data, db->size))
+    if (!lip_read_str_data(io, db->size, db->data))
     {
         cleanup_metadata_data(db);
         return eio("read metadata");
@@ -112,9 +113,9 @@ static inline uint32_t max_mt_data_size(void)
     return MAX_NPROFILES * (PROFILE_NAME_SIZE + PROFILE_ACC_SIZE);
 }
 
-static enum rc read_metadata_size(struct db_mt *db, struct cmp_ctx_s *cmp)
+static enum rc read_metadata_size(struct db_mt *db, struct lip_io_file *io)
 {
-    if (!cmp_read_u32(cmp, &db->size)) return eio("read metadata size");
+    if (!lip_read_int(io, &db->size)) return eio("read metadata size");
 
     if (db->size > max_mt_data_size())
         return error(RC_EFAIL, "mt.data size is too big");
@@ -122,21 +123,20 @@ static enum rc read_metadata_size(struct db_mt *db, struct cmp_ctx_s *cmp)
     return RC_DONE;
 }
 
-enum rc db_mt_read(struct db_mt *db, unsigned nprofiles, struct cmp_ctx_s *cmp)
+enum rc db_mt_read(struct db_mt *db, unsigned nprofiles, struct lip_io_file *io)
 {
     enum rc rc = RC_DONE;
 
-    if (!JS_XPEC_STR(cmp, "metadata")) eio("skip key");
-    uint32_t size = 0;
-    cmp_read_bin_size(cmp, &size);
+    if (!xlip_expect_key(io, "metadata")) eio("skip key");
+    unsigned size = 0;
+    lip_read_str_size(io, &size);
     if (size > max_mt_data_size())
         return error(RC_EFAIL, "mt.data size is too big");
     db->size = size;
-    // if ((rc = read_metadata_size(db, cmp))) goto cleanup;
 
     if (db->size > 0)
     {
-        if ((rc = read_metadata_data(db, cmp))) goto cleanup;
+        if ((rc = read_metadata_data(db, io))) goto cleanup;
         if ((rc = alloc_metadata_parsing(db, nprofiles))) goto cleanup;
         if ((rc = parse_metadata(db, nprofiles))) goto cleanup;
     }
@@ -150,10 +150,9 @@ cleanup:
 }
 
 static enum rc write_name(struct db_mt *db, struct metadata mt,
-                          struct cmp_ctx_s *dst)
+                          struct lip_io_file *dst)
 {
-    if (!cmp_write_str(dst, mt.name, (uint32_t)strlen(mt.name)))
-        return eio("write profile name");
+    if (!xlip_write_cstr(dst, mt.name)) return eio("write profile name");
     /* +1 for null-terminated string */
     db->size += (uint32_t)strlen(mt.name) + 1;
 
@@ -161,17 +160,17 @@ static enum rc write_name(struct db_mt *db, struct metadata mt,
 }
 
 static enum rc write_accession(struct db_mt *db, struct metadata mt,
-                               struct cmp_ctx_s *dst)
+                               struct lip_io_file *dst)
 {
-    if (!cmp_write_str(dst, mt.acc, (uint32_t)strlen(mt.acc)))
-        return eio("write profile accession");
+    if (!xlip_write_cstr(dst, mt.acc)) return eio("write profile accession");
     /* +1 for null-terminated string */
     db->size += (uint32_t)strlen(mt.acc) + 1;
 
     return RC_DONE;
 }
 
-enum rc db_mt_write(struct db_mt *db, struct metadata mt, struct cmp_ctx_s *dst)
+enum rc db_mt_write(struct db_mt *db, struct metadata mt,
+                    struct lip_io_file *dst)
 {
     if (!mt.name) return error(RC_EINVAL, "metadata not set");
 

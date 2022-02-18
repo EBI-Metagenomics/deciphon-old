@@ -25,7 +25,7 @@ bool xlip_expect_1darray_float(struct lip_io_file *, unsigned size,
 bool xlip_expect_1darray_float_type(struct lip_io_file *io, unsigned size,
                                     uint8_t type, imm_float arr[]);
 
-void xlip_write_cstr(struct lip_io_file *io, char const str[]);
+bool xlip_write_cstr(struct lip_io_file *io, char const str[]);
 void xlip_read_cstr(struct lip_io_file *io, unsigned size, char str[]);
 
 static inline void xlip_write_key(struct lip_io_file *io, char const key[])

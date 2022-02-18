@@ -1,7 +1,6 @@
 #ifndef DB_H
 #define DB_H
 
-#include "cmp/cmp.h"
 #include "db_mt.h"
 #include "db_tmp.h"
 #include "metadata.h"
@@ -20,7 +19,7 @@ struct db_vtable
 {
     int typeid;
     struct imm_abc const *(*abc)(struct db const *db);
-    enum rc (*write_profile)(struct cmp_ctx_s *dst, struct profile const *prof);
+    enum rc (*write_profile)(struct lip_io_file *dst, struct profile const *prof);
     unsigned header_size;
 };
 
@@ -39,7 +38,7 @@ struct db
 
     struct
     {
-        struct cmp_ctx_s cmp;
+        struct lip_io_file cmp;
         enum db_mode mode;
     } file;
 

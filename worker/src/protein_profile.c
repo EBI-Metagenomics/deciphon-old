@@ -1,5 +1,4 @@
 #include "protein_profile.h"
-#include "cmp/cmp.h"
 #include "common/logger.h"
 #include "imm/imm.h"
 #include "js.h"
@@ -35,7 +34,7 @@ static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
     return RC_DONE;
 }
 
-static enum rc read(struct profile *prof, struct cmp_ctx_s *cmp)
+static enum rc read(struct profile *prof, struct lip_io_file *cmp)
 {
     struct protein_profile *p = (struct protein_profile *)prof;
     uint32_t u32 = 0;
@@ -332,7 +331,7 @@ void protein_profile_write_dot(struct protein_profile const *p, FILE *fp)
 }
 
 enum rc protein_profile_write(struct protein_profile const *prof,
-                              struct cmp_ctx_s *cmp)
+                              struct lip_io_file *cmp)
 {
     if (!cmp_write_map(cmp, 15)) return eio("write profile map size");
 

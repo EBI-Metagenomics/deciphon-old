@@ -7,7 +7,7 @@
 static_assert(sizeof(size_t) >= 8, "64-bits");
 static_assert(sizeof(off_t) >= 8, "64-bits");
 
-static bool read(struct cmp_ctx_s *ctx, void *data, size_t sz)
+static bool read(struct lip_io_file *ctx, void *data, size_t sz)
 {
     struct xcmp *x = ctx->buf;
     memcpy(data, x->read.buff + x->read.pos, sz);
@@ -15,12 +15,12 @@ static bool read(struct cmp_ctx_s *ctx, void *data, size_t sz)
     return true;
 }
 
-// static bool skip(struct cmp_ctx_s *ctx, size_t count)
+// static bool skip(struct lip_io_file *ctx, size_t count)
 // {
 //     return fseeko((FILE *)ctx->buf, (off_t)count, SEEK_CUR) != -1;
 // }
 
-static size_t write(struct cmp_ctx_s *ctx, const void *data, size_t count)
+static size_t write(struct lip_io_file *ctx, const void *data, size_t count)
 {
     struct xcmp *x = ctx->buf;
     return fwrite(data, sizeof(uint8_t), count, x->fp);

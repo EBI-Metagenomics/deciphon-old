@@ -1,5 +1,4 @@
 #include "protein_db.h"
-#include "cmp/cmp.h"
 #include "common/logger.h"
 #include "common/rc.h"
 #include "common/xmath.h"
@@ -17,7 +16,7 @@ static struct imm_abc const *abc(struct db const *db)
     return &p->nuclt.super;
 }
 
-static enum rc write_profile(struct cmp_ctx_s *dst, struct profile const *prof)
+static enum rc write_profile(struct lip_io_file *dst, struct profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     struct protein_profile const *p = (struct protein_profile const *)prof;
@@ -26,7 +25,7 @@ static enum rc write_profile(struct cmp_ctx_s *dst, struct profile const *prof)
 
 static struct db_vtable vtable = {DB_PROTEIN, abc, write_profile, 8};
 
-static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
+static enum rc read_epsilon(struct lip_io_file *cmp, unsigned float_bytes,
                             imm_float *epsilon)
 {
     if (!JS_XPEC_STR(cmp, "epsilon")) eio("skip key");
@@ -40,7 +39,7 @@ static enum rc read_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
     return RC_DONE;
 }
 
-static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
+static enum rc write_epsilon(struct lip_io_file *cmp, unsigned float_bytes,
                              imm_float epsilon)
 {
     if (!JS_WRITE_STR(cmp, "epsilon")) eio("write epsilon key");
@@ -55,7 +54,7 @@ static enum rc write_epsilon(struct cmp_ctx_s *cmp, unsigned float_bytes,
     return RC_DONE;
 }
 
-static enum rc read_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist *edist)
+static enum rc read_entry_dist(struct lip_io_file *cmp, enum entry_dist *edist)
 {
     if (!JS_XPEC_STR(cmp, "entry_dist")) eio("skip key");
     uint64_t val = 0;
@@ -64,7 +63,7 @@ static enum rc read_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist *edist)
     return RC_DONE;
 }
 
-static enum rc write_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist edist)
+static enum rc write_entry_dist(struct lip_io_file *cmp, enum entry_dist edist)
 {
     if (!JS_WRITE_STR(cmp, "entry_dist")) eio("write entry_dist key");
     if (!cmp_write_uinteger(cmp, (uint64_t)edist))
@@ -72,14 +71,14 @@ static enum rc write_entry_dist(struct cmp_ctx_s *cmp, enum entry_dist edist)
     return RC_DONE;
 }
 
-static enum rc read_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt *nuclt)
+static enum rc read_nuclt(struct lip_io_file *cmp, struct imm_nuclt *nuclt)
 {
     if (!JS_XPEC_STR(cmp, "abc")) eio("skip abc key");
     if (imm_abc_read_cmp(&nuclt->super, cmp)) return eio("read nuclt abc");
     return RC_DONE;
 }
 
-static enum rc write_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt const *nuclt)
+static enum rc write_nuclt(struct lip_io_file *cmp, struct imm_nuclt const *nuclt)
 {
     if (!JS_WRITE_STR(cmp, "abc")) eio("write abc key");
     if (imm_abc_write(&nuclt->super, cmp_file(cmp)))
@@ -87,14 +86,14 @@ static enum rc write_nuclt(struct cmp_ctx_s *cmp, struct imm_nuclt const *nuclt)
     return RC_DONE;
 }
 
-static enum rc read_amino(struct cmp_ctx_s *cmp, struct imm_amino *amino)
+static enum rc read_amino(struct lip_io_file *cmp, struct imm_amino *amino)
 {
     if (!JS_XPEC_STR(cmp, "amino")) eio("skip amino key");
     if (imm_abc_read_cmp(&amino->super, cmp)) return eio("read amino abc");
     return RC_DONE;
 }
 
-static enum rc write_amino(struct cmp_ctx_s *cmp, struct imm_amino const *amino)
+static enum rc write_amino(struct lip_io_file *cmp, struct imm_amino const *amino)
 {
     if (!JS_WRITE_STR(cmp, "amino")) eio("write amino key");
     if (imm_abc_write(&amino->super, cmp_file(cmp)))
@@ -117,7 +116,7 @@ enum rc protein_db_openr(struct protein_db *db, FILE *fp)
     protein_db_init(db);
     db_openr(&db->super, fp);
 
-    struct cmp_ctx_s *cmp = &db->super.file.cmp;
+    struct lip_io_file *cmp = &db->super.file.cmp;
     imm_float *epsilon = &db->cfg.epsilon;
 
     enum rc rc = RC_DONE;
@@ -154,7 +153,7 @@ enum rc protein_db_openw(struct protein_db *db, FILE *fp,
     db->cfg = cfg;
     imm_nuclt_code_init(&db->code, &db->nuclt);
 
-    struct cmp_ctx_s *hdr = &db->super.tmp.hdr;
+    struct lip_io_file *hdr = &db->super.tmp.hdr;
     unsigned float_size = db->super.float_size;
     imm_float epsilon = db->cfg.epsilon;
 

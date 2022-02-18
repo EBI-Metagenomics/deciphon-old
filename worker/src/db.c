@@ -1,5 +1,4 @@
 #include "db.h"
-#include "cmp/cmp.h"
 #include "common/compiler.h"
 #include "common/limits.h"
 #include "common/logger.h"
@@ -16,7 +15,7 @@
 
 #define MAGIC_NUMBER 0xC6F0
 
-static enum rc copy_tmp_prof(struct cmp_ctx_s *dst, struct cmp_ctx_s *tmp,
+static enum rc copy_tmp_prof(struct lip_io_file *dst, struct lip_io_file *tmp,
                              unsigned nprofiles, int64_t base_offset)
 {
     rewind(cmp_file(tmp));
@@ -31,7 +30,7 @@ static enum rc copy_tmp_prof(struct cmp_ctx_s *dst, struct cmp_ctx_s *tmp,
     return RC_DONE;
 }
 
-static enum rc copy_tmp_mt(struct cmp_ctx_s *dst, struct cmp_ctx_s *tmp,
+static enum rc copy_tmp_mt(struct lip_io_file *dst, struct lip_io_file *tmp,
                            unsigned nprofiles)
 {
     rewind(cmp_file(tmp));
@@ -79,7 +78,7 @@ void db_openr(struct db *db, FILE *fp)
     db->file.mode = DB_OPEN_READ;
 }
 
-static enum rc write_header_root_map(struct cmp_ctx_s *cmp, unsigned size)
+static enum rc write_header_root_map(struct lip_io_file *cmp, unsigned size)
 {
     if (!cmp_write_map(cmp, size)) return eio("write header map size");
     return RC_DONE;
@@ -195,27 +194,27 @@ void db_cleanup(struct db *db)
     db_tmp_close(&db->tmp);
 }
 
-static enum rc db_write_header_key(struct cmp_ctx_s *cmp, unsigned size)
+static enum rc db_write_header_key(struct lip_io_file *io, unsigned size)
 {
-    if (!cmp_write_map(cmp, size)) eio("write header map size");
-    if (!JS_WRITE_STR(cmp, "header")) eio("write header map key");
+    if (!cmp_write_map(io, size)) eio("write header map size");
+    if (!JS_WRITE_STR(io, "header")) eio("write header map key");
     return RC_DONE;
 }
 
-static enum rc db_write_profile_key(struct cmp_ctx_s *cmp, unsigned size)
+static enum rc db_write_profile_key(struct lip_io_file *io, unsigned size)
 {
-    if (!cmp_write_map(cmp, size)) eio("write profile map size");
-    if (!JS_WRITE_STR(cmp, "profile")) eio("write profile map key");
+    if (!cmp_write_map(io, size)) eio("write profile map size");
+    if (!JS_WRITE_STR(io, "profile")) eio("write profile map key");
     return RC_DONE;
 }
 
 enum rc db_read_magic_number(struct db *db)
 {
-    struct cmp_ctx_s *cmp = &db->file.cmp;
-    if (!JS_XPEC_STR(cmp, "magic_number")) return eio("skip magic_number key");
+    struct lip_io_file *io = &db->file.cmp;
+    if (!JS_XPEC_STR(io, "magic_number")) return eio("skip magic_number key");
 
     int64_t magic_number = 0;
-    if (!cmp_read_integer(cmp, &magic_number)) return eio("read magic number");
+    if (!cmp_read_integer(io, &magic_number)) return eio("read magic number");
 
     if (magic_number != MAGIC_NUMBER)
         return error(RC_EPARSE, "wrong file magic number");
@@ -225,40 +224,40 @@ enum rc db_read_magic_number(struct db *db)
 
 enum rc db_write_magic_number(struct db *db)
 {
-    struct cmp_ctx_s *cmp = &db->tmp.hdr;
-    if (!JS_WRITE_STR(cmp, "magic_number")) eio("write magic_number map key");
-    if (!cmp_write_integer(cmp, MAGIC_NUMBER)) eio("write magic number");
+    struct lip_io_file *io = &db->tmp.hdr;
+    if (!JS_WRITE_STR(io, "magic_number")) eio("write magic_number map key");
+    if (!cmp_write_integer(io, MAGIC_NUMBER)) eio("write magic number");
     return RC_DONE;
 }
 
 enum rc db_read_profile_typeid(struct db *db)
 {
-    struct cmp_ctx_s *cmp = &db->file.cmp;
-    if (!JS_XPEC_STR(cmp, "profile_typeid"))
+    struct lip_io_file *io = &db->file.cmp;
+    if (!JS_XPEC_STR(io, "profile_typeid"))
         return eio("skip profile_typeid key");
     int64_t v = 0;
-    if (!cmp_read_integer(cmp, &v)) return eio("read profile typeid");
+    if (!cmp_read_integer(io, &v)) return eio("read profile typeid");
     db->profile_typeid = (int)v;
     return RC_DONE;
 }
 
 enum rc db_write_profile_typeid(struct db *db)
 {
-    struct cmp_ctx_s *cmp = &db->tmp.hdr;
-    if (!JS_WRITE_STR(cmp, "profile_typeid"))
+    struct lip_io_file *io = &db->tmp.hdr;
+    if (!JS_WRITE_STR(io, "profile_typeid"))
         eio("write profile_typeid map key");
-    if (!cmp_write_integer(cmp, db->profile_typeid))
+    if (!cmp_write_integer(io, db->profile_typeid))
         return eio("write profile_typeid");
     return RC_DONE;
 }
 
 enum rc db_read_float_size(struct db *db)
 {
-    struct cmp_ctx_s *cmp = &db->file.cmp;
-    if (!JS_XPEC_STR(cmp, "float_size")) return eio("skip float_size key");
+    struct lip_io_file *io = &db->file.cmp;
+    if (!JS_XPEC_STR(io, "float_size")) return eio("skip float_size key");
 
     uint64_t v = 0;
-    if (!cmp_read_uinteger(cmp, &v)) return eio("read float size");
+    if (!cmp_read_uinteger(io, &v)) return eio("read float size");
     if (v != 4 && v != 8) return error(RC_EPARSE, "invalid float size");
 
     db->float_size = (unsigned)v;
@@ -267,12 +266,12 @@ enum rc db_read_float_size(struct db *db)
 
 enum rc db_write_float_size(struct db *db)
 {
-    struct cmp_ctx_s *cmp = &db->tmp.hdr;
-    if (!JS_WRITE_STR(cmp, "float_size")) eio("write float_size map key");
+    struct lip_io_file *io = &db->tmp.hdr;
+    if (!JS_WRITE_STR(io, "float_size")) eio("write float_size map key");
 
     unsigned size = IMM_FLOAT_BYTES;
     assert(size == 4 || size == 8);
-    if (!cmp_write_uinteger(cmp, size)) return eio("write float size");
+    if (!cmp_write_uinteger(io, size)) return eio("write float size");
     return RC_DONE;
 }
 
@@ -288,11 +287,11 @@ static enum rc check_metadata_profile_compatibility(struct db const *db)
 
 enum rc db_read_profile_sizes(struct db *db)
 {
-    struct cmp_ctx_s *cmp = &db->file.cmp;
-    if (!JS_XPEC_STR(cmp, "profile_size")) eio("skip profile_size key");
+    struct lip_io_file *io = &db->file.cmp;
+    if (!JS_XPEC_STR(io, "profile_size")) eio("skip profile_size key");
 
     uint32_t n = 0;
-    if (!cmp_read_array(cmp, &n)) return eio("read array size");
+    if (!cmp_read_array(io, &n)) return eio("read array size");
     assert(n <= MAX_NPROFILES);
     db->nprofiles = (unsigned)n;
 
