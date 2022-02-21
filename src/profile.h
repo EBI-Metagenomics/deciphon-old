@@ -5,14 +5,14 @@
 #include "imm/imm.h"
 #include "dcp/rc.h"
 
-struct lip_io_file;
+struct lip_file;
 struct profile;
 
 struct profile_vtable
 {
     int typeid;
     void (*del)(struct profile *prof);
-    enum rc (*read)(struct profile *prof, struct lip_io_file *);
+    enum rc (*read)(struct profile *prof, struct lip_file *);
     struct imm_dp const *(*null_dp)(struct profile const *prof);
     struct imm_dp const *(*alt_dp)(struct profile const *prof);
 };
@@ -27,7 +27,7 @@ struct profile
 
 void profile_del(struct profile *prof);
 
-enum rc profile_read(struct profile *prof, struct lip_io_file *cmp);
+enum rc profile_read(struct profile *prof, struct lip_file *cmp);
 
 int profile_typeid(struct profile const *prof);
 struct imm_dp const *profile_null_dp(struct profile const *prof);

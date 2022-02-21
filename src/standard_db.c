@@ -13,7 +13,7 @@ static struct imm_abc const *abc(struct db const *db)
     return &s->abc;
 }
 
-static enum rc write_profile(struct lip_io_file *dst, struct profile const *prof)
+static enum rc write_profile(struct lip_file *dst, struct profile const *prof)
 {
     /* TODO: db_check_write_prof_ready(&db->super, &prof->super) */
     struct standard_profile const *p = (struct standard_profile const *)prof;
@@ -22,14 +22,14 @@ static enum rc write_profile(struct lip_io_file *dst, struct profile const *prof
 
 static struct db_vtable vtable = {DB_STANDARD, abc, write_profile, 6};
 
-static enum rc read_abc(struct lip_io_file *cmp, struct imm_abc *abc)
+static enum rc read_abc(struct lip_file *cmp, struct imm_abc *abc)
 {
     if (!cmp_write_str(cmp, "abc", 3)) eio("write abc key");
     if (imm_abc_read_cmp(abc, cmp)) return error(RC_EIO, "failed to read abc");
     return RC_DONE;
 }
 
-static enum rc write_abc(struct lip_io_file *cmp, struct imm_abc const *abc)
+static enum rc write_abc(struct lip_file *cmp, struct imm_abc const *abc)
 {
     if (!JS_XPEC_STR(cmp, "abc")) eio("skip abc key");
     if (imm_abc_write(abc, cmp_file(cmp)))
@@ -49,7 +49,7 @@ enum rc standard_db_openr(struct standard_db *db, FILE *fp)
     standard_db_init(db);
     db_openr(&db->super, fp);
 
-    struct lip_io_file *cmp = &db->super.file.cmp;
+    struct lip_file *cmp = &db->super.file.cmp;
 
     enum rc rc = RC_DONE;
     if ((rc = db_read_magic_number(&db->super))) return rc;
@@ -72,7 +72,7 @@ enum rc standard_db_openw(struct standard_db *db, FILE *fp,
     standard_db_init(db);
     db->code = *code;
 
-    struct lip_io_file *hdr = &db->super.tmp.hdr;
+    struct lip_file *hdr = &db->super.tmp.hdr;
 
     enum rc rc = RC_DONE;
     if ((rc = db_openw(&db->super, fp))) goto cleanup;

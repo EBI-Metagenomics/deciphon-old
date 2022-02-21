@@ -1,6 +1,6 @@
 #include "nuclt_dist.h"
 
-enum rc nuclt_dist_write(struct nuclt_dist const *ndist, struct lip_io_file *cmp)
+enum rc nuclt_dist_write(struct nuclt_dist const *ndist, struct lip_file *cmp)
 {
     enum rc rc = RC_EFAIL;
     cmp_write_array(cmp, 2);
@@ -9,7 +9,7 @@ enum rc nuclt_dist_write(struct nuclt_dist const *ndist, struct lip_io_file *cmp
     return RC_DONE;
 }
 
-enum rc nuclt_dist_read(struct nuclt_dist *ndist, struct lip_io_file *cmp)
+enum rc nuclt_dist_read(struct nuclt_dist *ndist, struct lip_file *cmp)
 {
     enum rc rc = RC_EFAIL;
     uint32_t size = 0;

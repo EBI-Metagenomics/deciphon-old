@@ -17,9 +17,9 @@ struct db_reader
     } db;
 };
 
-struct lip_io_file;
+struct lip_file;
 
-enum rc db_reader_open(struct db_reader *reader, struct lip_io_file *io);
+enum rc db_reader_open(struct db_reader *reader, struct lip_file *io);
 struct db *db_reader_db(struct db_reader *reader);
 enum rc db_reader_close(struct db_reader *reader);
 

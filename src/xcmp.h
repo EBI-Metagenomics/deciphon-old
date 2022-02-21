@@ -11,7 +11,7 @@ enum xcmp_mode
 
 struct xcmp
 {
-    struct lip_io_file cmp;
+    struct lip_file cmp;
     FILE *fp;
     enum xcmp_mode mode;
     struct

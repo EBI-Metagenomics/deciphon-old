@@ -36,7 +36,7 @@ void db_mt_cleanup(struct db_mt *db)
     cleanup_metadata_parsing(db);
 }
 
-static enum rc read_metadata_data(struct db_mt *db, struct lip_io_file *io)
+static enum rc read_metadata_data(struct db_mt *db, struct lip_file *io)
 {
     assert(db->size > 0);
 
@@ -113,7 +113,7 @@ static inline uint32_t max_mt_data_size(void)
     return MAX_NPROFILES * (PROFILE_NAME_SIZE + PROFILE_ACC_SIZE);
 }
 
-static enum rc read_metadata_size(struct db_mt *db, struct lip_io_file *io)
+static enum rc read_metadata_size(struct db_mt *db, struct lip_file *io)
 {
     if (!lip_read_int(io, &db->size)) return eio("read metadata size");
 
@@ -123,7 +123,7 @@ static enum rc read_metadata_size(struct db_mt *db, struct lip_io_file *io)
     return RC_DONE;
 }
 
-enum rc db_mt_read(struct db_mt *db, unsigned nprofiles, struct lip_io_file *io)
+enum rc db_mt_read(struct db_mt *db, unsigned nprofiles, struct lip_file *io)
 {
     enum rc rc = RC_DONE;
 
@@ -150,7 +150,7 @@ cleanup:
 }
 
 static enum rc write_name(struct db_mt *db, struct metadata mt,
-                          struct lip_io_file *dst)
+                          struct lip_file *dst)
 {
     if (!xlip_write_cstr(dst, mt.name)) return eio("write profile name");
     /* +1 for null-terminated string */
@@ -160,7 +160,7 @@ static enum rc write_name(struct db_mt *db, struct metadata mt,
 }
 
 static enum rc write_accession(struct db_mt *db, struct metadata mt,
-                               struct lip_io_file *dst)
+                               struct lip_file *dst)
 {
     if (!xlip_write_cstr(dst, mt.acc)) return eio("write profile accession");
     /* +1 for null-terminated string */
@@ -170,7 +170,7 @@ static enum rc write_accession(struct db_mt *db, struct metadata mt,
 }
 
 enum rc db_mt_write(struct db_mt *db, struct metadata mt,
-                    struct lip_io_file *dst)
+                    struct lip_file *dst)
 {
     if (!mt.name) return error(RC_EINVAL, "metadata not set");
 

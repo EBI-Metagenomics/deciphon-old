@@ -19,7 +19,7 @@ static void del(struct profile *prof)
     }
 }
 
-static enum rc read(struct profile *prof, struct lip_io_file *cmp)
+static enum rc read(struct profile *prof, struct lip_file *cmp)
 {
     struct standard_profile *p = (struct standard_profile *)prof;
     if (imm_dp_read_cmp(&p->dp.null, cmp)) return RC_EFAIL;
@@ -51,7 +51,7 @@ void standard_profile_init(struct standard_profile *prof,
 }
 
 enum rc standard_profile_write(struct standard_profile const *prof,
-                               struct lip_io_file *cmp)
+                               struct lip_file *cmp)
 {
     FILE *fp = cmp_file(cmp);
 

@@ -2,14 +2,14 @@
 #include "imm/support.h"
 #include "lite_pack/lite_pack.h"
 
-bool xlip_expect_map(struct lip_io_file *io, unsigned size)
+bool xlip_expect_map(struct lip_file *io, unsigned size)
 {
     unsigned sz = 0;
     lip_read_map_size(io, &sz);
     return size == sz;
 }
 
-bool xlip_expect_key(struct lip_io_file *io, char const key[])
+bool xlip_expect_key(struct lip_file *io, char const key[])
 {
     unsigned size = 0;
     char buf[16] = {0};
@@ -22,7 +22,7 @@ bool xlip_expect_key(struct lip_io_file *io, char const key[])
     return strncmp(key, buf, size) == 0;
 }
 
-bool xlip_expect_1darray_u8(struct lip_io_file *io, unsigned size,
+bool xlip_expect_1darray_u8(struct lip_file *io, unsigned size,
                             uint8_t arr[])
 {
     unsigned sz = 0;
@@ -37,7 +37,7 @@ error:
     return false;
 }
 
-bool xlip_expect_1darray_u8_type(struct lip_io_file *io, unsigned size,
+bool xlip_expect_1darray_u8_type(struct lip_file *io, unsigned size,
                                  uint8_t type, uint8_t arr[])
 {
     unsigned sz = 0;
@@ -53,7 +53,7 @@ error:
     return false;
 }
 
-bool xlip_expect_1darray_float(struct lip_io_file *io, unsigned size,
+bool xlip_expect_1darray_float(struct lip_file *io, unsigned size,
                                imm_float arr[])
 {
     unsigned sz = 0;
@@ -68,7 +68,7 @@ error:
     return false;
 }
 
-bool xlip_expect_1darray_float_type(struct lip_io_file *io, unsigned size,
+bool xlip_expect_1darray_float_type(struct lip_file *io, unsigned size,
                                     uint8_t type, imm_float arr[])
 {
     unsigned sz = 0;
@@ -84,14 +84,14 @@ error:
     return false;
 }
 
-bool xlip_write_cstr(struct lip_io_file *io, char const str[])
+bool xlip_write_cstr(struct lip_file *io, char const str[])
 {
     unsigned size = (unsigned)strlen(str);
     if (!lip_write_str_size(io, size)) return false;
     return lip_write_str_data(io, size, str);
 }
 
-void xlip_read_cstr(struct lip_io_file *io, unsigned size, char str[])
+void xlip_read_cstr(struct lip_file *io, unsigned size, char str[])
 {
     str[0] = 0;
     unsigned sz = 0;

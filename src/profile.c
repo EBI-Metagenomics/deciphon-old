@@ -6,7 +6,7 @@ void profile_del(struct profile *prof)
     if (prof) prof->vtable.del(prof);
 }
 
-enum rc profile_read(struct profile *prof, struct lip_io_file *cmp)
+enum rc profile_read(struct profile *prof, struct lip_file *cmp)
 {
     return prof->vtable.read(prof, cmp);
 }

@@ -14,7 +14,7 @@ struct profile_reader
     unsigned npartitions;
     unsigned partition_size[NUM_PARTITIONS];
     int64_t partition_offset[NUM_PARTITIONS + 1];
-    struct lip_io_file cmp[NUM_PARTITIONS];
+    struct lip_file cmp[NUM_PARTITIONS];
     enum profile_typeid profile_typeid;
     union
     {

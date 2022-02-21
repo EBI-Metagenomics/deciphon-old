@@ -341,8 +341,9 @@ enum rc db_write_profile(struct db *db, struct profile const *prof,
     int64_t end = lip_ftell(&db->tmp.prof);
     if (end < 0) eio("ftell");
 
-    uint64_t prof_size = (uint64_t)(end - start);
-    if (!lip_write_uinteger(&db->tmp.size, prof_size))
+    assert((end - start) <= UINT_MAX);
+    unsigned prof_size = (unsigned)(end - start);
+    if (!lip_write_int(&db->tmp.size, prof_size))
         return eio("write profile size");
 
     db->nprofiles++;
@@ -362,7 +363,7 @@ int db_typeid(struct db const *db) { return db->vtable.typeid; }
 
 enum rc db_set_metadata_end(struct db *db)
 {
-    if (!expect_key(&db->file.cmp, "profile")) return eio("skip key");
+    if (!expect_key(&db->file.lip, "profile")) return eio("skip key");
     int64_t off = lip_ftell(&db->file.lip);
     for (unsigned i = 0; i <= db->nprofiles; ++i)
         db->profile_offsets[i] += off;

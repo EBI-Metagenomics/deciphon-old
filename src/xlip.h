@@ -13,22 +13,22 @@
 // #define XLIP_1DARRAY_FLOAT LIP_1DARRAY_F32
 // #endif
 //
-// struct lip_io_file;
+// struct lip_file;
 //
-// bool xlip_expect_map(struct lip_io_file *io, unsigned size);
-// bool xlip_expect_key(struct lip_io_file *io, char const key[]);
-// bool xlip_expect_1darray_u8(struct lip_io_file *, unsigned size, uint8_t arr[]);
-// bool xlip_expect_1darray_u8_type(struct lip_io_file *io, unsigned size,
+// bool xlip_expect_map(struct lip_file *io, unsigned size);
+// bool xlip_expect_key(struct lip_file *io, char const key[]);
+// bool xlip_expect_1darray_u8(struct lip_file *, unsigned size, uint8_t arr[]);
+// bool xlip_expect_1darray_u8_type(struct lip_file *io, unsigned size,
 //                                  uint8_t type, uint8_t arr[]);
-// bool xlip_expect_1darray_float(struct lip_io_file *, unsigned size,
+// bool xlip_expect_1darray_float(struct lip_file *, unsigned size,
 //                                imm_float arr[]);
-// bool xlip_expect_1darray_float_type(struct lip_io_file *io, unsigned size,
+// bool xlip_expect_1darray_float_type(struct lip_file *io, unsigned size,
 //                                     uint8_t type, imm_float arr[]);
 //
-// bool xlip_write_cstr(struct lip_io_file *io, char const str[]);
-// void xlip_read_cstr(struct lip_io_file *io, unsigned size, char str[]);
+// bool xlip_write_cstr(struct lip_file *io, char const str[]);
+// void xlip_read_cstr(struct lip_file *io, unsigned size, char str[]);
 //
-// static inline void xlip_write_key(struct lip_io_file *io, char const key[])
+// static inline void xlip_write_key(struct lip_file *io, char const key[])
 // {
 //     xlip_write_cstr(io, key);
 // }

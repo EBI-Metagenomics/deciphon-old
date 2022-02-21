@@ -2,7 +2,7 @@
 #include "profile_types.h"
 #include "xlip.h"
 
-enum rc db_reader_open(struct db_reader *reader, struct lip_io_file *io)
+enum rc db_reader_open(struct db_reader *reader, struct lip_file *io)
 {
     struct db_vtable vtable = {0};
     struct db *db = (struct db *)&reader->db;
