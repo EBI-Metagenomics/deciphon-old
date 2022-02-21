@@ -19,7 +19,7 @@ struct db_vtable
 {
     int typeid;
     struct imm_abc const *(*abc)(struct db const *db);
-    enum rc (*write_profile)(struct lip_io_file *dst, struct profile const *prof);
+    enum rc (*write_profile)(struct lip_file *dst, struct profile const *prof);
     unsigned header_size;
 };
 
@@ -38,7 +38,7 @@ struct db
 
     struct
     {
-        struct lip_io_file cmp;
+        struct lip_file lip;
         enum db_mode mode;
     } file;
 

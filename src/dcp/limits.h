@@ -1,5 +1,5 @@
-#ifndef LIMITS_H
-#define LIMITS_H
+#ifndef DCP_DCP_LIMITS_H
+#define DCP_DCP_LIMITS_H
 
 #include "compiler.h"
 

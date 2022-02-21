@@ -40,36 +40,37 @@ add_library(
   ${PROJECT_NAME}
   src/buff.c
   src/db.c
-  src/db_mt.c
-  src/db_reader.c
-  src/db_tmp.c
-  src/job_state.c
-  src/js.c
-  src/nuclt_dist.c
-  src/pool.c
-  src/prod.c
-  src/profile.c
-  src/profile_reader.c
-  src/profile_types.c
-  src/progress_file.c
-  src/protein_codec.c
-  src/protein_db.c
-  src/protein_hmmer3_reader.c
-  src/protein_match.c
-  src/protein_model.c
-  src/protein_profile.c
-  src/protein_state.c
-  src/rest.c
-  src/row.c
-  src/seq.c
-  src/server.c
-  src/standard_db.c
-  src/standard_match.c
-  src/standard_profile.c
-  src/standard_state.c
-  src/table.c
-  src/tok.c
-  src/work.c)
+  # src/db_mt.c
+  # src/db_reader.c
+  # src/db_tmp.c
+  # src/job_state.c
+  # src/js.c
+  # src/nuclt_dist.c
+  # src/pool.c
+  # src/prod.c
+  # src/profile.c
+  # src/profile_reader.c
+  # src/profile_types.c
+  # src/progress_file.c
+  # src/protein_codec.c
+  # src/protein_db.c
+  # src/protein_hmmer3_reader.c
+  # src/protein_match.c
+  # src/protein_model.c
+  # src/protein_profile.c
+  # src/protein_state.c
+  # src/rest.c
+  # src/row.c
+  # src/seq.c
+  # src/server.c
+  # src/standard_db.c
+  # src/standard_match.c
+  # src/standard_profile.c
+  # src/standard_state.c
+  # src/table.c
+  # src/tok.c
+  # src/work.c
+  )
 
 add_library(DECIPHON::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 

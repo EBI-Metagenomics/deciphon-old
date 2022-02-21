@@ -1,5 +1,5 @@
-#ifndef BUG_H
-#define BUG_H
+#ifndef DCP_BUG_H
+#define DCP_BUG_H
 
 /*
  * Force a compilation error if condition is true, but also produce a
@@ -22,5 +22,4 @@
         __builtin_unreachable();                                               \
     } while (1)
 
-#endif /* !BUG_H                                                               \
-#define BUG_H */
+#endif

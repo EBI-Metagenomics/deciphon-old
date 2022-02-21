@@ -1,7 +1,7 @@
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef DCP_DCP_COMPILER_H
+#define DCP_DCP_COMPILER_H
 
-#include "common/bug.h"
+#include "bug.h"
 
 /*
  * __has_builtin is supported on gcc >= 10, clang >= 3 and icc >= 21.

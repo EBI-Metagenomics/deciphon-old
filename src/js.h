@@ -1,7 +1,7 @@
 #ifndef JS_H
 #define JS_H
 
-#include "common/compiler.h"
+#include "compiler.h"
 #include <stdbool.h>
 #include <stdint.h>
 

@@ -1,21 +1,21 @@
 #ifndef DB_TMP_H
 #define DB_TMP_H
 
-#include "common/rc.h"
-#include "xlip.h"
+#include "dcp/rc.h"
+#include "lite_pack.h"
 #include <stdint.h>
 
 struct db_tmp
 {
     union
     {
-        struct lip_io_file cmps[4];
+        struct lip_file cmps[4];
         struct
         {
-            struct lip_io_file hdr;
-            struct lip_io_file mt;
-            struct lip_io_file size;
-            struct lip_io_file prof;
+            struct lip_file hdr;
+            struct lip_file mt;
+            struct lip_file size;
+            struct lip_file prof;
         } __attribute__((packed));
     };
 };

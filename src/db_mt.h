@@ -1,8 +1,8 @@
-#ifndef DB_MT_H
-#define DB_MT_H
+#ifndef DCP_DB_MT_H
+#define DCP_DB_MT_H
 
-#include "common/rc.h"
 #include "metadata.h"
+#include "dcp/rc.h"
 #include <stdint.h>
 
 struct db_mt

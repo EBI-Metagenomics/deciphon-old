@@ -1,9 +1,9 @@
-#ifndef PROFILE_H
-#define PROFILE_H
+#ifndef DCP_PROFILE_H
+#define DCP_PROFILE_H
 
-#include "common/compiler.h"
+#include "dcp/compiler.h"
 #include "imm/imm.h"
-#include "common/rc.h"
+#include "dcp/rc.h"
 
 struct lip_io_file;
 struct profile;
