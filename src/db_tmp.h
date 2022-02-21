@@ -1,5 +1,5 @@
-#ifndef DB_TMP_H
-#define DB_TMP_H
+#ifndef DCP_DB_TMP_H
+#define DCP_DB_TMP_H
 
 #include "dcp/rc.h"
 #include "lite_pack.h"

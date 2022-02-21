@@ -1,5 +1,5 @@
-#ifndef PROTEIN_CFG_H
-#define PROTEIN_CFG_H
+#ifndef DCP_PROTEIN_CFG_H
+#define DCP_PROTEIN_CFG_H
 
 #include "entry_dist.h"
 #include "imm/imm.h"

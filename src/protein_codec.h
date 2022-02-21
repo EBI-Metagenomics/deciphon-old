@@ -1,5 +1,5 @@
-#ifndef PROTEIN_CODEC_H
-#define PROTEIN_CODEC_H
+#ifndef DCP_PROTEIN_CODEC_H
+#define DCP_PROTEIN_CODEC_H
 
 #include "common/rc.h"
 

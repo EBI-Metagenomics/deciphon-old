@@ -1,5 +1,5 @@
-#ifndef SEQ_H
-#define SEQ_H
+#ifndef DCP_SEQ_H
+#define DCP_SEQ_H
 
 #include "cco/cco.h"
 #include "common/limits.h"

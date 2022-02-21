@@ -1,7 +1,8 @@
-#ifndef PROTEIN_MODEL_H
-#define PROTEIN_MODEL_H
+#ifndef DCP_PROTEIN_MODEL_H
+#define DCP_PROTEIN_MODEL_H
 
-#include "common/limits.h"
+#include "dcp/limits.h"
+#include "dcp/rc.h"
 #include "entry_dist.h"
 #include "imm/imm.h"
 #include "nuclt_dist.h"
@@ -11,7 +12,6 @@
 #include "protein_trans.h"
 #include "protein_xnode.h"
 #include "protein_xtrans.h"
-#include "common/rc.h"
 
 struct protein_model
 {

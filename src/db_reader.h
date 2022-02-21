@@ -1,7 +1,7 @@
-#ifndef DB_READER_H
-#define DB_READER_H
+#ifndef DCP_DB_READER_H
+#define DCP_DB_READER_H
 
-#include "common/rc.h"
+#include "dcp/rc.h"
 #include "db_types.h"
 #include "protein_db.h"
 #include "standard_db.h"

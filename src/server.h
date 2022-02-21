@@ -1,5 +1,5 @@
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef DCP_SERVER_H
+#define DCP_SERVER_H
 
 #include "common/limits.h"
 #include "common/rc.h"

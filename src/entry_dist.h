@@ -1,5 +1,5 @@
-#ifndef ENTRY_DIST_H
-#define ENTRY_DIST_H
+#ifndef DCP_ENTRY_DIST_H
+#define DCP_ENTRY_DIST_H
 
 enum entry_dist
 {

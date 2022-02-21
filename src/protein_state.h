@@ -1,7 +1,7 @@
-#ifndef PROTEIN_STATE_H
-#define PROTEIN_STATE_H
+#ifndef DCP_PROTEIN_STATE_H
+#define DCP_PROTEIN_STATE_H
 
-#include "common/limits.h"
+#include "dcp/limits.h"
 #include "imm/imm.h"
 
 enum protein_state_id

@@ -1,5 +1,5 @@
-#ifndef PROTEIN_NODE_H
-#define PROTEIN_NODE_H
+#ifndef DCP_PROTEIN_NODE_H
+#define DCP_PROTEIN_NODE_H
 
 #include "imm/imm.h"
 #include "nuclt_dist.h"

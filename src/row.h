@@ -1,5 +1,5 @@
-#ifndef ROW_H
-#define ROW_H
+#ifndef DCP_ROW_H
+#define DCP_ROW_H
 
 #include <stdbool.h>
 #include <stdio.h>

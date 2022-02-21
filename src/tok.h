@@ -1,5 +1,5 @@
-#ifndef TOK_H
-#define TOK_H
+#ifndef DCP_TOK_H
+#define DCP_TOK_H
 
 #include <stdbool.h>
 #include <stdio.h>

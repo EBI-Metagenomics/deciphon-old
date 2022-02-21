@@ -1,5 +1,5 @@
-#ifndef PROTEIN_XNODE_H
-#define PROTEIN_XNODE_H
+#ifndef DCP_PROTEIN_XNODE_H
+#define DCP_PROTEIN_XNODE_H
 
 #include "imm/imm.h"
 

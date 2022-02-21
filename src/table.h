@@ -1,5 +1,5 @@
-#ifndef TABLE_H
-#define TABLE_H
+#ifndef DCP_TABLE_H
+#define DCP_TABLE_H
 
 #include "row.h"
 

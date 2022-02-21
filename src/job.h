@@ -1,5 +1,5 @@
-#ifndef JOB_H
-#define JOB_H
+#ifndef DCP_JOB_H
+#define DCP_JOB_H
 
 #include "cco/cco.h"
 #include "job_state.h"

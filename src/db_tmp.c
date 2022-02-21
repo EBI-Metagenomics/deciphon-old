@@ -1,6 +1,6 @@
 #include "db_tmp.h"
-#include "common/compiler.h"
-#include "common/logger.h"
+#include "dcp/compiler.h"
+#include "logger.h"
 
 void db_tmp_setup(struct db_tmp *db)
 {

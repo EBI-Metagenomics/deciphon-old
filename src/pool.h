@@ -1,5 +1,5 @@
-#ifndef POOL_H
-#define POOL_H
+#ifndef DCP_POOL_H
+#define DCP_POOL_H
 
 #include "common/bitops.h"
 #include <limits.h>

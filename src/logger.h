@@ -1,5 +1,5 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#ifndef DCP_LOGGER_H
+#define DCP_LOGGER_H
 
 #include "dcp/compiler.h"
 #include "dcp/rc.h"

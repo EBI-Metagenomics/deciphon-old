@@ -1,5 +1,5 @@
-#ifndef STANDARD_PROFILE_H
-#define STANDARD_PROFILE_H
+#ifndef DCP_STANDARD_PROFILE_H
+#define DCP_STANDARD_PROFILE_H
 
 #include "common/rc.h"
 #include "profile.h"

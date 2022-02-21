@@ -1,5 +1,5 @@
-#ifndef REST_H
-#define REST_H
+#ifndef DCP_REST_H
+#define DCP_REST_H
 
 #include "common/limits.h"
 #include "common/rc.h"

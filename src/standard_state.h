@@ -1,5 +1,5 @@
-#ifndef STANDARD_STATE_H
-#define STANDARD_STATE_H
+#ifndef DCP_STANDARD_STATE_H
+#define DCP_STANDARD_STATE_H
 
 #include "imm/imm.h"
 

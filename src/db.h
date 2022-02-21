@@ -1,5 +1,5 @@
-#ifndef DB_H
-#define DB_H
+#ifndef DCP_DB_H
+#define DCP_DB_H
 
 #include "db_mt.h"
 #include "db_tmp.h"

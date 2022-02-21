@@ -1,5 +1,5 @@
-#ifndef METADATA_H
-#define METADATA_H
+#ifndef DCP_METADATA_H
+#define DCP_METADATA_H
 
 struct metadata
 {

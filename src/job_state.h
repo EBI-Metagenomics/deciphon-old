@@ -1,5 +1,5 @@
-#ifndef JOB_STATE_H
-#define JOB_STATE_H
+#ifndef DCP_JOB_STATE_H
+#define DCP_JOB_STATE_H
 
 enum job_state
 {

@@ -1,5 +1,5 @@
-#ifndef PROTEIN_DB_H
-#define PROTEIN_DB_H
+#ifndef DCP_PROTEIN_DB_H
+#define DCP_PROTEIN_DB_H
 
 #include "db.h"
 #include "entry_dist.h"

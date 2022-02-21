@@ -1,5 +1,5 @@
-#ifndef PROGRESS_FILE_H
-#define PROGRESS_FILE_H
+#ifndef DCP_PROGRESS_FILE_H
+#define DCP_PROGRESS_FILE_H
 
 #include "athr/athr.h"
 #include <assert.h>

@@ -1,5 +1,5 @@
-#ifndef HYPOTHESIS_H
-#define HYPOTHESIS_H
+#ifndef DCP_HYPOTHESIS_H
+#define DCP_HYPOTHESIS_H
 
 #include "imm/imm.h"
 

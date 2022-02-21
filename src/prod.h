@@ -1,5 +1,5 @@
-#ifndef PROD_H
-#define PROD_H
+#ifndef DCP_PROD_H
+#define DCP_PROD_H
 
 #include "common/limits.h"
 #include "common/logger.h"

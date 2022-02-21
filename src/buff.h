@@ -1,5 +1,5 @@
-#ifndef BUFF_H
-#define BUFF_H
+#ifndef DCP_BUFF_H
+#define DCP_BUFF_H
 
 #include <stdbool.h>
 #include <stddef.h>

@@ -1,8 +1,8 @@
-#ifndef PROTEIN_PROFILE_H
-#define PROTEIN_PROFILE_H
+#ifndef DCP_PROTEIN_PROFILE_H
+#define DCP_PROTEIN_PROFILE_H
 
-#include "common/limits.h"
-#include "common/rc.h"
+#include "dcp/limits.h"
+#include "dcp/rc.h"
 #include "imm/imm.h"
 #include "metadata.h"
 #include "profile.h"

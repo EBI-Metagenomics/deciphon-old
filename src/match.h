@@ -1,5 +1,5 @@
-#ifndef MATCH_H
-#define MATCH_H
+#ifndef DCP_MATCH_H
+#define DCP_MATCH_H
 
 struct imm_profile;
 struct imm_seq;

@@ -1,5 +1,5 @@
-#ifndef XOMP_H
-#define XOMP_H
+#ifndef DCP_XOMP_H
+#define DCP_XOMP_H
 
 #ifdef OPENMP
 

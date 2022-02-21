@@ -1,5 +1,5 @@
-#ifndef PROTEIN_HMMER3_READER_H
-#define PROTEIN_HMMER3_READER_H
+#ifndef DCP_PROTEIN_HMMER3_READER_H
+#define DCP_PROTEIN_HMMER3_READER_H
 
 #include "common/rc.h"
 #include "hmr/hmr.h"

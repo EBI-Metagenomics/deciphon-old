@@ -1,5 +1,5 @@
-#ifndef PROTEIN_XTRANS_H
-#define PROTEIN_XTRANS_H
+#ifndef DCP_PROTEIN_XTRANS_H
+#define DCP_PROTEIN_XTRANS_H
 
 #include "imm/imm.h"
 

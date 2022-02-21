@@ -1,5 +1,5 @@
-#ifndef STANDARD_DB_H
-#define STANDARD_DB_H
+#ifndef DCP_STANDARD_DB_H
+#define DCP_STANDARD_DB_H
 
 #include "db.h"
 #include "metadata.h"

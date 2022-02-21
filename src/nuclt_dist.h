@@ -1,8 +1,8 @@
-#ifndef NUCLT_DIST_H
-#define NUCLT_DIST_H
+#ifndef DCP_NUCLT_DIST_H
+#define DCP_NUCLT_DIST_H
 
+#include "dcp/rc.h"
 #include "imm/imm.h"
-#include "common/rc.h"
 #include <stdio.h>
 
 struct nuclt_dist

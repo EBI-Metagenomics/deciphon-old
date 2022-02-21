@@ -1,5 +1,5 @@
-#ifndef STANDARD_MATCH_H
-#define STANDARD_MATCH_H
+#ifndef DCP_STANDARD_MATCH_H
+#define DCP_STANDARD_MATCH_H
 
 #include "match.h"
 #include <stdio.h>

@@ -1,5 +1,5 @@
-#ifndef JS_H
-#define JS_H
+#ifndef DCP_JS_H
+#define DCP_JS_H
 
 #include "compiler.h"
 #include <stdbool.h>

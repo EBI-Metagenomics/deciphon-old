@@ -1,5 +1,5 @@
-#ifndef WORK_H
-#define WORK_H
+#ifndef DCP_WORK_H
+#define DCP_WORK_H
 
 #include "common/rc.h"
 #include "db.h"
