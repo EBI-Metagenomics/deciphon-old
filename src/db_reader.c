@@ -1,6 +1,6 @@
 #include "db_reader.h"
 #include "profile_types.h"
-#include "xlip.h"
+#include "lite_pack.h"
 
 enum rc db_reader_open(struct db_reader *reader, struct lip_file *io)
 {

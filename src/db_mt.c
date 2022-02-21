@@ -1,7 +1,8 @@
 #include "db_mt.h"
 #include "dcp/limits.h"
+#include "expect.h"
+#include "lite_pack.h"
 #include "logger.h"
-#include "xlip.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,7 +127,7 @@ enum rc db_mt_read(struct db_mt *db, unsigned nprofiles, struct lip_file *io)
 {
     enum rc rc = DCP_OK;
 
-    if (!xlip_expect_key(io, "metadata")) eio("skip key");
+    if (!expect_key(io, "metadata")) eio("skip key");
     unsigned size = 0;
     lip_read_str_size(io, &size);
     if (size > max_mt_data_size())
@@ -151,7 +152,7 @@ cleanup:
 static enum rc write_name(struct db_mt *db, struct metadata mt,
                           struct lip_file *dst)
 {
-    if (!xlip_write_cstr(dst, mt.name)) return eio("write profile name");
+    if (!lip_write_cstr(dst, mt.name)) return eio("write profile name");
     /* +1 for null-terminated string */
     db->size += (uint32_t)strlen(mt.name) + 1;
 
@@ -161,15 +162,14 @@ static enum rc write_name(struct db_mt *db, struct metadata mt,
 static enum rc write_accession(struct db_mt *db, struct metadata mt,
                                struct lip_file *dst)
 {
-    if (!xlip_write_cstr(dst, mt.acc)) return eio("write profile accession");
+    if (!lip_write_cstr(dst, mt.acc)) return eio("write profile accession");
     /* +1 for null-terminated string */
     db->size += (uint32_t)strlen(mt.acc) + 1;
 
     return DCP_OK;
 }
 
-enum rc db_mt_write(struct db_mt *db, struct metadata mt,
-                    struct lip_file *dst)
+enum rc db_mt_write(struct db_mt *db, struct metadata mt, struct lip_file *dst)
 {
     if (!mt.name) return error(DCP_EINVAL, "metadata not set");
 
