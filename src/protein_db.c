@@ -34,9 +34,9 @@ static enum rc read_epsilon(struct lip_file *cmp, unsigned float_bytes,
     *epsilon = (imm_float)e;
 
     if (*epsilon < 0 || *epsilon > 1)
-        return error(RC_EPARSE, "invalid epsilon");
+        return error(DCP_EPARSE, "invalid epsilon");
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc write_epsilon(struct lip_file *cmp, unsigned float_bytes,
@@ -51,7 +51,7 @@ static enum rc write_epsilon(struct lip_file *cmp, unsigned float_bytes,
     else
         e = (double)epsilon;
     if (!cmp_write_decimal(cmp, e)) return eio("write epsilon");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc read_entry_dist(struct lip_file *cmp, enum entry_dist *edist)
@@ -60,7 +60,7 @@ static enum rc read_entry_dist(struct lip_file *cmp, enum entry_dist *edist)
     uint64_t val = 0;
     if (!cmp_read_uinteger(cmp, &val)) return eio("read entry_dist");
     *edist = (enum entry_dist)val;
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc write_entry_dist(struct lip_file *cmp, enum entry_dist edist)
@@ -68,14 +68,14 @@ static enum rc write_entry_dist(struct lip_file *cmp, enum entry_dist edist)
     if (!JS_WRITE_STR(cmp, "entry_dist")) eio("write entry_dist key");
     if (!cmp_write_uinteger(cmp, (uint64_t)edist))
         return eio("write entry distribution");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc read_nuclt(struct lip_file *cmp, struct imm_nuclt *nuclt)
 {
     if (!JS_XPEC_STR(cmp, "abc")) eio("skip abc key");
     if (imm_abc_read_cmp(&nuclt->super, cmp)) return eio("read nuclt abc");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc write_nuclt(struct lip_file *cmp, struct imm_nuclt const *nuclt)
@@ -83,14 +83,14 @@ static enum rc write_nuclt(struct lip_file *cmp, struct imm_nuclt const *nuclt)
     if (!JS_WRITE_STR(cmp, "abc")) eio("write abc key");
     if (imm_abc_write(&nuclt->super, cmp_file(cmp)))
         return eio("write nuclt abc");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc read_amino(struct lip_file *cmp, struct imm_amino *amino)
 {
     if (!JS_XPEC_STR(cmp, "amino")) eio("skip amino key");
     if (imm_abc_read_cmp(&amino->super, cmp)) return eio("read amino abc");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc write_amino(struct lip_file *cmp, struct imm_amino const *amino)
@@ -98,7 +98,7 @@ static enum rc write_amino(struct lip_file *cmp, struct imm_amino const *amino)
     if (!JS_WRITE_STR(cmp, "amino")) eio("write amino key");
     if (imm_abc_write(&amino->super, cmp_file(cmp)))
         return eio("write amino abc");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static void protein_db_init(struct protein_db *db)
@@ -119,7 +119,7 @@ enum rc protein_db_openr(struct protein_db *db, FILE *fp)
     struct lip_file *cmp = &db->super.file.cmp;
     imm_float *epsilon = &db->cfg.epsilon;
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     JS_XPEC_STR(cmp, "header");
 
     uint32_t size = 0;
@@ -138,7 +138,7 @@ enum rc protein_db_openr(struct protein_db *db, FILE *fp)
 
     imm_code_init(&db->code.super, imm_super(&db->nuclt));
     if (db->super.vtable.typeid != DB_PROTEIN)
-        return error(RC_EPARSE, "wrong typeid");
+        return error(DCP_EPARSE, "wrong typeid");
 
     return db_set_metadata_end(&db->super);
 }
@@ -157,7 +157,7 @@ enum rc protein_db_openw(struct protein_db *db, FILE *fp,
     unsigned float_size = db->super.float_size;
     imm_float epsilon = db->cfg.epsilon;
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     if ((rc = db_openw(&db->super, fp))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_profile_typeid(&db->super))) goto cleanup;

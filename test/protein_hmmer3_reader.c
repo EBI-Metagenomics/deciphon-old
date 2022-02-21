@@ -37,12 +37,12 @@ int main(void)
     struct protein_hmmer3_reader reader;
     protein_hmmer3_reader_init(&reader, amino, &code, cfg, fd);
 
-    EQ(protein_hmmer3_reader_next(&reader), RC_DONE);
+    EQ(protein_hmmer3_reader_next(&reader), DCP_OK);
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
 
-    EQ(protein_profile_absorb(&prof, &reader.model), RC_DONE);
+    EQ(protein_profile_absorb(&prof, &reader.model), DCP_OK);
 
     struct imm_seq seq = imm_seq(imm_str(sequence), prof.super.code->abc);
 

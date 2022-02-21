@@ -40,7 +40,7 @@ add_library(
   ${PROJECT_NAME}
   src/buff.c
   src/db.c
-  # src/db_mt.c
+  src/db_mt.c
   # src/db_reader.c
   # src/db_tmp.c
   # src/job_state.c

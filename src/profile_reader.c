@@ -24,7 +24,7 @@ static enum rc open_files(struct profile_reader *reader, struct db *db)
         }
         cmp_setup(reader->cmp + i, fp);
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static void init_standard_profiles(struct profile_reader *reader,
@@ -60,19 +60,19 @@ static enum rc __rewind(struct profile_reader *reader, unsigned npartitions)
             return error(RC_EIO, "failed to fseek");
     }
     setup_profile_indices(reader);
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc record_offset(struct lip_file *cmp, int64_t *offset)
 {
     if ((*offset = cmp_ftell(cmp)) == -1)
         return error(RC_EIO, "failed to ftello");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc partition_it(struct profile_reader *reader, struct db *db)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     reader->partition_offset[0] = db->profile_offsets[0];
     if ((rc = __rewind(reader, 1))) return rc;
 
@@ -99,7 +99,7 @@ static enum rc partition_it(struct profile_reader *reader, struct db *db)
     if ((rc = record_offset(cmp, reader->partition_offset + npartitions)))
         goto cleanup;
 
-    return RC_DONE;
+    return DCP_OK;
 
 cleanup:
     cleanup(reader);
@@ -131,16 +131,16 @@ static void partition_it2(struct profile_reader *reader, struct db *db)
 enum rc profile_reader_setup(struct profile_reader *reader, struct db *db,
                              unsigned npartitions)
 {
-    if (npartitions == 0) return error(RC_EINVAL, "can't have zero partitions");
+    if (npartitions == 0) return error(DCP_EINVAL, "can't have zero partitions");
 
     if (npartitions > NUM_PARTITIONS)
-        return error(RC_EINVAL, "too many partitions");
+        return error(DCP_EINVAL, "too many partitions");
 
     printf("Number of profiles: %d\n", db_nprofiles(db));
     if (db_nprofiles(db) < npartitions) npartitions = db_nprofiles(db);
     reader->npartitions = npartitions;
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     reader->profile_typeid = (enum profile_typeid)db_profile_typeid(db);
     if ((rc = open_files(reader, db))) goto cleanup;
 

@@ -38,22 +38,22 @@ static void signal_interrupt(int signum) { server.signal.interrupt = 1; }
 //     sigaction(SIGINT, &server.signal.action, NULL);
 //     server.num_threads = num_threads;
 //
-//     // if (sched_setup(filepath)) return error(RC_EFAIL, "failed to setup
+//     // if (sched_setup(filepath)) return error(DCP_EFAIL, "failed to setup
 //     sched");
-//     // if (sched_open()) return error(RC_EFAIL, "failed to open sched");
+//     // if (sched_open()) return error(DCP_EFAIL, "failed to open sched");
 //     server.work.lrt_threshold = 100.0f;
-//     return RC_DONE;
+//     return DCP_OK;
 // }
 
-// enum rc server_close(void) { return sched_close() ? RC_EFAIL : RC_DONE; }
+// enum rc server_close(void) { return sched_close() ? DCP_EFAIL : DCP_OK; }
 
 // enum rc server_add_db(char const *filepath, int64_t *id)
 // {
 //     if (!xfile_is_readable(filepath))
 //         return error(RC_EIO, "file is not readable");
 //
-//     if (sched_add_db(filepath, id)) return error(RC_EFAIL, "failed to add
-//     db"); return RC_DONE;
+//     if (sched_add_db(filepath, id)) return error(DCP_EFAIL, "failed to add
+//     db"); return DCP_OK;
 // }
 
 // enum rc server_submit_job(struct job *job)
@@ -61,7 +61,7 @@ static void signal_interrupt(int signum) { server.signal.interrupt = 1; }
 //     struct sched_job j = {0};
 //     sched_job_init(&j, job->db_id, job->multi_hits, job->hmmer3_compat);
 //     if (sched_begin_job_submission(&j))
-//         return error(RC_EFAIL, "failed to begin job submission");
+//         return error(DCP_EFAIL, "failed to begin job submission");
 //
 //     struct seq *seq = NULL;
 //     struct cco_iter iter = cco_queue_iter(&job->seqs);
@@ -71,17 +71,17 @@ static void signal_interrupt(int signum) { server.signal.interrupt = 1; }
 //     }
 //
 //     if (sched_end_job_submission(&j))
-//         return error(RC_EFAIL, "failed to end job submission");
+//         return error(DCP_EFAIL, "failed to end job submission");
 //
 //     job->id = j.id;
-//     return RC_DONE;
+//     return DCP_OK;
 // }
 
 // enum rc server_job_state(int64_t job_id, enum sched_job_state *state)
 // {
 //     if (sched_job_state(job_id, state))
-//         return error(RC_EFAIL, "failed to get job state");
-//     return RC_DONE;
+//         return error(DCP_EFAIL, "failed to get job state");
+//     return DCP_OK;
 // }
 
 enum rc server_run(bool single_run, unsigned num_threads, char const *url)
@@ -125,8 +125,8 @@ void server_set_lrt_threshold(imm_float lrt)
 
 // enum rc server_get_sched_job(struct sched_job *job)
 // {
-//     if (sched_get_job(job)) return error(RC_EFAIL, "failed to get job");
-//     return RC_DONE;
+//     if (sched_get_job(job)) return error(DCP_EFAIL, "failed to get job");
+//     return DCP_OK;
 // }
 
 // enum rc server_next_sched_prod(struct sched_job const *job,
@@ -134,7 +134,7 @@ void server_set_lrt_threshold(imm_float lrt)
 // {
 //     prod->job_id = job->id;
 //     enum rc rc = sched_prod_next(prod);
-//     if (rc == RC_DONE) return RC_DONE;
-//     if (rc != RC_NEXT) return error(RC_EFAIL, "failed to get prod");
+//     if (rc == DCP_OK) return DCP_OK;
+//     if (rc != RC_NEXT) return error(DCP_EFAIL, "failed to get prod");
 //     return RC_NEXT;
 // }

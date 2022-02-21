@@ -10,11 +10,11 @@ enum rc db_reader_open(struct db_reader *reader, struct lip_file *io)
     db_init(db, vtable);
     db_openr(db, io);
 
-    if (xlip_expect_key(&db->file.cmp, "header")) return RC_EPARSE;
+    if (xlip_expect_key(&db->file.cmp, "header")) return DCP_EPARSE;
     unsigned size = 0;
     lip_read_map_size(&db->file.cmp, &size);
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     if ((rc = db_read_magic_number(db))) return rc;
     if ((rc = db_read_profile_typeid(db))) return rc;
 

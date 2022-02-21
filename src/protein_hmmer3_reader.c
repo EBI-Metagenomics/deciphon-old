@@ -20,10 +20,10 @@ enum rc protein_hmmer3_reader_next(struct protein_hmmer3_reader *reader)
     enum hmr_rc hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
     if (hmr_rc == HMR_ENDFILE) return RC_END;
 
-    if (hmr_rc) return RC_EFAIL;
+    if (hmr_rc) return DCP_EFAIL;
 
     unsigned core_size = hmr_prof_length(&reader->prof);
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     if ((rc = protein_model_setup(&reader->model, core_size))) return rc;
 
     hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);
@@ -68,7 +68,7 @@ enum rc protein_hmmer3_reader_next(struct protein_hmmer3_reader *reader)
     assert(node_idx == core_size);
     assert(hmr_rc == HMR_ENDNODE);
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 void protein_hmmer3_reader_del(struct protein_hmmer3_reader const *reader)

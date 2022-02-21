@@ -12,8 +12,8 @@ enum rc rc_from_str(unsigned len, char const *str, enum rc *rc)
         if (!strncmp(name[i], str, len))
         {
             *rc = (enum rc)i;
-            return RC_DONE;
+            return DCP_OK;
         }
     }
-    return error(RC_EINVAL, "invalid return code");
+    return error(DCP_EINVAL, "invalid return code");
 }

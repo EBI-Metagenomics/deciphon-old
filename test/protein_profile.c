@@ -23,13 +23,13 @@ void test_protein_profile_uniform(void)
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
-    EQ(protein_profile_sample(&prof, 1, 2), RC_DONE);
+    EQ(protein_profile_sample(&prof, 1, 2), DCP_OK);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(IMM_STR(str), prof.super.code->abc);
 
-    EQ(protein_profile_setup(&prof, 0, true, false), RC_EINVAL);
-    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), RC_DONE);
+    EQ(protein_profile_setup(&prof, 0, true, false), DCP_EINVAL);
+    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), DCP_OK);
 
     struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.null.dp;
@@ -77,7 +77,7 @@ void test_protein_profile_uniform(void)
     EQ(name, "T");
 
     struct protein_codec codec = protein_codec_init(&prof, &prod.path);
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
 
     nuclt = prof.code->nuclt;
     struct imm_codon codons[10] = {
@@ -116,12 +116,12 @@ void test_protein_profile_occupancy(void)
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
-    EQ(protein_profile_sample(&prof, 1, 2), RC_DONE);
+    EQ(protein_profile_sample(&prof, 1, 2), DCP_OK);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), prof.super.code->abc);
 
-    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), RC_DONE);
+    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), DCP_OK);
 
     struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.null.dp;
@@ -169,7 +169,7 @@ void test_protein_profile_occupancy(void)
     EQ(name, "T");
 
     struct protein_codec codec = protein_codec_init(&prof, &prod.path);
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
 
     nuclt = prof.code->nuclt;
     struct imm_codon codons[10] = {

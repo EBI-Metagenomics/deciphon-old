@@ -56,9 +56,9 @@ void work_init(void) { atomic_store(&work.failed, false); }
 
 enum rc work_next(void)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     int code = sched_job_next_pending(&work.job);
-    if (code == SCHED_NOTFOUND) return RC_DONE;
+    if (code == SCHED_NOTFOUND) return DCP_OK;
     if ((rc = sched_job_next_pending(&work.job))) return rc;
     if ((rc = sched_db_get_by_id(&work.db.sched_db, work.job.db_id))) return rc;
     return RC_NEXT;
@@ -174,14 +174,14 @@ static enum rc reset_task(struct imm_task **task, struct imm_dp const *dp)
     if (!*task && !(*task = imm_task_new(dp)))
         return error(RC_FAIL, "failed to create task");
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq)
 {
     if (imm_task_setup(task, seq))
         return error(RC_FAIL, "failed to setup task");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc work_run(unsigned num_threads)
@@ -242,7 +242,7 @@ cleanup:
 enum rc write_product(struct work *work, struct task *task, unsigned match_id,
                       struct imm_seq seq)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     struct profile *p = profile_reader_profile(&work.profile_reader, 0);
     /* TODO: generalized it */
     struct protein_profile *prof = (struct protein_profile *)p;

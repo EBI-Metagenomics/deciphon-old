@@ -33,19 +33,19 @@ int main(void)
 void test_server_setup(unsigned num_threads)
 {
     remove(TMPDIR "/setup.sched");
-    EQ(server_open(TMPDIR "/setup.sched", num_threads), RC_DONE);
-    EQ(server_close(), RC_DONE);
+    EQ(server_open(TMPDIR "/setup.sched", num_threads), DCP_OK);
+    EQ(server_close(), DCP_OK);
 }
 
 void test_server_reopen(void)
 {
     remove(TMPDIR "/reopen.sched");
 
-    EQ(server_open(TMPDIR "/reopen.sched", 1), RC_DONE);
-    EQ(server_close(), RC_DONE);
+    EQ(server_open(TMPDIR "/reopen.sched", 1), DCP_OK);
+    EQ(server_close(), DCP_OK);
 
-    EQ(server_open(TMPDIR "/reopen.sched", 1), RC_DONE);
-    EQ(server_close(), RC_DONE);
+    EQ(server_open(TMPDIR "/reopen.sched", 1), DCP_OK);
+    EQ(server_close(), DCP_OK);
 }
 
 void test_server_standard_db(void)
@@ -55,13 +55,13 @@ void test_server_standard_db(void)
 
     remove(db_path);
 
-    EQ(server_open(db_path, 1), RC_DONE);
+    EQ(server_open(db_path, 1), DCP_OK);
 
     standard_db_examples_new_ex1(ex_path);
     int64_t db_id = 0;
-    EQ(server_add_db(ex_path, &db_id), RC_DONE);
+    EQ(server_add_db(ex_path, &db_id), DCP_OK);
 
-    EQ(server_close(), RC_DONE);
+    EQ(server_close(), DCP_OK);
 }
 
 void test_server_submit_standard_job(void)
@@ -70,11 +70,11 @@ void test_server_submit_standard_job(void)
     char const ex_path[] = TMPDIR "/submit_job.dcp";
     remove(db_path);
 
-    EQ(server_open(db_path, 1), RC_DONE);
+    EQ(server_open(db_path, 1), DCP_OK);
 
     standard_db_examples_new_ex1(ex_path, 2);
     int64_t db_id = 0;
-    EQ(server_add_db(ex_path, &db_id), RC_DONE);
+    EQ(server_add_db(ex_path, &db_id), DCP_OK);
     EQ(db_id, 1);
 
     struct job job = {0};
@@ -84,12 +84,12 @@ void test_server_submit_standard_job(void)
     /* seq_init(&seq, "seq0", imm_str(imm_example1_seq)); */
     job_add_seq(&job, &seq);
 
-    EQ(server_submit_job(&job), RC_DONE);
+    EQ(server_submit_job(&job), DCP_OK);
     EQ(job.id, 1);
 
-    EQ(server_run(true), RC_DONE);
+    EQ(server_run(true), DCP_OK);
 
-    EQ(server_close(), RC_DONE);
+    EQ(server_close(), DCP_OK);
 }
 
 struct sched_job sched_job = {0};
@@ -101,11 +101,11 @@ void test_server_submit_protein_job(void)
     char const ex_path[] = TMPDIR "/submit_protein_job.dcp";
     remove(db_path);
 
-    EQ(server_open(db_path, 1), RC_DONE);
+    EQ(server_open(db_path, 1), DCP_OK);
 
     protein_db_examples_new_ex1(ex_path, 2);
     int64_t db_id = 0;
-    EQ(server_add_db(ex_path, &db_id), RC_DONE);
+    EQ(server_add_db(ex_path, &db_id), DCP_OK);
     EQ(db_id, 1);
 
     struct job job = {0};
@@ -141,13 +141,13 @@ void test_server_submit_protein_job(void)
         }
     }
 
-    EQ(server_submit_job(&job), RC_DONE);
+    EQ(server_submit_job(&job), DCP_OK);
     EQ(job.id, 1);
 
-    EQ(server_run(true), RC_DONE);
+    EQ(server_run(true), DCP_OK);
 
     sched_job.id = job.id;
-    EQ(server_get_sched_job(&sched_job), RC_DONE);
+    EQ(server_get_sched_job(&sched_job), DCP_OK);
     EQ(sched_job.error, "");
     EQ(sched_job.multi_hits, true);
     EQ(sched_job.hmmer3_compat, false);
@@ -179,7 +179,7 @@ void test_server_submit_protein_job(void)
         }
     }
 
-    EQ(server_close(), RC_DONE);
+    EQ(server_close(), DCP_OK);
 }
 
 void test_server_submit_job_with_error(void)
@@ -188,11 +188,11 @@ void test_server_submit_job_with_error(void)
     char const ex_path[] = TMPDIR "/standard_example1.dcp";
     remove(db_path);
 
-    EQ(server_open(db_path, 1), RC_DONE);
+    EQ(server_open(db_path, 1), DCP_OK);
 
     standard_db_examples_new_ex1(ex_path, 2);
     int64_t db_id = 0;
-    EQ(server_add_db(ex_path, &db_id), RC_DONE);
+    EQ(server_add_db(ex_path, &db_id), DCP_OK);
     EQ(db_id, 1);
 
     struct job job = {0};
@@ -203,12 +203,12 @@ void test_server_submit_job_with_error(void)
     job_add_seq(&job, seq + 0);
     job_add_seq(&job, seq + 1);
 
-    EQ(server_submit_job(&job), RC_DONE);
+    EQ(server_submit_job(&job), DCP_OK);
     EQ(job.id, 1);
 
-    EQ(server_run(true), RC_DONE);
+    EQ(server_run(true), DCP_OK);
 
-    EQ(server_close(), RC_DONE);
+    EQ(server_close(), DCP_OK);
 }
 
 void test_server_submit_and_fetch_job(unsigned num_threads)
@@ -217,11 +217,11 @@ void test_server_submit_and_fetch_job(unsigned num_threads)
     char const ex_path[] = TMPDIR "/protein_example1.dcp";
     remove(db_path);
 
-    EQ(server_open(db_path, num_threads), RC_DONE);
+    EQ(server_open(db_path, num_threads), DCP_OK);
 
     protein_db_examples_new_ex1(ex_path, 2);
     int64_t db_id = 0;
-    EQ(server_add_db(ex_path, &db_id), RC_DONE);
+    EQ(server_add_db(ex_path, &db_id), DCP_OK);
     EQ(db_id, 1);
 
     struct job job = {0};
@@ -232,16 +232,16 @@ void test_server_submit_and_fetch_job(unsigned num_threads)
     job_add_seq(&job, seq + 0);
     job_add_seq(&job, seq + 1);
 
-    EQ(server_submit_job(&job), RC_DONE);
+    EQ(server_submit_job(&job), DCP_OK);
     EQ(job.id, 1);
 
     enum job_state state = 0;
-    EQ(server_job_state(job.id, &state), RC_DONE);
+    EQ(server_job_state(job.id, &state), DCP_OK);
     EQ(state, JOB_PEND);
 
     EQ(server_job_state(2, &state), RC_NOTFOUND);
 
-    EQ(server_run(true), RC_DONE);
+    EQ(server_run(true), DCP_OK);
 
     int64_t prod_id = 0;
     EQ(server_next_prod(1, &prod_id), RC_NEXT);
@@ -278,8 +278,8 @@ void test_server_submit_and_fetch_job(unsigned num_threads)
     EQ(p->prof_typeid, "protein");
     EQ(p->version, "0.0.4");
 
-    EQ(server_next_prod(1, &prod_id), RC_DONE);
+    EQ(server_next_prod(1, &prod_id), DCP_OK);
 
-    EQ(server_close(), RC_DONE);
+    EQ(server_close(), DCP_OK);
 }
 #endif

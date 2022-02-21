@@ -51,9 +51,9 @@ enum rc protein_match_write_cb(FILE *fp, void const *match)
     if (fprintf(fp, "%s,", ccodon) < 0) goto cleanup;
     if (fprintf(fp, "%s", camino) < 0) goto cleanup;
 
-    return RC_DONE;
+    return DCP_OK;
 
 cleanup:
     error(RC_EIO, "failed to write match");
-    return RC_EFAIL;
+    return DCP_EFAIL;
 }

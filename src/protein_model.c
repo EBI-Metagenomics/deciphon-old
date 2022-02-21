@@ -51,10 +51,10 @@ enum rc protein_model_add_node(struct protein_model *m,
                                char consensus)
 {
     if (!have_called_setup(m))
-        return error(RC_EFAIL, "Must call protein_model_setup first.");
+        return error(DCP_EFAIL, "Must call protein_model_setup first.");
 
     if (m->alt.node_idx == m->core_size)
-        return error(RC_EFAIL, "Reached limit of nodes.");
+        return error(DCP_EFAIL, "Reached limit of nodes.");
 
     m->consensus[m->alt.node_idx] = consensus;
 
@@ -67,33 +67,33 @@ enum rc protein_model_add_node(struct protein_model *m,
     setup_nuclt_dist(&n->match.nucltd, m->amino, m->code->nuclt, lodds);
 
     init_match(&n->M, m, &n->match.nucltd);
-    if (imm_hmm_add_state(&m->alt.hmm, &n->M.super)) return RC_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->M.super)) return DCP_EFAIL;
 
     init_insert(&n->I, m);
-    if (imm_hmm_add_state(&m->alt.hmm, &n->I.super)) return RC_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->I.super)) return DCP_EFAIL;
 
     init_delete(&n->D, m);
-    if (imm_hmm_add_state(&m->alt.hmm, &n->D.super)) return RC_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->D.super)) return DCP_EFAIL;
 
     m->alt.node_idx++;
 
     if (have_finished_add(m)) setup_transitions(m);
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc protein_model_add_trans(struct protein_model *m,
                                 struct protein_trans trans)
 {
     if (!have_called_setup(m))
-        return error(RC_EFAIL, "Must call protein_model_setup first.");
+        return error(DCP_EFAIL, "Must call protein_model_setup first.");
 
     if (m->alt.trans_idx == m->core_size + 1)
-        return error(RC_EFAIL, "Reached limit of transitions.");
+        return error(DCP_EFAIL, "Reached limit of transitions.");
 
     m->alt.trans[m->alt.trans_idx++] = trans;
     if (have_finished_add(m)) setup_transitions(m);
-    return RC_DONE;
+    return DCP_OK;
 }
 
 void protein_model_del(struct protein_model const *model)
@@ -155,10 +155,10 @@ static void model_reset(struct protein_model *model)
 
 enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
 {
-    if (core_size == 0) return error(RC_EINVAL, "`core_size` cannot be zero.");
+    if (core_size == 0) return error(DCP_EINVAL, "`core_size` cannot be zero.");
 
     if (core_size > PROTEIN_MODEL_CORE_SIZE_MAX)
-        return error(RC_EINVAL, "`core_size` is too big.");
+        return error(DCP_EINVAL, "`core_size` is too big.");
 
     m->core_size = core_size;
     m->consensus[core_size] = '\0';
@@ -166,18 +166,18 @@ enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
     m->alt.node_idx = 0;
 
     void *ptr = realloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
-    if (!ptr && n > 0) return error(RC_ENOMEM, "failed to alloc nodes");
+    if (!ptr && n > 0) return error(DCP_ENOMEM, "failed to alloc nodes");
     m->alt.nodes = ptr;
 
     if (m->cfg.entry_dist == ENTRY_DIST_OCCUPANCY)
     {
         ptr = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
-        if (!ptr && n > 0) return error(RC_ENOMEM, "failed to alloc locc");
+        if (!ptr && n > 0) return error(DCP_ENOMEM, "failed to alloc locc");
         m->alt.locc = ptr;
     }
     m->alt.trans_idx = 0;
     ptr = realloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
-    if (!ptr) return error(RC_ENOMEM, "failed to alloc trans");
+    if (!ptr) return error(DCP_ENOMEM, "failed to alloc trans");
     m->alt.trans = ptr;
 
     model_reset(m);
@@ -221,20 +221,20 @@ enum rc add_xnodes(struct protein_model *m)
 {
     struct protein_xnode *n = &m->xnode;
 
-    if (imm_hmm_add_state(&m->null.hmm, &n->null.R.super)) return RC_EFAIL;
+    if (imm_hmm_add_state(&m->null.hmm, &n->null.R.super)) return DCP_EFAIL;
     if (imm_hmm_set_start(&m->null.hmm, &n->null.R.super, LOG1))
-        return RC_EFAIL;
+        return DCP_EFAIL;
 
-    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.S.super)) return RC_EFAIL;
-    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.N.super)) return RC_EFAIL;
-    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.B.super)) return RC_EFAIL;
-    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.E.super)) return RC_EFAIL;
-    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.J.super)) return RC_EFAIL;
-    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.C.super)) return RC_EFAIL;
-    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.T.super)) return RC_EFAIL;
-    if (imm_hmm_set_start(&m->alt.hmm, &n->alt.S.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.S.super)) return DCP_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.N.super)) return DCP_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.B.super)) return DCP_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.E.super)) return DCP_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.J.super)) return DCP_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.C.super)) return DCP_EFAIL;
+    if (imm_hmm_add_state(&m->alt.hmm, &n->alt.T.super)) return DCP_EFAIL;
+    if (imm_hmm_set_start(&m->alt.hmm, &n->alt.S.super, LOG1)) return DCP_EFAIL;
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 void init_xnodes(struct protein_model *m)
@@ -316,28 +316,28 @@ void init_match(struct imm_frame_state *state, struct protein_model *m,
 
 enum rc init_null_xtrans(struct imm_hmm *hmm, struct protein_xnode_null *n)
 {
-    if (imm_hmm_set_trans(hmm, &n->R.super, &n->R.super, LOG1)) return RC_EFAIL;
-    return RC_DONE;
+    if (imm_hmm_set_trans(hmm, &n->R.super, &n->R.super, LOG1)) return DCP_EFAIL;
+    return DCP_OK;
 }
 
 enum rc init_alt_xtrans(struct imm_hmm *hmm, struct protein_xnode_alt *n)
 {
-    if (imm_hmm_set_trans(hmm, &n->S.super, &n->B.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->S.super, &n->N.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->N.super, &n->N.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->N.super, &n->B.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->S.super, &n->B.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->S.super, &n->N.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->N.super, &n->N.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->N.super, &n->B.super, LOG1)) return DCP_EFAIL;
 
-    if (imm_hmm_set_trans(hmm, &n->E.super, &n->T.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->E.super, &n->C.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->C.super, &n->C.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->C.super, &n->T.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->E.super, &n->T.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->E.super, &n->C.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->C.super, &n->C.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->C.super, &n->T.super, LOG1)) return DCP_EFAIL;
 
-    if (imm_hmm_set_trans(hmm, &n->E.super, &n->B.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->E.super, &n->J.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->J.super, &n->J.super, LOG1)) return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->J.super, &n->B.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->E.super, &n->B.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->E.super, &n->J.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->J.super, &n->J.super, LOG1)) return DCP_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->J.super, &n->B.super, LOG1)) return DCP_EFAIL;
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
@@ -420,7 +420,7 @@ enum rc setup_entry_trans(struct protein_model *m)
         {
             struct protein_node *node = m->alt.nodes + i;
             if (imm_hmm_set_trans(&m->alt.hmm, B, &node->M.super, cost))
-                return RC_EFAIL;
+                return DCP_EFAIL;
         }
     }
     else
@@ -433,10 +433,10 @@ enum rc setup_entry_trans(struct protein_model *m)
             struct protein_node *node = m->alt.nodes + i;
             if (imm_hmm_set_trans(&m->alt.hmm, B, &node->M.super,
                                   m->alt.locc[i]))
-                return RC_EFAIL;
+                return DCP_EFAIL;
         }
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc setup_exit_trans(struct protein_model *m)
@@ -447,15 +447,15 @@ enum rc setup_exit_trans(struct protein_model *m)
     {
         struct protein_node *node = m->alt.nodes + i;
         if (imm_hmm_set_trans(&m->alt.hmm, &node->M.super, E, imm_log(1)))
-            return RC_EFAIL;
+            return DCP_EFAIL;
     }
     for (unsigned i = 1; i < m->core_size; ++i)
     {
         struct protein_node *node = m->alt.nodes + i;
         if (imm_hmm_set_trans(&m->alt.hmm, &node->D.super, E, imm_log(1)))
-            return RC_EFAIL;
+            return DCP_EFAIL;
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc setup_transitions(struct protein_model *m)
@@ -465,7 +465,7 @@ enum rc setup_transitions(struct protein_model *m)
 
     struct imm_state *B = &m->xnode.alt.B.super;
     struct imm_state *M1 = &m->alt.nodes[0].M.super;
-    if (imm_hmm_set_trans(h, B, M1, trans[0].MM)) return RC_EFAIL;
+    if (imm_hmm_set_trans(h, B, M1, trans[0].MM)) return DCP_EFAIL;
 
     for (unsigned i = 0; i + 1 < m->core_size; ++i)
     {
@@ -474,28 +474,28 @@ enum rc setup_transitions(struct protein_model *m)
         unsigned j = i + 1;
         struct protein_trans t = trans[j];
         if (imm_hmm_set_trans(h, &pr->M.super, &pr->I.super, t.MI))
-            return RC_EFAIL;
+            return DCP_EFAIL;
         if (imm_hmm_set_trans(h, &pr->I.super, &pr->I.super, t.II))
-            return RC_EFAIL;
+            return DCP_EFAIL;
         if (imm_hmm_set_trans(h, &pr->M.super, &nx->M.super, t.MM))
-            return RC_EFAIL;
+            return DCP_EFAIL;
         if (imm_hmm_set_trans(h, &pr->I.super, &nx->M.super, t.IM))
-            return RC_EFAIL;
+            return DCP_EFAIL;
         if (imm_hmm_set_trans(h, &pr->M.super, &nx->D.super, t.MD))
-            return RC_EFAIL;
+            return DCP_EFAIL;
         if (imm_hmm_set_trans(h, &pr->D.super, &nx->D.super, t.DD))
-            return RC_EFAIL;
+            return DCP_EFAIL;
         if (imm_hmm_set_trans(h, &pr->D.super, &nx->M.super, t.DM))
-            return RC_EFAIL;
+            return DCP_EFAIL;
     }
 
     unsigned n = m->core_size;
     struct imm_state *Mm = &m->alt.nodes[n - 1].M.super;
     struct imm_state *E = &m->xnode.alt.E.super;
-    if (imm_hmm_set_trans(h, Mm, E, trans[n].MM)) return RC_EFAIL;
+    if (imm_hmm_set_trans(h, Mm, E, trans[n].MM)) return DCP_EFAIL;
 
-    if (setup_entry_trans(m)) return RC_EFAIL;
-    if (setup_exit_trans(m)) return RC_EFAIL;
-    if (init_null_xtrans(&m->null.hmm, &m->xnode.null)) return RC_EFAIL;
+    if (setup_entry_trans(m)) return DCP_EFAIL;
+    if (setup_exit_trans(m)) return DCP_EFAIL;
+    if (init_null_xtrans(&m->null.hmm, &m->xnode.null)) return DCP_EFAIL;
     return init_alt_xtrans(&m->alt.hmm, &m->xnode.alt);
 }

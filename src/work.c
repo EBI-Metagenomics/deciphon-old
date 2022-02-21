@@ -28,26 +28,26 @@ static void set_job_fail(struct sched_job *job, char const *msg)
     lock();
     end_work = true;
     if (rest_set_job_state(job, SCHED_JOB_FAIL, msg))
-        error(RC_EFAIL, "failed to set job_fail");
+        error(DCP_EFAIL, "failed to set job_fail");
     unlock();
 }
 
 static enum rc reset_task(struct imm_task **task, struct imm_dp const *dp)
 {
     if (*task && imm_task_reset(*task, dp))
-        return error(RC_EFAIL, "failed to reset task");
+        return error(DCP_EFAIL, "failed to reset task");
 
     if (!*task && !(*task = imm_task_new(dp)))
-        return error(RC_EFAIL, "failed to create task");
+        return error(DCP_EFAIL, "failed to create task");
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq)
 {
     if (imm_task_setup(task, seq))
-        return error(RC_EFAIL, "failed to setup task");
-    return RC_DONE;
+        return error(DCP_EFAIL, "failed to setup task");
+    return DCP_OK;
 }
 
 static enum rc run_on_partition(struct work *work, struct work_priv *priv,
@@ -56,7 +56,7 @@ static enum rc run_on_partition(struct work *work, struct work_priv *priv,
     struct profile *prof = 0;
     struct hypothesis *null = &priv->null;
     struct hypothesis *alt = &priv->alt;
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     while ((rc = profile_reader_next(&work->reader, i, &prof)) == RC_NEXT)
     {
         if (atomic_load(&end_work)) break;
@@ -76,10 +76,10 @@ static enum rc run_on_partition(struct work *work, struct work_priv *priv,
                               work->job.hmmer3_compat);
 
         if (imm_dp_viterbi(profile_null_dp(prof), null->task, &null->prod))
-            return error(RC_EFAIL, "failed to run viterbi");
+            return error(DCP_EFAIL, "failed to run viterbi");
 
         if (imm_dp_viterbi(profile_alt_dp(prof), alt->task, &alt->prod))
-            return error(RC_EFAIL, "failed to run viterbi");
+            return error(DCP_EFAIL, "failed to run viterbi");
 
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
@@ -102,7 +102,7 @@ static enum rc run_on_partition(struct work *work, struct work_priv *priv,
                               (struct match *)&work->priv->match)))
             return rc;
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc work_next(struct work *work)
@@ -161,7 +161,7 @@ enum rc work_run(struct work *work, unsigned num_threads)
     else
     {
         set_job_fail(&work->job, "unknown alphabet");
-        return error(RC_EINVAL, "unknown alphabet");
+        return error(DCP_EINVAL, "unknown alphabet");
     }
 
     work->seq.id = 0;
@@ -170,14 +170,14 @@ enum rc work_run(struct work *work, unsigned num_threads)
     if (prod_fopen(npartitions))
     {
         set_job_fail(&work->job, "failed to begin product submission");
-        return RC_DONE;
+        return DCP_OK;
     }
     while (!(rc = rest_next_seq(&work->seq)))
     {
         if (imm_abc_union_size(work->abc, imm_str(work->seq.data)) > 0)
         {
             set_job_fail(&work->job, "sequence has out-of-alphabet characters");
-            return RC_DONE;
+            return DCP_OK;
         }
 
         work->iseq = imm_seq(imm_str(work->seq.data), work->abc);
@@ -213,10 +213,10 @@ enum rc work_run(struct work *work, unsigned num_threads)
     if (prod_fclose())
     {
         set_job_fail(&work->job, "failed to end product submission");
-        return RC_DONE;
+        return DCP_OK;
     }
 
     if (rest_set_job_state(&work->job, SCHED_JOB_DONE, ""))
-        error(RC_EFAIL, "failed to set job_done");
-    return RC_DONE;
+        error(DCP_EFAIL, "failed to set job_done");
+    return DCP_OK;
 }

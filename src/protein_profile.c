@@ -28,10 +28,10 @@ static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
     if (!ptr && size > 0)
     {
         free(prof->alt.match_ndists);
-        return error(RC_ENOMEM, "failed to alloc nuclt dists");
+        return error(DCP_ENOMEM, "failed to alloc nuclt dists");
     }
     prof->alt.match_ndists = ptr;
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc read(struct profile *prof, struct lip_file *cmp)
@@ -42,16 +42,16 @@ static enum rc read(struct profile *prof, struct lip_file *cmp)
     assert(u32 == 15);
 
     if (!JS_XPEC_STR(cmp, "null")) return eio("skip key");
-    if (imm_dp_read_cmp(&p->null.dp, cmp)) return RC_EFAIL;
+    if (imm_dp_read_cmp(&p->null.dp, cmp)) return DCP_EFAIL;
 
     if (!JS_XPEC_STR(cmp, "alt")) return eio("skip key");
-    if (imm_dp_read_cmp(&p->alt.dp, cmp)) return RC_EFAIL;
+    if (imm_dp_read_cmp(&p->alt.dp, cmp)) return DCP_EFAIL;
 
     uint64_t u64 = 0;
     if (!JS_XPEC_STR(cmp, "core_size")) return eio("skip key");
     if (!cmp_read_uinteger(cmp, &u64)) return eio("read core size");
     if (u64 > PROTEIN_MODEL_CORE_SIZE_MAX)
-        return error(RC_EPARSE, "profile is too long");
+        return error(DCP_EPARSE, "profile is too long");
     p->core_size = (unsigned)u64;
 
     if (!JS_XPEC_STR(cmp, "consensus")) return eio("skip key");
@@ -109,7 +109,7 @@ static enum rc read(struct profile *prof, struct lip_file *cmp)
         if ((rc = nuclt_dist_read(p->alt.match_ndists + i, cmp))) return rc;
         nuclt_dist_init(p->alt.match_ndists + i, p->code->nuclt);
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static struct imm_dp const *null_dp(struct profile const *prof)
@@ -150,7 +150,7 @@ void protein_profile_init(struct protein_profile *p,
 enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
                               bool multi_hits, bool hmmer3_compat)
 {
-    if (seq_size == 0) return error(RC_EINVAL, "sequence cannot be empty");
+    if (seq_size == 0) return error(DCP_EINVAL, "sequence cannot be empty");
 
     imm_float L = (imm_float)seq_size;
 
@@ -207,25 +207,25 @@ enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, E, J), t.EJ + t.JJ);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, J), t.JJ);
     imm_dp_change_trans(dp, imm_dp_trans_idx(dp, J, B), t.JB);
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc protein_profile_absorb(struct protein_profile *p,
                                struct protein_model const *m)
 {
     if (p->code->nuclt != protein_model_nuclt(m))
-        return error(RC_EINVAL, "Different nucleotide alphabets.");
+        return error(DCP_EINVAL, "Different nucleotide alphabets.");
 
     if (p->amino != protein_model_amino(m))
-        return error(RC_EINVAL, "Different amino alphabets.");
+        return error(DCP_EINVAL, "Different amino alphabets.");
 
     struct protein_model_summary s = protein_model_summary(m);
 
     if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
-        return error(RC_EFAIL, "failed to hmm_reset");
+        return error(DCP_EFAIL, "failed to hmm_reset");
 
     if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
-        return error(RC_EFAIL, "failed to hmm_reset");
+        return error(DCP_EFAIL, "failed to hmm_reset");
 
     p->core_size = m->core_size;
     memcpy(p->consensus, m->consensus, m->core_size + 1);
@@ -248,7 +248,7 @@ enum rc protein_profile_absorb(struct protein_profile *p,
     p->alt.J = imm_state_idx(imm_super(s.alt.J));
     p->alt.C = imm_state_idx(imm_super(s.alt.C));
     p->alt.T = imm_state_idx(imm_super(s.alt.T));
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,
@@ -266,7 +266,7 @@ enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,
     struct protein_model model;
     protein_model_init(&model, p->amino, p->code, p->cfg, lprobs);
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
 
     if ((rc = protein_model_setup(&model, core_size))) goto cleanup;
 
@@ -320,9 +320,9 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
     struct imm_frame_cond cond = {prof->eps, &nucltd->nucltp, &nucltd->codonm};
 
     if (imm_lprob_is_nan(imm_frame_cond_decode(&cond, seq, codon)))
-        return error(RC_EINVAL, "failed to decode sequence");
+        return error(DCP_EINVAL, "failed to decode sequence");
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 void protein_profile_write_dot(struct protein_profile const *p, FILE *fp)
@@ -338,10 +338,10 @@ enum rc protein_profile_write(struct protein_profile const *prof,
     FILE *fp = cmp_file(cmp);
 
     if (!JS_WRITE_STR(cmp, "null")) return eio("write null key");
-    if (imm_dp_write(&prof->null.dp, fp)) return RC_EFAIL;
+    if (imm_dp_write(&prof->null.dp, fp)) return DCP_EFAIL;
 
     if (!JS_WRITE_STR(cmp, "alt")) return eio("write alt key");
-    if (imm_dp_write(&prof->alt.dp, fp)) return RC_EFAIL;
+    if (imm_dp_write(&prof->alt.dp, fp)) return DCP_EFAIL;
 
     if (!JS_WRITE_STR(cmp, "core_size")) return eio("write core_size key");
     if (!cmp_write_uinteger(cmp, prof->core_size))
@@ -391,5 +391,5 @@ enum rc protein_profile_write(struct protein_profile const *prof,
     {
         if ((rc = nuclt_dist_write(prof->alt.match_ndists + i, cmp))) return rc;
     }
-    return RC_DONE;
+    return DCP_OK;
 }

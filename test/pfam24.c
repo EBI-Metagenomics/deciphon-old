@@ -24,10 +24,10 @@ void test_pfam24_sample(bool multi_hits, bool hmmer3_compat,
     char const *sched_path = TMPDIR "/pfam24.sched";
 
     remove(sched_path);
-    EQ(server_open(sched_path, num_threads), RC_DONE);
+    EQ(server_open(sched_path, num_threads), DCP_OK);
 
     int64_t db_id = 0;
-    EQ(server_add_db(db_path, &db_id), RC_DONE);
+    EQ(server_add_db(db_path, &db_id), DCP_OK);
     EQ(db_id, 1);
 
     struct job job = {0};
@@ -49,20 +49,20 @@ void test_pfam24_sample(bool multi_hits, bool hmmer3_compat,
     job_add_seq(&job, seq + 0);
     job_add_seq(&job, seq + 1);
 
-    EQ(server_submit_job(&job), RC_DONE);
+    EQ(server_submit_job(&job), DCP_OK);
     COND(job.id > 0);
 
     server_set_lrt_threshold(10.f);
-    EQ(server_run(true), RC_DONE);
+    EQ(server_run(true), DCP_OK);
 
     sched_job.id = job.id;
-    EQ(server_get_sched_job(&sched_job), RC_DONE);
+    EQ(server_get_sched_job(&sched_job), DCP_OK);
     EQ(sched_job.error, "");
     EQ(sched_job.multi_hits, multi_hits);
     EQ(sched_job.hmmer3_compat, hmmer3_compat);
     EQ(sched_job.state, "done");
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     prod.id = 0;
     prod.job_id = sched_job.id;
     while ((rc = server_next_sched_prod(&sched_job, &prod)) == RC_NEXT)
@@ -142,7 +142,7 @@ void test_pfam24_sample(bool multi_hits, bool hmmer3_compat,
         }
     }
 
-    EQ(server_close(), RC_DONE);
+    EQ(server_close(), DCP_OK);
 
 #if 0
     struct dcp_task_cfg cfgs[4] = {{true, true, false, false},

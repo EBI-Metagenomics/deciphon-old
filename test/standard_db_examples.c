@@ -14,7 +14,7 @@ void standard_db_examples_new_ex1(char const *filepath, unsigned core_size)
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
     struct standard_db db;
-    EQ(standard_db_openw(&db, fd, &m->code), RC_DONE);
+    EQ(standard_db_openw(&db, fd, &m->code), DCP_OK);
 
     /* Profile 0 */
     struct standard_profile p;
@@ -24,7 +24,7 @@ void standard_db_examples_new_ex1(char const *filepath, unsigned core_size)
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
     EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
                         metadata("NAME0", "ACC0")),
-       RC_DONE);
+       DCP_OK);
 
     /* Profile 1 */
     struct imm_mute_state state;
@@ -37,10 +37,10 @@ void standard_db_examples_new_ex1(char const *filepath, unsigned core_size)
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
                         metadata("NAME1", "ACC1")),
-       RC_DONE);
+       DCP_OK);
 
     profile_del((struct profile *)&p);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }
 
@@ -57,7 +57,7 @@ void standard_db_examples_new_ex2(char const *filepath)
     FILE *fd = fopen(filepath, "wb");
     NOTNULL(fd);
     struct standard_db db;
-    EQ(standard_db_openw(&db, fd, code), RC_DONE);
+    EQ(standard_db_openw(&db, fd, code), DCP_OK);
 
     /* Profile 0 */
     struct standard_profile p;
@@ -67,7 +67,7 @@ void standard_db_examples_new_ex2(char const *filepath)
     EQ(imm_hmm_reset_dp(alt, imm_super(&m->end), &p.dp.alt), IMM_SUCCESS);
     EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
                         metadata("NAME0", "ACC0")),
-       RC_DONE);
+       DCP_OK);
 
     /* Profile 1 */
     struct imm_mute_state state;
@@ -80,9 +80,9 @@ void standard_db_examples_new_ex2(char const *filepath)
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
                         metadata("NAME1", "ACC1")),
-       RC_DONE);
+       DCP_OK);
 
     profile_del((struct profile *)&p);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }

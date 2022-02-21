@@ -26,7 +26,7 @@ static enum rc read_abc(struct lip_file *cmp, struct imm_abc *abc)
 {
     if (!cmp_write_str(cmp, "abc", 3)) eio("write abc key");
     if (imm_abc_read_cmp(abc, cmp)) return error(RC_EIO, "failed to read abc");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc write_abc(struct lip_file *cmp, struct imm_abc const *abc)
@@ -34,7 +34,7 @@ static enum rc write_abc(struct lip_file *cmp, struct imm_abc const *abc)
     if (!JS_XPEC_STR(cmp, "abc")) eio("skip abc key");
     if (imm_abc_write(abc, cmp_file(cmp)))
         return error(RC_EIO, "failed to write abc");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static void standard_db_init(struct standard_db *db)
@@ -51,7 +51,7 @@ enum rc standard_db_openr(struct standard_db *db, FILE *fp)
 
     struct lip_file *cmp = &db->super.file.cmp;
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     if ((rc = db_read_magic_number(&db->super))) return rc;
     if ((rc = db_read_profile_typeid(&db->super))) return rc;
     if ((rc = db_read_float_size(&db->super))) return rc;
@@ -61,7 +61,7 @@ enum rc standard_db_openr(struct standard_db *db, FILE *fp)
 
     imm_code_init(&db->code, &db->abc);
     if (db->super.vtable.typeid != DB_STANDARD)
-        return error(RC_EPARSE, "wrong typeid");
+        return error(DCP_EPARSE, "wrong typeid");
 
     return db_set_metadata_end(&db->super);
 }
@@ -74,7 +74,7 @@ enum rc standard_db_openw(struct standard_db *db, FILE *fp,
 
     struct lip_file *hdr = &db->super.tmp.hdr;
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     if ((rc = db_openw(&db->super, fp))) goto cleanup;
     if ((rc = db_write_magic_number(&db->super))) goto cleanup;
     if ((rc = db_write_profile_typeid(&db->super))) goto cleanup;

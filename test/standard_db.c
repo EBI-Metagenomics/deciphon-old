@@ -36,8 +36,8 @@ void test_db_openw_empty(void)
     FILE *fd = fopen(TMPDIR "/empty.dcp", "wb");
     NOTNULL(fd);
     struct standard_db db;
-    EQ(standard_db_openw(&db, fd, &code), RC_DONE);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(standard_db_openw(&db, fd, &code), DCP_OK);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }
 
@@ -46,7 +46,7 @@ void test_db_openr_empty(void)
     FILE *fd = fopen(TMPDIR "/empty.dcp", "rb");
     NOTNULL(fd);
     struct standard_db db;
-    EQ(standard_db_openr(&db, fd), RC_DONE);
+    EQ(standard_db_openr(&db, fd), DCP_OK);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = db_abc((struct db *)&db);
@@ -54,7 +54,7 @@ void test_db_openr_empty(void)
 
     struct imm_dna const *dna = (struct imm_dna *)abc;
     EQ(imm_abc_typeid(imm_super(imm_super(dna))), IMM_DNA);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }
 
@@ -75,7 +75,7 @@ void test_db_openw_one_mute(void)
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "wb");
     NOTNULL(fd);
     struct standard_db db;
-    EQ(standard_db_openw(&db, fd, &code), RC_DONE);
+    EQ(standard_db_openw(&db, fd, &code), DCP_OK);
 
     struct standard_profile p;
     standard_profile_init(&p, &code);
@@ -83,10 +83,10 @@ void test_db_openw_one_mute(void)
     EQ(imm_hmm_reset_dp(&hmm, imm_super(&state), &p.dp.alt), IMM_SUCCESS);
     EQ(db_write_profile((struct db *)&db, (struct profile const *)&p,
                         metadata("NAME0", "ACC0")),
-       RC_DONE);
+       DCP_OK);
 
     profile_del((struct profile *)&p);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }
 
@@ -95,7 +95,7 @@ void test_db_openr_one_mute(void)
     FILE *fd = fopen(TMPDIR "/one_mute.dcp", "rb");
     NOTNULL(fd);
     struct standard_db db;
-    EQ(standard_db_openr(&db, fd), RC_DONE);
+    EQ(standard_db_openr(&db, fd), DCP_OK);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = db_abc((struct db *)&db);
@@ -111,7 +111,7 @@ void test_db_openr_one_mute(void)
     EQ(mt.name, "NAME0");
     EQ(mt.acc, "ACC0");
 
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }
 
@@ -125,7 +125,7 @@ void test_db_openr_example1(void)
     FILE *fd = fopen(TMPDIR "/example1.dcp", "rb");
     NOTNULL(fd);
     struct standard_db db;
-    EQ(standard_db_openr(&db, fd), RC_DONE);
+    EQ(standard_db_openr(&db, fd), DCP_OK);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
     EQ(imm_abc_typeid(db_abc((struct db *)&db)), IMM_ABC);
@@ -141,9 +141,9 @@ void test_db_openr_example1(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     struct profile_reader reader;
-    EQ(profile_reader_setup(&reader, (struct db *)&db, 1), RC_DONE);
+    EQ(profile_reader_setup(&reader, (struct db *)&db, 1), DCP_OK);
     struct profile *prof = 0;
     while ((rc = profile_reader_next(&reader, 0, &prof)) != RC_END)
     {
@@ -165,7 +165,7 @@ void test_db_openr_example1(void)
 
     imm_del(&prod);
     profile_reader_del(&reader);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }
 
@@ -179,7 +179,7 @@ void test_db_openr_example2(void)
     FILE *fd = fopen(TMPDIR "/example2.dcp", "rb");
     NOTNULL(fd);
     struct standard_db db;
-    EQ(standard_db_openr(&db, fd), RC_DONE);
+    EQ(standard_db_openr(&db, fd), DCP_OK);
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_STANDARD);
     struct imm_abc const *abc = db_abc((struct db *)&db);
@@ -197,8 +197,8 @@ void test_db_openr_example2(void)
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
     struct profile_reader reader;
-    EQ(profile_reader_setup(&reader, (struct db *)&db, 1), RC_DONE);
-    enum rc rc = RC_DONE;
+    EQ(profile_reader_setup(&reader, (struct db *)&db, 1), DCP_OK);
+    enum rc rc = DCP_OK;
     struct profile *prof = 0;
     while ((rc = profile_reader_next(&reader, 0, &prof)) != RC_END)
     {
@@ -219,6 +219,6 @@ void test_db_openr_example2(void)
 
     imm_del(&prod);
     profile_reader_del(&reader);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }

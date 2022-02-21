@@ -10,7 +10,7 @@ void db_tmp_setup(struct db_tmp *db)
 
 enum rc db_tmp_init(struct db_tmp *db)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     for (unsigned i = 0; i < ARRAY_SIZE_OF(*db, cmps); ++i)
     {
         FILE *fp = tmpfile();

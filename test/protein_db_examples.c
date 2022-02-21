@@ -15,7 +15,7 @@ void protein_db_examples_new_ex1(char const *filepath, unsigned core_size)
 
     struct protein_cfg cfg = protein_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
     struct protein_db db = {0};
-    EQ(protein_db_openw(&db, fd, amino, nuclt, cfg), RC_DONE);
+    EQ(protein_db_openw(&db, fd, amino, nuclt, cfg), DCP_OK);
 
     struct protein_profile prof;
     protein_profile_init(&prof, amino, &code, cfg);
@@ -23,14 +23,14 @@ void protein_db_examples_new_ex1(char const *filepath, unsigned core_size)
     protein_profile_sample(&prof, 1, core_size);
     EQ(db_write_profile((struct db *)&db, (struct profile const *)&prof,
                         metadata("NAME0", "ACC0")),
-       RC_DONE);
+       DCP_OK);
 
     protein_profile_sample(&prof, 2, core_size);
     EQ(db_write_profile((struct db *)&db, (struct profile const *)&prof,
                         metadata("NAME1", "ACC1")),
-       RC_DONE);
+       DCP_OK);
 
     profile_del((struct profile *)&prof);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }

@@ -53,7 +53,7 @@ static size_t answer_callback(void *contents, size_t size, size_t nmemb,
     // char *ptr = realloc(a->data, a->size + realsize + 1);
     // if (!ptr)
     // {
-    //     error(RC_ENOMEM, "failed to realloc");
+    //     error(DCP_ENOMEM, "failed to realloc");
     //     return 0;
     // }
 
@@ -72,7 +72,7 @@ static size_t answer_callback(void *contents, size_t size, size_t nmemb,
     /* Assume the top-level element is an object */
     if (r < 1 || a->json.tok[0].type != JSMN_OBJECT)
     {
-        error(RC_EPARSE, "object expected");
+        error(DCP_EPARSE, "object expected");
         return 0;
     }
 
@@ -102,7 +102,7 @@ enum rc rest_open(char const *url)
 
     set_default_opts();
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 void rest_close(void)
@@ -149,9 +149,9 @@ static bool to_bool(jsmntok_t const *tok)
 
 static enum rc bind_int64(jsmntok_t const *tok, int64_t *val)
 {
-    if (!is_number(tok)) return error(RC_EINVAL, "expected number");
+    if (!is_number(tok)) return error(DCP_EINVAL, "expected number");
     if (!to_int64l(tokl(tok), tokv(tok), val)) return eparse("parse number");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static bool jeq(jsmntok_t const *tok, const char *s)
@@ -169,9 +169,9 @@ static enum rc parse_rc(jsmntok_t const *tok, enum rc *rc)
 
 static enum rc parse_ret(unsigned nitems, jsmntok_t const *tok)
 {
-    if (nitems != 2) return error(RC_EINVAL, "expected two items");
+    if (nitems != 2) return error(DCP_EINVAL, "expected two items");
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     for (unsigned i = 1; i < nitems * 2; i += 2)
     {
         if (jeq(tok + i, "rc"))
@@ -183,17 +183,17 @@ static enum rc parse_ret(unsigned nitems, jsmntok_t const *tok)
             cpy_str(JOB_ERROR_SIZE, rest_ret.error, tok + i + 1);
         }
         else
-            return error(RC_EINVAL, "unexpected json key");
+            return error(DCP_EINVAL, "unexpected json key");
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc parse_db(unsigned ntoks, jsmntok_t const *tok,
                         struct sched_db *db)
 {
-    if (ntoks != 2 * 3 + 1) return error(RC_EINVAL, "expected three items");
+    if (ntoks != 2 * 3 + 1) return error(DCP_EINVAL, "expected three items");
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     for (unsigned i = 1; i < ntoks; i += 2)
     {
         if (jeq(tok + i, "id"))
@@ -209,22 +209,22 @@ static enum rc parse_db(unsigned ntoks, jsmntok_t const *tok,
             cpy_str(PATH_SIZE, db->filename, tok + i + 1);
         }
         else
-            return error(RC_EINVAL, "unexpected json key");
+            return error(DCP_EINVAL, "unexpected json key");
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 #if 0
 static enum rc parse_filepath(unsigned ntoks, jsmntok_t const *tok,
                               unsigned path_size, char *path)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     for (unsigned i = 1; i < ntoks; i += 2)
     {
         if (jeq(tok + i, "ret"))
         {
             if (tok[i + 1].type != JSMN_OBJECT)
-                return error(RC_EPARSE, "expected json object");
+                return error(DCP_EPARSE, "expected json object");
 
             unsigned nitems = (unsigned)tok[i + 1].size;
             if ((rc = parse_ret(nitems, tok + i + 1))) return rc;
@@ -235,9 +235,9 @@ static enum rc parse_filepath(unsigned ntoks, jsmntok_t const *tok,
             cpy_str(path_size, path, tok + i + 1);
         }
         else
-            return error(RC_EINVAL, "unexpected json key");
+            return error(DCP_EINVAL, "unexpected json key");
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 #endif
 
@@ -279,7 +279,7 @@ enum rc rest_get_db(struct sched_db *db)
 // static enum rc parse_job_state(void)
 // {
 //     struct answer *a = (struct answer *)&answer;
-//     enum rc rc = RC_DONE;
+//     enum rc rc = DCP_OK;
 //     for (unsigned i = 1; i < (unsigned)a->json.ntoks; i++)
 //     {
 //         if (jeq(&a->json.tok[i], "rc") == 0)
@@ -304,10 +304,10 @@ enum rc rest_get_db(struct sched_db *db)
 //         {
 //             printf("Unexpected key: %.*s\n", tokl(a->json.tok + i),
 //                    tokv(a->json.tok + i));
-//             return error(RC_EINVAL, "unexpected json key");
+//             return error(DCP_EINVAL, "unexpected json key");
 //         }
 //     }
-//     return RC_DONE;
+//     return DCP_OK;
 // }
 
 // enum rc rest_job_state(int64_t job_id)
@@ -346,58 +346,58 @@ enum rc rest_get_db(struct sched_db *db)
 //     free(a->data);
 //
 //     curl_global_cleanup();
-//     return RC_DONE;
+//     return DCP_OK;
 // }
 
 static enum rc parse_pend_job(unsigned nitems, jsmntok_t const *tok,
                               struct rest_pend_job *job)
 {
-    if (nitems != 4) return error(RC_EINVAL, "expected four items");
+    if (nitems != 4) return error(DCP_EINVAL, "expected four items");
 
     for (unsigned i = 1; i < nitems * 2; i += 2)
     {
         if (jeq(tok + i, "id"))
         {
             if (!is_number(tok + i + 1))
-                return error(RC_EINVAL, "expected number");
+                return error(DCP_EINVAL, "expected number");
             if (!to_int64l(tokl(tok + i + 1), tokv(tok + i + 1), &job->id))
                 return eparse("parse number");
         }
         else if (jeq(tok + i, "db_id"))
         {
             if (!is_number(tok + i + 1))
-                return error(RC_EINVAL, "expected number");
+                return error(DCP_EINVAL, "expected number");
             if (!to_int64l(tokl(tok + i + 1), tokv(tok + i + 1), &job->db_id))
                 return eparse("parse number");
         }
         else if (jeq(tok + i, "multi_hits"))
         {
             if (!is_boolean(tok + i + 1))
-                return error(RC_EINVAL, "expected bool");
+                return error(DCP_EINVAL, "expected bool");
             job->multi_hits = to_bool(tok + i + 1);
         }
         else if (jeq(tok + i, "hmmer3_compat"))
         {
             if (!is_boolean(tok + i + 1))
-                return error(RC_EINVAL, "expected bool");
+                return error(DCP_EINVAL, "expected bool");
             job->hmmer3_compat = to_bool(tok + i + 1);
         }
         else
-            return error(RC_EINVAL, "unexpected json key");
+            return error(DCP_EINVAL, "unexpected json key");
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc parse_next_pend_job(unsigned ntoks, jsmntok_t const *tok,
                                    struct rest_pend_job *job)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     for (unsigned i = 1; i < ntoks; i += 2)
     {
         if (jeq(tok + i, "ret"))
         {
             if (tok[i + 1].type != JSMN_OBJECT)
-                return error(RC_EPARSE, "expected json object");
+                return error(DCP_EPARSE, "expected json object");
 
             unsigned nitems = (unsigned)tok[i + 1].size;
             if ((rc = parse_ret(nitems, tok + i + 1))) return rc;
@@ -406,24 +406,24 @@ static enum rc parse_next_pend_job(unsigned ntoks, jsmntok_t const *tok,
         else if (jeq(tok + i, "job"))
         {
             if (tok[i + 1].type != JSMN_OBJECT)
-                return error(RC_EPARSE, "expected json object");
+                return error(DCP_EPARSE, "expected json object");
 
             unsigned nitems = (unsigned)tok[i + 1].size;
             if ((rc = parse_pend_job(nitems, tok + i + 1, job))) return rc;
             i += (unsigned)(nitems * 2);
         }
         else
-            return error(RC_EINVAL, "unexpected json key");
+            return error(DCP_EINVAL, "unexpected json key");
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc parse_job(unsigned ntoks, jsmntok_t const *tok,
                          struct sched_job *job)
 {
-    if (ntoks != 2 * 9 + 1) return error(RC_EINVAL, "expected nine items");
+    if (ntoks != 2 * 9 + 1) return error(DCP_EINVAL, "expected nine items");
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     for (unsigned i = 1; i < ntoks; i += 2)
     {
         if (jeq(tok + i, "id"))
@@ -437,13 +437,13 @@ static enum rc parse_job(unsigned ntoks, jsmntok_t const *tok,
         else if (jeq(tok + i, "multi_hits"))
         {
             if (!is_boolean(tok + i + 1))
-                return error(RC_EINVAL, "expected bool");
+                return error(DCP_EINVAL, "expected bool");
             job->multi_hits = to_bool(tok + i + 1);
         }
         else if (jeq(tok + i, "hmmer3_compat"))
         {
             if (!is_boolean(tok + i + 1))
-                return error(RC_EINVAL, "expected bool");
+                return error(DCP_EINVAL, "expected bool");
             job->hmmer3_compat = to_bool(tok + i + 1);
         }
         else if (jeq(tok + i, "state"))
@@ -467,9 +467,9 @@ static enum rc parse_job(unsigned ntoks, jsmntok_t const *tok,
             if ((rc = bind_int64(tok + i + 1, &job->exec_ended))) return rc;
         }
         else
-            return error(RC_EINVAL, "unexpected json key");
+            return error(DCP_EINVAL, "unexpected json key");
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
@@ -491,8 +491,8 @@ enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
 
     long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    if (http_code == 403) return error(RC_EINVAL, "redundant job state update");
-    if (http_code == 500) return error(RC_EFAIL, "server error");
+    if (http_code == 403) return error(DCP_EINVAL, "redundant job state update");
+    if (http_code == 500) return error(DCP_EFAIL, "server error");
 
     printf("%.*s\n", (int)answer.size, answer.data);
     curl_slist_free_all(headers);
@@ -525,9 +525,9 @@ enum rc rest_next_pend_job(struct sched_job *job)
 static enum rc parse_seq(unsigned nitems, jsmntok_t const *tok,
                          struct sched_seq *seq)
 {
-    if (nitems != 4 * 2 + 1) return error(RC_EINVAL, "expected five items");
+    if (nitems != 4 * 2 + 1) return error(DCP_EINVAL, "expected five items");
 
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     for (unsigned i = 1; i < nitems; i += 2)
     {
         if (jeq(tok + i, "id"))
@@ -547,22 +547,22 @@ static enum rc parse_seq(unsigned nitems, jsmntok_t const *tok,
             cpy_str(SEQ_SIZE, seq->data, tok + i + 1);
         }
         else
-            return error(RC_EINVAL, "unexpected json key");
+            return error(DCP_EINVAL, "unexpected json key");
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 #if 0
 static enum rc parse_next_seq(unsigned ntoks, jsmntok_t const *tok,
                               struct sched_seq *seq)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     for (unsigned i = 1; i < ntoks; i += 2)
     {
         if (jeq(tok + i, "ret"))
         {
             if (tok[i + 1].type != JSMN_OBJECT)
-                return error(RC_EPARSE, "expected json object");
+                return error(DCP_EPARSE, "expected json object");
 
             unsigned nitems = (unsigned)tok[i + 1].size;
             if ((rc = parse_ret(nitems, tok + i + 1))) return rc;
@@ -571,16 +571,16 @@ static enum rc parse_next_seq(unsigned ntoks, jsmntok_t const *tok,
         else if (jeq(tok + i, "seq"))
         {
             if (tok[i + 1].type != JSMN_OBJECT)
-                return error(RC_EPARSE, "expected json object");
+                return error(DCP_EPARSE, "expected json object");
 
             unsigned nitems = (unsigned)tok[i + 1].size;
             if ((rc = parse_seq(nitems, tok + i + 1, seq))) return rc;
             i += (unsigned)(nitems * 2);
         }
         else
-            return error(RC_EINVAL, "unexpected json key");
+            return error(DCP_EINVAL, "unexpected json key");
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 #endif
 
@@ -605,7 +605,7 @@ enum rc rest_next_seq(struct sched_seq *seq)
     long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     if (http_code == 404) return RC_NOTFOUND;
-    if (http_code == 500) return error(RC_EFAIL, "server error");
+    if (http_code == 500) return error(DCP_EFAIL, "server error");
 
     printf("%.*s\n", (int)answer.size, answer.data);
     curl_slist_free_all(headers);
@@ -741,5 +741,5 @@ enum rc rest_submit_prods_file(char const *filepath)
     curl_slist_free_all(headers);
     if (http_code != 201) return efail("upload file");
 
-    return RC_DONE;
+    return DCP_OK;
 }

@@ -25,7 +25,7 @@ void test_db_protein_openr(void)
     FILE *fd = fopen(TMPDIR "/db.dcp", "rb");
     NOTNULL(fd);
     struct protein_db db = {0};
-    EQ(protein_db_openr(&db, fd), RC_DONE);
+    EQ(protein_db_openr(&db, fd), DCP_OK);
 
     EQ(db_float_size(&db.super), IMM_FLOAT_BYTES);
     EQ(db_profile_typeid(&db.super), PROFILE_PROTEIN);
@@ -46,9 +46,9 @@ void test_db_protein_openr(void)
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
     struct profile_reader reader;
-    EQ(profile_reader_setup(&reader, (struct db *)&db, 1), RC_DONE);
+    EQ(profile_reader_setup(&reader, (struct db *)&db, 1), DCP_OK);
     struct profile *prof = 0;
     while ((rc = profile_reader_next(&reader, 0, &prof)) != RC_END)
     {
@@ -65,6 +65,6 @@ void test_db_protein_openr(void)
 
     imm_del(&prod);
     profile_reader_del(&reader);
-    EQ(db_close((struct db *)&db), RC_DONE);
+    EQ(db_close((struct db *)&db), DCP_OK);
     fclose(fd);
 }

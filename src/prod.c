@@ -38,7 +38,7 @@ static enum rc write_begin(struct prod const *prod, unsigned thread_num)
     if (echo(Fs, profile_typeid)) efail("write prod");
     if (echo(Fs, version)) efail("write prod");
 
-    return RC_DONE;
+    return DCP_OK;
 
 #undef Fg
 #undef Fs
@@ -50,13 +50,13 @@ static enum rc write_begin(struct prod const *prod, unsigned thread_num)
 static enum rc write_match_sep(unsigned thread_num)
 {
     if (fputc(';', prod_file[thread_num].fp) == EOF) return eio("fputc");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc write_end(unsigned thread_num)
 {
     if (fputc('\n', prod_file[thread_num].fp) == EOF) return eio("fputc");
-    return RC_DONE;
+    return DCP_OK;
 }
 
 enum rc prod_fopen(unsigned num_threads)
@@ -70,7 +70,7 @@ enum rc prod_fopen(unsigned num_threads)
             return efail("begin prod submission");
         }
     }
-    return RC_DONE;
+    return DCP_OK;
 }
 
 /* Output example
@@ -91,7 +91,7 @@ enum rc prod_fopen(unsigned num_threads)
 
 enum rc prod_fclose(void)
 {
-    enum rc rc = RC_EFAIL;
+    enum rc rc = DCP_EFAIL;
 
     for (unsigned i = 0; i < nthreads; ++i)
     {
@@ -103,7 +103,7 @@ enum rc prod_fclose(void)
         rewind(prod_file[i].fp);
         if ((rc = rest_submit_prods_file(prod_file[i].path))) goto cleanup;
     }
-    rc = RC_DONE;
+    rc = DCP_OK;
 
 cleanup:
     cleanup();
@@ -114,7 +114,7 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
                     struct imm_path const *path, unsigned partition,
                     prod_fwrite_match_cb fwrite_match, struct match *match)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
 
     if (write_begin(prod, partition))
         return error(RC_EIO, "failed to write prod");

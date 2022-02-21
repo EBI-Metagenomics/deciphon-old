@@ -21,7 +21,7 @@ unsigned tok_size(struct tok const *tok)
 
 enum rc tok_next(struct tok *tok, FILE *fp)
 {
-    enum rc rc = RC_DONE;
+    enum rc rc = DCP_OK;
 
     if (tok->line.consumed)
     {
@@ -32,7 +32,7 @@ enum rc tok_next(struct tok *tok, FILE *fp)
                 tok->value = NULL;
                 tok->id = TOK_EOF;
                 tok->line.data[0] = '\0';
-                return RC_DONE;
+                return DCP_OK;
             }
             return rc;
         }
@@ -42,7 +42,7 @@ enum rc tok_next(struct tok *tok, FILE *fp)
     else
         tok->value = strtok_r(NULL, DELIM, &tok->line.ctx);
 
-    if (!tok->value) return RC_EPARSE;
+    if (!tok->value) return DCP_EPARSE;
 
     if (!strcmp(tok->value, "\n"))
         tok->id = TOK_NL;
@@ -51,7 +51,7 @@ enum rc tok_next(struct tok *tok, FILE *fp)
 
     tok->line.consumed = tok->id == TOK_NL;
 
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static enum rc next_line(FILE *fp, unsigned size, char *line)
@@ -66,7 +66,7 @@ static enum rc next_line(FILE *fp, unsigned size, char *line)
     }
 
     add_space_before_newline(line);
-    return RC_DONE;
+    return DCP_OK;
 }
 
 static void add_space_before_newline(char *line)

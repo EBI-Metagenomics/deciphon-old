@@ -22,9 +22,9 @@ static void del(struct profile *prof)
 static enum rc read(struct profile *prof, struct lip_file *cmp)
 {
     struct standard_profile *p = (struct standard_profile *)prof;
-    if (imm_dp_read_cmp(&p->dp.null, cmp)) return RC_EFAIL;
-    if (imm_dp_read_cmp(&p->dp.alt, cmp)) return RC_EFAIL;
-    return RC_DONE;
+    if (imm_dp_read_cmp(&p->dp.null, cmp)) return DCP_EFAIL;
+    if (imm_dp_read_cmp(&p->dp.alt, cmp)) return DCP_EFAIL;
+    return DCP_OK;
 }
 
 static struct imm_dp const *null_dp(struct profile const *prof)
@@ -56,10 +56,10 @@ enum rc standard_profile_write(struct standard_profile const *prof,
     FILE *fp = cmp_file(cmp);
 
     if (!JS_WRITE_STR(cmp, "null")) return eio("write null state key");
-    if (imm_dp_write(&prof->dp.null, fp)) return RC_EFAIL;
+    if (imm_dp_write(&prof->dp.null, fp)) return DCP_EFAIL;
 
     if (!JS_WRITE_STR(cmp, "alt")) return eio("write alt state key");
-    if (imm_dp_write(&prof->dp.alt, fp)) return RC_EFAIL;
+    if (imm_dp_write(&prof->dp.alt, fp)) return DCP_EFAIL;
 
-    return RC_DONE;
+    return DCP_OK;
 }
