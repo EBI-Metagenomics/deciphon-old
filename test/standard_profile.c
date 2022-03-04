@@ -1,4 +1,4 @@
-#include "standard_profile.h"
+#include "deciphon/model/standard_profile.h"
 #include "hope/hope.h"
 #include "imm/imm.h"
 
@@ -23,7 +23,7 @@ int main(void)
     EQ(imm_hmm_set_start(alt, imm_super(&state1), imm_log(0.1)), IMM_SUCCESS);
 
     struct standard_profile prof;
-    standard_profile_init(&prof, code);
+    standard_profile_init(&prof, "accession", code);
     EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_SUCCESS);
     EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_SUCCESS);
 

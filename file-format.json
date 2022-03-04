@@ -9,9 +9,9 @@
     "amino": null,
     "profile_size": [1, 1]
   },
-  "metadata": [null, null],
   "profile": [
     {
+      "accession": "",
       "null": null,
       "alt": null,
       "R": 1,
@@ -24,6 +24,7 @@
       "T": 1
     },
     {
+      "accession": "",
       "null": null,
       "alt": null,
       "R": 1,

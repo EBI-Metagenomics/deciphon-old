@@ -1,39 +1,63 @@
-#include "rest.h"
+#include "deciphon/db/db.h"
+#include "deciphon/server/server.h"
 #include "hope/hope.h"
+#include "imm/imm.h"
 
-struct rest_pend_job pend_job = {0};
-struct sched_seq sched_seq = {0};
-
-static void test_rest_next_pending_job(void)
-{
-    enum rc rc = rest_next_pend_job(&pend_job);
-    EQ(rc, DCP_OK);
-    printf("id: %lld db_id: %lld multi_hits: %d hmmer3_compat: %d\n",
-           pend_job.id, pend_job.db_id, pend_job.multi_hits,
-           pend_job.hmmer3_compat);
-}
-
-static void test_rest_next_seq(void)
-{
-    sched_seq.id = 0;
-    sched_seq.job_id = 1;
-    enum rc rc = rest_next_seq(&sched_seq);
-    EQ(rc, DCP_OK);
-    printf("id: %lld job_id: %lld name: %s\n", sched_seq.id, sched_seq.job_id,
-           sched_seq.name);
-    printf("data: %s\n", sched_seq.data);
-
-    sched_seq.id = 1;
-    rc = rest_next_seq(&sched_seq);
-    EQ(rc, DCP_OK);
-    printf("id: %lld job_id: %lld name: %s\n", sched_seq.id, sched_seq.job_id,
-           sched_seq.name);
-    printf("data: %s\n", sched_seq.data);
-}
+void test_rest_open_close(void);
+void test_rest_next_pend_job(void);
+void test_rest_post_db(void);
+void test_rest_get_db(void);
 
 int main(void)
 {
-    test_rest_next_pending_job();
-    test_rest_next_seq();
+    test_rest_open_close();
+    test_rest_next_pend_job();
+    test_rest_post_db();
+    test_rest_get_db();
     return hope_status();
+}
+
+void test_rest_open_close(void)
+{
+    EQ(rest_open(REST_URL_STEM), RC_OK);
+    rest_close();
+}
+
+void test_rest_next_pend_job(void)
+{
+    EQ(rest_open(REST_URL_STEM), RC_OK);
+    struct sched_job job = {0};
+    EQ(rest_next_pend_job(&job), RC_OK);
+    EQ(job.id, 1);
+    EQ(job.db_id, 1);
+    EQ(job.multi_hits, 1);
+    EQ(job.hmmer3_compat, 0);
+    EQ(job.state, "pend");
+    EQ(job.error, "");
+    COND(job.submission > 1646384350);
+    EQ(job.exec_started, 0);
+    EQ(job.exec_ended, 0);
+    rest_close();
+}
+
+void test_rest_post_db(void)
+{
+    EQ(rest_open(REST_URL_STEM), RC_OK);
+    struct sched_db db = {0};
+    strcpy(db.filename, "minifam.dcp");
+    EQ(rest_post_db(&db), RC_OK);
+    // {"id":1,"xxh3_64":-5972818837115870266,"filename":"minifam.dcp"}HTTP
+    // code: 201
+    rest_close();
+}
+
+void test_rest_get_db(void)
+{
+    EQ(rest_open(REST_URL_STEM), RC_OK);
+    struct sched_db db = {0};
+    db.id = 1;
+    EQ(rest_get_db(&db), RC_OK);
+    // [{"id":1,"xxh3_64":-5972818837115870266,"filename":"minifam.dcp"}]HTTP
+    // code: 200
+    rest_close();
 }

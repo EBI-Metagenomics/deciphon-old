@@ -1,7 +1,7 @@
-#include "protein_model.h"
+#include "deciphon/model/protein_model.h"
+#include "deciphon/model/protein_profile.h"
 #include "hope/hope.h"
 #include "imm/imm.h"
-#include "protein_profile.h"
 
 int main(void)
 {
@@ -34,21 +34,21 @@ int main(void)
     struct protein_model model;
     protein_model_init(&model, amino, &code, cfg, null_lprobs);
 
-    EQ(protein_model_setup(&model, core_size), DCP_OK);
+    EQ(protein_model_setup(&model, core_size), RC_OK);
 
-    EQ(protein_model_add_node(&model, match_lprobs1, '-'), DCP_OK);
-    EQ(protein_model_add_node(&model, match_lprobs2, '-'), DCP_OK);
-    EQ(protein_model_add_node(&model, match_lprobs3, '-'), DCP_OK);
+    EQ(protein_model_add_node(&model, match_lprobs1, '-'), RC_OK);
+    EQ(protein_model_add_node(&model, match_lprobs2, '-'), RC_OK);
+    EQ(protein_model_add_node(&model, match_lprobs3, '-'), RC_OK);
 
-    EQ(protein_model_add_trans(&model, t[0]), DCP_OK);
-    EQ(protein_model_add_trans(&model, t[1]), DCP_OK);
-    EQ(protein_model_add_trans(&model, t[2]), DCP_OK);
-    EQ(protein_model_add_trans(&model, t[3]), DCP_OK);
+    EQ(protein_model_add_trans(&model, t[0]), RC_OK);
+    EQ(protein_model_add_trans(&model, t[1]), RC_OK);
+    EQ(protein_model_add_trans(&model, t[2]), RC_OK);
+    EQ(protein_model_add_trans(&model, t[3]), RC_OK);
 
-    struct protein_profile prof;
-    protein_profile_init(&prof, amino, &code, cfg);
+    struct protein_profile prof = {0};
+    protein_profile_init(&prof, "accession", amino, &code, cfg);
 
-    EQ(protein_profile_absorb(&prof, &model), DCP_OK);
+    EQ(protein_profile_absorb(&prof, &model), RC_OK);
 
     profile_del((struct profile *)&prof);
     protein_model_del(&model);
