@@ -98,7 +98,7 @@ static enum rc perform_request(CURL *curl, long *http_code)
     return *http_code > 299 ? efail("http request error") : RC_OK;
 }
 
-enum rc xcurl_http_get(struct xcurl *x, char const *query, long *http_code,
+enum rc xcurl_get(struct xcurl *x, char const *query, long *http_code,
                        xcurl_callback_func_t callback, void *arg)
 {
     url_set_query(&x->url, query);
@@ -110,7 +110,7 @@ enum rc xcurl_http_get(struct xcurl *x, char const *query, long *http_code,
     return perform_request(x->curl, http_code);
 }
 
-enum rc xcurl_http_post(struct xcurl *x, char const *query, long *http_code,
+enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
                         xcurl_callback_func_t callback, void *arg,
                         char const *json)
 {
@@ -124,7 +124,7 @@ enum rc xcurl_http_post(struct xcurl *x, char const *query, long *http_code,
     return perform_request(x->curl, http_code);
 }
 
-enum rc xcurl_http_delete(struct xcurl *x, char const *query, long *http_code,
+enum rc xcurl_delete(struct xcurl *x, char const *query, long *http_code,
                           xcurl_callback_func_t callback, void *arg)
 {
     url_set_query(&x->url, query);

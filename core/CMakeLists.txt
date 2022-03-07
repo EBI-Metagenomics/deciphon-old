@@ -2,6 +2,7 @@ add_library(
   core
   bitops.c
   logger.c
+  nanoprintf.c
   rc.c
   strlcpy.c
   to.c
