@@ -12,18 +12,6 @@
 static struct xcurl curl = {0};
 static spinlock_t lock = SPINLOCK_INIT;
 
-// static struct answer
-// {
-//     struct
-//     {
-//         jsmn_parser parser;
-//         jsmntok_t tok[128];
-//         unsigned ntoks;
-//     } json;
-//     char *data;
-//     size_t size;
-// } answer = {0};
-
 struct
 {
     jsmn_parser parser;
@@ -163,13 +151,6 @@ static size_t next_pend_job_callback(void *contents, size_t bsize, size_t nmemb,
     return size;
 }
 
-static size_t get_db_callback(void *contents, size_t bsize, size_t nmemb,
-                              void *userp)
-{
-    size_t size = bsize * nmemb;
-    return size;
-}
-
 enum rc rest_open(char const *url_stem)
 {
     spinlock_lock(&lock);
@@ -185,34 +166,46 @@ void rest_close(void)
     spinlock_unlock(&lock);
 }
 
+static size_t parse_wipe(void *data, size_t size, void *arg) { return size; }
+
 enum rc rest_wipe(void)
 {
     long http_code = 0;
-    return xcurl_http_delete(&curl, "/", &http_code);
+    return xcurl_http_delete(&curl, "/", &http_code, parse_wipe, 0);
+}
+
+static size_t parse_next_pend_job(void *data, size_t size, void *arg)
+{
+    return size;
 }
 
 enum rc rest_next_pend_job(struct sched_job *job)
 {
     long http_code = 0;
     enum rc rc = xcurl_http_get(&curl, "/jobs/next_pend", &http_code,
-                                next_pend_job_callback, job);
+                                parse_next_pend_job, job);
     return rc;
 }
+
+static size_t parse_post_db(void *data, size_t size, void *arg) { return size; }
 
 enum rc rest_post_db(struct sched_db *db)
 {
     char json[FILENAME_SIZE + 16] = {0};
     sprintf(json, "{\"filename\": \"%s\"}", db->filename);
     long http_code = 0;
-    enum rc rc = xcurl_http_post(&curl, "/dbs/", &http_code, json);
+    enum rc rc =
+        xcurl_http_post(&curl, "/dbs/", &http_code, parse_post_db, db, json);
     return rc;
 }
+
+static size_t parse_get_db(void *data, size_t size, void *arg) { return size; }
 
 enum rc rest_get_db(struct sched_db *db)
 {
     char query[32] = {0};
     sprintf(query, "/dbs/%" PRId64, db->id);
     long http_code = 0;
-    enum rc rc = xcurl_http_get(&curl, query, &http_code, get_db_callback, db);
+    enum rc rc = xcurl_http_get(&curl, query, &http_code, parse_get_db, db);
     return rc;
 }

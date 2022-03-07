@@ -10,29 +10,30 @@
 
 struct xcurl
 {
-    CURL *handle;
+    CURL *curl;
     spinlock_t lock;
     struct
     {
         struct curl_slist *get;
         struct curl_slist *post;
+        struct curl_slist *delete;
     } headers;
     struct url url;
 };
 
-enum rc xcurl_init(struct xcurl *curl, char const *url_stem);
-void xcurl_del(struct xcurl *curl);
+enum rc xcurl_init(struct xcurl *, char const *url_stem);
+void xcurl_del(struct xcurl *xcurl);
 
-typedef size_t (*xcurl_callback_func_t)(void *contents, size_t size,
-                                        size_t nmemb, void *userp);
+typedef size_t (*xcurl_callback_func_t)(void *data, size_t size, void *arg);
 
-enum rc xcurl_http_get(struct xcurl *curl, char const *query, long *http_code,
+enum rc xcurl_http_get(struct xcurl *, char const *query, long *http_code,
                        xcurl_callback_func_t callback, void *arg);
 
-enum rc xcurl_http_post(struct xcurl *curl, char const *query, long *http_code,
+enum rc xcurl_http_post(struct xcurl *, char const *query, long *http_code,
+                        xcurl_callback_func_t callback, void *arg,
                         char const *json);
 
-enum rc xcurl_http_delete(struct xcurl *curl, char const *query,
-                          long *http_code);
+enum rc xcurl_http_delete(struct xcurl *, char const *query, long *http_code,
+                          xcurl_callback_func_t callback, void *arg);
 
 #endif
