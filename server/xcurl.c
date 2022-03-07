@@ -12,6 +12,7 @@ enum rc xcurl_init(struct xcurl *x, char const *url_stem)
     initialized = false;
     x->headers.get = 0;
     x->headers.post = 0;
+    x->headers.delete = 0;
 
     assert(!initialized);
 
@@ -54,9 +55,10 @@ cleanup:
 void xcurl_del(struct xcurl *x)
 {
     if (x->curl) curl_easy_cleanup(x->curl);
-    curl_slist_free_all(x->headers.get);
-    curl_slist_free_all(x->headers.post);
-    curl_slist_free_all(x->headers.delete);
+    x->curl = 0;
+    if (x->headers.get) curl_slist_free_all(x->headers.get);
+    if (x->headers.post) curl_slist_free_all(x->headers.post);
+    if (x->headers.delete) curl_slist_free_all(x->headers.delete);
     x->headers.get = 0;
     x->headers.post = 0;
     x->headers.delete = 0;
@@ -77,62 +79,60 @@ static size_t callback_func(void *data, size_t one, size_t size, void *arg)
     return cd->callback(data, size, cd->arg);
 }
 
+static void setup_common_options(CURL *curl, char const *url,
+                                 xcurl_callback_func_t callback, void *arg)
+{
+    curl_easy_reset(curl);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, callback_func);
+    struct callback_data cd = {callback, arg};
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &cd);
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+}
+
+static enum rc perform_request(CURL *curl, long *http_code)
+{
+    CURLcode code = curl_easy_perform(curl);
+    if (code) return curl_error(code);
+
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
+    return *http_code > 299 ? efail("http request error") : RC_OK;
+}
+
 enum rc xcurl_http_get(struct xcurl *x, char const *query, long *http_code,
                        xcurl_callback_func_t callback, void *arg)
 {
-    curl_easy_reset(x->curl);
+    url_set_query(&x->url, query);
+    setup_common_options(x->curl, x->url.full, callback, arg);
+
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers.get);
     curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
-    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, callback_func);
-    struct callback_data cd = {callback, arg};
-    curl_easy_setopt(x->curl, CURLOPT_WRITEDATA, &cd);
-    url_set_query(&x->url, query);
-    curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
 
-    CURLcode code = curl_easy_perform(x->curl);
-    if (code) return curl_error(code);
-
-    curl_easy_getinfo(x->curl, CURLINFO_RESPONSE_CODE, http_code);
-    return *http_code > 299 ? efail("http request error") : RC_OK;
+    return perform_request(x->curl, http_code);
 }
 
 enum rc xcurl_http_post(struct xcurl *x, char const *query, long *http_code,
                         xcurl_callback_func_t callback, void *arg,
                         char const *json)
 {
-    curl_easy_reset(x->curl);
+    url_set_query(&x->url, query);
+    setup_common_options(x->curl, x->url.full, callback, arg);
+
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers.post);
     curl_easy_setopt(x->curl, CURLOPT_POST, 1L);
     curl_easy_setopt(x->curl, CURLOPT_POSTFIELDS, json);
-    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, callback_func);
-    struct callback_data cd = {callback, arg};
-    curl_easy_setopt(x->curl, CURLOPT_WRITEDATA, &cd);
-    url_set_query(&x->url, query);
-    curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
 
-    CURLcode code = curl_easy_perform(x->curl);
-    if (code) return curl_error(code);
-
-    curl_easy_getinfo(x->curl, CURLINFO_RESPONSE_CODE, http_code);
-    return *http_code > 299 ? efail("http request error") : RC_OK;
+    return perform_request(x->curl, http_code);
 }
 
 enum rc xcurl_http_delete(struct xcurl *x, char const *query, long *http_code,
                           xcurl_callback_func_t callback, void *arg)
 {
-    curl_easy_reset(x->curl);
+    url_set_query(&x->url, query);
+    setup_common_options(x->curl, x->url.full, callback, arg);
+
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers.delete);
     curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
     curl_easy_setopt(x->curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, callback_func);
-    struct callback_data cd = {callback, arg};
-    curl_easy_setopt(x->curl, CURLOPT_WRITEDATA, &cd);
-    url_set_query(&x->url, query);
-    curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
 
-    CURLcode code = curl_easy_perform(x->curl);
-    if (code) return curl_error(code);
-
-    curl_easy_getinfo(x->curl, CURLINFO_RESPONSE_CODE, http_code);
-    return *http_code > 299 ? efail("http request error") : RC_OK;
+    return perform_request(x->curl, http_code);
 }
