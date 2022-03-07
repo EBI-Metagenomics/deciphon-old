@@ -1,6 +1,6 @@
 #include "protein_match.h"
+#include "deciphon/logger.h"
 #include "deciphon/model/protein_profile.h"
-#include "deciphon/util/util.h"
 
 /* Match example
  *             ___________________________

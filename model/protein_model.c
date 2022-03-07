@@ -1,9 +1,9 @@
 #include "deciphon/model/protein_model.h"
+#include "deciphon/logger.h"
 #include "deciphon/model/entry_dist.h"
 #include "deciphon/model/nuclt_dist.h"
 #include "deciphon/model/protein_model.h"
 #include "deciphon/model/protein_node.h"
-#include "deciphon/util/logger.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -47,8 +47,8 @@ enum rc setup_exit_trans(struct protein_model *);
 enum rc setup_transitions(struct protein_model *);
 
 enum rc protein_model_add_node(struct protein_model *m,
-                                     imm_float const lprobs[IMM_AMINO_SIZE],
-                                     char consensus)
+                               imm_float const lprobs[IMM_AMINO_SIZE],
+                               char consensus)
 {
     if (!have_called_setup(m))
         return error(RC_EFAIL, "Must call protein_model_setup first.");
@@ -83,7 +83,7 @@ enum rc protein_model_add_node(struct protein_model *m,
 }
 
 enum rc protein_model_add_trans(struct protein_model *m,
-                                      struct protein_trans trans)
+                                struct protein_trans trans)
 {
     if (!have_called_setup(m))
         return error(RC_EFAIL, "Must call protein_model_setup first.");
@@ -155,8 +155,7 @@ static void model_reset(struct protein_model *model)
 
 enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
 {
-    if (core_size == 0)
-        return error(RC_EINVAL, "`core_size` cannot be zero.");
+    if (core_size == 0) return error(RC_EINVAL, "`core_size` cannot be zero.");
 
     if (core_size > PROTEIN_MODEL_CORE_SIZE_MAX)
         return error(RC_EINVAL, "`core_size` is too big.");
@@ -233,8 +232,7 @@ enum rc add_xnodes(struct protein_model *m)
     if (imm_hmm_add_state(&m->alt.hmm, &n->alt.J.super)) return RC_EFAIL;
     if (imm_hmm_add_state(&m->alt.hmm, &n->alt.C.super)) return RC_EFAIL;
     if (imm_hmm_add_state(&m->alt.hmm, &n->alt.T.super)) return RC_EFAIL;
-    if (imm_hmm_set_start(&m->alt.hmm, &n->alt.S.super, LOG1))
-        return RC_EFAIL;
+    if (imm_hmm_set_start(&m->alt.hmm, &n->alt.S.super, LOG1)) return RC_EFAIL;
 
     return RC_OK;
 }
@@ -316,42 +314,28 @@ void init_match(struct imm_frame_state *state, struct protein_model *m,
     imm_frame_state_init(state, id, &d->nucltp, &d->codonm, e);
 }
 
-enum rc init_null_xtrans(struct imm_hmm *hmm,
-                               struct protein_xnode_null *n)
+enum rc init_null_xtrans(struct imm_hmm *hmm, struct protein_xnode_null *n)
 {
-    if (imm_hmm_set_trans(hmm, &n->R.super, &n->R.super, LOG1))
-        return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->R.super, &n->R.super, LOG1)) return RC_EFAIL;
     return RC_OK;
 }
 
 enum rc init_alt_xtrans(struct imm_hmm *hmm, struct protein_xnode_alt *n)
 {
-    if (imm_hmm_set_trans(hmm, &n->S.super, &n->B.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->S.super, &n->N.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->N.super, &n->N.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->N.super, &n->B.super, LOG1))
-        return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->S.super, &n->B.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->S.super, &n->N.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->N.super, &n->N.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->N.super, &n->B.super, LOG1)) return RC_EFAIL;
 
-    if (imm_hmm_set_trans(hmm, &n->E.super, &n->T.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->E.super, &n->C.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->C.super, &n->C.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->C.super, &n->T.super, LOG1))
-        return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->E.super, &n->T.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->E.super, &n->C.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->C.super, &n->C.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->C.super, &n->T.super, LOG1)) return RC_EFAIL;
 
-    if (imm_hmm_set_trans(hmm, &n->E.super, &n->B.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->E.super, &n->J.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->J.super, &n->J.super, LOG1))
-        return RC_EFAIL;
-    if (imm_hmm_set_trans(hmm, &n->J.super, &n->B.super, LOG1))
-        return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->E.super, &n->B.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->E.super, &n->J.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->J.super, &n->J.super, LOG1)) return RC_EFAIL;
+    if (imm_hmm_set_trans(hmm, &n->J.super, &n->B.super, LOG1)) return RC_EFAIL;
 
     return RC_OK;
 }

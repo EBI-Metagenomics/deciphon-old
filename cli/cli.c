@@ -1,5 +1,5 @@
 #include "cli.h"
-#include "deciphon/util/logger.h"
+#include "deciphon/logger.h"
 #include "imm/imm.h"
 // #include "log/log.h"
 #include <stdio.h>

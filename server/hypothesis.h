@@ -1,5 +1,5 @@
-#ifndef DECIPHON_HYPOTHESIS_H
-#define DECIPHON_HYPOTHESIS_H
+#ifndef HYPOTHESIS_H
+#define HYPOTHESIS_H
 
 #include "imm/imm.h"
 

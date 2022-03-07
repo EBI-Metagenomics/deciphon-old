@@ -1,8 +1,7 @@
-#ifndef DECIPHON_PROD_H
-#define DECIPHON_PROD_H
+#ifndef PROD_H
+#define PROD_H
 
 #include "deciphon/limits.h"
-#include "deciphon/util/util.h"
 #include <stdint.h>
 #include <stdio.h>
 

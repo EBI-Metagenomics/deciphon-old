@@ -1,7 +1,7 @@
-#include "deciphon/util/xfile.h"
+#include "deciphon/xfile.h"
 #include "deciphon/compiler.h"
-#include "deciphon/util/logger.h"
-#include "deciphon/util/strlcpy.h"
+#include "deciphon/logger.h"
+#include "deciphon/strlcpy.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,5 +1,5 @@
-#ifndef DECIPHON_PROTEIN_MATCH_H
-#define DECIPHON_PROTEIN_MATCH_H
+#ifndef PROTEIN_MATCH_H
+#define PROTEIN_MATCH_H
 
 #include "deciphon/rc.h"
 #include "imm/imm.h"

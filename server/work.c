@@ -1,7 +1,6 @@
 #include "work.h"
 #include "deciphon/db/profile_reader.h"
 #include "deciphon/server/rest.h"
-#include "deciphon/util/util.h"
 #include "deciphon/version.h"
 #include "imm/imm.h"
 #include "prod.h"
@@ -106,8 +105,8 @@ enum rc work_next(struct work *work)
 {
     enum rc rc = rest_next_pend_job(&work->job);
     if (rc) return rc;
-    // rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "");
-    // if (rc) return rc;
+        // rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "");
+        // if (rc) return rc;
 
 #if 0
     struct sched_db db = {0};

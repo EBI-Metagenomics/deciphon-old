@@ -1,5 +1,5 @@
-#ifndef DECIPHON_XOMP_H
-#define DECIPHON_XOMP_H
+#ifndef XOMP_H
+#define XOMP_H
 
 #ifdef OPENMP
 

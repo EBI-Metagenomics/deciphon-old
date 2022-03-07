@@ -1,7 +1,8 @@
 #include "deciphon/db/protein_reader.h"
 #include "deciphon/db/reader.h"
+#include "deciphon/expect.h"
+#include "deciphon/logger.h"
 #include "deciphon/model/model.h"
-#include "deciphon/util/util.h"
 #include "imm/imm.h"
 
 static enum rc unpack_entry_dist(struct lip_file *file, enum entry_dist *edist)

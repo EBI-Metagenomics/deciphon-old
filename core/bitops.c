@@ -1,4 +1,4 @@
-#include "deciphon/util/bitops.h"
+#include "deciphon/bitops.h"
 
 unsigned bitops_fls32(uint32_t x)
 {

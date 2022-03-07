@@ -1,8 +1,8 @@
 #ifndef DECIPHON_SERVER_REST_H
 #define DECIPHON_SERVER_REST_H
 
+#include "deciphon/limits.h"
 #include "deciphon/rc.h"
-#include "deciphon/util/util.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -38,6 +38,7 @@ struct sched_seq;
 
 enum rc rest_open(char const *url_stem);
 void rest_close(void);
+enum rc rest_wipe(void);
 enum rc rest_next_pend_job(struct sched_job *job);
 enum rc rest_post_db(struct sched_db *db);
 enum rc rest_get_db(struct sched_db *db);

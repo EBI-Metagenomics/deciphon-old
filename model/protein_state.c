@@ -1,6 +1,6 @@
 #include "deciphon/model/protein_state.h"
 #include "deciphon/model/protein_model.h"
-#include "deciphon/util/to.h"
+#include "deciphon/to.h"
 
 unsigned protein_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {

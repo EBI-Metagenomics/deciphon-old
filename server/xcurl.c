@@ -1,10 +1,10 @@
-#include "deciphon/server/rest_curl.h"
+#include "deciphon/server/xcurl.h"
 #include "curl_error.h"
-#include "deciphon/util/util.h"
+#include "deciphon/logger.h"
 
 static atomic_bool initialized = false;
 
-enum rc rest_curl_init(struct rest_curl *curl, char const *url_stem)
+enum rc xcurl_init(struct xcurl *curl, char const *url_stem)
 {
     enum rc rc = RC_OK;
 
@@ -35,7 +35,7 @@ enum rc rest_curl_init(struct rest_curl *curl, char const *url_stem)
         goto cleanup;
     }
 
-    if (!rest_url_init(&curl->url, url_stem))
+    if (!url_init(&curl->url, url_stem))
     {
         rc = einval("invalid url stem");
         goto cleanup;
@@ -44,17 +44,18 @@ enum rc rest_curl_init(struct rest_curl *curl, char const *url_stem)
     return rc;
 
 cleanup:
-    rest_curl_del(curl);
+    xcurl_del(curl);
     return rc;
 }
 
-static void rest_curl_reset(struct rest_curl *curl, struct curl_slist *headers)
+static void rest_curl_reset(struct xcurl *curl, struct curl_slist *headers)
 {
     curl_easy_reset(curl->handle);
     curl_easy_setopt(curl->handle, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, NULL);
 }
 
-void rest_curl_del(struct rest_curl *curl)
+void xcurl_del(struct xcurl *curl)
 {
     if (curl->handle) curl_easy_cleanup(curl->handle);
     curl_slist_free_all(curl->headers.get);
@@ -65,15 +66,15 @@ void rest_curl_del(struct rest_curl *curl)
     initialized = false;
 }
 
-static inline void set_query(struct rest_curl *curl, char const *query)
+static inline void set_query(struct xcurl *curl, char const *query)
 {
-    rest_url_set_query(&curl->url, query);
+    url_set_query(&curl->url, query);
     CURLcode code = curl_easy_setopt(curl->handle, CURLOPT_URL, curl->url.full);
     assert(!code);
 }
 
-enum rc rest_curl_http_get(struct rest_curl *curl, char const *query,
-                           rest_curl_callback_func_t callback, void *arg)
+enum rc xcurl_http_get(struct xcurl *curl, char const *query, long *http_code,
+                       xcurl_callback_func_t callback, void *arg)
 {
     rest_curl_reset(curl, curl->headers.get);
     curl_easy_setopt(curl->handle, CURLOPT_HTTPGET, 1L);
@@ -84,14 +85,12 @@ enum rc rest_curl_http_get(struct rest_curl *curl, char const *query,
     CURLcode code = curl_easy_perform(curl->handle);
     if (code) return curl_error(code);
 
-    long http_code = 0;
-    curl_easy_getinfo(curl->handle, CURLINFO_RESPONSE_CODE, &http_code);
-    printf("HTTP code: %ld\n", http_code);
-    return RC_OK;
+    curl_easy_getinfo(curl->handle, CURLINFO_RESPONSE_CODE, http_code);
+    return *http_code > 299 ? efail("http request error") : RC_OK;
 }
 
-enum rc rest_curl_http_post(struct rest_curl *curl, char const *query,
-                            char const *json)
+enum rc xcurl_http_post(struct xcurl *curl, char const *query, long *http_code,
+                        char const *json)
 {
     rest_curl_reset(curl, curl->headers.post);
     curl_easy_setopt(curl->handle, CURLOPT_POST, 1L);
@@ -101,8 +100,23 @@ enum rc rest_curl_http_post(struct rest_curl *curl, char const *query,
     CURLcode code = curl_easy_perform(curl->handle);
     if (code) return curl_error(code);
 
-    long http_code = 0;
-    curl_easy_getinfo(curl->handle, CURLINFO_RESPONSE_CODE, &http_code);
-    printf("HTTP code: %ld\n", http_code);
-    return RC_OK;
+    curl_easy_getinfo(curl->handle, CURLINFO_RESPONSE_CODE, http_code);
+    return *http_code > 299 ? efail("http request error") : RC_OK;
+}
+
+enum rc xcurl_http_delete(struct xcurl *curl, char const *query,
+                          long *http_code)
+{
+    rest_curl_reset(curl, curl->headers.get);
+    curl_easy_setopt(curl->handle, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(curl->handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+    // curl_easy_setopt(curl->handle, CURLOPT_WRITEFUNCTION, callback);
+    // curl_easy_setopt(curl->handle, CURLOPT_WRITEDATA, arg);
+    set_query(curl, query);
+
+    CURLcode code = curl_easy_perform(curl->handle);
+    if (code) return curl_error(code);
+
+    curl_easy_getinfo(curl->handle, CURLINFO_RESPONSE_CODE, http_code);
+    return *http_code > 299 ? efail("http request error") : RC_OK;
 }

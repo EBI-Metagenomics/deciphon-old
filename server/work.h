@@ -1,5 +1,5 @@
-#ifndef DECIPHON_WORK_H
-#define DECIPHON_WORK_H
+#ifndef WORK_H
+#define WORK_H
 
 #include "deciphon/db/db.h"
 #include "deciphon/rc.h"

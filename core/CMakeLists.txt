@@ -1,8 +1,8 @@
 add_library(
-  util
+  core
   bitops.c
   logger.c
-  resolve_rc.c
+  rc.c
   strlcpy.c
   to.c
   xfile.c)

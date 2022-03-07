@@ -1,9 +1,10 @@
 #include "deciphon/db/reader.h"
 #include "deciphon/compiler.h"
 #include "deciphon/db/types.h"
+#include "deciphon/expect.h"
 #include "deciphon/limits.h"
+#include "deciphon/logger.h"
 #include "deciphon/model/model.h"
-#include "deciphon/util/util.h"
 #include "imm/imm.h"
 #include <stdlib.h>
 

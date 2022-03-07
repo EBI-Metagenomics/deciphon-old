@@ -1,5 +1,5 @@
-#ifndef DECIPHON_UTIL_LOGGER_H
-#define DECIPHON_UTIL_LOGGER_H
+#ifndef DECIPHON_LOGGER_H
+#define DECIPHON_LOGGER_H
 
 #include "deciphon/compiler.h"
 #include "deciphon/rc.h"

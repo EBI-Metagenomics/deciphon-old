@@ -1,5 +1,5 @@
-#ifndef DECIPHON_UTIL_TO_H
-#define DECIPHON_UTIL_TO_H
+#ifndef DECIPHON_TO_H
+#define DECIPHON_TO_H
 
 #include <stdbool.h>
 #include <stdint.h>

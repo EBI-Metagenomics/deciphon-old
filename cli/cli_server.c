@@ -1,6 +1,6 @@
 #include "cli.h"
+#include "deciphon/logger.h"
 #include "deciphon/server/server.h"
-#include "deciphon/util/util.h"
 #include "log/log.h"
 #include <argp.h>
 #include <assert.h>

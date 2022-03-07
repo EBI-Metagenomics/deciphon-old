@@ -26,7 +26,7 @@ add_compile_definitions(_DARWIN_C_SOURCE=1)
 check_symbol_exists(strlcpy "string.h" HAVE_STRLCPY)
 add_compile_definitions($<$<BOOL:${HAVE_STRLCPY}>:HAVE_STRLCPY=1>)
 
-set(LIBS util model db server cli)
+set(LIBS core model db server cli)
 
 # Enable interprodecural optimization
 macro(enable_ipo lib)

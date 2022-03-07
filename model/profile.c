@@ -1,6 +1,6 @@
 #include "deciphon/model/profile.h"
 #include "deciphon/compiler.h"
-#include "deciphon/util/strlcpy.h"
+#include "deciphon/strlcpy.h"
 
 void profile_del(struct profile *prof)
 {

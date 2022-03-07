@@ -3,6 +3,7 @@
 
 #include "deciphon/server/rest.h"
 #include "deciphon/server/sched.h"
+#include "imm/imm.h"
 
 enum rc server_run(bool single_run, unsigned num_threads, char const *url);
 void server_set_lrt_threshold(imm_float lrt);

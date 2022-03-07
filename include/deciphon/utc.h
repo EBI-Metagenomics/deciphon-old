@@ -1,5 +1,5 @@
-#ifndef DECIPHON_UTIL_UTC_H
-#define DECIPHON_UTIL_UTC_H
+#ifndef DECIPHON_UTC_H
+#define DECIPHON_UTC_H
 
 #include <stdint.h>
 #include <time.h>

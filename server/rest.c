@@ -1,11 +1,15 @@
 #include "deciphon/server/rest.h"
-#include "deciphon/server/rest_curl.h"
+#include "deciphon/logger.h"
 #include "deciphon/server/sched.h"
+#include "deciphon/server/xcurl.h"
 #include "deciphon/spinlock.h"
+#include "deciphon/to.h"
+#include "deciphon/xmath.h"
 #include "jsmn.h"
 #include <inttypes.h>
+#include <string.h>
 
-static struct rest_curl curl = {0};
+static struct xcurl curl = {0};
 static spinlock_t lock = SPINLOCK_INIT;
 
 // static struct answer
@@ -159,15 +163,17 @@ static size_t next_pend_job_callback(void *contents, size_t bsize, size_t nmemb,
     return size;
 }
 
-static size_t get_db_callback(void *contents, size_t size, size_t nmemb,
+static size_t get_db_callback(void *contents, size_t bsize, size_t nmemb,
                               void *userp)
 {
+    size_t size = bsize * nmemb;
+    return size;
 }
 
 enum rc rest_open(char const *url_stem)
 {
     spinlock_lock(&lock);
-    enum rc rc = rest_curl_init(&curl, url_stem);
+    enum rc rc = xcurl_init(&curl, url_stem);
     spinlock_unlock(&lock);
     return rc;
 }
@@ -175,34 +181,21 @@ enum rc rest_open(char const *url_stem)
 void rest_close(void)
 {
     spinlock_lock(&lock);
-    rest_curl_del(&curl);
+    xcurl_del(&curl);
     spinlock_unlock(&lock);
+}
+
+enum rc rest_wipe(void)
+{
+    long http_code = 0;
+    return xcurl_http_delete(&curl, "/", &http_code);
 }
 
 enum rc rest_next_pend_job(struct sched_job *job)
 {
-    enum rc rc = rest_curl_http_get(&curl, "/jobs/next_pend",
-                                    next_pend_job_callback, job);
-    //
-    //
-    // reset_curl_handle();
-    // rest_url_set_query(&rest_url, "/jobs/next_pend");
-    //
-    // CURLcode code = curl_easy_setopt(curl.handle, CURLOPT_URL,
-    // rest_url.full);
-    //
-    // code = curl_easy_perform(curl.handle);
-    // // CURLE_COULDNT_CONNECT
-    // if (curl_easy_perform(curl.handle) != CURLE_OK)
-    //     return efail("curl_easy_perform");
-    //
-    // long http_code = 0;
-    // curl_easy_getinfo(curl.handle, CURLINFO_RESPONSE_CODE, &http_code);
-    // // TODO: chek for the real answer
-    // if (http_code == 404) return RC_END;
-    //
-    // printf("%.*s\n", (int)answer.size, answer.data);
-    // return parse_job(answer.json.ntoks, answer.json.tok, job);
+    long http_code = 0;
+    enum rc rc = xcurl_http_get(&curl, "/jobs/next_pend", &http_code,
+                                next_pend_job_callback, job);
     return rc;
 }
 
@@ -210,27 +203,8 @@ enum rc rest_post_db(struct sched_db *db)
 {
     char json[FILENAME_SIZE + 16] = {0};
     sprintf(json, "{\"filename\": \"%s\"}", db->filename);
-    enum rc rc = rest_curl_http_post(&curl, "/dbs/", json);
-    //
-    //
-    // reset_curl_handle();
-    // rest_url_set_query(&rest_url, "/jobs/next_pend");
-    //
-    // CURLcode code = curl_easy_setopt(curl.handle, CURLOPT_URL,
-    // rest_url.full);
-    //
-    // code = curl_easy_perform(curl.handle);
-    // // CURLE_COULDNT_CONNECT
-    // if (curl_easy_perform(curl.handle) != CURLE_OK)
-    //     return efail("curl_easy_perform");
-    //
-    // long http_code = 0;
-    // curl_easy_getinfo(curl.handle, CURLINFO_RESPONSE_CODE, &http_code);
-    // // TODO: chek for the real answer
-    // if (http_code == 404) return RC_END;
-    //
-    // printf("%.*s\n", (int)answer.size, answer.data);
-    // return parse_job(answer.json.ntoks, answer.json.tok, job);
+    long http_code = 0;
+    enum rc rc = xcurl_http_post(&curl, "/dbs/", &http_code, json);
     return rc;
 }
 
@@ -238,26 +212,7 @@ enum rc rest_get_db(struct sched_db *db)
 {
     char query[32] = {0};
     sprintf(query, "/dbs/%" PRId64, db->id);
-    enum rc rc = rest_curl_http_get(&curl, query, get_db_callback, db);
-    //
-    //
-    // reset_curl_handle();
-    // rest_url_set_query(&rest_url, "/jobs/next_pend");
-    //
-    // CURLcode code = curl_easy_setopt(curl.handle, CURLOPT_URL,
-    // rest_url.full);
-    //
-    // code = curl_easy_perform(curl.handle);
-    // // CURLE_COULDNT_CONNECT
-    // if (curl_easy_perform(curl.handle) != CURLE_OK)
-    //     return efail("curl_easy_perform");
-    //
-    // long http_code = 0;
-    // curl_easy_getinfo(curl.handle, CURLINFO_RESPONSE_CODE, &http_code);
-    // // TODO: chek for the real answer
-    // if (http_code == 404) return RC_END;
-    //
-    // printf("%.*s\n", (int)answer.size, answer.data);
-    // return parse_job(answer.json.ntoks, answer.json.tok, job);
+    long http_code = 0;
+    enum rc rc = xcurl_http_get(&curl, query, &http_code, get_db_callback, db);
     return rc;
 }

@@ -1,7 +1,6 @@
-#include "deciphon/util/resolve_rc.h"
-#include "deciphon/compiler.h"
 #include "deciphon/rc.h"
-#include "deciphon/util/logger.h"
+#include "deciphon/compiler.h"
+#include "deciphon/logger.h"
 #include <string.h>
 
 static char const name[][9] = {"ok",  "end",    "efail", "einval",

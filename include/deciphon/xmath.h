@@ -1,5 +1,5 @@
-#ifndef DECIPHON_UTIL_XMATH_H
-#define DECIPHON_UTIL_XMATH_H
+#ifndef DECIPHON_XMATH_H
+#define DECIPHON_XMATH_H
 
 #include <assert.h>
 #include <limits.h>

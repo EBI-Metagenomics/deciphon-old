@@ -1,7 +1,7 @@
-#ifndef DECIPHON_SERVER_CURL_ERROR_H
-#define DECIPHON_SERVER_CURL_ERROR_H
+#ifndef CURL_ERROR_H
+#define CURL_ERROR_H
 
-#include "deciphon/util/logger.h"
+#include "deciphon/logger.h"
 
 /* clang-format off */
 #define curl_error(code)                                                       \

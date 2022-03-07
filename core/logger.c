@@ -1,5 +1,4 @@
-#include "deciphon/util/logger.h"
-#include "deciphon/rc.h"
+#include "deciphon/logger.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>

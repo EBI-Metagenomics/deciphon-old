@@ -1,5 +1,5 @@
-#ifndef DECIPHON_UTIL_EXPECT_H
-#define DECIPHON_UTIL_EXPECT_H
+#ifndef DECIPHON_EXPECT_H
+#define DECIPHON_EXPECT_H
 
 #include "deciphon/compiler.h"
 #include "deciphon/lite_pack.h"

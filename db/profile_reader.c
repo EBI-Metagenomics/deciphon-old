@@ -1,5 +1,8 @@
 #include "deciphon/db/db.h"
-#include "deciphon/util/util.h"
+#include "deciphon/expect.h"
+#include "deciphon/logger.h"
+#include "deciphon/xfile.h"
+#include "deciphon/xmath.h"
 
 static void cleanup(struct profile_reader *reader)
 {

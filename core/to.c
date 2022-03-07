@@ -1,4 +1,4 @@
-#include "deciphon/util/to.h"
+#include "deciphon/to.h"
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>

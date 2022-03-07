@@ -1,5 +1,5 @@
-#ifndef DCP_SERVER_H
-#define DCP_SERVER_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #include "deciphon/limits.h"
 #include "deciphon/rc.h"

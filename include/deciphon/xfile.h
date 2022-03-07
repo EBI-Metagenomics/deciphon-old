@@ -1,5 +1,5 @@
-#ifndef DECIPHON_UTIL_XFILE_H
-#define DECIPHON_UTIL_XFILE_H
+#ifndef DECIPHON_XFILE_H
+#define DECIPHON_XFILE_H
 
 #include "deciphon/limits.h"
 #include "deciphon/rc.h"

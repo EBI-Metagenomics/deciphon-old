@@ -1,6 +1,6 @@
 #include "progress_file.h"
+#include "deciphon/logger.h"
 #include "deciphon/rc.h"
-#include "deciphon/util/logger.h"
 #include <assert.h>
 #include <sys/stat.h>
 
