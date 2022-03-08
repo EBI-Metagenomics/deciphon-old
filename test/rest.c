@@ -12,7 +12,7 @@ int main(void)
 {
     test_rest_open_close();
     test_rest_post_db();
-    test_rest_get_db();
+    // test_rest_get_db();
     // test_rest_next_pend_job();
     return hope_status();
 }

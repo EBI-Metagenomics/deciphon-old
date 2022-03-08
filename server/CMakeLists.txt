@@ -8,6 +8,7 @@ add_library(
   url.c
   work.c
   xcurl.c
+  xcurl_debug.c
   xjson.c)
 
 target_link_libraries(server PUBLIC CURL::libcurl)

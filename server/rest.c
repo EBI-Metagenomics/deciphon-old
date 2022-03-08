@@ -17,12 +17,13 @@ static atomic_bool initialized = false;
 static struct buff *buff = 0;
 struct xjson xjson = {0};
 
-static enum rc parse_wipe(char const *data, size_t size);
 static size_t parse_job(char const *data, size_t size);
 static size_t parse_db(char const *data, size_t size);
 
 static size_t save_to_buff(void *data, size_t size, void *arg)
 {
+    printf("Callback save_to_buff\n");
+    fflush(stdout);
     if (size == 0) return 0;
     (void)arg;
 
@@ -100,7 +101,7 @@ enum rc rest_wipe(void)
 
     reset_buff();
     long http_code = 0;
-    enum rc rc = xcurl_delete(&xcurl, "/", &http_code, save_to_buff, 0);
+    enum rc rc = xcurl_delete(&xcurl, "/", &http_code);
 
     spinlock_unlock(&lock);
     return rc;
@@ -149,7 +150,7 @@ enum rc rest_get_db(struct sched_db *db)
     return rc;
 }
 
-static enum rc parse_wipe(char const *data, size_t size)
+static size_t parse_job(char const *data, size_t size)
 {
     enum rc rc = xjson_parse(&xjson, data, size);
     if (rc) return rc;
@@ -157,6 +158,10 @@ static enum rc parse_wipe(char const *data, size_t size)
     return RC_OK;
 }
 
-static size_t parse_job(char const *data, size_t size) { return size; }
+static size_t parse_db(char const *data, size_t size)
+{
+    enum rc rc = xjson_parse(&xjson, data, size);
+    if (rc) return rc;
 
-static size_t parse_db(char const *data, size_t size) { return size; }
+    return RC_OK;
+}

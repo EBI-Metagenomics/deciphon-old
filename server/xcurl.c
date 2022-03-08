@@ -1,6 +1,7 @@
 #include "deciphon/server/xcurl.h"
 #include "curl_error.h"
 #include "deciphon/logger.h"
+#include "xcurl_debug.h"
 
 enum rc xcurl_init(struct xcurl *x, char const *url_stem)
 {
@@ -59,16 +60,6 @@ static size_t callback_func(void *data, size_t one, size_t size, void *arg)
     return cd->callback(data, size, cd->arg);
 }
 
-static void setup_common_options(CURL *curl, char const *url,
-                                 xcurl_callback_func_t callback, void *arg)
-{
-    curl_easy_reset(curl);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, callback_func);
-    struct callback_data cd = {callback, arg};
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &cd);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-}
-
 static enum rc perform_request(CURL *curl, long *http_code)
 {
     CURLcode code = curl_easy_perform(curl);
@@ -82,7 +73,11 @@ enum rc xcurl_get(struct xcurl *x, char const *query, long *http_code,
                   xcurl_callback_func_t callback, void *arg)
 {
     url_set_query(&x->url, query);
-    setup_common_options(x->curl, x->url.full, callback, arg);
+    curl_easy_reset(&x->curl);
+    curl_easy_setopt(&x->curl, CURLOPT_WRITEFUNCTION, callback_func);
+    struct callback_data cd = {callback, arg};
+    curl_easy_setopt(&x->curl, CURLOPT_WRITEDATA, &cd);
+    curl_easy_setopt(&x->curl, CURLOPT_URL, x->url.full);
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
     curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
@@ -94,7 +89,11 @@ enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
                    xcurl_callback_func_t callback, void *arg, char const *json)
 {
     url_set_query(&x->url, query);
-    setup_common_options(x->curl, x->url.full, callback, arg);
+    curl_easy_reset(&x->curl);
+    curl_easy_setopt(&x->curl, CURLOPT_WRITEFUNCTION, callback_func);
+    struct callback_data cd = {callback, arg};
+    curl_easy_setopt(&x->curl, CURLOPT_WRITEDATA, &cd);
+    curl_easy_setopt(&x->curl, CURLOPT_URL, x->url.full);
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
     curl_easy_setopt(x->curl, CURLOPT_POST, 1L);
@@ -103,15 +102,17 @@ enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
     return perform_request(x->curl, http_code);
 }
 
-enum rc xcurl_delete(struct xcurl *x, char const *query, long *http_code,
-                     xcurl_callback_func_t callback, void *arg)
+enum rc xcurl_delete(struct xcurl *x, char const *query, long *http_code)
 {
+    curl_easy_reset(&x->curl);
     url_set_query(&x->url, query);
-    setup_common_options(x->curl, x->url.full, callback, arg);
+    curl_easy_setopt(&x->curl, CURLOPT_URL, x->url.full);
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
     curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
     curl_easy_setopt(x->curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+
+    xcurl_debug_setup(x->curl);
 
     return perform_request(x->curl, http_code);
 }

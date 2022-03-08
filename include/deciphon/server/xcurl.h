@@ -26,7 +26,6 @@ enum rc xcurl_get(struct xcurl *, char const *query, long *http_code,
 enum rc xcurl_post(struct xcurl *, char const *query, long *http_code,
                    xcurl_callback_func_t callback, void *arg, char const *json);
 
-enum rc xcurl_delete(struct xcurl *, char const *query, long *http_code,
-                     xcurl_callback_func_t callback, void *arg);
+enum rc xcurl_delete(struct xcurl *, char const *query, long *http_code);
 
 #endif
