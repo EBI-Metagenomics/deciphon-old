@@ -11,13 +11,7 @@
 struct xcurl
 {
     CURL *curl;
-    spinlock_t lock;
-    struct
-    {
-        struct curl_slist *get;
-        struct curl_slist *post;
-        struct curl_slist *delete;
-    } headers;
+    struct curl_slist *headers;
     struct url url;
 };
 

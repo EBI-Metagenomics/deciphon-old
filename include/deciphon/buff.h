@@ -13,7 +13,6 @@ struct buff
 
 struct buff *buff_new(size_t size);
 struct buff *buff_ensure(struct buff *buff, size_t size);
-// struct buff *buff_compact(struct buff *buff, size_t size);
 void buff_del(struct buff const *buff);
 
 #endif

@@ -1,12 +1,11 @@
-#include "buff.h"
+#include "deciphon/buff.h"
 #include <assert.h>
 #include <stdlib.h>
 
 struct buff *buff_new(size_t size)
 {
     assert(size > 0);
-    struct buff *buff = malloc(sizeof(*buff) + size);
-    return buff;
+    return malloc(sizeof(struct buff) + size);
 }
 
 struct buff *buff_ensure(struct buff *buff, size_t size)

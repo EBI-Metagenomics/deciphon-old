@@ -2,6 +2,7 @@
 #define CURL_ERROR_H
 
 #include "deciphon/logger.h"
+#include <curl/curl.h>
 
 /* clang-format off */
 #define curl_error(code)                                                       \
