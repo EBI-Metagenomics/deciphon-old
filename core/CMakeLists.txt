@@ -1,6 +1,7 @@
 add_library(
   core
   bitops.c
+  buff.c
   logger.c
   nanoprintf.c
   rc.c

@@ -27,13 +27,12 @@ void xcurl_del(struct xcurl *xcurl);
 typedef size_t (*xcurl_callback_func_t)(void *data, size_t size, void *arg);
 
 enum rc xcurl_get(struct xcurl *, char const *query, long *http_code,
-                       xcurl_callback_func_t callback, void *arg);
+                  xcurl_callback_func_t callback, void *arg);
 
 enum rc xcurl_post(struct xcurl *, char const *query, long *http_code,
-                        xcurl_callback_func_t callback, void *arg,
-                        char const *json);
+                   xcurl_callback_func_t callback, void *arg, char const *json);
 
 enum rc xcurl_delete(struct xcurl *, char const *query, long *http_code,
-                          xcurl_callback_func_t callback, void *arg);
+                     xcurl_callback_func_t callback, void *arg);
 
 #endif

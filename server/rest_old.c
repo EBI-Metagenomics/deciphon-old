@@ -167,7 +167,7 @@ static inline char const *tokv(jsmntok_t const *tok)
     return answer.data + tok->start;
 }
 
-static void cpy_str(unsigned dst_sz, char *dst, jsmntok_t const *tok)
+static void tmpcpy_str(unsigned dst_sz, char *dst, jsmntok_t const *tok)
 {
     unsigned len = xmath_min(dst_sz - 1, tokl(tok));
     memcpy(dst, tokv(tok), len);
