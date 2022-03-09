@@ -1,6 +1,7 @@
 #ifndef XJSON_H
 #define XJSON_H
 
+#define JSMN_STATIC
 #include "jsmn.h"
 #include <stdbool.h>
 

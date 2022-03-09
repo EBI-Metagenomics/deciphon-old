@@ -1,5 +1,4 @@
 #include "deciphon/server/server.h"
-#include "db.h"
 #include "deciphon/compiler.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"

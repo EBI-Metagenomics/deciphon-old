@@ -13,28 +13,24 @@
 
 static void destroy_tempfiles(struct db_writer *db)
 {
-    for (unsigned i = 0; i < ARRAY_SIZE_OF(db->tmp, files); ++i)
-    {
-        if (db->tmp.files[i].fp) fclose(db->tmp.files[i].fp);
-    }
+    if (db->tmp.header.fp) fclose(db->tmp.header.fp);
+    if (db->tmp.profile_sizes.fp) fclose(db->tmp.profile_sizes.fp);
+    if (db->tmp.profiles.fp) fclose(db->tmp.profiles.fp);
 }
 
 static enum rc create_tempfiles(struct db_writer *db)
 {
-    for (unsigned i = 0; i < ARRAY_SIZE_OF(db->tmp, files); ++i)
-        lip_file_init(&db->tmp.files[i], 0);
+    lip_file_init(&db->tmp.header, tmpfile());
+    lip_file_init(&db->tmp.profile_sizes, tmpfile());
+    lip_file_init(&db->tmp.profiles, tmpfile());
 
     enum rc rc = RC_OK;
-    for (unsigned i = 0; i < ARRAY_SIZE_OF(db->tmp, files); ++i)
+    if (!db->tmp.header.fp || !db->tmp.profile_sizes.fp || !db->tmp.profiles.fp)
     {
-        FILE *fp = tmpfile();
-        if (!fp)
-        {
-            rc = eio("create tmpfile");
-            goto cleanup;
-        }
-        lip_file_init(&db->tmp.files[i], fp);
+        rc = eio("create tmpfile");
+        goto cleanup;
     }
+
     return rc;
 
 cleanup:

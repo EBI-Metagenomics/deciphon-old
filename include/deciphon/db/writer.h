@@ -15,16 +15,9 @@ struct db_writer
     struct lip_file file;
     struct
     {
-        union
-        {
-            struct lip_file files[3];
-            struct
-            {
-                struct lip_file header;
-                struct lip_file profile_sizes;
-                struct lip_file profiles;
-            } __attribute__((packed));
-        };
+        struct lip_file header;
+        struct lip_file profile_sizes;
+        struct lip_file profiles;
     } tmp;
 };
 

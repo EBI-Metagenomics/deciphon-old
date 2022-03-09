@@ -11,6 +11,7 @@ add_library(
   standard_profile.c
   standard_state.c)
 
+target_link_libraries(model PUBLIC DECIPHON::core)
 target_link_libraries(model PUBLIC HMR::hmr)
 target_link_libraries(model PUBLIC IMM::imm)
 target_link_libraries(model PUBLIC LITE_PACK::lite_pack)

@@ -18,7 +18,7 @@
 
 #ifndef HAVE_STRLCPY
 
-#include "deciphon/util/strlcpy.h"
+#include "deciphon/strlcpy.h"
 #include <string.h>
 #include <sys/types.h>
 

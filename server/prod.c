@@ -1,10 +1,10 @@
 #include "prod.h"
 #include "deciphon/logger.h"
+#include "deciphon/model/profile.h"
 #include "deciphon/server/rest.h"
 #include "deciphon/xfile.h"
 #include "imm/imm.h"
 #include "match.h"
-#include "profile.h"
 #include <inttypes.h>
 
 static unsigned nthreads = 0;

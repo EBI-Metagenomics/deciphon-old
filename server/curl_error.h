@@ -184,8 +184,6 @@
         ? efail("QUIC connection error")                                       \
     : code == CURLE_PROXY                                                      \
         ? efail("proxy handshake error")                                       \
-    : code == CURLE_SSL_CLIENTCERT                                             \
-        ? efail("SSL Client Certificate required")                             \
     : efail("Unknown error")
 /* clang-format on */
 

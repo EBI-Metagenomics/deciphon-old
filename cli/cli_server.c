@@ -59,7 +59,9 @@ static void syslog_print(char const *msg, void *arg)
 
 static void print_log_put(char const *msg, void *arg)
 {
-    __log_put(LOG_ERROR, msg);
+    (void)msg;
+    (void)arg;
+    // __log_put(LOG_ERROR, msg);
 }
 
 static void flush_nop(void *arg) {}
