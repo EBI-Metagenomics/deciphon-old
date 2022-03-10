@@ -13,16 +13,9 @@ static inline char const *tok_value(jsmntok_t const *tok, char const *data)
     return data + tok->start;
 }
 
-bool xjson_eqstr(struct xjson const *x, unsigned idx, char const *str)
+unsigned json_tok_size(struct xjson const *x, unsigned idx)
 {
-    unsigned len = (unsigned)strlen(str);
-
-    struct jsmntok const *tok = x->tok + idx;
-    jsmntype_t type = tok->type;
-    unsigned size = tok_size(tok);
-    char const *value = tok_value(tok, x->data);
-
-    return type == JSMN_STRING && len == size && !strncmp(value, str, size);
+    return tok_size(x->tok + idx);
 }
 
 enum rc xjson_parse(struct xjson *x, char const *data, unsigned size)
@@ -33,6 +26,23 @@ enum rc xjson_parse(struct xjson *x, char const *data, unsigned size)
     int r = jsmn_parse(&x->parser, x->data, x->size, x->tok, XJSON_MAX_TOKENS);
     x->ntoks = (unsigned)r;
     return r < 0 ? jsmn_error(r) : RC_OK;
+}
+
+char const *json_tok_value(struct xjson const *x, unsigned idx)
+{
+    return tok_value(x->tok + idx, x->data);
+}
+
+bool xjson_eqstr(struct xjson const *x, unsigned idx, char const *str)
+{
+    unsigned len = (unsigned)strlen(str);
+
+    struct jsmntok const *tok = x->tok + idx;
+    jsmntype_t type = tok->type;
+    unsigned size = tok_size(tok);
+    char const *value = tok_value(tok, x->data);
+
+    return type == JSMN_STRING && len == size && !strncmp(value, str, size);
 }
 
 enum rc xjson_bind_int64(struct xjson *x, unsigned idx, int64_t *dst)

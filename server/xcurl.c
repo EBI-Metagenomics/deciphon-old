@@ -67,7 +67,7 @@ static enum rc perform_request(CURL *curl, long *http_code)
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
 
     curl_easy_reset(curl);
-    return *http_code > 299 ? efail("http request error") : RC_OK;
+    return RC_OK;
 }
 
 enum rc xcurl_get(struct xcurl *x, char const *query, long *http_code,

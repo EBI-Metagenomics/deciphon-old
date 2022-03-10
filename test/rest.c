@@ -30,11 +30,22 @@ void test_rest_post_db(void)
     EQ(rest_wipe(), RC_OK);
 
     struct sched_db db = {0};
+    struct rest_error error = {0};
+
     strcpy(db.filename, "minifam.dcp");
-    EQ(rest_post_db(&db), RC_OK);
+    EQ(rest_post_db(&db, &error), RC_OK);
     EQ(db.id, 1);
     EQ(db.xxh3_64, -3907098992699871052);
     EQ(db.filename, "minifam.dcp");
+    EQ(error.rc, RC_OK);
+    EQ(error.msg, "");
+
+    db.id = 1;
+    db.xxh3_64 = -3907098992699871052L;
+    strcpy(db.filename, "minifam.dcp");
+    EQ(rest_post_db(&db, &error), RC_OK);
+    EQ(error.rc, RC_EINVAL);
+    EQ(error.msg, "database already exists");
 
     rest_close();
 }
@@ -45,13 +56,15 @@ void test_rest_get_db(void)
     EQ(rest_wipe(), RC_OK);
 
     struct sched_db db = {0};
+    struct rest_error error = {0};
+
     strcpy(db.filename, "minifam.dcp");
-    EQ(rest_post_db(&db), RC_OK);
+    EQ(rest_post_db(&db, &error), RC_OK);
 
     db.id = 1;
     db.xxh3_64 = 0;
     db.filename[0] = 0;
-    EQ(rest_get_db(&db), RC_OK);
+    EQ(rest_get_db(&db, &error), RC_OK);
 
     rest_close();
 }

@@ -12,6 +12,6 @@ enum rc
     RC_EPARSE,
 };
 
-enum rc resolve_rc(unsigned len, char const *str, enum rc *rc);
+enum rc rc_resolve(unsigned len, char const *str, enum rc *rc);
 
 #endif

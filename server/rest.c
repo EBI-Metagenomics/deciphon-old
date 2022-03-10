@@ -1,6 +1,7 @@
 #include "deciphon/server/rest.h"
 #include "deciphon/buff.h"
 #include "deciphon/logger.h"
+#include "deciphon/model/profile_typeid.h"
 #include "deciphon/nanoprintf.h"
 #include "deciphon/server/sched.h"
 #include "deciphon/server/xcurl.h"
@@ -22,7 +23,9 @@ static struct
 } rest = {{0}, SPINLOCK_INIT, false, 0, 0, {0}};
 
 static size_t parse_job(char const *data, size_t size);
-static size_t parse_db(struct sched_db *db, size_t size, char const *data);
+static enum rc parse_db(struct sched_db *db, size_t size, char const *data);
+static enum rc parse_error(struct rest_error *error, size_t size,
+                           char const *data);
 
 static enum rc body_add(struct buff **body, size_t size, char const *data)
 {
@@ -47,6 +50,12 @@ static inline size_t body_store(void *data, size_t size, void *arg)
 }
 
 static inline void body_reset(struct buff *body) { body->size = 0; }
+
+static inline void rest_error_reset(struct rest_error *error)
+{
+    error->rc = RC_OK;
+    error->msg[0] = 0;
+}
 
 #if 0
 static size_t next_pend_job_callback(void *contents, size_t bsize, size_t nmemb,
@@ -132,9 +141,11 @@ enum rc rest_next_pend_job(struct sched_job *job)
     return rc;
 }
 
-enum rc rest_post_db(struct sched_db *db)
+enum rc rest_post_db(struct sched_db *db, struct rest_error *error)
 {
     spinlock_lock(&rest.lock);
+    rest_error_reset(error);
+
     enum rc rc = RC_OK;
 
     body_reset(rest.request_body);
@@ -148,22 +159,30 @@ enum rc rest_post_db(struct sched_db *db)
     rc = xcurl_post(&rest.xcurl, "/dbs/", &http_code, body_store,
                     &rest.response_body, rest.request_body->data);
     if (rc) goto cleanup;
+
     if (http_code == 201)
     {
-        parse_db(db, rest.response_body->size, rest.response_body->data);
+        rc = parse_db(db, rest.response_body->size, rest.response_body->data);
     }
-    // 201 OK
-    // 409 conflict
-    // 500 server error
+    else if (http_code == 409 || http_code == 500)
+    {
+        rc = parse_error(error, rest.response_body->size,
+                         rest.response_body->data);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
 
 cleanup:
     spinlock_unlock(&rest.lock);
     return rc;
 }
 
-enum rc rest_get_db(struct sched_db *db)
+enum rc rest_get_db(struct sched_db *db, struct rest_error *error)
 {
     spinlock_lock(&rest.lock);
+    rest_error_reset(error);
 
     char query[] = "/dbs/18446744073709551615";
     npf_snprintf(query, sizeof(query), "/dbs/%" PRId64, db->id);
@@ -186,7 +205,7 @@ static size_t parse_job(char const *data, size_t size)
     return RC_OK;
 }
 
-static size_t parse_db(struct sched_db *db, size_t size, char const *data)
+static enum rc parse_db(struct sched_db *db, size_t size, char const *data)
 {
     struct xjson *x = &rest.xjson;
     enum rc rc = xjson_parse(x, data, size);
@@ -207,6 +226,35 @@ static size_t parse_db(struct sched_db *db, size_t size, char const *data)
         else if (xjson_eqstr(x, i, "filename"))
         {
             if ((rc = xjson_copy_str(x, i + 1, PATH_SIZE, db->filename)))
+                return rc;
+        }
+        else
+            return einval("unexpected json key");
+    }
+    return RC_OK;
+}
+
+static enum rc parse_error(struct rest_error *error, size_t size,
+                           char const *data)
+{
+    struct xjson *x = &rest.xjson;
+    enum rc rc = xjson_parse(x, data, size);
+    if (rc) return rc;
+
+    if (x->ntoks != 2 * 2 + 1) return einval("expected two items");
+
+    for (unsigned i = 1; i < x->ntoks; i += 2)
+    {
+        if (xjson_eqstr(x, i, "rc"))
+        {
+            if (!xjson_is_string(x, i + 1)) return einval("expected string");
+            rc = rc_resolve(json_tok_size(x, i + 1), json_tok_value(x, i + 1),
+                            &error->rc);
+            if (rc) return rc;
+        }
+        else if (xjson_eqstr(x, i, "msg"))
+        {
+            if ((rc = xjson_copy_str(x, i + 1, ERROR_SIZE, error->msg)))
                 return rc;
         }
         else

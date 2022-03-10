@@ -6,7 +6,7 @@
 static char const name[][9] = {"ok",  "end",    "efail", "einval",
                                "eio", "enomem", "eparse"};
 
-enum rc resolve_rc(unsigned len, char const *str, enum rc *rc)
+enum rc rc_resolve(unsigned len, char const *str, enum rc *rc)
 {
     for (unsigned i = 0; i < ARRAY_SIZE(name); ++i)
     {

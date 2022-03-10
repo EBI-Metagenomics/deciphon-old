@@ -19,6 +19,10 @@ struct xjson
 
 enum rc xjson_parse(struct xjson *x, char const *data, unsigned size);
 
+unsigned json_tok_size(struct xjson const *x, unsigned idx);
+
+char const *json_tok_value(struct xjson const *x, unsigned idx);
+
 bool xjson_eqstr(struct xjson const *x, unsigned idx, char const *str);
 
 static inline bool xjson_is_number(struct xjson const *x, unsigned idx)
