@@ -13,7 +13,7 @@ int main(void)
 {
     test_rest_open_close();
     test_rest_post_db();
-    // test_rest_get_db();
+    test_rest_get_db();
     // test_rest_next_pend_job();
     return hope_status();
 }
@@ -58,13 +58,30 @@ void test_rest_get_db(void)
     struct sched_db db = {0};
     struct rest_error error = {0};
 
+    db.id = 1;
+    db.xxh3_64 = 0;
+    db.filename[0] = 0;
+    EQ(rest_get_db(&db, &error), RC_OK);
+    EQ(error.rc, RC_EINVAL);
+    EQ(error.msg, "database not found");
+
     strcpy(db.filename, "minifam.dcp");
     EQ(rest_post_db(&db, &error), RC_OK);
+    EQ(db.id, 1);
+    EQ(db.xxh3_64, -3907098992699871052);
+    EQ(db.filename, "minifam.dcp");
+    EQ(error.rc, RC_OK);
+    EQ(error.msg, "");
 
     db.id = 1;
     db.xxh3_64 = 0;
     db.filename[0] = 0;
     EQ(rest_get_db(&db, &error), RC_OK);
+    EQ(db.id, 1);
+    EQ(db.xxh3_64, -3907098992699871052);
+    EQ(db.filename, "minifam.dcp");
+    EQ(error.rc, RC_OK);
+    EQ(error.msg, "");
 
     rest_close();
 }

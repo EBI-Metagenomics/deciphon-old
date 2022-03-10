@@ -184,15 +184,30 @@ enum rc rest_get_db(struct sched_db *db, struct rest_error *error)
     spinlock_lock(&rest.lock);
     rest_error_reset(error);
 
-    char query[] = "/dbs/18446744073709551615";
+    char query[] = "/dbs/00000000000000000000";
     npf_snprintf(query, sizeof(query), "/dbs/%" PRId64, db->id);
 
-    body_reset(rest.request_body);
     body_reset(rest.response_body);
     long http_code = 0;
     enum rc rc = xcurl_get(&rest.xcurl, query, &http_code, body_store,
                            &rest.response_body);
+    if (rc) goto cleanup;
 
+    if (http_code == 200)
+    {
+        rc = parse_db(db, rest.response_body->size, rest.response_body->data);
+    }
+    else if (http_code == 404 || http_code == 500)
+    {
+        rc = parse_error(error, rest.response_body->size,
+                         rest.response_body->data);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
     spinlock_unlock(&rest.lock);
     return rc;
 }
