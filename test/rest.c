@@ -2,11 +2,12 @@
 #include "deciphon/server/server.h"
 #include "hope/hope.h"
 #include "imm/imm.h"
+#include <curl/curl.h>
 
 void test_rest_open_close(void);
 void test_rest_post_db(void);
 void test_rest_get_db(void);
-// void test_rest_next_pend_job(void);
+void test_rest_next_pend_job(void);
 
 int main(void)
 {

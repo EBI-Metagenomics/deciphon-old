@@ -92,6 +92,7 @@ void rest_close(void)
     spinlock_lock(&lock);
     xcurl_del(&xcurl);
     initialized = false;
+    buff_del(buff);
     spinlock_unlock(&lock);
 }
 

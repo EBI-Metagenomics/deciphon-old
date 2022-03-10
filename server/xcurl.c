@@ -6,20 +6,20 @@
 enum rc xcurl_init(struct xcurl *x, char const *url_stem)
 {
     enum rc rc = RC_OK;
-
     x->headers = 0;
 
-    if (curl_global_init(CURL_GLOBAL_ALL))
+    if (curl_global_init(CURL_GLOBAL_DEFAULT))
     {
         rc = efail("failed to initialized curl");
         goto cleanup;
     }
 
-    struct curl_slist *h = x->headers;
-    x->headers = curl_slist_append(h, "Content-Type: application/json");
-    x->headers = curl_slist_append(h, "Accept: application/json");
+    x->headers =
+        curl_slist_append(x->headers, "Content-Type: application/json");
+    x->headers = curl_slist_append(x->headers, "Accept: application/json");
 
-    if (!(x->curl = curl_easy_init()))
+    x->curl = curl_easy_init();
+    if (!x->curl)
     {
         rc = efail("failed to initialize curl");
         goto cleanup;
@@ -63,6 +63,7 @@ static size_t callback_func(void *data, size_t one, size_t size, void *arg)
 static enum rc perform_request(CURL *curl, long *http_code)
 {
     CURLcode code = curl_easy_perform(curl);
+    curl_easy_reset(curl);
     if (code) return curl_error(code);
 
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
@@ -73,11 +74,10 @@ enum rc xcurl_get(struct xcurl *x, char const *query, long *http_code,
                   xcurl_callback_func_t callback, void *arg)
 {
     url_set_query(&x->url, query);
-    curl_easy_reset(&x->curl);
-    curl_easy_setopt(&x->curl, CURLOPT_WRITEFUNCTION, callback_func);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, callback_func);
     struct callback_data cd = {callback, arg};
-    curl_easy_setopt(&x->curl, CURLOPT_WRITEDATA, &cd);
-    curl_easy_setopt(&x->curl, CURLOPT_URL, x->url.full);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEDATA, &cd);
+    curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
     curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
@@ -89,11 +89,10 @@ enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
                    xcurl_callback_func_t callback, void *arg, char const *json)
 {
     url_set_query(&x->url, query);
-    curl_easy_reset(&x->curl);
-    curl_easy_setopt(&x->curl, CURLOPT_WRITEFUNCTION, callback_func);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, callback_func);
     struct callback_data cd = {callback, arg};
-    curl_easy_setopt(&x->curl, CURLOPT_WRITEDATA, &cd);
-    curl_easy_setopt(&x->curl, CURLOPT_URL, x->url.full);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEDATA, &cd);
+    curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
     curl_easy_setopt(x->curl, CURLOPT_POST, 1L);
@@ -104,9 +103,8 @@ enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
 
 enum rc xcurl_delete(struct xcurl *x, char const *query, long *http_code)
 {
-    curl_easy_reset(&x->curl);
     url_set_query(&x->url, query);
-    curl_easy_setopt(&x->curl, CURLOPT_URL, x->url.full);
+    curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
     curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
