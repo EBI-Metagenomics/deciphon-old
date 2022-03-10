@@ -11,33 +11,42 @@
 #include <inttypes.h>
 #include <string.h>
 
-static struct xcurl xcurl = {0};
-static spinlock_t lock = SPINLOCK_INIT;
-static atomic_bool initialized = false;
-static struct buff *buff = 0;
-struct xjson xjson = {0};
+static struct
+{
+    struct xcurl xcurl;
+    spinlock_t lock;
+    unsigned int initialized;
+    struct buff *request_body;
+    struct buff *response_body;
+    struct xjson xjson;
+} rest = {{0}, SPINLOCK_INIT, false, 0, 0, {0}};
 
 static size_t parse_job(char const *data, size_t size);
 static size_t parse_db(char const *data, size_t size);
 
-static size_t save_to_buff(void *data, size_t size, void *arg)
+static enum rc body_add(struct buff **body, size_t size, char const *data)
 {
-    printf("Callback save_to_buff\n");
-    fflush(stdout);
-    if (size == 0) return 0;
-    (void)arg;
+    if (size == 0) return RC_OK;
 
-    struct buff *tmp = buff_ensure(buff, buff->size + size);
-    if (!tmp)
-    {
-        enomem("buff_ensure failed");
-        return 0;
-    }
-    memcpy(buff->data + buff->size, data, size);
-    return size;
+    if (!buff_ensure(body, (*body)->size + size))
+        return enomem("buff_ensure failed");
+
+    memcpy((*body)->data + (*body)->size, data, size);
+    (*body)->size += size;
+    return RC_OK;
 }
 
-static void reset_buff(void) { buff->size = 0; }
+static inline enum rc body_add_str(struct buff **body, char const *str)
+{
+    return body_add(body, strlen(str), str);
+}
+
+static inline size_t body_store(void *data, size_t size, void *arg)
+{
+    return body_add(arg, size, data) ? 0 : size;
+}
+
+static inline void body_reset(struct buff *body) { body->size = 0; }
 
 #if 0
 static size_t next_pend_job_callback(void *contents, size_t bsize, size_t nmemb,
@@ -67,93 +76,103 @@ static size_t next_pend_job_callback(void *contents, size_t bsize, size_t nmemb,
 
 enum rc rest_open(char const *url_stem)
 {
-    spinlock_lock(&lock);
+    if (rest.initialized++) return RC_OK;
 
-    enum rc rc = RC_OK;
-    if (initialized)
+    enum rc rc = xcurl_init(&rest.xcurl, url_stem);
+    if (rc) return rc;
+
+    if (!(rest.request_body = buff_new(1024)))
     {
-        rc = einval("cannot have multiple rest open");
-        goto cleanup;
+        xcurl_del(&rest.xcurl);
+        return enomem("buff_new failed");
     }
 
-    rc = xcurl_init(&xcurl, url_stem);
-    buff = buff_new(1024);
-    if (!buff) rc = enomem("buff_new failed");
-
-    initialized = true;
-
-cleanup:
-    spinlock_unlock(&lock);
-    return rc;
+    if (!(rest.response_body = buff_new(1024)))
+    {
+        buff_del(rest.request_body);
+        xcurl_del(&rest.xcurl);
+        return enomem("buff_new failed");
+    }
+    return RC_OK;
 }
 
 void rest_close(void)
 {
-    spinlock_lock(&lock);
-    xcurl_del(&xcurl);
-    initialized = false;
-    buff_del(buff);
-    spinlock_unlock(&lock);
+    if (!rest.initialized) return;
+
+    if (--rest.initialized) return;
+
+    xcurl_del(&rest.xcurl);
+    buff_del(rest.request_body);
+    buff_del(rest.response_body);
 }
 
 enum rc rest_wipe(void)
 {
-    spinlock_lock(&lock);
+    spinlock_lock(&rest.lock);
 
-    reset_buff();
+    body_reset(rest.request_body);
     long http_code = 0;
-    enum rc rc = xcurl_delete(&xcurl, "/", &http_code);
+    enum rc rc = xcurl_delete(&rest.xcurl, "/", &http_code);
 
-    spinlock_unlock(&lock);
+    spinlock_unlock(&rest.lock);
     return rc;
 }
 
 enum rc rest_next_pend_job(struct sched_job *job)
 {
-    spinlock_lock(&lock);
+    spinlock_lock(&rest.lock);
 
-    reset_buff();
+    body_reset(rest.request_body);
     long http_code = 0;
-    enum rc rc =
-        xcurl_get(&xcurl, "/jobs/next_pend", &http_code, save_to_buff, 0);
+    enum rc rc = xcurl_get(&rest.xcurl, "/jobs/next_pend", &http_code,
+                           body_store, rest.response_body);
 
-    spinlock_unlock(&lock);
+    spinlock_unlock(&rest.lock);
     return rc;
 }
 
 enum rc rest_post_db(struct sched_db *db)
 {
-    spinlock_lock(&lock);
+    spinlock_lock(&rest.lock);
+    enum rc rc = RC_OK;
 
-    char body[FILENAME_SIZE + sizeof("{\"filename\": \"\"}")] = {0};
-    npf_snprintf(body, sizeof(body), "{\"filename\": \"%s\"}", db->filename);
+    body_reset(rest.request_body);
+    if ((rc = body_add_str(&rest.request_body, "{\"filename\": \"")))
+        goto cleanup;
+    if ((rc = body_add_str(&rest.request_body, db->filename))) goto cleanup;
+    if ((rc = body_add_str(&rest.request_body, "\"}"))) goto cleanup;
 
-    reset_buff();
+    body_reset(rest.response_body);
     long http_code = 0;
-    enum rc rc = xcurl_post(&xcurl, "/dbs/", &http_code, save_to_buff, 0, body);
+    rc = xcurl_post(&rest.xcurl, "/dbs/", &http_code, body_store,
+                    &rest.response_body, rest.request_body->data);
 
-    spinlock_unlock(&lock);
+cleanup:
+    spinlock_unlock(&rest.lock);
     return rc;
 }
 
 enum rc rest_get_db(struct sched_db *db)
 {
-    spinlock_lock(&lock);
+    spinlock_lock(&rest.lock);
 
     char query[] = "/dbs/18446744073709551615";
     npf_snprintf(query, sizeof(query), "/dbs/%" PRId64, db->id);
 
-    reset_buff();
+    body_reset(rest.request_body);
+    body_reset(rest.response_body);
     long http_code = 0;
-    enum rc rc = xcurl_get(&xcurl, query, &http_code, save_to_buff, 0);
+    enum rc rc = xcurl_get(&rest.xcurl, query, &http_code, body_store,
+                           &rest.response_body);
 
-    spinlock_unlock(&lock);
+    spinlock_unlock(&rest.lock);
     return rc;
 }
 
 static size_t parse_job(char const *data, size_t size)
 {
-    enum rc rc = xjson_parse(&xjson, data, size);
+    enum rc rc = xjson_parse(&rest.xjson, data, size);
     if (rc) return rc;
 
     return RC_OK;
@@ -161,7 +180,7 @@ static size_t parse_job(char const *data, size_t size)
 
 static size_t parse_db(char const *data, size_t size)
 {
-    enum rc rc = xjson_parse(&xjson, data, size);
+    enum rc rc = xjson_parse(&rest.xjson, data, size);
     if (rc) return rc;
 
     return RC_OK;

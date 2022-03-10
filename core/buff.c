@@ -2,27 +2,29 @@
 #include <assert.h>
 #include <stdlib.h>
 
-struct buff *buff_new(size_t size)
+struct buff *buff_new(size_t capacity)
 {
-    assert(size > 0);
-    return malloc(sizeof(struct buff) + size);
+    assert(capacity > 0);
+
+    struct buff *buff = malloc(sizeof(struct buff) + capacity);
+    if (!buff) return 0;
+
+    buff->size = 0;
+    buff->capacity = capacity;
+    return buff;
 }
 
-struct buff *buff_ensure(struct buff *buff, size_t size)
+bool buff_ensure(struct buff **buff, size_t capacity)
 {
-    if (size > buff->capacity)
+    if (capacity > (*buff)->capacity)
     {
-        struct buff *tmp = realloc(buff, sizeof(*tmp) + size);
-        if (!tmp)
-        {
-            buff_del(buff);
-            return 0;
-        }
-        buff = tmp;
-        buff->capacity = size;
+        struct buff *tmp = realloc(*buff, sizeof(*tmp) + capacity);
+        if (!tmp) return false;
+
+        *buff = tmp;
+        (*buff)->capacity = capacity;
     }
-    buff->size = size;
-    return buff;
+    return true;
 }
 
 void buff_del(struct buff const *buff) { free((void *)buff); }

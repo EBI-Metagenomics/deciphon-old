@@ -33,13 +33,3 @@ enum rc xjson_parse(struct xjson *x, char const *data, unsigned size)
     if (r < 0) jsmn_error(r);
     return RC_OK;
 }
-
-// enum jsmnerr
-// {
-//     /* Not enough tokens were provided */
-//     JSMN_ERROR_NOMEM = -1,
-//     /* Invalid character inside JSON string */
-//     JSMN_ERROR_INVAL = -2,
-//     /* The string is not a full JSON packet, more bytes expected */
-//     JSMN_ERROR_PART = -3
-// };
