@@ -22,7 +22,7 @@ static struct
 } rest = {{0}, SPINLOCK_INIT, false, 0, 0, {0}};
 
 static size_t parse_job(char const *data, size_t size);
-static size_t parse_db(char const *data, size_t size);
+static size_t parse_db(struct sched_db *db, size_t size, char const *data);
 
 static enum rc body_add(struct buff **body, size_t size, char const *data)
 {
@@ -147,6 +147,14 @@ enum rc rest_post_db(struct sched_db *db)
     long http_code = 0;
     rc = xcurl_post(&rest.xcurl, "/dbs/", &http_code, body_store,
                     &rest.response_body, rest.request_body->data);
+    if (rc) goto cleanup;
+    if (http_code == 201)
+    {
+        parse_db(db, rest.response_body->size, rest.response_body->data);
+    }
+    // 201 OK
+    // 409 conflict
+    // 500 server error
 
 cleanup:
     spinlock_unlock(&rest.lock);
@@ -178,10 +186,31 @@ static size_t parse_job(char const *data, size_t size)
     return RC_OK;
 }
 
-static size_t parse_db(char const *data, size_t size)
+static size_t parse_db(struct sched_db *db, size_t size, char const *data)
 {
-    enum rc rc = xjson_parse(&rest.xjson, data, size);
+    struct xjson *x = &rest.xjson;
+    enum rc rc = xjson_parse(x, data, size);
     if (rc) return rc;
 
+    if (x->ntoks != 2 * 3 + 1) return einval("expected three items");
+
+    for (unsigned i = 1; i < x->ntoks; i += 2)
+    {
+        if (xjson_eqstr(x, i, "id"))
+        {
+            if ((rc = xjson_bind_int64(x, i + 1, &db->id))) return rc;
+        }
+        else if (xjson_eqstr(x, i, "xxh3_64"))
+        {
+            if ((rc = xjson_bind_int64(x, i + 1, &db->xxh3_64))) return rc;
+        }
+        else if (xjson_eqstr(x, i, "filename"))
+        {
+            if ((rc = xjson_copy_str(x, i + 1, PATH_SIZE, db->filename)))
+                return rc;
+        }
+        else
+            return einval("unexpected json key");
+    }
     return RC_OK;
 }

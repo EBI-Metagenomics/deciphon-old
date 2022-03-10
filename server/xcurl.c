@@ -63,10 +63,10 @@ static size_t callback_func(void *data, size_t one, size_t size, void *arg)
 static enum rc perform_request(CURL *curl, long *http_code)
 {
     CURLcode code = curl_easy_perform(curl);
-    curl_easy_reset(curl);
     if (code) return curl_error(code);
-
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
+
+    curl_easy_reset(curl);
     return *http_code > 299 ? efail("http request error") : RC_OK;
 }
 

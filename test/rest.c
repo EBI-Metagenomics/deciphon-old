@@ -32,6 +32,9 @@ void test_rest_post_db(void)
     struct sched_db db = {0};
     strcpy(db.filename, "minifam.dcp");
     EQ(rest_post_db(&db), RC_OK);
+    EQ(db.id, 1);
+    EQ(db.xxh3_64, -3907098992699871052);
+    EQ(db.filename, "minifam.dcp");
 
     rest_close();
 }

@@ -4,6 +4,7 @@
 #define JSMN_STATIC
 #include "jsmn.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 #define XJSON_MAX_TOKENS 128
 
@@ -34,9 +35,20 @@ static bool xjson_is_bool(struct xjson const *x, unsigned idx)
     return tok->type == JSMN_PRIMITIVE && (c == 't' || c == 'f');
 }
 
+static inline bool xjson_is_string(struct xjson const *x, unsigned idx)
+{
+    struct jsmntok const *tok = x->tok + idx;
+    return tok->type == JSMN_STRING;
+}
+
 static bool xjson_to_bool(struct xjson const *x, unsigned idx)
 {
     return x->data[x->tok[idx].start] == 't';
 }
+
+enum rc xjson_bind_int64(struct xjson *x, unsigned idx, int64_t *dst);
+
+enum rc xjson_copy_str(struct xjson *x, unsigned idx, unsigned dst_size,
+                       char *dst);
 
 #endif
