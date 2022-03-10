@@ -4,6 +4,7 @@ add_library(
   prod.c
   protein_match.c
   rest.c
+  sched.c
   server.c
   url.c
   work.c

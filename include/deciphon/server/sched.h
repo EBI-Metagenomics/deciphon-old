@@ -42,4 +42,12 @@ struct sched_job
     int64_t exec_ended;
 };
 
+struct xjson;
+
+void sched_seq_init(struct sched_seq *seq);
+void sched_db_init(struct sched_db *db);
+void sched_job_init(struct sched_job *job);
+enum rc sched_db_parse(struct sched_db *db, struct xjson *x, unsigned start);
+enum rc sched_job_parse(struct sched_job *job, struct xjson *x, unsigned start);
+
 #endif

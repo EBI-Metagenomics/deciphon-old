@@ -103,7 +103,8 @@ static enum rc run_on_partition(struct work *work, struct work_priv *priv,
 
 enum rc work_next(struct work *work)
 {
-    enum rc rc = rest_next_pend_job(&work->job);
+    struct rest_error error = {0};
+    enum rc rc = rest_next_pend_job(&work->job, &error);
     if (rc) return rc;
         // rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "");
         // if (rc) return rc;

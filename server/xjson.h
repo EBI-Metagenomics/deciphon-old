@@ -25,6 +25,17 @@ char const *json_tok_value(struct xjson const *x, unsigned idx);
 
 bool xjson_eqstr(struct xjson const *x, unsigned idx, char const *str);
 
+static inline bool xjson_is_array(struct xjson const *x, unsigned idx)
+{
+    struct jsmntok const *tok = x->tok + idx;
+    return tok->type == JSMN_ARRAY;
+}
+
+static inline bool xjson_is_array_empty(struct xjson const *x, unsigned idx)
+{
+    return x->ntoks == 1;
+}
+
 static inline bool xjson_is_number(struct xjson const *x, unsigned idx)
 {
     struct jsmntok const *tok = x->tok + idx;

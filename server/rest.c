@@ -22,10 +22,8 @@ static struct
     struct xjson xjson;
 } rest = {{0}, SPINLOCK_INIT, false, 0, 0, {0}};
 
-static size_t parse_job(char const *data, size_t size);
-static enum rc parse_db(struct sched_db *db, size_t size, char const *data);
-static enum rc parse_error(struct rest_error *error, size_t size,
-                           char const *data);
+static enum rc parse_error(struct rest_error *error, struct xjson *x,
+                           unsigned start);
 
 static enum rc body_add(struct buff **body, size_t size, char const *data)
 {
@@ -55,6 +53,12 @@ static inline void rest_error_reset(struct rest_error *error)
 {
     error->rc = RC_OK;
     error->msg[0] = 0;
+}
+
+static inline enum rc parse_json(void)
+{
+    return xjson_parse(&rest.xjson, rest.response_body->data,
+                       rest.response_body->size);
 }
 
 #if 0
@@ -128,19 +132,6 @@ enum rc rest_wipe(void)
     return rc;
 }
 
-enum rc rest_next_pend_job(struct sched_job *job)
-{
-    spinlock_lock(&rest.lock);
-
-    body_reset(rest.request_body);
-    long http_code = 0;
-    enum rc rc = xcurl_get(&rest.xcurl, "/jobs/next_pend", &http_code,
-                           body_store, rest.response_body);
-
-    spinlock_unlock(&rest.lock);
-    return rc;
-}
-
 enum rc rest_post_db(struct sched_db *db, struct rest_error *error)
 {
     spinlock_lock(&rest.lock);
@@ -162,12 +153,13 @@ enum rc rest_post_db(struct sched_db *db, struct rest_error *error)
 
     if (http_code == 201)
     {
-        rc = parse_db(db, rest.response_body->size, rest.response_body->data);
+        if ((rc = parse_json())) goto cleanup;
+        rc = sched_db_parse(db, &rest.xjson, 1);
     }
     else if (http_code == 409 || http_code == 500)
     {
-        rc = parse_error(error, rest.response_body->size,
-                         rest.response_body->data);
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_error(error, &rest.xjson, 1);
     }
     else
     {
@@ -177,6 +169,17 @@ enum rc rest_post_db(struct sched_db *db, struct rest_error *error)
 cleanup:
     spinlock_unlock(&rest.lock);
     return rc;
+}
+
+static enum rc parse_db_list(struct sched_db *db, struct xjson *x)
+{
+    if (!xjson_is_array(x, 0)) return einval("expected array");
+    if (xjson_is_array_empty(x, 0))
+    {
+        sched_db_init(db);
+        return RC_OK;
+    }
+    return sched_db_parse(db, x, 2);
 }
 
 enum rc rest_get_db(struct sched_db *db, struct rest_error *error)
@@ -195,12 +198,13 @@ enum rc rest_get_db(struct sched_db *db, struct rest_error *error)
 
     if (http_code == 200)
     {
-        rc = parse_db(db, rest.response_body->size, rest.response_body->data);
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_db_list(db, &rest.xjson);
     }
     else if (http_code == 404 || http_code == 500)
     {
-        rc = parse_error(error, rest.response_body->size,
-                         rest.response_body->data);
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_error(error, &rest.xjson, 1);
     }
     else
     {
@@ -212,53 +216,57 @@ cleanup:
     return rc;
 }
 
-static size_t parse_job(char const *data, size_t size)
+static enum rc parse_job_list(struct sched_job *job, struct xjson *x)
 {
-    enum rc rc = xjson_parse(&rest.xjson, data, size);
-    if (rc) return rc;
-
-    return RC_OK;
-}
-
-static enum rc parse_db(struct sched_db *db, size_t size, char const *data)
-{
-    struct xjson *x = &rest.xjson;
-    enum rc rc = xjson_parse(x, data, size);
-    if (rc) return rc;
-
-    if (x->ntoks != 2 * 3 + 1) return einval("expected three items");
-
-    for (unsigned i = 1; i < x->ntoks; i += 2)
+    if (!xjson_is_array(x, 0)) return einval("expected array");
+    if (xjson_is_array_empty(x, 0))
     {
-        if (xjson_eqstr(x, i, "id"))
-        {
-            if ((rc = xjson_bind_int64(x, i + 1, &db->id))) return rc;
-        }
-        else if (xjson_eqstr(x, i, "xxh3_64"))
-        {
-            if ((rc = xjson_bind_int64(x, i + 1, &db->xxh3_64))) return rc;
-        }
-        else if (xjson_eqstr(x, i, "filename"))
-        {
-            if ((rc = xjson_copy_str(x, i + 1, PATH_SIZE, db->filename)))
-                return rc;
-        }
-        else
-            return einval("unexpected json key");
+        sched_job_init(job);
+        return RC_OK;
     }
-    return RC_OK;
+    return sched_job_parse(job, x, 2);
 }
 
-static enum rc parse_error(struct rest_error *error, size_t size,
-                           char const *data)
+enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *error)
 {
-    struct xjson *x = &rest.xjson;
-    enum rc rc = xjson_parse(x, data, size);
-    if (rc) return rc;
+    spinlock_lock(&rest.lock);
+    rest_error_reset(error);
 
-    if (x->ntoks != 2 * 2 + 1) return einval("expected two items");
+    enum rc rc = RC_OK;
 
-    for (unsigned i = 1; i < x->ntoks; i += 2)
+    body_reset(rest.request_body);
+    long http_code = 0;
+    rc = xcurl_get(&rest.xcurl, "/jobs/next_pend", &http_code, body_store,
+                   &rest.response_body);
+    if (rc) goto cleanup;
+
+    if (http_code == 200)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_job_list(job, &rest.xjson);
+    }
+    else if (http_code == 409 || http_code == 500)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_error(error, &rest.xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&rest.lock);
+    return rc;
+}
+
+static enum rc parse_error(struct rest_error *error, struct xjson *x,
+                           unsigned start)
+{
+    enum rc rc = RC_OK;
+
+    unsigned nitems = 0;
+    for (unsigned i = start; i < x->ntoks && nitems < 2; i += 2)
     {
         if (xjson_eqstr(x, i, "rc"))
         {
@@ -274,6 +282,10 @@ static enum rc parse_error(struct rest_error *error, size_t size,
         }
         else
             return einval("unexpected json key");
+        nitems++;
     }
+
+    if (nitems != 2) return einval("expected two items");
+
     return RC_OK;
 }
