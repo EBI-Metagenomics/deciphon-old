@@ -49,6 +49,11 @@ static inline size_t body_store(void *data, size_t size, void *arg)
 
 static inline void body_reset(struct buff *body) { body->size = 0; }
 
+static inline enum rc body_finish_up(struct buff **body)
+{
+    return body_add(body, 1, "\0");
+}
+
 static inline void rest_error_reset(struct rest_error *error)
 {
     error->rc = RC_OK;
@@ -124,7 +129,6 @@ enum rc rest_wipe(void)
 {
     spinlock_lock(&rest.lock);
 
-    body_reset(rest.request_body);
     long http_code = 0;
     enum rc rc = xcurl_delete(&rest.xcurl, "/", &http_code);
 
@@ -144,6 +148,7 @@ enum rc rest_post_db(struct sched_db *db, struct rest_error *error)
         goto cleanup;
     if ((rc = body_add_str(&rest.request_body, db->filename))) goto cleanup;
     if ((rc = body_add_str(&rest.request_body, "\"}"))) goto cleanup;
+    body_finish_up(&rest.request_body);
 
     body_reset(rest.response_body);
     long http_code = 0;
@@ -235,7 +240,9 @@ enum rc rest_testing_data(struct rest_error *error)
     enum rc rc = RC_OK;
 
     body_reset(rest.request_body);
+    body_reset(rest.response_body);
     if ((rc = body_add_str(&rest.request_body, "{}"))) goto cleanup;
+    body_finish_up(&rest.request_body);
 
     long http_code = 0;
     rc = xcurl_post(&rest.xcurl, "/testing/data/", &http_code, body_store,
@@ -274,7 +281,7 @@ enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *error)
 
     enum rc rc = RC_OK;
 
-    body_reset(rest.request_body);
+    body_reset(rest.response_body);
     long http_code = 0;
     rc = xcurl_get(&rest.xcurl, "/jobs/next_pend", &http_code, body_store,
                    &rest.response_body);

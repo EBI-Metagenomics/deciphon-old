@@ -115,5 +115,14 @@ void test_rest_next_pend_job(void)
     EQ(error.msg, "");
     EQ(job.id, 0);
 
+    EQ(rest_testing_data(&error), RC_OK);
+    EQ(error.rc, RC_OK);
+    EQ(error.msg, "");
+
+    EQ(rest_next_pend_job(&job, &error), RC_OK);
+    EQ(error.rc, RC_OK);
+    EQ(error.msg, "");
+    EQ(job.id, 0);
+
     rest_close();
 }
