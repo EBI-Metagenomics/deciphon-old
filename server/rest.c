@@ -317,6 +317,44 @@ cleanup:
     return rc;
 }
 
+enum rc rest_next_job_seq(struct sched_job *job, struct sched_seq *seq,
+                          struct rest_error *error)
+{
+    spinlock_lock(&rest.lock);
+    rest_error_reset(error);
+
+    char query[] = "/jobs/00000000000000000000/seqs/next/00000000000000000000";
+    npf_snprintf(query, sizeof(query), "/jobs/%" PRId64 "/seqs/next/%" PRId64,
+                 job->id, seq->id);
+
+    long http_code = 0;
+    body_reset(rest.response_body);
+    enum rc rc = xcurl_get(&rest.xcurl, query, &http_code, body_store,
+                           &rest.response_body);
+    if (rc) goto cleanup;
+    rc = body_finish_up(&rest.response_body);
+    if (rc) goto cleanup;
+
+    if (http_code == 200)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        rc = sched_seq_parse(seq, &rest.xjson, 1);
+    }
+    else if (http_code == 409 || http_code == 500)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_error(error, &rest.xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&rest.lock);
+    return rc;
+}
+
 static enum rc parse_error(struct rest_error *error, struct xjson *x,
                            unsigned start)
 {

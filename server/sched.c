@@ -13,9 +13,10 @@ void sched_job_init(struct sched_job *job) { memset(job, 0, sizeof(*job)); }
 enum rc sched_db_parse(struct sched_db *db, struct xjson *x, unsigned start)
 {
     enum rc rc = RC_OK;
+    static unsigned expected_items = 3;
 
     unsigned nitems = 0;
-    for (unsigned i = start; i < x->ntoks && nitems < 3; i += 2)
+    for (unsigned i = start; i < x->ntoks && nitems < expected_items; i += 2)
     {
         if (xjson_eqstr(x, i, "id"))
         {
@@ -35,7 +36,7 @@ enum rc sched_db_parse(struct sched_db *db, struct xjson *x, unsigned start)
         nitems++;
     }
 
-    if (nitems != 3) return einval("expected three items");
+    if (nitems != expected_items) return einval("expected three items");
 
     return RC_OK;
 }
@@ -43,11 +44,12 @@ enum rc sched_db_parse(struct sched_db *db, struct xjson *x, unsigned start)
 enum rc sched_job_parse(struct sched_job *job, struct xjson *x, unsigned start)
 {
     enum rc rc = RC_OK;
+    static unsigned expected_items = 9;
 
     if (x->ntoks < 2 * 9 + 1) return einval("expected nine items");
 
     unsigned nitems = 0;
-    for (unsigned i = start; i < x->ntoks && nitems < 9; i += 2)
+    for (unsigned i = start; i < x->ntoks && nitems < expected_items; i += 2)
     {
         if (xjson_eqstr(x, i, "id"))
         {
@@ -95,7 +97,44 @@ enum rc sched_job_parse(struct sched_job *job, struct xjson *x, unsigned start)
         nitems++;
     }
 
-    if (nitems != 9) return einval("expected three items");
+    if (nitems != expected_items) return einval("expected nine items");
+
+    return RC_OK;
+}
+
+enum rc sched_seq_parse(struct sched_seq *seq, struct xjson *x, unsigned start)
+{
+    enum rc rc = RC_OK;
+    static unsigned expected_items = 4;
+
+    if (x->ntoks < 2 * expected_items + 1) return einval("expected four items");
+
+    unsigned nitems = 0;
+    for (unsigned i = start; i < x->ntoks && nitems < expected_items; i += 2)
+    {
+        if (xjson_eqstr(x, i, "id"))
+        {
+            if ((rc = xjson_bind_int64(x, i + 1, &seq->id))) return rc;
+        }
+        else if (xjson_eqstr(x, i, "job_id"))
+        {
+            if ((rc = xjson_bind_int64(x, i + 1, &seq->job_id))) return rc;
+        }
+        else if (xjson_eqstr(x, i, "name"))
+        {
+            if ((rc = xjson_copy_str(x, i + 1, SEQ_NAME_SIZE, seq->name)))
+                return rc;
+        }
+        else if (xjson_eqstr(x, i, "data"))
+        {
+            if ((rc = xjson_copy_str(x, i + 1, SEQ_SIZE, seq->data))) return rc;
+        }
+        else
+            return einval("unexpected json key");
+        nitems++;
+    }
+
+    if (nitems != expected_items) return einval("expected four items");
 
     return RC_OK;
 }
