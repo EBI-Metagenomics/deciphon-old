@@ -7,6 +7,7 @@
 void test_rest_open_close(void);
 void test_rest_post_db(void);
 void test_rest_get_db(void);
+void test_rest_post_testing_data(void);
 void test_rest_next_pend_job(void);
 
 int main(void)
@@ -14,6 +15,7 @@ int main(void)
     test_rest_open_close();
     test_rest_post_db();
     test_rest_get_db();
+    test_rest_post_testing_data();
     test_rest_next_pend_job();
     return hope_status();
 }
@@ -80,6 +82,20 @@ void test_rest_get_db(void)
     EQ(db.id, 1);
     EQ(db.xxh3_64, -3907098992699871052);
     EQ(db.filename, "minifam.dcp");
+    EQ(error.rc, RC_OK);
+    EQ(error.msg, "");
+
+    rest_close();
+}
+
+void test_rest_post_testing_data(void)
+{
+    EQ(rest_open(REST_URL_STEM), RC_OK);
+    EQ(rest_wipe(), RC_OK);
+
+    struct rest_error error = {0};
+    EQ(rest_testing_data(&error), RC_OK);
+
     EQ(error.rc, RC_OK);
     EQ(error.msg, "");
 

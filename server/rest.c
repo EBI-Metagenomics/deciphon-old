@@ -227,6 +227,46 @@ static enum rc parse_job_list(struct sched_job *job, struct xjson *x)
     return sched_job_parse(job, x, 2);
 }
 
+enum rc rest_testing_data(struct rest_error *error)
+{
+    spinlock_lock(&rest.lock);
+    rest_error_reset(error);
+
+    enum rc rc = RC_OK;
+
+    body_reset(rest.request_body);
+    if ((rc = body_add_str(&rest.request_body, "{}"))) goto cleanup;
+
+    long http_code = 0;
+    rc = xcurl_post(&rest.xcurl, "/testing/data/", &http_code, body_store,
+                    &rest.response_body, rest.request_body->data);
+    if (rc) goto cleanup;
+
+    if (http_code == 201)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        if (!(xjson_is_array(&rest.xjson, 0) &&
+              xjson_is_array_empty(&rest.xjson, 0)))
+        {
+            rc = einval("expected empty array");
+            goto cleanup;
+        }
+    }
+    else if (http_code == 404 || http_code == 409 || http_code == 500)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_error(error, &rest.xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&rest.lock);
+    return rc;
+}
+
 enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *error)
 {
     spinlock_lock(&rest.lock);

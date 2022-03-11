@@ -38,6 +38,7 @@ void rest_close(void);
 enum rc rest_wipe(void);
 enum rc rest_post_db(struct sched_db *db, struct rest_error *error);
 enum rc rest_get_db(struct sched_db *db, struct rest_error *error);
+enum rc rest_testing_data(struct rest_error *error);
 enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *error);
 // enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
 //                            char const *error);
