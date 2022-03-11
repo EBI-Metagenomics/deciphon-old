@@ -29,13 +29,14 @@ struct work
     struct sched_seq seq;
 
     struct work_priv priv[NUM_PARTITIONS];
-    struct db_reader db_reader;
+
+    struct protein_db_reader db_reader;
+    struct profile_reader profile_reader;
 
     struct imm_str str;
     struct imm_seq iseq;
     struct imm_abc const *abc;
     char abc_name[6];
-    struct profile_reader profile_reader;
     enum profile_typeid profile_typeid;
 
     prod_fwrite_match_cb *write_match_cb;

@@ -118,36 +118,43 @@ enum rc work_next(struct work *work)
     FILE *fp = fopen(db.filename, "wb");
     rc = rest_download_db(&db, fp);
     fclose(fp);
-#if 0
     if (rc) return rc;
 
-    if (!(work->db.fp = fopen(db.filename, "rb"))) return eio("open db");
+    fp = fopen(db.filename, "rb");
+    rc = protein_db_reader_open(&work->db_reader, fp);
+    if (rc) return rc;
 
-    rc = db_reader_open(&work->db.reader, work->db.fp);
-    if (rc)
-    {
-        fclose(work->db.fp);
-        return rc;
-    }
-
-    // work->db.
-    if (db_reader_db(&work->db.reader)->vtable.typeid == DB_PROTEIN)
-    {
-        work->write_match_cb = protein_match_write_cb;
-        work->profile_typeid = PROFILE_PROTEIN;
-    }
-    else
-        assert(false);
-
-#endif
     return RC_OK;
 }
 
 enum rc work_run(struct work *work, unsigned num_threads)
 {
+    enum rc rc =
+        profile_reader_setup(&work->profile_reader,
+                             (struct db_reader *)&work->db_reader, num_threads);
+
+    struct imm_abc const *abc = imm_super(&work->db_reader.nuclt);
+
+    struct profile *prof = 0;
+    struct imm_prod prod = imm_prod();
+    while ((rc = profile_reader_next(&work->profile_reader, 0, &prof)) !=
+           RC_END)
+    {
+        // EQ(profile_typeid(prof), PROFILE_PROTEIN);
+        struct imm_task *task = imm_task_new(profile_alt_dp(prof));
+        struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
+        imm_task_setup(task, &seq);
+        imm_dp_viterbi(profile_alt_dp(prof), task, &prod);
+        // CLOSE(prod.loglik, logliks[nprofs]);
+        imm_del(task);
+    }
+
+    imm_del(&prod);
+    // profile_reader_del(&reader);
+    // db_reader_close((struct db_reader *)&db);
+    // fclose(fp);
+
 #if 0
-    enum rc rc = profile_reader_setup(
-        &work->reader, db_reader_db(&work->db.reader), num_threads);
     if (rc)
     {
         db_reader_close(&work->db.reader);
