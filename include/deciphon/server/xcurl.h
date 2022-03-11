@@ -32,4 +32,7 @@ enum rc xcurl_patch(struct xcurl *x, char const *query, long *http_code,
 
 enum rc xcurl_delete(struct xcurl *, char const *query, long *http_code);
 
+enum rc xcurl_download(struct xcurl *x, char const *query, long *http_code,
+                       FILE *fp);
+
 #endif

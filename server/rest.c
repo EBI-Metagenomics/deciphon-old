@@ -414,6 +414,37 @@ cleanup:
     return rc;
 }
 
+enum rc rest_download_db(struct sched_db *db, FILE *fp)
+{
+    spinlock_lock(&rest.lock);
+
+    enum rc rc = RC_OK;
+
+    char query[] = "/dbs/00000000000000000000/download";
+
+    npf_snprintf(query, sizeof(query), "/dbs/%" PRId64 "/download", db->id);
+    long http_code = 0;
+    rc = xcurl_download(&rest.xcurl, query, &http_code, fp);
+    if (rc) goto cleanup;
+
+    if (http_code == 200)
+    {
+        rc = RC_OK;
+    }
+    else if (http_code == 404)
+    {
+        rc = einval("database not found");
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&rest.lock);
+    return rc;
+}
+
 static enum rc parse_error(struct rest_error *error, struct xjson *x,
                            unsigned start)
 {

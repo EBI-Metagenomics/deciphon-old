@@ -110,10 +110,15 @@ enum rc work_next(struct work *work)
     rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &error);
     if (rc) return rc;
 
-#if 0
     struct sched_db db = {0};
     db.id = work->job.db_id;
-    rc = rest_get_db(&db);
+    rc = rest_get_db(&db, &error);
+    if (rc) return rc;
+
+    FILE *fp = fopen(db.filename, "wb");
+    rc = rest_download_db(&db, fp);
+    fclose(fp);
+#if 0
     if (rc) return rc;
 
     if (!(work->db.fp = fopen(db.filename, "rb"))) return eio("open db");

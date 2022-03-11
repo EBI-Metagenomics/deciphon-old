@@ -98,6 +98,8 @@ enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
     curl_easy_setopt(x->curl, CURLOPT_POST, 1L);
     curl_easy_setopt(x->curl, CURLOPT_POSTFIELDS, json);
 
+    xcurl_debug_setup(x->curl);
+
     return perform_request(x->curl, http_code);
 }
 // curl -X 'PATCH' \
@@ -109,6 +111,14 @@ enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
 //   "error": ""
 // }'
 
+// content-disposition: attachment; filename="minifam.hmm"
+// content-length: 271220
+// content-type: application/octet-stream
+// date: Fri,11 Mar 2022 10:53:23 GMT
+// etag: 94ab2c4f0708d28c619f9e5c81a4dde5
+// last-modified: Fri,11 Mar 2022 10:13:55 GMT
+// server: uvicorn
+
 enum rc xcurl_patch(struct xcurl *x, char const *query, long *http_code,
                     xcurl_callback_func_t callback, void *arg, char const *json)
 {
@@ -119,9 +129,10 @@ enum rc xcurl_patch(struct xcurl *x, char const *query, long *http_code,
     curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
-    // curl_easy_setopt(x->curl, CURLOPT_POST, 1L);
     curl_easy_setopt(x->curl, CURLOPT_POSTFIELDS, json);
     curl_easy_setopt(x->curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+
+    xcurl_debug_setup(x->curl);
 
     return perform_request(x->curl, http_code);
 }
@@ -134,6 +145,20 @@ enum rc xcurl_delete(struct xcurl *x, char const *query, long *http_code)
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
     curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
     curl_easy_setopt(x->curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+
+    xcurl_debug_setup(x->curl);
+
+    return perform_request(x->curl, http_code);
+}
+
+enum rc xcurl_download(struct xcurl *x, char const *query, long *http_code,
+                       FILE *fp)
+{
+    url_set_query(&x->url, query);
+    curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, 0);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEDATA, fp);
+    curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
 
     xcurl_debug_setup(x->curl);
 
