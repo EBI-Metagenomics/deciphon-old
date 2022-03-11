@@ -122,7 +122,15 @@ void test_rest_next_pend_job(void)
     EQ(rest_next_pend_job(&job, &error), RC_OK);
     EQ(error.rc, RC_OK);
     EQ(error.msg, "");
-    EQ(job.id, 0);
+    EQ(job.id, 1);
+    EQ(job.db_id, 1);
+    EQ(job.multi_hits, 1);
+    EQ(job.hmmer3_compat, 0);
+    EQ(job.state, "pend");
+    EQ(job.error, "");
+    COND(job.submission > 1646972352);
+    EQ(job.exec_started, 0);
+    EQ(job.exec_ended, 0);
 
     rest_close();
 }

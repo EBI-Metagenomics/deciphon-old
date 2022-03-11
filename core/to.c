@@ -10,11 +10,28 @@ bool to_double(char const *str, double *val)
     return !((*val == 0.0 && str == ptr) || strchr(str, '\0') != ptr);
 }
 
+bool to_int32(char const *str, int32_t *val)
+{
+    long long v = strtoll(str, NULL, 10);
+    *val = (int32_t)v;
+    return (v <= INT32_MAX || !(v == 0 && !(str[0] == '0' && str[1] == '\0')));
+}
+
 bool to_int64(char const *str, int64_t *val)
 {
     long long v = strtoll(str, NULL, 10);
     *val = (int64_t)v;
     return (v <= INT64_MAX || !(v == 0 && !(str[0] == '0' && str[1] == '\0')));
+}
+
+bool to_int32l(unsigned len, char const *str, int32_t *val)
+{
+    char *s = (char *)str;
+    char c = str[len];
+    s[len] = '\0';
+    bool ret = to_int32(str, val);
+    s[len] = c;
+    return ret;
 }
 
 bool to_int64l(unsigned len, char const *str, int64_t *val)

@@ -148,12 +148,15 @@ enum rc rest_post_db(struct sched_db *db, struct rest_error *error)
         goto cleanup;
     if ((rc = body_add_str(&rest.request_body, db->filename))) goto cleanup;
     if ((rc = body_add_str(&rest.request_body, "\"}"))) goto cleanup;
-    body_finish_up(&rest.request_body);
+    rc = body_finish_up(&rest.request_body);
+    if (rc) goto cleanup;
 
-    body_reset(rest.response_body);
     long http_code = 0;
+    body_reset(rest.response_body);
     rc = xcurl_post(&rest.xcurl, "/dbs/", &http_code, body_store,
                     &rest.response_body, rest.request_body->data);
+    if (rc) goto cleanup;
+    rc = body_finish_up(&rest.response_body);
     if (rc) goto cleanup;
 
     if (http_code == 201)
@@ -195,10 +198,12 @@ enum rc rest_get_db(struct sched_db *db, struct rest_error *error)
     char query[] = "/dbs/00000000000000000000";
     npf_snprintf(query, sizeof(query), "/dbs/%" PRId64, db->id);
 
-    body_reset(rest.response_body);
     long http_code = 0;
+    body_reset(rest.response_body);
     enum rc rc = xcurl_get(&rest.xcurl, query, &http_code, body_store,
                            &rest.response_body);
+    if (rc) goto cleanup;
+    rc = body_finish_up(&rest.response_body);
     if (rc) goto cleanup;
 
     if (http_code == 200)
@@ -240,13 +245,16 @@ enum rc rest_testing_data(struct rest_error *error)
     enum rc rc = RC_OK;
 
     body_reset(rest.request_body);
-    body_reset(rest.response_body);
     if ((rc = body_add_str(&rest.request_body, "{}"))) goto cleanup;
-    body_finish_up(&rest.request_body);
+    rc = body_finish_up(&rest.request_body);
+    if (rc) goto cleanup;
 
     long http_code = 0;
+    body_reset(rest.response_body);
     rc = xcurl_post(&rest.xcurl, "/testing/data/", &http_code, body_store,
                     &rest.response_body, rest.request_body->data);
+    if (rc) goto cleanup;
+    rc = body_finish_up(&rest.response_body);
     if (rc) goto cleanup;
 
     if (http_code == 201)
@@ -281,10 +289,12 @@ enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *error)
 
     enum rc rc = RC_OK;
 
-    body_reset(rest.response_body);
     long http_code = 0;
+    body_reset(rest.response_body);
     rc = xcurl_get(&rest.xcurl, "/jobs/next_pend", &http_code, body_store,
                    &rest.response_body);
+    if (rc) goto cleanup;
+    rc = body_finish_up(&rest.response_body);
     if (rc) goto cleanup;
 
     if (http_code == 200)
