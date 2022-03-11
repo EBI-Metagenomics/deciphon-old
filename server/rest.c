@@ -136,7 +136,7 @@ enum rc rest_wipe(void)
     return rc;
 }
 
-enum rc rest_post_db(struct sched_db *db, struct rest_error *error)
+enum rc rest_add_db(struct sched_db *db, struct rest_error *error)
 {
     spinlock_lock(&rest.lock);
     rest_error_reset(error);
@@ -226,17 +226,6 @@ cleanup:
     return rc;
 }
 
-static enum rc parse_job_list(struct sched_job *job, struct xjson *x)
-{
-    if (!xjson_is_array(x, 0)) return einval("expected array");
-    if (xjson_is_array_empty(x, 0))
-    {
-        sched_job_init(job);
-        return RC_OK;
-    }
-    return sched_job_parse(job, x, 2);
-}
-
 enum rc rest_testing_data(struct rest_error *error)
 {
     spinlock_lock(&rest.lock);
@@ -300,7 +289,13 @@ enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *error)
     if (http_code == 200)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_job_list(job, &rest.xjson);
+
+        if (!xjson_is_array(&rest.xjson, 0))
+            rc = einval("expected array");
+        else if (xjson_is_array_empty(&rest.xjson, 0))
+            rc = RC_END;
+        else
+            rc = sched_job_parse(job, &rest.xjson, 2);
     }
     else if (http_code == 409 || http_code == 500)
     {
@@ -339,6 +334,70 @@ enum rc rest_next_job_seq(struct sched_job *job, struct sched_seq *seq,
     {
         if ((rc = parse_json())) goto cleanup;
         rc = sched_seq_parse(seq, &rest.xjson, 1);
+    }
+    else if (http_code == 409 || http_code == 500)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_error(error, &rest.xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&rest.lock);
+    return rc;
+}
+
+static char const job_states[][5] = {[SCHED_JOB_PEND] = "pend",
+                                     [SCHED_JOB_RUN] = "run",
+                                     [SCHED_JOB_DONE] = "done",
+                                     [SCHED_JOB_FAIL] = "fail"};
+
+enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
+                           char const *state_error, struct rest_error *error)
+{
+    spinlock_lock(&rest.lock);
+
+    enum rc rc = RC_OK;
+
+    char buf[] = "/jobs/00000000000000000000";
+
+    body_reset(rest.request_body);
+    if ((rc = body_add_str(&rest.request_body, "{\"job_id\": "))) goto cleanup;
+    npf_snprintf(buf, sizeof(buf), "%" PRId64, job->id);
+
+    if ((rc = body_add_str(&rest.request_body, buf))) goto cleanup;
+    if ((rc = body_add_str(&rest.request_body, ", \"state\": \"")))
+        goto cleanup;
+
+    if ((rc = body_add_str(&rest.request_body, job_states[state])))
+        goto cleanup;
+
+    if ((rc = body_add_str(&rest.request_body, "\", \"error\": \"")))
+        goto cleanup;
+
+    if ((rc = body_add_str(&rest.request_body, state_error))) goto cleanup;
+
+    if ((rc = body_add_str(&rest.request_body, "\"}"))) goto cleanup;
+
+    rc = body_finish_up(&rest.request_body);
+    if (rc) goto cleanup;
+
+    npf_snprintf(buf, sizeof(buf), "/jobs/%" PRId64, job->id);
+    long http_code = 0;
+    body_reset(rest.response_body);
+    rc = xcurl_patch(&rest.xcurl, buf, &http_code, body_store,
+                     &rest.response_body, rest.request_body->data);
+    if (rc) goto cleanup;
+    rc = body_finish_up(&rest.response_body);
+    if (rc) goto cleanup;
+
+    if (http_code == 200)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        rc = sched_job_parse(job, &rest.xjson, 1);
     }
     else if (http_code == 409 || http_code == 500)
     {

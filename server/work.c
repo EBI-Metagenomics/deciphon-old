@@ -106,8 +106,9 @@ enum rc work_next(struct work *work)
     struct rest_error error = {0};
     enum rc rc = rest_next_pend_job(&work->job, &error);
     if (rc) return rc;
-        // rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "");
-        // if (rc) return rc;
+
+    rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &error);
+    if (rc) return rc;
 
 #if 0
     struct sched_db db = {0};

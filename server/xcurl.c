@@ -100,6 +100,31 @@ enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
 
     return perform_request(x->curl, http_code);
 }
+// curl -X 'PATCH' \
+//   'http://127.0.0.1:8000/jobs/1' \
+//   -H 'accept: application/json' \
+//   -H 'Content-Type: application/json' \
+//   -d '{
+//   "state": "run",
+//   "error": ""
+// }'
+
+enum rc xcurl_patch(struct xcurl *x, char const *query, long *http_code,
+                    xcurl_callback_func_t callback, void *arg, char const *json)
+{
+    url_set_query(&x->url, query);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, callback_func);
+    struct callback_data cd = {callback, arg};
+    curl_easy_setopt(x->curl, CURLOPT_WRITEDATA, &cd);
+    curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
+
+    curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->headers);
+    // curl_easy_setopt(x->curl, CURLOPT_POST, 1L);
+    curl_easy_setopt(x->curl, CURLOPT_POSTFIELDS, json);
+    curl_easy_setopt(x->curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+
+    return perform_request(x->curl, http_code);
+}
 
 enum rc xcurl_delete(struct xcurl *x, char const *query, long *http_code)
 {

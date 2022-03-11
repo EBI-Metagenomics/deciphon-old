@@ -98,13 +98,20 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
             elapsed_sleep(500);
             continue;
         }
-        if (rc != RC_OK) return rc;
+        if (rc == RC_END)
+        {
+            rc = RC_OK;
+            goto cleanup;
+        }
+        if (rc != RC_OK) goto cleanup;
 
         info("Found a new job");
         rc = work_run(&server.work, server.num_threads);
         if (rc) goto cleanup;
         info("Finished a job");
     }
+
+    if (rc == RC_END) rc = RC_OK;
 
     info("Goodbye!");
 cleanup:

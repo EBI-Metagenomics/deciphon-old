@@ -36,14 +36,14 @@ struct sched_seq;
 enum rc rest_open(char const *url_stem);
 void rest_close(void);
 enum rc rest_wipe(void);
-enum rc rest_post_db(struct sched_db *db, struct rest_error *error);
+enum rc rest_add_db(struct sched_db *db, struct rest_error *error);
 enum rc rest_get_db(struct sched_db *db, struct rest_error *error);
 enum rc rest_testing_data(struct rest_error *error);
 enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *error);
 enum rc rest_next_job_seq(struct sched_job *job, struct sched_seq *seq,
                           struct rest_error *error);
-// enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
-//                            char const *error);
+enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
+                           char const *state_error, struct rest_error *error);
 // enum rc rest_get_db(struct sched_db *db);
 // enum rc rest_next_seq(struct sched_seq *seq);
 // enum rc rest_submit_prods_file(char const *filepath);
