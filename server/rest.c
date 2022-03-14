@@ -449,6 +449,7 @@ static enum rc parse_error(struct rest_error *error, struct xjson *x,
                            unsigned start)
 {
     enum rc rc = RC_OK;
+    if (!x) return rc;
 
     unsigned nitems = 0;
     for (unsigned i = start; i < x->ntoks && nitems < 2; i += 2)

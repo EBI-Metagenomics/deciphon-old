@@ -2,6 +2,8 @@
 #include "deciphon/compiler.h"
 #include "deciphon/logger.h"
 #include "deciphon/strlcpy.h"
+#define XXH_INLINE_ALL
+#include "xxhash/xxhash.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +52,45 @@ enum rc xfile_dsize(int fd, int64_t *size)
     off_t sz = st.st_size;
     *size = (int64_t)sz;
     return RC_OK;
+}
+
+static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
+
+enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
+{
+    enum rc rc = RC_EFAIL;
+    XXH3_state_t *state = XXH3_createState();
+    if (!state)
+    {
+        rc = efail("failed to create state");
+        goto cleanup;
+    }
+    XXH3_64bits_reset(state);
+
+    size_t n = 0;
+    unsigned char buffer[BUFFSIZE] = {0};
+    while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, fp)) > 0)
+    {
+        if (n < BUFFSIZE && ferror(fp))
+        {
+            rc = eio("fread");
+            goto cleanup;
+        }
+
+        XXH3_64bits_update(state, buffer, n);
+    }
+    if (ferror(fp))
+    {
+        rc = eio("fread");
+        goto cleanup;
+    }
+
+    rc = RC_OK;
+    *hash = XXH3_64bits_digest(state);
+
+cleanup:
+    XXH3_freeState(state);
+    return rc;
 }
 
 enum rc xfile_tmp_open(struct xfile_tmp *file)

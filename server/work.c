@@ -1,7 +1,9 @@
 #include "work.h"
 #include "deciphon/db/profile_reader.h"
+#include "deciphon/logger.h"
 #include "deciphon/server/rest.h"
 #include "deciphon/version.h"
+#include "deciphon/xfile.h"
 #include "imm/imm.h"
 #include "prod.h"
 #include "protein_match.h"
@@ -9,16 +11,16 @@
 #include <stdatomic.h>
 #include <string.h>
 
-static atomic_flag lock_work = ATOMIC_FLAG_INIT;
-static atomic_bool end_work = false;
-
-static void lock(void)
-{
-    while (atomic_flag_test_and_set(&lock_work))
-        /* spin until the lock is acquired */;
-}
-
-static void unlock(void) { atomic_flag_clear(&lock_work); }
+// static atomic_flag lock_work = ATOMIC_FLAG_INIT;
+// static atomic_bool end_work = false;
+//
+// static void lock(void)
+// {
+//     while (atomic_flag_test_and_set(&lock_work))
+//         /* spin until the lock is acquired */;
+// }
+//
+// static void unlock(void) { atomic_flag_clear(&lock_work); }
 
 #if 0
 static void set_job_fail(struct sched_job *job, char const *msg)
@@ -106,33 +108,104 @@ enum rc work_next(struct work *work)
     struct rest_error error = {0};
     enum rc rc = rest_next_pend_job(&work->job, &error);
     if (rc) return rc;
+    return rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &error);
+}
 
-    rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &error);
+static enum rc ensure_database_integrity(char const *filename, int64_t xxh3_64)
+{
+    union
+    {
+        uint64_t u64;
+        int64_t i64;
+    } hash = {.u64 = 0};
+
+    FILE *fp = fopen(filename, "rb");
+    enum rc rc = xfile_hash(fp, &hash.u64);
+    if (rc)
+    {
+        fclose(fp);
+        return rc;
+    }
+    fclose(fp);
+    return xxh3_64 == hash.i64 ? RC_OK : einval("wrong hash");
+}
+
+static enum rc download_database(struct sched_db *db)
+{
+    FILE *fp = fopen(db->filename, "wb");
+    enum rc rc = rest_download_db(db, fp);
+    if (rc)
+    {
+        fclose(fp);
+        return rc;
+    }
+    return fclose(fp) ? eio("failed to close database") : RC_OK;
+}
+
+static enum rc ensure_database(struct sched_db *db)
+{
+    enum rc rc = RC_OK;
+    if (xfile_exists(db->filename))
+    {
+        rc = ensure_database_integrity(db->filename, db->xxh3_64);
+        if (!rc) return rc;
+    }
+
+    rc = download_database(db);
     if (rc) return rc;
+
+    return ensure_database_integrity(db->filename, db->xxh3_64);
+}
+
+static inline void fail_job(struct work *work, char const *msg)
+{
+    rest_set_job_state(&work->job, SCHED_JOB_FAIL, msg, 0);
+}
+
+enum rc work_prepare(struct work *work, unsigned num_threads)
+{
+    FILE *fp = 0;
 
     struct sched_db db = {0};
     db.id = work->job.db_id;
-    rc = rest_get_db(&db, &error);
-    if (rc) return rc;
 
-    FILE *fp = fopen(db.filename, "wb");
-    rc = rest_download_db(&db, fp);
-    fclose(fp);
-    if (rc) return rc;
+    struct rest_error error = {0};
+    enum rc rc = rest_get_db(&db, &error);
+    if (rc)
+    {
+        fail_job(work, error.msg);
+        goto cleanup;
+    }
+    rc = ensure_database(&db);
+    if (rc)
+    {
+        fail_job(work, "failed to ensure database");
+        goto cleanup;
+    }
 
     fp = fopen(db.filename, "rb");
     rc = protein_db_reader_open(&work->db_reader, fp);
-    if (rc) return rc;
+    if (rc)
+    {
+        fail_job(work, "failed to setup database reader");
+        goto cleanup;
+    }
+
+    struct profile_reader *profile_reader = &work->profile_reader;
+    struct db_reader *db_reader = (struct db_reader *)&work->db_reader;
+    rc = profile_reader_setup(profile_reader, db_reader, num_threads);
+    if (rc) goto cleanup;
 
     return RC_OK;
+
+cleanup:
+    if (fp) fclose(fp);
+    return rc;
 }
 
-enum rc work_run(struct work *work, unsigned num_threads)
+enum rc work_run(struct work *work)
 {
-    enum rc rc =
-        profile_reader_setup(&work->profile_reader,
-                             (struct db_reader *)&work->db_reader, num_threads);
-
+    enum rc rc = RC_OK;
     struct imm_abc const *abc = imm_super(&work->db_reader.nuclt);
 
     struct profile *prof = 0;

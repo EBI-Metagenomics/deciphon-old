@@ -106,7 +106,10 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
         if (rc != RC_OK) goto cleanup;
 
         info("Found a new job");
-        rc = work_run(&server.work, server.num_threads);
+        rc = work_prepare(&server.work, server.num_threads);
+        if (rc) goto cleanup;
+
+        rc = work_run(&server.work);
         if (rc) goto cleanup;
         info("Finished a job");
     }

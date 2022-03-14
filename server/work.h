@@ -44,6 +44,7 @@ struct work
 };
 
 enum rc work_next(struct work *work);
-enum rc work_run(struct work *work, unsigned num_threads);
+enum rc work_prepare(struct work *work, unsigned num_threads);
+enum rc work_run(struct work *work);
 
 #endif
