@@ -45,8 +45,5 @@ enum rc rest_next_job_seq(struct sched_job *job, struct sched_seq *seq,
 enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
                            char const *state_error, struct rest_error *error);
 enum rc rest_download_db(struct sched_db *db, FILE *fp);
-// enum rc rest_get_db(struct sched_db *db);
-// enum rc rest_next_seq(struct sched_seq *seq);
-// enum rc rest_submit_prods_file(char const *filepath);
 
 #endif

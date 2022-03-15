@@ -1,7 +1,6 @@
 #include "prod.h"
 #include "deciphon/logger.h"
-#include "deciphon/model/profile.h"
-#include "deciphon/server/rest.h"
+#include "deciphon/version.h"
 #include "deciphon/xfile.h"
 #include "imm/imm.h"
 #include "match.h"
@@ -9,13 +8,6 @@
 
 static unsigned nthreads = 0;
 static struct xfile_tmp prod_file[MAX_NUM_THREADS] = {0};
-
-static void cleanup(void)
-{
-    for (unsigned i = 0; i < nthreads; ++i)
-        xfile_tmp_del(prod_file + i);
-    nthreads = 0;
-}
 
 static enum rc write_begin(struct prod const *prod, unsigned thread_num)
 {
@@ -66,11 +58,32 @@ enum rc prod_fopen(unsigned num_threads)
     {
         if (xfile_tmp_open(prod_file + nthreads))
         {
-            cleanup();
+            prod_fcleanup();
             return efail("begin prod submission");
         }
     }
     return RC_OK;
+}
+
+void prod_setup_job(struct prod *prod, char const *abc_name,
+                    char const *prof_typeid, unsigned job_id)
+{
+    strcpy(prod->abc_name, abc_name);
+    strcpy(prod->profile_typeid, prof_typeid);
+    strcpy(prod->version, DECIPHON_VERSION);
+    prod->job_id = job_id;
+}
+
+void prod_setup_seq(struct prod *prod, int64_t seq_id)
+{
+    prod->seq_id = seq_id;
+}
+
+void prod_fcleanup(void)
+{
+    for (unsigned i = 0; i < nthreads; ++i)
+        xfile_tmp_del(prod_file + i);
+    nthreads = 0;
 }
 
 /* Output example
@@ -108,13 +121,13 @@ enum rc prod_fclose(void)
     rc = RC_OK;
 
 cleanup:
-    cleanup();
+    prod_fcleanup();
     return rc;
 }
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
                     struct imm_path const *path, unsigned partition,
-                    prod_fwrite_match_cb fwrite_match, struct match *match)
+                    prod_fwrite_match_func_t fwrite_match, struct match *match)
 {
     enum rc rc = RC_OK;
 

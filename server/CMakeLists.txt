@@ -8,6 +8,7 @@ add_library(
   server.c
   url.c
   work.c
+  thread.c
   xcurl.c
   xcurl_debug.c
   xjson.c)

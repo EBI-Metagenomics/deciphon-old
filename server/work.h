@@ -4,42 +4,28 @@
 #include "deciphon/db/db.h"
 #include "deciphon/rc.h"
 #include "deciphon/server/sched.h"
-#include "hypothesis.h"
 #include "imm/imm.h"
-#include "prod.h"
-#include "protein_match.h"
 #include "sched.h"
+#include "thread.h"
 #include <stdint.h>
-
-struct work_priv
-{
-    struct prod prod;
-    struct hypothesis null;
-    struct hypothesis alt;
-    union
-    {
-        // struct standard_match std;
-        struct protein_match pro;
-    } match;
-};
 
 struct work
 {
     struct sched_job job;
     struct sched_seq seq;
 
-    struct work_priv priv[NUM_PARTITIONS];
+    unsigned num_threads;
+    struct thread thread[NUM_PARTITIONS];
 
+    char db_filename[FILENAME_SIZE];
     struct protein_db_reader db_reader;
     struct profile_reader profile_reader;
 
     struct imm_str str;
     struct imm_seq iseq;
     struct imm_abc const *abc;
-    char abc_name[6];
-    enum profile_typeid profile_typeid;
 
-    prod_fwrite_match_cb *write_match_cb;
+    prod_fwrite_match_func_t *write_match_cb;
     imm_float lrt_threshold;
 };
 

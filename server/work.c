@@ -4,6 +4,7 @@
 #include "deciphon/server/rest.h"
 #include "deciphon/version.h"
 #include "deciphon/xfile.h"
+#include "deciphon/xmath.h"
 #include "imm/imm.h"
 #include "prod.h"
 #include "protein_match.h"
@@ -30,76 +31,6 @@ static void set_job_fail(struct sched_job *job, char const *msg)
     if (rest_set_job_state(job, SCHED_JOB_FAIL, msg))
         error(RC_EFAIL, "failed to set job_fail");
     unlock();
-}
-
-static enum rc reset_task(struct imm_task **task, struct imm_dp const *dp)
-{
-    if (*task && imm_task_reset(*task, dp))
-        return error(RC_EFAIL, "failed to reset task");
-
-    if (!*task && !(*task = imm_task_new(dp)))
-        return error(RC_EFAIL, "failed to create task");
-
-    return RC_OK;
-}
-
-static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq)
-{
-    if (imm_task_setup(task, seq))
-        return error(RC_EFAIL, "failed to setup task");
-    return RC_OK;
-}
-
-static enum rc run_on_partition(struct work *work, struct work_priv *priv,
-                                unsigned i)
-{
-    struct profile *prof = 0;
-    struct hypothesis *null = &priv->null;
-    struct hypothesis *alt = &priv->alt;
-    enum rc rc = RC_OK;
-    while ((rc = profile_reader_next(&work->reader, i, &prof)) == RC_OK)
-    {
-        if (atomic_load(&end_work)) break;
-
-        if ((rc = reset_task(&null->task, profile_null_dp(prof)))) return rc;
-
-        if ((rc = reset_task(&alt->task, profile_alt_dp(prof)))) return rc;
-
-        if ((rc = setup_task(null->task, &work->iseq))) return rc;
-        if ((rc = setup_task(alt->task, &work->iseq))) return rc;
-
-        imm_prod_reset(&null->prod);
-        imm_prod_reset(&alt->prod);
-
-        protein_profile_setup((struct protein_profile *)prof,
-                              imm_seq_size(&work->iseq), work->job.multi_hits,
-                              work->job.hmmer3_compat);
-
-        if (imm_dp_viterbi(profile_null_dp(prof), null->task, &null->prod))
-            return error(RC_EFAIL, "failed to run viterbi");
-
-        if (imm_dp_viterbi(profile_alt_dp(prof), alt->task, &alt->prod))
-            return error(RC_EFAIL, "failed to run viterbi");
-
-        imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
-
-        if (!imm_lprob_is_finite(lrt) || lrt < work->lrt_threshold) continue;
-
-        // strcpy(priv->prod.profile_name, mt.acc);
-        strcpy(priv->prod.abc_name, work->abc_name);
-
-        priv->prod.alt_loglik = alt->prod.loglik;
-        priv->prod.null_loglik = null->prod.loglik;
-
-        struct imm_path const *path = &alt->prod.path;
-        struct match *match = (struct match *)&priv->match;
-        match->profile = prof;
-        if ((rc = prod_fwrite(&priv->prod, &work->iseq, path, i,
-                              work->write_match_cb,
-                              (struct match *)&work->priv->match)))
-            return rc;
-    }
-    return RC_OK;
 }
 #endif
 
@@ -162,10 +93,8 @@ static inline void fail_job(struct work *work, char const *msg)
     rest_set_job_state(&work->job, SCHED_JOB_FAIL, msg, 0);
 }
 
-enum rc work_prepare(struct work *work, unsigned num_threads)
+enum rc prepare_database(struct work *work)
 {
-    FILE *fp = 0;
-
     struct sched_db db = {0};
     db.id = work->job.db_id;
 
@@ -174,17 +103,30 @@ enum rc work_prepare(struct work *work, unsigned num_threads)
     if (rc)
     {
         fail_job(work, error.msg);
-        goto cleanup;
+        return rc;
     }
     rc = ensure_database(&db);
     if (rc)
     {
         fail_job(work, "failed to ensure database");
-        goto cleanup;
+        return rc;
+    }
+    strcpy(work->db_filename, db.filename);
+
+    return RC_OK;
+}
+
+enum rc prepare_readers(struct work *work, unsigned num_threads)
+{
+    work->num_threads = num_threads;
+    FILE *fp = fopen(work->db_filename, "rb");
+    if (!fp)
+    {
+        fail_job(work, "failed to open database");
+        return eio("failed to open database");
     }
 
-    fp = fopen(db.filename, "rb");
-    rc = protein_db_reader_open(&work->db_reader, fp);
+    enum rc rc = protein_db_reader_open(&work->db_reader, fp);
     if (rc)
     {
         fail_job(work, "failed to setup database reader");
@@ -193,8 +135,11 @@ enum rc work_prepare(struct work *work, unsigned num_threads)
 
     struct profile_reader *profile_reader = &work->profile_reader;
     struct db_reader *db_reader = (struct db_reader *)&work->db_reader;
+
     rc = profile_reader_setup(profile_reader, db_reader, num_threads);
     if (rc) goto cleanup;
+
+    work->abc = (struct imm_abc const *)&work->db_reader.nuclt;
 
     return RC_OK;
 
@@ -203,26 +148,67 @@ cleanup:
     return rc;
 }
 
-enum rc work_run(struct work *work)
+enum rc work_prepare(struct work *work, unsigned num_threads)
 {
-    enum rc rc = RC_OK;
-    struct imm_abc const *abc = imm_super(&work->db_reader.nuclt);
-
-    struct profile *prof = 0;
-    struct imm_prod prod = imm_prod();
-    while ((rc = profile_reader_next(&work->profile_reader, 0, &prof)) !=
-           RC_END)
+    if (prod_fopen(num_threads))
     {
-        // EQ(profile_typeid(prof), PROFILE_PROTEIN);
-        struct imm_task *task = imm_task_new(profile_alt_dp(prof));
-        struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
-        imm_task_setup(task, &seq);
-        imm_dp_viterbi(profile_alt_dp(prof), task, &prod);
-        // CLOSE(prod.loglik, logliks[nprofs]);
-        imm_del(task);
+        fail_job(work, "failed to open product files");
+        return RC_OK;
     }
 
-    imm_del(&prod);
+    enum rc rc = prepare_database(work);
+    if (rc)
+    {
+        prod_fcleanup();
+        return rc;
+    }
+
+    rc = prepare_readers(work, num_threads);
+    if (rc) prod_fcleanup();
+
+    for (unsigned i = 0; i < work->num_threads; ++i)
+    {
+        struct thread *t = work->thread + i;
+        struct profile_reader *reader = &work->profile_reader;
+        bool multi_hits = work->job.multi_hits;
+        bool hmmer3_compat = work->job.hmmer3_compat;
+        imm_float lrt_threshold = work->lrt_threshold;
+
+        thread_init(t, i, reader, multi_hits, hmmer3_compat, lrt_threshold);
+
+        enum imm_abc_typeid abc_typeid = work->abc->vtable.typeid;
+        enum profile_typeid profile_typeid = reader->profile_typeid;
+        thread_setup_job(t, abc_typeid, profile_typeid, work->job.id);
+    }
+
+    return rc;
+}
+
+enum rc work_run(struct work *w)
+{
+    enum rc rc = RC_OK;
+
+    struct rest_error error = {0};
+    while (!(rc = rest_next_job_seq(&w->job, &w->seq, &error)))
+    {
+        struct thread *t = w->thread + 0;
+        struct imm_seq iseq = imm_seq(imm_str(w->seq.data), w->abc);
+        thread_setup_seq(t, w->seq.id);
+        rc = thread_run(t, &iseq);
+#if 0
+        while ((rc = profile_reader_next(prof_reader, 0, &prof)) != RC_END)
+        {
+            struct imm_task *task = imm_task_new(profile_alt_dp(prof));
+            struct imm_seq seq = imm_seq(imm_str(work->seq.data), abc);
+            imm_task_setup(task, &seq);
+            imm_dp_viterbi(profile_alt_dp(prof), task, &prod);
+            // CLOSE(prod.loglik, logliks[nprofs]);
+            imm_del(task);
+        }
+#endif
+    }
+
+    // imm_del(&prod);
     // profile_reader_del(&reader);
     // db_reader_close((struct db_reader *)&db);
     // fclose(fp);
