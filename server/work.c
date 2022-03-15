@@ -90,7 +90,7 @@ static enum rc ensure_database(struct sched_db *db)
 
 static inline void fail_job(struct work *work, char const *msg)
 {
-    rest_set_job_state(&work->job, SCHED_JOB_FAIL, msg, 0);
+    rest_fail_job(work->job.id, msg);
 }
 
 enum rc prepare_database(struct work *work)

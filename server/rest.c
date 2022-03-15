@@ -355,44 +355,46 @@ static char const job_states[][5] = {[SCHED_JOB_PEND] = "pend",
                                      [SCHED_JOB_DONE] = "done",
                                      [SCHED_JOB_FAIL] = "fail"};
 
-enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
-                           char const *state_error, struct rest_error *error)
+enum rc set_job_state(int64_t job_id, enum sched_job_state state,
+                      char const *state_error, long *http_code)
 {
-    spinlock_lock(&rest.lock);
-
     enum rc rc = RC_OK;
 
     char buf[] = "/jobs/00000000000000000000";
 
     body_reset(rest.request_body);
-    if ((rc = body_add_str(&rest.request_body, "{\"job_id\": "))) goto cleanup;
-    npf_snprintf(buf, sizeof(buf), "%" PRId64, job->id);
+    if ((rc = body_add_str(&rest.request_body, "{\"job_id\": "))) return rc;
+    npf_snprintf(buf, sizeof(buf), "%" PRId64, job_id);
 
-    if ((rc = body_add_str(&rest.request_body, buf))) goto cleanup;
-    if ((rc = body_add_str(&rest.request_body, ", \"state\": \"")))
-        goto cleanup;
+    if ((rc = body_add_str(&rest.request_body, buf))) return rc;
+    if ((rc = body_add_str(&rest.request_body, ", \"state\": \""))) return rc;
 
-    if ((rc = body_add_str(&rest.request_body, job_states[state])))
-        goto cleanup;
+    if ((rc = body_add_str(&rest.request_body, job_states[state]))) return rc;
 
-    if ((rc = body_add_str(&rest.request_body, "\", \"error\": \"")))
-        goto cleanup;
+    if ((rc = body_add_str(&rest.request_body, "\", \"error\": \""))) return rc;
 
-    if ((rc = body_add_str(&rest.request_body, state_error))) goto cleanup;
+    if ((rc = body_add_str(&rest.request_body, state_error))) return rc;
 
-    if ((rc = body_add_str(&rest.request_body, "\"}"))) goto cleanup;
+    if ((rc = body_add_str(&rest.request_body, "\"}"))) return rc;
 
     rc = body_finish_up(&rest.request_body);
-    if (rc) goto cleanup;
+    if (rc) return rc;
 
-    npf_snprintf(buf, sizeof(buf), "/jobs/%" PRId64, job->id);
-    long http_code = 0;
+    npf_snprintf(buf, sizeof(buf), "/jobs/%" PRId64, job_id);
     body_reset(rest.response_body);
-    rc = xcurl_patch(&rest.xcurl, buf, &http_code, body_store,
+    rc = xcurl_patch(&rest.xcurl, buf, http_code, body_store,
                      &rest.response_body, rest.request_body->data);
-    if (rc) goto cleanup;
-    rc = body_finish_up(&rest.response_body);
-    if (rc) goto cleanup;
+    if (rc) return rc;
+    return body_finish_up(&rest.response_body);
+}
+
+enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
+                           char const *state_error, struct rest_error *error)
+{
+    spinlock_lock(&rest.lock);
+
+    long http_code = 0;
+    enum rc rc = set_job_state(job->id, state, state_error, &http_code);
 
     if (http_code == 200)
     {
@@ -410,6 +412,18 @@ enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
     }
 
 cleanup:
+    spinlock_unlock(&rest.lock);
+    return rc;
+}
+
+enum rc rest_fail_job(int64_t job_id, char const *msg)
+{
+    spinlock_lock(&rest.lock);
+
+    long http_code = 0;
+    enum rc rc = set_job_state(job_id, SCHED_JOB_FAIL, msg, &http_code);
+    if (rc || http_code != 200) rc = efail("failed to set job state");
+
     spinlock_unlock(&rest.lock);
     return rc;
 }

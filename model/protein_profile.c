@@ -156,7 +156,7 @@ void protein_profile_init(struct protein_profile *p, char const *accession,
 enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
                               bool multi_hits, bool hmmer3_compat)
 {
-    if (seq_size == 0) return error(RC_EINVAL, "sequence cannot be empty");
+    if (seq_size == 0) return einval("sequence cannot be empty");
 
     imm_float L = (imm_float)seq_size;
 

@@ -1,6 +1,7 @@
 #include "thread.h"
 #include "deciphon/db/profile_reader.h"
 #include "deciphon/logger.h"
+#include "deciphon/server/rest.h"
 #include "deciphon/version.h"
 #include "deciphon/xmath.h"
 
@@ -32,41 +33,37 @@ void thread_setup_seq(struct thread *t, unsigned seq_id)
 static enum rc reset_task(struct imm_task **task, struct imm_dp const *dp)
 {
     if (*task && imm_task_reset(*task, dp))
-        return error(RC_EFAIL, "failed to reset task");
+        return efail("failed to reset task");
 
     if (!*task && !(*task = imm_task_new(dp)))
-        return error(RC_EFAIL, "failed to create task");
+        return efail("failed to create task");
 
     return RC_OK;
 }
 
 static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq)
 {
-    if (imm_task_setup(task, seq))
-        return error(RC_EFAIL, "failed to setup task");
+    if (imm_task_setup(task, seq)) return efail("failed to setup task");
     return RC_OK;
 }
 
 typedef struct imm_dp const *(*profile_dp_func_t)(struct profile const *prof);
 
-static enum rc setup_hypothesis(struct hypothesis *hyp,
-                                profile_dp_func_t dp_func, struct profile *prof,
-                                struct imm_seq *iseq)
+static enum rc setup_hypothesis(struct hypothesis *hyp, struct imm_dp const *dp,
+                                struct imm_seq *seq)
 {
     enum rc rc = RC_OK;
-    if ((rc = reset_task(&hyp->task, dp_func(prof)))) return rc;
-    if ((rc = setup_task(hyp->task, iseq))) return rc;
+    if ((rc = reset_task(&hyp->task, dp))) return rc;
+    if ((rc = setup_task(hyp->task, seq))) return rc;
     imm_prod_reset(&hyp->prod);
     return rc;
 }
 
-static enum rc viterbi(struct profile *prof, struct imm_task *task,
+static enum rc viterbi(struct imm_dp const *dp, struct imm_task *task,
                        struct imm_prod *prod, double *loglik)
 
 {
-    if (imm_dp_viterbi(profile_null_dp(prof), task, prod))
-        return efail("failed to run viterbi");
-
+    if (imm_dp_viterbi(dp, task, prod)) return efail("failed to run viterbi");
     *loglik = (double)prod->loglik;
     return RC_OK;
 }
@@ -81,7 +78,13 @@ static enum rc write_product(struct thread *wt, struct profile *prof,
     return rc;
 }
 
-enum rc thread_run(struct thread *t, struct imm_seq *iseq)
+static inline enum rc fail_job(enum rc rc, struct thread *t, char const *msg)
+{
+    rest_fail_job(t->prod.job_id, msg);
+    return rc;
+}
+
+enum rc thread_run(struct thread *t, struct imm_seq *seq)
 {
     enum rc rc = RC_OK;
 
@@ -93,17 +96,26 @@ enum rc thread_run(struct thread *t, struct imm_seq *iseq)
     while ((rc = profile_reader_next(reader, t->id, &prof)) == RC_OK)
     {
         // if (atomic_load(&end_work)) break;
-
-        if ((rc = setup_hypothesis(null, profile_null_dp, prof, iseq)))
-            return rc;
-        if ((rc = setup_hypothesis(alt, profile_alt_dp, prof, iseq))) return rc;
-
+        //
+        struct imm_dp const *null_dp = profile_null_dp(prof);
+        struct imm_dp const *alt_dp = profile_alt_dp(prof);
         struct protein_profile *pp = (struct protein_profile *)prof;
-        unsigned sz = imm_seq_size(iseq);
-        rc = protein_profile_setup(pp, sz, t->multi_hits, t->hmmer3_compat);
+        unsigned size = imm_seq_size(seq);
 
-        rc = viterbi(prof, null->task, &null->prod, &t->prod.null_loglik);
-        rc = viterbi(prof, alt->task, &alt->prod, &t->prod.alt_loglik);
+        rc = setup_hypothesis(null, profile_null_dp(prof), seq);
+        if (rc) return fail_job(rc, t, "failed to setup null hypothesis");
+
+        rc = setup_hypothesis(alt, profile_alt_dp(prof), seq);
+        if (rc) return fail_job(rc, t, "failed to setup alt hypothesis");
+
+        rc = protein_profile_setup(pp, size, t->multi_hits, t->hmmer3_compat);
+        if (rc) return fail_job(rc, t, "failed to setup profile");
+
+        rc = viterbi(null_dp, null->task, &null->prod, &t->prod.null_loglik);
+        if (rc) return fail_job(rc, t, "failed to run viterbi");
+
+        rc = viterbi(alt_dp, alt->task, &alt->prod, &t->prod.alt_loglik);
+        if (rc) return fail_job(rc, t, "failed to run viterbi");
 
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
@@ -113,6 +125,7 @@ enum rc thread_run(struct thread *t, struct imm_seq *iseq)
         // strcpy(wt->prod.abc_name, wt->abc_name);
 
         rc = write_product(t, prof, &alt->prod.path);
+        if (rc) return fail_job(rc, t, "failed to write product");
     }
     return RC_OK;
 }

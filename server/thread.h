@@ -36,6 +36,6 @@ void thread_init(struct thread *, unsigned id, struct profile_reader *reader,
 void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
                       unsigned job_id);
 void thread_setup_seq(struct thread *, unsigned seq_id);
-enum rc thread_run(struct thread *, struct imm_seq *iseq);
+enum rc thread_run(struct thread *, struct imm_seq *seq);
 
 #endif
