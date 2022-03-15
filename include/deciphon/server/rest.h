@@ -3,6 +3,7 @@
 
 #include "deciphon/limits.h"
 #include "deciphon/rc.h"
+#include "deciphon/server/sched.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -24,7 +25,7 @@ struct rest_pend_job
 
 struct rest_error
 {
-    enum rc rc;
+    enum sched_rc rc;
     char msg[ERROR_SIZE];
 };
 

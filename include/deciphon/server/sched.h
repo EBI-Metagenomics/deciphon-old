@@ -42,6 +42,18 @@ struct sched_job
     int64_t exec_ended;
 };
 
+enum sched_rc
+{
+    SCHED_OK,
+    SCHED_END,
+    SCHED_NOTFOUND,
+    SCHED_EFAIL,
+    SCHED_EIO,
+    SCHED_EINVAL,
+    SCHED_ENOMEM,
+    SCHED_EPARSE,
+};
+
 struct xjson;
 
 void sched_seq_init(struct sched_seq *seq);
@@ -50,5 +62,6 @@ void sched_job_init(struct sched_job *job);
 enum rc sched_db_parse(struct sched_db *db, struct xjson *x, unsigned start);
 enum rc sched_job_parse(struct sched_job *job, struct xjson *x, unsigned start);
 enum rc sched_seq_parse(struct sched_seq *seq, struct xjson *x, unsigned start);
+enum rc sched_rc_resolve(unsigned len, char const *str, enum sched_rc *rc);
 
 #endif

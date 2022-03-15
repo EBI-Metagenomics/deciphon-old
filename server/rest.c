@@ -56,7 +56,7 @@ static inline enum rc body_finish_up(struct buff **body)
 
 static inline void rest_error_reset(struct rest_error *rerr)
 {
-    rerr->rc = RC_OK;
+    rerr->rc = SCHED_OK;
     rerr->msg[0] = 0;
 }
 
@@ -471,8 +471,8 @@ static enum rc parse_error(struct rest_error *rerr, struct xjson *x,
         if (xjson_eqstr(x, i, "rc"))
         {
             if (!xjson_is_string(x, i + 1)) return einval("expected string");
-            rc = rc_resolve(json_tok_size(x, i + 1), json_tok_value(x, i + 1),
-                            &rerr->rc);
+            rc = sched_rc_resolve(json_tok_size(x, i + 1),
+                                  json_tok_value(x, i + 1), &rerr->rc);
             if (rc) return rc;
         }
         else if (xjson_eqstr(x, i, "msg"))
