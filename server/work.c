@@ -1,6 +1,7 @@
 #include "work.h"
 #include "deciphon/db/profile_reader.h"
 #include "deciphon/logger.h"
+#include "deciphon/rc.h"
 #include "deciphon/server/rest.h"
 #include "deciphon/version.h"
 #include "deciphon/xfile.h"
@@ -36,10 +37,11 @@ static void set_job_fail(struct sched_job *job, char const *msg)
 
 enum rc work_next(struct work *work)
 {
-    struct rest_error error = {0};
-    enum rc rc = rest_next_pend_job(&work->job, &error);
+    struct rest_error rerr = {0};
+    enum rc rc = rest_next_pend_job(&work->job, &rerr);
     if (rc) return rc;
-    return rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &error);
+    // if (rerr.rc) return error(error.rc,  "")
+    return rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &rerr);
 }
 
 static enum rc ensure_database_integrity(char const *filename, int64_t xxh3_64)
@@ -150,13 +152,14 @@ cleanup:
 
 enum rc work_prepare(struct work *work, unsigned num_threads)
 {
-    if (prod_fopen(num_threads))
+    enum rc rc = prod_fopen(num_threads);
+    if (rc)
     {
         fail_job(work, "failed to open product files");
-        return RC_OK;
+        return rc;
     }
 
-    enum rc rc = prepare_database(work);
+    rc = prepare_database(work);
     if (rc)
     {
         prod_fcleanup();

@@ -7,7 +7,7 @@
 #include <inttypes.h>
 
 static unsigned nthreads = 0;
-static struct xfile_tmp prod_file[MAX_NUM_THREADS] = {0};
+static struct xfile_tmp prod_file[NUM_THREADS] = {0};
 
 static enum rc write_begin(struct prod const *prod, unsigned thread_num)
 {
@@ -53,7 +53,7 @@ static enum rc write_end(unsigned thread_num)
 
 enum rc prod_fopen(unsigned num_threads)
 {
-    assert(num_threads <= MAX_NUM_THREADS);
+    assert(num_threads <= NUM_THREADS);
     for (nthreads = 0; nthreads < num_threads; ++nthreads)
     {
         if (xfile_tmp_open(prod_file + nthreads))

@@ -9,15 +9,15 @@
 struct profile_reader
 {
     unsigned npartitions;
-    unsigned partition_size[NUM_PARTITIONS];
-    int64_t partition_offset[NUM_PARTITIONS + 1];
-    struct lip_file file[NUM_PARTITIONS];
+    unsigned partition_size[NUM_THREADS];
+    int64_t partition_offset[NUM_THREADS + 1];
+    struct lip_file file[NUM_THREADS];
     enum profile_typeid profile_typeid;
     union
     {
         // struct standard_profile std;
         struct protein_profile pro;
-    } profiles[NUM_PARTITIONS];
+    } profiles[NUM_THREADS];
 };
 
 struct db_reader;

@@ -2,12 +2,10 @@
 #define WORK_H
 
 #include "deciphon/db/db.h"
-#include "deciphon/rc.h"
 #include "deciphon/server/sched.h"
 #include "imm/imm.h"
 #include "sched.h"
 #include "thread.h"
-#include <stdint.h>
 
 struct work
 {
@@ -15,7 +13,7 @@ struct work
     struct sched_seq seq;
 
     unsigned num_threads;
-    struct thread thread[NUM_PARTITIONS];
+    struct thread thread[NUM_THREADS];
 
     char db_filename[FILENAME_SIZE];
     struct protein_db_reader db_reader;
@@ -28,6 +26,8 @@ struct work
     prod_fwrite_match_func_t *write_match_cb;
     imm_float lrt_threshold;
 };
+
+enum rc;
 
 enum rc work_next(struct work *work);
 enum rc work_prepare(struct work *work, unsigned num_threads);
