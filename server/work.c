@@ -40,7 +40,7 @@ enum rc work_next(struct work *work)
     struct rest_error rerr = {0};
     enum rc rc = rest_next_pend_job(&work->job, &rerr);
     if (rc) return rc;
-    // if (rerr.rc) return error(error.rc,  "")
+    if (rerr.rc) return efail(rerr.msg);
     return rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &rerr);
 }
 

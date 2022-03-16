@@ -54,7 +54,7 @@ enum rc xfile_dsize(int fd, int64_t *size)
     return RC_OK;
 }
 
-static_assert(same_type(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
+static_assert(SAME_TYPE(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
 
 enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
 {

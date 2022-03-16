@@ -1,38 +1,42 @@
 #include "deciphon/logger.h"
+#include "deciphon/limits.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
 
-static void default_print(char const *msg, void *arg)
+static void default_print(char const *ctx, char const *msg, void *arg)
 {
     (void)arg;
-    fprintf(stderr, "%s\n", msg);
+    fputs(ctx, stderr);
+    fputs(": ", stderr);
+    fputs(msg, stderr);
+    fputc('\n', stderr);
 }
 
-static logger_print_t *__log_print = default_print;
-static void *__log_arg = NULL;
-
-void logger_setup(logger_print_t *print, void *arg)
+static void default_print_static(char const *ctx, char const *msg, void *arg)
 {
-    __log_print = print;
-    __log_arg = arg;
+    (void)arg;
+    fputs(ctx, stderr);
+    fputs(": ", stderr);
+    fputs(msg, stderr);
+    fputc('\n', stderr);
 }
 
-static void log_print(char const *msg) { __log_print(msg, __log_arg); }
-
-enum rc __logger_error(enum rc rc, char const *msg)
+static struct
 {
-    log_print(msg);
-    return rc;
-}
+    logger_print_func_t print;
+    logger_print_static_func_t print_static;
+    void *arg;
+} local = {default_print, default_print_static, 0};
 
-enum rc __logger_warn(enum rc rc, char const *msg)
+void logger_setup(logger_print_func_t print,
+                  logger_print_static_func_t print_static, void *arg)
 {
-    log_print(msg);
-    return rc;
+    local.print = print;
+    local.print_static = print_static;
+    local.arg = arg;
 }
 
-// void __logger_info(char const *msg) { log_print(msg); }
 void info(char const *fmt, ...)
 {
     time_t timer = {0};
@@ -51,4 +55,16 @@ void info(char const *fmt, ...)
 
     fprintf(stdout, "\n");
     fflush(stdout);
+}
+
+enum rc __logger_error(enum rc rc, char const *ctx, char const *msg)
+{
+    local.print(msg, ctx, local.arg);
+    return rc;
+}
+
+enum rc __logger_error_static(enum rc rc, char const *ctx, char const *msg)
+{
+    local.print_static(ctx, msg, local.arg);
+    return rc;
 }

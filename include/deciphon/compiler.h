@@ -26,22 +26,46 @@
     (sizeof(x) == 3 ? 24U :\
     (sizeof(x) == 2 ? 16U :\
     (sizeof(x) == 1 ? 8U : BUILD_BUG_ON_ZERO(0))))))))))
+/* clang-format on */
+
+#define TRUE (!!1)
+#define FALSE (!!0)
+
+/*
+ * Evaluates to `ONE` in case of `EXPR` being `true`; `TWO` otherwise.
+ *
+ * Acknowledgement: Jens Gustedt.
+ */
+#define BUILD_SWITCH(EXPR, ONE, TWO)                                           \
+    _Generic((1 ? (struct p00_nullptr_test *)0 : (void *)!(EXPR)),             \
+             struct p00_nullptr_test *                                         \
+             : ONE, default                                                    \
+             : TWO)
+
+#define __MEMBER_REF(var, member) ((__typeof__(var) *)0)->member
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#define MEMBER_REF(var, member) ((__typeof__(var) *)0)->member
-#define MEMBER_SIZE(var, member) sizeof(MEMBER_REF((var), member))
-#define ARRAY_SIZE_OF(var, member) ARRAY_SIZE(MEMBER_REF((var), member))
+#define MEMBER_SIZE(var, member) sizeof(__MEMBER_REF((var), member))
+#define ARRAY_SIZE_OF(var, member) ARRAY_SIZE(__MEMBER_REF((var), member))
 
+/*
+ * String related macros.
+ */
+#define IS_STRING(x)                                                           \
+    _Generic((x), char * : TRUE, char const * : TRUE, default : FALSE)
+#define STRINGIFY(s) __STRINGIFY(s)
+#define __STRINGIFY(s) #s
 #define STRADDR(x) ((char const *)(char const(*)[ARRAY_SIZE(x)]){&(x)})
+#define IS_LITERAL_STRING(x)                                                   \
+    BUILD_SWITCH(IS_STRING(x) && __builtin_constant_p(x), TRUE, FALSE)
 
-#define __STRINGIFY(n) #n
-#define LOCAL(n) __FILE__ ":" __STRINGIFY(n)
+#ifdef __FILE_NAME__
+#define LOCAL __FILE_NAME__ ":" STRINGIFY(__LINE__)
+#else
+#define LOCAL __FILE__ ":" STRINGIFY(__LINE__)
+#endif
 
 /* Are two types/vars the same type (ignoring qualifiers)? */
-#define same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
-
-#define __ARRSIZE(x) (sizeof(x) / sizeof(x[0]))
-#define __STRSIZE(x) (__ARRSIZE(x) - 1)
-#define __STRADDR(x) ((char const *)(char const(*)[__ARRSIZE(x)]){&(x)})
+#define SAME_TYPE(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 
 #endif
