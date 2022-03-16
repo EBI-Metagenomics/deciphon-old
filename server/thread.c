@@ -6,15 +6,18 @@
 #include "deciphon/xmath.h"
 
 void thread_init(struct thread *t, unsigned id, struct profile_reader *reader,
-                 bool multi_hits, bool hmmer3_compat, imm_float lrt_threshold)
+                 bool multi_hits, bool hmmer3_compat, imm_float lrt_threshold,
+                 prod_fwrite_match_func_t write_match_func)
 {
     t->id = id;
-    t->iseq = 0;
+    t->seq = 0;
     t->reader = reader;
 
     t->multi_hits = multi_hits;
     t->hmmer3_compat = hmmer3_compat;
     t->lrt_threshold = lrt_threshold;
+
+    t->write_match_func = write_match_func;
 }
 
 void thread_setup_job(struct thread *t, enum imm_abc_typeid abc_typeid,
@@ -25,8 +28,9 @@ void thread_setup_job(struct thread *t, enum imm_abc_typeid abc_typeid,
     prod_setup_job(&t->prod, abc, prof, job_id);
 }
 
-void thread_setup_seq(struct thread *t, unsigned seq_id)
+void thread_setup_seq(struct thread *t, struct imm_seq *seq, unsigned seq_id)
 {
+    t->seq = seq;
     prod_setup_seq(&t->prod, seq_id);
 }
 
@@ -50,7 +54,7 @@ static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq)
 typedef struct imm_dp const *(*profile_dp_func_t)(struct profile const *prof);
 
 static enum rc setup_hypothesis(struct hypothesis *hyp, struct imm_dp const *dp,
-                                struct imm_seq *seq)
+                                struct imm_seq const *seq)
 {
     enum rc rc = RC_OK;
     if ((rc = reset_task(&hyp->task, dp))) return rc;
@@ -68,14 +72,11 @@ static enum rc viterbi(struct imm_dp const *dp, struct imm_task *task,
     return RC_OK;
 }
 
-static enum rc write_product(struct thread *wt, struct profile *prof,
-                             struct imm_path const *path)
+static enum rc write_product(struct thread *t, struct imm_path const *path)
 {
-    struct match *match = (struct match *)&wt->match;
-    match->profile = prof;
-    enum rc rc = prod_fwrite(&wt->prod, wt->iseq, path, wt->id,
-                             wt->write_match_func, (struct match *)&wt->match);
-    return rc;
+    struct match *match = (struct match *)&t->match;
+    prod_fwrite_match_func_t func = t->write_match_func;
+    return prod_fwrite(&t->prod, t->seq, path, t->id, func, match);
 }
 
 static inline enum rc fail_job(enum rc rc, struct thread *t, char const *msg)
@@ -84,7 +85,7 @@ static inline enum rc fail_job(enum rc rc, struct thread *t, char const *msg)
     return rc;
 }
 
-enum rc thread_run(struct thread *t, struct imm_seq *seq)
+enum rc thread_run(struct thread *t)
 {
     enum rc rc = RC_OK;
 
@@ -92,6 +93,7 @@ enum rc thread_run(struct thread *t, struct imm_seq *seq)
     struct hypothesis *null = &t->null;
     struct hypothesis *alt = &t->alt;
     struct profile_reader *reader = t->reader;
+    struct imm_seq const *seq = t->seq;
 
     while ((rc = profile_reader_next(reader, t->id, &prof)) == RC_OK)
     {
@@ -121,11 +123,21 @@ enum rc thread_run(struct thread *t, struct imm_seq *seq)
 
         if (!imm_lprob_is_finite(lrt) || lrt < t->lrt_threshold) continue;
 
-        // strcpy(wt->prod.profile_name, mt.acc);
-        // strcpy(wt->prod.abc_name, wt->abc_name);
+        strcpy(t->prod.profile_name, prof->accession);
 
-        rc = write_product(t, prof, &alt->prod.path);
+        match_setup((struct match *)&t->match, prof);
+        rc = write_product(t, &alt->prod.path);
         if (rc) return fail_job(rc, t, "failed to write product");
     }
     return RC_OK;
+}
+
+enum rc thread_finishup(struct thread *t)
+{
+    enum rc rc = prod_fclose();
+    if (rc)
+        return fail_job(rc, t, "failed to end product submission");
+
+    if (rest_set_job_state(&work->job, SCHED_JOB_DONE, ""))
+        error(RC_EFAIL, "failed to set job_done");
 }

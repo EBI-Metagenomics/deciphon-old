@@ -69,7 +69,7 @@ enum rc protein_db_reader_open(struct protein_db_reader *db, FILE *fp)
     rc = unpack_amino(&db->super.file, &db->amino);
     if (rc) goto cleanup;
 
-    imm_code_init(&db->code.super, imm_super(&db->nuclt));
+    imm_nuclt_code_init(&db->code, &db->nuclt);
 
     rc = db_reader_unpack_profile_sizes(&db->super);
     if (rc) goto cleanup;

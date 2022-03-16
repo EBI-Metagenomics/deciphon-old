@@ -31,13 +31,13 @@ struct prod
     char match[MATCH_SIZE];
 };
 
-typedef enum rc(prod_fwrite_match_func_t)(FILE *fp, void const *match);
+typedef enum rc (*prod_fwrite_match_func_t)(FILE *fp, void const *match);
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
-                    struct imm_path const *path, unsigned partition,
+                    struct imm_path const *path, unsigned thread_num,
                     prod_fwrite_match_func_t fwrite_match, struct match *match);
 
-enum rc prod_fopen(unsigned num_threads);
+enum rc prod_fopen(unsigned nthreads);
 void prod_setup_job(struct prod *prod, char const *abc_name,
                     char const *prof_typeid, unsigned job_id);
 void prod_setup_seq(struct prod *prod, int64_t seq_id);

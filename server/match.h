@@ -12,4 +12,12 @@ struct match
     struct profile const *profile;
 };
 
+static inline void match_setup(struct match *match,
+                               struct profile const *profile)
+{
+    match->step = 0;
+    match->frag = 0;
+    match->profile = profile;
+}
+
 #endif

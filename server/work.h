@@ -23,7 +23,7 @@ struct work
     struct imm_seq iseq;
     struct imm_abc const *abc;
 
-    prod_fwrite_match_func_t *write_match_cb;
+    prod_fwrite_match_func_t write_match_func;
     imm_float lrt_threshold;
 };
 

@@ -6,7 +6,7 @@
 #include "match.h"
 #include <inttypes.h>
 
-static unsigned nthreads = 0;
+static unsigned num_threads = 0;
 static struct xfile_tmp prod_file[NUM_THREADS] = {0};
 
 static enum rc write_begin(struct prod const *prod, unsigned thread_num)
@@ -41,22 +41,22 @@ static enum rc write_begin(struct prod const *prod, unsigned thread_num)
 
 static enum rc write_match_sep(unsigned thread_num)
 {
-    if (fputc(';', prod_file[thread_num].fp) == EOF) return eio("fputc");
-    return RC_OK;
+    FILE *fp = prod_file[thread_num].fp;
+    return fputc(';', fp) == EOF ? eio("fputc") : RC_OK;
 }
 
 static enum rc write_end(unsigned thread_num)
 {
-    if (fputc('\n', prod_file[thread_num].fp) == EOF) return eio("fputc");
-    return RC_OK;
+    FILE *fp = prod_file[thread_num].fp;
+    return fputc('\n', fp) == EOF ? eio("fputc") : RC_OK;
 }
 
-enum rc prod_fopen(unsigned num_threads)
+enum rc prod_fopen(unsigned nthreads)
 {
-    assert(num_threads <= NUM_THREADS);
-    for (nthreads = 0; nthreads < num_threads; ++nthreads)
+    assert(nthreads <= NUM_THREADS);
+    for (num_threads = 0; num_threads < nthreads; ++num_threads)
     {
-        if (xfile_tmp_open(prod_file + nthreads))
+        if (xfile_tmp_open(prod_file + num_threads))
         {
             prod_fcleanup();
             return efail("begin prod submission");
@@ -81,9 +81,9 @@ void prod_setup_seq(struct prod *prod, int64_t seq_id)
 
 void prod_fcleanup(void)
 {
-    for (unsigned i = 0; i < nthreads; ++i)
+    for (unsigned i = 0; i < num_threads; ++i)
         xfile_tmp_del(prod_file + i);
-    nthreads = 0;
+    num_threads = 0;
 }
 
 /* Output example
@@ -106,7 +106,7 @@ enum rc prod_fclose(void)
 {
     enum rc rc = RC_EFAIL;
 
-    for (unsigned i = 0; i < nthreads; ++i)
+    for (unsigned i = 0; i < num_threads; ++i)
     {
         if (fflush(prod_file[i].fp))
         {
@@ -126,13 +126,12 @@ cleanup:
 }
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
-                    struct imm_path const *path, unsigned partition,
+                    struct imm_path const *path, unsigned thread_num,
                     prod_fwrite_match_func_t fwrite_match, struct match *match)
 {
     enum rc rc = RC_OK;
 
-    if (write_begin(prod, partition))
-        return error(RC_EIO, "failed to write prod");
+    if (write_begin(prod, thread_num)) return eio("failed to write prod");
 
     unsigned start = 0;
     for (unsigned idx = 0; idx < imm_path_nsteps(path); idx++)
@@ -143,16 +142,15 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
 
         if (idx > 0 && idx + 1 <= imm_path_nsteps(path))
         {
-            if (write_match_sep(partition))
-                return error(RC_EIO, "failed to write prod");
+            if (write_match_sep(thread_num)) return eio("failed to write prod");
         }
 
-        if (fwrite_match(prod_file[partition].fp, match))
+        if (fwrite_match(prod_file[thread_num].fp, match))
             return eio("write prod");
 
         start += match->step->seqlen;
     }
-    if (write_end(partition)) return error(RC_EIO, "failed to write prod");
+    if (write_end(thread_num)) return eio("failed to write prod");
 
     return rc;
 }

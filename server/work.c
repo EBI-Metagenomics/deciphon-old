@@ -38,10 +38,14 @@ static void set_job_fail(struct sched_job *job, char const *msg)
 enum rc work_next(struct work *work)
 {
     struct rest_error rerr = {0};
+
     enum rc rc = rest_next_pend_job(&work->job, &rerr);
     if (rc) return rc;
     if (rerr.rc) return efail(rerr.msg);
-    return rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &rerr);
+
+    rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &rerr);
+    if (rc) return rc;
+    return rerr.rc ? efail(rerr.msg) : RC_OK;
 }
 
 static enum rc ensure_database_integrity(char const *filename, int64_t xxh3_64)
@@ -100,11 +104,12 @@ enum rc prepare_database(struct work *work)
     struct sched_db db = {0};
     db.id = work->job.db_id;
 
-    struct rest_error error = {0};
-    enum rc rc = rest_get_db(&db, &error);
-    if (rc)
+    struct rest_error rerr = {0};
+    enum rc rc = rest_get_db(&db, &rerr);
+    if (rc || rerr.rc)
     {
-        fail_job(work, error.msg);
+        if (rerr.rc) rc = efail(rerr.msg);
+        fail_job(work, rerr.msg);
         return rc;
     }
     rc = ensure_database(&db);
@@ -156,18 +161,23 @@ enum rc work_prepare(struct work *work, unsigned num_threads)
     if (rc)
     {
         fail_job(work, "failed to open product files");
-        return rc;
+        goto cleanup;
     }
 
     rc = prepare_database(work);
     if (rc)
     {
         prod_fcleanup();
-        return rc;
+        goto cleanup;
     }
 
     rc = prepare_readers(work, num_threads);
-    if (rc) prod_fcleanup();
+    if (rc)
+    {
+        prod_fcleanup();
+        goto cleanup;
+    }
+    work->write_match_func = protein_match_write_func;
 
     for (unsigned i = 0; i < work->num_threads; ++i)
     {
@@ -175,15 +185,17 @@ enum rc work_prepare(struct work *work, unsigned num_threads)
         struct profile_reader *reader = &work->profile_reader;
         bool multi_hits = work->job.multi_hits;
         bool hmmer3_compat = work->job.hmmer3_compat;
-        imm_float lrt_threshold = work->lrt_threshold;
+        imm_float lrt = work->lrt_threshold;
+        prod_fwrite_match_func_t func = work->write_match_func;
 
-        thread_init(t, i, reader, multi_hits, hmmer3_compat, lrt_threshold);
+        thread_init(t, i, reader, multi_hits, hmmer3_compat, lrt, func);
 
         enum imm_abc_typeid abc_typeid = work->abc->vtable.typeid;
         enum profile_typeid profile_typeid = reader->profile_typeid;
         thread_setup_job(t, abc_typeid, profile_typeid, work->job.id);
     }
 
+cleanup:
     return rc;
 }
 
@@ -191,32 +203,31 @@ enum rc work_run(struct work *w)
 {
     enum rc rc = RC_OK;
 
-    struct rest_error error = {0};
-    while (!(rc = rest_next_job_seq(&w->job, &w->seq, &error)))
+    struct rest_error rerr = {0};
+    while (!(rc = rest_next_job_seq(&w->job, &w->seq, &rerr)))
     {
-        struct thread *t = w->thread + 0;
-        struct imm_seq iseq = imm_seq(imm_str(w->seq.data), w->abc);
-        thread_setup_seq(t, w->seq.id);
-        rc = thread_run(t, &iseq);
-#if 0
-        while ((rc = profile_reader_next(prof_reader, 0, &prof)) != RC_END)
+        if (rerr.rc)
         {
-            struct imm_task *task = imm_task_new(profile_alt_dp(prof));
-            struct imm_seq seq = imm_seq(imm_str(work->seq.data), abc);
-            imm_task_setup(task, &seq);
-            imm_dp_viterbi(profile_alt_dp(prof), task, &prod);
-            // CLOSE(prod.loglik, logliks[nprofs]);
-            imm_del(task);
+            rc = efail(rerr.msg);
+            goto cleanup;
         }
-#endif
+        struct thread *t = w->thread + 0;
+        struct imm_seq seq = imm_seq(imm_str(w->seq.data), w->abc);
+        thread_setup_seq(t, &seq, w->seq.id);
+        rc = thread_run(t);
+        if (rc) goto cleanup;
     }
 
+cleanup:
+    return rc;
+}
+
+#if 0
     // imm_del(&prod);
     // profile_reader_del(&reader);
     // db_reader_close((struct db_reader *)&db);
     // fclose(fp);
 
-#if 0
     if (rc)
     {
         db_reader_close(&work->db.reader);
@@ -290,5 +301,3 @@ enum rc work_run(struct work *w)
     if (rest_set_job_state(&work->job, SCHED_JOB_DONE, ""))
         error(RC_EFAIL, "failed to set job_done");
 #endif
-    return RC_OK;
-}

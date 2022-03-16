@@ -9,7 +9,7 @@ struct thread
 {
     unsigned id;
 
-    struct imm_seq *iseq;
+    struct imm_seq const *seq;
     struct profile_reader *reader;
 
     bool multi_hits;
@@ -25,17 +25,19 @@ struct thread
         struct protein_match pro;
     } match;
 
-    prod_fwrite_match_func_t *write_match_func;
+    prod_fwrite_match_func_t write_match_func;
 };
 
 enum imm_abc_typeid;
 enum profile_typeid;
 
 void thread_init(struct thread *, unsigned id, struct profile_reader *reader,
-                 bool multi_hits, bool hmmer3_compat, imm_float lrt_threshold);
+                 bool multi_hits, bool hmmer3_compat, imm_float lrt_threshold,
+                 prod_fwrite_match_func_t write_match_func);
 void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
                       unsigned job_id);
-void thread_setup_seq(struct thread *, unsigned seq_id);
-enum rc thread_run(struct thread *, struct imm_seq *seq);
+void thread_setup_seq(struct thread *, struct imm_seq *seq, unsigned seq_id);
+enum rc thread_run(struct thread *);
+enum rc thread_finishup(struct thread *);
 
 #endif

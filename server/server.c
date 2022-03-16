@@ -103,7 +103,7 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
             rc = RC_OK;
             goto cleanup;
         }
-        if (rc != RC_OK) goto cleanup;
+        if (rc != RC_OK) continue;
 
         info("Found a new job");
         rc = work_prepare(&server.work, server.num_threads);
