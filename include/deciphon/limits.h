@@ -22,6 +22,7 @@ enum limits
     SEQ_NAME_SIZE = 256,
     SEQ_SIZE = (1024 * 1024),
     VERSION_SIZE = 16,
+    MIME_TYPE_SIZE = 128,
 };
 
 #endif

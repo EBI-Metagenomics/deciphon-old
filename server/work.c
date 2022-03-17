@@ -209,6 +209,8 @@ static enum rc work_finishup(struct work *w)
         return rc;
     }
 
+    FILE *fp = prod_final_fp();
+
     struct rest_error rerr = {0};
     rc = rest_set_job_state(w->job.id, SCHED_JOB_DONE, "", &rerr);
     if (rc) return rc;

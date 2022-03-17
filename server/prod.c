@@ -8,6 +8,7 @@
 
 static unsigned num_threads = 0;
 static struct xfile_tmp prod_file[NUM_THREADS] = {0};
+static struct xfile_tmp final_file = {0};
 
 static enum rc write_begin(struct prod const *prod, unsigned thread_num)
 {
@@ -104,26 +105,39 @@ void prod_fcleanup(void)
 
 enum rc prod_fclose(void)
 {
-    enum rc rc = RC_EFAIL;
+    enum rc rc = RC_OK;
+
+    if (xfile_tmp_open(&final_file))
+    {
+        rc = eio("fail to finish product");
+        goto cleanup;
+    }
 
     for (unsigned i = 0; i < num_threads; ++i)
     {
         if (fflush(prod_file[i].fp))
         {
             rc = eio("fflush");
+            xfile_tmp_del(&final_file);
             goto cleanup;
         }
         rewind(prod_file[i].fp);
-#if 0
-        if ((rc = rest_submit_prods_file(prod_file[i].path))) goto cleanup;
-#endif
+        rc = xfile_copy(final_file.fp, prod_file[i].fp);
+        if (rc)
+        {
+            xfile_tmp_del(&final_file);
+            goto cleanup;
+        }
     }
-    rc = RC_OK;
 
 cleanup:
     prod_fcleanup();
     return rc;
 }
+
+FILE *prod_final_fp(void) { return final_file.fp; }
+
+void prod_final_cleanup(void) { xfile_tmp_del(&final_file); }
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
                     struct imm_path const *path, unsigned thread_num,

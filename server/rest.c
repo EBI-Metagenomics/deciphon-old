@@ -428,6 +428,11 @@ cleanup:
     return rc;
 }
 
+enum rc rest_upload_prod_file(FILE *fp)
+{
+
+}
+
 static enum rc parse_error(struct rest_error *rerr, struct xjson *x,
                            unsigned start)
 {
