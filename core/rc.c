@@ -3,8 +3,8 @@
 #include "deciphon/logger.h"
 #include <string.h>
 
-static char const name[][9] = {"ok",  "end",    "efail", "einval",
-                               "eio", "enomem", "eparse"};
+static char const name[][9] = {"ok",  "end",    "efail",  "einval",
+                               "eio", "enomem", "eparse", "erest"};
 
 enum rc rc_resolve(unsigned len, char const *str, enum rc *rc)
 {

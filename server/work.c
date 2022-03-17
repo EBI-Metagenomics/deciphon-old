@@ -41,11 +41,11 @@ enum rc work_next(struct work *work)
 
     enum rc rc = rest_next_pend_job(&work->job, &rerr);
     if (rc) return rc;
-    if (rerr.rc) return efail(rerr.msg);
+    if (rerr.rc) return erest(rerr.msg);
 
-    rc = rest_set_job_state(&work->job, SCHED_JOB_RUN, "", &rerr);
+    rc = rest_set_job_state(work->job.id, SCHED_JOB_RUN, "", &rerr);
     if (rc) return rc;
-    return rerr.rc ? efail(rerr.msg) : RC_OK;
+    return rerr.rc ? erest(rerr.msg) : RC_OK;
 }
 
 static enum rc ensure_database_integrity(char const *filename, int64_t xxh3_64)
@@ -96,7 +96,8 @@ static enum rc ensure_database(struct sched_db *db)
 
 static inline void fail_job(struct work *work, char const *msg)
 {
-    rest_fail_job(work->job.id, msg);
+    struct rest_error rerr = {0};
+    rest_set_job_state(work->job.id, SCHED_JOB_FAIL, msg, &rerr);
 }
 
 enum rc prepare_database(struct work *work)
@@ -108,7 +109,7 @@ enum rc prepare_database(struct work *work)
     enum rc rc = rest_get_db(&db, &rerr);
     if (rc || rerr.rc)
     {
-        if (rerr.rc) rc = efail(rerr.msg);
+        if (rerr.rc) rc = erest(rerr.msg);
         fail_job(work, rerr.msg);
         return rc;
     }
@@ -208,7 +209,7 @@ enum rc work_run(struct work *w)
     {
         if (rerr.rc)
         {
-            rc = efail(rerr.msg);
+            rc = erest(rerr.msg);
             goto cleanup;
         }
         struct thread *t = w->thread + 0;

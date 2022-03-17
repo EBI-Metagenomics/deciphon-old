@@ -81,7 +81,8 @@ static enum rc write_product(struct thread *t, struct imm_path const *path)
 
 static inline enum rc fail_job(enum rc rc, struct thread *t, char const *msg)
 {
-    rest_fail_job(t->prod.job_id, msg);
+    struct rest_error rerr = {0};
+    rest_set_job_state(t->prod.job_id, SCHED_JOB_FAIL, msg, &rerr);
     return rc;
 }
 
@@ -135,9 +136,11 @@ enum rc thread_run(struct thread *t)
 enum rc thread_finishup(struct thread *t)
 {
     enum rc rc = prod_fclose();
-    if (rc)
-        return fail_job(rc, t, "failed to end product submission");
+    if (rc) return fail_job(rc, t, "failed to end product submission");
 
-    if (rest_set_job_state(&work->job, SCHED_JOB_DONE, ""))
-        error(RC_EFAIL, "failed to set job_done");
+    struct rest_error rerr = {0};
+    rc = rest_set_job_state(t->prod.job_id, SCHED_JOB_DONE, "", &rerr);
+    if (rc) return rc;
+
+    return rerr.rc ? erest(rerr.msg) : RC_OK;
 }

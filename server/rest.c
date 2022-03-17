@@ -388,18 +388,21 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
     return body_finish_up(&rest.response_body);
 }
 
-enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
-                           char const *state_error, struct rest_error *rerr)
+enum rc rest_set_job_state(int64_t job_id, enum sched_job_state state,
+                           char const *msg, struct rest_error *rerr)
 {
     spinlock_lock(&rest.lock);
 
+    static struct sched_job job = {0};
+    job.id = job_id;
+
     long http_code = 0;
-    enum rc rc = set_job_state(job->id, state, state_error, &http_code);
+    enum rc rc = set_job_state(job_id, state, msg, &http_code);
 
     if (http_code == 200)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = sched_job_parse(job, &rest.xjson, 1);
+        rc = sched_job_parse(&job, &rest.xjson, 1);
     }
     else if (http_code == 409 || http_code == 500)
     {
@@ -412,18 +415,6 @@ enum rc rest_set_job_state(struct sched_job *job, enum sched_job_state state,
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
-    return rc;
-}
-
-enum rc rest_fail_job(int64_t job_id, char const *msg)
-{
-    spinlock_lock(&rest.lock);
-
-    long http_code = 0;
-    enum rc rc = set_job_state(job_id, SCHED_JOB_FAIL, msg, &http_code);
-    if (rc || http_code != 200) rc = efail("failed to set job state");
-
     spinlock_unlock(&rest.lock);
     return rc;
 }

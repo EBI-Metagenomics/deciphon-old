@@ -10,6 +10,7 @@ enum rc
     RC_EIO,
     RC_ENOMEM,
     RC_EPARSE,
+    RC_EREST,
 };
 
 enum rc rc_resolve(unsigned len, char const *str, enum rc *rc);
