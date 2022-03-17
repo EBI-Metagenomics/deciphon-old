@@ -52,6 +52,7 @@ enum rc xcurl_download(struct xcurl *x, char const *query, long *http_code,
                        FILE *fp);
 
 enum rc xcurl_upload(struct xcurl *x, char const *query, long *http_code,
+                     xcurl_callback_func_t callback, void *arg,
                      struct xcurl_mime const *mime, char const *filepath);
 
 #endif

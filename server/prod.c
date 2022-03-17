@@ -112,12 +112,15 @@ enum rc prod_fclose(void)
         rc = eio("fail to finish product");
         goto cleanup;
     }
+    fputs("job_id	seq_id	profile_name	abc_name	alt_loglik	"
+          "null_loglik	profile_typeid	version	match\n",
+          final_file.fp);
 
     for (unsigned i = 0; i < num_threads; ++i)
     {
         if (fflush(prod_file[i].fp))
         {
-            rc = eio("fflush");
+            rc = eio("failed to flush");
             xfile_tmp_del(&final_file);
             goto cleanup;
         }
@@ -129,6 +132,12 @@ enum rc prod_fclose(void)
             goto cleanup;
         }
     }
+    if (fflush(final_file.fp))
+    {
+        rc = eio("failed to flush");
+        goto cleanup;
+    }
+    rewind(final_file.fp);
 
 cleanup:
     prod_fcleanup();

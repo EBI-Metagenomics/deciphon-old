@@ -438,7 +438,11 @@ enum rc rest_upload_prods_file(char const *filepath, struct rest_error *rerr)
                    "text/tab-separated-values");
 
     long http_code = 0;
-    rc = xcurl_upload(&rest.xcurl, "/prods/", &http_code, &mime, filepath);
+    body_reset(rest.response_body);
+    rc = xcurl_upload(&rest.xcurl, "/prods/", &http_code, body_store,
+                    &rest.response_body, &mime, filepath);
+    if (rc) goto cleanup;
+    rc = body_finish_up(&rest.response_body);
     if (rc) goto cleanup;
 
     if (http_code == 201)

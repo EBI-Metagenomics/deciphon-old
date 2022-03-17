@@ -221,9 +221,13 @@ enum rc xcurl_download(struct xcurl *x, char const *query, long *http_code,
 }
 
 enum rc xcurl_upload(struct xcurl *x, char const *query, long *http_code,
+                     xcurl_callback_func_t callback, void *arg,
                      struct xcurl_mime const *mime, char const *filepath)
 {
     url_set_query(&x->url, query);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, callback_func);
+    struct callback_data cd = {callback, arg};
+    curl_easy_setopt(x->curl, CURLOPT_WRITEDATA, &cd);
     curl_easy_setopt(x->curl, CURLOPT_URL, x->url.full);
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->hdr.recv_json);
