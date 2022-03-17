@@ -60,6 +60,13 @@ cleanup:
     return rc;
 }
 
+static size_t noop_write(void *ptr, size_t size, size_t nmemb, void *data)
+{
+    (void)ptr;
+    (void)data;
+    return size * nmemb;
+}
+
 enum rc xcurl_init(struct xcurl *x, char const *url_stem)
 {
     enum rc rc = RC_OK;
@@ -157,22 +164,6 @@ enum rc xcurl_post(struct xcurl *x, char const *query, long *http_code,
 
     return perform_request(x->curl, http_code);
 }
-// curl -X 'PATCH' \
-//   'http://127.0.0.1:8000/jobs/1' \
-//   -H 'accept: application/json' \
-//   -H 'Content-Type: application/json' \
-//   -d '{
-//   "state": "run",
-//   "error": ""
-// }'
-
-// content-disposition: attachment; filename="minifam.hmm"
-// content-length: 271220
-// content-type: application/octet-stream
-// date: Fri,11 Mar 2022 10:53:23 GMT
-// etag: 94ab2c4f0708d28c619f9e5c81a4dde5
-// last-modified: Fri,11 Mar 2022 10:13:55 GMT
-// server: uvicorn
 
 enum rc xcurl_patch(struct xcurl *x, char const *query, long *http_code,
                     xcurl_callback_func_t callback, void *arg, char const *json)
@@ -199,6 +190,7 @@ enum rc xcurl_delete(struct xcurl *x, char const *query, long *http_code)
 
     curl_easy_setopt(x->curl, CURLOPT_HTTPHEADER, x->hdr.recv_json);
     curl_easy_setopt(x->curl, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(x->curl, CURLOPT_WRITEFUNCTION, noop_write);
     curl_easy_setopt(x->curl, CURLOPT_CUSTOMREQUEST, "DELETE");
 
     xcurl_debug_setup(x->curl);

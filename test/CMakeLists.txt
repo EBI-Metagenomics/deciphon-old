@@ -2,7 +2,7 @@ find_package(hope REQUIRED)
 
 set(ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets)
 set(TMPDIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
-set(REST_URL_STEM "http://127.0.0.1:8000")
+set(REST_URL_STEM "http://127.0.0.1:8000/api")
 
 file(MAKE_DIRECTORY ${ASSETS})
 file(MAKE_DIRECTORY ${TMPDIR})

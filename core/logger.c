@@ -45,7 +45,6 @@ void info(char const *fmt, ...)
     timer = time(NULL);
     tm_info = localtime(&timer);
     strftime(stamp, 26, "%H:%M:%S", tm_info);
-    // strftime(stamp, 26, "%Y-%m-%d %H:%M:%S", tm_info);
     fprintf(stdout, "[%s] ", stamp);
 
     va_list args;
