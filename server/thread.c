@@ -1,8 +1,6 @@
 #include "thread.h"
 #include "deciphon/db/profile_reader.h"
 #include "deciphon/logger.h"
-#include "deciphon/server/rest.h"
-#include "deciphon/version.h"
 #include "deciphon/xmath.h"
 
 void thread_init(struct thread *t, unsigned id, struct profile_reader *reader,
@@ -79,13 +77,6 @@ static enum rc write_product(struct thread *t, struct imm_path const *path)
     return prod_fwrite(&t->prod, t->seq, path, t->id, func, match);
 }
 
-static inline enum rc fail_job(enum rc rc, struct thread *t, char const *msg)
-{
-    struct rest_error rerr = {0};
-    rest_set_job_state(t->prod.job_id, SCHED_JOB_FAIL, msg, &rerr);
-    return rc;
-}
-
 enum rc thread_run(struct thread *t)
 {
     enum rc rc = RC_OK;
@@ -106,19 +97,18 @@ enum rc thread_run(struct thread *t)
         unsigned size = imm_seq_size(seq);
 
         rc = setup_hypothesis(null, profile_null_dp(prof), seq);
-        if (rc) return fail_job(rc, t, "failed to setup null hypothesis");
+        if (rc) return rc;
 
         rc = setup_hypothesis(alt, profile_alt_dp(prof), seq);
-        if (rc) return fail_job(rc, t, "failed to setup alt hypothesis");
+        if (rc) return rc;
 
         rc = protein_profile_setup(pp, size, t->multi_hits, t->hmmer3_compat);
-        if (rc) return fail_job(rc, t, "failed to setup profile");
+        if (rc) return rc;
 
         rc = viterbi(null_dp, null->task, &null->prod, &t->prod.null_loglik);
-        if (rc) return fail_job(rc, t, "failed to run viterbi");
 
         rc = viterbi(alt_dp, alt->task, &alt->prod, &t->prod.alt_loglik);
-        if (rc) return fail_job(rc, t, "failed to run viterbi");
+        if (rc) return rc;
 
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
@@ -128,19 +118,7 @@ enum rc thread_run(struct thread *t)
 
         match_setup((struct match *)&t->match, prof);
         rc = write_product(t, &alt->prod.path);
-        if (rc) return fail_job(rc, t, "failed to write product");
+        if (rc) return rc;
     }
     return RC_OK;
-}
-
-enum rc thread_finishup(struct thread *t)
-{
-    enum rc rc = prod_fclose();
-    if (rc) return fail_job(rc, t, "failed to end product submission");
-
-    struct rest_error rerr = {0};
-    rc = rest_set_job_state(t->prod.job_id, SCHED_JOB_DONE, "", &rerr);
-    if (rc) return rc;
-
-    return rerr.rc ? erest(rerr.msg) : RC_OK;
 }

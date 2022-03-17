@@ -38,6 +38,5 @@ void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
                       unsigned job_id);
 void thread_setup_seq(struct thread *, struct imm_seq *seq, unsigned seq_id);
 enum rc thread_run(struct thread *);
-enum rc thread_finishup(struct thread *);
 
 #endif

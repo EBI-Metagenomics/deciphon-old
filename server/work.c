@@ -200,6 +200,22 @@ cleanup:
     return rc;
 }
 
+static enum rc work_finishup(struct work *w)
+{
+    enum rc rc = prod_fclose();
+    if (rc)
+    {
+        fail_job(w, "failed to finish up work");
+        return rc;
+    }
+
+    struct rest_error rerr = {0};
+    rc = rest_set_job_state(w->job.id, SCHED_JOB_DONE, "", &rerr);
+    if (rc) return rc;
+
+    return rerr.rc ? erest(rerr.msg) : RC_OK;
+}
+
 enum rc work_run(struct work *w)
 {
     enum rc rc = RC_OK;
@@ -210,14 +226,22 @@ enum rc work_run(struct work *w)
         if (rerr.rc)
         {
             rc = erest(rerr.msg);
+            fail_job(w, "failed to fetch new sequence");
             goto cleanup;
         }
         struct thread *t = w->thread + 0;
         struct imm_seq seq = imm_seq(imm_str(w->seq.data), w->abc);
         thread_setup_seq(t, &seq, w->seq.id);
         rc = thread_run(t);
-        if (rc) goto cleanup;
+        if (rc)
+        {
+            fail_job(w, "internal thread error");
+            goto cleanup;
+        }
     }
+    if (rc != RC_END) goto cleanup;
+
+    return work_finishup(w);
 
 cleanup:
     return rc;

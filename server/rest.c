@@ -66,32 +66,6 @@ static inline enum rc parse_json(void)
                        rest.response_body->size);
 }
 
-#if 0
-static size_t next_pend_job_callback(void *contents, size_t bsize, size_t nmemb,
-                                     void *userp)
-{
-    struct sched_job *job = userp;
-    (void)userp;
-    size_t size = bsize * nmemb;
-    char *data = contents;
-
-    jsmn_init(&json.parser);
-    int r = jsmn_parse(&json.parser, data, size, json.tok, 128);
-    if (r < 0)
-    {
-        return 0;
-    }
-    if (r < 1 || json.tok[0].type != JSMN_ARRAY)
-    {
-        return 0;
-    }
-
-    json.ntoks = (unsigned)(r - 1);
-    if (parse_job(data, json.ntoks, json.tok + 1, job)) return 0;
-    return size;
-}
-#endif
-
 enum rc rest_open(char const *url_stem)
 {
     if (rest.initialized++) return RC_OK;
@@ -333,7 +307,11 @@ enum rc rest_next_job_seq(struct sched_job *job, struct sched_seq *seq,
     if (http_code == 200)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = sched_seq_parse(seq, &rest.xjson, 1);
+        if (!xjson_is_array(&rest.xjson, 0)) return einval("expected array");
+        if (xjson_is_array_empty(&rest.xjson, 0))
+            rc = RC_END;
+        else
+            rc = sched_seq_parse(seq, &rest.xjson, 2);
     }
     else if (http_code == 409 || http_code == 500)
     {
