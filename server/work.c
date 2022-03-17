@@ -206,16 +206,32 @@ static enum rc work_finishup(struct work *w)
     if (rc)
     {
         fail_job(w, "failed to finish up work");
-        return rc;
+        goto cleanup;
     }
 
-    FILE *fp = prod_final_fp();
+    char const *filepath = prod_final_path();
 
     struct rest_error rerr = {0};
+
+    if ((rc = rest_upload_prods_file(filepath, &rerr)))
+    {
+        fail_job(w, "failed to submit prods_file");
+        goto cleanup;
+    }
+    if (rerr.rc)
+    {
+        rc = erest("failed to submit prods_file");
+        fail_job(w, rerr.msg);
+        goto cleanup;
+    }
+
     rc = rest_set_job_state(w->job.id, SCHED_JOB_DONE, "", &rerr);
     if (rc) return rc;
 
     return rerr.rc ? erest(rerr.msg) : RC_OK;
+
+cleanup:
+    return rc;
 }
 
 enum rc work_run(struct work *w)

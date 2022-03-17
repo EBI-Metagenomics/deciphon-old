@@ -428,9 +428,39 @@ cleanup:
     return rc;
 }
 
-enum rc rest_upload_prod_file(FILE *fp)
+enum rc rest_upload_prods_file(char const *filepath, struct rest_error *rerr)
 {
+    spinlock_lock(&rest.lock);
 
+    enum rc rc = RC_OK;
+    struct xcurl_mime mime = {0};
+    xcurl_mime_set(&mime, "prods_file", "prods_file.tsv",
+                   "text/tab-separated-values");
+
+    long http_code = 0;
+    rc = xcurl_upload(&rest.xcurl, "/prods/", &http_code, &mime, filepath);
+    if (rc) goto cleanup;
+
+    if (http_code == 201)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        if (!(xjson_is_array(&rest.xjson, 0) &&
+              xjson_is_array_empty(&rest.xjson, 0)))
+            rc = einval("expected empty array");
+    }
+    else if (http_code == 400 || http_code == 409)
+    {
+        if ((rc = parse_json())) goto cleanup;
+        rc = parse_error(rerr, &rest.xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&rest.lock);
+    return rc;
 }
 
 static enum rc parse_error(struct rest_error *rerr, struct xjson *x,

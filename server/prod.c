@@ -137,6 +137,8 @@ cleanup:
 
 FILE *prod_final_fp(void) { return final_file.fp; }
 
+char const *prod_final_path(void) { return final_file.path; }
+
 void prod_final_cleanup(void) { xfile_tmp_del(&final_file); }
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,

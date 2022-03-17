@@ -45,6 +45,7 @@ void prod_fcleanup(void);
 enum rc prod_fclose(void);
 
 FILE *prod_final_fp(void);
+char const *prod_final_path(void);
 void prod_final_cleanup(void);
 
 #endif
