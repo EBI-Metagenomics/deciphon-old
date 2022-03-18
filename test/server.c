@@ -1,5 +1,5 @@
-#include "deciphon/db/db.h"
 #include "deciphon/server/server.h"
+#include "deciphon/db/db.h"
 #include "hope/hope.h"
 #include "imm/imm.h"
 #include <curl/curl.h>
@@ -12,10 +12,9 @@ int main(void)
     return hope_status();
 }
 
-
 void test_server(void)
 {
-    EQ(rest_open(REST_URL_STEM), RC_OK);
+    EQ(rest_open(SCHED_API_URL), RC_OK);
     EQ(rest_wipe(), RC_OK);
 
     struct sched_job job = {0};
@@ -32,5 +31,5 @@ void test_server(void)
 
     rest_close();
 
-    EQ(server_run(true, 1, REST_URL_STEM), RC_OK);
+    EQ(server_run(true, 1, SCHED_API_URL), RC_OK);
 }

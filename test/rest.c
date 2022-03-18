@@ -23,13 +23,13 @@ int main(void)
 
 void test_rest_open_close(void)
 {
-    EQ(rest_open(REST_URL_STEM), RC_OK);
+    EQ(rest_open(SCHED_API_URL), RC_OK);
     rest_close();
 }
 
 void test_rest_post_db(void)
 {
-    EQ(rest_open(REST_URL_STEM), RC_OK);
+    EQ(rest_open(SCHED_API_URL), RC_OK);
     EQ(rest_wipe(), RC_OK);
 
     struct sched_db db = {0};
@@ -40,14 +40,14 @@ void test_rest_post_db(void)
     EQ(db.id, 1);
     EQ(db.xxh3_64, -3907098992699871052);
     EQ(db.filename, "minifam.dcp");
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
 
     db.id = 1;
     db.xxh3_64 = -3907098992699871052L;
     strcpy(db.filename, "minifam.dcp");
     EQ(rest_add_db(&db, &error), RC_OK);
-    EQ(error.rc, RC_EINVAL);
+    EQ(error.rc, SCHED_EINVAL);
     EQ(error.msg, "database already exists");
 
     rest_close();
@@ -55,7 +55,7 @@ void test_rest_post_db(void)
 
 void test_rest_get_db(void)
 {
-    EQ(rest_open(REST_URL_STEM), RC_OK);
+    EQ(rest_open(SCHED_API_URL), RC_OK);
     EQ(rest_wipe(), RC_OK);
 
     struct sched_db db = {0};
@@ -65,7 +65,7 @@ void test_rest_get_db(void)
     db.xxh3_64 = 0;
     db.filename[0] = 0;
     EQ(rest_get_db(&db, &error), RC_OK);
-    EQ(error.rc, RC_EINVAL);
+    EQ(error.rc, SCHED_EINVAL);
     EQ(error.msg, "database not found");
 
     strcpy(db.filename, "minifam.dcp");
@@ -73,7 +73,7 @@ void test_rest_get_db(void)
     EQ(db.id, 1);
     EQ(db.xxh3_64, -3907098992699871052);
     EQ(db.filename, "minifam.dcp");
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
 
     db.id = 1;
@@ -83,7 +83,7 @@ void test_rest_get_db(void)
     EQ(db.id, 1);
     EQ(db.xxh3_64, -3907098992699871052);
     EQ(db.filename, "minifam.dcp");
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
 
     rest_close();
@@ -91,13 +91,13 @@ void test_rest_get_db(void)
 
 void test_rest_post_testing_data(void)
 {
-    EQ(rest_open(REST_URL_STEM), RC_OK);
+    EQ(rest_open(SCHED_API_URL), RC_OK);
     EQ(rest_wipe(), RC_OK);
 
     struct rest_error error = {0};
     EQ(rest_testing_data(&error), RC_OK);
 
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
 
     rest_close();
@@ -105,23 +105,23 @@ void test_rest_post_testing_data(void)
 
 void test_rest_next_pend_job(void)
 {
-    EQ(rest_open(REST_URL_STEM), RC_OK);
+    EQ(rest_open(SCHED_API_URL), RC_OK);
     EQ(rest_wipe(), RC_OK);
 
     struct sched_job job = {0};
     struct rest_error error = {0};
 
     EQ(rest_next_pend_job(&job, &error), RC_END);
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
     EQ(job.id, 0);
 
     EQ(rest_testing_data(&error), RC_OK);
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
 
     EQ(rest_next_pend_job(&job, &error), RC_OK);
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
     EQ(job.id, 1);
     EQ(job.db_id, 1);
@@ -140,23 +140,23 @@ static struct sched_seq seq = {0};
 
 void test_rest_next_job_seq(void)
 {
-    EQ(rest_open(REST_URL_STEM), RC_OK);
+    EQ(rest_open(SCHED_API_URL), RC_OK);
     EQ(rest_wipe(), RC_OK);
 
     struct sched_job job = {0};
     struct rest_error error = {0};
 
     EQ(rest_next_pend_job(&job, &error), RC_END);
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
     EQ(job.id, 0);
 
     EQ(rest_testing_data(&error), RC_OK);
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
 
     EQ(rest_next_pend_job(&job, &error), RC_OK);
-    EQ(error.rc, RC_OK);
+    EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
     EQ(job.id, 1);
     EQ(job.db_id, 1);

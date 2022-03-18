@@ -2,14 +2,17 @@ find_package(hope REQUIRED)
 
 set(ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets)
 set(TMPDIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
-set(REST_URL_STEM "http://127.0.0.1:8000/api")
+set(SCHED_API_URL
+    "http://127.0.0.1:8000/api"
+    CACHE STRING "Scheduler API URL")
+message(STATUS "Scheduler API URL: ${SCHED_API_URL}")
 
 file(MAKE_DIRECTORY ${ASSETS})
 file(MAKE_DIRECTORY ${TMPDIR})
 
 add_compile_definitions(ASSETS=\"${ASSETS}\")
 add_compile_definitions(TMPDIR=\"${TMPDIR}\")
-add_compile_definitions(REST_URL_STEM=\"${REST_URL_STEM}\")
+add_compile_definitions(SCHED_API_URL=\"${SCHED_API_URL}\")
 
 set(URL "https://deciphon.s3.eu-west-2.amazonaws.com")
 

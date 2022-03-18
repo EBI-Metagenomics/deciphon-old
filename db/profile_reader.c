@@ -85,7 +85,6 @@ enum rc profile_reader_setup(struct profile_reader *reader,
 
     if (npartitions > NUM_THREADS) return einval("too many partitions");
 
-    printf("Number of profiles: %d\n", db->nprofiles);
     reader->npartitions = xmath_min(npartitions, db->nprofiles);
 
     if (!expect_map_key(&db->file, "profiles")) return eio("read key");

@@ -111,7 +111,7 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
 
         rc = work_run(&server.work);
         if (rc) goto cleanup;
-        info("Finished a job");
+        info("Finished the job");
     }
 
     if (rc == RC_END) rc = RC_OK;
