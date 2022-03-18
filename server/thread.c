@@ -87,8 +87,12 @@ enum rc thread_run(struct thread *t)
     struct profile_reader *reader = t->reader;
     struct imm_seq const *seq = t->seq;
 
+    rc = profile_reader_rewind(reader);
+    if (rc) goto cleanup;
+
     while ((rc = profile_reader_next(reader, t->id, &prof)) == RC_OK)
     {
+        info("Thread(%d)> Profile: %s", t->id, prof->accession);
         // if (atomic_load(&end_work)) break;
         //
         struct imm_dp const *null_dp = profile_null_dp(prof);
@@ -97,28 +101,32 @@ enum rc thread_run(struct thread *t)
         unsigned size = imm_seq_size(seq);
 
         rc = setup_hypothesis(null, profile_null_dp(prof), seq);
-        if (rc) return rc;
+        if (rc) goto cleanup;
 
         rc = setup_hypothesis(alt, profile_alt_dp(prof), seq);
-        if (rc) return rc;
+        if (rc) goto cleanup;
 
         rc = protein_profile_setup(pp, size, t->multi_hits, t->hmmer3_compat);
-        if (rc) return rc;
+        if (rc) goto cleanup;
 
         rc = viterbi(null_dp, null->task, &null->prod, &t->prod.null_loglik);
 
         rc = viterbi(alt_dp, alt->task, &alt->prod, &t->prod.alt_loglik);
-        if (rc) return rc;
+        if (rc) goto cleanup;
 
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
+        info("Thread(%d)> LRT: %f", t->id, lrt);
         if (!imm_lprob_is_finite(lrt) || lrt < t->lrt_threshold) continue;
 
         strcpy(t->prod.profile_name, prof->accession);
 
         match_setup((struct match *)&t->match, prof);
         rc = write_product(t, &alt->prod.path);
-        if (rc) return rc;
+        if (rc) goto cleanup;
     }
-    return RC_OK;
+    if (rc == RC_END) rc = RC_OK;
+
+cleanup:
+    return rc;
 }

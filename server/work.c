@@ -241,20 +241,24 @@ enum rc work_run(struct work *w)
     struct sched_api_error rerr = {0};
     while (!(rc = sched_api_next_job_seq(&w->job, &w->seq, &rerr)))
     {
+        info("Sequence: %s", w->seq.name);
         if (rerr.rc)
         {
             rc = erest(rerr.msg);
             fail_job(w, "failed to fetch new sequence");
             goto cleanup;
         }
-        struct thread *t = w->thread + 0;
-        struct imm_seq seq = imm_seq(imm_str(w->seq.data), w->abc);
-        thread_setup_seq(t, &seq, w->seq.id);
-        rc = thread_run(t);
-        if (rc)
+        for (unsigned i = 0; i < w->num_threads; ++i)
         {
-            fail_job(w, "internal thread error");
-            goto cleanup;
+            struct thread *t = w->thread + i;
+            struct imm_seq seq = imm_seq(imm_str(w->seq.data), w->abc);
+            thread_setup_seq(t, &seq, w->seq.id);
+            rc = thread_run(t);
+            if (rc)
+            {
+                fail_job(w, "internal thread error");
+                goto cleanup;
+            }
         }
     }
     if (rc != RC_END) goto cleanup;
