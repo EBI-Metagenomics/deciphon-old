@@ -2,7 +2,7 @@
 #include "deciphon/db/profile_reader.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
-#include "deciphon/server/rest.h"
+#include "deciphon/server/sched_api.h"
 #include "deciphon/version.h"
 #include "deciphon/xfile.h"
 #include "deciphon/xmath.h"
@@ -37,13 +37,13 @@ static void set_job_fail(struct sched_job *job, char const *msg)
 
 enum rc work_next(struct work *work)
 {
-    struct rest_error rerr = {0};
+    struct sched_api_error rerr = {0};
 
-    enum rc rc = rest_next_pend_job(&work->job, &rerr);
+    enum rc rc = sched_api_next_pend_job(&work->job, &rerr);
     if (rc) return rc;
     if (rerr.rc) return erest(rerr.msg);
 
-    rc = rest_set_job_state(work->job.id, SCHED_JOB_RUN, "", &rerr);
+    rc = sched_api_set_job_state(work->job.id, SCHED_JOB_RUN, "", &rerr);
     if (rc) return rc;
     return rerr.rc ? erest(rerr.msg) : RC_OK;
 }
@@ -70,7 +70,7 @@ static enum rc ensure_database_integrity(char const *filename, int64_t xxh3_64)
 static enum rc download_database(struct sched_db *db)
 {
     FILE *fp = fopen(db->filename, "wb");
-    enum rc rc = rest_download_db(db, fp);
+    enum rc rc = sched_api_download_db(db, fp);
     if (rc)
     {
         fclose(fp);
@@ -96,8 +96,8 @@ static enum rc ensure_database(struct sched_db *db)
 
 static inline void fail_job(struct work *work, char const *msg)
 {
-    struct rest_error rerr = {0};
-    rest_set_job_state(work->job.id, SCHED_JOB_FAIL, msg, &rerr);
+    struct sched_api_error rerr = {0};
+    sched_api_set_job_state(work->job.id, SCHED_JOB_FAIL, msg, &rerr);
 }
 
 enum rc prepare_database(struct work *work)
@@ -105,8 +105,8 @@ enum rc prepare_database(struct work *work)
     struct sched_db db = {0};
     db.id = work->job.db_id;
 
-    struct rest_error rerr = {0};
-    enum rc rc = rest_get_db(&db, &rerr);
+    struct sched_api_error rerr = {0};
+    enum rc rc = sched_api_get_db(&db, &rerr);
     if (rc || rerr.rc)
     {
         if (rerr.rc) rc = erest(rerr.msg);
@@ -211,9 +211,9 @@ static enum rc work_finishup(struct work *w)
 
     char const *filepath = prod_final_path();
 
-    struct rest_error rerr = {0};
+    struct sched_api_error rerr = {0};
 
-    if ((rc = rest_upload_prods_file(filepath, &rerr)))
+    if ((rc = sched_api_upload_prods_file(filepath, &rerr)))
     {
         fail_job(w, "failed to submit prods_file");
         goto cleanup;
@@ -225,7 +225,7 @@ static enum rc work_finishup(struct work *w)
         goto cleanup;
     }
 
-    rc = rest_set_job_state(w->job.id, SCHED_JOB_DONE, "", &rerr);
+    rc = sched_api_set_job_state(w->job.id, SCHED_JOB_DONE, "", &rerr);
     if (rc) return rc;
 
     return rerr.rc ? erest(rerr.msg) : RC_OK;
@@ -238,8 +238,8 @@ enum rc work_run(struct work *w)
 {
     enum rc rc = RC_OK;
 
-    struct rest_error rerr = {0};
-    while (!(rc = rest_next_job_seq(&w->job, &w->seq, &rerr)))
+    struct sched_api_error rerr = {0};
+    while (!(rc = sched_api_next_job_seq(&w->job, &w->seq, &rerr)))
     {
         if (rerr.rc)
         {

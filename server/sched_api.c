@@ -1,4 +1,4 @@
-#include "deciphon/server/rest.h"
+#include "deciphon/server/sched_api.h"
 #include "deciphon/buff.h"
 #include "deciphon/logger.h"
 #include "deciphon/model/profile_typeid.h"
@@ -12,17 +12,13 @@
 #include <inttypes.h>
 #include <string.h>
 
-static struct
-{
-    struct xcurl xcurl;
-    spinlock_t lock;
-    unsigned int initialized;
-    struct buff *request_body;
-    struct buff *response_body;
-    struct xjson xjson;
-} rest = {{0}, SPINLOCK_INIT, false, 0, 0, {0}};
+static spinlock_t lock = SPINLOCK_INIT;
+static unsigned initialized = 0;
+static struct buff *request_body = 0;
+static struct buff *response_body = 0;
+static struct xjson xjson = {0};
 
-static enum rc parse_error(struct rest_error *rerr, struct xjson *x,
+static enum rc parse_error(struct sched_api_error *rerr, struct xjson *x,
                            unsigned start);
 
 static enum rc body_add(struct buff **body, size_t size, char const *data)
@@ -54,94 +50,85 @@ static inline enum rc body_finish_up(struct buff **body)
     return body_add(body, 1, "\0");
 }
 
-static inline void rest_error_reset(struct rest_error *rerr)
-{
-    rerr->rc = SCHED_OK;
-    rerr->msg[0] = 0;
-}
-
 static inline enum rc parse_json(void)
 {
-    return xjson_parse(&rest.xjson, rest.response_body->data,
-                       rest.response_body->size);
+    return xjson_parse(&xjson, response_body->data, response_body->size);
 }
 
-enum rc rest_open(char const *url_stem)
+enum rc sched_api_init(char const *url_stem)
 {
-    if (rest.initialized++) return RC_OK;
+    if (initialized++) return RC_OK;
 
-    enum rc rc = xcurl_init(&rest.xcurl, url_stem);
+    enum rc rc = xcurl_init(url_stem);
     if (rc) return rc;
 
-    if (!(rest.request_body = buff_new(1024)))
+    if (!(request_body = buff_new(1024)))
     {
-        xcurl_del(&rest.xcurl);
+        xcurl_cleanup();
         return enomem("buff_new failed");
     }
 
-    if (!(rest.response_body = buff_new(1024)))
+    if (!(response_body = buff_new(1024)))
     {
-        buff_del(rest.request_body);
-        xcurl_del(&rest.xcurl);
+        buff_del(request_body);
+        xcurl_cleanup();
         return enomem("buff_new failed");
     }
     return RC_OK;
 }
 
-void rest_close(void)
+void sched_api_cleanup(void)
 {
-    if (!rest.initialized) return;
+    if (!initialized) return;
+    if (--initialized) return;
 
-    if (--rest.initialized) return;
-
-    xcurl_del(&rest.xcurl);
-    buff_del(rest.request_body);
-    buff_del(rest.response_body);
+    xcurl_cleanup();
+    buff_del(request_body);
+    buff_del(response_body);
 }
 
-enum rc rest_wipe(void)
+enum rc sched_api_wipe(void)
 {
-    spinlock_lock(&rest.lock);
+    spinlock_lock(&lock);
 
     long http_code = 0;
-    enum rc rc = xcurl_delete(&rest.xcurl, "/", &http_code);
+    enum rc rc = xcurl_delete("/", &http_code);
 
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
-enum rc rest_add_db(struct sched_db *db, struct rest_error *rerr)
+enum rc sched_api_add_db(struct sched_db *db, struct sched_api_error *rerr)
 {
-    spinlock_lock(&rest.lock);
-    rest_error_reset(rerr);
+    spinlock_lock(&lock);
+    sched_api_error_init(rerr);
 
     enum rc rc = RC_OK;
 
-    body_reset(rest.request_body);
-    if ((rc = body_add_str(&rest.request_body, "{\"filename\": \"")))
-        goto cleanup;
-    if ((rc = body_add_str(&rest.request_body, db->filename))) goto cleanup;
-    if ((rc = body_add_str(&rest.request_body, "\"}"))) goto cleanup;
-    rc = body_finish_up(&rest.request_body);
+    body_reset(request_body);
+    if ((rc = body_add_str(&request_body, "{\"filename\": \""))) goto cleanup;
+    if ((rc = body_add_str(&request_body, db->filename))) goto cleanup;
+    if ((rc = body_add_str(&request_body, "\"}"))) goto cleanup;
+    rc = body_finish_up(&request_body);
     if (rc) goto cleanup;
 
     long http_code = 0;
-    body_reset(rest.response_body);
-    rc = xcurl_post(&rest.xcurl, "/dbs/", &http_code, body_store,
-                    &rest.response_body, rest.request_body->data);
+    body_reset(response_body);
+    rc = xcurl_post("/dbs/", &http_code, body_store, &response_body,
+                    request_body->data);
     if (rc) goto cleanup;
-    rc = body_finish_up(&rest.response_body);
+    rc = body_finish_up(&response_body);
     if (rc) goto cleanup;
 
     if (http_code == 201)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = sched_db_parse(db, &rest.xjson, 1);
+        rc = sched_db_parse(db, &xjson, 1);
     }
     else if (http_code == 409 || http_code == 500)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &rest.xjson, 1);
+        rc = parse_error(rerr, &xjson, 1);
     }
     else
     {
@@ -149,7 +136,7 @@ enum rc rest_add_db(struct sched_db *db, struct rest_error *rerr)
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
@@ -164,31 +151,30 @@ static enum rc parse_db_list(struct sched_db *db, struct xjson *x)
     return sched_db_parse(db, x, 2);
 }
 
-enum rc rest_get_db(struct sched_db *db, struct rest_error *rerr)
+enum rc sched_api_get_db(struct sched_db *db, struct sched_api_error *rerr)
 {
-    spinlock_lock(&rest.lock);
-    rest_error_reset(rerr);
+    spinlock_lock(&lock);
+    sched_api_error_init(rerr);
 
     char query[] = "/dbs/00000000000000000000";
     npf_snprintf(query, sizeof(query), "/dbs/%" PRId64, db->id);
 
     long http_code = 0;
-    body_reset(rest.response_body);
-    enum rc rc = xcurl_get(&rest.xcurl, query, &http_code, body_store,
-                           &rest.response_body);
+    body_reset(response_body);
+    enum rc rc = xcurl_get(query, &http_code, body_store, &response_body);
     if (rc) goto cleanup;
-    rc = body_finish_up(&rest.response_body);
+    rc = body_finish_up(&response_body);
     if (rc) goto cleanup;
 
     if (http_code == 200)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_db_list(db, &rest.xjson);
+        rc = parse_db_list(db, &xjson);
     }
     else if (http_code == 404 || http_code == 500)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &rest.xjson, 1);
+        rc = parse_error(rerr, &xjson, 1);
     }
     else
     {
@@ -196,35 +182,34 @@ enum rc rest_get_db(struct sched_db *db, struct rest_error *rerr)
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
-enum rc rest_testing_data(struct rest_error *rerr)
+enum rc sched_api_post_testing_data(struct sched_api_error *rerr)
 {
-    spinlock_lock(&rest.lock);
-    rest_error_reset(rerr);
+    spinlock_lock(&lock);
+    sched_api_error_init(rerr);
 
     enum rc rc = RC_OK;
 
-    body_reset(rest.request_body);
-    if ((rc = body_add_str(&rest.request_body, "{}"))) goto cleanup;
-    rc = body_finish_up(&rest.request_body);
+    body_reset(request_body);
+    if ((rc = body_add_str(&request_body, "{}"))) goto cleanup;
+    rc = body_finish_up(&request_body);
     if (rc) goto cleanup;
 
     long http_code = 0;
-    body_reset(rest.response_body);
-    rc = xcurl_post(&rest.xcurl, "/testing/data/", &http_code, body_store,
-                    &rest.response_body, rest.request_body->data);
+    body_reset(response_body);
+    rc = xcurl_post("/testing/data/", &http_code, body_store, &response_body,
+                    request_body->data);
     if (rc) goto cleanup;
-    rc = body_finish_up(&rest.response_body);
+    rc = body_finish_up(&response_body);
     if (rc) goto cleanup;
 
     if (http_code == 201)
     {
         if ((rc = parse_json())) goto cleanup;
-        if (!(xjson_is_array(&rest.xjson, 0) &&
-              xjson_is_array_empty(&rest.xjson, 0)))
+        if (!(xjson_is_array(&xjson, 0) && xjson_is_array_empty(&xjson, 0)))
         {
             rc = einval("expected empty array");
             goto cleanup;
@@ -233,7 +218,7 @@ enum rc rest_testing_data(struct rest_error *rerr)
     else if (http_code == 404 || http_code == 409 || http_code == 500)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &rest.xjson, 1);
+        rc = parse_error(rerr, &xjson, 1);
     }
     else
     {
@@ -241,40 +226,40 @@ enum rc rest_testing_data(struct rest_error *rerr)
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
-enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *rerr)
+enum rc sched_api_next_pend_job(struct sched_job *job,
+                                struct sched_api_error *rerr)
 {
-    spinlock_lock(&rest.lock);
-    rest_error_reset(rerr);
+    spinlock_lock(&lock);
+    sched_api_error_init(rerr);
 
     enum rc rc = RC_OK;
 
     long http_code = 0;
-    body_reset(rest.response_body);
-    rc = xcurl_get(&rest.xcurl, "/jobs/next_pend", &http_code, body_store,
-                   &rest.response_body);
+    body_reset(response_body);
+    rc = xcurl_get("/jobs/next_pend", &http_code, body_store, &response_body);
     if (rc) goto cleanup;
-    rc = body_finish_up(&rest.response_body);
+    rc = body_finish_up(&response_body);
     if (rc) goto cleanup;
 
     if (http_code == 200)
     {
         if ((rc = parse_json())) goto cleanup;
 
-        if (!xjson_is_array(&rest.xjson, 0))
+        if (!xjson_is_array(&xjson, 0))
             rc = einval("expected array");
-        else if (xjson_is_array_empty(&rest.xjson, 0))
+        else if (xjson_is_array_empty(&xjson, 0))
             rc = RC_END;
         else
-            rc = sched_job_parse(job, &rest.xjson, 2);
+            rc = sched_job_parse(job, &xjson, 2);
     }
     else if (http_code == 409 || http_code == 500)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &rest.xjson, 1);
+        rc = parse_error(rerr, &xjson, 1);
     }
     else
     {
@@ -282,41 +267,40 @@ enum rc rest_next_pend_job(struct sched_job *job, struct rest_error *rerr)
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
-enum rc rest_next_job_seq(struct sched_job *job, struct sched_seq *seq,
-                          struct rest_error *rerr)
+enum rc sched_api_next_job_seq(struct sched_job *job, struct sched_seq *seq,
+                               struct sched_api_error *rerr)
 {
-    spinlock_lock(&rest.lock);
-    rest_error_reset(rerr);
+    spinlock_lock(&lock);
+    sched_api_error_init(rerr);
 
     char query[] = "/jobs/00000000000000000000/seqs/next/00000000000000000000";
     npf_snprintf(query, sizeof(query), "/jobs/%" PRId64 "/seqs/next/%" PRId64,
                  job->id, seq->id);
 
     long http_code = 0;
-    body_reset(rest.response_body);
-    enum rc rc = xcurl_get(&rest.xcurl, query, &http_code, body_store,
-                           &rest.response_body);
+    body_reset(response_body);
+    enum rc rc = xcurl_get(query, &http_code, body_store, &response_body);
     if (rc) goto cleanup;
-    rc = body_finish_up(&rest.response_body);
+    rc = body_finish_up(&response_body);
     if (rc) goto cleanup;
 
     if (http_code == 200)
     {
         if ((rc = parse_json())) goto cleanup;
-        if (!xjson_is_array(&rest.xjson, 0)) return einval("expected array");
-        if (xjson_is_array_empty(&rest.xjson, 0))
+        if (!xjson_is_array(&xjson, 0)) return einval("expected array");
+        if (xjson_is_array_empty(&xjson, 0))
             rc = RC_END;
         else
-            rc = sched_seq_parse(seq, &rest.xjson, 2);
+            rc = sched_seq_parse(seq, &xjson, 2);
     }
     else if (http_code == 409 || http_code == 500)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &rest.xjson, 1);
+        rc = parse_error(rerr, &xjson, 1);
     }
     else
     {
@@ -324,7 +308,7 @@ enum rc rest_next_job_seq(struct sched_job *job, struct sched_seq *seq,
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
@@ -340,36 +324,36 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
 
     char buf[] = "/jobs/00000000000000000000";
 
-    body_reset(rest.request_body);
-    if ((rc = body_add_str(&rest.request_body, "{\"job_id\": "))) return rc;
+    body_reset(request_body);
+    if ((rc = body_add_str(&request_body, "{\"job_id\": "))) return rc;
     npf_snprintf(buf, sizeof(buf), "%" PRId64, job_id);
 
-    if ((rc = body_add_str(&rest.request_body, buf))) return rc;
-    if ((rc = body_add_str(&rest.request_body, ", \"state\": \""))) return rc;
+    if ((rc = body_add_str(&request_body, buf))) return rc;
+    if ((rc = body_add_str(&request_body, ", \"state\": \""))) return rc;
 
-    if ((rc = body_add_str(&rest.request_body, job_states[state]))) return rc;
+    if ((rc = body_add_str(&request_body, job_states[state]))) return rc;
 
-    if ((rc = body_add_str(&rest.request_body, "\", \"error\": \""))) return rc;
+    if ((rc = body_add_str(&request_body, "\", \"error\": \""))) return rc;
 
-    if ((rc = body_add_str(&rest.request_body, state_error))) return rc;
+    if ((rc = body_add_str(&request_body, state_error))) return rc;
 
-    if ((rc = body_add_str(&rest.request_body, "\"}"))) return rc;
+    if ((rc = body_add_str(&request_body, "\"}"))) return rc;
 
-    rc = body_finish_up(&rest.request_body);
+    rc = body_finish_up(&request_body);
     if (rc) return rc;
 
     npf_snprintf(buf, sizeof(buf), "/jobs/%" PRId64, job_id);
-    body_reset(rest.response_body);
-    rc = xcurl_patch(&rest.xcurl, buf, http_code, body_store,
-                     &rest.response_body, rest.request_body->data);
+    body_reset(response_body);
+    rc = xcurl_patch(buf, http_code, body_store, &response_body,
+                     request_body->data);
     if (rc) return rc;
-    return body_finish_up(&rest.response_body);
+    return body_finish_up(&response_body);
 }
 
-enum rc rest_set_job_state(int64_t job_id, enum sched_job_state state,
-                           char const *msg, struct rest_error *rerr)
+enum rc sched_api_set_job_state(int64_t job_id, enum sched_job_state state,
+                                char const *msg, struct sched_api_error *rerr)
 {
-    spinlock_lock(&rest.lock);
+    spinlock_lock(&lock);
 
     static struct sched_job job = {0};
     job.id = job_id;
@@ -380,12 +364,12 @@ enum rc rest_set_job_state(int64_t job_id, enum sched_job_state state,
     if (http_code == 200)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = sched_job_parse(&job, &rest.xjson, 1);
+        rc = sched_job_parse(&job, &xjson, 1);
     }
     else if (http_code == 409 || http_code == 500)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &rest.xjson, 1);
+        rc = parse_error(rerr, &xjson, 1);
     }
     else
     {
@@ -393,13 +377,13 @@ enum rc rest_set_job_state(int64_t job_id, enum sched_job_state state,
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
-enum rc rest_download_db(struct sched_db *db, FILE *fp)
+enum rc sched_api_download_db(struct sched_db *db, FILE *fp)
 {
-    spinlock_lock(&rest.lock);
+    spinlock_lock(&lock);
 
     enum rc rc = RC_OK;
 
@@ -407,7 +391,7 @@ enum rc rest_download_db(struct sched_db *db, FILE *fp)
 
     npf_snprintf(query, sizeof(query), "/dbs/%" PRId64 "/download", db->id);
     long http_code = 0;
-    rc = xcurl_download(&rest.xcurl, query, &http_code, fp);
+    rc = xcurl_download(query, &http_code, fp);
     if (rc) goto cleanup;
 
     if (http_code == 200)
@@ -424,13 +408,14 @@ enum rc rest_download_db(struct sched_db *db, FILE *fp)
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
-enum rc rest_upload_prods_file(char const *filepath, struct rest_error *rerr)
+enum rc sched_api_upload_prods_file(char const *filepath,
+                                    struct sched_api_error *rerr)
 {
-    spinlock_lock(&rest.lock);
+    spinlock_lock(&lock);
 
     enum rc rc = RC_OK;
     struct xcurl_mime mime = {0};
@@ -438,24 +423,23 @@ enum rc rest_upload_prods_file(char const *filepath, struct rest_error *rerr)
                    "text/tab-separated-values");
 
     long http_code = 0;
-    body_reset(rest.response_body);
-    rc = xcurl_upload(&rest.xcurl, "/prods/", &http_code, body_store,
-                    &rest.response_body, &mime, filepath);
+    body_reset(response_body);
+    rc = xcurl_upload("/prods/", &http_code, body_store, &response_body, &mime,
+                      filepath);
     if (rc) goto cleanup;
-    rc = body_finish_up(&rest.response_body);
+    rc = body_finish_up(&response_body);
     if (rc) goto cleanup;
 
     if (http_code == 201)
     {
         if ((rc = parse_json())) goto cleanup;
-        if (!(xjson_is_array(&rest.xjson, 0) &&
-              xjson_is_array_empty(&rest.xjson, 0)))
+        if (!(xjson_is_array(&xjson, 0) && xjson_is_array_empty(&xjson, 0)))
             rc = einval("expected empty array");
     }
     else if (http_code == 400 || http_code == 409)
     {
         if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &rest.xjson, 1);
+        rc = parse_error(rerr, &xjson, 1);
     }
     else
     {
@@ -463,11 +447,11 @@ enum rc rest_upload_prods_file(char const *filepath, struct rest_error *rerr)
     }
 
 cleanup:
-    spinlock_unlock(&rest.lock);
+    spinlock_unlock(&lock);
     return rc;
 }
 
-static enum rc parse_error(struct rest_error *rerr, struct xjson *x,
+static enum rc parse_error(struct sched_api_error *rerr, struct xjson *x,
                            unsigned start)
 {
     enum rc rc = RC_OK;

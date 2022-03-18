@@ -1,8 +1,6 @@
 #ifndef DECIPHON_SERVER_SERVER_H
 #define DECIPHON_SERVER_SERVER_H
 
-#include "deciphon/server/rest.h"
-#include "deciphon/server/sched.h"
 #include "imm/imm.h"
 
 enum rc server_run(bool single_run, unsigned num_threads, char const *url);

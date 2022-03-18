@@ -3,12 +3,12 @@ add_library(
   job_state.c
   prod.c
   protein_match.c
-  rest.c
   sched.c
+  sched_api.c
   server.c
+  thread.c
   url.c
   work.c
-  thread.c
   xcurl.c
   xcurl_debug.c
   xjson.c)

@@ -5,7 +5,7 @@
 #include "elapsed/elapsed.h"
 #include "job.h"
 // #include "protein_state.h"
-#include "deciphon/server/rest.h"
+#include "deciphon/server/sched_api.h"
 #include "sched.h"
 // #include "table.h"
 #include "work.h"
@@ -86,7 +86,7 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
     server.num_threads = num_threads;
     server.work.lrt_threshold = 100.0f;
 
-    enum rc rc = rest_open(url);
+    enum rc rc = sched_api_init(url);
     if (rc) return rc;
 
     info("Starting the server (%d threads)", num_threads);
@@ -118,7 +118,7 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
 
     info("Goodbye!");
 cleanup:
-    rest_close();
+    sched_api_cleanup();
     return rc;
 }
 
