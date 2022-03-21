@@ -105,7 +105,7 @@ enum rc profile_reader_setup(struct profile_reader *reader,
         assert(false);
 
     partition_it(reader, db, profiles_offset);
-    if ((rc = profile_reader_rewind(reader))) goto cleanup;
+    if ((rc = profile_reader_rewind_all(reader))) goto cleanup;
     return rc;
 
 cleanup:
@@ -124,7 +124,7 @@ unsigned profile_reader_partition_size(struct profile_reader const *reader,
     return reader->partition_size[partition];
 }
 
-enum rc profile_reader_rewind(struct profile_reader *reader)
+enum rc profile_reader_rewind_all(struct profile_reader *reader)
 {
     for (unsigned i = 0; i < reader->npartitions; ++i)
     {
@@ -132,6 +132,14 @@ enum rc profile_reader_rewind(struct profile_reader *reader)
         if (!xfile_seek(fp, reader->partition_offset[i], SEEK_SET))
             return eio("failed to fseek");
     }
+    return RC_OK;
+}
+
+enum rc profile_reader_rewind(struct profile_reader *reader, unsigned partition)
+{
+    FILE *fp = lip_file_ptr(reader->file + partition);
+    if (!xfile_seek(fp, reader->partition_offset[partition], SEEK_SET))
+        return eio("failed to fseek");
     return RC_OK;
 }
 

@@ -39,6 +39,9 @@ void logger_setup(logger_print_func_t print,
 
 void info(char const *fmt, ...)
 {
+#ifdef NDEBUG
+    (void)fmt;
+#else
     time_t timer = {0};
     char stamp[26];
     struct tm *tm_info = 0;
@@ -54,6 +57,7 @@ void info(char const *fmt, ...)
 
     fprintf(stdout, "\n");
     fflush(stdout);
+#endif
 }
 
 enum rc __logger_error(enum rc rc, char const *ctx, char const *msg)

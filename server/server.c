@@ -84,7 +84,8 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
     sigemptyset(&server.signal.action.sa_mask);
     sigaction(SIGINT, &server.signal.action, NULL);
     server.num_threads = num_threads;
-    server.work.lrt_threshold = 100.0f;
+    // server.work.lrt_threshold = 100.0f;
+    server.work.lrt_threshold = 10.0f;
 
     enum rc rc = sched_api_init(url);
     if (rc) return rc;
@@ -109,6 +110,7 @@ enum rc server_run(bool single_run, unsigned num_threads, char const *url)
         rc = work_prepare(&server.work, server.num_threads);
         if (rc) goto cleanup;
 
+        info("Running job");
         rc = work_run(&server.work);
         if (rc) goto cleanup;
         info("Finished the job");

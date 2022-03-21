@@ -14,3 +14,4 @@ add_library(
   xjson.c)
 
 target_link_libraries(server PUBLIC CURL::libcurl)
+target_link_libraries(server PUBLIC OpenMP::OpenMP_C)

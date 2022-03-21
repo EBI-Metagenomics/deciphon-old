@@ -17,6 +17,7 @@ find_package(imm REQUIRED)
 find_package(lite_pack REQUIRED)
 find_package(Argp REQUIRED)
 find_package(athr REQUIRED)
+find_package(OpenMP REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)

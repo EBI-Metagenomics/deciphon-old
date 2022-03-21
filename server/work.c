@@ -248,16 +248,23 @@ enum rc work_run(struct work *w)
             fail_job(w, "failed to fetch new sequence");
             goto cleanup;
         }
+        struct imm_seq seq = imm_seq(imm_str(w->seq.data), w->abc);
+
         for (unsigned i = 0; i < w->num_threads; ++i)
         {
             struct thread *t = w->thread + i;
-            struct imm_seq seq = imm_seq(imm_str(w->seq.data), w->abc);
             thread_setup_seq(t, &seq, w->seq.id);
-            rc = thread_run(t);
-            if (rc)
+        }
+
+#pragma omp parallel for
+        for (unsigned i = 0; i < w->num_threads; ++i)
+        {
+            struct thread *t = w->thread + i;
+            enum rc local_rc = thread_run(t);
+            if (local_rc)
             {
                 fail_job(w, "internal thread error");
-                goto cleanup;
+                // goto cleanup;
             }
         }
     }

@@ -87,7 +87,7 @@ enum rc thread_run(struct thread *t)
     struct profile_reader *reader = t->reader;
     struct imm_seq const *seq = t->seq;
 
-    rc = profile_reader_rewind(reader);
+    rc = profile_reader_rewind(reader, t->id);
     if (rc) goto cleanup;
 
     while ((rc = profile_reader_next(reader, t->id, &prof)) == RC_OK)
@@ -118,6 +118,9 @@ enum rc thread_run(struct thread *t)
 
         info("Thread(%d)> LRT: %f", t->id, lrt);
         if (!imm_lprob_is_finite(lrt) || lrt < t->lrt_threshold) continue;
+        printf("Thread(%d)> Profile: %s\n", t->id, prof->accession);
+        printf("Thread(%d)> LRT: %f\n", t->id, lrt);
+        fflush(stdout);
 
         strcpy(t->prod.profile_name, prof->accession);
 
