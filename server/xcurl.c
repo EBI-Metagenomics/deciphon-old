@@ -6,7 +6,7 @@
 #include "xcurl_debug.h"
 #include <curl/curl.h>
 
-struct xcurl
+static struct xcurl
 {
     unsigned initialized;
     CURL *curl;
@@ -18,6 +18,9 @@ struct xcurl
     } hdr;
     struct url url;
 } xcurl = {0};
+
+#define TIMEOUT 300L
+#define CONNECTTIMEOUT 5L
 
 void xcurl_mime_set(struct xcurl_mime *mime, char const *name,
                     char const *filename, char const *type)
@@ -155,10 +158,12 @@ enum rc xcurl_get(char const *query, long *http_code,
                   xcurl_callback_func_t callback, void *arg)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
+    curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
+
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEFUNCTION, callback_func);
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
-    curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
 
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.recv_json);
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPGET, 1L);
@@ -170,10 +175,12 @@ enum rc xcurl_post(char const *query, long *http_code,
                    xcurl_callback_func_t callback, void *arg, char const *json)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
+    curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
+
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEFUNCTION, callback_func);
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
-    curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
 
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.only_json);
     curl_easy_setopt(xcurl.curl, CURLOPT_POST, 1L);
@@ -188,10 +195,12 @@ enum rc xcurl_patch(char const *query, long *http_code,
                     xcurl_callback_func_t callback, void *arg, char const *json)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
+    curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
+
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEFUNCTION, callback_func);
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
-    curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
 
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.only_json);
     curl_easy_setopt(xcurl.curl, CURLOPT_POSTFIELDS, json);
@@ -206,6 +215,7 @@ enum rc xcurl_delete(char const *query, long *http_code)
 {
     url_set_query(&xcurl.url, query);
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
+    curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
 
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.recv_json);
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPGET, 1L);
@@ -221,6 +231,9 @@ enum rc xcurl_download(char const *query, long *http_code, FILE *fp)
 {
     url_set_query(&xcurl.url, query);
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
+    curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
+    curl_easy_setopt(xcurl.curl, CURLOPT_TIMEOUT, TIMEOUT);
+
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEFUNCTION, 0);
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, fp);
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPGET, 1L);
@@ -235,10 +248,13 @@ enum rc xcurl_upload(char const *query, long *http_code,
                      struct xcurl_mime const *mime, char const *filepath)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
+    curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
+    curl_easy_setopt(xcurl.curl, CURLOPT_TIMEOUT, TIMEOUT);
+
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEFUNCTION, callback_func);
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
-    curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
 
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.recv_json);
 

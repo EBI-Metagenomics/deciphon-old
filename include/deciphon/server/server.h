@@ -3,7 +3,19 @@
 
 #include "imm/imm.h"
 
-enum rc server_run(bool single_run, unsigned num_threads, char const *url);
-void server_set_lrt_threshold(imm_float lrt);
+struct server_cfg
+{
+    unsigned num_threads;
+    double lrt_threshold;
+    unsigned polling_rate;
+    bool single_run;
+};
+
+#define SERVER_CFG_INIT                                                        \
+    (struct server_cfg) { 1, 1.0f, 2, false }
+
+enum rc server_init(char const *sched_api_url, struct server_cfg cfg);
+enum rc server_run(void);
+void server_cleanup(void);
 
 #endif

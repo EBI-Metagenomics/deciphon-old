@@ -1,5 +1,6 @@
 #include "work.h"
 #include "deciphon/db/profile_reader.h"
+#include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
 #include "deciphon/server/sched_api.h"
@@ -241,7 +242,7 @@ enum rc work_run(struct work *w)
     struct sched_api_error rerr = {0};
     while (!(rc = sched_api_next_job_seq(&w->job, &w->seq, &rerr)))
     {
-        info("Sequence: %s", w->seq.name);
+        // info("Sequence: %s", w->seq.name);
         if (rerr.rc)
         {
             rc = erest(rerr.msg);

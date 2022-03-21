@@ -27,8 +27,6 @@ void logger_setup(logger_print_func_t, logger_print_static_func_t, void *arg);
 #define eparse(msg) error(RC_EPARSE, msg)
 #define erest(msg) error(RC_EREST, msg)
 
-void info(char const *fmt, ...);
-
 /*
  * Private functions. They are not supposed to be used directly outside this
  * module.

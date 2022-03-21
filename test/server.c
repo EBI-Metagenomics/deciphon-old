@@ -32,5 +32,9 @@ void test_server(void)
 
     sched_api_cleanup();
 
-    EQ(server_run(true, 1, SCHED_API_URL), RC_OK);
+    struct server_cfg cfg = SERVER_CFG_INIT;
+    // cfg.single_run = true;
+    EQ(server_init(SCHED_API_URL, cfg), RC_OK);
+    EQ(server_run(), RC_OK);
+    server_cleanup();
 }

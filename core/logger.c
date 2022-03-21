@@ -1,8 +1,7 @@
 #include "deciphon/logger.h"
+#include "deciphon/info.h"
 #include "deciphon/limits.h"
-#include <stdarg.h>
 #include <stdio.h>
-#include <time.h>
 
 static void default_print(char const *ctx, char const *msg, void *arg)
 {
@@ -11,6 +10,7 @@ static void default_print(char const *ctx, char const *msg, void *arg)
     fputs(": ", stderr);
     fputs(msg, stderr);
     fputc('\n', stderr);
+    info("%s: %s", ctx, msg);
 }
 
 static void default_print_static(char const *ctx, char const *msg, void *arg)
@@ -20,6 +20,7 @@ static void default_print_static(char const *ctx, char const *msg, void *arg)
     fputs(": ", stderr);
     fputs(msg, stderr);
     fputc('\n', stderr);
+    info("%s: %s", ctx, msg);
 }
 
 static struct
@@ -35,29 +36,6 @@ void logger_setup(logger_print_func_t print,
     local.print = print;
     local.print_static = print_static;
     local.arg = arg;
-}
-
-void info(char const *fmt, ...)
-{
-#ifdef NDEBUG
-    (void)fmt;
-#else
-    time_t timer = {0};
-    char stamp[26];
-    struct tm *tm_info = 0;
-    timer = time(NULL);
-    tm_info = localtime(&timer);
-    strftime(stamp, 26, "%H:%M:%S", tm_info);
-    fprintf(stdout, "[%s] ", stamp);
-
-    va_list args;
-    va_start(args, fmt);
-    vfprintf(stdout, fmt, args);
-    va_end(args);
-
-    fprintf(stdout, "\n");
-    fflush(stdout);
-#endif
 }
 
 enum rc __logger_error(enum rc rc, char const *ctx, char const *msg)

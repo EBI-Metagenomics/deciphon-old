@@ -1,5 +1,6 @@
 #include "thread.h"
 #include "deciphon/db/profile_reader.h"
+#include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/xmath.h"
 
@@ -92,7 +93,7 @@ enum rc thread_run(struct thread *t)
 
     while ((rc = profile_reader_next(reader, t->id, &prof)) == RC_OK)
     {
-        info("Thread(%d)> Profile: %s", t->id, prof->accession);
+        // info("Thread(%d)> Profile: %s", t->id, prof->accession);
         // if (atomic_load(&end_work)) break;
         //
         struct imm_dp const *null_dp = profile_null_dp(prof);
@@ -116,11 +117,11 @@ enum rc thread_run(struct thread *t)
 
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
-        info("Thread(%d)> LRT: %f", t->id, lrt);
+        // info("Thread(%d)> LRT: %f", t->id, lrt);
         if (!imm_lprob_is_finite(lrt) || lrt < t->lrt_threshold) continue;
-        printf("Thread(%d)> Profile: %s\n", t->id, prof->accession);
-        printf("Thread(%d)> LRT: %f\n", t->id, lrt);
-        fflush(stdout);
+        // printf("Thread(%d)> Profile: %s\n", t->id, prof->accession);
+        // printf("Thread(%d)> LRT: %f\n", t->id, lrt);
+        // fflush(stdout);
 
         strcpy(t->prod.profile_name, prof->accession);
 

@@ -1,146 +1,107 @@
 #include "deciphon/server/server.h"
 #include "deciphon/compiler.h"
+#include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
-#include "elapsed/elapsed.h"
-#include "job.h"
-// #include "protein_state.h"
 #include "deciphon/server/sched_api.h"
-#include "sched.h"
-// #include "table.h"
+#include "elapsed/elapsed.h"
 #include "work.h"
 #include <signal.h>
 
 static struct server
 {
+    struct server_cfg cfg;
+
     struct
     {
         volatile sig_atomic_t interrupt;
         struct sigaction action;
     } signal;
-    unsigned num_threads;
-    struct job job;
+
+    unsigned initialized;
     struct work work;
 } server = {0};
 
-static void signal_interrupt(int signum) { server.signal.interrupt = 1; }
-
-// enum rc server_open(char const *filepath, unsigned num_threads)
-// {
-//     server.signal.action.sa_handler = &signal_interrupt;
-//     sigemptyset(&server.signal.action.sa_mask);
-//     sigaction(SIGINT, &server.signal.action, NULL);
-//     server.num_threads = num_threads;
-//
-//     // if (sched_setup(filepath)) return error(DECIPHON_EFAIL, "failed to
-//     setup sched");
-//     // if (sched_open()) return error(DECIPHON_EFAIL, "failed to open
-//     sched"); server.work.lrt_threshold = 100.0f; return DECIPHON_OK;
-// }
-
-// enum rc server_close(void) { return sched_close() ? DECIPHON_EFAIL :
-// DECIPHON_OK; }
-
-// enum rc server_add_db(char const *filepath, int64_t *id)
-// {
-//     if (!xfile_is_readable(filepath))
-//         return error(RC_EIO, "file is not readable");
-//
-//     if (sched_add_db(filepath, id)) return error(DECIPHON_EFAIL, "failed to
-//     add db"); return DECIPHON_OK;
-// }
-
-// enum rc server_submit_job(struct job *job)
-// {
-//     struct sched_job j = {0};
-//     sched_job_init(&j, job->db_id, job->multi_hits, job->hmmer3_compat);
-//     if (sched_begin_job_submission(&j))
-//         return error(DECIPHON_EFAIL, "failed to begin job submission");
-//
-//     struct seq *seq = NULL;
-//     struct cco_iter iter = cco_queue_iter(&job->seqs);
-//     cco_iter_for_each_entry(seq, &iter, node)
-//     {
-//         sched_add_seq(&j, seq->name, seq->str.data);
-//     }
-//
-//     if (sched_end_job_submission(&j))
-//         return error(DECIPHON_EFAIL, "failed to end job submission");
-//
-//     job->id = j.id;
-//     return DECIPHON_OK;
-// }
-
-// enum rc server_job_state(int64_t job_id, enum sched_job_state *state)
-// {
-//     if (sched_job_state(job_id, state))
-//         return error(DECIPHON_EFAIL, "failed to get job state");
-//     return DECIPHON_OK;
-// }
-
-enum rc server_run(bool single_run, unsigned num_threads, char const *url)
+static void signal_handler(int signum)
 {
-    server.signal.action.sa_handler = &signal_interrupt;
-    sigemptyset(&server.signal.action.sa_mask);
-    sigaction(SIGINT, &server.signal.action, NULL);
-    server.num_threads = num_threads;
-    // server.work.lrt_threshold = 100.0f;
-    server.work.lrt_threshold = 10.0f;
+    if (signum == SIGINT)
+    {
+        info("Terminating it...");
+        server.signal.interrupt = 1;
+        return;
+    }
+    efail("unknown signum");
+}
 
-    enum rc rc = sched_api_init(url);
+enum rc server_init(char const *sched_api_url, struct server_cfg cfg)
+{
+    if (server.initialized++) return RC_OK;
+
+    server.cfg = cfg;
+
+    enum rc rc = sched_api_init(sched_api_url);
     if (rc) return rc;
 
-    info("Starting the server (%d threads)", num_threads);
-    while (!server.signal.interrupt)
+    if (cfg.single_run) server.signal.interrupt = 1;
+
+    server.signal.action.sa_handler = &signal_handler;
+    sigemptyset(&server.signal.action.sa_mask);
+    if (sigaction(SIGINT, &server.signal.action, NULL))
     {
-        if ((rc = work_next(&server.work)) == RC_END)
-        {
-            if (single_run) break;
-            elapsed_sleep(500);
-            continue;
-        }
-        if (rc == RC_END)
-        {
-            rc = RC_OK;
-            goto cleanup;
-        }
-        if (rc != RC_OK) continue;
-
-        info("Found a new job");
-        rc = work_prepare(&server.work, server.num_threads);
-        if (rc) goto cleanup;
-
-        info("Running job");
-        rc = work_run(&server.work);
-        if (rc) goto cleanup;
-        info("Finished the job");
+        rc = efail("failed to listen to SIGINT");
+        goto cleanup;
     }
 
-    if (rc == RC_END) rc = RC_OK;
+    return rc;
 
-    info("Goodbye!");
 cleanup:
     sched_api_cleanup();
     return rc;
 }
 
-void server_set_lrt_threshold(imm_float lrt)
+enum rc server_run(void)
 {
-    server.work.lrt_threshold = lrt;
+    enum rc rc = RC_OK;
+
+    info("Starting the server (%d threads)", server.cfg.num_threads);
+
+    do
+    {
+        rc = work_next(&server.work);
+        if (rc == RC_OK)
+        {
+            info("Found new job[%ld]", server.work.job.id);
+            rc = work_prepare(&server.work, server.cfg.num_threads);
+            if (rc) break;
+
+            info("Running job[%ld]", server.work.job.id);
+            rc = work_run(&server.work);
+            if (rc) break;
+
+            info("Finished job[%ld]", server.work.job.id);
+        }
+        else if (rc == RC_END)
+        {
+            rc = RC_OK;
+            elapsed_sleep(1000 / server.cfg.polling_rate);
+        }
+
+        if (rc && !server.signal.interrupt)
+        {
+            info("Backing off for 5s due to error");
+            elapsed_sleep(5 * 1000);
+        }
+
+    } while (!server.signal.interrupt);
+
+    info("Goodbye!");
+    return rc;
 }
 
-// enum rc server_get_sched_job(struct sched_job *job)
-// {
-//     if (sched_get_job(job)) return error(DECIPHON_EFAIL, "failed to get
-//     job"); return DECIPHON_OK;
-// }
+void server_cleanup(void)
+{
+    if (!server.initialized) return;
+    if (--server.initialized) return;
 
-// enum rc server_next_sched_prod(struct sched_job const *job,
-//                                struct sched_prod *prod)
-// {
-//     prod->job_id = job->id;
-//     enum rc rc = sched_prod_next(prod);
-//     if (rc == DECIPHON_OK) return DECIPHON_OK;
-//     if (rc != RC_NEXT) return error(DECIPHON_EFAIL, "failed to get prod");
-//     return RC_NEXT;
-// }
+    sched_api_cleanup();
+}

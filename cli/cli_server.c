@@ -84,8 +84,14 @@ enum rc cli_server(int argc, char **argv)
     // int64_t db_id = 0;
     // rc = server_add_db(dcpfile, &db_id);
     // if (rc) goto cleanup;
+    struct server_cfg cfg = SERVER_CFG_INIT;
+    cfg.num_threads = (unsigned)atoi(num_threads);
 
-    rc = server_run(false, (unsigned)atoi(num_threads), url_stem);
+    rc = server_init(url_stem, cfg);
+    if (rc) goto cleanup;
+
+    rc = server_run();
+    server_cleanup();
     if (rc) goto cleanup;
 
     // rc = server_close();
