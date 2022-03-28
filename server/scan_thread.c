@@ -1,11 +1,12 @@
-#include "thread.h"
+#include "scan_thread.h"
 #include "deciphon/db/profile_reader.h"
 #include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/xmath.h"
 
-void thread_init(struct thread *t, unsigned id, struct profile_reader *reader,
-                 bool multi_hits, bool hmmer3_compat, imm_float lrt_threshold,
+void thread_init(struct scan_thread *t, unsigned id,
+                 struct profile_reader *reader, bool multi_hits,
+                 bool hmmer3_compat, imm_float lrt_threshold,
                  prod_fwrite_match_func_t write_match_func)
 {
     t->id = id;
@@ -19,7 +20,7 @@ void thread_init(struct thread *t, unsigned id, struct profile_reader *reader,
     t->write_match_func = write_match_func;
 }
 
-void thread_setup_job(struct thread *t, enum imm_abc_typeid abc_typeid,
+void thread_setup_job(struct scan_thread *t, enum imm_abc_typeid abc_typeid,
                       enum profile_typeid profile_typeid, unsigned job_id)
 {
     char const *abc = imm_abc_typeid_name(abc_typeid);
@@ -27,7 +28,8 @@ void thread_setup_job(struct thread *t, enum imm_abc_typeid abc_typeid,
     prod_setup_job(&t->prod, abc, prof, job_id);
 }
 
-void thread_setup_seq(struct thread *t, struct imm_seq *seq, unsigned seq_id)
+void thread_setup_seq(struct scan_thread *t, struct imm_seq *seq,
+                      unsigned seq_id)
 {
     t->seq = seq;
     prod_setup_seq(&t->prod, seq_id);
@@ -71,14 +73,14 @@ static enum rc viterbi(struct imm_dp const *dp, struct imm_task *task,
     return RC_OK;
 }
 
-static enum rc write_product(struct thread *t, struct imm_path const *path)
+static enum rc write_product(struct scan_thread *t, struct imm_path const *path)
 {
     struct match *match = (struct match *)&t->match;
     prod_fwrite_match_func_t func = t->write_match_func;
     return prod_fwrite(&t->prod, t->seq, path, t->id, func, match);
 }
 
-enum rc thread_run(struct thread *t)
+enum rc thread_run(struct scan_thread *t)
 {
     enum rc rc = RC_OK;
 

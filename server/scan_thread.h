@@ -1,11 +1,11 @@
-#ifndef THREAD_H
-#define THREAD_H
+#ifndef SCAN_THREAD_H
+#define SCAN_THREAD_H
 
 #include "hypothesis.h"
 #include "prod.h"
 #include "protein_match.h"
 
-struct thread
+struct scan_thread
 {
     unsigned id;
 
@@ -31,12 +31,14 @@ struct thread
 enum imm_abc_typeid;
 enum profile_typeid;
 
-void thread_init(struct thread *, unsigned id, struct profile_reader *reader,
-                 bool multi_hits, bool hmmer3_compat, imm_float lrt_threshold,
+void thread_init(struct scan_thread *, unsigned id,
+                 struct profile_reader *reader, bool multi_hits,
+                 bool hmmer3_compat, imm_float lrt_threshold,
                  prod_fwrite_match_func_t write_match_func);
-void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
-                      unsigned job_id);
-void thread_setup_seq(struct thread *, struct imm_seq *seq, unsigned seq_id);
-enum rc thread_run(struct thread *);
+void thread_setup_job(struct scan_thread *, enum imm_abc_typeid,
+                      enum profile_typeid, unsigned job_id);
+void thread_setup_seq(struct scan_thread *, struct imm_seq *seq,
+                      unsigned seq_id);
+enum rc thread_run(struct scan_thread *);
 
 #endif

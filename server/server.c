@@ -5,7 +5,7 @@
 #include "deciphon/rc.h"
 #include "deciphon/server/sched_api.h"
 #include "elapsed/elapsed.h"
-#include "work.h"
+#include "job.h"
 #include <signal.h>
 
 static struct server
@@ -19,7 +19,7 @@ static struct server
     } signal;
 
     unsigned initialized;
-    struct work work;
+    struct job job;
 } server = {0};
 
 static void signal_handler(int signum)
@@ -62,23 +62,20 @@ cleanup:
 enum rc server_run(void)
 {
     enum rc rc = RC_OK;
+    job_init(&server.job, server.cfg.num_threads);
 
     info("Starting the server (%d threads)", server.cfg.num_threads);
 
     do
     {
-        rc = work_next(&server.work);
+        rc = job_next(&server.job);
         if (rc == RC_OK)
         {
-            info("Found new job[%ld]", server.work.job.id);
-            rc = work_prepare(&server.work, server.cfg.num_threads);
+            info("Running job[%ld]", server.job.sched_job.id);
+            rc = job_run(&server.job);
             if (rc) break;
 
-            info("Running job[%ld]", server.work.job.id);
-            rc = work_run(&server.work);
-            if (rc) break;
-
-            info("Finished job[%ld]", server.work.job.id);
+            info("Finished job[%ld]", server.job.sched_job.id);
         }
         else if (rc == RC_END)
         {

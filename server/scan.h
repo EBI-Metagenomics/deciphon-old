@@ -1,19 +1,17 @@
-#ifndef WORK_H
-#define WORK_H
+#ifndef SCAN_H
+#define SCAN_H
 
 #include "deciphon/db/db.h"
 #include "deciphon/server/sched.h"
-#include "imm/imm.h"
-#include "sched.h"
-#include "thread.h"
+#include "scan_thread.h"
 
-struct work
+struct scan
 {
-    struct sched_job job;
+    struct sched_scan sched;
     struct sched_seq seq;
 
     unsigned num_threads;
-    struct thread thread[NUM_THREADS];
+    struct scan_thread thread[NUM_THREADS];
 
     char db_filename[FILENAME_SIZE];
     struct protein_db_reader db_reader;
@@ -24,13 +22,13 @@ struct work
     struct imm_abc const *abc;
 
     prod_fwrite_match_func_t write_match_func;
-    imm_float lrt_threshold;
+    double lrt_threshold;
 };
 
 enum rc;
 
-enum rc work_next(struct work *work);
-enum rc work_prepare(struct work *work, unsigned num_threads);
-enum rc work_run(struct work *work);
+enum rc scan_init(struct scan *, unsigned num_threads, double lrt_threshold);
+enum rc scan_run(struct scan *);
+enum rc scan_cleanup(struct scan *);
 
 #endif

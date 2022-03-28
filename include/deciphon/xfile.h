@@ -18,7 +18,7 @@ struct xfile_tmp
 enum rc xfile_size(char const *filepath, int64_t *size);
 enum rc xfile_psize(FILE *fp, int64_t *size);
 enum rc xfile_dsize(int fd, int64_t *size);
-enum rc xfile_hash(FILE *restrict fp, uint64_t *hash);
+enum rc xfile_hash(FILE *restrict fp, int64_t *hash);
 
 int64_t xfile_tell(FILE *restrict fp);
 bool xfile_seek(FILE *restrict fp, int64_t offset, int whence);

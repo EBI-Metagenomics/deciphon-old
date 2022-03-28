@@ -271,15 +271,15 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_next_job_seq(struct sched_job *job, struct sched_seq *seq,
-                               struct sched_api_error *rerr)
+enum rc sched_api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
+                                struct sched_api_error *rerr)
 {
     spinlock_lock(&lock);
     sched_api_error_init(rerr);
 
-    char query[] = "/jobs/00000000000000000000/seqs/next/00000000000000000000";
+    char query[] = "/scans/00000000000000000000/seqs/next/00000000000000000000";
     npf_snprintf(query, sizeof(query), "/jobs/%" PRId64 "/seqs/next/%" PRId64,
-                 job->id, seq->id);
+                 scan_id, seq->id);
 
     long http_code = 0;
     body_reset(response_body);
@@ -312,10 +312,10 @@ cleanup:
     return rc;
 }
 
-static char const job_states[][5] = {[SCHED_JOB_PEND] = "pend",
-                                     [SCHED_JOB_RUN] = "run",
-                                     [SCHED_JOB_DONE] = "done",
-                                     [SCHED_JOB_FAIL] = "fail"};
+static char const job_states[][5] = {[SCHED_PEND] = "pend",
+                                     [SCHED_RUN] = "run",
+                                     [SCHED_DONE] = "done",
+                                     [SCHED_FAIL] = "fail"};
 
 enum rc set_job_state(int64_t job_id, enum sched_job_state state,
                       char const *state_error, long *http_code)

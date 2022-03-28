@@ -61,6 +61,7 @@ static bool xjson_to_bool(struct xjson const *x, unsigned idx)
     return x->data[x->tok[idx].start] == 't';
 }
 
+enum rc xjson_bind_int(struct xjson *x, unsigned idx, int *dst);
 enum rc xjson_bind_int32(struct xjson *x, unsigned idx, int32_t *dst);
 enum rc xjson_bind_int64(struct xjson *x, unsigned idx, int64_t *dst);
 

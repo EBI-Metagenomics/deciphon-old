@@ -21,6 +21,7 @@ static inline void sched_api_error_init(struct sched_api_error *err)
 
 enum sched_job_state;
 struct sched_db;
+struct sched_hmm;
 struct sched_job;
 struct sched_seq;
 
@@ -33,8 +34,8 @@ enum rc sched_api_get_db(struct sched_db *db, struct sched_api_error *);
 enum rc sched_api_post_testing_data(struct sched_api_error *);
 enum rc sched_api_next_pend_job(struct sched_job *job,
                                 struct sched_api_error *);
-enum rc sched_api_next_job_seq(struct sched_job *job, struct sched_seq *seq,
-                               struct sched_api_error *);
+enum rc sched_api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
+                                struct sched_api_error *);
 enum rc sched_api_set_job_state(int64_t job_id, enum sched_job_state state,
                                 char const *msg, struct sched_api_error *);
 enum rc sched_api_download_db(struct sched_db *db, FILE *fp);

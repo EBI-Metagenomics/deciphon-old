@@ -56,7 +56,7 @@ enum rc xfile_dsize(int fd, int64_t *size)
 
 static_assert(SAME_TYPE(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
 
-enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
+enum rc xfile_hash(FILE *restrict fp, int64_t *hash)
 {
     enum rc rc = RC_EFAIL;
     XXH3_state_t *state = XXH3_createState();
@@ -84,9 +84,14 @@ enum rc xfile_hash(FILE *restrict fp, uint64_t *hash)
         rc = eio("fread");
         goto cleanup;
     }
-
     rc = RC_OK;
-    *hash = XXH3_64bits_digest(state);
+
+    union
+    {
+        int64_t const i;
+        uint64_t const u;
+    } const h = {.u = XXH3_64bits_digest(state)};
+    *hash = h.i;
 
 cleanup:
     XXH3_freeState(state);

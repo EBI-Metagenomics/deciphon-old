@@ -1,14 +1,15 @@
 add_library(
   server
+  job.c
   job_state.c
   prod.c
   protein_match.c
+  scan.c
+  scan_thread.c
   sched.c
   sched_api.c
   server.c
-  thread.c
   url.c
-  work.c
   xcurl.c
   xcurl_debug.c
   xjson.c)

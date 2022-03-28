@@ -45,6 +45,16 @@ bool xjson_eqstr(struct xjson const *x, unsigned idx, char const *str)
     return type == JSMN_STRING && len == size && !strncmp(value, str, size);
 }
 
+enum rc xjson_bind_int(struct xjson *x, unsigned idx, int *dst)
+{
+    if (!xjson_is_number(x, idx)) return einval("expected number");
+    struct jsmntok const *tok = x->tok + idx;
+    unsigned size = tok_size(tok);
+    char const *value = tok_value(tok, x->data);
+    if (!to_intl(size, value, dst)) return eparse("parse number");
+    return RC_OK;
+}
+
 enum rc xjson_bind_int32(struct xjson *x, unsigned idx, int32_t *dst)
 {
     if (!xjson_is_number(x, idx)) return einval("expected number");

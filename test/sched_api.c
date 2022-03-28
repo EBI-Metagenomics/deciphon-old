@@ -39,13 +39,13 @@ void test_sched_api_post_db(void)
     strcpy(db.filename, "minifam.dcp");
     EQ(sched_api_add_db(&db, &error), RC_OK);
     EQ(db.id, 1);
-    EQ(db.xxh3_64, -3907098992699871052);
+    EQ(db.xxh3, -3907098992699871052);
     EQ(db.filename, "minifam.dcp");
     EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
 
     db.id = 1;
-    db.xxh3_64 = -3907098992699871052L;
+    db.xxh3 = -3907098992699871052L;
     strcpy(db.filename, "minifam.dcp");
     EQ(sched_api_add_db(&db, &error), RC_OK);
     EQ(error.rc, SCHED_EINVAL);
@@ -63,7 +63,7 @@ void test_sched_api_get_db(void)
     struct sched_api_error error = {0};
 
     db.id = 1;
-    db.xxh3_64 = 0;
+    db.xxh3 = 0;
     db.filename[0] = 0;
     EQ(sched_api_get_db(&db, &error), RC_OK);
     EQ(error.rc, SCHED_EINVAL);
@@ -72,17 +72,17 @@ void test_sched_api_get_db(void)
     strcpy(db.filename, "minifam.dcp");
     EQ(sched_api_add_db(&db, &error), RC_OK);
     EQ(db.id, 1);
-    EQ(db.xxh3_64, -3907098992699871052);
+    EQ(db.xxh3, -3907098992699871052);
     EQ(db.filename, "minifam.dcp");
     EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
 
     db.id = 1;
-    db.xxh3_64 = 0;
+    db.xxh3 = 0;
     db.filename[0] = 0;
     EQ(sched_api_get_db(&db, &error), RC_OK);
     EQ(db.id, 1);
-    EQ(db.xxh3_64, -3907098992699871052);
+    EQ(db.xxh3, -3907098992699871052);
     EQ(db.filename, "minifam.dcp");
     EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
@@ -125,10 +125,9 @@ void test_sched_api_next_pend_job(void)
     EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
     EQ(job.id, 1);
-    EQ(job.db_id, 1);
-    EQ(job.multi_hits, 1);
-    EQ(job.hmmer3_compat, 0);
+    EQ(job.type, 0);
     EQ(job.state, "pend");
+    EQ(job.progress, 0);
     EQ(job.error, "");
     COND(job.submission > 1646972352);
     EQ(job.exec_started, 0);
@@ -137,7 +136,7 @@ void test_sched_api_next_pend_job(void)
     sched_api_cleanup();
 }
 
-static struct sched_seq seq = {0};
+// static struct sched_seq seq = {0};
 
 void test_sched_api_next_job_seq(void)
 {
@@ -160,17 +159,16 @@ void test_sched_api_next_job_seq(void)
     EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
     EQ(job.id, 1);
-    EQ(job.db_id, 1);
-    EQ(job.multi_hits, 1);
-    EQ(job.hmmer3_compat, 0);
+    EQ(job.type, 0);
     EQ(job.state, "pend");
+    EQ(job.progress, 0);
     EQ(job.error, "");
     COND(job.submission > 1646972352);
     EQ(job.exec_started, 0);
     EQ(job.exec_ended, 0);
 
-    seq.id = 0;
-    EQ(sched_api_next_job_seq(&job, &seq, &error), RC_OK);
+    // seq.id = 0;
+    // EQ(sched_api_next_job_seq(&job, &seq, &error), RC_OK);
 
     sched_api_cleanup();
 }
