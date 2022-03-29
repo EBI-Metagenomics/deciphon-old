@@ -29,6 +29,8 @@ enum rc sched_api_init(char const *url_stem);
 void sched_api_cleanup(void);
 
 enum rc sched_api_wipe(void);
+enum rc sched_api_upload_hmm(char const *filepath, struct sched_hmm *,
+                             struct sched_api_error *);
 enum rc sched_api_add_db(struct sched_db *db, struct sched_api_error *);
 enum rc sched_api_get_db(struct sched_db *db, struct sched_api_error *);
 enum rc sched_api_post_testing_data(struct sched_api_error *);
