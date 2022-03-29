@@ -6,6 +6,7 @@ add_library(
   logger.c
   nanoprintf.c
   rc.c
+  str.c
   strlcpy.c
   to.c
   xfile.c)
