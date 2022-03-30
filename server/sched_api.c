@@ -229,6 +229,35 @@ cleanup:
     return rc;
 }
 
+enum rc sched_api_download_hmm(int64_t id, FILE *fp)
+{
+    spinlock_lock(&lock);
+
+    enum rc rc = RC_OK;
+
+    long http_code = 0;
+    rc =
+        xcurl_download(query("/hmms/%" PRId64 "/download", id), &http_code, fp);
+    if (rc) goto cleanup;
+
+    if (http_code == 200)
+    {
+        rc = RC_OK;
+    }
+    else if (http_code == 404)
+    {
+        rc = einval("hmm not found");
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&lock);
+    return rc;
+}
+
 enum rc sched_api_upload_db(char const *filepath, struct sched_db *db,
                             struct sched_api_error *rerr)
 {

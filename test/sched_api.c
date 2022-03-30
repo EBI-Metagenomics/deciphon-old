@@ -13,11 +13,15 @@ static struct sched_api_error error = {0};
 
 void test_sched_api_open_close(void);
 void test_sched_api_no_pend_job(void);
+
 void test_sched_api_upload_hmm(void);
 void test_sched_api_get_hmm(void);
+void test_sched_api_download_hmm(void);
+
 void test_sched_api_upload_db(void);
 void test_sched_api_get_db(void);
 void test_sched_api_download_db(void);
+
 // void test_sched_api_post_testing_data(void);
 // void test_sched_api_next_pend_job(void);
 // void test_sched_api_next_job_seq(void);
@@ -26,11 +30,15 @@ int main(void)
 {
     test_sched_api_open_close();
     test_sched_api_no_pend_job();
+
     test_sched_api_upload_hmm();
     test_sched_api_get_hmm();
+    test_sched_api_download_hmm();
+
     test_sched_api_upload_db();
     test_sched_api_get_db();
     test_sched_api_download_db();
+
     // test_sched_api_post_testing_data();
     // test_sched_api_next_pend_job();
     // test_sched_api_next_job_seq();
@@ -108,6 +116,32 @@ void test_sched_api_get_hmm(void)
     EQ(hmm.xxh3, -7843725841264658444);
     EQ(hmm.filename, "PF02545.hmm");
     EQ(hmm.job_id, 1);
+
+    sched_api_cleanup();
+}
+
+void test_sched_api_download_hmm(void)
+{
+    EQ(sched_api_init(SCHED_API_URL), RC_OK);
+    EQ(sched_api_wipe(), RC_OK);
+
+    EQ(sched_api_upload_hmm(ASSETS "/PF02545.hmm", &hmm, &error), RC_OK);
+    EQ(hmm.id, 1);
+    EQ(hmm.xxh3, -7843725841264658444);
+    EQ(hmm.filename, "PF02545.hmm");
+    EQ(hmm.job_id, 1);
+    EQ(error.rc, SCHED_OK);
+    EQ(error.msg, "");
+
+    FILE *fp = fopen(TMPDIR "/db.hmm", "wb");
+    EQ(sched_api_download_hmm(hmm.id, fp), RC_OK);
+    fclose(fp);
+
+    fp = fopen(TMPDIR "/db.hmm", "rb");
+    int64_t hash = 0;
+    EQ(xfile_hash(fp, &hash), RC_OK);
+    EQ(hmm.xxh3, hash);
+    fclose(fp);
 
     sched_api_cleanup();
 }
