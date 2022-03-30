@@ -1,5 +1,6 @@
 #include "deciphon/server/sched_api.h"
 #include "deciphon/buff.h"
+#include "deciphon/ljson.h"
 #include "deciphon/logger.h"
 #include "deciphon/model/profile_typeid.h"
 #include "deciphon/nanoprintf.h"
@@ -15,10 +16,12 @@
 
 static spinlock_t lock = SPINLOCK_INIT;
 static unsigned initialized = 0;
-static struct buff *request = 0;
 static struct buff *response = 0;
 static struct xjson xjson = {0};
 static char filename[FILENAME_SIZE] = {0};
+
+static char request[1024] = {0};
+static struct ljson_ctx ljson = {0};
 
 static enum rc parse_error(struct sched_api_error *rerr, struct xjson *x,
                            unsigned start);
@@ -34,11 +37,6 @@ static enum rc body_add(struct buff **body, size_t size, char const *data)
     (*body)->data[(*body)->size - 1] = '\0';
 
     return RC_OK;
-}
-
-static inline enum rc body_add_str(struct buff **body, char const *str)
-{
-    return body_add(body, strlen(str), str);
 }
 
 static inline size_t body_store(void *data, size_t size, void *arg)
@@ -64,16 +62,8 @@ enum rc sched_api_init(char const *url_stem)
     enum rc rc = xcurl_init(url_stem);
     if (rc) return rc;
 
-    if (!(request = buff_new(1024)))
-    {
-        xcurl_cleanup();
-        return enomem("buff_new failed");
-    }
-    body_reset(request);
-
     if (!(response = buff_new(1024)))
     {
-        buff_del(request);
         xcurl_cleanup();
         return enomem("buff_new failed");
     }
@@ -88,7 +78,6 @@ void sched_api_cleanup(void)
     if (--initialized) return;
 
     xcurl_cleanup();
-    buff_del(request);
     buff_del(response);
 }
 
@@ -161,14 +150,14 @@ enum rc sched_api_add_db(struct sched_db *db, struct sched_api_error *rerr)
 
     enum rc rc = RC_OK;
 
-    body_reset(request);
-    if ((rc = body_add_str(&request, "{\"filename\": \""))) goto cleanup;
-    if ((rc = body_add_str(&request, db->filename))) goto cleanup;
-    if ((rc = body_add_str(&request, "\"}"))) goto cleanup;
+    ljson_open(&ljson, sizeof request, request);
+    ljson_str(&ljson, "filename", db->filename);
+    ljson_close(&ljson);
+    if (ljson_error(&ljson)) return efail("failed to write json");
 
     long http_code = 0;
     body_reset(response);
-    rc = xcurl_post("/dbs/", &http_code, body_store, &response, request->data);
+    rc = xcurl_post("/dbs/", &http_code, body_store, &response, request);
     if (rc) goto cleanup;
 
     if (http_code == 201)
@@ -249,13 +238,9 @@ enum rc sched_api_post_testing_data(struct sched_api_error *rerr)
 
     enum rc rc = RC_OK;
 
-    body_reset(request);
-    if ((rc = body_add_str(&request, "{}"))) goto cleanup;
-
     long http_code = 0;
     body_reset(response);
-    rc = xcurl_post("/testing/data/", &http_code, body_store, &response,
-                    request->data);
+    rc = xcurl_post("/testing/data/", &http_code, body_store, &response, "{}");
     if (rc) goto cleanup;
 
     if (http_code == 201)
@@ -297,10 +282,10 @@ enum rc sched_api_next_pend_job(struct sched_job *job,
     rc = xcurl_get("/jobs/next_pend", &http_code, body_store, &response);
     if (rc) goto cleanup;
 
+    if ((rc = parse_json())) goto cleanup;
+
     if (http_code == 200)
     {
-        if ((rc = parse_json())) goto cleanup;
-
         if (!xjson_is_array(&xjson, 0))
             rc = einval("expected array");
         else if (xjson_is_array_empty(&xjson, 0))
@@ -310,7 +295,6 @@ enum rc sched_api_next_pend_job(struct sched_job *job,
     }
     else if (http_code == 409 || http_code == 500)
     {
-        if ((rc = parse_json())) goto cleanup;
         rc = parse_error(rerr, &xjson, 1);
     }
     else
@@ -370,28 +354,18 @@ static char const job_states[][5] = {[SCHED_PEND] = "pend",
 enum rc set_job_state(int64_t job_id, enum sched_job_state state,
                       char const *state_error, long *http_code)
 {
-    enum rc rc = RC_OK;
-
     char buf[] = "/jobs/00000000000000000000";
 
-    body_reset(request);
-    if ((rc = body_add_str(&request, "{\"job_id\": "))) return rc;
-    npf_snprintf(buf, sizeof(buf), "%" PRId64, job_id);
-
-    if ((rc = body_add_str(&request, buf))) return rc;
-    if ((rc = body_add_str(&request, ", \"state\": \""))) return rc;
-
-    if ((rc = body_add_str(&request, job_states[state]))) return rc;
-
-    if ((rc = body_add_str(&request, "\", \"error\": \""))) return rc;
-
-    if ((rc = body_add_str(&request, state_error))) return rc;
-
-    if ((rc = body_add_str(&request, "\"}"))) return rc;
+    ljson_open(&ljson, sizeof request, request);
+    ljson_int(&ljson, "job_id", job_id);
+    ljson_str(&ljson, "state", job_states[state]);
+    ljson_str(&ljson, "error", state_error);
+    ljson_close(&ljson);
+    if (ljson_error(&ljson)) return efail("failed to write json");
 
     npf_snprintf(buf, sizeof(buf), "/jobs/%" PRId64, job_id);
     body_reset(response);
-    return xcurl_patch(buf, http_code, body_store, &response, request->data);
+    return xcurl_patch(buf, http_code, body_store, &response, request);
 }
 
 enum rc sched_api_set_job_state(int64_t job_id, enum sched_job_state state,

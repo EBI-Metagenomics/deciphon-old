@@ -3,6 +3,7 @@ add_library(
   bitops.c
   buff.c
   info.c
+  ljson.c
   logger.c
   nanoprintf.c
   rc.c
