@@ -1,4 +1,4 @@
-#include "deciphon/server/sched_api.h"
+#include "deciphon/server/api.h"
 #include "deciphon/buff.h"
 #include "deciphon/ljson.h"
 #include "deciphon/logger.h"
@@ -25,7 +25,13 @@ static char _query[128] = {0};
 static char request[1024] = {0};
 static struct ljson_ctx ljson = {0};
 
-static enum rc parse_error(struct sched_api_error *rerr, struct xjson *x,
+static inline void error_init(struct api_error *err)
+{
+    err->rc = SCHED_OK;
+    err->msg[0] = 0;
+}
+
+static enum rc parse_error(struct api_error *rerr, struct xjson *x,
                            unsigned start);
 
 static enum rc body_add(struct buff **body, size_t size, char const *data)
@@ -67,7 +73,7 @@ static char const *query(char const *fmt, ...)
     return _query;
 }
 
-enum rc sched_api_init(char const *url_stem)
+enum rc api_init(char const *url_stem)
 {
     if (initialized++) return RC_OK;
 
@@ -84,7 +90,7 @@ enum rc sched_api_init(char const *url_stem)
     return RC_OK;
 }
 
-void sched_api_cleanup(void)
+void api_cleanup(void)
 {
     if (!initialized) return;
     if (--initialized) return;
@@ -93,7 +99,7 @@ void sched_api_cleanup(void)
     buff_del(response);
 }
 
-enum rc sched_api_wipe(void)
+enum rc api_wipe(void)
 {
     spinlock_lock(&lock);
 
@@ -117,12 +123,12 @@ static inline enum rc upload(char const *query, long *http_code,
                         filepath);
 }
 
-enum rc sched_api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
-                             struct sched_api_error *rerr)
+enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
+                       struct api_error *rerr)
 {
     spinlock_lock(&lock);
 
-    sched_api_error_init(rerr);
+    error_init(rerr);
     sched_hmm_init(hmm);
 
     struct xcurl_mime mime = {0};
@@ -165,13 +171,12 @@ static inline enum rc patch(char const *query, long *http_code)
     return xcurl_patch(query, http_code, body_store, &response, request);
 }
 
-enum rc sched_api_get_hmm(int64_t id, struct sched_hmm *hmm,
-                          struct sched_api_error *rerr)
+enum rc api_get_hmm(int64_t id, struct sched_hmm *hmm, struct api_error *rerr)
 {
     spinlock_lock(&lock);
 
     sched_hmm_init(hmm);
-    sched_api_error_init(rerr);
+    error_init(rerr);
 
     long http_code = 0;
     enum rc rc = get(query("/hmms/%" PRId64, id), &http_code);
@@ -197,13 +202,13 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
-                                    struct sched_api_error *rerr)
+enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
+                              struct api_error *rerr)
 {
     spinlock_lock(&lock);
 
     sched_hmm_init(hmm);
-    sched_api_error_init(rerr);
+    error_init(rerr);
 
     long http_code = 0;
     enum rc rc = get(query("/jobs/%" PRId64 "/hmm", job_id), &http_code);
@@ -229,7 +234,7 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_download_hmm(int64_t id, FILE *fp)
+enum rc api_download_hmm(int64_t id, FILE *fp)
 {
     spinlock_lock(&lock);
 
@@ -258,12 +263,12 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_upload_db(char const *filepath, struct sched_db *db,
-                            struct sched_api_error *rerr)
+enum rc api_upload_db(char const *filepath, struct sched_db *db,
+                      struct api_error *rerr)
 {
     spinlock_lock(&lock);
 
-    sched_api_error_init(rerr);
+    error_init(rerr);
     sched_db_init(db);
 
     struct xcurl_mime mime = {0};
@@ -308,13 +313,12 @@ static enum rc parse_db_list(struct sched_db *db, struct xjson *x)
 }
 #endif
 
-enum rc sched_api_get_db(int64_t id, struct sched_db *db,
-                         struct sched_api_error *rerr)
+enum rc api_get_db(int64_t id, struct sched_db *db, struct api_error *rerr)
 {
     spinlock_lock(&lock);
 
     sched_db_init(db);
-    sched_api_error_init(rerr);
+    error_init(rerr);
 
     long http_code = 0;
     enum rc rc = get(query("/dbs/%" PRId64, id), &http_code);
@@ -340,10 +344,10 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_post_testing_data(struct sched_api_error *rerr)
+enum rc api_post_testing_data(struct api_error *rerr)
 {
     spinlock_lock(&lock);
-    sched_api_error_init(rerr);
+    error_init(rerr);
 
     enum rc rc = RC_OK;
 
@@ -376,13 +380,12 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_next_pend_job(struct sched_job *job,
-                                struct sched_api_error *rerr)
+enum rc api_next_pend_job(struct sched_job *job, struct api_error *rerr)
 {
     spinlock_lock(&lock);
 
     sched_job_init(job);
-    sched_api_error_init(rerr);
+    error_init(rerr);
 
     enum rc rc = RC_OK;
 
@@ -415,11 +418,11 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
-                                struct sched_api_error *rerr)
+enum rc api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
+                          struct api_error *rerr)
 {
     spinlock_lock(&lock);
-    sched_api_error_init(rerr);
+    error_init(rerr);
 
     long http_code = 0;
     enum rc rc =
@@ -469,12 +472,12 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
     return patch(query("/jobs/%" PRId64, job_id), http_code);
 }
 
-enum rc sched_api_set_job_state(int64_t job_id, enum sched_job_state state,
-                                char const *msg, struct sched_api_error *rerr)
+enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
+                          char const *msg, struct api_error *rerr)
 {
     spinlock_lock(&lock);
 
-    sched_api_error_init(rerr);
+    error_init(rerr);
 
     long http_code = 0;
     enum rc rc = set_job_state(job_id, state, msg, &http_code);
@@ -496,7 +499,7 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_download_db(int64_t id, FILE *fp)
+enum rc api_download_db(int64_t id, FILE *fp)
 {
     spinlock_lock(&lock);
 
@@ -524,12 +527,11 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_upload_prods_file(char const *filepath,
-                                    struct sched_api_error *rerr)
+enum rc api_upload_prods_file(char const *filepath, struct api_error *rerr)
 {
     spinlock_lock(&lock);
 
-    sched_api_error_init(rerr);
+    error_init(rerr);
 
     struct xcurl_mime mime = {0};
     xcurl_mime_set(&mime, "prods_file", "prods_file.tsv",
@@ -560,7 +562,7 @@ cleanup:
     return rc;
 }
 
-static enum rc parse_error(struct sched_api_error *rerr, struct xjson *x,
+static enum rc parse_error(struct api_error *rerr, struct xjson *x,
                            unsigned start)
 {
     enum rc rc = RC_OK;

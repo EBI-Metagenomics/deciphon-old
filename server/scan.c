@@ -3,7 +3,7 @@
 #include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
-#include "deciphon/server/sched_api.h"
+#include "deciphon/server/api.h"
 #include "deciphon/version.h"
 #include "deciphon/xfile.h"
 #include "deciphon/xmath.h"
@@ -33,7 +33,7 @@ static enum rc ensure_database_integrity(char const *filename, int64_t xxh3)
 static enum rc download_database(struct sched_db *db)
 {
     FILE *fp = fopen(db->filename, "wb");
-    enum rc rc = sched_api_download_db(db, fp);
+    enum rc rc = api_download_db(db, fp);
     if (rc)
     {
         fclose(fp);
@@ -59,8 +59,8 @@ static enum rc ensure_database(struct sched_db *db)
 
 static inline void fail_job(int64_t job_id, char const *msg)
 {
-    struct sched_api_error rerr = {0};
-    sched_api_set_job_state(job_id, SCHED_FAIL, msg, &rerr);
+    struct api_error rerr = {0};
+    api_set_job_state(job_id, SCHED_FAIL, msg, &rerr);
 }
 
 static enum rc prepare_database(struct scan *scan)
@@ -68,8 +68,8 @@ static enum rc prepare_database(struct scan *scan)
     struct sched_db db = {0};
     db.id = scan->sched.db_id;
 
-    struct sched_api_error rerr = {0};
-    enum rc rc = sched_api_get_db(scan->sched.db_id, &db, &rerr);
+    struct api_error rerr = {0};
+    enum rc rc = api_get_db(scan->sched.db_id, &db, &rerr);
     if (rc || rerr.rc)
     {
         if (rerr.rc) rc = erest(rerr.msg);
@@ -176,9 +176,9 @@ static enum rc work_finishup(int64_t job_id)
 
     char const *filepath = prod_final_path();
 
-    struct sched_api_error rerr = {0};
+    struct api_error rerr = {0};
 
-    if ((rc = sched_api_upload_prods_file(filepath, &rerr)))
+    if ((rc = api_upload_prods_file(filepath, &rerr)))
     {
         fail_job(job_id, "failed to submit prods_file");
         goto cleanup;
@@ -190,7 +190,7 @@ static enum rc work_finishup(int64_t job_id)
         goto cleanup;
     }
 
-    rc = sched_api_set_job_state(job_id, SCHED_DONE, "", &rerr);
+    rc = api_set_job_state(job_id, SCHED_DONE, "", &rerr);
     if (rc) return rc;
 
     return rerr.rc ? erest(rerr.msg) : RC_OK;
@@ -204,8 +204,8 @@ enum rc scan_run(struct scan *scan)
     enum rc rc = RC_OK;
     int64_t job_id = scan->sched.job_id;
 
-    struct sched_api_error rerr = {0};
-    while (!(rc = sched_api_scan_next_seq(scan->sched.id, &scan->seq, &rerr)))
+    struct api_error rerr = {0};
+    while (!(rc = api_scan_next_seq(scan->sched.id, &scan->seq, &rerr)))
     {
         if (rerr.rc)
         {

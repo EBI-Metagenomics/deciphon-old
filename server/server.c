@@ -3,7 +3,7 @@
 #include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
-#include "deciphon/server/sched_api.h"
+#include "deciphon/server/api.h"
 #include "elapsed/elapsed.h"
 #include "job.h"
 #include <signal.h>
@@ -39,7 +39,7 @@ enum rc server_init(char const *sched_api_url, struct server_cfg cfg)
 
     server.cfg = cfg;
 
-    enum rc rc = sched_api_init(sched_api_url);
+    enum rc rc = api_init(sched_api_url);
     if (rc) return rc;
 
     if (cfg.single_run) server.signal.interrupt = 1;
@@ -55,7 +55,7 @@ enum rc server_init(char const *sched_api_url, struct server_cfg cfg)
     return rc;
 
 cleanup:
-    sched_api_cleanup();
+    api_cleanup();
     return rc;
 }
 
@@ -100,5 +100,5 @@ void server_cleanup(void)
     if (!server.initialized) return;
     if (--server.initialized) return;
 
-    sched_api_cleanup();
+    api_cleanup();
 }

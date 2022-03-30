@@ -1,0 +1,47 @@
+#ifndef DECIPHON_SERVER_API_H
+#define DECIPHON_SERVER_API_H
+
+#include "deciphon/limits.h"
+#include "deciphon/rc.h"
+#include "deciphon/server/sched.h"
+#include <stdint.h>
+#include <stdio.h>
+
+struct api_error
+{
+    enum sched_rc rc;
+    char msg[ERROR_SIZE];
+};
+
+enum sched_job_state;
+struct sched_db;
+struct sched_hmm;
+struct sched_job;
+struct sched_seq;
+
+enum rc api_init(char const *url_stem);
+void api_cleanup(void);
+
+enum rc api_wipe(void);
+
+enum rc api_upload_hmm(char const *filepath, struct sched_hmm *,
+                       struct api_error *);
+enum rc api_get_hmm(int64_t id, struct sched_hmm *, struct api_error *);
+enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *,
+                              struct api_error *);
+enum rc api_download_hmm(int64_t id, FILE *fp);
+
+enum rc api_upload_db(char const *filepath, struct sched_db *,
+                      struct api_error *);
+enum rc api_get_db(int64_t id, struct sched_db *, struct api_error *);
+
+enum rc api_post_testing_data(struct api_error *);
+enum rc api_next_pend_job(struct sched_job *job, struct api_error *);
+enum rc api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
+                          struct api_error *);
+enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
+                          char const *msg, struct api_error *);
+enum rc api_download_db(int64_t id, FILE *fp);
+enum rc api_upload_prods_file(char const *filepath, struct api_error *);
+
+#endif

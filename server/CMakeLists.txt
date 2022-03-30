@@ -1,5 +1,6 @@
 add_library(
   server
+  api.c
   job.c
   job_state.c
   prod.c
@@ -7,7 +8,6 @@ add_library(
   scan.c
   scan_thread.c
   sched.c
-  sched_api.c
   server.c
   url.c
   xcurl.c
