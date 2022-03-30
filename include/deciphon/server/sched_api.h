@@ -40,7 +40,6 @@ enum rc sched_api_download_hmm(int64_t id, FILE *fp);
 
 enum rc sched_api_upload_db(char const *filepath, struct sched_db *,
                             struct sched_api_error *);
-enum rc sched_api_add_db(struct sched_db *db, struct sched_api_error *);
 enum rc sched_api_get_db(int64_t id, struct sched_db *,
                          struct sched_api_error *);
 

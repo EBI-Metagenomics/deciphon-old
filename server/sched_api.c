@@ -295,45 +295,6 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_add_db(struct sched_db *db, struct sched_api_error *rerr)
-{
-    spinlock_lock(&lock);
-
-    sched_api_error_init(rerr);
-    sched_db_init(db);
-
-    enum rc rc = RC_OK;
-
-    ljson_open(&ljson, sizeof request, request);
-    ljson_str(&ljson, "filename", db->filename);
-    ljson_close(&ljson);
-    if (ljson_error(&ljson)) return efail("failed to write json");
-
-    long http_code = 0;
-    body_reset(response);
-    rc = xcurl_post("/dbs/", &http_code, body_store, &response, request);
-    if (rc) goto cleanup;
-
-    if (http_code == 201)
-    {
-        if ((rc = parse_json())) goto cleanup;
-        rc = sched_db_parse(db, &xjson, 1);
-    }
-    else if (http_code == 409 || http_code == 500)
-    {
-        if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &xjson, 1);
-    }
-    else
-    {
-        rc = efail("unexpected http code");
-    }
-
-cleanup:
-    spinlock_unlock(&lock);
-    return rc;
-}
-
 #if 0
 static enum rc parse_db_list(struct sched_db *db, struct xjson *x)
 {
