@@ -141,6 +141,82 @@ cleanup:
     return rc;
 }
 
+static inline enum rc get(char const *query, long *http_code)
+{
+    body_reset(response);
+    return xcurl_get(query, http_code, body_store, &response);
+}
+
+enum rc sched_api_get_hmm(int64_t id, struct sched_hmm *hmm,
+                          struct sched_api_error *rerr)
+{
+    spinlock_lock(&lock);
+
+    sched_hmm_init(hmm);
+    sched_api_error_init(rerr);
+
+    char query[] = "/hmms/00000000000000000000";
+    npf_snprintf(query, sizeof(query), "/hmms/%" PRId64, id);
+
+    long http_code = 0;
+    enum rc rc = get(query, &http_code);
+    if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http_code == 200)
+    {
+        rc = sched_hmm_parse(hmm, &xjson, 1);
+    }
+    else if (http_code == 400 || http_code == 409)
+    {
+        rc = parse_error(rerr, &xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&lock);
+    return rc;
+}
+
+enum rc sched_api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
+                                    struct sched_api_error *rerr)
+{
+    spinlock_lock(&lock);
+
+    sched_hmm_init(hmm);
+    sched_api_error_init(rerr);
+
+    char query[] = "/jobs/00000000000000000000/hmm";
+    npf_snprintf(query, sizeof(query), "/jobs/%" PRId64 "/hmm", job_id);
+
+    long http_code = 0;
+    enum rc rc = get(query, &http_code);
+    if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http_code == 200)
+    {
+        rc = sched_hmm_parse(hmm, &xjson, 1);
+    }
+    else if (http_code == 400 || http_code == 409)
+    {
+        rc = parse_error(rerr, &xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&lock);
+    return rc;
+}
+
 enum rc sched_api_add_db(struct sched_db *db, struct sched_api_error *rerr)
 {
     spinlock_lock(&lock);
@@ -189,12 +265,6 @@ static enum rc parse_db_list(struct sched_db *db, struct xjson *x)
         return RC_OK;
     }
     return sched_db_parse(db, x, 2);
-}
-
-static inline enum rc get(char const *query, long *http_code)
-{
-    body_reset(response);
-    return xcurl_get(query, http_code, body_store, &response);
 }
 
 enum rc sched_api_get_db(struct sched_db *db, struct sched_api_error *rerr)

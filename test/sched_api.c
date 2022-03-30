@@ -1,5 +1,6 @@
 #include "deciphon/server/sched_api.h"
 #include "deciphon/db/db.h"
+#include "deciphon/server/sched.h"
 #include "deciphon/server/server.h"
 #include "hope/hope.h"
 #include "imm/imm.h"
@@ -12,6 +13,7 @@ static struct sched_api_error error = {0};
 void test_sched_api_open_close(void);
 void test_sched_api_no_pend_job(void);
 void test_sched_api_upload_hmm(void);
+void test_sched_api_get_hmm(void);
 void test_sched_api_upload_db(void);
 // void test_sched_api_get_db(void);
 // void test_sched_api_post_testing_data(void);
@@ -23,6 +25,7 @@ int main(void)
     test_sched_api_open_close();
     test_sched_api_no_pend_job();
     test_sched_api_upload_hmm();
+    test_sched_api_get_hmm();
     test_sched_api_upload_db();
     // test_sched_api_get_db();
     // test_sched_api_post_testing_data();
@@ -67,6 +70,41 @@ void test_sched_api_upload_hmm(void)
     EQ(error.rc, SCHED_OK);
     EQ(error.msg, "");
     EQ(job.id, 1);
+    EQ(sched_job_type(&job), SCHED_HMM);
+
+    sched_api_cleanup();
+}
+
+void test_sched_api_get_hmm(void)
+{
+    EQ(sched_api_init(SCHED_API_URL), RC_OK);
+    EQ(sched_api_wipe(), RC_OK);
+
+    EQ(sched_api_upload_hmm(ASSETS "/PF02545.hmm", &hmm, &error), RC_OK);
+    EQ(hmm.id, 1);
+    EQ(hmm.xxh3, -7843725841264658444);
+    EQ(hmm.filename, "PF02545.hmm");
+    EQ(hmm.job_id, 1);
+    EQ(error.rc, SCHED_OK);
+    EQ(error.msg, "");
+
+    EQ(sched_api_next_pend_job(&job, &error), RC_OK);
+    EQ(error.rc, SCHED_OK);
+    EQ(error.msg, "");
+    EQ(job.id, 1);
+    EQ(sched_job_type(&job), SCHED_HMM);
+
+    EQ(sched_api_get_hmm(hmm.id, &hmm, &error), RC_OK);
+    EQ(hmm.id, 1);
+    EQ(hmm.xxh3, -7843725841264658444);
+    EQ(hmm.filename, "PF02545.hmm");
+    EQ(hmm.job_id, 1);
+
+    EQ(sched_api_get_hmm_by_job_id(job.id, &hmm, &error), RC_OK);
+    EQ(hmm.id, 1);
+    EQ(hmm.xxh3, -7843725841264658444);
+    EQ(hmm.filename, "PF02545.hmm");
+    EQ(hmm.job_id, 1);
 
     sched_api_cleanup();
 }

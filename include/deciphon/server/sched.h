@@ -68,6 +68,11 @@ struct sched_job
     int64_t exec_ended;
 };
 
+static inline enum sched_job_type sched_job_type(struct sched_job const *job)
+{
+    return (enum sched_job_type)job->type;
+}
+
 enum sched_rc
 {
     SCHED_OK,
