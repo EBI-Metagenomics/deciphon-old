@@ -1,4 +1,4 @@
-#include "deciphon/server/xcurl.h"
+#include "deciphon/sched/xcurl.h"
 #include "curl_error.h"
 #include "deciphon/limits.h"
 #include "deciphon/logger.h"

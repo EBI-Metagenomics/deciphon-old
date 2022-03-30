@@ -2,7 +2,7 @@
 #define SCAN_H
 
 #include "deciphon/db/db.h"
-#include "deciphon/server/sched.h"
+#include "deciphon/sched/sched.h"
 #include "scan_thread.h"
 
 struct scan

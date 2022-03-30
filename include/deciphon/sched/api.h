@@ -3,7 +3,7 @@
 
 #include "deciphon/limits.h"
 #include "deciphon/rc.h"
-#include "deciphon/server/sched.h"
+#include "deciphon/sched/sched.h"
 #include <stdint.h>
 #include <stdio.h>
 

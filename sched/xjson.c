@@ -1,6 +1,7 @@
 #include "xjson.h"
 #include "deciphon/to.h"
 #include "jsmn_error.h"
+#include <assert.h>
 #include <string.h>
 
 static inline unsigned tok_size(jsmntok_t const *tok)
@@ -43,6 +44,43 @@ bool xjson_eqstr(struct xjson const *x, unsigned idx, char const *str)
     char const *value = tok_value(tok, x->data);
 
     return type == JSMN_STRING && len == size && !strncmp(value, str, size);
+}
+
+bool xjson_is_array(struct xjson const *x, unsigned idx)
+{
+    struct jsmntok const *tok = x->tok + idx;
+    return tok->type == JSMN_ARRAY;
+}
+
+bool xjson_is_array_empty(struct xjson const *x, unsigned idx)
+{
+    assert(xjson_is_array(x, idx));
+    return x->ntoks == 1;
+}
+
+bool xjson_is_number(struct xjson const *x, unsigned idx)
+{
+    struct jsmntok const *tok = x->tok + idx;
+    char c = x->data[x->tok[idx].start];
+    return tok->type == JSMN_PRIMITIVE && c != 'n' && c != 't' && c != 'f';
+}
+
+bool xjson_is_bool(struct xjson const *x, unsigned idx)
+{
+    struct jsmntok const *tok = x->tok + idx;
+    char c = x->data[tok->start];
+    return tok->type == JSMN_PRIMITIVE && (c == 't' || c == 'f');
+}
+
+bool xjson_is_string(struct xjson const *x, unsigned idx)
+{
+    struct jsmntok const *tok = x->tok + idx;
+    return tok->type == JSMN_STRING;
+}
+
+bool xjson_to_bool(struct xjson const *x, unsigned idx)
+{
+    return x->data[x->tok[idx].start] == 't';
 }
 
 enum rc xjson_bind_int(struct xjson *x, unsigned idx, int *dst)

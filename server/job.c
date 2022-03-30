@@ -3,7 +3,7 @@
 #include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
-#include "deciphon/server/api.h"
+#include "deciphon/sched/api.h"
 #include "deciphon/version.h"
 #include "deciphon/xfile.h"
 #include "deciphon/xmath.h"
@@ -31,10 +31,16 @@ enum rc job_next(struct job *job)
     return rerr.rc ? erest(rerr.msg) : RC_OK;
 }
 
+#if 0
 static inline void fail_job(int64_t job_id, char const *msg)
 {
     struct api_error rerr = {0};
     api_set_job_state(job_id, SCHED_FAIL, msg, &rerr);
 }
+#endif
 
-enum rc job_run(struct job *job) {}
+enum rc job_run(struct job *job)
+{
+    (void)job;
+    return RC_OK;
+}

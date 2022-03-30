@@ -3,7 +3,7 @@
 #include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
-#include "deciphon/server/api.h"
+#include "deciphon/sched/api.h"
 #include "elapsed/elapsed.h"
 #include "job.h"
 #include <signal.h>

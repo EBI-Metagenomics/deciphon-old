@@ -3,7 +3,7 @@
 #include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
-#include "deciphon/server/api.h"
+#include "deciphon/sched/api.h"
 #include "deciphon/version.h"
 #include "deciphon/xfile.h"
 #include "deciphon/xmath.h"
@@ -33,7 +33,7 @@ static enum rc ensure_database_integrity(char const *filename, int64_t xxh3)
 static enum rc download_database(struct sched_db *db)
 {
     FILE *fp = fopen(db->filename, "wb");
-    enum rc rc = api_download_db(db, fp);
+    enum rc rc = api_download_db(db->id, fp);
     if (rc)
     {
         fclose(fp);
@@ -240,4 +240,8 @@ cleanup:
     return rc;
 }
 
-enum rc scan_cleanup(struct scan *) {}
+enum rc scan_cleanup(struct scan *scan)
+{
+    (void)scan;
+    return RC_OK;
+}

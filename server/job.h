@@ -1,7 +1,7 @@
 #ifndef JOB_H
 #define JOB_H
 
-#include "deciphon/server/sched.h"
+#include "deciphon/sched/sched.h"
 
 struct job
 {

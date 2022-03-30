@@ -3,7 +3,7 @@
 
 #include "deciphon/limits.h"
 #include "deciphon/rc.h"
-#include "deciphon/server/url.h"
+#include "deciphon/sched/url.h"
 #include <stdio.h>
 
 struct xcurl_mime

@@ -102,6 +102,7 @@ void xcurl_debug_setup(CURL *curl)
     curl_easy_setopt(curl, CURLOPT_DEBUGDATA, 0);
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 #else
+    (void)curl;
     (void)trace;
     (void)dump;
 #endif

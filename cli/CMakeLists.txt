@@ -2,6 +2,7 @@ add_library(cli cli.c cli_press.c cli_server.c progress_file.c)
 
 target_link_libraries(cli PUBLIC ATHR::athr)
 target_link_libraries(cli PUBLIC server)
+target_link_libraries(cli PUBLIC sched)
 target_link_libraries(cli PUBLIC core)
 target_link_libraries(cli PUBLIC model)
 target_link_libraries(cli PUBLIC db)

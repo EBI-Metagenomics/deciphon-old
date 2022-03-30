@@ -168,6 +168,8 @@ enum rc profile_reader_next(struct profile_reader *reader, unsigned partition,
 
 bool profile_reader_end(struct profile_reader *reader, unsigned partition)
 {
+    (void)reader;
+    (void)partition;
     return true;
 }
 
