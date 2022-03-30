@@ -14,19 +14,15 @@ add_compile_definitions(ASSETS=\"${ASSETS}\")
 add_compile_definitions(TMPDIR=\"${TMPDIR}\")
 add_compile_definitions(SCHED_API_URL=\"${SCHED_API_URL}\")
 
-set(URL "https://deciphon.s3.eu-west-2.amazonaws.com")
+set(URL "https://f002.backblazeb2.com/file/deciphon")
 
 file(DOWNLOAD ${URL}/PF02545.hmm.7z ${ASSETS}/PF02545.hmm.7z
      EXPECTED_HASH SHA1=2b27ec36086e5c424b719437a924728801bb8277)
 file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.hmm.7z DESTINATION ${ASSETS})
-#
-# file( DOWNLOAD ${URL}/Pfam-A.5.hmm.7z ${ASSETS}/Pfam-A.5.hmm.7z EXPECTED_HASH
-# SHA1=1dcdd145730f2a9e2314132972775ec284fb02e1 ) file(ARCHIVE_EXTRACT INPUT
-# ${ASSETS}/Pfam-A.5.hmm.7z DESTINATION ${ASSETS})
-#
-# file( DOWNLOAD ${URL}/pfam24.dcp.7z ${ASSETS}/pfam24.dcp.7z EXPECTED_HASH
-# SHA1=a4c23440c1f69fb7d0d64b8f29781e06969e83bd ) file(ARCHIVE_EXTRACT INPUT
-# ${ASSETS}/pfam24.dcp.7z DESTINATION ${ASSETS})
+
+file(DOWNLOAD ${URL}/PF02545.dcp.7z ${ASSETS}/PF02545.dcp.7z
+     EXPECTED_HASH SHA1=cce596ce9695b9d1e862e300b86df840adccbc14)
+file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.dcp.7z DESTINATION ${ASSETS})
 
 function(model_add_test name libs)
   add_executable(test_${name} ${name}.c)

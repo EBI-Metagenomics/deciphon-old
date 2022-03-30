@@ -20,6 +20,8 @@ static struct buff *response = 0;
 static struct xjson xjson = {0};
 static char filename[FILENAME_SIZE] = {0};
 
+static char _query[128] = {0};
+
 static char request[1024] = {0};
 static struct ljson_ctx ljson = {0};
 
@@ -53,6 +55,16 @@ static inline void body_reset(struct buff *body)
 static inline enum rc parse_json(void)
 {
     return xjson_parse(&xjson, response->data, response->size);
+}
+
+static char const *query(char const *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    npf_vsnprintf(_query, sizeof _query, fmt, args);
+    va_end(args);
+
+    return _query;
 }
 
 enum rc sched_api_init(char const *url_stem)
@@ -147,6 +159,12 @@ static inline enum rc get(char const *query, long *http_code)
     return xcurl_get(query, http_code, body_store, &response);
 }
 
+static inline enum rc patch(char const *query, long *http_code)
+{
+    body_reset(response);
+    return xcurl_patch(query, http_code, body_store, &response, request);
+}
+
 enum rc sched_api_get_hmm(int64_t id, struct sched_hmm *hmm,
                           struct sched_api_error *rerr)
 {
@@ -155,11 +173,8 @@ enum rc sched_api_get_hmm(int64_t id, struct sched_hmm *hmm,
     sched_hmm_init(hmm);
     sched_api_error_init(rerr);
 
-    char query[] = "/hmms/00000000000000000000";
-    npf_snprintf(query, sizeof(query), "/hmms/%" PRId64, id);
-
     long http_code = 0;
-    enum rc rc = get(query, &http_code);
+    enum rc rc = get(query("/hmms/%" PRId64, id), &http_code);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
@@ -190,11 +205,8 @@ enum rc sched_api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
     sched_hmm_init(hmm);
     sched_api_error_init(rerr);
 
-    char query[] = "/jobs/00000000000000000000/hmm";
-    npf_snprintf(query, sizeof(query), "/jobs/%" PRId64 "/hmm", job_id);
-
     long http_code = 0;
-    enum rc rc = get(query, &http_code);
+    enum rc rc = get(query("/jobs/%" PRId64 "/hmm", job_id), &http_code);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
@@ -202,6 +214,42 @@ enum rc sched_api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
     if (http_code == 200)
     {
         rc = sched_hmm_parse(hmm, &xjson, 1);
+    }
+    else if (http_code == 400 || http_code == 409)
+    {
+        rc = parse_error(rerr, &xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&lock);
+    return rc;
+}
+
+enum rc sched_api_upload_db(char const *filepath, struct sched_db *db,
+                            struct sched_api_error *rerr)
+{
+    spinlock_lock(&lock);
+
+    sched_api_error_init(rerr);
+    sched_db_init(db);
+
+    struct xcurl_mime mime = {0};
+    xfile_basename(filename, filepath);
+    xcurl_mime_set(&mime, "database_file", filename, "application/octet-stream");
+
+    long http_code = 0;
+    enum rc rc = upload("/dbs/", &http_code, &mime, filepath);
+    if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http_code == 201)
+    {
+        rc = sched_db_parse(db, &xjson, 1);
     }
     else if (http_code == 400 || http_code == 409)
     {
@@ -274,11 +322,8 @@ enum rc sched_api_get_db(struct sched_db *db, struct sched_api_error *rerr)
     sched_db_init(db);
     sched_api_error_init(rerr);
 
-    char query[] = "/dbs/00000000000000000000";
-    npf_snprintf(query, sizeof(query), "/dbs/%" PRId64, db->id);
-
     long http_code = 0;
-    enum rc rc = get(query, &http_code);
+    enum rc rc = get(query("/dbs/%" PRId64, db->id), &http_code);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
@@ -348,8 +393,7 @@ enum rc sched_api_next_pend_job(struct sched_job *job,
     enum rc rc = RC_OK;
 
     long http_code = 0;
-    body_reset(response);
-    rc = xcurl_get("/jobs/next_pend", &http_code, body_store, &response);
+    rc = get("/jobs/next_pend", &http_code);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
@@ -383,13 +427,10 @@ enum rc sched_api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
     spinlock_lock(&lock);
     sched_api_error_init(rerr);
 
-    char query[] = "/scans/00000000000000000000/seqs/next/00000000000000000000";
-    npf_snprintf(query, sizeof(query), "/jobs/%" PRId64 "/seqs/next/%" PRId64,
-                 scan_id, seq->id);
-
     long http_code = 0;
-    body_reset(response);
-    enum rc rc = xcurl_get(query, &http_code, body_store, &response);
+    enum rc rc =
+        get(query("/jobs/%" PRId64 "/seqs/next/%" PRId64, scan_id, seq->id),
+            &http_code);
     if (rc) goto cleanup;
 
     if (http_code == 200)
@@ -424,8 +465,6 @@ static char const job_states[][5] = {[SCHED_PEND] = "pend",
 enum rc set_job_state(int64_t job_id, enum sched_job_state state,
                       char const *state_error, long *http_code)
 {
-    char buf[] = "/jobs/00000000000000000000";
-
     ljson_open(&ljson, sizeof request, request);
     ljson_int(&ljson, "job_id", job_id);
     ljson_str(&ljson, "state", job_states[state]);
@@ -433,9 +472,7 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
     ljson_close(&ljson);
     if (ljson_error(&ljson)) return efail("failed to write json");
 
-    npf_snprintf(buf, sizeof(buf), "/jobs/%" PRId64, job_id);
-    body_reset(response);
-    return xcurl_patch(buf, http_code, body_store, &response, request);
+    return patch(query("/jobs/%" PRId64, job_id), http_code);
 }
 
 enum rc sched_api_set_job_state(int64_t job_id, enum sched_job_state state,
@@ -471,11 +508,9 @@ enum rc sched_api_download_db(struct sched_db *db, FILE *fp)
 
     enum rc rc = RC_OK;
 
-    char query[] = "/dbs/00000000000000000000/download";
-
-    npf_snprintf(query, sizeof(query), "/dbs/%" PRId64 "/download", db->id);
     long http_code = 0;
-    rc = xcurl_download(query, &http_code, fp);
+    rc = xcurl_download(query("/dbs/%" PRId64 "/download", db->id), &http_code,
+                        fp);
     if (rc) goto cleanup;
 
     if (http_code == 200)

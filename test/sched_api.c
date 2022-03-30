@@ -119,12 +119,15 @@ void test_sched_api_upload_db(void)
     EQ(sched_api_set_job_state(hmm.job_id, SCHED_RUN, "", &error), RC_OK);
     EQ(sched_api_set_job_state(hmm.job_id, SCHED_DONE, "", &error), RC_OK);
 
-    // db.id = 1;
-    // db.xxh3 = -3907098992699871052L;
-    // strcpy(db.filename, "minifam.dcp");
-    // EQ(sched_api_add_db(&db, &error), RC_OK);
-    // EQ(error.rc, SCHED_EINVAL);
-    // EQ(error.msg, "database already exists");
+    EQ(sched_api_upload_db(ASSETS "/PF02545.hmm", &db, &error), RC_EFAIL);
+
+    EQ(sched_api_upload_db(ASSETS "/PF02545.dcp", &db, &error), RC_OK);
+    EQ(db.id, 1);
+    EQ(db.xxh3, -7843725841264658444);
+    EQ(db.filename, "PF02545.dcp");
+    EQ(db.hmm_id, hmm.id);
+    EQ(error.rc, SCHED_OK);
+    EQ(error.msg, "");
 
     sched_api_cleanup();
 }
