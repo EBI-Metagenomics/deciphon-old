@@ -40,7 +40,8 @@ enum rc sched_api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *,
 enum rc sched_api_upload_db(char const *filepath, struct sched_db *,
                             struct sched_api_error *);
 enum rc sched_api_add_db(struct sched_db *db, struct sched_api_error *);
-enum rc sched_api_get_db(struct sched_db *db, struct sched_api_error *);
+enum rc sched_api_get_db(int64_t id, struct sched_db *,
+                         struct sched_api_error *);
 
 enum rc sched_api_post_testing_data(struct sched_api_error *);
 enum rc sched_api_next_pend_job(struct sched_job *job,

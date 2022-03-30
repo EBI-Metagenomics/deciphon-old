@@ -69,7 +69,7 @@ static enum rc prepare_database(struct scan *scan)
     db.id = scan->sched.db_id;
 
     struct sched_api_error rerr = {0};
-    enum rc rc = sched_api_get_db(&db, &rerr);
+    enum rc rc = sched_api_get_db(scan->sched.db_id, &db, &rerr);
     if (rc || rerr.rc)
     {
         if (rerr.rc) rc = erest(rerr.msg);

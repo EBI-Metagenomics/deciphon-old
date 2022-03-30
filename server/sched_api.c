@@ -239,7 +239,8 @@ enum rc sched_api_upload_db(char const *filepath, struct sched_db *db,
 
     struct xcurl_mime mime = {0};
     xfile_basename(filename, filepath);
-    xcurl_mime_set(&mime, "database_file", filename, "application/octet-stream");
+    xcurl_mime_set(&mime, "database_file", filename,
+                   "application/octet-stream");
 
     long http_code = 0;
     enum rc rc = upload("/dbs/", &http_code, &mime, filepath);
@@ -304,6 +305,7 @@ cleanup:
     return rc;
 }
 
+#if 0
 static enum rc parse_db_list(struct sched_db *db, struct xjson *x)
 {
     if (!xjson_is_array(x, 0)) return einval("expected array");
@@ -314,8 +316,10 @@ static enum rc parse_db_list(struct sched_db *db, struct xjson *x)
     }
     return sched_db_parse(db, x, 2);
 }
+#endif
 
-enum rc sched_api_get_db(struct sched_db *db, struct sched_api_error *rerr)
+enum rc sched_api_get_db(int64_t id, struct sched_db *db,
+                         struct sched_api_error *rerr)
 {
     spinlock_lock(&lock);
 
@@ -323,16 +327,16 @@ enum rc sched_api_get_db(struct sched_db *db, struct sched_api_error *rerr)
     sched_api_error_init(rerr);
 
     long http_code = 0;
-    enum rc rc = get(query("/dbs/%" PRId64, db->id), &http_code);
+    enum rc rc = get(query("/dbs/%" PRId64, id), &http_code);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
     if (http_code == 200)
     {
-        rc = parse_db_list(db, &xjson);
+        rc = sched_db_parse(db, &xjson, 1);
     }
-    else if (http_code == 404 || http_code == 500)
+    else if (http_code == 400 || http_code == 409)
     {
         rc = parse_error(rerr, &xjson, 1);
     }
