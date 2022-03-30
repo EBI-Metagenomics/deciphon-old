@@ -50,7 +50,7 @@ enum rc sched_api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
                                 struct sched_api_error *);
 enum rc sched_api_set_job_state(int64_t job_id, enum sched_job_state state,
                                 char const *msg, struct sched_api_error *);
-enum rc sched_api_download_db(struct sched_db *db, FILE *fp);
+enum rc sched_api_download_db(int64_t id, FILE *fp);
 enum rc sched_api_upload_prods_file(char const *filepath,
                                     struct sched_api_error *);
 

@@ -506,15 +506,14 @@ cleanup:
     return rc;
 }
 
-enum rc sched_api_download_db(struct sched_db *db, FILE *fp)
+enum rc sched_api_download_db(int64_t id, FILE *fp)
 {
     spinlock_lock(&lock);
 
     enum rc rc = RC_OK;
 
     long http_code = 0;
-    rc = xcurl_download(query("/dbs/%" PRId64 "/download", db->id), &http_code,
-                        fp);
+    rc = xcurl_download(query("/dbs/%" PRId64 "/download", id), &http_code, fp);
     if (rc) goto cleanup;
 
     if (http_code == 200)
