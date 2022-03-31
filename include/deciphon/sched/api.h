@@ -35,7 +35,6 @@ enum rc api_upload_db(char const *filepath, struct sched_db *,
                       struct api_error *);
 enum rc api_get_db(int64_t id, struct sched_db *, struct api_error *);
 
-enum rc api_post_testing_data(struct api_error *);
 enum rc api_next_pend_job(struct sched_job *job, struct api_error *);
 enum rc api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
                           struct api_error *);

@@ -343,42 +343,6 @@ cleanup:
     return rc;
 }
 
-enum rc api_post_testing_data(struct api_error *rerr)
-{
-    spinlock_lock(&lock);
-    error_init(rerr);
-
-    enum rc rc = RC_OK;
-
-    long http_code = 0;
-    body_reset(response);
-    rc = xcurl_post("/testing/data/", &http_code, body_store, &response, "{}");
-    if (rc) goto cleanup;
-
-    if (http_code == 201)
-    {
-        if ((rc = parse_json())) goto cleanup;
-        if (!(xjson_is_array(&xjson, 0) && xjson_is_array_empty(&xjson, 0)))
-        {
-            rc = einval("expected empty array");
-            goto cleanup;
-        }
-    }
-    else if (http_code == 404 || http_code == 409 || http_code == 500)
-    {
-        if ((rc = parse_json())) goto cleanup;
-        rc = parse_error(rerr, &xjson, 1);
-    }
-    else
-    {
-        rc = efail("unexpected http code");
-    }
-
-cleanup:
-    spinlock_unlock(&lock);
-    return rc;
-}
-
 enum rc api_next_pend_job(struct sched_job *job, struct api_error *rerr)
 {
     spinlock_lock(&lock);
