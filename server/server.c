@@ -71,11 +71,11 @@ enum rc server_run(void)
         rc = job_next(&server.job);
         if (rc == RC_OK)
         {
-            info("Running job[%ld]", server.job.sched_job.id);
+            info("Running job[%ld]", server.job.sched.id);
             rc = job_run(&server.job);
             if (rc) break;
 
-            info("Finished job[%ld]", server.job.sched_job.id);
+            info("Finished job[%ld]", server.job.sched.id);
         }
         else if (rc == RC_END)
         {

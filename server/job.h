@@ -5,7 +5,7 @@
 
 struct job
 {
-    struct sched_job sched_job;
+    struct sched_job sched;
     unsigned num_threads;
 };
 

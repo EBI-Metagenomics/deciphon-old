@@ -1,5 +1,6 @@
 add_library(
   server
+  hmm.c
   job.c
   job_state.c
   prod.c
