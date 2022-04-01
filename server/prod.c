@@ -18,7 +18,7 @@ static enum rc write_begin(struct prod const *prod, unsigned thread_num)
 #define Fs "%s" TAB
 #define Fg "%.17g" TAB
 
-    if (echo(Fd64, job_id)) efail("write prod");
+    if (echo(Fd64, scan_id)) efail("write prod");
     if (echo(Fd64, seq_id)) efail("write prod");
 
     if (echo(Fs, profile_name)) efail("write prod");
@@ -67,12 +67,12 @@ enum rc prod_fopen(unsigned nthreads)
 }
 
 void prod_setup_job(struct prod *prod, char const *abc_name,
-                    char const *prof_typeid, unsigned job_id)
+                    char const *prof_typeid, unsigned scan_id)
 {
     strcpy(prod->abc_name, abc_name);
     strcpy(prod->profile_typeid, prof_typeid);
     strcpy(prod->version, DECIPHON_VERSION);
-    prod->job_id = job_id;
+    prod->scan_id = scan_id;
 }
 
 void prod_setup_seq(struct prod *prod, int64_t seq_id)
@@ -112,7 +112,7 @@ enum rc prod_fclose(void)
         rc = eio("fail to finish product");
         goto cleanup;
     }
-    fputs("job_id	seq_id	profile_name	abc_name	alt_loglik	"
+    fputs("scan_id	seq_id	profile_name	abc_name	alt_loglik	"
           "null_loglik	profile_typeid	version	match\n",
           final_file.fp);
 

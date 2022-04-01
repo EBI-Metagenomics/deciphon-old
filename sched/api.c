@@ -381,30 +381,65 @@ cleanup:
     return rc;
 }
 
-enum rc api_scan_next_seq(int64_t scan_id, struct sched_seq *seq,
-                          struct api_error *rerr)
+enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
+                          struct sched_seq *seq, struct api_error *rerr)
 {
     spinlock_lock(&lock);
+
+    sched_seq_init(seq);
     error_init(rerr);
 
     long http_code = 0;
-    enum rc rc =
-        get(query("/jobs/%" PRId64 "/seqs/next/%" PRId64, scan_id, seq->id),
-            &http_code);
+    char const *q =
+        query("/scans/%" PRId64 "/seqs/next/%" PRId64, scan_id, seq_id);
+    enum rc rc = get(q, &http_code);
     if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
 
     if (http_code == 200)
     {
-        if ((rc = parse_json())) goto cleanup;
-        if (!xjson_is_array(&xjson, 0)) return einval("expected array");
-        if (xjson_is_array_empty(&xjson, 0))
+        if (!xjson_is_array(&xjson, 0))
+            rc = einval("expected array");
+        else if (xjson_is_array_empty(&xjson, 0))
             rc = RC_END;
         else
             rc = sched_seq_parse(seq, &xjson, 2);
     }
     else if (http_code == 409 || http_code == 500)
     {
-        if ((rc = parse_json())) goto cleanup;
+        rc = parse_error(rerr, &xjson, 1);
+    }
+    else
+    {
+        rc = efail("unexpected http code");
+    }
+
+cleanup:
+    spinlock_unlock(&lock);
+    return rc;
+}
+
+enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan,
+                               struct api_error *rerr)
+{
+    spinlock_lock(&lock);
+
+    sched_scan_init(scan);
+    error_init(rerr);
+
+    long http_code = 0;
+    enum rc rc = get(query("/jobs/%" PRId64 "/scan", job_id), &http_code);
+    if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http_code == 200)
+    {
+        rc = sched_scan_parse(scan, &xjson, 1);
+    }
+    else if (http_code == 400 || http_code == 409)
+    {
         rc = parse_error(rerr, &xjson, 1);
     }
     else

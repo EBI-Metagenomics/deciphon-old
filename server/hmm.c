@@ -26,8 +26,9 @@ static enum rc profile_write(void)
     return protein_db_writer_pack_profile(&db, &profile);
 }
 
-enum rc hmm_press(int64_t job_id)
+enum rc hmm_press(int64_t job_id, unsigned num_threads)
 {
+    (void)num_threads;
     enum rc rc = api_get_hmm_by_job_id(job_id, &hmm, &error);
     if (rc) return rc;
 

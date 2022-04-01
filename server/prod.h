@@ -16,7 +16,7 @@ struct prod
 {
     int64_t id;
 
-    int64_t job_id;
+    int64_t scan_id;
     int64_t seq_id;
 
     char profile_name[PROFILE_NAME_SIZE];
@@ -39,7 +39,7 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
 
 enum rc prod_fopen(unsigned nthreads);
 void prod_setup_job(struct prod *prod, char const *abc_name,
-                    char const *prof_typeid, unsigned job_id);
+                    char const *prof_typeid, unsigned scan_id);
 void prod_setup_seq(struct prod *prod, int64_t seq_id);
 void prod_fcleanup(void);
 enum rc prod_fclose(void);

@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-enum rc hmm_press(int64_t job_id);
+enum rc hmm_press(int64_t job_id, unsigned num_threads);
 
 #endif

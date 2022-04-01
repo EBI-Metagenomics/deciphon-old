@@ -1,18 +1,44 @@
 #include "scan.h"
+#include "deciphon/db/db.h"
 #include "deciphon/db/profile_reader.h"
 #include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/rc.h"
 #include "deciphon/sched/api.h"
+#include "deciphon/sched/sched.h"
 #include "deciphon/version.h"
 #include "deciphon/xfile.h"
 #include "deciphon/xmath.h"
 #include "imm/imm.h"
 #include "prod.h"
 #include "protein_match.h"
+#include "scan_thread.h"
 #include "xomp.h"
 #include <stdatomic.h>
 #include <string.h>
+
+struct scan
+{
+    struct sched_scan sched;
+    struct sched_seq seq;
+
+    unsigned num_threads;
+    struct scan_thread thread[NUM_THREADS];
+
+    char db_filename[FILENAME_SIZE];
+    struct protein_db_reader db_reader;
+    struct profile_reader profile_reader;
+
+    struct imm_str str;
+    struct imm_seq iseq;
+    struct imm_abc const *abc;
+
+    prod_fwrite_match_func_t write_match_func;
+    double lrt_threshold;
+};
+
+static struct scan scan = {0};
+static struct api_error error = {0};
 
 static enum rc ensure_database_integrity(char const *filename, int64_t xxh3)
 {
@@ -118,7 +144,8 @@ cleanup:
     return rc;
 }
 
-enum rc scan_init(struct scan *scan, unsigned num_threads, double lrt_threshold)
+static enum rc scan_init(struct scan *scan, unsigned num_threads,
+                         double lrt_threshold)
 {
     scan->num_threads = num_threads;
     scan->lrt_threshold = lrt_threshold;
@@ -145,7 +172,8 @@ enum rc scan_init(struct scan *scan, unsigned num_threads, double lrt_threshold)
     }
     scan->write_match_func = protein_match_write_func;
 
-    for (unsigned i = 0; i < scan->num_threads; ++i)
+    unsigned npartitions = profile_reader_npartitions(&scan->profile_reader);
+    for (unsigned i = 0; i < npartitions; ++i)
     {
         struct scan_thread *t = scan->thread + i;
         struct profile_reader *reader = &scan->profile_reader;
@@ -158,7 +186,7 @@ enum rc scan_init(struct scan *scan, unsigned num_threads, double lrt_threshold)
 
         enum imm_abc_typeid abc_typeid = scan->abc->vtable.typeid;
         enum profile_typeid profile_typeid = reader->profile_typeid;
-        thread_setup_job(t, abc_typeid, profile_typeid, scan->sched.job_id);
+        thread_setup_job(t, abc_typeid, profile_typeid, scan->sched.id);
     }
 
 cleanup:
@@ -199,13 +227,19 @@ cleanup:
     return rc;
 }
 
-enum rc scan_run(struct scan *scan)
+enum rc scan_run(int64_t job_id, unsigned num_threads)
 {
-    enum rc rc = RC_OK;
-    int64_t job_id = scan->sched.job_id;
+    enum rc rc = api_get_scan_by_job_id(job_id, &scan.sched, &error);
+    if (rc) return rc;
+
+    rc = scan_init(&scan, num_threads, 10.);
+    if (rc) return rc;
+
+    sched_seq_init(&scan.seq);
 
     struct api_error rerr = {0};
-    while (!(rc = api_scan_next_seq(scan->sched.id, &scan->seq, &rerr)))
+    while (
+        !(rc = api_scan_next_seq(scan.sched.id, scan.seq.id, &scan.seq, &rerr)))
     {
         if (rerr.rc)
         {
@@ -213,18 +247,19 @@ enum rc scan_run(struct scan *scan)
             fail_job(job_id, "failed to fetch new sequence");
             goto cleanup;
         }
-        struct imm_seq seq = imm_seq(imm_str(scan->seq.data), scan->abc);
+        struct imm_seq seq = imm_seq(imm_str(scan.seq.data), scan.abc);
 
-        for (unsigned i = 0; i < scan->num_threads; ++i)
+        unsigned npartitions = profile_reader_npartitions(&scan.profile_reader);
+        for (unsigned i = 0; i < npartitions; ++i)
         {
-            struct scan_thread *t = scan->thread + i;
-            thread_setup_seq(t, &seq, scan->seq.id);
+            struct scan_thread *t = scan.thread + i;
+            thread_setup_seq(t, &seq, scan.seq.id);
         }
 
-#pragma omp parallel for
-        for (unsigned i = 0; i < scan->num_threads; ++i)
+        // #pragma omp parallel for
+        for (unsigned i = 0; i < npartitions; ++i)
         {
-            struct scan_thread *t = scan->thread + i;
+            struct scan_thread *t = scan.thread + i;
             enum rc local_rc = thread_run(t);
             if (local_rc)
             {

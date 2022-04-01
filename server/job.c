@@ -9,13 +9,14 @@
 #include "deciphon/xmath.h"
 #include "hmm.h"
 #include "imm/imm.h"
+#include "scan.h"
 #include "xomp.h"
 #include <stdatomic.h>
 #include <string.h>
 
-typedef enum rc (*job_run_func_t)(int64_t job_id);
+typedef enum rc (*job_run_func_t)(int64_t job_id, unsigned num_threads);
 
-static job_run_func_t job_run_func[] = {0, hmm_press};
+static job_run_func_t job_run_func[] = {scan_run, hmm_press};
 
 void job_init(struct job *job, unsigned num_threads)
 {
@@ -46,5 +47,5 @@ static inline void fail_job(int64_t job_id, char const *msg)
 
 enum rc job_run(struct job *job)
 {
-    return job_run_func[job->sched.type](job->sched.id);
+    return job_run_func[job->sched.type](job->sched.id, job->num_threads);
 }
