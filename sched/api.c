@@ -432,7 +432,7 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
     ljson_close(&ljson);
     if (ljson_error(&ljson)) return efail("failed to write json");
 
-    return patch(query("/jobs/%" PRId64, job_id), http_code);
+    return patch(query("/jobs/%" PRId64 "/state", job_id), http_code);
 }
 
 enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,

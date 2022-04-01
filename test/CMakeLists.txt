@@ -24,6 +24,11 @@ file(DOWNLOAD ${URL}/PF02545.dcp.7z ${ASSETS}/PF02545.dcp.7z
      EXPECTED_HASH SHA1=cce596ce9695b9d1e862e300b86df840adccbc14)
 file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.dcp.7z DESTINATION ${ASSETS})
 
+file(DOWNLOAD ${URL}/Pfam-A.one_tenth.hmm.7z ${ASSETS}/Pfam-A.one_tenth.hmm.7z
+     EXPECTED_HASH MD5=8203bd09489c5b097c7e3054b96f57e0)
+file(ARCHIVE_EXTRACT INPUT ${ASSETS}/Pfam-A.one_tenth.hmm.7z DESTINATION
+     ${ASSETS})
+
 function(model_add_test name libs)
   add_executable(test_${name} ${name}.c)
   target_link_libraries(test_${name} PRIVATE HOPE::hope)
