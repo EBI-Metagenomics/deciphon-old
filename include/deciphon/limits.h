@@ -12,7 +12,6 @@ enum limits
     MATCH_SIZE = 5 * (1024 * 1024),
     MAX_NPROFILES = (1 << 20),
     NUM_THREADS = 64,
-    NUM_SEQS_PER_JOB = 64,
     PATH_SIZE = 4096,
     PROFILE_ACC_SIZE = 32,
     PROFILE_NAME_SIZE = 64,
