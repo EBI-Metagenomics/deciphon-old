@@ -16,18 +16,33 @@ add_compile_definitions(SCHED_API_URL=\"${SCHED_API_URL}\")
 
 set(URL "https://f002.backblazeb2.com/file/deciphon")
 
-file(DOWNLOAD ${URL}/PF02545.hmm.7z ${ASSETS}/PF02545.hmm.7z
-     EXPECTED_HASH SHA1=2b27ec36086e5c424b719437a924728801bb8277)
-file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.hmm.7z DESTINATION ${ASSETS})
+if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
+  message("Please consider to switch to CMake 3.8.0 or above")
+  file(DOWNLOAD ${URL}/PF02545.hmm ${ASSETS}/PF02545.hmm
+       EXPECTED_HASH MD5=10d19e97a1d5df2f431a8c25ed5b6288)
+  file(INPUT ${ASSETS}/PF02545.hmm DESTINATION ${ASSETS})
 
-file(DOWNLOAD ${URL}/PF02545.dcp.7z ${ASSETS}/PF02545.dcp.7z
-     EXPECTED_HASH SHA1=cce596ce9695b9d1e862e300b86df840adccbc14)
-file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.dcp.7z DESTINATION ${ASSETS})
+  file(DOWNLOAD ${URL}/PF02545.dcp ${ASSETS}/PF02545.dcp
+       EXPECTED_HASH MD5=10d19e97a1d5df2f431a8c25ed5b6288)
+  file(INPUT ${ASSETS}/PF02545.dcp DESTINATION ${ASSETS})
 
-file(DOWNLOAD ${URL}/Pfam-A.one_tenth.hmm.7z ${ASSETS}/Pfam-A.one_tenth.hmm.7z
-     EXPECTED_HASH MD5=8203bd09489c5b097c7e3054b96f57e0)
-file(ARCHIVE_EXTRACT INPUT ${ASSETS}/Pfam-A.one_tenth.hmm.7z DESTINATION
-     ${ASSETS})
+  file(DOWNLOAD ${URL}/Pfam-A.one_tenth.hmm ${ASSETS}/Pfam-A.one_tenth.hmm
+       EXPECTED_HASH MD5=f0fbc2df31ed584bc5eab0b4391d6893)
+  file(INPUT ${ASSETS}/Pfam-A.one_tenth.hmm DESTINATION ${ASSETS})
+else()
+  file(DOWNLOAD ${URL}/PF02545.hmm.7z ${ASSETS}/PF02545.hmm.7z
+       EXPECTED_HASH MD5=0e1ebe82f2b78b4ed56250b8661e9d0d)
+  file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.hmm.7z DESTINATION ${ASSETS})
+
+  file(DOWNLOAD ${URL}/PF02545.dcp.7z ${ASSETS}/PF02545.dcp.7z
+       EXPECTED_HASH MD5=310a817bf6fe6096dfa228e637a96515)
+  file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.dcp.7z DESTINATION ${ASSETS})
+
+  file(DOWNLOAD ${URL}/Pfam-A.one_tenth.hmm.7z ${ASSETS}/Pfam-A.one_tenth.hmm.7z
+       EXPECTED_HASH MD5=8203bd09489c5b097c7e3054b96f57e0)
+  file(ARCHIVE_EXTRACT INPUT ${ASSETS}/Pfam-A.one_tenth.hmm.7z DESTINATION
+       ${ASSETS})
+endif()
 
 function(model_add_test name libs)
   add_executable(test_${name} ${name}.c)
