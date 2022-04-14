@@ -24,8 +24,24 @@ void test_sched_api_download_db(void);
 // void test_sched_api_next_pend_job(void);
 // void test_sched_api_next_job_seq(void);
 
+static bool is_sched_reachable(void)
+{
+    enum rc rc = api_init(SCHED_API_URL);
+    if (rc) return false;
+    bool reachable = api_is_reachable();
+    api_cleanup();
+    return reachable;
+}
+
 int main(void)
 {
+    if (!is_sched_reachable())
+    {
+        fprintf(stderr, "Scheduler is not reachable ");
+        fprintf(stderr, "so we canno't really test it.\n");
+        return 1;
+    }
+
     test_sched_api_open_close();
     test_sched_api_no_pend_job();
 

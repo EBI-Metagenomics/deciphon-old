@@ -6,20 +6,20 @@
 static void default_print(char const *ctx, char const *msg, void *arg)
 {
     (void)arg;
-    fputs(ctx, stderr);
-    fputs(": ", stderr);
-    fputs(msg, stderr);
-    fputc('\n', stderr);
+    // fputs(ctx, stderr);
+    // fputs(": ", stderr);
+    // fputs(msg, stderr);
+    // fputc('\n', stderr);
     info("%s: %s", ctx, msg);
 }
 
 static void default_print_static(char const *ctx, char const *msg, void *arg)
 {
     (void)arg;
-    fputs(ctx, stderr);
-    fputs(": ", stderr);
-    fputs(msg, stderr);
-    fputc('\n', stderr);
+    // fputs(ctx, stderr);
+    // fputs(": ", stderr);
+    // fputs(msg, stderr);
+    // fputc('\n', stderr);
     info("%s: %s", ctx, msg);
 }
 

@@ -20,15 +20,12 @@ if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
   message("Please consider to switch to CMake 3.8.0 or above")
   file(DOWNLOAD ${URL}/PF02545.hmm ${ASSETS}/PF02545.hmm
        EXPECTED_HASH MD5=10d19e97a1d5df2f431a8c25ed5b6288)
-  file(INPUT ${ASSETS}/PF02545.hmm DESTINATION ${ASSETS})
 
   file(DOWNLOAD ${URL}/PF02545.dcp ${ASSETS}/PF02545.dcp
        EXPECTED_HASH MD5=10d19e97a1d5df2f431a8c25ed5b6288)
-  file(INPUT ${ASSETS}/PF02545.dcp DESTINATION ${ASSETS})
 
   file(DOWNLOAD ${URL}/Pfam-A.one_tenth.hmm ${ASSETS}/Pfam-A.one_tenth.hmm
        EXPECTED_HASH MD5=f0fbc2df31ed584bc5eab0b4391d6893)
-  file(INPUT ${ASSETS}/Pfam-A.one_tenth.hmm DESTINATION ${ASSETS})
 else()
   file(DOWNLOAD ${URL}/PF02545.hmm.7z ${ASSETS}/PF02545.hmm.7z
        EXPECTED_HASH MD5=0e1ebe82f2b78b4ed56250b8661e9d0d)

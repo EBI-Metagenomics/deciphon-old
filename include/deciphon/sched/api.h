@@ -22,6 +22,8 @@ struct sched_seq;
 enum rc api_init(char const *url_stem);
 void api_cleanup(void);
 
+bool api_is_reachable(void);
+
 enum rc api_wipe(void);
 
 enum rc api_upload_hmm(char const *filepath, struct sched_hmm *,

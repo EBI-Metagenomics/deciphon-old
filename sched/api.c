@@ -98,6 +98,27 @@ void api_cleanup(void)
     buff_del(response);
 }
 
+static inline enum rc get(char const *query, long *http_code)
+{
+    body_reset(response);
+    return xcurl_get(query, http_code, body_store, &response);
+}
+
+bool api_is_reachable(void)
+{
+    spinlock_lock(&lock);
+
+    bool reachable = false;
+    long http_code = 0;
+    if (get("/", &http_code)) goto cleanup;
+
+    reachable = http_code == 200;
+
+cleanup:
+    spinlock_unlock(&lock);
+    return reachable;
+}
+
 enum rc api_wipe(void)
 {
     spinlock_lock(&lock);
@@ -156,12 +177,6 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
 cleanup:
     spinlock_unlock(&lock);
     return rc;
-}
-
-static inline enum rc get(char const *query, long *http_code)
-{
-    body_reset(response);
-    return xcurl_get(query, http_code, body_store, &response);
 }
 
 static inline enum rc patch(char const *query, long *http_code)
