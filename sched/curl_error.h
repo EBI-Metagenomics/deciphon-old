@@ -180,10 +180,6 @@
         ? efail("An authentication function returned an error")                \
     : code == CURLE_HTTP3                                                      \
         ? efail("HTTP/3 error")                                                \
-    : code == CURLE_QUIC_CONNECT_ERROR                                         \
-        ? efail("QUIC connection error")                                       \
-    : code == CURLE_PROXY                                                      \
-        ? efail("proxy handshake error")                                       \
     : efail("Unknown error")
 /* clang-format on */
 
