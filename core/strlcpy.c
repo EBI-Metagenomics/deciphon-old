@@ -16,8 +16,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef HAVE_STRLCPY
-
 #include "deciphon/strlcpy.h"
 #include <string.h>
 #include <sys/types.h>
@@ -51,5 +49,3 @@ size_t dcp_strlcpy(char *dst, const char *src, size_t dsize)
 
     return (size_t)(src - osrc - 1); /* count does not include NUL */
 }
-
-#endif

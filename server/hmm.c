@@ -4,6 +4,7 @@
 #include "deciphon/model/protein_h3reader.h"
 #include "deciphon/rc.h"
 #include "deciphon/sched/api.h"
+#include "deciphon/strlcpy.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -21,7 +22,7 @@ static enum rc profile_write(void)
     if (rc) return rc;
 
     dcp_strlcpy(profile.super.accession, reader.prof.meta.acc,
-            ARRAY_SIZE_OF(profile.super, accession));
+                ARRAY_SIZE_OF(profile.super, accession));
 
     return protein_db_writer_pack_profile(&db, &profile);
 }
