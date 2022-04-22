@@ -419,12 +419,12 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
 
     if (http_code == 200)
     {
-        if (!xjson_is_array(&xjson, 0))
-            rc = einval("expected array");
-        else if (xjson_is_array_empty(&xjson, 0))
-            rc = RC_END;
-        else
-            rc = sched_seq_parse(seq, &xjson, 2);
+        rc = sched_seq_parse(seq, &xjson, 1);
+    }
+    else if (http_code == 404)
+    {
+        rc = parse_error(rerr, &xjson, 1);
+        if (!rc && rerr->rc == 7) rc = RC_END;
     }
     else if (http_code == 409 || http_code == 500)
     {

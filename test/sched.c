@@ -5,8 +5,10 @@
 #include "imm/imm.h"
 
 static struct sched_hmm hmm = {0};
+static struct sched_scan scan = {0};
 static struct sched_db db = {0};
 static struct sched_job job = {0};
+static struct sched_seq seq = {0};
 static struct api_error error = {0};
 
 void test_sched_api_open_close(void);
@@ -21,8 +23,9 @@ void test_sched_api_get_db(void);
 void test_sched_api_download_db(void);
 
 // void test_sched_api_post_testing_data(void);
-// void test_sched_api_next_pend_job(void);
-// void test_sched_api_next_job_seq(void);
+void test_sched_api_next_pend_hmm_job(void);
+void test_sched_api_next_pend_scan_job(void);
+void test_sched_api_next_job_seq(void);
 
 static bool is_sched_reachable(void)
 {
@@ -42,20 +45,21 @@ int main(void)
         return 1;
     }
 
-    test_sched_api_open_close();
-    test_sched_api_no_pend_job();
-
-    test_sched_api_upload_hmm();
-    test_sched_api_get_hmm();
-    test_sched_api_download_hmm();
-
-    test_sched_api_upload_db();
-    test_sched_api_get_db();
-    test_sched_api_download_db();
+    // test_sched_api_open_close();
+    // test_sched_api_no_pend_job();
+    //
+    // test_sched_api_upload_hmm();
+    // test_sched_api_get_hmm();
+    // test_sched_api_download_hmm();
+    //
+    // test_sched_api_upload_db();
+    // test_sched_api_get_db();
+    // test_sched_api_download_db();
 
     // test_sched_api_post_testing_data();
-    // test_sched_api_next_pend_job();
-    // test_sched_api_next_job_seq();
+    // test_sched_api_next_pend_hmm_job();
+    // test_sched_api_next_pend_scan_job();
+    test_sched_api_next_job_seq();
     return hope_status();
 }
 
@@ -242,7 +246,7 @@ void test_sched_api_download_db(void)
 #if 0
 void test_sched_api_post_testing_data(void)
 {
-    EQ(sched_api_init(SCHED_API_URL), RC_OK);
+    EQ(api_init(SCHED_API_URL), RC_OK);
     EQ(sched_api_wipe(), RC_OK);
 
     struct sched_api_error error = {0};
@@ -250,76 +254,79 @@ void test_sched_api_post_testing_data(void)
 
     EQ(error.rc, 0);
     EQ(error.msg, "");
-
-    sched_api_cleanup();
-}
-
-void test_sched_api_next_pend_job(void)
-{
-    EQ(sched_api_init(SCHED_API_URL), RC_OK);
-    EQ(sched_api_wipe(), RC_OK);
-
-    struct sched_job job = {0};
-    struct sched_api_error error = {0};
-
-    EQ(sched_api_next_pend_job(&job, &error), RC_END);
-    EQ(error.rc, 0);
-    EQ(error.msg, "");
-    EQ(job.id, 0);
-
-    EQ(sched_api_post_testing_data(&error), RC_OK);
-    EQ(error.rc, 0);
-    EQ(error.msg, "");
-
-    EQ(sched_api_next_pend_job(&job, &error), RC_OK);
-    EQ(error.rc, 0);
-    EQ(error.msg, "");
-    EQ(job.id, 1);
-    EQ(job.type, 0);
-    EQ(job.state, "pend");
-    EQ(job.progress, 0);
-    EQ(job.error, "");
-    COND(job.submission > 1646972352);
-    EQ(job.exec_started, 0);
-    EQ(job.exec_ended, 0);
-
-    sched_api_cleanup();
-}
-
-// static struct sched_seq seq = {0};
-
-void test_sched_api_next_job_seq(void)
-{
-    EQ(sched_api_init(SCHED_API_URL), RC_OK);
-    EQ(sched_api_wipe(), RC_OK);
-
-    struct sched_job job = {0};
-    struct sched_api_error error = {0};
-
-    EQ(sched_api_next_pend_job(&job, &error), RC_END);
-    EQ(error.rc, 0);
-    EQ(error.msg, "");
-    EQ(job.id, 0);
-
-    EQ(sched_api_post_testing_data(&error), RC_OK);
-    EQ(error.rc, 0);
-    EQ(error.msg, "");
-
-    EQ(sched_api_next_pend_job(&job, &error), RC_OK);
-    EQ(error.rc, 0);
-    EQ(error.msg, "");
-    EQ(job.id, 1);
-    EQ(job.type, 0);
-    EQ(job.state, "pend");
-    EQ(job.progress, 0);
-    EQ(job.error, "");
-    COND(job.submission > 1646972352);
-    EQ(job.exec_started, 0);
-    EQ(job.exec_ended, 0);
-
-    // seq.id = 0;
-    // EQ(sched_api_next_job_seq(&job, &seq, &error), RC_OK);
 
     sched_api_cleanup();
 }
 #endif
+
+void test_sched_api_next_pend_hmm_job(void)
+{
+    EQ(api_init(SCHED_API_URL), RC_OK);
+
+    EQ(api_next_pend_job(&job, &error), RC_OK);
+    EQ(error.rc, 0);
+    EQ(error.msg, "");
+    EQ(job.id, 1);
+    EQ(job.type, 1);
+    EQ(job.state, "pend");
+    EQ(job.progress, 0);
+    EQ(job.error, "");
+    COND(job.submission > 1646972352);
+    EQ(job.exec_started, 0);
+    EQ(job.exec_ended, 0);
+
+    api_cleanup();
+}
+
+void test_sched_api_next_pend_scan_job(void)
+{
+    EQ(api_init(SCHED_API_URL), RC_OK);
+
+    EQ(api_next_pend_job(&job, &error), RC_OK);
+    EQ(error.rc, 0);
+    EQ(error.msg, "");
+    EQ(job.id, 2);
+    EQ(job.type, 0);
+    EQ(job.state, "pend");
+    EQ(job.progress, 0);
+    EQ(job.error, "");
+    COND(job.submission > 1646972352);
+    EQ(job.exec_started, 0);
+    EQ(job.exec_ended, 0);
+
+    api_cleanup();
+}
+
+void test_sched_api_next_job_seq(void)
+{
+    EQ(api_init(SCHED_API_URL), RC_OK);
+
+    EQ(api_next_pend_job(&job, &error), RC_OK);
+    EQ(error.rc, 0);
+    EQ(error.msg, "");
+    EQ(job.id, 2);
+    EQ(job.type, 0);
+    EQ(job.state, "pend");
+    EQ(job.progress, 0);
+    EQ(job.error, "");
+    COND(job.submission > 1646972352);
+    EQ(job.exec_started, 0);
+    EQ(job.exec_ended, 0);
+
+    EQ(api_get_scan_by_job_id(job.id, &scan, &error), RC_OK);
+    EQ(api_scan_next_seq(scan.id, 0, &seq, &error), RC_OK);
+    EQ(seq.id, 1);
+    EQ(seq.name, "Homoserine_dh-consensus");
+
+    EQ(api_scan_next_seq(scan.id, seq.id, &seq, &error), RC_OK);
+    EQ(seq.id, 2);
+    EQ(seq.name, "AA_kinase-consensus");
+
+    EQ(api_scan_next_seq(scan.id, seq.id, &seq, &error), RC_OK);
+    EQ(seq.id, 3);
+    EQ(seq.name, "23ISL-consensus");
+
+    EQ(api_scan_next_seq(scan.id, seq.id, &seq, &error), RC_END);
+
+    api_cleanup();
+}
