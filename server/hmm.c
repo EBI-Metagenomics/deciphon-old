@@ -20,7 +20,7 @@ static enum rc profile_write(void)
     enum rc rc = protein_profile_absorb(&profile, &reader.model);
     if (rc) return rc;
 
-    strlcpy(profile.super.accession, reader.prof.meta.acc,
+    dcp_strlcpy(profile.super.accession, reader.prof.meta.acc,
             ARRAY_SIZE_OF(profile.super, accession));
 
     return protein_db_writer_pack_profile(&db, &profile);

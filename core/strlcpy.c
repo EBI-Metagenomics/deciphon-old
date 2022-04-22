@@ -27,7 +27,7 @@
  * chars will be copied.  Always NUL terminates (unless dsize == 0).
  * Returns strlen(src); if retval >= dsize, truncation occurred.
  */
-size_t strlcpy(char *dst, const char *src, size_t dsize)
+size_t dcp_strlcpy(char *dst, const char *src, size_t dsize)
 {
     const char *osrc = src;
     size_t nleft = dsize;

@@ -25,9 +25,9 @@ static struct xcurl
 void xcurl_mime_set(struct xcurl_mime *mime, char const *name,
                     char const *filename, char const *type)
 {
-    strlcpy(mime->name, name, FILENAME_SIZE);
-    strlcpy(mime->filename, filename, FILENAME_SIZE);
-    strlcpy(mime->type, type, MIME_TYPE_SIZE);
+    dcp_strlcpy(mime->name, name, FILENAME_SIZE);
+    dcp_strlcpy(mime->filename, filename, FILENAME_SIZE);
+    dcp_strlcpy(mime->type, type, MIME_TYPE_SIZE);
 }
 
 static inline enum rc list_add(struct curl_slist **list, const char *string)
