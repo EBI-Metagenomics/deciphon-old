@@ -27,6 +27,18 @@ void logger_setup(logger_print_func_t, logger_print_static_func_t, void *arg);
 #define eparse(msg) error(RC_EPARSE, msg)
 #define erest(msg) error(RC_EREST, msg)
 
+/* clang-format off */
+#define ehttp(code)                                  \
+    code == 400 ? error(RC_EHTTP, "400 bad request")   \
+    : code == 401 ? error(RC_EHTTP, "401 unauthorized")   \
+    : code == 403 ? error(RC_EHTTP, "403 forbidden")   \
+    : code == 404 ? error(RC_EHTTP, "404 not found")   \
+    : code == 405 ? error(RC_EHTTP, "405 method not allowed")   \
+    : code == 406 ? error(RC_EHTTP, "406 not acceptable")   \
+    : code == 418 ? error(RC_EHTTP, "418 I'm a teapot")   \
+    : error(RC_EHTTP, "Unknown http error")
+/* clang-format on */
+
 /*
  * Private functions. They are not supposed to be used directly outside this
  * module.

@@ -11,6 +11,7 @@ enum rc
     RC_ENOMEM,
     RC_EPARSE,
     RC_EREST,
+    RC_EHTTP,
 };
 
 enum rc rc_resolve(unsigned len, char const *str, enum rc *rc);

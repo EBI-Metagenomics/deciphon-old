@@ -73,18 +73,6 @@ static inline enum sched_job_type sched_job_type(struct sched_job const *job)
     return (enum sched_job_type)job->type;
 }
 
-enum sched_rc
-{
-    SCHED_OK,
-    SCHED_END,
-    SCHED_NOTFOUND,
-    SCHED_EFAIL,
-    SCHED_EIO,
-    SCHED_EINVAL,
-    SCHED_ENOMEM,
-    SCHED_EPARSE,
-};
-
 struct xjson;
 
 void sched_db_init(struct sched_db *);
@@ -98,7 +86,5 @@ enum rc sched_hmm_parse(struct sched_hmm *, struct xjson *x, unsigned start);
 enum rc sched_job_parse(struct sched_job *, struct xjson *x, unsigned start);
 enum rc sched_scan_parse(struct sched_scan *, struct xjson *x, unsigned start);
 enum rc sched_seq_parse(struct sched_seq *, struct xjson *x, unsigned start);
-
-enum rc sched_rc_resolve(unsigned len, char const *str, enum sched_rc *rc);
 
 #endif

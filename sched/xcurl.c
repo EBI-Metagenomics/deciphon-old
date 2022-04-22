@@ -58,14 +58,19 @@ static enum rc setup_headers(void)
 
     rc = list_add(&xcurl.hdr.send_json, "Content-Type: application/json");
     if (rc) goto cleanup;
+    rc = list_add(&xcurl.hdr.send_json, "X-API-KEY: change-me");
+    if (rc) goto cleanup;
 
     rc = list_add(&xcurl.hdr.recv_json, "Accept: application/json");
+    if (rc) goto cleanup;
+    rc = list_add(&xcurl.hdr.recv_json, "X-API-KEY: change-me");
     if (rc) goto cleanup;
 
     rc = list_add(&xcurl.hdr.only_json, "Content-Type: application/json");
     if (rc) goto cleanup;
-
     rc = list_add(&xcurl.hdr.only_json, "Accept: application/json");
+    if (rc) goto cleanup;
+    rc = list_add(&xcurl.hdr.only_json, "X-API-KEY: change-me");
     if (rc) goto cleanup;
 
     return rc;

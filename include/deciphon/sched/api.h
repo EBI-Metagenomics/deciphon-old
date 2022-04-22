@@ -9,7 +9,7 @@
 
 struct api_error
 {
-    enum sched_rc rc;
+    int rc;
     char msg[ERROR_SIZE];
 };
 

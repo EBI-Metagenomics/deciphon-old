@@ -71,8 +71,8 @@ void test_sched_api_no_pend_job(void)
     EQ(api_wipe(), RC_OK);
 
     EQ(api_next_pend_job(&job, &error), RC_END);
-    EQ(error.rc, SCHED_OK);
-    EQ(error.msg, "");
+    EQ(error.rc, 5);
+    EQ(error.msg, "job not found");
     EQ(job.id, 0);
 
     api_cleanup();
@@ -88,11 +88,11 @@ void test_sched_api_upload_hmm(void)
     EQ(hmm.xxh3, -7843725841264658444);
     EQ(hmm.filename, "PF02545.hmm");
     EQ(hmm.job_id, 1);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     EQ(api_next_pend_job(&job, &error), RC_OK);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
     EQ(job.id, 1);
     EQ(sched_job_type(&job), SCHED_HMM);
@@ -110,11 +110,11 @@ void test_sched_api_get_hmm(void)
     EQ(hmm.xxh3, -7843725841264658444);
     EQ(hmm.filename, "PF02545.hmm");
     EQ(hmm.job_id, 1);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     EQ(api_next_pend_job(&job, &error), RC_OK);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
     EQ(job.id, 1);
     EQ(sched_job_type(&job), SCHED_HMM);
@@ -144,7 +144,7 @@ void test_sched_api_download_hmm(void)
     EQ(hmm.xxh3, -7843725841264658444);
     EQ(hmm.filename, "PF02545.hmm");
     EQ(hmm.job_id, 1);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     FILE *fp = fopen(TMPDIR "/db.hmm", "wb");
@@ -177,7 +177,7 @@ void test_sched_api_upload_db(void)
     EQ(db.xxh3, -7843725841264658444);
     EQ(db.filename, "PF02545.dcp");
     EQ(db.hmm_id, hmm.id);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     api_cleanup();
@@ -200,7 +200,7 @@ void test_sched_api_get_db(void)
     EQ(db.xxh3, -7843725841264658444);
     EQ(db.filename, "PF02545.dcp");
     EQ(db.hmm_id, hmm.id);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     api_cleanup();
@@ -223,7 +223,7 @@ void test_sched_api_download_db(void)
     EQ(db.xxh3, -7843725841264658444);
     EQ(db.filename, "PF02545.dcp");
     EQ(db.hmm_id, hmm.id);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     FILE *fp = fopen(TMPDIR "/db.dcp", "wb");
@@ -248,7 +248,7 @@ void test_sched_api_post_testing_data(void)
     struct sched_api_error error = {0};
     EQ(sched_api_post_testing_data(&error), RC_OK);
 
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     sched_api_cleanup();
@@ -263,16 +263,16 @@ void test_sched_api_next_pend_job(void)
     struct sched_api_error error = {0};
 
     EQ(sched_api_next_pend_job(&job, &error), RC_END);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
     EQ(job.id, 0);
 
     EQ(sched_api_post_testing_data(&error), RC_OK);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     EQ(sched_api_next_pend_job(&job, &error), RC_OK);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
     EQ(job.id, 1);
     EQ(job.type, 0);
@@ -297,16 +297,16 @@ void test_sched_api_next_job_seq(void)
     struct sched_api_error error = {0};
 
     EQ(sched_api_next_pend_job(&job, &error), RC_END);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
     EQ(job.id, 0);
 
     EQ(sched_api_post_testing_data(&error), RC_OK);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
 
     EQ(sched_api_next_pend_job(&job, &error), RC_OK);
-    EQ(error.rc, SCHED_OK);
+    EQ(error.rc, 0);
     EQ(error.msg, "");
     EQ(job.id, 1);
     EQ(job.type, 0);

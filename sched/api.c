@@ -26,7 +26,7 @@ static struct ljson_ctx ljson = {0};
 
 static inline void error_init(struct api_error *err)
 {
-    err->rc = SCHED_OK;
+    err->rc = 0;
     err->msg[0] = 0;
 }
 
@@ -127,7 +127,7 @@ enum rc api_wipe(void)
     enum rc rc = xcurl_delete("/sched/wipe", &http_code);
     if (rc) goto cleanup;
 
-    if (http_code != 200) rc = efail("failed to wipe sheduler");
+    if (http_code != 200) rc = ehttp(http_code);
 
 cleanup:
     spinlock_unlock(&lock);
@@ -171,7 +171,7 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -208,7 +208,7 @@ enum rc api_get_hmm(int64_t id, struct sched_hmm *hmm, struct api_error *rerr)
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -240,7 +240,7 @@ enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -269,7 +269,7 @@ enum rc api_download_hmm(int64_t id, FILE *fp)
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -306,7 +306,7 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db,
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -350,7 +350,7 @@ enum rc api_get_db(int64_t id, struct sched_db *db, struct api_error *rerr)
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -375,20 +375,16 @@ enum rc api_next_pend_job(struct sched_job *job, struct api_error *rerr)
 
     if (http_code == 200)
     {
-        if (!xjson_is_array(&xjson, 0))
-            rc = einval("expected array");
-        else if (xjson_is_array_empty(&xjson, 0))
-            rc = RC_END;
-        else
-            rc = sched_job_parse(job, &xjson, 2);
+        rc = sched_job_parse(job, &xjson, 1);
     }
-    else if (http_code == 409 || http_code == 500)
+    else if (http_code == 404)
     {
         rc = parse_error(rerr, &xjson, 1);
+        if (!rc && rerr->rc == 5) rc = RC_END;
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -427,7 +423,7 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -459,7 +455,7 @@ enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan,
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -504,7 +500,7 @@ enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
     }
     else if (http_code != 200)
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -532,7 +528,7 @@ enum rc api_download_db(int64_t id, FILE *fp)
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -567,7 +563,7 @@ enum rc api_upload_prods_file(char const *filepath, struct api_error *rerr)
     }
     else
     {
-        rc = efail("unexpected http code");
+        rc = ehttp(http_code);
     }
 
 cleanup:
@@ -586,9 +582,8 @@ static enum rc parse_error(struct api_error *rerr, struct xjson *x,
     {
         if (xjson_eqstr(x, i, "rc"))
         {
-            if (!xjson_is_string(x, i + 1)) return einval("expected string");
-            rc = sched_rc_resolve(json_tok_size(x, i + 1),
-                                  json_tok_value(x, i + 1), &rerr->rc);
+            if (!xjson_is_number(x, i + 1)) return einval("expected number");
+            rc = xjson_bind_int(x, i + 1, &rerr->rc);
             if (rc) return rc;
         }
         else if (xjson_eqstr(x, i, "msg"))

@@ -3,7 +3,7 @@ find_package(hope REQUIRED)
 set(ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets)
 set(TMPDIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
 set(SCHED_API_URL
-    "http://127.0.0.1:8000/api"
+    "http://127.0.0.1:49329"
     CACHE STRING "Scheduler API URL")
 message(STATUS "Scheduler API URL: ${SCHED_API_URL}")
 

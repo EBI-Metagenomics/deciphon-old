@@ -215,19 +215,3 @@ enum rc sched_seq_parse(struct sched_seq *seq, struct xjson *x, unsigned start)
 
     return RC_OK;
 }
-
-static char const rc_name[][9] = {"ok",  "end",    "notfound", "efail",
-                                  "eio", "einval", "enomem",   "eparse"};
-
-enum rc sched_rc_resolve(unsigned len, char const *str, enum sched_rc *rc)
-{
-    for (unsigned i = 0; i < ARRAY_SIZE(rc_name); ++i)
-    {
-        if (!strncmp(rc_name[i], str, len))
-        {
-            *rc = (enum sched_rc)i;
-            return RC_OK;
-        }
-    }
-    return einval("invalid return code");
-}
