@@ -36,6 +36,7 @@ void logger_setup(logger_print_func_t, logger_print_static_func_t, void *arg);
     : code == 405 ? error(RC_EHTTP, "405 method not allowed")   \
     : code == 406 ? error(RC_EHTTP, "406 not acceptable")   \
     : code == 418 ? error(RC_EHTTP, "418 I'm a teapot")   \
+    : code == 422 ? error(RC_EHTTP, "422 unprocessable entity")   \
     : error(RC_EHTTP, "Unknown http error")
 /* clang-format on */
 

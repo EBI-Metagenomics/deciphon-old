@@ -165,6 +165,11 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
     {
         rc = sched_hmm_parse(hmm, &xjson, 1);
     }
+    else if (http_code == 418)
+    {
+        rc = parse_error(rerr, &xjson, 1);
+        if (!rc && rerr->rc == 16) rc = efail("invalid file name ext");
+    }
     else if (http_code == 400 || http_code == 409)
     {
         rc = parse_error(rerr, &xjson, 1);
@@ -287,8 +292,7 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db,
 
     struct xcurl_mime mime = {0};
     xfile_basename(filename, filepath);
-    xcurl_mime_set(&mime, "database_file", filename,
-                   "application/octet-stream");
+    xcurl_mime_set(&mime, "db_file", filename, "application/octet-stream");
 
     long http_code = 0;
     enum rc rc = upload("/dbs/", &http_code, &mime, filepath);
@@ -299,6 +303,11 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db,
     if (http_code == 201)
     {
         rc = sched_db_parse(db, &xjson, 1);
+    }
+    else if (http_code == 418)
+    {
+        rc = parse_error(rerr, &xjson, 1);
+        if (!rc && rerr->rc == 16) rc = efail("invalid file name ext");
     }
     else if (http_code == 400 || http_code == 409)
     {
