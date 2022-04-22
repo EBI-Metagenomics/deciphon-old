@@ -1,5 +1,7 @@
+#include "hmm.h"
 #include "deciphon/compiler.h"
 #include "deciphon/db/protein_writer.h"
+#include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/model/protein_h3reader.h"
 #include "deciphon/rc.h"
@@ -57,6 +59,7 @@ enum rc hmm_press(int64_t job_id, unsigned num_threads)
     protein_profile_init(&profile, reader.prof.meta.acc, &db.amino, &db.code,
                          db.cfg);
 
+    int i = 0;
     while (!(rc = protein_h3reader_next(&reader)))
     {
         if ((rc = profile_write()))
@@ -64,6 +67,8 @@ enum rc hmm_press(int64_t job_id, unsigned num_threads)
             efail("failed to write profile");
             // goto cleanup;
         }
+        ++i;
+        if (i % 1000 == 0) info("Pressed %d profiles", i);
     }
 
     if (rc != RC_END)
