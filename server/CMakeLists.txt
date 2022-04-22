@@ -10,3 +10,7 @@ add_library(
   server.c)
 
 target_link_libraries(server PUBLIC OpenMP::OpenMP_C)
+target_link_libraries(server PUBLIC sched)
+target_link_libraries(server PUBLIC core)
+target_link_libraries(server PUBLIC model)
+target_link_libraries(server PUBLIC db)
