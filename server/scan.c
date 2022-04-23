@@ -238,6 +238,7 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
     sched_seq_init(&scan.seq);
 
     struct api_error rerr = {0};
+    int nseqs = 0;
     while (
         !(rc = api_scan_next_seq(scan.sched.id, scan.seq.id, &scan.seq, &rerr)))
     {
@@ -266,6 +267,8 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
                 fail_job(job_id, "internal thread error");
             }
         }
+        ++nseqs;
+        info("%d of sequences have been scanned", nseqs);
     }
     if (rc != RC_END) goto cleanup;
 

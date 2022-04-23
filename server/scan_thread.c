@@ -93,6 +93,7 @@ enum rc thread_run(struct scan_thread *t)
     rc = profile_reader_rewind(reader, t->id);
     if (rc) goto cleanup;
 
+    int nprofs = 0;
     while ((rc = profile_reader_next(reader, t->id, &prof)) == RC_OK)
     {
         // info("Thread(%d)> Profile: %s", t->id, prof->accession);
@@ -117,6 +118,11 @@ enum rc thread_run(struct scan_thread *t)
         rc = viterbi(alt_dp, alt->task, &alt->prod, &t->prod.alt_loglik);
         if (rc) goto cleanup;
 
+        ++nprofs;
+        if (nprofs % 100 == 0)
+        {
+            info("%d profiles have been scanned", nprofs);
+        }
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
         // info("Thread(%d)> LRT: %f", t->id, lrt);

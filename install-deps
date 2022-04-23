@@ -11,4 +11,3 @@ bash -c "$(curl -fsSL https://bit.ly/3Kv06KA)" -s EBI-Metagenomics/fasta || exit
 bash -c "$(curl -fsSL https://bit.ly/3Kv06KA)" -s EBI-Metagenomics/imm || exit 1
 bash -c "$(curl -fsSL https://bit.ly/3Kv06KA)" -s EBI-Metagenomics/tabulate || exit 1
 bash -c "$(curl -fsSL https://bit.ly/3Kv06KA)" -s EBI-Metagenomics/gff || exit 1
-bash -c "$(curl -fsSL https://bit.ly/3Kv06KA)" -s EBI-Metagenomics/deciphon-sched || exit 1
