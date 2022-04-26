@@ -1,8 +1,8 @@
 #include "deciphon/sched/xcurl.h"
+#include "c_toolbelt/c_toolbelt.h"
 #include "curl_error.h"
 #include "deciphon/limits.h"
 #include "deciphon/logger.h"
-#include "deciphon/strlcpy.h"
 #include "xcurl_debug.h"
 #include <curl/curl.h>
 
@@ -25,9 +25,9 @@ static struct xcurl
 void xcurl_mime_set(struct xcurl_mime *mime, char const *name,
                     char const *filename, char const *type)
 {
-    dcp_strlcpy(mime->name, name, FILENAME_SIZE);
-    dcp_strlcpy(mime->filename, filename, FILENAME_SIZE);
-    dcp_strlcpy(mime->type, type, MIME_TYPE_SIZE);
+    CTB_STRLCPY(mime, name, name);
+    CTB_STRLCPY(mime, filename, filename);
+    CTB_STRLCPY(mime, type, type);
 }
 
 static inline enum rc list_add(struct curl_slist **list, const char *string)

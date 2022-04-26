@@ -9,7 +9,7 @@ static struct sched_scan scan = {0};
 static struct sched_db db = {0};
 static struct sched_job job = {0};
 static struct sched_seq seq = {0};
-static struct api_error error = {0};
+static struct api_rc error = {0};
 
 void test_sched_api_open_close(void);
 void test_sched_api_no_pend_job(void);

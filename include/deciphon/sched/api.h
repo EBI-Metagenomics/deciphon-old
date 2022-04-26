@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-struct api_error
+struct api_rc
 {
     int rc;
     char msg[ERROR_SIZE];
@@ -27,25 +27,27 @@ bool api_is_reachable(void);
 enum rc api_wipe(void);
 
 enum rc api_upload_hmm(char const *filepath, struct sched_hmm *,
-                       struct api_error *);
-enum rc api_get_hmm(int64_t id, struct sched_hmm *, struct api_error *);
+                       struct api_rc *);
+enum rc api_get_hmm(int64_t id, struct sched_hmm *, struct api_rc *);
 enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *,
-                              struct api_error *);
+                              struct api_rc *);
 enum rc api_download_hmm(int64_t id, FILE *fp);
 
-enum rc api_upload_db(char const *filepath, struct sched_db *,
-                      struct api_error *);
-enum rc api_get_db(int64_t id, struct sched_db *, struct api_error *);
+enum rc api_upload_db(char const *filepath, struct sched_db *, struct api_rc *);
+enum rc api_get_db(int64_t id, struct sched_db *, struct api_rc *);
 
-enum rc api_next_pend_job(struct sched_job *job, struct api_error *);
+enum rc api_next_pend_job(struct sched_job *job, struct api_rc *);
 enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
-                          char const *msg, struct api_error *);
+                          char const *msg, struct api_rc *);
 enum rc api_download_db(int64_t id, FILE *fp);
-enum rc api_upload_prods_file(char const *filepath, struct api_error *);
+enum rc api_upload_prods_file(char const *filepath, struct api_rc *);
 
 enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
-                          struct sched_seq *seq, struct api_error *);
+                          struct sched_seq *seq, struct api_rc *);
 enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *,
-                               struct api_error *);
+                               struct api_rc *);
+
+enum rc api_increment_job_progress(int64_t job_id, int increment,
+                                   struct api_rc *api_rc);
 
 #endif

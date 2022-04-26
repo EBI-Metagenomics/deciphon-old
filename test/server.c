@@ -6,7 +6,7 @@
 #include <curl/curl.h>
 
 static struct sched_hmm hmm = {0};
-static struct api_error error = {0};
+static struct api_rc error = {0};
 
 void test_server(void);
 

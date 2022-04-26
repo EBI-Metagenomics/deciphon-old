@@ -38,7 +38,7 @@ struct scan
 };
 
 static struct scan scan = {0};
-static struct api_error error = {0};
+static struct api_rc error = {0};
 
 static enum rc ensure_database_integrity(char const *filename, int64_t xxh3)
 {
@@ -85,7 +85,7 @@ static enum rc ensure_database(struct sched_db *db)
 
 static inline void fail_job(int64_t job_id, char const *msg)
 {
-    struct api_error rerr = {0};
+    struct api_rc rerr = {0};
     api_set_job_state(job_id, SCHED_FAIL, msg, &rerr);
 }
 
@@ -94,7 +94,7 @@ static enum rc prepare_database(struct scan *scan)
     struct sched_db db = {0};
     db.id = scan->sched.db_id;
 
-    struct api_error rerr = {0};
+    struct api_rc rerr = {0};
     enum rc rc = api_get_db(scan->sched.db_id, &db, &rerr);
     if (rc || rerr.rc)
     {
@@ -204,7 +204,7 @@ static enum rc work_finishup(int64_t job_id)
 
     char const *filepath = prod_final_path();
 
-    struct api_error rerr = {0};
+    struct api_rc rerr = {0};
 
     if ((rc = api_upload_prods_file(filepath, &rerr)))
     {
@@ -237,7 +237,7 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
 
     sched_seq_init(&scan.seq);
 
-    struct api_error rerr = {0};
+    struct api_rc rerr = {0};
     int nseqs = 0;
     while (
         !(rc = api_scan_next_seq(scan.sched.id, scan.seq.id, &scan.seq, &rerr)))

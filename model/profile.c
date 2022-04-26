@@ -1,6 +1,6 @@
 #include "deciphon/model/profile.h"
+#include "c_toolbelt/c_toolbelt.h"
 #include "deciphon/compiler.h"
-#include "deciphon/strlcpy.h"
 
 void profile_del(struct profile *prof)
 {
@@ -29,7 +29,7 @@ void profile_init(struct profile *prof, char const *accession,
                   imm_state_name *state_name)
 {
     prof->vtable = vtable;
-    dcp_strlcpy(prof->accession, accession, ARRAY_SIZE_OF(*prof, accession));
+    CTB_STRLCPY(prof, accession, accession);
     prof->state_name = state_name;
     prof->code = code;
 }

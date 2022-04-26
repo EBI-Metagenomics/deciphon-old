@@ -1,7 +1,7 @@
 #include "deciphon/xfile.h"
+#include "c_toolbelt/c_toolbelt.h"
 #include "deciphon/compiler.h"
 #include "deciphon/logger.h"
-#include "deciphon/strlcpy.h"
 #define XXH_INLINE_ALL
 #include "xxhash/xxhash.h"
 #include <assert.h>
@@ -100,7 +100,7 @@ cleanup:
 
 enum rc xfile_tmp_open(struct xfile_tmp *file)
 {
-    dcp_strlcpy(file->path, XFILE_PATH_TEMP_TEMPLATE, ARRAY_SIZE_OF(*file, path));
+    CTB_STRLCPY(file, path, XFILE_PATH_TEMP_TEMPLATE);
     file->fp = 0;
 
     enum rc rc = xfile_mktemp(file->path);
@@ -197,7 +197,7 @@ enum rc xfile_set_ext(size_t max_size, char *str, char const *ext)
 void xfile_basename(char *filename, char const *path)
 {
     char *p = glibc_basename(path);
-    dcp_strlcpy(filename, p, FILENAME_SIZE);
+    ctb_strlcpy(filename, p, FILENAME_SIZE);
 }
 
 void xfile_strip_ext(char *str)

@@ -8,6 +8,7 @@ add_library(
   nanoprintf.c
   rc.c
   str.c
-  strlcpy.c
   to.c
   xfile.c)
+
+target_link_libraries(core PUBLIC C_TOOLBELT::c_toolbelt)

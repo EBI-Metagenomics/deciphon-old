@@ -26,7 +26,7 @@ void job_init(struct job *job, unsigned num_threads)
 
 enum rc job_next(struct job *job)
 {
-    struct api_error rerr = {0};
+    struct api_rc rerr = {0};
 
     enum rc rc = api_next_pend_job(&job->sched, &rerr);
     if (rc) return rc;
