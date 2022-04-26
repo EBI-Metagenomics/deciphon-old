@@ -67,7 +67,7 @@ enum rc prod_fopen(unsigned nthreads)
 }
 
 void prod_setup_job(struct prod *prod, char const *abc_name,
-                    char const *prof_typeid, unsigned scan_id)
+                    char const *prof_typeid, int64_t scan_id)
 {
     strcpy(prod->abc_name, abc_name);
     strcpy(prod->profile_typeid, prof_typeid);

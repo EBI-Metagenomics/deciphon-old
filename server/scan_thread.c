@@ -6,7 +6,7 @@
 
 void thread_init(struct scan_thread *t, unsigned id,
                  struct profile_reader *reader, bool multi_hits,
-                 bool hmmer3_compat, imm_float lrt_threshold,
+                 bool hmmer3_compat, double lrt_threshold,
                  prod_fwrite_match_func_t write_match_func)
 {
     t->id = id;
@@ -21,7 +21,7 @@ void thread_init(struct scan_thread *t, unsigned id,
 }
 
 void thread_setup_job(struct scan_thread *t, enum imm_abc_typeid abc_typeid,
-                      enum profile_typeid profile_typeid, unsigned scan_id)
+                      enum profile_typeid profile_typeid, int64_t scan_id)
 {
     char const *abc = imm_abc_typeid_name(abc_typeid);
     char const *prof = profile_typeid_name(profile_typeid);
@@ -29,7 +29,7 @@ void thread_setup_job(struct scan_thread *t, enum imm_abc_typeid abc_typeid,
 }
 
 void thread_setup_seq(struct scan_thread *t, struct imm_seq *seq,
-                      unsigned seq_id)
+                      int64_t seq_id)
 {
     t->seq = seq;
     prod_setup_seq(&t->prod, seq_id);

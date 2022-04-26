@@ -51,7 +51,10 @@ static void setup_db_filename(void)
 
 static enum rc fetch_hmm(char const *filename, int64_t xxh3)
 {
+    /* TODO: should be filename */
     FILE *fp = fopen(hmm.filename, "wb");
+    if (!fp) return eio("fopen");
+    /* TODO: should be xxh3 */
     enum rc rc = api_download_hmm(hmm.id, fp);
     if (rc)
     {
