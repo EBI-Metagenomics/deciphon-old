@@ -163,6 +163,7 @@ enum rc xcurl_get(char const *query, long *http_code,
                   xcurl_callback_func_t callback, void *arg)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
     curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
 
@@ -180,6 +181,7 @@ enum rc xcurl_post(char const *query, long *http_code,
                    xcurl_callback_func_t callback, void *arg, char const *json)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
     curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
 
@@ -200,6 +202,7 @@ enum rc xcurl_patch(char const *query, long *http_code,
                     xcurl_callback_func_t callback, void *arg, char const *json)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
     curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
 
@@ -219,6 +222,7 @@ enum rc xcurl_patch(char const *query, long *http_code,
 enum rc xcurl_delete(char const *query, long *http_code)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
     curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
 
@@ -235,6 +239,7 @@ enum rc xcurl_delete(char const *query, long *http_code)
 enum rc xcurl_download(char const *query, long *http_code, FILE *fp)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
     curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
     curl_easy_setopt(xcurl.curl, CURLOPT_TIMEOUT, TIMEOUT);
@@ -253,6 +258,7 @@ enum rc xcurl_upload(char const *query, long *http_code,
                      struct xcurl_mime const *mime, char const *filepath)
 {
     url_set_query(&xcurl.url, query);
+    curl_easy_setopt(xcurl.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
     curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
     curl_easy_setopt(xcurl.curl, CURLOPT_TIMEOUT, TIMEOUT);
