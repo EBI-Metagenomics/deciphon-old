@@ -168,8 +168,10 @@ cleanup:
     rc = rc ? rc : (rc_r ? rc_r : (rc_w ? rc_w : RC_OK));
     if (rc) return rc;
 
+    info("Uploading pressed file");
     rc = api_upload_db(db_filename, &sched_db, &api_rc);
     if (rc) return rc;
+    info("Finished upload");
 
     rc = api_set_job_state(job_id, SCHED_DONE, "", &api_rc);
     return rc;

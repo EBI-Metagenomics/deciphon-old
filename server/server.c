@@ -68,13 +68,17 @@ enum rc server_run(void)
 
     do
     {
+        server.job.sched.id = 0;
         rc = job_next(&server.job);
         if (rc == RC_OK)
         {
             info("Running job[%ld]", server.job.sched.id);
             rc = job_run(&server.job);
-            if (rc) break;
-
+            if (rc)
+            {
+                info("Failed job[%ld]", server.job.sched.id);
+                continue;
+            }
             info("Finished job[%ld]", server.job.sched.id);
         }
         else if (rc == RC_END)

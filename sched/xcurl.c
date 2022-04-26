@@ -19,7 +19,7 @@ static struct xcurl
     struct url url;
 } xcurl = {0};
 
-#define TIMEOUT 300L
+#define TIMEOUT 3000L
 #define CONNECTTIMEOUT 5L
 
 void xcurl_mime_set(struct xcurl_mime *mime, char const *name,
