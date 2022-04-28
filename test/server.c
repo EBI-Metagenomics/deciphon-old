@@ -1,7 +1,7 @@
 #include "deciphon/server/server.h"
 #include "deciphon/db/db.h"
 #include "deciphon/sched/api.h"
-#include "hope/hope.h"
+#include "hope.h"
 #include "imm/imm.h"
 #include <curl/curl.h>
 

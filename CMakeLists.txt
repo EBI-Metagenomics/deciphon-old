@@ -8,7 +8,15 @@ project(
 include(CheckSymbolExists)
 include(cmake/compiler-options.cmake)
 include(cmake/sanitizers.cmake)
+include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
+cpmaddpackage(NAME hmr GIT_TAG 0.1.2 GITHUB_REPOSITORY
+              EBI-Metagenomics/hmmer-reader)
+cpmaddpackage(NAME imm GIT_TAG 0.1.1 GITHUB_REPOSITORY EBI-Metagenomics/imm)
+cpmaddpackage(NAME c_toolbelt GIT_TAG 0.1.2 GITHUB_REPOSITORY horta/c-toolbelt)
+cpmaddpackage(NAME lite_pack GIT_TAG 0.1.2 GITHUB_REPOSITORY
+              EBI-Metagenomics/lite-pack)
 
 find_package(CURL REQUIRED)
 find_package(Threads REQUIRED)
@@ -59,3 +67,18 @@ endforeach()
 
 enable_testing()
 add_subdirectory(test)
+
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VENDOR "Danilo Horta")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "DECIPHON")
+set(CPACK_PACKAGE_CONTACT "Danilo Horta")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md)
+set(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+set(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/package)
+set(CPACK_VERBATIM_VARIABLES YES)
+set(CPACK_PACKAGE_RELOCATABLE YES)
+set(CPACK_MONOLITHIC_INSTALL YES)
+include(CPack)

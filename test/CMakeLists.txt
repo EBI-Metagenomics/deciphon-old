@@ -1,5 +1,3 @@
-find_package(hope REQUIRED)
-
 set(ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets)
 set(TMPDIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
 set(SCHED_API_URL
@@ -43,7 +41,6 @@ endif()
 
 function(model_add_test name libs)
   add_executable(test_${name} ${name}.c)
-  target_link_libraries(test_${name} PRIVATE HOPE::hope)
   target_link_libraries(test_${name} PRIVATE DECIPHON::core)
   target_link_libraries(test_${name} PRIVATE DECIPHON::model)
   add_test(NAME test_${name} COMMAND test_${name})
@@ -51,7 +48,6 @@ endfunction()
 
 function(db_add_test name libs)
   add_executable(test_${name} ${name}.c)
-  target_link_libraries(test_${name} PRIVATE HOPE::hope)
   target_link_libraries(test_${name} PRIVATE DECIPHON::core)
   target_link_libraries(test_${name} PRIVATE DECIPHON::model)
   target_link_libraries(test_${name} PRIVATE DECIPHON::db)
@@ -60,7 +56,6 @@ endfunction()
 
 function(sched_add_test name libs)
   add_executable(test_${name} ${name}.c)
-  target_link_libraries(test_${name} PRIVATE HOPE::hope)
   target_link_libraries(test_${name} PRIVATE DECIPHON::core)
   target_link_libraries(test_${name} PRIVATE DECIPHON::model)
   target_link_libraries(test_${name} PRIVATE DECIPHON::db)
@@ -70,7 +65,6 @@ endfunction()
 
 function(server_add_test name libs)
   add_executable(test_${name} ${name}.c)
-  target_link_libraries(test_${name} PRIVATE HOPE::hope)
   target_link_libraries(test_${name} PRIVATE DECIPHON::core)
   target_link_libraries(test_${name} PRIVATE DECIPHON::model)
   target_link_libraries(test_${name} PRIVATE DECIPHON::db)

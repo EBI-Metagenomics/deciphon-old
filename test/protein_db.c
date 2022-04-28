@@ -1,5 +1,5 @@
 #include "deciphon/db/db.h"
-#include "hope/hope.h"
+#include "hope.h"
 #include "imm/imm.h"
 
 void test_protein_db_writer(void);

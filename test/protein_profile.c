@@ -1,6 +1,6 @@
 #include "deciphon/model/protein_profile.h"
 #include "deciphon/model/protein_codec.h"
-#include "hope/hope.h"
+#include "hope.h"
 #include "imm/imm.h"
 
 void test_protein_profile_uniform(void);

@@ -1,5 +1,5 @@
 #include "deciphon/model/standard_profile.h"
-#include "hope/hope.h"
+#include "hope.h"
 #include "imm/imm.h"
 
 int main(void)

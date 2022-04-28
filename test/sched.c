@@ -1,7 +1,7 @@
 #include "deciphon/sched/sched.h"
 #include "deciphon/sched/api.h"
 #include "deciphon/xfile.h"
-#include "hope/hope.h"
+#include "hope.h"
 #include "imm/imm.h"
 
 static struct sched_hmm hmm = {0};
