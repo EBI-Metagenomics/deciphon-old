@@ -97,6 +97,7 @@ enum rc cli_server(int argc, char **argv)
     strcpy(url_stem + strlen(url_stem), host);
     strcpy(url_stem + strlen(url_stem), ":");
     strcpy(url_stem + strlen(url_stem), port);
+    strcpy(url_stem + strlen(url_stem), prefix);
 
     // char const *url_stem = arguments.args[0];
     // char const *num_threads = arguments.args[1];
