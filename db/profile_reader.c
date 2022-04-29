@@ -1,5 +1,6 @@
 #include "deciphon/db/db.h"
 #include "deciphon/expect.h"
+#include "deciphon/info.h"
 #include "deciphon/logger.h"
 #include "deciphon/xfile.h"
 #include "deciphon/xmath.h"
@@ -55,11 +56,17 @@ static void setup_profile_indices(struct profile_reader *reader)
 static void partition_it(struct profile_reader *reader, struct db_reader *db,
                          int64_t offset)
 {
-    reader->partition_offset[0] = offset;
-    // reader->partition_offset[0] = db->profile_offsets[0];
-
     unsigned nparts = reader->npartitions;
     unsigned nprofs = db->nprofiles;
+
+    for (unsigned j = 0; j < nprofs; ++j)
+    {
+        reader->partition_size[j] = 0;
+        reader->partition_offset[j] = 0;
+    }
+    reader->partition_offset[nprofs] = 0;
+    reader->partition_offset[0] = offset;
+
     unsigned i = 0;
     unsigned size = 0;
     for (unsigned j = 0; j < nprofs; ++j)
@@ -94,6 +101,7 @@ enum rc profile_reader_setup(struct profile_reader *reader,
     if (n != db->nprofiles) return einval("invalid nprofiles");
 
     int64_t profiles_offset = xfile_tell(db->file.fp);
+    info("profiles_offset: %lld", profiles_offset);
 
     enum rc rc = RC_OK;
     reader->profile_typeid = db->profile_typeid;
@@ -155,7 +163,6 @@ enum rc profile_reader_next(struct profile_reader *reader, unsigned partition,
                             struct profile **profile)
 {
     *profile = (struct profile *)&reader->profiles[partition];
-    // (*profile)->idx_within_db++;
     enum rc rc = reached_end(reader, partition);
     if (rc == RC_OK)
     {
