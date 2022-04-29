@@ -19,15 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Check for sudo
-        shell: bash
-        run: |
-          if type sudo >/dev/null 2>&1; then SUDO="sudo"; else SUDO=""; fi
-          echo "SUDO=$SUDO" >> $GITHUB_ENV
-
-      - name: Install dependencies
-        shell: bash
-        run: if [ -f install-deps ]; then $SUDO ./install-deps; fi
+      - name: Install libcurl4
+        run: sudo apt-get install -y libcurl4 libcurl4-openssl-dev
 
       - name: Configure CMake
         if: runner.os == 'Linux'
@@ -43,8 +36,3 @@ jobs:
       - name: Test
         working-directory: ${{github.workspace}}/build
         run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
-
-      - name: Install
-        working-directory: ${{github.workspace}}/build
-        shell: bash
-        run: $SUDO cmake --build . --target install --config $BUILD_TYPE
