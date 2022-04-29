@@ -9,3 +9,4 @@ add_library(
   xjson.c)
 
 target_link_libraries(sched PUBLIC CURL::libcurl)
+target_link_libraries(sched PUBLIC C_TOOLBELT::c_toolbelt)

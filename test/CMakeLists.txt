@@ -80,6 +80,5 @@ model_add_test(protein_h3reader protein_h3reader.c)
 
 db_add_test(protein_db protein_db.c)
 
-sched_add_test(sched sched.c)
-
-server_add_test(server server.c)
+# sched_add_test(sched sched.c)
+# server_add_test(server server.c)

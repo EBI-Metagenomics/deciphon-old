@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
 
 project(
   deciphon
-  VERSION 1.0.0
+  VERSION 0.1.0
   LANGUAGES C)
 
 include(CheckSymbolExists)
@@ -13,9 +13,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 cpmaddpackage(NAME hmr GIT_TAG 0.1.2 GITHUB_REPOSITORY
               EBI-Metagenomics/hmmer-reader)
-cpmaddpackage(NAME imm GIT_TAG 0.1.1 GITHUB_REPOSITORY EBI-Metagenomics/imm)
+cpmaddpackage(NAME imm VERSION 1.0.0 GITHUB_REPOSITORY EBI-Metagenomics/imm)
 cpmaddpackage(NAME c_toolbelt GIT_TAG 0.1.2 GITHUB_REPOSITORY horta/c-toolbelt)
-cpmaddpackage(NAME lite_pack GIT_TAG 0.1.2 GITHUB_REPOSITORY
+cpmaddpackage(NAME lite_pack VERSION 0.1.4 GITHUB_REPOSITORY
               EBI-Metagenomics/lite-pack)
 
 find_package(CURL REQUIRED)
