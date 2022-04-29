@@ -39,7 +39,7 @@ enum rc server_init(char const *sched_api_url, struct server_cfg cfg)
 
     server.cfg = cfg;
 
-    enum rc rc = api_init(sched_api_url);
+    enum rc rc = api_init(sched_api_url, cfg.api_key);
     if (rc) return rc;
 
     if (cfg.single_run) server.signal.interrupt = 1;
