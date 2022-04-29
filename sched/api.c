@@ -72,11 +72,11 @@ static char const *query(char const *fmt, ...)
     return _query;
 }
 
-enum rc api_init(char const *url_stem)
+enum rc api_init(char const *url_stem, char const *api_key)
 {
     if (initialized++) return RC_OK;
 
-    enum rc rc = xcurl_init(url_stem);
+    enum rc rc = xcurl_init(url_stem, api_key);
     if (rc) return rc;
 
     if (!(response = buff_new(1024)))

@@ -9,6 +9,7 @@ add_library(
   rc.c
   str.c
   to.c
+  dotenv.c
   xfile.c)
 
 target_link_libraries(core PUBLIC C_TOOLBELT::c_toolbelt)

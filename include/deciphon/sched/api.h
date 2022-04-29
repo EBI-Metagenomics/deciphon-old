@@ -19,7 +19,7 @@ struct sched_hmm;
 struct sched_job;
 struct sched_seq;
 
-enum rc api_init(char const *url_stem);
+enum rc api_init(char const *url_stem, char const *api_key);
 void api_cleanup(void);
 
 bool api_is_reachable(void);

@@ -9,6 +9,7 @@ struct server_cfg
     double lrt_threshold;
     unsigned polling_rate;
     bool single_run;
+    char api_key[256];
 };
 
 #define SERVER_CFG_INIT                                                        \

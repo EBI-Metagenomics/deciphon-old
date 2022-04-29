@@ -1,7 +1,7 @@
 #include "cli.h"
+#include "deciphon/dotenv.h"
 #include "deciphon/logger.h"
 #include "deciphon/server/server.h"
-// #include "log/log.h"
 #include <argp.h>
 #include <assert.h>
 #include <signal.h>
@@ -14,7 +14,7 @@
 
 struct arguments
 {
-    char *args[2];
+    char *args[0];
     int quiet;
 } arguments;
 
@@ -29,12 +29,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         break;
 
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 2) argp_usage(state);
+        if (state->arg_num >= 0) argp_usage(state);
         args->args[state->arg_num] = arg;
         break;
 
     case ARGP_KEY_END:
-        if (state->arg_num < 2) argp_usage(state);
+        if (state->arg_num < 0) argp_usage(state);
         break;
 
     default:
@@ -43,8 +43,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     return 0;
 }
 
-static char doc[] = "Run daemon -- deciphond http://127.0.0.1:8000 1";
-static char args_doc[] = "URL_STEM NUM_THREADS";
+static char doc[] = "Run daemon -- deciphond";
+static char args_doc[] = "";
+// static char args_doc[] = "URL_STEM NUM_THREADS";
 static struct argp_option options[] = {
     {"quiet", 'q', 0, 0, "Disable output", 0}, {0}};
 static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
@@ -66,13 +67,39 @@ static void print_log_put(char const *msg, void *arg)
 
 static void flush_nop(void *arg) {}
 
+static char url_stem[2048] = {0};
+
 enum rc cli_server(int argc, char **argv)
 {
     if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return RC_EINVAL;
 
     enum rc rc = RC_OK;
-    char const *url_stem = arguments.args[0];
-    char const *num_threads = arguments.args[1];
+
+    if (dotenv_load(".env", true))
+        return efail("failed to read `.env` file from the working directory");
+
+    char const *host = getenv("API_HOST");
+    if (!host) return efail("failed to get `API_HOST`");
+
+    char const *port = getenv("API_PORT");
+    if (!port) return efail("failed to get `API_PORT`");
+
+    char const *prefix = getenv("API_PREFIX");
+    if (!prefix) return efail("failed to get `API_PREFIX`");
+
+    char const *key = getenv("API_KEY");
+    if (!key) return efail("failed to get `API_KEY`");
+
+    char const *num_threads = getenv("NUM_THREADS");
+    if (!num_threads) return efail("failed to get `NUM_THREADS`");
+
+    strcpy(url_stem, "http://");
+    strcpy(url_stem + strlen(url_stem), host);
+    strcpy(url_stem + strlen(url_stem), ":");
+    strcpy(url_stem + strlen(url_stem), port);
+
+    // char const *url_stem = arguments.args[0];
+    // char const *num_threads = arguments.args[1];
 
     /* skeleton_daemon(); */
     // logger_setup(print_log_put, NULL);
@@ -86,6 +113,7 @@ enum rc cli_server(int argc, char **argv)
     // if (rc) goto cleanup;
     struct server_cfg cfg = SERVER_CFG_INIT;
     cfg.num_threads = (unsigned)atoi(num_threads);
+    strcpy(cfg.api_key, key);
 
     rc = server_init(url_stem, cfg);
     if (rc) goto cleanup;

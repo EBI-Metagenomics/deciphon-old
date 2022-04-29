@@ -18,7 +18,7 @@ void xcurl_mime_set(struct xcurl_mime *, char const *name, char const *filename,
 
 struct xcurl;
 
-enum rc xcurl_init(char const *url_stem);
+enum rc xcurl_init(char const *url_stem, char const *api_key);
 void xcurl_cleanup(void);
 
 typedef size_t (*xcurl_callback_func_t)(void *data, size_t size, void *arg);

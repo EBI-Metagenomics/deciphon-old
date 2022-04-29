@@ -5,6 +5,7 @@
 #include "deciphon/logger.h"
 #include "xcurl_debug.h"
 #include <curl/curl.h>
+#include <string.h>
 
 static struct xcurl
 {
@@ -48,29 +49,33 @@ static inline void list_free(struct curl_slist *list)
     curl_slist_free_all(list);
 }
 
-static enum rc setup_headers(void)
+char key_header[256 + 11] = "X-API-KEY: ";
+
+static enum rc setup_headers(char const *api_key)
 {
     xcurl.hdr.send_json = 0;
     xcurl.hdr.recv_json = 0;
     xcurl.hdr.only_json = 0;
 
+    strcpy(key_header + strlen(key_header), api_key);
+
     enum rc rc = RC_OK;
 
     rc = list_add(&xcurl.hdr.send_json, "Content-Type: application/json");
     if (rc) goto cleanup;
-    rc = list_add(&xcurl.hdr.send_json, "X-API-KEY: change-me");
+    rc = list_add(&xcurl.hdr.send_json, key_header);
     if (rc) goto cleanup;
 
     rc = list_add(&xcurl.hdr.recv_json, "Accept: application/json");
     if (rc) goto cleanup;
-    rc = list_add(&xcurl.hdr.recv_json, "X-API-KEY: change-me");
+    rc = list_add(&xcurl.hdr.recv_json, key_header);
     if (rc) goto cleanup;
 
     rc = list_add(&xcurl.hdr.only_json, "Content-Type: application/json");
     if (rc) goto cleanup;
     rc = list_add(&xcurl.hdr.only_json, "Accept: application/json");
     if (rc) goto cleanup;
-    rc = list_add(&xcurl.hdr.only_json, "X-API-KEY: change-me");
+    rc = list_add(&xcurl.hdr.only_json, key_header);
     if (rc) goto cleanup;
 
     return rc;
@@ -89,7 +94,7 @@ static size_t noop_write(void *ptr, size_t size, size_t nmemb, void *data)
     return size * nmemb;
 }
 
-enum rc xcurl_init(char const *url_stem)
+enum rc xcurl_init(char const *url_stem, char const *api_key)
 {
     if (xcurl.initialized++) return RC_OK;
 
@@ -101,7 +106,7 @@ enum rc xcurl_init(char const *url_stem)
         goto cleanup;
     }
 
-    if ((rc = setup_headers())) goto cleanup;
+    if ((rc = setup_headers(api_key))) goto cleanup;
 
     xcurl.curl = curl_easy_init();
     if (!xcurl.curl)
