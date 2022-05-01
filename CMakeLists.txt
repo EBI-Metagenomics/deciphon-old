@@ -43,27 +43,76 @@ add_compile_definitions(_DARWIN_C_SOURCE=1)
 
 set(LIBS core model db sched server cli)
 
-# Enable interprodecural optimization
-macro(enable_ipo lib)
-  if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    include(CheckIPOSupported)
-    check_ipo_supported()
-    set_target_properties(${lib} PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
-  endif()
-endmacro()
+add_library(
+  deciphon
+  src/core/bitops.c
+  src/core/buff.c
+  src/core/info.c
+  src/core/ljson.c
+  src/core/logger.c
+  src/core/nanoprintf.c
+  src/core/rc.c
+  src/core/str.c
+  src/core/to.c
+  src/core/dotenv.c
+  src/core/xfile.c
+  src/model/nuclt_dist.c
+  src/model/profile.c
+  src/model/profile_types.c
+  src/model/protein_codec.c
+  src/model/protein_h3reader.c
+  src/model/protein_model.c
+  src/model/protein_profile.c
+  src/model/protein_state.c
+  src/model/standard_profile.c
+  src/model/standard_state.c
+  src/db/reader.c
+  src/db/writer.c
+  src/db/protein_writer.c
+  src/db/protein_reader.c
+  src/db/profile_reader.c
+  src/sched/api.c
+  src/sched/jsmn.c
+  src/sched/sched.c
+  src/sched/url.c
+  src/sched/xcurl.c
+  src/sched/xcurl_debug.c
+  src/sched/xjson.c
+  src/server/file.c
+  src/server/hmm.c
+  src/server/job.c
+  src/server/job_state.c
+  src/server/prod.c
+  src/server/protein_match.c
+  src/server/scan.c
+  src/server/scan_thread.c
+  src/server/server.c
+  src/cli/cli.c
+  src/cli/cli_server.c)
+add_library(DECIPHON::deciphon ALIAS deciphon)
 
-foreach(lib ${LIBS})
-  add_subdirectory(${lib})
-  add_library(DECIPHON::${lib} ALIAS ${lib})
-  enable_ipo(${lib})
+target_link_libraries(deciphon PUBLIC CURL::libcurl)
+target_link_libraries(deciphon PUBLIC C_TOOLBELT::c_toolbelt)
+target_link_libraries(deciphon PUBLIC HMR::hmr)
+target_link_libraries(deciphon PUBLIC IMM::imm)
+target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)
+target_link_libraries(deciphon PUBLIC OpenMP::OpenMP_C)
 
-  target_include_directories(
-    ${lib}
-    PUBLIC $<INSTALL_INTERFACE:include>
-           $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-           $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
-    PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${lib}>)
-endforeach()
+target_include_directories(
+  deciphon
+  PUBLIC $<INSTALL_INTERFACE:include>
+         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  include(CheckIPOSupported)
+  check_ipo_supported()
+  set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+add_executable(dcp-server src/cli/bin_server.c)
+target_link_libraries(dcp-server PUBLIC deciphon)
 
 enable_testing()
 add_subdirectory(test)

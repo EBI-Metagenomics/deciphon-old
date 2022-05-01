@@ -2,7 +2,6 @@
 #include "deciphon/dotenv.h"
 #include "deciphon/logger.h"
 #include "deciphon/server/server.h"
-#include <argp.h>
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>
@@ -11,44 +10,6 @@
 #include <sys/types.h>
 #include <syslog.h>
 #include <unistd.h>
-
-struct arguments
-{
-    char *args[0];
-    int quiet;
-} arguments;
-
-static error_t parse_opt(int key, char *arg, struct argp_state *state)
-{
-    struct arguments *args = state->input;
-
-    switch (key)
-    {
-    case 'q':
-        args->quiet = 1;
-        break;
-
-    case ARGP_KEY_ARG:
-        if (state->arg_num >= 0) argp_usage(state);
-        args->args[state->arg_num] = arg;
-        break;
-
-    case ARGP_KEY_END:
-        if (state->arg_num < 0) argp_usage(state);
-        break;
-
-    default:
-        return ARGP_ERR_UNKNOWN;
-    }
-    return 0;
-}
-
-static char doc[] = "Run daemon -- deciphond";
-static char args_doc[] = "";
-// static char args_doc[] = "URL_STEM NUM_THREADS";
-static struct argp_option options[] = {
-    {"quiet", 'q', 0, 0, "Disable output", 0}, {0}};
-static struct argp argp = {options, parse_opt, args_doc, doc, 0, 0, 0};
 
 void skeleton_daemon(void);
 
@@ -69,10 +30,8 @@ static void flush_nop(void *arg) {}
 
 static char url_stem[2048] = {0};
 
-enum rc cli_server(int argc, char **argv)
+enum rc cli_server(void)
 {
-    if (argp_parse(&argp, argc, argv, 0, 0, &arguments)) return RC_EINVAL;
-
     enum rc rc = RC_OK;
 
     if (dotenv_load(".env", true))
