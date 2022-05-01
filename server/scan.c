@@ -217,7 +217,7 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
             thread_setup_seq(t, &seq, scan.seq.id);
         }
 
-        // #pragma omp parallel for
+#pragma omp parallel for
         for (unsigned i = 0; i < npartitions; ++i)
         {
             struct scan_thread *t = scan.thread + i;

@@ -1,3 +1,4 @@
+#include "c_toolbelt/c_toolbelt.h"
 #include "deciphon/db/db.h"
 #include "deciphon/expect.h"
 #include "deciphon/info.h"
@@ -41,38 +42,26 @@ static void init_protein_profiles(struct profile_reader *reader,
     }
 }
 
-#if 0
-static void setup_profile_indices(struct profile_reader *reader)
+static void partition_init(struct profile_reader *reader, int64_t offset)
 {
-    int offset = -1;
-    for (unsigned i = 0; i < reader->npartitions; ++i)
-    {
-        ((struct profile *)&reader->profiles[i])->idx_within_db = offset;
-        offset += reader->partition_size[i];
-    }
+    int64_t *poffset = reader->partition_offset;
+    unsigned *psize = reader->partition_size;
+
+    memset(poffset, 0, CTB_SIZEOF_MEMBER(*reader, partition_offset));
+    memset(psize, 0, CTB_SIZEOF_MEMBER(*reader, partition_size));
+    poffset[0] = offset;
 }
-#endif
 
-static void partition_it(struct profile_reader *reader, struct db_reader *db,
-                         int64_t offset)
+static void partition_it(struct profile_reader *reader, struct db_reader *db)
 {
-    unsigned nparts = reader->npartitions;
-    unsigned nprofs = db->nprofiles;
-
-    for (unsigned j = 0; j < nprofs; ++j)
-    {
-        reader->partition_size[j] = 0;
-        reader->partition_offset[j] = 0;
-    }
-    reader->partition_offset[nprofs] = 0;
-    reader->partition_offset[0] = offset;
-
     unsigned i = 0;
     unsigned size = 0;
+    unsigned nprofs = db->nprofiles;
     for (unsigned j = 0; j < nprofs; ++j)
     {
         reader->partition_offset[i + 1] += db->profile_sizes[j];
 
+        unsigned nparts = reader->npartitions;
         if (++size >= xmath_partition_size(nprofs, nparts, i))
         {
             reader->partition_size[i] = size;
@@ -82,7 +71,6 @@ static void partition_it(struct profile_reader *reader, struct db_reader *db,
         }
     }
     assert(i == nparts);
-    // reader->partition_offset[nparts] = db->profile_offsets[nprofs];
 }
 
 enum rc profile_reader_setup(struct profile_reader *reader,
@@ -101,7 +89,6 @@ enum rc profile_reader_setup(struct profile_reader *reader,
     if (n != db->nprofiles) return einval("invalid nprofiles");
 
     int64_t profiles_offset = xfile_tell(db->file.fp);
-    info("profiles_offset: %lld", profiles_offset);
 
     enum rc rc = RC_OK;
     reader->profile_typeid = db->profile_typeid;
@@ -112,7 +99,8 @@ enum rc profile_reader_setup(struct profile_reader *reader,
     else
         assert(false);
 
-    partition_it(reader, db, profiles_offset);
+    partition_init(reader, profiles_offset);
+    partition_it(reader, db);
     if ((rc = profile_reader_rewind_all(reader))) goto cleanup;
     return rc;
 
