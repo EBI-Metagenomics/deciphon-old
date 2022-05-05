@@ -1,72 +1,9 @@
-#ifndef DECIPHON_SERVER_SCHED_H
-#define DECIPHON_SERVER_SCHED_H
+#ifndef DECIPHON_SCHED_SCHED_H
+#define DECIPHON_SCHED_SCHED_H
 
-#include "deciphon/limits.h"
+#include "sched/structs.h"
 #include <stdbool.h>
 #include <stdint.h>
-
-struct sched_seq
-{
-    int64_t id;
-    int64_t scan_id;
-    char name[SEQ_NAME_SIZE];
-    char data[SEQ_SIZE];
-};
-
-struct sched_hmm
-{
-    int64_t id;
-    int64_t xxh3;
-    char filename[FILENAME_SIZE];
-    int64_t job_id;
-};
-
-struct sched_db
-{
-    int64_t id;
-    int64_t xxh3;
-    char filename[FILENAME_SIZE];
-    int64_t hmm_id;
-};
-
-struct sched_scan
-{
-    int64_t id;
-    int64_t db_id;
-
-    bool multi_hits;
-    bool hmmer3_compat;
-
-    int64_t job_id;
-};
-
-enum sched_job_type
-{
-    SCHED_SCAN,
-    SCHED_HMM
-};
-
-enum sched_job_state
-{
-    SCHED_PEND,
-    SCHED_RUN,
-    SCHED_DONE,
-    SCHED_FAIL
-};
-
-struct sched_job
-{
-    int64_t id;
-    int type;
-
-    char state[JOB_STATE_SIZE];
-    int progress;
-    char error[JOB_ERROR_SIZE];
-
-    int64_t submission;
-    int64_t exec_started;
-    int64_t exec_ended;
-};
 
 static inline enum sched_job_type sched_job_type(struct sched_job const *job)
 {

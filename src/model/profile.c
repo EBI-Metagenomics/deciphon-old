@@ -1,6 +1,6 @@
 #include "deciphon/model/profile.h"
 #include "c_toolbelt/c_toolbelt.h"
-#include "deciphon/compiler.h"
+#include "deciphon/core/compiler.h"
 
 void profile_del(struct profile *prof)
 {

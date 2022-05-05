@@ -13,19 +13,19 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 cpmaddpackage(NAME hmr GIT_TAG 0.1.2 GITHUB_REPOSITORY
               EBI-Metagenomics/hmmer-reader)
-cpmaddpackage(NAME imm VERSION 1.0.0 GITHUB_REPOSITORY EBI-Metagenomics/imm)
+cpmaddpackage(NAME imm VERSION 2.0.0 GITHUB_REPOSITORY EBI-Metagenomics/imm)
 cpmaddpackage(NAME c_toolbelt VERSION 0.2.0 GITHUB_REPOSITORY horta/c-toolbelt)
 cpmaddpackage(NAME lite_pack VERSION 0.1.4 GITHUB_REPOSITORY
               EBI-Metagenomics/lite-pack)
+cpmaddpackage(NAME sched VERSION 0.3.0 GITHUB_REPOSITORY
+              EBI-Metagenomics/deciphon-sched)
+cpmaddpackage(NAME dotenv VERSION 0.1.0 GITHUB_REPOSITORY
+              EBI-Metagenomics/dotenv)
 
-find_package(CURL REQUIRED)
-find_package(Threads REQUIRED)
-find_package(hmr REQUIRED)
-find_package(imm REQUIRED)
-find_package(lite_pack REQUIRED)
-find_package(c_toolbelt REQUIRED)
 find_package(Argp REQUIRED)
+find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(Threads REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)
@@ -41,21 +41,15 @@ endif()
 add_compile_definitions(_XOPEN_SOURCE=700)
 add_compile_definitions(_DARWIN_C_SOURCE=1)
 
-set(LIBS core model db sched server cli)
-
 add_library(
   deciphon
-  src/core/bitops.c
   src/core/buff.c
-  src/core/info.c
   src/core/ljson.c
-  src/core/logger.c
-  src/core/nanoprintf.c
+  src/core/logging.c
   src/core/rc.c
-  src/core/str.c
   src/core/to.c
-  src/core/dotenv.c
   src/core/xfile.c
+  src/core/http.c
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c
@@ -97,6 +91,8 @@ target_link_libraries(deciphon PUBLIC HMR::hmr)
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)
 target_link_libraries(deciphon PUBLIC OpenMP::OpenMP_C)
+target_link_libraries(deciphon PUBLIC SCHED::headers)
+target_link_libraries(deciphon PUBLIC DOTENV::dotenv)
 
 target_include_directories(
   deciphon

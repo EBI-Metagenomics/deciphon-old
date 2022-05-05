@@ -1,7 +1,7 @@
-#include "deciphon/xfile.h"
+#include "deciphon/core/xfile.h"
 #include "c_toolbelt/c_toolbelt.h"
-#include "deciphon/compiler.h"
-#include "deciphon/logger.h"
+#include "deciphon/core/compiler.h"
+#include "deciphon/core/logging.h"
 #define XXH_INLINE_ALL
 #include "xxhash/xxhash.h"
 #include <assert.h>
@@ -145,7 +145,7 @@ bool xfile_is_readable(char const *filepath)
 
 enum rc xfile_mktemp(char *filepath)
 {
-    if (mkstemp(filepath) == -1) return error(RC_EIO, "mkstemp failed");
+    if (mkstemp(filepath) == -1) return eio("mkstemp failed");
     return RC_OK;
 }
 

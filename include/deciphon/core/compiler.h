@@ -1,7 +1,7 @@
 #ifndef DECIPHON_COMPILER_H
 #define DECIPHON_COMPILER_H
 
-#include "deciphon/bug.h"
+#include "deciphon/core/bug.h"
 
 /*
  * __has_builtin is supported on gcc >= 10, clang >= 3 and icc >= 21.
@@ -51,13 +51,8 @@
 /*
  * String related macros.
  */
-#define IS_STRING(x)                                                           \
-    _Generic((x), char * : TRUE, char const * : TRUE, default : FALSE)
 #define STRINGIFY(s) __STRINGIFY(s)
 #define __STRINGIFY(s) #s
-#define STRADDR(x) ((char const *)(char const(*)[ARRAY_SIZE(x)]){&(x)})
-#define IS_LITERAL_STRING(x)                                                   \
-    BUILD_SWITCH(IS_STRING(x) && __builtin_constant_p(x), TRUE, FALSE)
 
 #ifdef __FILE_NAME__
 #define LOCAL __FILE_NAME__ ":" STRINGIFY(__LINE__)

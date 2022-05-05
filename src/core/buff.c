@@ -1,4 +1,4 @@
-#include "deciphon/buff.h"
+#include "deciphon/core/buff.h"
 #include <assert.h>
 #include <stdlib.h>
 

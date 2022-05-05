@@ -1,8 +1,8 @@
 #ifndef DECIPHON_MODEL_PROFILE_H
 #define DECIPHON_MODEL_PROFILE_H
 
-#include "deciphon/limits.h"
-#include "deciphon/rc.h"
+#include "deciphon/core/limits.h"
+#include "deciphon/core/rc.h"
 #include "imm/imm.h"
 
 struct lip_file;

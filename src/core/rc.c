@@ -1,10 +1,10 @@
-#include "deciphon/rc.h"
-#include "deciphon/compiler.h"
-#include "deciphon/logger.h"
+#include "deciphon/core/rc.h"
+#include "deciphon/core/compiler.h"
+#include "deciphon/core/logging.h"
 #include <string.h>
 
-static char const name[][9] = {"ok",  "end",    "efail",  "einval",
-                               "eio", "enomem", "eparse", "erest"};
+static char const name[][9] = {"ok",     "end",    "efail", "einval", "eio",
+                               "enomem", "eparse", "erest", "ehttp"};
 
 enum rc rc_resolve(unsigned len, char const *str, enum rc *rc)
 {
@@ -16,5 +16,6 @@ enum rc rc_resolve(unsigned len, char const *str, enum rc *rc)
             return RC_OK;
         }
     }
-    return einval("invalid return code");
+    warn("invalid return code");
+    return RC_EINVAL;
 }

@@ -1,7 +1,7 @@
 #ifndef DECIPHON_MODEL_NUCLT_DIST_H
 #define DECIPHON_MODEL_NUCLT_DIST_H
 
-#include "deciphon/rc.h"
+#include "deciphon/core/rc.h"
 #include "imm/imm.h"
 
 struct nuclt_dist
@@ -19,8 +19,7 @@ static inline void nuclt_dist_init(struct nuclt_dist *nucltd,
     nucltd->codonm.nuclt = nuclt;
 }
 
-enum rc nuclt_dist_pack(struct nuclt_dist const *ndist,
-                              struct lip_file *);
+enum rc nuclt_dist_pack(struct nuclt_dist const *ndist, struct lip_file *);
 
 enum rc nuclt_dist_unpack(struct nuclt_dist *ndist, struct lip_file *);
 

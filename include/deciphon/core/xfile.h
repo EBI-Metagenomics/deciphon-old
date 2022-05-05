@@ -1,8 +1,8 @@
 #ifndef DECIPHON_XFILE_H
 #define DECIPHON_XFILE_H
 
-#include "deciphon/limits.h"
-#include "deciphon/rc.h"
+#include "deciphon/core/limits.h"
+#include "deciphon/core/rc.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
