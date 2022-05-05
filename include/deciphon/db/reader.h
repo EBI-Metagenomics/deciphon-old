@@ -1,7 +1,7 @@
 #ifndef DECIPHON_DB_READER_H
 #define DECIPHON_DB_READER_H
 
-#include "deciphon/lite_pack.h"
+#include "deciphon/core/lite_pack.h"
 #include "deciphon/model/profile.h"
 #include "deciphon/model/profile_typeid.h"
 

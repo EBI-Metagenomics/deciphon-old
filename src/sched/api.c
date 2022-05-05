@@ -621,7 +621,7 @@ static enum rc parse_error(struct api_rc *api_rc, struct xjson *x,
         }
         else if (xjson_eqstr(x, i, "msg"))
         {
-            if ((rc = xjson_copy_str(x, i + 1, ERROR_SIZE, api_rc->msg)))
+            if ((rc = xjson_copy_str(x, i + 1, JOB_ERROR_SIZE, api_rc->msg)))
                 return rc;
         }
         else

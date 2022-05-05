@@ -1,7 +1,7 @@
 #ifndef DECIPHON_DB_WRITER_H
 #define DECIPHON_DB_WRITER_H
 
-#include "deciphon/lite_pack.h"
+#include "deciphon/core/lite_pack.h"
 #include "deciphon/model/profile.h"
 
 typedef enum rc (*pack_profile_func_t)(struct lip_file *file, void const *arg);

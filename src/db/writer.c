@@ -1,11 +1,11 @@
 #include "deciphon/db/writer.h"
-#include "deciphon/compiler.h"
+#include "deciphon/core/compiler.h"
+#include "deciphon/core/limits.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/rc.h"
+#include "deciphon/core/xfile.h"
 #include "deciphon/db/types.h"
-#include "deciphon/limits.h"
-#include "deciphon/logger.h"
 #include "deciphon/model/model.h"
-#include "deciphon/rc.h"
-#include "deciphon/xfile.h"
 #include "imm/imm.h"
 #include <assert.h>
 #include <stdio.h>

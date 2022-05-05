@@ -1,8 +1,8 @@
 #ifndef DECIPHON_SERVER_API_H
 #define DECIPHON_SERVER_API_H
 
-#include "deciphon/limits.h"
-#include "deciphon/rc.h"
+#include "deciphon/core/limits.h"
+#include "deciphon/core/rc.h"
 #include "deciphon/sched/sched.h"
 #include <stdint.h>
 #include <stdio.h>
@@ -10,7 +10,7 @@
 struct api_rc
 {
     int rc;
-    char msg[ERROR_SIZE];
+    char msg[JOB_ERROR_SIZE];
 };
 
 enum sched_job_state;

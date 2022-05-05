@@ -1,6 +1,6 @@
 #include "deciphon/model/protein_profile.h"
-#include "deciphon/expect.h"
-#include "deciphon/logger.h"
+#include "deciphon/core/expect.h"
+#include "deciphon/core/logging.h"
 #include "deciphon/model/profile.h"
 #include "deciphon/model/profile_typeid.h"
 #include "deciphon/model/protein_model.h"
@@ -54,8 +54,7 @@ static enum rc unpack(struct profile *prof, struct lip_file *file)
 
     if (!expect_map_key(file, "core_size")) return eio("skip key");
     if (!lip_read_int(file, &size)) return eio("read core size");
-    if (size > PROTEIN_MODEL_CORE_SIZE_MAX)
-        return error(RC_EIO, "profile is too long");
+    if (size > PROTEIN_MODEL_CORE_SIZE_MAX) return eio("profile is too long");
     p->core_size = size;
 
     if (!expect_map_key(file, "consensus")) return eio("skip key");
@@ -220,18 +219,18 @@ enum rc protein_profile_absorb(struct protein_profile *p,
                                struct protein_model const *m)
 {
     if (p->code->nuclt != protein_model_nuclt(m))
-        return error(RC_EINVAL, "Different nucleotide alphabets.");
+        return einval("Different nucleotide alphabets.");
 
     if (p->amino != protein_model_amino(m))
-        return error(RC_EINVAL, "Different amino alphabets.");
+        return einval("Different amino alphabets.");
 
     struct protein_model_summary s = protein_model_summary(m);
 
     if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
-        return error(RC_EFAIL, "failed to hmm_reset");
+        return efail("failed to hmm_reset");
 
     if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
-        return error(RC_EFAIL, "failed to hmm_reset");
+        return efail("failed to hmm_reset");
 
     p->core_size = m->core_size;
     memcpy(p->consensus, m->consensus, m->core_size + 1);
@@ -326,7 +325,7 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
     struct imm_frame_cond cond = {prof->eps, &nucltd->nucltp, &nucltd->codonm};
 
     if (imm_lprob_is_nan(imm_frame_cond_decode(&cond, seq, codon)))
-        return error(RC_EINVAL, "failed to decode sequence");
+        return einval("failed to decode sequence");
 
     return RC_OK;
 }

@@ -1,9 +1,9 @@
 #ifndef DECIPHON_MODEL_PROTEIN_H3READER_H
 #define DECIPHON_MODEL_PROTEIN_H3READER_H
 
+#include "deciphon/core/rc.h"
 #include "deciphon/model/protein_cfg.h"
 #include "deciphon/model/protein_model.h"
-#include "deciphon/rc.h"
 #include "hmr/hmr.h"
 #include "imm/imm.h"
 #include <stdio.h>

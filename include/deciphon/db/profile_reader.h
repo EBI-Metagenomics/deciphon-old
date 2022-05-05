@@ -1,8 +1,8 @@
 #ifndef DECIPHON_PROFILE_READER_H
 #define DECIPHON_PROFILE_READER_H
 
-#include "deciphon/limits.h"
-#include "deciphon/lite_pack.h"
+#include "deciphon/core/limits.h"
+#include "deciphon/core/lite_pack.h"
 #include "deciphon/model/model.h"
 #include <stdint.h>
 
@@ -28,7 +28,8 @@ unsigned profile_reader_npartitions(struct profile_reader const *reader);
 unsigned profile_reader_partition_size(struct profile_reader const *reader,
                                        unsigned partition);
 enum rc profile_reader_rewind_all(struct profile_reader *reader);
-enum rc profile_reader_rewind(struct profile_reader *reader, unsigned partition);
+enum rc profile_reader_rewind(struct profile_reader *reader,
+                              unsigned partition);
 enum rc profile_reader_next(struct profile_reader *reader, unsigned partition,
                             struct profile **profile);
 bool profile_reader_end(struct profile_reader *reader, unsigned partition);

@@ -1,5 +1,5 @@
 #include "deciphon/model/protein_model.h"
-#include "deciphon/logger.h"
+#include "deciphon/core/logging.h"
 #include "deciphon/model/entry_dist.h"
 #include "deciphon/model/nuclt_dist.h"
 #include "deciphon/model/protein_model.h"
@@ -51,10 +51,9 @@ enum rc protein_model_add_node(struct protein_model *m,
                                char consensus)
 {
     if (!have_called_setup(m))
-        return error(RC_EFAIL, "Must call protein_model_setup first.");
+        return efail("must call protein_model_setup first");
 
-    if (m->alt.node_idx == m->core_size)
-        return error(RC_EFAIL, "Reached limit of nodes.");
+    if (m->alt.node_idx == m->core_size) return efail("reached limit of nodes");
 
     m->consensus[m->alt.node_idx] = consensus;
 
@@ -86,10 +85,10 @@ enum rc protein_model_add_trans(struct protein_model *m,
                                 struct protein_trans trans)
 {
     if (!have_called_setup(m))
-        return error(RC_EFAIL, "Must call protein_model_setup first.");
+        return efail("must call protein_model_setup first");
 
     if (m->alt.trans_idx == m->core_size + 1)
-        return error(RC_EFAIL, "Reached limit of transitions.");
+        return efail("reached limit of transitions");
 
     m->alt.trans[m->alt.trans_idx++] = trans;
     if (have_finished_add(m)) setup_transitions(m);
@@ -155,10 +154,10 @@ static void model_reset(struct protein_model *model)
 
 enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
 {
-    if (core_size == 0) return error(RC_EINVAL, "`core_size` cannot be zero.");
+    if (core_size == 0) return einval("`core_size` cannot be zero");
 
     if (core_size > PROTEIN_MODEL_CORE_SIZE_MAX)
-        return error(RC_EINVAL, "`core_size` is too big.");
+        return einval("`core_size` is too big");
 
     m->core_size = core_size;
     m->consensus[core_size] = '\0';
@@ -166,18 +165,18 @@ enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
     m->alt.node_idx = 0;
 
     void *ptr = realloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
-    if (!ptr && n > 0) return error(RC_ENOMEM, "failed to alloc nodes");
+    if (!ptr && n > 0) return enomem("failed to alloc nodes");
     m->alt.nodes = ptr;
 
     if (m->cfg.entry_dist == ENTRY_DIST_OCCUPANCY)
     {
         ptr = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
-        if (!ptr && n > 0) return error(RC_ENOMEM, "failed to alloc locc");
+        if (!ptr && n > 0) return enomem("failed to alloc locc");
         m->alt.locc = ptr;
     }
     m->alt.trans_idx = 0;
     ptr = realloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
-    if (!ptr) return error(RC_ENOMEM, "failed to alloc trans");
+    if (!ptr) return enomem("failed to alloc trans");
     m->alt.trans = ptr;
 
     model_reset(m);

@@ -1,8 +1,8 @@
-#ifndef DECIPHON_EXPECT_H
-#define DECIPHON_EXPECT_H
+#ifndef DECIPHON_CORE_EXPECT_H
+#define DECIPHON_CORE_EXPECT_H
 
-#include "deciphon/compiler.h"
-#include "deciphon/lite_pack.h"
+#include "deciphon/core/compiler.h"
+#include "deciphon/core/lite_pack.h"
 #include "imm/float.h"
 #include <stdbool.h>
 #include <stdint.h>

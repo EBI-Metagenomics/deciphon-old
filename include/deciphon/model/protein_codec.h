@@ -1,7 +1,7 @@
 #ifndef DECIPHON_MODEL_PROTEIN_CODEC_H
 #define DECIPHON_MODEL_PROTEIN_CODEC_H
 
-#include "deciphon/rc.h"
+#include "deciphon/core/rc.h"
 
 struct imm_codon;
 struct imm_path;
@@ -24,7 +24,6 @@ protein_codec_init(struct protein_profile const *prof,
 }
 
 enum rc protein_codec_next(struct protein_codec *codec,
-                                 struct imm_seq const *seq,
-                                 struct imm_codon *codon);
+                           struct imm_seq const *seq, struct imm_codon *codon);
 
 #endif

@@ -1,10 +1,9 @@
 #include "c_toolbelt/c_toolbelt.h"
+#include "deciphon/core/expect.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/xfile.h"
+#include "deciphon/core/xmath.h"
 #include "deciphon/db/db.h"
-#include "deciphon/expect.h"
-#include "deciphon/info.h"
-#include "deciphon/logger.h"
-#include "deciphon/xfile.h"
-#include "deciphon/xmath.h"
 
 static void cleanup(struct profile_reader *reader)
 {

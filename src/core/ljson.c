@@ -1,4 +1,4 @@
-#include "deciphon/ljson.h"
+#include "deciphon/core/ljson.h"
 
 static void put_char(struct ljson_ctx *ctx, char c)
 {

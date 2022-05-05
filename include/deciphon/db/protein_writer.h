@@ -1,10 +1,10 @@
 #ifndef DECIPHON_PROTEIN_DB_WRITER_H
 #define DECIPHON_PROTEIN_DB_WRITER_H
 
+#include "deciphon/core/rc.h"
 #include "deciphon/model/entry_dist.h"
 #include "deciphon/model/protein_cfg.h"
 #include "deciphon/model/protein_profile.h"
-#include "deciphon/rc.h"
 #include "writer.h"
 #include <stdio.h>
 

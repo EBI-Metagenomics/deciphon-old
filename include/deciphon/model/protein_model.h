@@ -1,7 +1,8 @@
 #ifndef DECIPHON_MODEL_PROTEIN_MODEL_H
 #define DECIPHON_MODEL_PROTEIN_MODEL_H
 
-#include "deciphon/limits.h"
+#include "deciphon/core/limits.h"
+#include "deciphon/core/rc.h"
 #include "deciphon/model/entry_dist.h"
 #include "deciphon/model/nuclt_dist.h"
 #include "deciphon/model/protein_cfg.h"
@@ -10,7 +11,6 @@
 #include "deciphon/model/protein_trans.h"
 #include "deciphon/model/protein_xnode.h"
 #include "deciphon/model/protein_xtrans.h"
-#include "deciphon/rc.h"
 #include "imm/imm.h"
 
 struct protein_model
@@ -47,11 +47,11 @@ struct protein_model
 };
 
 enum rc protein_model_add_node(struct protein_model *,
-                                     imm_float const lp[IMM_AMINO_SIZE],
-                                     char consensus);
+                               imm_float const lp[IMM_AMINO_SIZE],
+                               char consensus);
 
 enum rc protein_model_add_trans(struct protein_model *,
-                                      struct protein_trans trans);
+                                struct protein_trans trans);
 
 void protein_model_del(struct protein_model const *);
 
