@@ -1,5 +1,6 @@
 #include "xjson.h"
-#include "deciphon/to.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/to.h"
 #include "jsmn_error.h"
 #include <assert.h>
 #include <string.h>
@@ -54,6 +55,7 @@ bool xjson_is_array(struct xjson const *x, unsigned idx)
 
 bool xjson_is_array_empty(struct xjson const *x, unsigned idx)
 {
+    (void)idx;
     assert(xjson_is_array(x, idx));
     return x->ntoks == 1;
 }

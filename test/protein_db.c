@@ -69,8 +69,8 @@ void test_protein_db_reader(void)
         EQ(profile_typeid(prof), PROFILE_PROTEIN);
         struct imm_task *task = imm_task_new(profile_alt_dp(prof));
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
-        EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-        EQ(imm_dp_viterbi(profile_alt_dp(prof), task, &prod), IMM_SUCCESS);
+        EQ(imm_task_setup(task, &seq), IMM_OK);
+        EQ(imm_dp_viterbi(profile_alt_dp(prof), task, &prod), IMM_OK);
         CLOSE(prod.loglik, logliks[nprofs]);
         imm_del(task);
         ++nprofs;

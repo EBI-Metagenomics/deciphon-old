@@ -1,7 +1,7 @@
 #ifndef DECIPHON_SERVER_URL_H
 #define DECIPHON_SERVER_URL_H
 
-#include "deciphon/compiler.h"
+#include "deciphon/core/compiler.h"
 #include <assert.h>
 #include <stdbool.h>
 

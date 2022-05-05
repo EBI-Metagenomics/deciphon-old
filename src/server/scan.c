@@ -1,14 +1,12 @@
 #include "scan.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/rc.h"
+#include "deciphon/core/xfile.h"
+#include "deciphon/core/xmath.h"
 #include "deciphon/db/db.h"
 #include "deciphon/db/profile_reader.h"
-#include "deciphon/info.h"
-#include "deciphon/logger.h"
-#include "deciphon/rc.h"
 #include "deciphon/sched/api.h"
 #include "deciphon/sched/sched.h"
-#include "deciphon/version.h"
-#include "deciphon/xfile.h"
-#include "deciphon/xmath.h"
 #include "file.h"
 #include "imm/imm.h"
 #include "prod.h"
@@ -26,7 +24,7 @@ struct scan
     unsigned num_threads;
     struct scan_thread thread[NUM_THREADS];
 
-    char db_filename[FILENAME_SIZE];
+    char db_filename[SCHED_FILENAME_SIZE];
     struct protein_db_reader db_reader;
     struct profile_reader profile_reader;
 

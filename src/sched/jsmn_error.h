@@ -1,7 +1,7 @@
 #ifndef JSMN_ERROR_H
 #define JSMN_ERROR_H
 
-#include "deciphon/logger.h"
+#include "deciphon/core/logging.h"
 
 /* clang-format off */
 #define jsmn_error(code)                                                       \

@@ -1,8 +1,7 @@
 #include "scan_thread.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/xmath.h"
 #include "deciphon/db/profile_reader.h"
-#include "deciphon/info.h"
-#include "deciphon/logger.h"
-#include "deciphon/xmath.h"
 
 void thread_init(struct scan_thread *t, unsigned id,
                  struct profile_reader *reader, bool multi_hits,

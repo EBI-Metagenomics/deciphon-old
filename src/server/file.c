@@ -1,6 +1,6 @@
 #include "file.h"
-#include "deciphon/logger.h"
-#include "deciphon/xfile.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/xfile.h"
 
 static enum rc ensure_integrity(char const *filename, int64_t xxh3)
 {

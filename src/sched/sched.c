@@ -1,6 +1,6 @@
 #include "deciphon/sched/sched.h"
-#include "deciphon/logger.h"
-#include "deciphon/rc.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/rc.h"
 #include "xjson.h"
 #include <string.h>
 
@@ -35,7 +35,7 @@ enum rc sched_db_parse(struct sched_db *db, struct xjson *x, unsigned start)
         }
         else if (xjson_eqstr(x, i, "filename"))
         {
-            if ((rc = xjson_copy_str(x, i + 1, PATH_SIZE, db->filename)))
+            if ((rc = xjson_copy_str(x, i + 1, SCHED_PATH_SIZE, db->filename)))
                 return rc;
         }
         else if (xjson_eqstr(x, i, "hmm_id"))
@@ -70,7 +70,7 @@ enum rc sched_hmm_parse(struct sched_hmm *hmm, struct xjson *x, unsigned start)
         }
         else if (xjson_eqstr(x, i, "filename"))
         {
-            if ((rc = xjson_copy_str(x, i + 1, PATH_SIZE, hmm->filename)))
+            if ((rc = xjson_copy_str(x, i + 1, SCHED_PATH_SIZE, hmm->filename)))
                 return rc;
         }
         else if (xjson_eqstr(x, i, "job_id"))
@@ -105,7 +105,8 @@ enum rc sched_job_parse(struct sched_job *job, struct xjson *x, unsigned start)
         }
         else if (xjson_eqstr(x, i, "state"))
         {
-            if ((rc = xjson_copy_str(x, i + 1, JOB_STATE_SIZE, job->state)))
+            if ((rc = xjson_copy_str(x, i + 1, SCHED_JOB_STATE_SIZE,
+                                     job->state)))
                 return rc;
         }
         else if (xjson_eqstr(x, i, "progress"))
@@ -114,7 +115,8 @@ enum rc sched_job_parse(struct sched_job *job, struct xjson *x, unsigned start)
         }
         else if (xjson_eqstr(x, i, "error"))
         {
-            if ((rc = xjson_copy_str(x, i + 1, JOB_ERROR_SIZE, job->error)))
+            if ((rc = xjson_copy_str(x, i + 1, SCHED_JOB_ERROR_SIZE,
+                                     job->error)))
                 return rc;
         }
         else if (xjson_eqstr(x, i, "submission"))
@@ -199,12 +201,13 @@ enum rc sched_seq_parse(struct sched_seq *seq, struct xjson *x, unsigned start)
         }
         else if (xjson_eqstr(x, i, "name"))
         {
-            if ((rc = xjson_copy_str(x, i + 1, SEQ_NAME_SIZE, seq->name)))
+            if ((rc = xjson_copy_str(x, i + 1, SCHED_SEQ_NAME_SIZE, seq->name)))
                 return rc;
         }
         else if (xjson_eqstr(x, i, "data"))
         {
-            if ((rc = xjson_copy_str(x, i + 1, SEQ_SIZE, seq->data))) return rc;
+            if ((rc = xjson_copy_str(x, i + 1, SCHED_SEQ_SIZE, seq->data)))
+                return rc;
         }
         else
             return einval("unexpected json key");

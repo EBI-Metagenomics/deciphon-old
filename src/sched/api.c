@@ -1,23 +1,24 @@
 #include "deciphon/sched/api.h"
-#include "deciphon/buff.h"
-#include "deciphon/ljson.h"
-#include "deciphon/logger.h"
-#include "deciphon/nanoprintf.h"
+#include "deciphon/core/buff.h"
+#include "deciphon/core/http.h"
+#include "deciphon/core/ljson.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/spinlock.h"
+#include "deciphon/core/to.h"
+#include "deciphon/core/xfile.h"
+#include "deciphon/core/xmath.h"
 #include "deciphon/sched/sched.h"
 #include "deciphon/sched/xcurl.h"
-#include "deciphon/spinlock.h"
-#include "deciphon/to.h"
-#include "deciphon/xfile.h"
-#include "deciphon/xmath.h"
 #include "xjson.h"
 #include <inttypes.h>
+#include <stdarg.h>
 #include <string.h>
 
 static spinlock_t lock = SPINLOCK_INIT;
 static unsigned initialized = 0;
 static struct buff *response = 0;
 static struct xjson xjson = {0};
-static char filename[FILENAME_SIZE] = {0};
+static char filename[SCHED_FILENAME_SIZE] = {0};
 
 static char _query[128] = {0};
 
@@ -66,7 +67,7 @@ static char const *query(char const *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    npf_vsnprintf(_query, sizeof _query, fmt, args);
+    vsnprintf(_query, sizeof _query, fmt, args);
     va_end(args);
 
     return _query;
@@ -127,7 +128,7 @@ enum rc api_wipe(void)
     enum rc rc = xcurl_delete("/sched/wipe", &http_code);
     if (rc) goto cleanup;
 
-    if (http_code != 200) rc = ehttp(http_code);
+    if (http_code != 200) rc = ehttp(http_status_string(http_code));
 
 cleanup:
     spinlock_unlock(&lock);
@@ -176,7 +177,7 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -213,7 +214,7 @@ enum rc api_get_hmm(int64_t id, struct sched_hmm *hmm, struct api_rc *api_rc)
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -245,7 +246,7 @@ enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -274,7 +275,7 @@ enum rc api_download_hmm(int64_t id, FILE *fp)
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -311,7 +312,7 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db,
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -355,7 +356,7 @@ enum rc api_get_db(int64_t id, struct sched_db *db, struct api_rc *api_rc)
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -389,7 +390,7 @@ enum rc api_next_pend_job(struct sched_job *job, struct api_rc *api_rc)
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -428,7 +429,7 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -460,7 +461,7 @@ enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan,
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -505,7 +506,7 @@ enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
     }
     else if (http_code != 200)
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -533,7 +534,7 @@ enum rc api_download_db(int64_t id, FILE *fp)
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -568,7 +569,7 @@ enum rc api_upload_prods_file(char const *filepath, struct api_rc *api_rc)
     }
     else
     {
-        rc = ehttp(http_code);
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -621,7 +622,8 @@ static enum rc parse_error(struct api_rc *api_rc, struct xjson *x,
         }
         else if (xjson_eqstr(x, i, "msg"))
         {
-            if ((rc = xjson_copy_str(x, i + 1, JOB_ERROR_SIZE, api_rc->msg)))
+            if ((rc = xjson_copy_str(x, i + 1, SCHED_JOB_ERROR_SIZE,
+                                     api_rc->msg)))
                 return rc;
         }
         else

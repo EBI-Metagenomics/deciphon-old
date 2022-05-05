@@ -69,7 +69,6 @@ static void partition_it(struct profile_reader *reader, struct db_reader *db)
             size = 0;
         }
     }
-    assert(i == nparts);
 }
 
 enum rc profile_reader_setup(struct profile_reader *reader,

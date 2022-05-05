@@ -9,6 +9,7 @@
 
 enum logging_level
 {
+    LOGGING_NOTSET,
     LOGGING_DEBUG,
     LOGGING_INFO,
     LOGGING_WARN,
@@ -16,11 +17,11 @@ enum logging_level
     LOGGING_FATAL
 };
 
-#define debug(msg) __logging_print(LOGGING_DEBUG, LOCAL, msg)
-#define info(msg) __logging_print(LOGGING_INFO, LOCAL, msg)
-#define warn(msg) __logging_print(LOGGING_WARN, LOCAL, msg)
-#define error(msg) __logging_print(LOGGING_ERROR, LOCAL, msg)
-#define fatal(msg) __logging_print(LOGGING_FATAL, LOCAL, msg)
+#define debug(...) __logging_print(LOGGING_DEBUG, LOCAL, __VA_ARGS__)
+#define info(...) __logging_print(LOGGING_INFO, LOCAL, __VA_ARGS__)
+#define warn(...) __logging_print(LOGGING_WARN, LOCAL, __VA_ARGS__)
+#define error(...) __logging_print(LOGGING_ERROR, LOCAL, __VA_ARGS__)
+#define fatal(...) __logging_print(LOGGING_FATAL, LOCAL, __VA_ARGS__)
 
 void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
                      ...);
@@ -52,14 +53,22 @@ void logging_setup(FILE *restrict user_stream, enum logging_level user_level,
         RC_ENOMEM;                                                             \
     })
 
-// RC_OK,
-// RC_END,
-// RC_EFAIL,
-// RC_EINVAL,
-// RC_EIO,
-// RC_ENOMEM,
-// RC_EPARSE,
-// RC_EREST,
-// RC_EHTTP,
+#define eparse(msg)                                                            \
+    ({                                                                         \
+        error(msg);                                                            \
+        RC_EPARSE;                                                             \
+    })
+
+#define erest(msg)                                                             \
+    ({                                                                         \
+        error(msg);                                                            \
+        RC_EREST;                                                              \
+    })
+
+#define ehttp(msg)                                                             \
+    ({                                                                         \
+        error(msg);                                                            \
+        RC_EHTTP;                                                              \
+    })
 
 #endif

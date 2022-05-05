@@ -13,19 +13,19 @@ int main(void)
 
     struct imm_mute_state state0;
     imm_mute_state_init(&state0, 3, abc);
-    EQ(imm_hmm_add_state(null, imm_super(&state0)), IMM_SUCCESS);
-    EQ(imm_hmm_set_start(null, imm_super(&state0), imm_log(0.3)), IMM_SUCCESS);
+    EQ(imm_hmm_add_state(null, imm_super(&state0)), IMM_OK);
+    EQ(imm_hmm_set_start(null, imm_super(&state0), imm_log(0.3)), IMM_OK);
 
     imm_float lprobs[IMM_NUCLT_SIZE] = {0};
     struct imm_normal_state state1;
     imm_normal_state_init(&state1, 1, abc, lprobs);
-    EQ(imm_hmm_add_state(alt, imm_super(&state1)), IMM_SUCCESS);
-    EQ(imm_hmm_set_start(alt, imm_super(&state1), imm_log(0.1)), IMM_SUCCESS);
+    EQ(imm_hmm_add_state(alt, imm_super(&state1)), IMM_OK);
+    EQ(imm_hmm_set_start(alt, imm_super(&state1), imm_log(0.1)), IMM_OK);
 
     struct standard_profile prof;
     standard_profile_init(&prof, "accession", code);
-    EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_SUCCESS);
-    EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_SUCCESS);
+    EQ(imm_hmm_reset_dp(null, imm_super(&state0), &prof.dp.null), IMM_OK);
+    EQ(imm_hmm_reset_dp(alt, imm_super(&state1), &prof.dp.alt), IMM_OK);
 
     profile_del((struct profile *)&prof);
     return hope_status();

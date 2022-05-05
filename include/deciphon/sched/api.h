@@ -10,7 +10,7 @@
 struct api_rc
 {
     int rc;
-    char msg[JOB_ERROR_SIZE];
+    char msg[SCHED_JOB_ERROR_SIZE];
 };
 
 enum sched_job_state;

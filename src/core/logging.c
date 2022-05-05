@@ -11,7 +11,7 @@ static spinlock_t lock = SPINLOCK_INIT;
 #define SYS_PIPE 1
 
 static FILE *streams[2] = {0};
-static enum logging_level levels[2] = {0};
+static enum logging_level levels[2] = {LOGGING_NOTSET};
 
 void logging_setup(FILE *restrict user_stream, enum logging_level user_level,
                    FILE *restrict sys_stream, enum logging_level sys_level)
@@ -21,6 +21,15 @@ void logging_setup(FILE *restrict user_stream, enum logging_level user_level,
 
     levels[USER_PIPE] = sys_level;
     levels[SYS_PIPE] = user_level;
+}
+
+static void initialize_if_not_yet(void)
+{
+    if (!streams[USER_PIPE]) streams[USER_PIPE] = stdout;
+    if (!streams[SYS_PIPE]) streams[SYS_PIPE] = stderr;
+
+    if (!levels[USER_PIPE]) levels[USER_PIPE] = LOGGING_INFO;
+    if (!levels[SYS_PIPE]) levels[SYS_PIPE] = LOGGING_INFO;
 }
 
 static void pipe_into(FILE *restrict stream, char const *ctx, char const *fmt,
@@ -47,6 +56,8 @@ void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
                      ...)
 {
     spinlock_lock(&lock);
+
+    initialize_if_not_yet();
 
     time_t timer = time(NULL);
     struct tm *tm_info = localtime(&timer);

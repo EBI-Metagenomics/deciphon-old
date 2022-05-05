@@ -1,7 +1,7 @@
 #include "prod.h"
-#include "deciphon/logger.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/xfile.h"
 #include "deciphon/version.h"
-#include "deciphon/xfile.h"
 #include "imm/imm.h"
 #include "match.h"
 #include <inttypes.h>

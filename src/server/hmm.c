@@ -1,11 +1,10 @@
 #include "hmm.h"
 #include "c_toolbelt/c_toolbelt.h"
-#include "deciphon/compiler.h"
+#include "deciphon/core/compiler.h"
+#include "deciphon/core/logging.h"
+#include "deciphon/core/rc.h"
 #include "deciphon/db/protein_writer.h"
-#include "deciphon/info.h"
-#include "deciphon/logger.h"
 #include "deciphon/model/protein_h3reader.h"
-#include "deciphon/rc.h"
 #include "deciphon/sched/api.h"
 #include "file.h"
 #include "hmr/hmr.h"
@@ -14,7 +13,7 @@
 
 static struct sched_hmm hmm = {0};
 static struct sched_db sched_db = {0};
-static char db_filename[FILENAME_SIZE] = {0};
+static char db_filename[SCHED_FILENAME_SIZE] = {0};
 static struct api_rc api_rc = {0};
 
 static struct protein_profile profile = {0};

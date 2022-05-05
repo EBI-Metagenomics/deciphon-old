@@ -35,8 +35,8 @@ void test_protein_profile_uniform(void)
     struct imm_dp *dp = &prof.null.dp;
     struct imm_task *task = imm_task_new(dp);
     NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_SUCCESS);
+    EQ(imm_task_setup(task, &seq), IMM_OK);
+    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
 
     CLOSE(prod.loglik, -48.9272687711);
 
@@ -59,8 +59,8 @@ void test_protein_profile_uniform(void)
     dp = &prof.alt.dp;
     task = imm_task_new(dp);
     NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_SUCCESS);
+    EQ(imm_task_setup(task, &seq), IMM_OK);
+    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
 
     CLOSE(prod.loglik, -55.59428153448);
 
@@ -127,8 +127,8 @@ void test_protein_profile_occupancy(void)
     struct imm_dp *dp = &prof.null.dp;
     struct imm_task *task = imm_task_new(dp);
     NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_SUCCESS);
+    EQ(imm_task_setup(task, &seq), IMM_OK);
+    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
 
     CLOSE(prod.loglik, -48.9272687711);
 
@@ -151,8 +151,8 @@ void test_protein_profile_occupancy(void)
     dp = &prof.alt.dp;
     task = imm_task_new(dp);
     NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_SUCCESS);
+    EQ(imm_task_setup(task, &seq), IMM_OK);
+    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
 
     CLOSE(prod.loglik, -54.35543421312);
 

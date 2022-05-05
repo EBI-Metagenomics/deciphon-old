@@ -2,6 +2,7 @@
 #include "c_toolbelt/c_toolbelt.h"
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/logging.h"
+#include "sched/structs.h"
 #define XXH_INLINE_ALL
 #include "xxhash/xxhash.h"
 #include <assert.h>
@@ -197,7 +198,7 @@ enum rc xfile_set_ext(size_t max_size, char *str, char const *ext)
 void xfile_basename(char *filename, char const *path)
 {
     char *p = glibc_basename(path);
-    ctb_strlcpy(filename, p, FILENAME_SIZE);
+    ctb_strlcpy(filename, p, SCHED_FILENAME_SIZE);
 }
 
 void xfile_strip_ext(char *str)

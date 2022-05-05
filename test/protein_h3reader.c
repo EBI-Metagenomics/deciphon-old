@@ -52,8 +52,8 @@ int main(void)
     struct imm_dp *dp = &prof.alt.dp;
     struct imm_task *task = imm_task_new(dp);
     NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_SUCCESS);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_SUCCESS);
+    EQ(imm_task_setup(task, &seq), IMM_OK);
+    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
     CLOSE(prod.loglik, -1430.9281381240353);
     imm_del(&prod);
 

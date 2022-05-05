@@ -17,7 +17,7 @@ cpmaddpackage(NAME imm VERSION 2.0.0 GITHUB_REPOSITORY EBI-Metagenomics/imm)
 cpmaddpackage(NAME c_toolbelt VERSION 0.2.0 GITHUB_REPOSITORY horta/c-toolbelt)
 cpmaddpackage(NAME lite_pack VERSION 0.1.4 GITHUB_REPOSITORY
               EBI-Metagenomics/lite-pack)
-cpmaddpackage(NAME sched VERSION 0.3.0 GITHUB_REPOSITORY
+cpmaddpackage(NAME sched VERSION 0.4.0 GITHUB_REPOSITORY
               EBI-Metagenomics/deciphon-sched)
 cpmaddpackage(NAME dotenv VERSION 0.1.0 GITHUB_REPOSITORY
               EBI-Metagenomics/dotenv)
@@ -93,6 +93,10 @@ target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)
 target_link_libraries(deciphon PUBLIC OpenMP::OpenMP_C)
 target_link_libraries(deciphon PUBLIC SCHED::headers)
 target_link_libraries(deciphon PUBLIC DOTENV::dotenv)
+
+set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/deciphon/version.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/deciphon/version.h.in
+               ${VERSION_FILE} @ONLY)
 
 target_include_directories(
   deciphon

@@ -1,15 +1,16 @@
 #ifndef DECIPHON_SERVER_XCURL_H
 #define DECIPHON_SERVER_XCURL_H
 
-#include "deciphon/limits.h"
-#include "deciphon/rc.h"
+#include "deciphon/core/limits.h"
+#include "deciphon/core/rc.h"
 #include "deciphon/sched/url.h"
+#include "sched/structs.h"
 #include <stdio.h>
 
 struct xcurl_mime
 {
-    char name[FILENAME_SIZE];
-    char filename[FILENAME_SIZE];
+    char name[SCHED_FILENAME_SIZE];
+    char filename[SCHED_FILENAME_SIZE];
     char type[MIME_TYPE_SIZE];
 };
 

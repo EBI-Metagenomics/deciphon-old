@@ -1,7 +1,7 @@
 #include "cli.h"
-#include "deciphon/dotenv.h"
-#include "deciphon/logger.h"
+#include "deciphon/core/logging.h"
 #include "deciphon/server/server.h"
+#include "dotenv/dotenv.h"
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>

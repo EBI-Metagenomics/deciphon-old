@@ -1,7 +1,7 @@
 #ifndef SERVER_FILE_H
 #define SERVER_FILE_H
 
-#include "deciphon/rc.h"
+#include "deciphon/core/rc.h"
 #include <stdint.h>
 
 typedef enum rc (*file_fetch_func_t)(char const *filename, int64_t xxh3);

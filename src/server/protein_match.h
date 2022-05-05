@@ -1,7 +1,7 @@
 #ifndef PROTEIN_MATCH_H
 #define PROTEIN_MATCH_H
 
-#include "deciphon/rc.h"
+#include "deciphon/core/rc.h"
 #include "imm/imm.h"
 #include "match.h"
 #include <stdio.h>

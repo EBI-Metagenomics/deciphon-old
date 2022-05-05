@@ -1,7 +1,8 @@
 #ifndef PROD_H
 #define PROD_H
 
-#include "deciphon/limits.h"
+#include "deciphon/core/limits.h"
+#include "sched/structs.h"
 #include <stdint.h>
 #include <stdio.h>
 
@@ -19,16 +20,16 @@ struct prod
     int64_t scan_id;
     int64_t seq_id;
 
-    char profile_name[PROFILE_NAME_SIZE];
-    char abc_name[ABC_NAME_SIZE];
+    char profile_name[SCHED_PROFILE_NAME_SIZE];
+    char abc_name[SCHED_ABC_NAME_SIZE];
 
     double alt_loglik;
     double null_loglik;
 
-    char profile_typeid[PROFILE_TYPEID_SIZE];
-    char version[VERSION_SIZE];
+    char profile_typeid[SCHED_PROFILE_TYPEID_SIZE];
+    char version[SCHED_VERSION_SIZE];
 
-    char match[MATCH_SIZE];
+    char match[SCHED_MATCH_SIZE];
 };
 
 typedef enum rc (*prod_fwrite_match_func_t)(FILE *fp, void const *match);
