@@ -118,6 +118,14 @@ unsigned profile_reader_partition_size(struct profile_reader const *reader,
     return reader->partition_size[partition];
 }
 
+unsigned profile_reader_nprofiles(struct profile_reader const *reader)
+{
+    unsigned n = 0;
+    for (unsigned i = 0; i < reader->npartitions; ++i)
+        n += reader->partition_size[i];
+    return n;
+}
+
 enum rc profile_reader_rewind_all(struct profile_reader *reader)
 {
     for (unsigned i = 0; i < reader->npartitions; ++i)

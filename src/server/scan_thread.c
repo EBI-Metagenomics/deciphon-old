@@ -72,7 +72,8 @@ static enum rc viterbi(struct imm_dp const *dp, struct imm_task *task,
     return RC_OK;
 }
 
-static enum rc write_product(struct scan_thread *t, struct imm_path const *path)
+static enum rc write_product(struct scan_thread const *t,
+                             struct imm_path const *path)
 {
     struct match *match = (struct match *)&t->match;
     prod_fwrite_match_func_t func = t->write_match_func;
@@ -92,7 +93,8 @@ enum rc thread_run(struct scan_thread *t)
     rc = profile_reader_rewind(reader, t->id);
     if (rc) goto cleanup;
 
-    int nprofs = 0;
+    // unsigned num_profiles = profile_reader_partition_size(reader, t->id);
+    int current_profile = 0;
     while ((rc = profile_reader_next(reader, t->id, &prof)) == RC_OK)
     {
         // info("Thread(%d)> Profile: %s", t->id, prof->accession);
@@ -117,18 +119,14 @@ enum rc thread_run(struct scan_thread *t)
         rc = viterbi(alt_dp, alt->task, &alt->prod, &t->prod.alt_loglik);
         if (rc) goto cleanup;
 
-        ++nprofs;
-        if (nprofs % 100 == 0)
+        ++current_profile;
+        if (current_profile % 100 == 0)
         {
-            info("%d profiles have been scanned", nprofs);
+            info("%d profiles have been scanned", current_profile);
         }
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
-        // info("Thread(%d)> LRT: %f", t->id, lrt);
         if (!imm_lprob_is_finite(lrt) || lrt < t->lrt_threshold) continue;
-        // printf("Thread(%d)> Profile: %s\n", t->id, prof->accession);
-        // printf("Thread(%d)> LRT: %f\n", t->id, lrt);
-        // fflush(stdout);
 
         strcpy(t->prod.profile_name, prof->accession);
 

@@ -9,6 +9,7 @@
 #include "deciphon/sched/sched.h"
 #include "file.h"
 #include "imm/imm.h"
+#include "job.h"
 #include "prod.h"
 #include "protein_match.h"
 #include "scan_thread.h"
@@ -40,25 +41,19 @@ static struct scan scan = {0};
 static struct api_rc api_rc = {0};
 static struct sched_db db = {0};
 
-static inline void fail_job(int64_t job_id, char const *msg)
-{
-    struct api_rc tmp = {0};
-    api_set_job_state(job_id, SCHED_FAIL, msg, &tmp);
-}
-
 static enum rc prepare_readers(void)
 {
     FILE *fp = fopen(db.filename, "rb");
     if (!fp)
     {
-        fail_job(scan.sched.job_id, "failed to open database");
+        job_set_fail(scan.sched.job_id, "failed to open database");
         return eio("failed to open database");
     }
 
     enum rc rc = protein_db_reader_open(&scan.db_reader, fp);
     if (rc)
     {
-        fail_job(scan.sched.job_id, "failed to setup database reader");
+        job_set_fail(scan.sched.job_id, "failed to setup database reader");
         goto cleanup;
     }
 
@@ -84,13 +79,13 @@ static enum rc fetch_db(char const *filename, int64_t xxh3)
     enum rc rc = api_download_db(scan.sched.db_id, fp);
     if (rc)
     {
-        fail_job(scan.sched.job_id, "failed to download database");
+        job_set_fail(scan.sched.job_id, "failed to download database");
         fclose(fp);
         return rc;
     }
     if (fclose(fp))
     {
-        fail_job(scan.sched.job_id, "failed to close database file");
+        job_set_fail(scan.sched.job_id, "failed to close database file");
         return eio("fclose");
     }
     return RC_OK;
@@ -105,24 +100,24 @@ static enum rc scan_init(unsigned num_threads, double lrt_threshold)
 
     if ((rc = prod_fopen(num_threads)))
     {
-        fail_job(scan.sched.job_id, "failed to open product files");
+        job_set_fail(scan.sched.job_id, "failed to open product files");
         goto cleanup;
     }
 
     if ((rc = api_get_db(scan.sched.db_id, &db, &api_rc)))
     {
-        fail_job(scan.sched.job_id, "failed to get database");
+        job_set_fail(scan.sched.job_id, "failed to get database");
         return rc;
     }
     if (api_rc.rc)
     {
-        fail_job(scan.sched.job_id, api_rc.msg);
+        job_set_fail(scan.sched.job_id, api_rc.msg);
         return rc;
     }
 
     if ((rc = file_ensure_local(db.filename, db.xxh3, fetch_db)))
     {
-        fail_job(scan.sched.job_id, "failed to have database on disk");
+        job_set_fail(scan.sched.job_id, "failed to have database on disk");
         return rc;
     }
 
@@ -159,7 +154,7 @@ static enum rc work_finishup(int64_t job_id)
     enum rc rc = prod_fclose();
     if (rc)
     {
-        fail_job(job_id, "failed to finish up work");
+        job_set_fail(job_id, "failed to finish up work");
         goto cleanup;
     }
 
@@ -167,13 +162,13 @@ static enum rc work_finishup(int64_t job_id)
 
     if ((rc = api_upload_prods_file(filepath, &api_rc)))
     {
-        fail_job(job_id, "failed to submit prods_file");
+        job_set_fail(job_id, "failed to submit prods_file");
         goto cleanup;
     }
     if (api_rc.rc)
     {
         rc = erest("failed to submit prods_file");
-        fail_job(job_id, api_rc.msg);
+        job_set_fail(job_id, api_rc.msg);
         goto cleanup;
     }
 
@@ -196,42 +191,58 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
 
     sched_seq_init(&scan.seq);
 
+    // unsigned num_tasks = 0;
+    // rc = api_scan_num_seqs(scan.sched.id, &num_tasks, &api_rc);
+    // num_tasks *= profile_reader_nprofiles(&scan.profile_reader);
+
     int nseqs = 0;
-    while (!(
-        rc = api_scan_next_seq(scan.sched.id, scan.seq.id, &scan.seq, &api_rc)))
+    int64_t scan_id = scan.sched.id;
+    int64_t seq_id = scan.seq.id;
+    while (!(rc = api_scan_next_seq(scan_id, seq_id, &scan.seq, &api_rc)))
     {
         if (api_rc.rc)
         {
             rc = erest(api_rc.msg);
-            fail_job(job_id, "failed to fetch new sequence");
+            job_set_fail(job_id, "failed to fetch new sequence");
             goto cleanup;
         }
         struct imm_seq seq = imm_seq(imm_str(scan.seq.data), scan.abc);
 
-        unsigned npartitions = profile_reader_npartitions(&scan.profile_reader);
-        for (unsigned i = 0; i < npartitions; ++i)
+        unsigned nparts = profile_reader_npartitions(&scan.profile_reader);
+        for (unsigned i = 0; i < nparts; ++i)
         {
             struct scan_thread *t = scan.thread + i;
             thread_setup_seq(t, &seq, scan.seq.id);
         }
 
-#pragma omp parallel for
-        for (unsigned i = 0; i < npartitions; ++i)
+#pragma omp parallel num_threads(nparts) shared(scan, rc) firstprivate(job_id)
+#pragma omp for schedule(static, 1)
+        for (unsigned i = 0; i < nparts; ++i)
         {
             struct scan_thread *t = scan.thread + i;
             enum rc local_rc = thread_run(t);
             if (local_rc)
             {
-                fail_job(job_id, "internal thread api_rc");
+#pragma omp atomic write
+                rc = local_rc;
+#pragma omp cancel for
             }
         }
+
         ++nseqs;
         info("%d of sequences have been scanned", nseqs);
+
+        if (rc)
+        {
+            job_set_fail(job_id, "thread_run error (%s)", RC_STRING(rc));
+            break;
+        }
     }
+
     if (rc == RC_END)
         rc = RC_OK;
     else
-        fail_job(job_id, "rc should have been RC_END");
+        job_set_fail(job_id, "rc should have been RC_END");
 
     return work_finishup(job_id);
 

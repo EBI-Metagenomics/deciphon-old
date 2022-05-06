@@ -46,7 +46,6 @@ add_library(
   src/core/buff.c
   src/core/ljson.c
   src/core/logging.c
-  src/core/rc.c
   src/core/to.c
   src/core/xfile.c
   src/core/http.c

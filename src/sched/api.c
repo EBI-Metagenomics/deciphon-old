@@ -320,19 +320,6 @@ cleanup:
     return rc;
 }
 
-#if 0
-static enum rc parse_db_list(struct sched_db *db, struct xjson *x)
-{
-    if (!xjson_is_array(x, 0)) return einval("expected array");
-    if (xjson_is_array_empty(x, 0))
-    {
-        sched_db_init(db);
-        return RC_OK;
-    }
-    return sched_db_parse(db, x, 2);
-}
-#endif
-
 enum rc api_get_db(int64_t id, struct sched_db *db, struct api_rc *api_rc)
 {
     spinlock_lock(&lock);

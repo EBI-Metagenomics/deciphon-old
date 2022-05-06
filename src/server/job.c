@@ -9,6 +9,7 @@
 #include "imm/imm.h"
 #include "scan.h"
 #include "xomp.h"
+#include <stdarg.h>
 #include <stdatomic.h>
 #include <string.h>
 
@@ -35,15 +36,18 @@ enum rc job_next(struct job *job)
     return rerr.rc ? erest(rerr.msg) : RC_OK;
 }
 
-#if 0
-static inline void fail_job(int64_t job_id, char const *msg)
-{
-    struct api_error rerr = {0};
-    api_set_job_state(job_id, SCHED_FAIL, msg, &rerr);
-}
-#endif
-
 enum rc job_run(struct job *job)
 {
     return job_run_func[job->sched.type](job->sched.id, job->num_threads);
+}
+
+void job_set_fail(int64_t job_id, char const *fmt, ...)
+{
+    char msg[SCHED_JOB_ERROR_SIZE] = {0};
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(msg, sizeof msg, fmt, args);
+    va_end(args);
+    struct api_rc discard = {0};
+    api_set_job_state(job_id, SCHED_FAIL, msg, &discard);
 }

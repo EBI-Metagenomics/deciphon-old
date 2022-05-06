@@ -27,6 +27,7 @@ enum rc profile_reader_setup(struct profile_reader *reader,
 unsigned profile_reader_npartitions(struct profile_reader const *reader);
 unsigned profile_reader_partition_size(struct profile_reader const *reader,
                                        unsigned partition);
+unsigned profile_reader_nprofiles(struct profile_reader const *reader);
 enum rc profile_reader_rewind_all(struct profile_reader *reader);
 enum rc profile_reader_rewind(struct profile_reader *reader,
                               unsigned partition);
