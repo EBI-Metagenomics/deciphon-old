@@ -465,6 +465,23 @@ cleanup:
     return rc;
 }
 
+enum rc api_scan_num_seqs(int64_t scan_id, unsigned *num_seqs,
+                          struct api_rc *api_rc)
+{
+    // TODO: implement an API call for that
+    static struct sched_seq seq = {0};
+
+    *num_seqs = 0;
+    seq.id = 0;
+    enum rc rc = RC_OK;
+
+    while (!(rc = api_scan_next_seq(scan_id, seq.id, &seq, api_rc)))
+        *num_seqs += 1;
+
+    if (rc == RC_END) rc = RC_OK;
+    return rc;
+}
+
 enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan,
                                struct api_rc *api_rc)
 {
@@ -628,6 +645,7 @@ enum rc api_increment_job_progress(int64_t job_id, int increment,
 
     init_api_rc(api_rc);
 
+    info("Increment: %d", increment);
     ljson_open(&ljson, sizeof request, request);
     ljson_int(&ljson, "increment", increment);
     ljson_close(&ljson);

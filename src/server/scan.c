@@ -116,12 +116,14 @@ static enum rc scan_init(unsigned num_threads, double lrt_threshold)
         return rc;
     }
 
+    info("Ensuring database exists locally");
     if ((rc = file_ensure_local(db.filename, db.xxh3, fetch_db)))
     {
         job_set_fail(scan.sched.job_id, "failed to have database on disk");
         return rc;
     }
 
+    info("Preparing readers");
     if ((rc = prepare_readers()))
     {
         prod_fcleanup();
@@ -186,11 +188,11 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
 
     sched_seq_init(&scan.seq);
 
-    // unsigned num_tasks = 0;
-    // rc = api_scan_num_seqs(scan.sched.id, &num_tasks, &api_rc);
-    // num_tasks *= profile_reader_nprofiles(&scan.profile_reader);
+    unsigned nseqs = 0;
+    if ((rc = api_scan_num_seqs(scan.sched.id, &nseqs, &api_rc))) return rc;
 
-    int nseqs = 0;
+    int steps = (int)(nseqs * profile_reader_nprofiles(&scan.profile_reader));
+
     int64_t scan_id = scan.sched.id;
     int64_t seq_id = scan.seq.id;
     while (!(rc = api_scan_next_seq(scan_id, seq_id, &scan.seq, &api_rc)))
@@ -202,14 +204,15 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
         {
             struct scan_thread *t = scan.thread + i;
             thread_setup_seq(t, &seq, scan.seq.id);
+            t->job_id = job_id;
         }
 
-#pragma omp parallel for num_threads(nparts) shared(scan, rc)                  \
-    firstprivate(job_id) schedule(static, 1)
+#pragma omp parallel for num_threads(nparts) firstprivate(job_id)              \
+    schedule(static, 1)
         for (unsigned i = 0; i < nparts; ++i)
         {
-            struct scan_thread *t = scan.thread + i;
-            enum rc local_rc = thread_run(t);
+            int tid = xomp_thread_num();
+            enum rc local_rc = thread_run(&scan.thread[i], tid, &steps, steps);
             if (local_rc)
             {
 #pragma omp atomic write
@@ -217,9 +220,6 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
 #pragma omp cancel for
             }
         }
-
-        ++nseqs;
-        info("%d of sequences have been scanned", nseqs);
 
         if (rc)
         {

@@ -44,6 +44,8 @@ enum rc api_upload_prods_file(char const *filepath, struct api_rc *);
 
 enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
                           struct sched_seq *seq, struct api_rc *);
+enum rc api_scan_num_seqs(int64_t scan_id, unsigned *num_seqs, struct api_rc *);
+
 enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *,
                                struct api_rc *);
 

@@ -40,6 +40,9 @@ endif()
 
 add_compile_definitions(_XOPEN_SOURCE=700)
 add_compile_definitions(_DARWIN_C_SOURCE=1)
+if(OpenMP_FOUND)
+  add_compile_definitions(DECIPHON_OPENM=1)
+endif()
 
 add_library(
   deciphon

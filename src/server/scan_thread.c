@@ -1,7 +1,9 @@
 #include "scan_thread.h"
+#include "deciphon/core/hash.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/xmath.h"
 #include "deciphon/db/profile_reader.h"
+#include "deciphon/sched/api.h"
 
 void thread_init(struct scan_thread *t, unsigned id,
                  struct profile_reader *reader, bool multi_hits,
@@ -80,9 +82,14 @@ static enum rc write_product(struct scan_thread const *t,
     return prod_fwrite(&t->prod, t->seq, path, t->id, func, match);
 }
 
-enum rc thread_run(struct scan_thread *t)
+#define MAX_STEPS 1000
+#define MIN_STEPS 50
+
+enum rc thread_run(struct scan_thread *t, int tid, int *steps_left,
+                   int total_steps)
 {
     enum rc rc = RC_OK;
+    int steps = core_hash(tid) % (MAX_STEPS - MIN_STEPS + 1) + MIN_STEPS;
 
     struct profile *prof = 0;
     struct hypothesis *null = &t->null;
@@ -93,13 +100,10 @@ enum rc thread_run(struct scan_thread *t)
     rc = profile_reader_rewind(reader, t->id);
     if (rc) goto cleanup;
 
-    // unsigned num_profiles = profile_reader_partition_size(reader, t->id);
     int current_profile = 0;
+    int last_progress = 0;
     while ((rc = profile_reader_next(reader, t->id, &prof)) == RC_OK)
     {
-        // info("Thread(%d)> Profile: %s", t->id, prof->accession);
-        // if (atomic_load(&end_work)) break;
-        //
         struct imm_dp const *null_dp = profile_null_dp(prof);
         struct imm_dp const *alt_dp = profile_alt_dp(prof);
         struct protein_profile *pp = (struct protein_profile *)prof;
@@ -120,9 +124,25 @@ enum rc thread_run(struct scan_thread *t)
         if (rc) goto cleanup;
 
         ++current_profile;
-        if (current_profile % 100 == 0)
+        if (current_profile % steps == 0)
         {
-            info("%d profiles have been scanned", current_profile);
+            *steps_left -= steps;
+#pragma omp flush(steps_left)
+
+            if (tid == 0)
+            {
+                int progress = 100 * (total_steps - *steps_left);
+                progress /= total_steps;
+                if (progress > last_progress)
+                {
+                    info("%d%% of job done", progress);
+
+                    int inc = progress - last_progress;
+                    struct api_rc api_rc = {0};
+                    api_increment_job_progress(t->job_id, inc, &api_rc);
+                    last_progress = progress;
+                }
+            }
         }
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
@@ -135,6 +155,12 @@ enum rc thread_run(struct scan_thread *t)
         if (rc) goto cleanup;
     }
     if (rc == RC_END) rc = RC_OK;
+
+    if (current_profile % steps != 0)
+    {
+        *steps_left -= current_profile % steps;
+#pragma omp flush(steps_left)
+    }
 
 cleanup:
     return rc;

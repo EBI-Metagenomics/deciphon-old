@@ -116,6 +116,7 @@ void ljson_int(struct ljson_ctx *ctx, char *key, long value)
 {
     int const size = itoa_rev(ctx->tmpbuf, value);
     reverse(ctx->tmpbuf, size);
+    ctx->tmpbuf[size] = 0;
     write_raw(ctx, key, ctx->tmpbuf);
 }
 
