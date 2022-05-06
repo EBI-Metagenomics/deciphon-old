@@ -54,7 +54,8 @@ static enum rc fetch_hmm(char const *filename, int64_t xxh3)
     FILE *fp = fopen(hmm.filename, "wb");
     if (!fp) return eio("fopen");
     /* TODO: should be xxh3 */
-    enum rc rc = api_download_hmm(hmm.id, fp);
+    struct api_rc api_rc = {0};
+    enum rc rc = api_download_hmm(hmm.id, fp, &api_rc);
     if (rc)
     {
         fclose(fp);

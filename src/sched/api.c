@@ -25,14 +25,14 @@ static char _query[128] = {0};
 static char request[1024] = {0};
 static struct ljson_ctx ljson = {0};
 
-static inline void error_init(struct api_rc *err)
+static inline void init_api_rc(struct api_rc *err)
 {
     err->rc = 0;
     err->msg[0] = 0;
 }
 
-static enum rc parse_error(struct api_rc *api_rc, struct xjson *x,
-                           unsigned start);
+static enum rc parse_api_rc(struct api_rc *api_rc, struct xjson *x,
+                            unsigned start);
 
 static enum rc body_add(struct buff **body, size_t size, char const *data)
 {
@@ -105,6 +105,12 @@ static inline enum rc get(char const *query, long *http_code)
     return xcurl_get(query, http_code, body_store, &response);
 }
 
+static inline bool recognized_http_status(long http_status)
+{
+    return http_status == 401 || http_status == 404 || http_status == 406 ||
+           http_status == 418 || http_status == 422;
+}
+
 bool api_is_reachable(void)
 {
     spinlock_lock(&lock);
@@ -149,8 +155,8 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
 {
     spinlock_lock(&lock);
 
-    error_init(api_rc);
     sched_hmm_init(hmm);
+    init_api_rc(api_rc);
 
     struct xcurl_mime mime = {0};
     xfile_basename(filename, filepath);
@@ -166,14 +172,12 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
     {
         rc = sched_hmm_parse(hmm, &xjson, 1);
     }
-    else if (http_code == 418)
+    else if (recognized_http_status(http_code))
     {
-        rc = parse_error(api_rc, &xjson, 1);
-        if (!rc && api_rc->rc == 16) rc = efail("invalid file name ext");
-    }
-    else if (http_code == 400 || http_code == 409)
-    {
-        rc = parse_error(api_rc, &xjson, 1);
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -196,7 +200,7 @@ enum rc api_get_hmm(int64_t id, struct sched_hmm *hmm, struct api_rc *api_rc)
     spinlock_lock(&lock);
 
     sched_hmm_init(hmm);
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
     long http_code = 0;
     enum rc rc = get(query("/hmms/%" PRId64, id), &http_code);
@@ -208,9 +212,12 @@ enum rc api_get_hmm(int64_t id, struct sched_hmm *hmm, struct api_rc *api_rc)
     {
         rc = sched_hmm_parse(hmm, &xjson, 1);
     }
-    else if (http_code == 400 || http_code == 409)
+    else if (recognized_http_status(http_code))
     {
-        rc = parse_error(api_rc, &xjson, 1);
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -228,7 +235,7 @@ enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
     spinlock_lock(&lock);
 
     sched_hmm_init(hmm);
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
     long http_code = 0;
     enum rc rc = get(query("/jobs/%" PRId64 "/hmm", job_id), &http_code);
@@ -240,9 +247,12 @@ enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
     {
         rc = sched_hmm_parse(hmm, &xjson, 1);
     }
-    else if (http_code == 400 || http_code == 409)
+    else if (recognized_http_status(http_code))
     {
-        rc = parse_error(api_rc, &xjson, 1);
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -254,9 +264,11 @@ cleanup:
     return rc;
 }
 
-enum rc api_download_hmm(int64_t id, FILE *fp)
+enum rc api_download_hmm(int64_t id, FILE *fp, struct api_rc *api_rc)
 {
     spinlock_lock(&lock);
+
+    init_api_rc(api_rc);
 
     enum rc rc = RC_OK;
 
@@ -269,9 +281,12 @@ enum rc api_download_hmm(int64_t id, FILE *fp)
     {
         rc = RC_OK;
     }
-    else if (http_code == 404)
+    else if (recognized_http_status(http_code))
     {
-        rc = einval("hmm not found");
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -288,7 +303,7 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db,
 {
     spinlock_lock(&lock);
 
-    error_init(api_rc);
+    init_api_rc(api_rc);
     sched_db_init(db);
 
     struct xcurl_mime mime = {0};
@@ -305,10 +320,12 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db,
     {
         rc = sched_db_parse(db, &xjson, 1);
     }
-    else if (http_code == 418)
+    else if (recognized_http_status(http_code))
     {
-        rc = parse_error(api_rc, &xjson, 1);
-        if (!rc && api_rc->rc == 16) rc = efail("invalid file name ext");
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -325,7 +342,7 @@ enum rc api_get_db(int64_t id, struct sched_db *db, struct api_rc *api_rc)
     spinlock_lock(&lock);
 
     sched_db_init(db);
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
     long http_code = 0;
     enum rc rc = get(query("/dbs/%" PRId64, id), &http_code);
@@ -337,9 +354,12 @@ enum rc api_get_db(int64_t id, struct sched_db *db, struct api_rc *api_rc)
     {
         rc = sched_db_parse(db, &xjson, 1);
     }
-    else if (http_code == 400 || http_code == 409)
+    else if (recognized_http_status(http_code))
     {
-        rc = parse_error(api_rc, &xjson, 1);
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -356,13 +376,12 @@ enum rc api_next_pend_job(struct sched_job *job, struct api_rc *api_rc)
     spinlock_lock(&lock);
 
     sched_job_init(job);
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
     enum rc rc = RC_OK;
 
     long http_code = 0;
-    rc = get("/jobs/next_pend", &http_code);
-    if (rc) goto cleanup;
+    if ((rc = get("/jobs/next_pend", &http_code))) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
@@ -372,8 +391,20 @@ enum rc api_next_pend_job(struct sched_job *job, struct api_rc *api_rc)
     }
     else if (http_code == 404)
     {
-        rc = parse_error(api_rc, &xjson, 1);
-        if (!rc && api_rc->rc == 5) rc = RC_END;
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            if (api_rc->rc == 5)
+                rc = RC_END;
+            else
+                rc = eapi(*api_rc);
+        }
+    }
+    else if (recognized_http_status(http_code))
+    {
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -391,13 +422,15 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     spinlock_lock(&lock);
 
     sched_seq_init(seq);
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
-    long http_code = 0;
+    enum rc rc = RC_OK;
+
     char const *q =
         query("/scans/%" PRId64 "/seqs/next/%" PRId64, scan_id, seq_id);
-    enum rc rc = get(q, &http_code);
-    if (rc) goto cleanup;
+
+    long http_code = 0;
+    if ((rc = get(q, &http_code))) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
@@ -407,12 +440,20 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     }
     else if (http_code == 404)
     {
-        rc = parse_error(api_rc, &xjson, 1);
-        if (!rc && api_rc->rc == 7) rc = RC_END;
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            if (api_rc->rc == 7)
+                rc = RC_END;
+            else
+                rc = eapi(*api_rc);
+        }
     }
-    else if (http_code == 409 || http_code == 500)
+    else if (recognized_http_status(http_code))
     {
-        rc = parse_error(api_rc, &xjson, 1);
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -430,7 +471,7 @@ enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan,
     spinlock_lock(&lock);
 
     sched_scan_init(scan);
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
     long http_code = 0;
     enum rc rc = get(query("/jobs/%" PRId64 "/scan", job_id), &http_code);
@@ -442,9 +483,12 @@ enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan,
     {
         rc = sched_scan_parse(scan, &xjson, 1);
     }
-    else if (http_code == 400 || http_code == 409)
+    else if (recognized_http_status(http_code))
     {
-        rc = parse_error(api_rc, &xjson, 1);
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -479,7 +523,7 @@ enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
 {
     spinlock_lock(&lock);
 
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
     long http_code = 0;
     enum rc rc = set_job_state(job_id, state, msg, &http_code);
@@ -487,11 +531,18 @@ enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 409 || http_code == 500)
+    if (http_code == 200)
     {
-        rc = parse_error(api_rc, &xjson, 1);
+        rc = RC_OK;
     }
-    else if (http_code != 200)
+    else if (recognized_http_status(http_code))
+    {
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
+    }
+    else
     {
         rc = ehttp(http_status_string(http_code));
     }
@@ -501,7 +552,7 @@ cleanup:
     return rc;
 }
 
-enum rc api_download_db(int64_t id, FILE *fp)
+enum rc api_download_db(int64_t id, FILE *fp, struct api_rc *api_rc)
 {
     spinlock_lock(&lock);
 
@@ -515,9 +566,12 @@ enum rc api_download_db(int64_t id, FILE *fp)
     {
         rc = RC_OK;
     }
-    else if (http_code == 404)
+    else if (recognized_http_status(http_code))
     {
-        rc = einval("database not found");
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -533,7 +587,7 @@ enum rc api_upload_prods_file(char const *filepath, struct api_rc *api_rc)
 {
     spinlock_lock(&lock);
 
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
     struct xcurl_mime mime = {0};
     xcurl_mime_set(&mime, "prods_file", "prods_file.tsv",
@@ -550,9 +604,12 @@ enum rc api_upload_prods_file(char const *filepath, struct api_rc *api_rc)
         if (!(xjson_is_array(&xjson, 0) && xjson_is_array_empty(&xjson, 0)))
             rc = einval("expected empty array");
     }
-    else if (http_code == 400 || http_code == 409)
+    else if (recognized_http_status(http_code))
     {
-        rc = parse_error(api_rc, &xjson, 1);
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
     }
     else
     {
@@ -569,7 +626,7 @@ enum rc api_increment_job_progress(int64_t job_id, int increment,
 {
     spinlock_lock(&lock);
 
-    error_init(api_rc);
+    init_api_rc(api_rc);
 
     ljson_open(&ljson, sizeof request, request);
     ljson_int(&ljson, "increment", increment);
@@ -582,9 +639,20 @@ enum rc api_increment_job_progress(int64_t job_id, int increment,
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code != 200)
+    if (http_code == 200)
     {
-        rc = parse_error(api_rc, &xjson, 1);
+        rc = RC_OK;
+    }
+    else if (recognized_http_status(http_code))
+    {
+        if (!(rc = parse_api_rc(api_rc, &xjson, 1)))
+        {
+            rc = eapi(*api_rc);
+        }
+    }
+    else
+    {
+        rc = ehttp(http_status_string(http_code));
     }
 
 cleanup:
@@ -592,8 +660,8 @@ cleanup:
     return rc;
 }
 
-static enum rc parse_error(struct api_rc *api_rc, struct xjson *x,
-                           unsigned start)
+static enum rc parse_api_rc(struct api_rc *api_rc, struct xjson *x,
+                            unsigned start)
 {
     enum rc rc = RC_OK;
     if (!x) return rc;

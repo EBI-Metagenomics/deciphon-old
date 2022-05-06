@@ -29,45 +29,45 @@ void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
 void logging_setup(FILE *restrict user_stream, enum logging_level user_level,
                    FILE *restrict sys_stream, enum logging_level sys_level);
 
-#define efail(msg)                                                             \
+#define efail(...)                                                             \
     ({                                                                         \
-        error(msg);                                                            \
+        error(__VA_ARGS__);                                                    \
         RC_EFAIL;                                                              \
     })
 
-#define einval(msg)                                                            \
+#define einval(...)                                                            \
     ({                                                                         \
-        error(msg);                                                            \
+        error(__VA_ARGS__);                                                    \
         RC_EINVAL;                                                             \
     })
 
-#define eio(msg)                                                               \
+#define eio(...)                                                               \
     ({                                                                         \
-        error(msg);                                                            \
+        error(__VA_ARGS__);                                                    \
         RC_EIO;                                                                \
     })
 
-#define enomem(msg)                                                            \
+#define enomem(...)                                                            \
     ({                                                                         \
-        error(msg);                                                            \
+        error(__VA_ARGS__);                                                    \
         RC_ENOMEM;                                                             \
     })
 
-#define eparse(msg)                                                            \
+#define eparse(...)                                                            \
     ({                                                                         \
-        error(msg);                                                            \
+        error(__VA_ARGS__);                                                    \
         RC_EPARSE;                                                             \
     })
 
-#define erest(msg)                                                             \
+#define eapi(api_rc)                                                           \
     ({                                                                         \
-        error(msg);                                                            \
-        RC_EREST;                                                              \
+        error(" api_rc[%d] %s", (api_rc).rc, (api_rc).msg);                    \
+        RC_EAPI;                                                               \
     })
 
-#define ehttp(msg)                                                             \
+#define ehttp(...)                                                             \
     ({                                                                         \
-        error(msg);                                                            \
+        error(__VA_ARGS__);                                                    \
         RC_EHTTP;                                                              \
     })
 

@@ -10,7 +10,7 @@ enum rc
     RC_EIO,
     RC_ENOMEM,
     RC_EPARSE,
-    RC_EREST,
+    RC_EAPI,
     RC_EHTTP,
 };
 
@@ -22,7 +22,7 @@ enum rc
     : rc == RC_EIO    ? "RC_EIO"                                               \
     : rc == RC_ENOMEM ? "RC_ENOMEM"                                            \
     : rc == RC_EPARSE ? "RC_EPARSE"                                            \
-    : rc == RC_EREST  ? "RC_EREST"                                             \
+    : rc == RC_EAPI   ? "RC_EAPI"                                              \
     : rc == RC_EHTTP  ? "RC_EHTTP"                                             \
                       : "invalid return code"
 

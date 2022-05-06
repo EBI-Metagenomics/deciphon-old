@@ -76,7 +76,8 @@ static enum rc fetch_db(char const *filename, int64_t xxh3)
 {
     FILE *fp = fopen(filename, "wb");
     if (!fp) return eio("fopen");
-    enum rc rc = api_download_db(scan.sched.db_id, fp);
+    struct api_rc api_rc = {0};
+    enum rc rc = api_download_db(scan.sched.db_id, fp, &api_rc);
     if (rc)
     {
         job_set_fail(scan.sched.job_id, "failed to download database");
@@ -165,17 +166,11 @@ static enum rc work_finishup(int64_t job_id)
         job_set_fail(job_id, "failed to submit prods_file");
         goto cleanup;
     }
-    if (api_rc.rc)
-    {
-        rc = erest("failed to submit prods_file");
-        job_set_fail(job_id, api_rc.msg);
-        goto cleanup;
-    }
 
     rc = api_set_job_state(job_id, SCHED_DONE, "", &api_rc);
     if (rc) return rc;
 
-    return api_rc.rc ? erest(api_rc.msg) : RC_OK;
+    return api_rc.rc ? eapi(api_rc) : RC_OK;
 
 cleanup:
     return rc;
@@ -200,12 +195,6 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
     int64_t seq_id = scan.seq.id;
     while (!(rc = api_scan_next_seq(scan_id, seq_id, &scan.seq, &api_rc)))
     {
-        if (api_rc.rc)
-        {
-            rc = erest(api_rc.msg);
-            job_set_fail(job_id, "failed to fetch new sequence");
-            goto cleanup;
-        }
         struct imm_seq seq = imm_seq(imm_str(scan.seq.data), scan.abc);
 
         unsigned nparts = profile_reader_npartitions(&scan.profile_reader);
@@ -215,8 +204,8 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
             thread_setup_seq(t, &seq, scan.seq.id);
         }
 
-#pragma omp parallel num_threads(nparts) shared(scan, rc) firstprivate(job_id)
-#pragma omp for schedule(static, 1)
+#pragma omp parallel for num_threads(nparts) shared(scan, rc)                  \
+    firstprivate(job_id) schedule(static, 1)
         for (unsigned i = 0; i < nparts; ++i)
         {
             struct scan_thread *t = scan.thread + i;
@@ -235,16 +224,17 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
         if (rc)
         {
             job_set_fail(job_id, "thread_run error (%s)", RC_STRING(rc));
-            break;
+            goto cleanup;
         }
+        seq_id = scan.seq.id;
     }
 
-    if (rc == RC_END)
-        rc = RC_OK;
-    else
-        job_set_fail(job_id, "rc should have been RC_END");
+    if (rc == RC_END) return work_finishup(job_id);
 
-    return work_finishup(job_id);
+    if (rc == RC_EAPI)
+        job_set_fail(job_id, api_rc.msg);
+    else
+        job_set_fail(job_id, "BUG: unexpected return code");
 
 cleanup:
     return rc;
