@@ -82,14 +82,15 @@ static enum rc write_product(struct scan_thread const *t,
     return prod_fwrite(&t->prod, t->seq, path, t->id, func, match);
 }
 
-#define MAX_STEPS 1000
-#define MIN_STEPS 50
+#define MAX_STEPS 100
+#define MIN_STEPS 30
 
 enum rc thread_run(struct scan_thread *t, int tid, int *steps_left,
                    int total_steps)
 {
     enum rc rc = RC_OK;
     int steps = core_hash(tid) % (MAX_STEPS - MIN_STEPS + 1) + MIN_STEPS;
+    info("tid[%d] steps[%d]", tid, steps);
 
     struct profile *prof = 0;
     struct hypothesis *null = &t->null;
@@ -127,20 +128,24 @@ enum rc thread_run(struct scan_thread *t, int tid, int *steps_left,
         if (current_profile % steps == 0)
         {
             *steps_left -= steps;
-#pragma omp flush(steps_left)
+            info("tid[%d] flush", tid);
 
+            _Pragma("omp flush(steps_left)")
             if (tid == 0)
             {
                 int progress = 100 * (total_steps - *steps_left);
                 progress /= total_steps;
                 if (progress > last_progress)
                 {
-                    info("%d%% of job done", progress);
-
                     int inc = progress - last_progress;
-                    struct api_rc api_rc = {0};
-                    api_increment_job_progress(t->job_id, inc, &api_rc);
                     last_progress = progress;
+                    int64_t job_id = t->job_id;
+                    _Pragma("omp task default(none) firstprivate(progress, job_id, inc)")
+                    {
+                        info("%d%% of job done", progress);
+                        struct api_rc api_rc = {0};
+                        api_increment_job_progress(job_id, inc, &api_rc);
+                    }
                 }
             }
         }
@@ -159,7 +164,7 @@ enum rc thread_run(struct scan_thread *t, int tid, int *steps_left,
     if (current_profile % steps != 0)
     {
         *steps_left -= current_profile % steps;
-#pragma omp flush(steps_left)
+        _Pragma("omp flush(steps_left)")
     }
 
 cleanup:

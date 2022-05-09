@@ -16,3 +16,4 @@ BraceWrapping:
   BeforeElse: true
   IndentBraces: false
 BreakBeforeBraces: Custom
+ForEachMacros: [_Pragma]

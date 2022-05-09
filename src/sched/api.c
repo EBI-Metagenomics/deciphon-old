@@ -645,7 +645,6 @@ enum rc api_increment_job_progress(int64_t job_id, int increment,
 
     init_api_rc(api_rc);
 
-    info("Increment: %d", increment);
     ljson_open(&ljson, sizeof request, request);
     ljson_int(&ljson, "increment", increment);
     ljson_close(&ljson);

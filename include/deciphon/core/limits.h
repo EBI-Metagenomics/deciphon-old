@@ -1,5 +1,5 @@
-#ifndef DECIPHON_LIMITS_H
-#define DECIPHON_LIMITS_H
+#ifndef DECIPHON_CORE_LIMITS_H
+#define DECIPHON_CORE_LIMITS_H
 
 enum limits
 {

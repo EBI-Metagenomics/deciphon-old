@@ -207,19 +207,19 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
             t->job_id = job_id;
         }
 
-#pragma omp parallel for num_threads(nparts) firstprivate(job_id)              \
-    schedule(static, 1)
-        for (unsigned i = 0; i < nparts; ++i)
-        {
-            int tid = xomp_thread_num();
-            enum rc local_rc = thread_run(&scan.thread[i], tid, &steps, steps);
-            if (local_rc)
+        _Pragma ("omp parallel for firstprivate(job_id) schedule(static, 1)")
+            for (unsigned i = 0; i < nparts; ++i)
             {
-#pragma omp atomic write
-                rc = local_rc;
-#pragma omp cancel for
+                int tid = xomp_thread_num();
+                enum rc local_rc =
+                    thread_run(&scan.thread[i], tid, &steps, steps);
+                if (local_rc)
+                {
+                    _Pragma ("omp atomic write")
+                        rc = local_rc;
+                    _Pragma ("omp cancel for")
+                }
             }
-        }
 
         if (rc)
         {
