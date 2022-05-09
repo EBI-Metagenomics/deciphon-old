@@ -72,6 +72,7 @@ enum rc server_run(void)
         if (rc == RC_OK)
         {
             info("Running job[%ld]", server.job.sched.id);
+
             rc = job_run(&server.job);
             if (rc)
             {

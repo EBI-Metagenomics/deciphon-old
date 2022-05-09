@@ -47,11 +47,12 @@ endif()
 add_library(
   deciphon
   src/core/buff.c
+  src/core/http.c
   src/core/ljson.c
   src/core/logging.c
+  src/core/progress.c
   src/core/to.c
   src/core/xfile.c
-  src/core/http.c
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c

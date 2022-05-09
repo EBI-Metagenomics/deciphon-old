@@ -1,5 +1,6 @@
 #include "scan.h"
 #include "deciphon/core/logging.h"
+#include "deciphon/core/progress.h"
 #include "deciphon/core/rc.h"
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
@@ -92,6 +93,23 @@ static enum rc fetch_db(char const *filename, int64_t xxh3)
     return RC_OK;
 }
 
+static void send_progress(unsigned long units, void *data)
+{
+    struct api_rc api_rc = {0};
+    int64_t *job_id = data;
+    api_increment_job_progress(*job_id, (int)units, &api_rc);
+}
+
+static enum rc compute_number_of_tasks(unsigned *total)
+{
+    enum rc rc = RC_OK;
+    unsigned nseqs = 0;
+    if ((rc = api_scan_num_seqs(scan.sched.id, &nseqs, &api_rc))) return rc;
+
+    *total = nseqs * profile_reader_nprofiles(&scan.profile_reader);
+    return rc;
+}
+
 static enum rc scan_init(unsigned num_threads, double lrt_threshold)
 {
     scan.num_threads = num_threads;
@@ -148,12 +166,28 @@ static enum rc scan_init(unsigned num_threads, double lrt_threshold)
         thread_setup_job(t, abc_typeid, profile_typeid, scan.sched.id);
     }
 
+    unsigned nseqs = 0;
+    if ((rc = api_scan_num_seqs(scan.sched.id, &nseqs, &api_rc))) return rc;
+
+    unsigned total = 0;
+    if ((rc = compute_number_of_tasks(&total)))
+    {
+        job_set_fail(scan.sched.job_id, "failed to compute number of tasks");
+        goto cleanup;
+    }
+    info("%d tasks to run", total);
+
+    progress_setup(
+        npartitions, total, 100,
+        (struct progress_callback){send_progress, &scan.sched.job_id});
+
 cleanup:
     return rc;
 }
 
 static enum rc work_finishup(int64_t job_id)
 {
+    progress_finishup();
     enum rc rc = prod_fclose();
     if (rc)
     {
@@ -188,11 +222,6 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
 
     sched_seq_init(&scan.seq);
 
-    unsigned nseqs = 0;
-    if ((rc = api_scan_num_seqs(scan.sched.id, &nseqs, &api_rc))) return rc;
-
-    int steps = (int)(nseqs * profile_reader_nprofiles(&scan.profile_reader));
-
     int64_t scan_id = scan.sched.id;
     int64_t seq_id = scan.seq.id;
     while (!(rc = api_scan_next_seq(scan_id, seq_id, &scan.seq, &api_rc)))
@@ -211,8 +240,7 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
             for (unsigned i = 0; i < nparts; ++i)
             {
                 int tid = xomp_thread_num();
-                enum rc local_rc =
-                    thread_run(&scan.thread[i], tid, &steps, steps);
+                enum rc local_rc = thread_run(&scan.thread[i], tid);
                 if (local_rc)
                 {
                     _Pragma ("omp atomic write")

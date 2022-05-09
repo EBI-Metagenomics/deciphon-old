@@ -40,7 +40,6 @@ void thread_setup_job(struct scan_thread *, enum imm_abc_typeid,
                       enum profile_typeid, int64_t scan_id);
 void thread_setup_seq(struct scan_thread *, struct imm_seq *seq,
                       int64_t seq_id);
-enum rc thread_run(struct scan_thread *, int tid, int *steps_left,
-                   int total_steps);
+enum rc thread_run(struct scan_thread *, int tid);
 
 #endif

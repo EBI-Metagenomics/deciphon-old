@@ -3,7 +3,6 @@
 #include "deciphon/core/http.h"
 #include "deciphon/core/ljson.h"
 #include "deciphon/core/logging.h"
-#include "deciphon/core/spinlock.h"
 #include "deciphon/core/to.h"
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
@@ -11,10 +10,11 @@
 #include "deciphon/sched/xcurl.h"
 #include "xjson.h"
 #include <inttypes.h>
+#include <omp.h>
 #include <stdarg.h>
 #include <string.h>
 
-static spinlock_t lock = SPINLOCK_INIT;
+omp_lock_t lock = {0};
 static unsigned initialized = 0;
 static struct buff *response = 0;
 static struct xjson xjson = {0};
@@ -87,6 +87,7 @@ enum rc api_init(char const *url_stem, char const *api_key)
     }
     body_reset(response);
 
+    omp_init_lock(&lock);
     return RC_OK;
 }
 
@@ -97,6 +98,7 @@ void api_cleanup(void)
 
     xcurl_cleanup();
     buff_del(response);
+    omp_destroy_lock(&lock);
 }
 
 static inline enum rc get(char const *query, long *http_code)
@@ -113,7 +115,7 @@ static inline bool recognized_http_status(long http_status)
 
 bool api_is_reachable(void)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     bool reachable = false;
     long http_code = 0;
@@ -122,13 +124,13 @@ bool api_is_reachable(void)
     reachable = http_code == 200;
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return reachable;
 }
 
 enum rc api_wipe(void)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     long http_code = 0;
     enum rc rc = xcurl_delete("/sched/wipe", &http_code);
@@ -137,7 +139,7 @@ enum rc api_wipe(void)
     if (http_code != 200) rc = ehttp(http_status_string(http_code));
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
@@ -153,7 +155,7 @@ static inline enum rc upload(char const *query, long *http_code,
 enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
                        struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     sched_hmm_init(hmm);
     init_api_rc(api_rc);
@@ -185,7 +187,7 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm,
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
@@ -197,7 +199,7 @@ static inline enum rc patch(char const *query, long *http_code)
 
 enum rc api_get_hmm(int64_t id, struct sched_hmm *hmm, struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     sched_hmm_init(hmm);
     init_api_rc(api_rc);
@@ -225,14 +227,14 @@ enum rc api_get_hmm(int64_t id, struct sched_hmm *hmm, struct api_rc *api_rc)
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
                               struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     sched_hmm_init(hmm);
     init_api_rc(api_rc);
@@ -260,13 +262,13 @@ enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm,
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_download_hmm(int64_t id, FILE *fp, struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     init_api_rc(api_rc);
 
@@ -294,14 +296,14 @@ enum rc api_download_hmm(int64_t id, FILE *fp, struct api_rc *api_rc)
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_upload_db(char const *filepath, struct sched_db *db,
                       struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     init_api_rc(api_rc);
     sched_db_init(db);
@@ -333,13 +335,13 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db,
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_get_db(int64_t id, struct sched_db *db, struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     sched_db_init(db);
     init_api_rc(api_rc);
@@ -367,13 +369,13 @@ enum rc api_get_db(int64_t id, struct sched_db *db, struct api_rc *api_rc)
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_next_pend_job(struct sched_job *job, struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     sched_job_init(job);
     init_api_rc(api_rc);
@@ -412,14 +414,14 @@ enum rc api_next_pend_job(struct sched_job *job, struct api_rc *api_rc)
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
                           struct sched_seq *seq, struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     sched_seq_init(seq);
     init_api_rc(api_rc);
@@ -461,7 +463,7 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
@@ -485,7 +487,7 @@ enum rc api_scan_num_seqs(int64_t scan_id, unsigned *num_seqs,
 enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan,
                                struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     sched_scan_init(scan);
     init_api_rc(api_rc);
@@ -513,7 +515,7 @@ enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan,
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
@@ -538,7 +540,7 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
 enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
                           char const *msg, struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     init_api_rc(api_rc);
 
@@ -565,13 +567,13 @@ enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_download_db(int64_t id, FILE *fp, struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     enum rc rc = RC_OK;
 
@@ -596,13 +598,13 @@ enum rc api_download_db(int64_t id, FILE *fp, struct api_rc *api_rc)
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_upload_prods_file(char const *filepath, struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     init_api_rc(api_rc);
 
@@ -634,14 +636,14 @@ enum rc api_upload_prods_file(char const *filepath, struct api_rc *api_rc)
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
 enum rc api_increment_job_progress(int64_t job_id, int increment,
                                    struct api_rc *api_rc)
 {
-    spinlock_lock(&lock);
+    omp_set_lock(&lock);
 
     init_api_rc(api_rc);
 
@@ -673,7 +675,7 @@ enum rc api_increment_job_progress(int64_t job_id, int increment,
     }
 
 cleanup:
-    spinlock_unlock(&lock);
+    omp_unset_lock(&lock);
     return rc;
 }
 
