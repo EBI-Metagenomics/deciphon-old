@@ -13,7 +13,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 cpmaddpackage(NAME hmr GIT_TAG 0.1.2 GITHUB_REPOSITORY
               EBI-Metagenomics/hmmer-reader)
-cpmaddpackage(NAME imm VERSION 2.0.0 GITHUB_REPOSITORY EBI-Metagenomics/imm)
+cpmaddpackage(NAME imm VERSION 2.0.1 GITHUB_REPOSITORY EBI-Metagenomics/imm)
 cpmaddpackage(NAME c_toolbelt VERSION 0.2.1 GITHUB_REPOSITORY horta/c-toolbelt)
 cpmaddpackage(NAME lite_pack VERSION 0.1.4 GITHUB_REPOSITORY
               EBI-Metagenomics/lite-pack)

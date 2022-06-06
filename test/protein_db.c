@@ -56,7 +56,7 @@ void test_protein_db_reader(void)
     struct imm_abc const *abc = imm_super(&db.nuclt);
     EQ(imm_abc_typeid(abc), IMM_DNA);
 
-    double logliks[] = {-2720.38142805010, -2854.53369140625};
+    double logliks[] = {-2720.381428394979, -2854.53237780213};
 
     unsigned nprofs = 0;
     struct imm_prod prod = imm_prod();
@@ -71,6 +71,7 @@ void test_protein_db_reader(void)
         struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
         EQ(imm_task_setup(task, &seq), IMM_OK);
         EQ(imm_dp_viterbi(profile_alt_dp(prof), task, &prod), IMM_OK);
+        printf("Loglik: %.30f\n", prod.loglik);
         CLOSE(prod.loglik, logliks[nprofs]);
         imm_del(task);
         ++nprofs;

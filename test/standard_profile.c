@@ -16,7 +16,7 @@ int main(void)
     EQ(imm_hmm_add_state(null, imm_super(&state0)), IMM_OK);
     EQ(imm_hmm_set_start(null, imm_super(&state0), imm_log(0.3)), IMM_OK);
 
-    imm_float lprobs[IMM_NUCLT_SIZE] = {0};
+    imm_float lprobs[IMM_EXAMPLE1_NUCLT_SIZE] = {0};
     struct imm_normal_state state1;
     imm_normal_state_init(&state1, 1, abc, lprobs);
     EQ(imm_hmm_add_state(alt, imm_super(&state1)), IMM_OK);
