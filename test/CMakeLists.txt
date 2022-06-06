@@ -1,18 +1,15 @@
 set(ASSETS ${CMAKE_CURRENT_BINARY_DIR}/assets)
 set(TMPDIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
-set(SCHED_API_URL
-    "http://127.0.0.1:49329"
-    CACHE STRING "Scheduler API URL")
-message(STATUS "Scheduler API URL: ${SCHED_API_URL}")
 
 file(MAKE_DIRECTORY ${ASSETS})
 file(MAKE_DIRECTORY ${TMPDIR})
 
 add_compile_definitions(ASSETS=\"${ASSETS}\")
 add_compile_definitions(TMPDIR=\"${TMPDIR}\")
-add_compile_definitions(SCHED_API_URL=\"${SCHED_API_URL}\")
 
 set(URL "https://f002.backblazeb2.com/file/deciphon")
+
+file(COPY assets/.env.test DESTINATION ${ASSETS})
 
 if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
   message("Please consider to switch to CMake 3.8.0 or above")
