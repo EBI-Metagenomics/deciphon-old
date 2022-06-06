@@ -22,7 +22,6 @@ cpmaddpackage(NAME sched VERSION 0.4.2 GITHUB_REPOSITORY
 cpmaddpackage(NAME dotenv VERSION 0.1.0 GITHUB_REPOSITORY
               EBI-Metagenomics/dotenv)
 
-find_package(Argp REQUIRED)
 find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
