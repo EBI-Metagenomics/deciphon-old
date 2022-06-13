@@ -7,7 +7,7 @@ file(MAKE_DIRECTORY ${TMPDIR})
 add_compile_definitions(ASSETS=\"${ASSETS}\")
 add_compile_definitions(TMPDIR=\"${TMPDIR}\")
 
-set(URL "https://f002.backblazeb2.com/file/deciphon")
+set(URL "https://uk1s3.embassy.ebi.ac.uk/deciphon")
 
 file(COPY assets/.env.test DESTINATION ${ASSETS})
 
