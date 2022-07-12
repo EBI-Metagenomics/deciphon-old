@@ -4,8 +4,7 @@
 #include "imm/imm.h"
 
 enum rc protein_codec_next(struct protein_codec *codec,
-                                 struct imm_seq const *seq,
-                                 struct imm_codon *codon)
+                           struct imm_seq const *seq, struct imm_codon *codon)
 {
     struct imm_step const *step = NULL;
 

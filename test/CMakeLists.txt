@@ -7,34 +7,25 @@ file(MAKE_DIRECTORY ${TMPDIR})
 add_compile_definitions(ASSETS=\"${ASSETS}\")
 add_compile_definitions(TMPDIR=\"${TMPDIR}\")
 
-set(URL "https://uk1s3.embassy.ebi.ac.uk/deciphon")
+function(download_files dst)
+  set(URL "https://uk1s3.embassy.ebi.ac.uk/deciphon")
 
-file(COPY assets/.env.test DESTINATION ${ASSETS})
+  file(COPY assets/.env.test DESTINATION ${dst})
 
-if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
-  message("Please consider to switch to CMake 3.8.0 or above")
-  file(DOWNLOAD ${URL}/PF02545.hmm ${ASSETS}/PF02545.hmm
-       EXPECTED_HASH MD5=10d19e97a1d5df2f431a8c25ed5b6288)
-
-  file(DOWNLOAD ${URL}/PF02545.dcp ${ASSETS}/PF02545.dcp
-       EXPECTED_HASH MD5=10d19e97a1d5df2f431a8c25ed5b6288)
-
-  file(DOWNLOAD ${URL}/Pfam-A.one_tenth.hmm ${ASSETS}/Pfam-A.one_tenth.hmm
-       EXPECTED_HASH MD5=f0fbc2df31ed584bc5eab0b4391d6893)
-else()
-  file(DOWNLOAD ${URL}/PF02545.hmm.7z ${ASSETS}/PF02545.hmm.7z
+  file(DOWNLOAD ${URL}/PF02545.hmm.7z ${dst}/PF02545.hmm.7z
        EXPECTED_HASH MD5=0e1ebe82f2b78b4ed56250b8661e9d0d)
-  file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.hmm.7z DESTINATION ${ASSETS})
+  file(ARCHIVE_EXTRACT INPUT ${dst}/PF02545.hmm.7z DESTINATION ${dst})
 
-  file(DOWNLOAD ${URL}/PF02545.dcp.7z ${ASSETS}/PF02545.dcp.7z
+  file(DOWNLOAD ${URL}/PF02545.dcp.7z ${dst}/PF02545.dcp.7z
        EXPECTED_HASH MD5=310a817bf6fe6096dfa228e637a96515)
-  file(ARCHIVE_EXTRACT INPUT ${ASSETS}/PF02545.dcp.7z DESTINATION ${ASSETS})
+  file(ARCHIVE_EXTRACT INPUT ${dst}/PF02545.dcp.7z DESTINATION ${dst})
 
-  file(DOWNLOAD ${URL}/Pfam-A.one_tenth.hmm.7z ${ASSETS}/Pfam-A.one_tenth.hmm.7z
+  file(DOWNLOAD ${URL}/Pfam-A.one_tenth.hmm.7z ${dst}/Pfam-A.one_tenth.hmm.7z
        EXPECTED_HASH MD5=8203bd09489c5b097c7e3054b96f57e0)
-  file(ARCHIVE_EXTRACT INPUT ${ASSETS}/Pfam-A.one_tenth.hmm.7z DESTINATION
-       ${ASSETS})
-endif()
+  file(ARCHIVE_EXTRACT INPUT ${dst}/Pfam-A.one_tenth.hmm.7z DESTINATION ${dst})
+endfunction()
+
+download_files("${ASSETS}")
 
 function(model_add_test name libs)
   add_executable(test_${name} ${name}.c)

@@ -2,8 +2,7 @@
 #include "lite_pack/file/file.h"
 #include "lite_pack/lite_pack.h"
 
-enum rc nuclt_dist_pack(struct nuclt_dist const *ndist,
-                              struct lip_file *file)
+enum rc nuclt_dist_pack(struct nuclt_dist const *ndist, struct lip_file *file)
 {
     enum rc rc = RC_EFAIL;
     lip_write_array_size(file, 2);
