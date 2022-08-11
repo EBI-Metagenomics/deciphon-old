@@ -30,6 +30,7 @@ cpmaddpackage(
   NAME dotenv VERSION 0.1.0 GITHUB_REPOSITORY
   EBI-Metagenomics/dotenv
 )
+cpmaddpackage(NAME libuv VERSION 1.44.2 GITHUB_REPOSITORY libuv/libuv)
 
 find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
@@ -93,11 +94,10 @@ add_library(
   src/server/scan.c
   src/server/scan_thread.c
   src/server/server.c
-  src/cli/cli.c
-  src/cli/cli_server.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
+target_link_libraries(deciphon PUBLIC uv_a)
 target_link_libraries(deciphon PUBLIC CURL::libcurl)
 target_link_libraries(deciphon PUBLIC C_TOOLBELT::ctb)
 target_link_libraries(deciphon PUBLIC HMR::hmr)
@@ -126,9 +126,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   check_ipo_supported()
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
-
-add_executable(dcp-server src/cli/bin_server.c)
-target_link_libraries(dcp-server PUBLIC deciphon)
 
 enable_testing()
 add_subdirectory(test)
