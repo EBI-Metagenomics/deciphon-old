@@ -5,7 +5,9 @@
 #include "deciphon/sched/api.h"
 #include "elapsed/elapsed.h"
 #include "job.h"
+#include "sc/sc.h"
 #include <signal.h>
+#include <uv.h>
 
 static struct server
 {
@@ -16,6 +18,13 @@ static struct server
         volatile sig_atomic_t interrupt;
         struct sigaction action;
     } signal;
+
+    struct uv_loop_s uv;
+    struct sc_backend_uv_data scuv;
+    struct uv_async_s async;
+    struct uv_signal_s sigterm;
+    struct uv_signal_s sigint;
+    struct uv_idle_s idle;
 
     unsigned initialized;
     struct job job;
