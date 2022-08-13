@@ -52,6 +52,10 @@ endif()
 
 add_library(
   deciphon
+  src/decy.c
+  src/benchy.c
+  src/schedy.c
+  src/hmmy.c
   src/core/buff.c
   src/core/expect.c
   src/core/http.c
