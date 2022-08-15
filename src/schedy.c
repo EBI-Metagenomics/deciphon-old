@@ -2,6 +2,7 @@
 #include "deciphon/core/liner.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/looper.h"
+#include "deciphon/core/to.h"
 #include "deciphon/sched/api.h"
 #include <assert.h>
 #include <stdbool.h>
@@ -101,13 +102,13 @@ static void ioerror_cb(void)
     looper_terminate(&looper);
 }
 
-static inline say_ok(void) { puts("OK"); }
+static inline void say_ok(void) { puts("OK"); }
 
-static inline say_fail(void) { puts("FAIL"); }
+static inline void say_fail(void) { puts("FAIL"); }
 
-static inline say_yes(void) { puts("YES"); }
+static inline void say_yes(void) { puts("YES"); }
 
-static inline say_no(void) { puts("NO"); }
+static inline void say_no(void) { puts("NO"); }
 
 static void exec_cmd(enum cmd cmd, struct payload_args *args)
 {
@@ -154,6 +155,25 @@ static void exec_cmd(enum cmd cmd, struct payload_args *args)
             say_fail();
         }
         say_ok();
+    }
+    if (cmd == CMD_GET_HMM)
+    {
+        int64_t id = 0;
+        if (!to_int64l(strlen(args->argv[0]), args->argv[0], &id))
+        {
+            error("failed to parse int64");
+            say_fail();
+        }
+        else
+        {
+            if ((rc = api_get_hmm(id, &hmm)))
+            {
+                error(RC_STRING(rc));
+                say_fail();
+            }
+            else
+                say_ok();
+        }
     }
 }
 
