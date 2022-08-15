@@ -14,7 +14,7 @@ struct liner;
 struct looper;
 
 typedef void liner_ioerror_fn_t(void);
-typedef void liner_newline_fn_t(char const *line);
+typedef void liner_newline_fn_t(char *line);
 
 struct liner
 {
