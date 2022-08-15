@@ -14,7 +14,7 @@
 static struct sched_hmm hmm = {0};
 static struct sched_db sched_db = {0};
 static char db_filename[SCHED_FILENAME_SIZE] = {0};
-static struct api_rc api_rc = {0};
+// static struct api_error api_rc = {0};
 
 static struct protein_profile profile = {0};
 
@@ -54,8 +54,7 @@ static enum rc fetch_hmm(char const *filename, int64_t xxh3)
     FILE *fp = fopen(hmm.filename, "wb");
     if (!fp) return eio("fopen");
     /* TODO: should be xxh3 */
-    struct api_rc api_rc = {0};
-    enum rc rc = api_download_hmm(hmm.id, fp, &api_rc);
+    enum rc rc = api_download_hmm(hmm.id, fp);
     if (rc)
     {
         fclose(fp);
@@ -122,7 +121,7 @@ enum rc hmm_press(int64_t job_id, unsigned num_threads)
     (void)num_threads;
     enum rc rc = RC_OK;
 
-    if ((rc = api_get_hmm_by_job_id(job_id, &hmm, &api_rc))) return rc;
+    if ((rc = api_get_hmm_by_job_id(job_id, &hmm))) return rc;
 
     if ((rc = file_ensure_local(hmm.filename, hmm.xxh3, fetch_hmm))) return rc;
     int num_profs = hmr_count_profiles(hmm.filename);
@@ -150,7 +149,7 @@ enum rc hmm_press(int64_t job_id, unsigned num_threads)
             int inc = (i * 100) / num_profs - progress;
             progress += inc;
             info("Pressed %d%% of the profiles", progress);
-            api_increment_job_progress(job_id, inc, &api_rc);
+            api_increment_job_progress(job_id, inc);
         }
     }
     progress = 100;
@@ -169,10 +168,10 @@ cleanup:
     if (rc) return rc;
 
     info("Uploading pressed file");
-    rc = api_upload_db(db_filename, &sched_db, &api_rc);
+    rc = api_upload_db(db_filename, &sched_db);
     if (rc) return rc;
     info("Finished upload");
 
-    rc = api_set_job_state(job_id, SCHED_DONE, "", &api_rc);
+    rc = api_set_job_state(job_id, SCHED_DONE, "");
     return rc;
 }

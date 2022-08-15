@@ -13,6 +13,7 @@ static void onterm_cb(void);
 
 static struct looper looper = {0};
 static struct liner liner = {0};
+static struct sched_hmm hmm = {0};
 
 #define CMD_MAP(X)                                                             \
     X(INVALID)                                                                 \
@@ -100,46 +101,59 @@ static void ioerror_cb(void)
     looper_terminate(&looper);
 }
 
+static inline say_ok(void) { puts("OK"); }
+
+static inline say_fail(void) { puts("FAIL"); }
+
+static inline say_yes(void) { puts("YES"); }
+
+static inline say_no(void) { puts("NO"); }
+
 static void exec_cmd(enum cmd cmd, struct payload_args *args)
 {
     enum rc rc = RC_OK;
-    struct api_rc arc = {0};
 
-    if (cmd == CMD_INVALID) warn("invalid command");
+    if (cmd == CMD_INVALID)
+    {
+        warn("invalid command");
+        say_fail();
+    }
     if (cmd == CMD_INIT)
     {
         if ((rc = api_init(args->argv[0], args->argv[1])))
         {
             error(RC_STRING(rc));
+            say_fail();
             looper_terminate(&looper);
         }
         else
-            info("OK");
+            say_ok();
     }
-
     if (cmd == CMD_IS_REACHABLE)
-        puts(api_is_reachable() ? "is reachable" : "not reachable");
-
+    {
+        if (api_is_reachable())
+            say_yes();
+        else
+            say_no();
+    }
     if (cmd == CMD_WIPE)
     {
         if ((rc = api_wipe()))
+        {
             error(RC_STRING(rc));
+            say_fail();
+        }
         else
-            info("OK");
+            say_ok();
     }
-
     if (cmd == CMD_UPLOAD_HMM)
     {
-        static struct sched_hmm hmm = {0};
-        if ((rc = api_upload_hmm(args->argv[0], &hmm, &arc)))
-            error(RC_STRING(rc));
-        else
+        if ((rc = api_upload_hmm(args->argv[0], &hmm)))
         {
-            if (arc.rc)
-                error("API: %s", arc.msg);
-            else
-                info("OK");
+            error(RC_STRING(rc));
+            say_fail();
         }
+        say_ok();
     }
 }
 

@@ -59,12 +59,6 @@ void logging_setup(FILE *restrict user_stream, enum logging_level user_level,
         RC_EPARSE;                                                             \
     })
 
-#define eapi(api_rc)                                                           \
-    ({                                                                         \
-        error(" api_rc[%d] %s", (api_rc).rc, (api_rc).msg);                    \
-        RC_EAPI;                                                               \
-    })
-
 #define ehttp(...)                                                             \
     ({                                                                         \
         error(__VA_ARGS__);                                                    \

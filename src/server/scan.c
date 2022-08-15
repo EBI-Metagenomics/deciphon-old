@@ -39,7 +39,7 @@ struct scan
 };
 
 static struct scan scan = {0};
-static struct api_rc api_rc = {0};
+static struct api_error api_rc = {0};
 static struct sched_db db = {0};
 
 static enum rc prepare_readers(void)
@@ -77,8 +77,8 @@ static enum rc fetch_db(char const *filename, int64_t xxh3)
 {
     FILE *fp = fopen(filename, "wb");
     if (!fp) return eio("fopen");
-    struct api_rc api_rc = {0};
-    enum rc rc = api_download_db(scan.sched.db_id, fp, &api_rc);
+    // struct api_error api_rc = {0};
+    enum rc rc = api_download_db(scan.sched.db_id, fp);
     if (rc)
     {
         job_set_fail(scan.sched.job_id, "failed to download database");
@@ -95,16 +95,16 @@ static enum rc fetch_db(char const *filename, int64_t xxh3)
 
 static void send_progress(unsigned long units, void *data)
 {
-    struct api_rc api_rc = {0};
+    // struct api_error api_rc = {0};
     int64_t *job_id = data;
-    api_increment_job_progress(*job_id, (int)units, &api_rc);
+    api_increment_job_progress(*job_id, (int)units);
 }
 
 static enum rc compute_number_of_tasks(unsigned *total)
 {
     enum rc rc = RC_OK;
     unsigned nseqs = 0;
-    if ((rc = api_scan_num_seqs(scan.sched.id, &nseqs, &api_rc))) return rc;
+    if ((rc = api_scan_num_seqs(scan.sched.id, &nseqs))) return rc;
 
     *total = nseqs * profile_reader_nprofiles(&scan.profile_reader);
     return rc;
@@ -123,16 +123,16 @@ static enum rc scan_init(unsigned num_threads, double lrt_threshold)
         goto cleanup;
     }
 
-    if ((rc = api_get_db(scan.sched.db_id, &db, &api_rc)))
+    if ((rc = api_get_db(scan.sched.db_id, &db)))
     {
         job_set_fail(scan.sched.job_id, "failed to get database");
         return rc;
     }
-    if (api_rc.rc)
-    {
-        job_set_fail(scan.sched.job_id, api_rc.msg);
-        return rc;
-    }
+    // if (api_rc.rc)
+    // {
+    //     job_set_fail(scan.sched.job_id, api_rc.msg);
+    //     return rc;
+    // }
 
     info("Ensuring database exists locally");
     if ((rc = file_ensure_local(db.filename, db.xxh3, fetch_db)))
@@ -167,7 +167,7 @@ static enum rc scan_init(unsigned num_threads, double lrt_threshold)
     }
 
     unsigned nseqs = 0;
-    if ((rc = api_scan_num_seqs(scan.sched.id, &nseqs, &api_rc))) return rc;
+    if ((rc = api_scan_num_seqs(scan.sched.id, &nseqs))) return rc;
 
     unsigned total = 0;
     if ((rc = compute_number_of_tasks(&total)))
@@ -197,16 +197,17 @@ static enum rc work_finishup(int64_t job_id)
 
     char const *filepath = prod_final_path();
 
-    if ((rc = api_upload_prods_file(filepath, &api_rc)))
+    if ((rc = api_upload_prods_file(filepath)))
     {
         job_set_fail(job_id, "failed to submit prods_file");
         goto cleanup;
     }
 
-    rc = api_set_job_state(job_id, SCHED_DONE, "", &api_rc);
+    rc = api_set_job_state(job_id, SCHED_DONE, "");
     if (rc) return rc;
 
-    return api_rc.rc ? eapi(api_rc) : RC_OK;
+    // return api_rc.rc ? eapi(api_rc) : RC_OK;
+    return RC_OK;
 
 cleanup:
     return rc;
@@ -216,7 +217,7 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
 {
     enum rc rc = RC_OK;
 
-    if ((rc = api_get_scan_by_job_id(job_id, &scan.sched, &api_rc))) return rc;
+    if ((rc = api_get_scan_by_job_id(job_id, &scan.sched))) return rc;
 
     if ((rc = scan_init(num_threads, 10.))) return rc;
 
@@ -224,7 +225,7 @@ enum rc scan_run(int64_t job_id, unsigned num_threads)
 
     int64_t scan_id = scan.sched.id;
     int64_t seq_id = scan.seq.id;
-    while (!(rc = api_scan_next_seq(scan_id, seq_id, &scan.seq, &api_rc)))
+    while (!(rc = api_scan_next_seq(scan_id, seq_id, &scan.seq)))
     {
         struct imm_seq seq = imm_seq(imm_str(scan.seq.data), scan.abc);
 
