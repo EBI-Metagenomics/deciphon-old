@@ -102,17 +102,45 @@ static void ioerror_cb(void)
 
 static void exec_cmd(enum cmd cmd, struct payload_args *args)
 {
+    enum rc rc = RC_OK;
+    struct api_rc arc = {0};
+
     if (cmd == CMD_INVALID) warn("invalid command");
     if (cmd == CMD_INIT)
     {
-        if (api_init(args->argv[0], args->argv[1]))
+        if ((rc = api_init(args->argv[0], args->argv[1])))
         {
+            error(RC_STRING(rc));
             looper_terminate(&looper);
         }
+        else
+            info("OK");
     }
+
     if (cmd == CMD_IS_REACHABLE)
         puts(api_is_reachable() ? "is reachable" : "not reachable");
-    if (cmd == CMD_WIPE) printf("WIPE\n");
+
+    if (cmd == CMD_WIPE)
+    {
+        if ((rc = api_wipe()))
+            error(RC_STRING(rc));
+        else
+            info("OK");
+    }
+
+    if (cmd == CMD_UPLOAD_HMM)
+    {
+        static struct sched_hmm hmm = {0};
+        if ((rc = api_upload_hmm(args->argv[0], &hmm, &arc)))
+            error(RC_STRING(rc));
+        else
+        {
+            if (arc.rc)
+                error("API: %s", arc.msg);
+            else
+                info("OK");
+        }
+    }
 }
 
 static void parse_newline(char *line)
