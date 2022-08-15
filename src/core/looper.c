@@ -10,7 +10,7 @@ static void close_async(struct looper *);
 static void close_sigterm(struct looper *);
 static void close_sigint(struct looper *);
 
-void looper_init(struct looper *l)
+void looper_init(struct looper *l, looper_on_terminate_fn_t *on_terminate_cb)
 {
     l->terminating = false;
 
@@ -28,6 +28,8 @@ void looper_init(struct looper *l)
     l->closing.sigterm = false;
     l->closing.sigint = false;
 
+    l->on_terminate_cb = on_terminate_cb;
+
     if (uv_signal_start(&l->sigterm, sigterm_cb, SIGTERM))
         fatal("uv_signal_start");
 
@@ -38,6 +40,12 @@ void looper_init(struct looper *l)
 void looper_run(struct looper *l)
 {
     if (uv_run(l->loop, UV_RUN_DEFAULT)) fatal("uv_run");
+}
+
+void looper_terminate(struct looper *l)
+{
+    if (l->terminating) return;
+    if (uv_async_send(&l->async)) fatal("uv_async_send");
 }
 
 void looper_cleanup(struct looper *l)
@@ -87,6 +95,7 @@ static void async_cb(struct uv_async_s *handle)
 {
     struct looper *l = handle->data;
     l->terminating = true;
+    (*l->on_terminate_cb)();
     if (!l->closing.async)
     {
         uv_close((struct uv_handle_s *)&l->async, close_signals_cb);
@@ -94,20 +103,14 @@ static void async_cb(struct uv_async_s *handle)
     }
 }
 
-static void please_terminate(struct looper *l)
-{
-    if (l->terminating) return;
-    if (uv_async_send(&l->async)) fatal("uv_async_send");
-}
-
 static void sigterm_cb(struct uv_signal_s *handle, int signum)
 {
     (void)signum;
-    please_terminate(handle->data);
+    looper_terminate(handle->data);
 }
 
 static void sigint_cb(struct uv_signal_s *handle, int signum)
 {
     (void)signum;
-    please_terminate(handle->data);
+    looper_terminate(handle->data);
 }

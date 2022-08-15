@@ -1,3 +1,4 @@
+#include "deciphon/core/liner.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/looper.h"
 #include <assert.h>

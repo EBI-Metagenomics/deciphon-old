@@ -11,7 +11,7 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-cpmaddpackage("gh:horta/c-toolbelt@0.9.2")
+cpmaddpackage("gh:horta/c-toolbelt@0.10.0")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.1.4")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.6")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.3.1")
@@ -52,13 +52,17 @@ endif()
 
 add_library(
   deciphon
-  src/decy.c
-  src/benchy.c
-  src/schedy.c
-  src/hmmy.c
+  # src/decy.c
+  # src/benchy.c
+  # src/schedy.c
+  # src/hmmy.c
   src/core/buff.c
+  # src/core/buff_pool.c
   src/core/expect.c
   src/core/http.c
+  # src/core/line.c
+  src/core/liner.c
+  src/core/looper.c
   src/core/ljson.c
   src/core/logging.c
   src/core/progress.c
@@ -124,6 +128,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   check_ipo_supported()
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
+
+add_executable(schedy src/schedy.c)
+target_link_libraries(schedy PUBLIC deciphon)
 
 enable_testing()
 add_subdirectory(test)
