@@ -16,7 +16,6 @@ struct getcmd
 };
 
 bool getcmd_parse(struct getcmd *gc, char *str);
-char *getcmd_str(struct getcmd const *gc, int i);
 int64_t getcmd_i64(struct getcmd const *gc, int i);
 bool getcmd_check(struct getcmd const *gc, char const *fmt);
 

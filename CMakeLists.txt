@@ -62,6 +62,7 @@ add_library(
   src/core/http.c
   # src/core/line.c
   src/core/liner.c
+  src/core/getcmd.c
   src/core/looper.c
   src/core/ljson.c
   src/core/logging.c

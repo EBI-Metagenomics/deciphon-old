@@ -1,4 +1,5 @@
 #include "deciphon/core/compiler.h"
+#include "deciphon/core/getcmd.h"
 #include "deciphon/core/liner.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/looper.h"
@@ -9,7 +10,7 @@
 #include <string.h>
 
 static void ioerror_cb(void);
-static void parse_newline(char *line);
+static void newline_cb(char *line);
 static void onterm_cb(void);
 
 static struct looper looper = {0};
@@ -71,24 +72,10 @@ struct payload_args
     char const *argv[PAYLOAD_ARGC_MAX];
 };
 
-static void payload_parse(struct payload_args *args, char *payload)
-{
-    char *token = strtok(payload, "&");
-    args->argc = 0;
-    while (token && args->argc < PAYLOAD_ARGC_MAX)
-    {
-        args->argv[args->argc++] = token;
-        token = strtok(0, "&");
-    }
-
-    while (args->argc < PAYLOAD_ARGC_MAX)
-        args->argv[args->argc++] = "";
-}
-
 int main(void)
 {
     looper_init(&looper, onterm_cb);
-    liner_init(&liner, &looper, ioerror_cb, parse_newline);
+    liner_init(&liner, &looper, ioerror_cb, newline_cb);
     liner_open(&liner, 0);
 
     looper_run(&looper);
@@ -110,9 +97,10 @@ static inline void say_yes(void) { puts("YES"); }
 
 static inline void say_no(void) { puts("NO"); }
 
-static void exec_cmd(enum cmd cmd, struct payload_args *args)
+static void exec_cmd(struct getcmd const *gc)
 {
     enum rc rc = RC_OK;
+    enum cmd cmd = parse_command(gc->argv[0]);
 
     if (cmd == CMD_INVALID)
     {
@@ -121,7 +109,7 @@ static void exec_cmd(enum cmd cmd, struct payload_args *args)
     }
     if (cmd == CMD_INIT)
     {
-        if ((rc = api_init(args->argv[0], args->argv[1])))
+        if ((rc = api_init(gc->argv[1], gc->argv[2])))
         {
             error(RC_STRING(rc));
             say_fail();
@@ -149,7 +137,7 @@ static void exec_cmd(enum cmd cmd, struct payload_args *args)
     }
     if (cmd == CMD_UPLOAD_HMM)
     {
-        if ((rc = api_upload_hmm(args->argv[0], &hmm)))
+        if ((rc = api_upload_hmm(gc->argv[1], &hmm)))
         {
             error(RC_STRING(rc));
             say_fail();
@@ -158,15 +146,14 @@ static void exec_cmd(enum cmd cmd, struct payload_args *args)
     }
     if (cmd == CMD_GET_HMM)
     {
-        int64_t id = 0;
-        if (!to_int64l(strlen(args->argv[0]), args->argv[0], &id))
+        if (!getcmd_check(gc, "si"))
         {
-            error("failed to parse int64");
+            error("failed to parse command");
             say_fail();
         }
         else
         {
-            if ((rc = api_get_hmm(id, &hmm)))
+            if ((rc = api_get_hmm(getcmd_i64(gc, 1), &hmm)))
             {
                 error(RC_STRING(rc));
                 say_fail();
@@ -177,24 +164,11 @@ static void exec_cmd(enum cmd cmd, struct payload_args *args)
     }
 }
 
-static void parse_newline(char *line)
+static void newline_cb(char *line)
 {
-    struct split split = split_line(line);
-    enum cmd cmd = parse_command(split.command);
-    struct payload_args args = {0};
-    payload_parse(&args, split.payload);
-    exec_cmd(cmd, &args);
+    struct getcmd getcmd = {0};
+    if (!getcmd_parse(&getcmd, line)) error("too many arguments");
+    exec_cmd(&getcmd);
 }
 
 static void onterm_cb(void) { liner_close(&liner); }
-
-static struct split split_line(char *line)
-{
-    char *command = strtok(line, " ");
-    if (!command) return (struct split){"", ""};
-
-    char *payload = strtok(0, "\n");
-    if (!payload) return (struct split){command, ""};
-
-    return (struct split){command, payload};
-}

@@ -25,12 +25,10 @@ bool getcmd_parse(struct getcmd *gc, char *str)
     return !p;
 }
 
-char *getcmd_str(struct getcmd const *gc, int i) { return gc->argv[i]; }
-
 int64_t getcmd_i64(struct getcmd const *gc, int i)
 {
     int64_t i64 = 0;
-    (void)to_int64(getcmd_str(gc, i), &i64);
+    (void)to_int64(gc->argv[i], &i64);
     return i64;
 }
 
@@ -46,7 +44,7 @@ bool getcmd_check(struct getcmd const *gc, char const *fmt)
         if (fmt[i] == 's') continue;
 
         int64_t i64 = 0;
-        if (fmt[i] == 'i' && !to_int64(getcmd_str(gc, i), &i64)) return false;
+        if (fmt[i] == 'i' && !to_int64(gc->argv[i], &i64)) return false;
     }
 
     return true;
