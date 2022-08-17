@@ -1,4 +1,5 @@
 #include "scan.h"
+#include "deciphon/core/file.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/progress.h"
 #include "deciphon/core/rc.h"
@@ -8,7 +9,6 @@
 #include "deciphon/db/profile_reader.h"
 #include "deciphon/sched/api.h"
 #include "deciphon/sched/sched.h"
-#include "file.h"
 #include "imm/imm.h"
 #include "job.h"
 #include "prod.h"

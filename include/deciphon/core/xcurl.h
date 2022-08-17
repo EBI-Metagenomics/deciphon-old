@@ -1,23 +1,14 @@
-#ifndef DECIPHON_SERVER_XCURL_H
-#define DECIPHON_SERVER_XCURL_H
+#ifndef DECIPHON_CORE_XCURL_H
+#define DECIPHON_CORE_XCURL_H
 
 #include "deciphon/core/limits.h"
 #include "deciphon/core/rc.h"
-#include "deciphon/sched/url.h"
+#include "deciphon/core/url.h"
 #include "sched/structs.h"
 #include <stdio.h>
 
-struct xcurl_mime
-{
-    char name[SCHED_FILENAME_SIZE];
-    char filename[SCHED_FILENAME_SIZE];
-    char type[MIME_TYPE_SIZE];
-};
-
-void xcurl_mime_set(struct xcurl_mime *, char const *name, char const *filename,
-                    char const *type);
-
 struct xcurl;
+struct xcurl_mime_file;
 
 enum rc xcurl_init(char const *url_stem, char const *api_key);
 void xcurl_cleanup(void);
@@ -40,6 +31,6 @@ enum rc xcurl_download(char const *query, long *http_code, FILE *fp);
 
 enum rc xcurl_upload(char const *query, long *http_code,
                      xcurl_callback_func_t callback, void *arg,
-                     struct xcurl_mime const *mime, char const *filepath);
+                     struct xcurl_mime_file const *mime, char const *filepath);
 
 #endif

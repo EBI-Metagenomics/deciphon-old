@@ -195,10 +195,10 @@ enum rc xfile_set_ext(size_t max_size, char *str, char const *ext)
     return RC_OK;
 }
 
-void xfile_basename(char *filename, char const *path)
+void xfile_basename(char *filename, char const *path, size_t size)
 {
     char *p = glibc_basename(path);
-    ctb_strlcpy(filename, p, SCHED_FILENAME_SIZE);
+    ctb_strlcpy(filename, p, size);
 }
 
 void xfile_strip_ext(char *str)

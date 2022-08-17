@@ -1,4 +1,5 @@
-#include "deciphon/sched/xcurl.h"
+#include "deciphon/core/xcurl.h"
+#include "core/xcurl_mime.h"
 #include "ctb/ctb.h"
 #include "deciphon/core/limits.h"
 #include "deciphon/core/logging.h"
@@ -22,14 +23,6 @@ static struct xcurl
 
 #define TIMEOUT 3000L
 #define CONNECTTIMEOUT 5L
-
-void xcurl_mime_set(struct xcurl_mime *mime, char const *name,
-                    char const *filename, char const *type)
-{
-    CTB_STRLCPY(mime, name, name);
-    CTB_STRLCPY(mime, filename, filename);
-    CTB_STRLCPY(mime, type, type);
-}
 
 static inline enum rc list_add(struct curl_slist **list, const char *string)
 {
@@ -260,7 +253,7 @@ enum rc xcurl_download(char const *query, long *http_code, FILE *fp)
 
 enum rc xcurl_upload(char const *query, long *http_code,
                      xcurl_callback_func_t callback, void *arg,
-                     struct xcurl_mime const *mime, char const *filepath)
+                     struct xcurl_mime_file const *mime, char const *filepath)
 {
     url_set_query(&xcurl.url, query);
     curl_easy_setopt(xcurl.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -274,26 +267,14 @@ enum rc xcurl_upload(char const *query, long *http_code,
 
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.recv_json);
 
-    curl_mime *form = curl_mime_init(xcurl.curl);
-
-    curl_mimepart *field = curl_mime_addpart(form);
-    curl_mime_name(field, "name");
-    curl_mime_data(field, mime->name, CURL_ZERO_TERMINATED);
-
-    field = curl_mime_addpart(form);
-    curl_mime_name(field, mime->name);
-    curl_mime_type(field, mime->type);
-    curl_mime_filedata(field, filepath);
-
-    field = curl_mime_addpart(form);
-    curl_mime_name(field, "filename");
-    curl_mime_data(field, mime->filename, CURL_ZERO_TERMINATED);
-
+    curl_mime *form = xcurl_mime_new_file(xcurl.curl, mime, filepath);
+    if (!form) return enomem("failed to allocate for mime");
     curl_easy_setopt(xcurl.curl, CURLOPT_MIMEPOST, form);
 
     xcurl_debug_setup(xcurl.curl);
 
     enum rc rc = perform_request(xcurl.curl, http_code);
-    curl_mime_free(form);
+    xcurl_mime_del(form);
+
     return rc;
 }

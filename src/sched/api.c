@@ -3,10 +3,11 @@
 #include "deciphon/core/http.h"
 #include "deciphon/core/ljson.h"
 #include "deciphon/core/logging.h"
+#include "deciphon/core/xcurl.h"
+#include "deciphon/core/xcurl_mime.h"
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
 #include "deciphon/sched/sched.h"
-#include "deciphon/sched/xcurl.h"
 #include "xjson.h"
 #include <inttypes.h>
 #include <stdarg.h>
@@ -135,7 +136,7 @@ cleanup:
 }
 
 static inline enum rc upload(char const *query, long *http_code,
-                             struct xcurl_mime const *mime,
+                             struct xcurl_mime_file const *mime,
                              char const *filepath)
 {
     body_reset(response);
@@ -148,9 +149,8 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm)
     sched_hmm_init(hmm);
     reset_api_error();
 
-    struct xcurl_mime mime = {0};
-    xfile_basename(filename, filepath);
-    xcurl_mime_set(&mime, "hmm_file", filename, "application/octet-stream");
+    xfile_basename(filename, filepath, sizeof filename);
+    XCURL_MIME_FILE_DEF(mime, "hmm_file", filename, "application/octet-stream");
 
     long http_code = 0;
     enum rc rc = upload("/hmms/", &http_code, &mime, filepath);
@@ -314,9 +314,7 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db)
     reset_api_error();
     sched_db_init(db);
 
-    struct xcurl_mime mime = {0};
-    xfile_basename(filename, filepath);
-    xcurl_mime_set(&mime, "db_file", filename, "application/octet-stream");
+    XCURL_MIME_FILE_DEF(mime, "db_file", filename, "application/octet-stream");
 
     long http_code = 0;
     enum rc rc = upload("/dbs/", &http_code, &mime, filepath);
@@ -591,9 +589,8 @@ enum rc api_upload_prods_file(char const *filepath)
 {
     reset_api_error();
 
-    struct xcurl_mime mime = {0};
-    xcurl_mime_set(&mime, "prods_file", "prods_file.tsv",
-                   "text/tab-separated-values");
+    XCURL_MIME_FILE_DEF(mime, "prods_file", "prods_file.tsv",
+                        "text/tab-separated-values");
 
     long http_code = 0;
     enum rc rc = upload("/prods/", &http_code, &mime, filepath);

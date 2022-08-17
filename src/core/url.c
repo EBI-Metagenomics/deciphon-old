@@ -1,5 +1,7 @@
-#include "deciphon/sched/url.h"
+#include "deciphon/core/url.h"
 #include "ctb/ctb.h"
+#include "deciphon/core/compiler.h"
+#include <assert.h>
 
 bool url_init(struct url *url, char const *stem)
 {

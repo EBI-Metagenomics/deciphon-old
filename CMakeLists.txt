@@ -88,16 +88,17 @@ add_library(
   src/sched/api.c
   src/sched/jsmn.c
   src/sched/sched.c
-  src/sched/url.c
-  src/sched/xcurl.c
-  src/sched/xcurl_debug.c
+  src/core/url.c
+  src/core/xcurl.c
+  src/core/xcurl_mime.c
+  src/core/xcurl_debug.c
   src/sched/xjson.c
-  src/server/hmm.c
+  # src/server/hmm.c
   src/server/job.c
   src/server/job_state.c
   src/server/prod.c
   src/server/protein_match.c
-  src/server/scan.c
+  # src/server/scan.c
   src/server/scan_thread.c
   src/server/server.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
@@ -130,7 +131,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-add_executable(schedy src/schedy.c)
+add_executable(schedy src/schedy.c src/schedy_cmd.c)
 target_link_libraries(schedy PUBLIC deciphon)
 
 enable_testing()

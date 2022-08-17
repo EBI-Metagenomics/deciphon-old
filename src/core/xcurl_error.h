@@ -1,5 +1,5 @@
-#ifndef XCURL_ERROR_H
-#define XCURL_ERROR_H
+#ifndef CORE_XCURL_ERROR_H
+#define CORE_XCURL_ERROR_H
 
 #include "deciphon/core/logging.h"
 #include <curl/curl.h>

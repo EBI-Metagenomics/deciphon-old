@@ -1,12 +1,12 @@
 #include "hmm.h"
 #include "ctb/ctb.h"
 #include "deciphon/core/compiler.h"
+#include "deciphon/core/file.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/rc.h"
 #include "deciphon/db/protein_writer.h"
 #include "deciphon/model/protein_h3reader.h"
 #include "deciphon/sched/api.h"
-#include "file.h"
 #include "hmr/hmr.h"
 #include <stdint.h>
 #include <string.h>

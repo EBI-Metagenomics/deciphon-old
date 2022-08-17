@@ -1,7 +1,6 @@
 #ifndef DECIPHON_XFILE_H
 #define DECIPHON_XFILE_H
 
-#include "deciphon/core/limits.h"
 #include "deciphon/core/rc.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -31,7 +30,7 @@ bool xfile_is_readable(char const *filepath);
 enum rc xfile_mktemp(char *filepath);
 
 enum rc xfile_set_ext(size_t max_size, char *str, char const *ext);
-void xfile_basename(char *filename, char const *path);
+void xfile_basename(char *filename, char const *path, size_t size);
 void xfile_strip_ext(char *str);
 
 enum rc xfile_filepath_from_fptr(FILE *fp, char *filepath);
