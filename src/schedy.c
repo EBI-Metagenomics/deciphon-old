@@ -5,6 +5,7 @@
 #include "deciphon/core/looper.h"
 #include "deciphon/core/to.h"
 #include "deciphon/sched/api.h"
+#include "schedy_cmd.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
@@ -53,25 +54,6 @@ enum cmd parse_command(char const *cmd)
     return CMD_INVALID;
 }
 
-struct split
-{
-    char *command;
-    char *payload;
-};
-
-static struct split split_line(char *line);
-
-enum
-{
-    PAYLOAD_ARGC_MAX = 4,
-};
-
-struct payload_args
-{
-    unsigned argc;
-    char const *argv[PAYLOAD_ARGC_MAX];
-};
-
 int main(void)
 {
     looper_init(&looper, onterm_cb);
@@ -89,71 +71,28 @@ static void ioerror_cb(void)
     looper_terminate(&looper);
 }
 
-static inline void say_ok(void) { puts("OK"); }
-
-static inline void say_fail(void) { puts("FAIL"); }
-
-static inline void say_yes(void) { puts("YES"); }
-
-static inline void say_no(void) { puts("NO"); }
+static schedy_cmd_fn_t *schedy_cmds[] = {
+    &schedy_cmd_invalid, &schedy_cmd_init,       &schedy_cmd_is_reachable,
+    &schedy_cmd_wipe,    &schedy_cmd_upload_hmm, &schedy_cmd_get_hmm,
+};
 
 static void exec_cmd(struct getcmd const *gc)
 {
     enum rc rc = RC_OK;
     enum cmd cmd = parse_command(gc->argv[0]);
+    (*schedy_cmds[cmd])(gc);
 
-    if (cmd == CMD_INVALID)
+#if 0
+    if (cmd == CMD_DOWNLOAD_HMM)
     {
-        warn("invalid command");
-        say_fail();
-    }
-    if (cmd == CMD_INIT)
-    {
-        if ((rc = api_init(gc->argv[1], gc->argv[2])))
-        {
-            error(RC_STRING(rc));
-            say_fail();
-            looper_terminate(&looper);
-        }
-        else
-            say_ok();
-    }
-    if (cmd == CMD_IS_REACHABLE)
-    {
-        if (api_is_reachable())
-            say_yes();
-        else
-            say_no();
-    }
-    if (cmd == CMD_WIPE)
-    {
-        if ((rc = api_wipe()))
-        {
-            error(RC_STRING(rc));
-            say_fail();
-        }
-        else
-            say_ok();
-    }
-    if (cmd == CMD_UPLOAD_HMM)
-    {
-        if ((rc = api_upload_hmm(gc->argv[1], &hmm)))
-        {
-            error(RC_STRING(rc));
-            say_fail();
-        }
-        say_ok();
-    }
-    if (cmd == CMD_GET_HMM)
-    {
-        if (!getcmd_check(gc, "si"))
+        if (!getcmd_check(gc, "ss"))
         {
             error("failed to parse command");
             say_fail();
         }
         else
         {
-            if ((rc = api_get_hmm(getcmd_i64(gc, 1), &hmm)))
+            if ((rc = api_download_hmm(getcmd_i64(gc, 1), fp)))
             {
                 error(RC_STRING(rc));
                 say_fail();
@@ -162,6 +101,9 @@ static void exec_cmd(struct getcmd const *gc)
                 say_ok();
         }
     }
+#endif
+    // enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *);
+    // enum rc api_download_hmm(int64_t id, FILE *fp);
 }
 
 static void newline_cb(char *line)

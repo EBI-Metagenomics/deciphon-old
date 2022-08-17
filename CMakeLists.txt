@@ -61,6 +61,7 @@ add_library(
   src/core/expect.c
   src/core/http.c
   # src/core/line.c
+  src/core/file.c
   src/core/liner.c
   src/core/getcmd.c
   src/core/looper.c
@@ -91,7 +92,6 @@ add_library(
   src/sched/xcurl.c
   src/sched/xcurl_debug.c
   src/sched/xjson.c
-  src/server/file.c
   src/server/hmm.c
   src/server/job.c
   src/server/job_state.c

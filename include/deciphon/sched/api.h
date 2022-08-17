@@ -32,6 +32,7 @@ enum rc api_wipe(void);
 
 enum rc api_upload_hmm(char const *filepath, struct sched_hmm *);
 enum rc api_get_hmm(int64_t id, struct sched_hmm *);
+enum rc api_get_hmm_by_xxh3(int64_t xxh3, struct sched_hmm *);
 enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *);
 enum rc api_download_hmm(int64_t id, FILE *fp);
 

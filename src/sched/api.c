@@ -184,6 +184,38 @@ static inline enum rc patch(char const *query, long *http_code)
     return xcurl_patch(query, http_code, body_store, &response, request);
 }
 
+enum rc api_get_hmm_by_xxh3(int64_t xxh3, struct sched_hmm *hmm)
+{
+    // {"id_type": "xxh3"}
+    sched_hmm_init(hmm);
+    reset_api_error();
+
+    long http_code = 0;
+    enum rc rc = get(query("/hmms/%" PRId64, xxh3), &http_code);
+    if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http_code == 200)
+    {
+        rc = sched_hmm_parse(hmm, &xjson, 1);
+    }
+    else if (recognized_http_status(http_code))
+    {
+        if (!(rc = parse_api_error(&xjson, 1)))
+        {
+            rc = eapi(api_err);
+        }
+    }
+    else
+    {
+        rc = ehttp(http_status_string(http_code));
+    }
+
+cleanup:
+    return rc;
+}
+
 enum rc api_get_hmm(int64_t id, struct sched_hmm *hmm)
 {
     sched_hmm_init(hmm);

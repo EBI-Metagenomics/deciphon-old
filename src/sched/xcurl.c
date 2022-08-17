@@ -1,9 +1,9 @@
 #include "deciphon/sched/xcurl.h"
 #include "ctb/ctb.h"
-#include "curl_error.h"
 #include "deciphon/core/limits.h"
 #include "deciphon/core/logging.h"
 #include "xcurl_debug.h"
+#include "xcurl_error.h"
 #include <curl/curl.h>
 #include <string.h>
 
@@ -157,7 +157,7 @@ static size_t callback_func(void *data, size_t one, size_t size, void *arg)
 static enum rc perform_request(CURL *curl, long *http_code)
 {
     CURLcode code = curl_easy_perform(curl);
-    if (code) return curl_error(code);
+    if (code) return xcurl_error(code);
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
 
     curl_easy_reset(curl);

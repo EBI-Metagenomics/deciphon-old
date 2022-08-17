@@ -1,11 +1,11 @@
-#ifndef CURL_ERROR_H
-#define CURL_ERROR_H
+#ifndef XCURL_ERROR_H
+#define XCURL_ERROR_H
 
 #include "deciphon/core/logging.h"
 #include <curl/curl.h>
 
 /* clang-format off */
-#define curl_error(code)                                                       \
+#define xcurl_error(code)                                                      \
     code == CURLE_OK                                                           \
         ? efail("No error")                                                    \
     : code == CURLE_UNSUPPORTED_PROTOCOL                                       \
