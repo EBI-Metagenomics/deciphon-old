@@ -135,8 +135,9 @@ void schedy_cmd_download_hmm(struct getcmd const *gc)
         say_fail();
         return;
     }
-    else if (file_ensure_local(gc->argv[2], getcmd_i64(gc, 1), &download_hmm,
-                               0))
+
+    int64_t xxh3 = getcmd_i64(gc, 1);
+    if (file_ensure_local(gc->argv[2], xxh3, &download_hmm, &xxh3))
         say_fail();
     else
         say_ok();
@@ -159,11 +160,11 @@ static enum rc download_hmm(char const *filepath, void *data)
 
     int64_t xxh3 = *((int64_t *)data);
     enum rc rc = api_get_hmm_by_xxh3(xxh3, &hmm);
+    if (rc) return rc;
 
     FILE *fp = fopen(filepath, "wb");
     if (!fp) return eio("fopen");
-    // enum rc rc = api_download_hmm_by_xxh3(id, fp);
-    if (rc)
+    if ((rc = api_download_hmm(hmm.id, fp)))
     {
         fclose(fp);
         return rc;
