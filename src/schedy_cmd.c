@@ -39,7 +39,6 @@ void schedy_cmd_init(struct getcmd const *gc)
 
 void schedy_cmd_is_reachable(struct getcmd const *gc)
 {
-    (void)gc;
     if (api_is_reachable())
         say_yes();
     else
@@ -59,7 +58,12 @@ void schedy_cmd_upload_hmm(struct getcmd const *gc)
 {
     static struct sched_hmm hmm = {0};
 
-    if (api_upload_hmm(gc->argv[1], &hmm))
+    if (!getcmd_check(gc, "ss"))
+    {
+        error_parse();
+        say_fail();
+    }
+    else if (api_upload_hmm(gc->argv[1], &hmm))
         say_fail();
     else
         say_ok();
@@ -143,7 +147,21 @@ void schedy_cmd_download_hmm(struct getcmd const *gc)
         say_ok();
 }
 
-void schedy_cmd_api_upload_db(struct getcmd const *gc) { (void)gc; }
+void schedy_cmd_upload_db(struct getcmd const *gc)
+{
+    static struct sched_db db = {0};
+
+    if (!getcmd_check(gc, "ss"))
+    {
+        error_parse();
+        say_fail();
+    }
+    else if (api_upload_db(gc->argv[1], &db))
+        say_fail();
+    else
+        say_ok();
+}
+
 void schedy_cmd_get_db(struct getcmd const *gc) { (void)gc; }
 void schedy_cmd_next_pend_job(struct getcmd const *gc) { (void)gc; }
 void schedy_cmd_set_job_state(struct getcmd const *gc) { (void)gc; }

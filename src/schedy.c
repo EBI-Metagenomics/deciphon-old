@@ -28,7 +28,7 @@ static struct liner liner = {0};
     X(GET_HMM_BY_JOB_ID, schedy_cmd_get_hmm_by_job_id)                         \
     X(GET_HMM_BY_FILENAME, schedy_cmd_get_hmm_by_filename)                     \
     X(DOWNLOAD_HMM, schedy_cmd_download_hmm)                                   \
-    X(API_UPLOAD_DB, schedy_cmd_api_upload_db)                                 \
+    X(UPLOAD_DB, schedy_cmd_upload_db)                                         \
     X(GET_DB, schedy_cmd_get_db)                                               \
     X(NEXT_PEND_JOB, schedy_cmd_next_pend_job)                                 \
     X(SET_JOB_STATE, schedy_cmd_set_job_state)                                 \

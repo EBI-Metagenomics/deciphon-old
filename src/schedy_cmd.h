@@ -15,7 +15,7 @@ void schedy_cmd_get_hmm_by_xxh3(struct getcmd const *);
 void schedy_cmd_get_hmm_by_job_id(struct getcmd const *);
 void schedy_cmd_get_hmm_by_filename(struct getcmd const *);
 void schedy_cmd_download_hmm(struct getcmd const *);
-void schedy_cmd_api_upload_db(struct getcmd const *);
+void schedy_cmd_upload_db(struct getcmd const *);
 void schedy_cmd_get_db(struct getcmd const *);
 void schedy_cmd_next_pend_job(struct getcmd const *);
 void schedy_cmd_set_job_state(struct getcmd const *);
