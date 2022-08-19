@@ -65,7 +65,7 @@ void schedy_cmd_upload_hmm(struct getcmd const *gc)
         say_ok();
 }
 
-void schedy_cmd_get_hmm(struct getcmd const *gc)
+void schedy_cmd_get_hmm_by_id(struct getcmd const *gc)
 {
     static struct sched_hmm hmm = {0};
 
@@ -74,7 +74,7 @@ void schedy_cmd_get_hmm(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_get_hmm(getcmd_i64(gc, 1), &hmm))
+    else if (api_get_hmm_by_id(getcmd_i64(gc, 1), &hmm))
         say_fail();
     else
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
@@ -105,6 +105,21 @@ void schedy_cmd_get_hmm_by_job_id(struct getcmd const *gc)
         say_fail();
     }
     else if (api_get_hmm_by_job_id(getcmd_i64(gc, 1), &hmm))
+        say_fail();
+    else
+        puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
+}
+
+void schedy_cmd_get_hmm_by_filename(struct getcmd const *gc)
+{
+    static struct sched_hmm hmm = {0};
+
+    if (!getcmd_check(gc, "ss"))
+    {
+        error_parse();
+        say_fail();
+    }
+    else if (api_get_hmm_by_filename(gc->argv[1], &hmm))
         say_fail();
     else
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));

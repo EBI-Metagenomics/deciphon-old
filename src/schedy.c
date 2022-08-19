@@ -23,9 +23,10 @@ static struct liner liner = {0};
     X(IS_REACHABLE, schedy_cmd_is_reachable)                                   \
     X(WIPE, schedy_cmd_wipe)                                                   \
     X(UPLOAD_HMM, schedy_cmd_upload_hmm)                                       \
-    X(GET_HMM, schedy_cmd_get_hmm)                                             \
+    X(GET_HMM_BY_ID, schedy_cmd_get_hmm_by_id)                                 \
     X(GET_HMM_BY_XXH3, schedy_cmd_get_hmm_by_xxh3)                             \
     X(GET_HMM_BY_JOB_ID, schedy_cmd_get_hmm_by_job_id)                         \
+    X(GET_HMM_BY_FILENAME, schedy_cmd_get_hmm_by_filename)                     \
     X(DOWNLOAD_HMM, schedy_cmd_download_hmm)                                   \
     X(API_UPLOAD_DB, schedy_cmd_api_upload_db)                                 \
     X(GET_DB, schedy_cmd_get_db)                                               \
