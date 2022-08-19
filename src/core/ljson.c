@@ -38,13 +38,13 @@ static void put_str(struct ljson_ctx *ctx, char const *str)
 void ljson_open(struct ljson_ctx *ctx, unsigned size, char *str)
 {
     for (unsigned i = 0; i < size; ++i)
-        str[i] = '\0';
+        str[i] = 0;
     ctx->size = size;
     ctx->buf = str;
     ctx->cur = str;
     ctx->elem = 0;
     ctx->error = 0;
-    ctx->tmpbuf[0] = '\0';
+    ctx->tmpbuf[0] = 0;
     put_char(ctx, '{');
 }
 
@@ -53,7 +53,7 @@ void ljson_close(struct ljson_ctx *ctx)
     if (!ctx->error)
     {
         put_char(ctx, '}');
-        put_char(ctx, '\0');
+        put_char(ctx, 0);
     }
 }
 

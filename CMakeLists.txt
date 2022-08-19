@@ -86,10 +86,12 @@ add_library(
   src/db/protein_reader.c
   src/db/profile_reader.c
   src/sched/api.c
+  src/sched/dump.c
   src/sched/jsmn.c
   src/sched/sched.c
   src/core/url.c
   src/core/xcurl.c
+  src/core/xcurl_header.c
   src/core/xcurl_mime.c
   src/core/xcurl_debug.c
   src/sched/xjson.c
