@@ -1,4 +1,5 @@
 #include "deciphon/core/xcurl.h"
+#include "core/xcurl_header.h"
 #include "core/xcurl_mime.h"
 #include "ctb/ctb.h"
 #include "deciphon/core/limits.h"
@@ -42,7 +43,7 @@ static inline void list_free(struct curl_slist *list)
     curl_slist_free_all(list);
 }
 
-char key_header[256 + 11] = "X-API-KEY: ";
+static char key_header[256 + 11] = "X-API-KEY: ";
 
 static enum rc setup_headers(char const *api_key)
 {
@@ -169,7 +170,8 @@ enum rc xcurl_get(char const *query, long *http_code,
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
 
-    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.recv_json);
+    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER,
+                     xcurl_header(key_header, "Accept: application/json"));
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPGET, 1L);
 
     return perform_request(xcurl.curl, http_code);
