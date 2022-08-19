@@ -194,6 +194,7 @@ union param
 enum param_type
 {
     HMM_ID,
+    DB_ID,
     XXH3,
     JOB_ID,
     FILENAME,
@@ -327,22 +328,56 @@ cleanup:
     return rc;
 }
 
-enum rc api_get_db(int64_t id, struct sched_db *db)
+static enum rc get_db_by(struct sched_db *db, union param p,
+                         enum param_type type);
+
+enum rc api_get_db_by_id(int64_t id, struct sched_db *db)
+{
+    return get_db_by(db, (union param){.i = id}, DB_ID);
+}
+
+enum rc api_get_db_by_xxh3(int64_t xxh3, struct sched_db *db)
+{
+    return get_db_by(db, (union param){.i = xxh3}, XXH3);
+}
+
+enum rc api_get_db_by_job_id(int64_t job_id, struct sched_db *db)
+{
+    return get_db_by(db, (union param){.i = job_id}, JOB_ID);
+}
+
+enum rc api_get_db_by_filename(char const *filename, struct sched_db *db)
+{
+    return get_db_by(db, (union param){.s = filename}, FILENAME);
+}
+
+static enum rc get_db_by(struct sched_db *db, union param p,
+                         enum param_type type)
 {
     sched_db_init(db);
     reset_api_error();
 
-    long http_code = 0;
-    enum rc rc = get(query("/dbs/%" PRId64, id), &http_code);
+    long http = 0;
+    enum rc rc = RC_OK;
+
+    if (type == DB_ID)
+        rc = get(query("/dbs/%" PRId64 "?id_type=db_id", p.i), &http);
+    if (type == XXH3)
+        rc = get(query("/dbs/%" PRId64 "?id_type=xxh3", p.i), &http);
+    if (type == JOB_ID)
+        rc = get(query("/jobs/%" PRId64 "/db&id_type=job_id", p.i), &http);
+    if (type == FILENAME)
+        rc = get(query("/dbs/%s?id_type=filename", p.s), &http);
+
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 200)
+    if (http == 200)
     {
         rc = sched_db_parse(db, &xjson, 1);
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -351,7 +386,7 @@ enum rc api_get_db(int64_t id, struct sched_db *db)
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:
