@@ -99,11 +99,11 @@ void api_cleanup(void)
 
 struct api_error const *api_error(void) { return &api_err; }
 
-static inline enum rc get(char const *query, long *http_code)
+static inline enum rc get(char const *query, long *http)
 {
     printf("Query: %s\n", query);
     body_reset(response);
-    return xcurl_get(query, http_code, body_store, &response);
+    return xcurl_get(query, http, body_store, &response);
 }
 
 static inline bool recognized_http_status(long http_status)
@@ -115,10 +115,10 @@ static inline bool recognized_http_status(long http_status)
 bool api_is_reachable(void)
 {
     bool reachable = false;
-    long http_code = 0;
-    if (get("/", &http_code)) goto cleanup;
+    long http = 0;
+    if (get("/", &http)) goto cleanup;
 
-    reachable = http_code == 200;
+    reachable = http == 200;
 
 cleanup:
     return reachable;
@@ -126,44 +126,43 @@ cleanup:
 
 enum rc api_wipe(void)
 {
-    long http_code = 0;
-    enum rc rc = xcurl_delete("/sched/wipe", &http_code);
+    long http = 0;
+    enum rc rc = xcurl_delete("/sched/wipe", &http);
     if (rc) goto cleanup;
 
-    if (http_code != 200) rc = ehttp(http_status_string(http_code));
+    if (http != 200) rc = ehttp(http_status_string(http));
 
 cleanup:
     return rc;
 }
 
-static inline enum rc upload(char const *query, long *http_code,
+static inline enum rc upload(char const *query, long *http,
                              struct xcurl_mime_file const *mime,
                              char const *filepath)
 {
     body_reset(response);
-    return xcurl_upload(query, http_code, body_store, &response, mime,
-                        filepath);
+    return xcurl_upload(query, http, body_store, &response, mime, filepath);
 }
 
-enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm)
+enum rc api_up_hmm(char const *filepath, struct sched_hmm *hmm)
 {
-    sched_hmm_init(hmm);
     reset_api_error();
 
     xfile_basename(filename, filepath, sizeof filename);
     XCURL_MIME_FILE_DEF(mime, "hmm_file", filename, "application/octet-stream");
 
-    long http_code = 0;
-    enum rc rc = upload("/hmms/", &http_code, &mime, filepath);
+    long http = 0;
+    enum rc rc = upload("/hmms/", &http, &mime, filepath);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 201)
+    if (http == 201)
     {
+        sched_hmm_init(hmm);
         rc = sched_hmm_parse(hmm, &xjson, 1);
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -172,17 +171,47 @@ enum rc api_upload_hmm(char const *filepath, struct sched_hmm *hmm)
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:
     return rc;
 }
 
-static inline enum rc patch(char const *query, long *http_code)
+enum rc api_dl_hmm(int64_t id, FILE *fp)
+{
+    reset_api_error();
+
+    enum rc rc = RC_OK;
+
+    long http = 0;
+    rc = xcurl_download(query("/hmms/%" PRId64 "/download", id), &http, fp);
+    if (rc) goto cleanup;
+
+    if (http == 200)
+    {
+        rc = RC_OK;
+    }
+    else if (recognized_http_status(http))
+    {
+        if (!(rc = parse_api_error(&xjson, 1)))
+        {
+            rc = eapi(api_err);
+        }
+    }
+    else
+    {
+        rc = ehttp(http_status_string(http));
+    }
+
+cleanup:
+    return rc;
+}
+
+static inline enum rc patch(char const *query, long *http)
 {
     body_reset(response);
-    return xcurl_patch(query, http_code, body_store, &response, request);
+    return xcurl_patch(query, http, body_store, &response, request);
 }
 
 union param
@@ -264,55 +293,24 @@ cleanup:
     return rc;
 }
 
-enum rc api_download_hmm(int64_t id, FILE *fp)
-{
-    reset_api_error();
-
-    enum rc rc = RC_OK;
-
-    long http_code = 0;
-    rc =
-        xcurl_download(query("/hmms/%" PRId64 "/download", id), &http_code, fp);
-    if (rc) goto cleanup;
-
-    if (http_code == 200)
-    {
-        rc = RC_OK;
-    }
-    else if (recognized_http_status(http_code))
-    {
-        if (!(rc = parse_api_error(&xjson, 1)))
-        {
-            rc = eapi(api_err);
-        }
-    }
-    else
-    {
-        rc = ehttp(http_status_string(http_code));
-    }
-
-cleanup:
-    return rc;
-}
-
-enum rc api_upload_db(char const *filepath, struct sched_db *db)
+enum rc api_up_db(char const *filepath, struct sched_db *db)
 {
     reset_api_error();
     sched_db_init(db);
 
     XCURL_MIME_FILE_DEF(mime, "db_file", filename, "application/octet-stream");
 
-    long http_code = 0;
-    enum rc rc = upload("/dbs/", &http_code, &mime, filepath);
+    long http = 0;
+    enum rc rc = upload("/dbs/", &http, &mime, filepath);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 201)
+    if (http == 201)
     {
         rc = sched_db_parse(db, &xjson, 1);
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -321,7 +319,35 @@ enum rc api_upload_db(char const *filepath, struct sched_db *db)
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
+    }
+
+cleanup:
+    return rc;
+}
+
+enum rc api_dl_db(int64_t id, FILE *fp)
+{
+    enum rc rc = RC_OK;
+
+    long http = 0;
+    rc = xcurl_download(query("/dbs/%" PRId64 "/download", id), &http, fp);
+    if (rc) goto cleanup;
+
+    if (http == 200)
+    {
+        rc = RC_OK;
+    }
+    else if (recognized_http_status(http))
+    {
+        if (!(rc = parse_api_error(&xjson, 1)))
+        {
+            rc = eapi(api_err);
+        }
+    }
+    else
+    {
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:
@@ -400,16 +426,16 @@ enum rc api_next_pend_job(struct sched_job *job)
 
     enum rc rc = RC_OK;
 
-    long http_code = 0;
-    if ((rc = get("/jobs/next_pend", &http_code))) goto cleanup;
+    long http = 0;
+    if ((rc = get("/jobs/next_pend", &http))) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 200)
+    if (http == 200)
     {
         rc = sched_job_parse(job, &xjson, 1);
     }
-    else if (http_code == 404)
+    else if (http == 404)
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -419,7 +445,7 @@ enum rc api_next_pend_job(struct sched_job *job)
                 rc = eapi(api_err);
         }
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -428,7 +454,7 @@ enum rc api_next_pend_job(struct sched_job *job)
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:
@@ -446,16 +472,16 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     char const *q =
         query("/scans/%" PRId64 "/seqs/next/%" PRId64, scan_id, seq_id);
 
-    long http_code = 0;
-    if ((rc = get(q, &http_code))) goto cleanup;
+    long http = 0;
+    if ((rc = get(q, &http))) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 200)
+    if (http == 200)
     {
         rc = sched_seq_parse(seq, &xjson, 1);
     }
-    else if (http_code == 404)
+    else if (http == 404)
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -465,7 +491,7 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
                 rc = eapi(api_err);
         }
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -474,7 +500,7 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:
@@ -502,17 +528,17 @@ enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan)
     sched_scan_init(scan);
     reset_api_error();
 
-    long http_code = 0;
-    enum rc rc = get(query("/jobs/%" PRId64 "/scan", job_id), &http_code);
+    long http = 0;
+    enum rc rc = get(query("/jobs/%" PRId64 "/scan", job_id), &http);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 200)
+    if (http == 200)
     {
         rc = sched_scan_parse(scan, &xjson, 1);
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -521,7 +547,7 @@ enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan)
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:
@@ -534,7 +560,7 @@ static char const job_states[][5] = {[SCHED_PEND] = "pend",
                                      [SCHED_FAIL] = "fail"};
 
 enum rc set_job_state(int64_t job_id, enum sched_job_state state,
-                      char const *state_error, long *http_code)
+                      char const *state_error, long *http)
 {
     ljson_open(&ljson, sizeof request, request);
     ljson_int(&ljson, "job_id", job_id);
@@ -543,7 +569,7 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
     ljson_close(&ljson);
     if (ljson_error(&ljson)) return efail("failed to write json");
 
-    return patch(query("/jobs/%" PRId64 "/state", job_id), http_code);
+    return patch(query("/jobs/%" PRId64 "/state", job_id), http);
 }
 
 enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
@@ -551,17 +577,17 @@ enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
 {
     reset_api_error();
 
-    long http_code = 0;
-    enum rc rc = set_job_state(job_id, state, msg, &http_code);
+    long http = 0;
+    enum rc rc = set_job_state(job_id, state, msg, &http);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 200)
+    if (http == 200)
     {
         rc = RC_OK;
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -570,60 +596,32 @@ enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:
     return rc;
 }
 
-enum rc api_download_db(int64_t id, FILE *fp)
-{
-    enum rc rc = RC_OK;
-
-    long http_code = 0;
-    rc = xcurl_download(query("/dbs/%" PRId64 "/download", id), &http_code, fp);
-    if (rc) goto cleanup;
-
-    if (http_code == 200)
-    {
-        rc = RC_OK;
-    }
-    else if (recognized_http_status(http_code))
-    {
-        if (!(rc = parse_api_error(&xjson, 1)))
-        {
-            rc = eapi(api_err);
-        }
-    }
-    else
-    {
-        rc = ehttp(http_status_string(http_code));
-    }
-
-cleanup:
-    return rc;
-}
-
-enum rc api_upload_prods_file(char const *filepath)
+enum rc api_up_prods_file(char const *filepath)
 {
     reset_api_error();
 
     XCURL_MIME_FILE_DEF(mime, "prods_file", "prods_file.tsv",
                         "text/tab-separated-values");
 
-    long http_code = 0;
-    enum rc rc = upload("/prods/", &http_code, &mime, filepath);
+    long http = 0;
+    enum rc rc = upload("/prods/", &http, &mime, filepath);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 201)
+    if (http == 201)
     {
         if (!(xjson_is_array(&xjson, 0) && xjson_is_array_empty(&xjson, 0)))
             rc = einval("expected empty array");
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -632,7 +630,7 @@ enum rc api_upload_prods_file(char const *filepath)
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:
@@ -648,17 +646,17 @@ enum rc api_increment_job_progress(int64_t job_id, int increment)
     ljson_close(&ljson);
     if (ljson_error(&ljson)) return efail("failed to write json");
 
-    long http_code = 0;
-    enum rc rc = patch(query("/jobs/%" PRId64 "/progress", job_id), &http_code);
+    long http = 0;
+    enum rc rc = patch(query("/jobs/%" PRId64 "/progress", job_id), &http);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
 
-    if (http_code == 200)
+    if (http == 200)
     {
         rc = RC_OK;
     }
-    else if (recognized_http_status(http_code))
+    else if (recognized_http_status(http))
     {
         if (!(rc = parse_api_error(&xjson, 1)))
         {
@@ -667,7 +665,7 @@ enum rc api_increment_job_progress(int64_t job_id, int increment)
     }
     else
     {
-        rc = ehttp(http_status_string(http_code));
+        rc = ehttp(http_status_string(http));
     }
 
 cleanup:

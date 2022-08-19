@@ -24,7 +24,7 @@ void schedy_cmd_invalid(struct getcmd const *gc)
     say_fail();
 }
 
-void schedy_cmd_init(struct getcmd const *gc)
+void schedy_cmd_connect(struct getcmd const *gc)
 {
     if (!getcmd_check(gc, "sss"))
     {
@@ -37,13 +37,15 @@ void schedy_cmd_init(struct getcmd const *gc)
         say_ok();
 }
 
-void schedy_cmd_is_reachable(struct getcmd const *gc)
+void schedy_cmd_online(struct getcmd const *gc)
 {
     if (api_is_reachable())
         say_yes();
     else
         say_no();
 }
+
+void schedy_cmd_disconnect(struct getcmd const *gc) {}
 
 void schedy_cmd_wipe(struct getcmd const *gc)
 {
@@ -54,7 +56,7 @@ void schedy_cmd_wipe(struct getcmd const *gc)
         say_ok();
 }
 
-void schedy_cmd_upload_hmm(struct getcmd const *gc)
+void schedy_cmd_hmm_up(struct getcmd const *gc)
 {
     static struct sched_hmm hmm = {0};
 
@@ -63,13 +65,29 @@ void schedy_cmd_upload_hmm(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_upload_hmm(gc->argv[1], &hmm))
+    else if (api_up_hmm(gc->argv[1], &hmm))
         say_fail();
     else
         say_ok();
 }
 
-void schedy_cmd_get_hmm_by_id(struct getcmd const *gc)
+void schedy_cmd_hmm_dl(struct getcmd const *gc)
+{
+    if (!getcmd_check(gc, "sis"))
+    {
+        error_parse();
+        say_fail();
+        return;
+    }
+
+    int64_t xxh3 = getcmd_i64(gc, 1);
+    if (file_ensure_local(gc->argv[2], xxh3, &download_hmm, &xxh3))
+        say_fail();
+    else
+        say_ok();
+}
+
+void schedy_cmd_hmm_get_by_id(struct getcmd const *gc)
 {
     static struct sched_hmm hmm = {0};
 
@@ -84,7 +102,7 @@ void schedy_cmd_get_hmm_by_id(struct getcmd const *gc)
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
 }
 
-void schedy_cmd_get_hmm_by_xxh3(struct getcmd const *gc)
+void schedy_cmd_hmm_get_by_xxh3(struct getcmd const *gc)
 {
     static struct sched_hmm hmm = {0};
 
@@ -99,7 +117,7 @@ void schedy_cmd_get_hmm_by_xxh3(struct getcmd const *gc)
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
 }
 
-void schedy_cmd_get_hmm_by_job_id(struct getcmd const *gc)
+void schedy_cmd_hmm_get_by_job_id(struct getcmd const *gc)
 {
     static struct sched_hmm hmm = {0};
 
@@ -114,7 +132,7 @@ void schedy_cmd_get_hmm_by_job_id(struct getcmd const *gc)
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
 }
 
-void schedy_cmd_get_hmm_by_filename(struct getcmd const *gc)
+void schedy_cmd_hmm_get_by_filename(struct getcmd const *gc)
 {
     static struct sched_hmm hmm = {0};
 
@@ -131,23 +149,7 @@ void schedy_cmd_get_hmm_by_filename(struct getcmd const *gc)
 
 static enum rc download_hmm(char const *filepath, void *data);
 
-void schedy_cmd_download_hmm(struct getcmd const *gc)
-{
-    if (!getcmd_check(gc, "sis"))
-    {
-        error_parse();
-        say_fail();
-        return;
-    }
-
-    int64_t xxh3 = getcmd_i64(gc, 1);
-    if (file_ensure_local(gc->argv[2], xxh3, &download_hmm, &xxh3))
-        say_fail();
-    else
-        say_ok();
-}
-
-void schedy_cmd_upload_db(struct getcmd const *gc)
+void schedy_cmd_db_up(struct getcmd const *gc)
 {
     static struct sched_db db = {0};
 
@@ -156,21 +158,28 @@ void schedy_cmd_upload_db(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_upload_db(gc->argv[1], &db))
+    else if (api_up_db(gc->argv[1], &db))
         say_fail();
     else
         say_ok();
 }
 
-void schedy_cmd_get_db(struct getcmd const *gc) { (void)gc; }
-void schedy_cmd_next_pend_job(struct getcmd const *gc) { (void)gc; }
-void schedy_cmd_set_job_state(struct getcmd const *gc) { (void)gc; }
-void schedy_cmd_download_db(struct getcmd const *gc) { (void)gc; }
-void schedy_cmd_upload_prods_file(struct getcmd const *gc) { (void)gc; }
+void schedy_cmd_db_dl(struct getcmd const *gc) { (void)gc; }
+
+void schedy_cmd_db_get_by_id(struct getcmd const *gc) { (void)gc; }
+void schedy_cmd_db_get_by_xxh3(struct getcmd const *gc) { (void)gc; }
+void schedy_cmd_db_get_by_job_id(struct getcmd const *gc) { (void)gc; }
+void schedy_cmd_db_get_by_filename(struct getcmd const *gc) { (void)gc; }
+
+void schedy_cmd_job_next_pend(struct getcmd const *gc) { (void)gc; }
+void schedy_cmd_job_set_state(struct getcmd const *gc) { (void)gc; }
+void schedy_cmd_job_inc_progress(struct getcmd const *gc) { (void)gc; }
+
+void schedy_cmd_prods_file_up(struct getcmd const *gc) { (void)gc; }
+
 void schedy_cmd_scan_next_seq(struct getcmd const *gc) { (void)gc; }
 void schedy_cmd_scan_num_seqs(struct getcmd const *gc) { (void)gc; }
-void schedy_cmd_get_scan_by_job_id(struct getcmd const *gc) { (void)gc; }
-void schedy_cmd_increment_job_progress(struct getcmd const *gc) { (void)gc; }
+void schedy_cmd_scan_get_by_job_id(struct getcmd const *gc) { (void)gc; }
 
 static enum rc download_hmm(char const *filepath, void *data)
 {
@@ -182,7 +191,7 @@ static enum rc download_hmm(char const *filepath, void *data)
 
     FILE *fp = fopen(filepath, "wb");
     if (!fp) return eio("fopen");
-    if ((rc = api_download_hmm(hmm.id, fp)))
+    if ((rc = api_dl_hmm(hmm.id, fp)))
     {
         fclose(fp);
         return rc;
