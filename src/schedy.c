@@ -4,6 +4,7 @@
 #include "deciphon/core/to.h"
 #include "deciphon/loop/liner.h"
 #include "deciphon/loop/looper.h"
+#include "deciphon/loop/writer.h"
 #include "deciphon/sched/api.h"
 #include "schedy_cmd.h"
 #include <assert.h>
@@ -16,6 +17,7 @@ static void onterm_cb(void);
 
 static struct looper looper = {0};
 static struct liner liner = {0};
+static struct writer *writer = 0;
 
 #define CMD_MAP(X)                                                             \
     X(INVALID, schedy_cmd_invalid)                                             \
@@ -63,11 +65,15 @@ enum cmd parse_command(char const *cmd)
     return CMD_INVALID;
 }
 
+#define STDIN_NUM 0
+#define STDOUT_NUM 1
+
 int main(void)
 {
     looper_init(&looper, onterm_cb);
     liner_init(&liner, &looper, ioerror_cb, newline_cb);
-    liner_open(&liner, 0);
+    if (!(writer = writer_new(&looper, STDOUT_NUM))) return 1;
+    liner_open(&liner, STDIN_NUM);
 
     looper_run(&looper);
 
@@ -101,4 +107,8 @@ static void newline_cb(char *line)
     exec_cmd(&getcmd);
 }
 
-static void onterm_cb(void) { liner_close(&liner); }
+static void onterm_cb(void)
+{
+    liner_close(&liner);
+    if (writer) writer_del(writer);
+}

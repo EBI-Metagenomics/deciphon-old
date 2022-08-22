@@ -65,6 +65,7 @@ add_library(
   src/core/getcmd.c
   src/loop/looper.c
   src/loop/liner.c
+  src/loop/writer.c
   src/core/ljson.c
   src/core/logging.c
   src/core/mempool.c
