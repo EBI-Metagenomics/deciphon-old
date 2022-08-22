@@ -21,7 +21,6 @@ static struct liner *liner = 0;
     X(INVALID, schedy_cmd_invalid)                                             \
     X(CONNECT, schedy_cmd_connect)                                             \
     X(ONLINE, schedy_cmd_online)                                               \
-    X(DISCONNECT, schedy_cmd_disconnect)                                       \
     X(WIPE, schedy_cmd_wipe)                                                   \
                                                                                \
     X(HMM_UP, schedy_cmd_hmm_up)                                               \
@@ -90,7 +89,7 @@ static schedy_cmd_fn_t *schedy_cmds[] = {
 static void exec_cmd(struct getcmd const *gc)
 {
     enum cmd cmd = parse_command(gc->argv[0]);
-    (*schedy_cmds[cmd])(gc);
+    char const *msg = (*schedy_cmds[cmd])(gc);
 }
 
 static void newline_cb(char *line)

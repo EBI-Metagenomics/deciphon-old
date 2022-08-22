@@ -101,7 +101,6 @@ struct api_error const *api_error(void) { return &api_err; }
 
 static inline enum rc get(char const *query, long *http)
 {
-    printf("Query: %s\n", query);
     body_reset(response);
     return xcurl_get(query, http, body_store, &response);
 }
