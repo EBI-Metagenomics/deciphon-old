@@ -54,9 +54,10 @@ void writer_put(struct writer *writer, char const *msg)
     request->req.data = request;
 
     struct uv_stream_s *stream = (struct uv_stream_s *)&writer->pipe;
-    uv_buf_t bufs[1] = {uv_buf_init((char *)request->msg, size)};
+    uv_buf_t bufs[2] = {uv_buf_init((char *)request->msg, size),
+                        uv_buf_init((char *)"\n", 1)};
 
-    uv_write(&request->req, stream, bufs, 1, write_cb);
+    uv_write(&request->req, stream, bufs, 2, write_cb);
 }
 
 void writer_del(struct writer *writer)
