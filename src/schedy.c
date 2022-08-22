@@ -15,7 +15,7 @@ static void newline_cb(char *line);
 static void onterm_cb(void);
 
 static struct looper looper = {0};
-static struct liner *liner = 0;
+static struct liner liner = {0};
 
 #define CMD_MAP(X)                                                             \
     X(INVALID, schedy_cmd_invalid)                                             \
@@ -66,8 +66,8 @@ enum cmd parse_command(char const *cmd)
 int main(void)
 {
     looper_init(&looper, onterm_cb);
-    if (!(liner = liner_new(&looper, ioerror_cb, newline_cb))) return 1;
-    liner_open(liner, 0);
+    liner_init(&liner, &looper, ioerror_cb, newline_cb);
+    liner_open(&liner, 0);
 
     looper_run(&looper);
 
@@ -101,4 +101,4 @@ static void newline_cb(char *line)
     exec_cmd(&getcmd);
 }
 
-static void onterm_cb(void) { liner_del(liner); }
+static void onterm_cb(void) { liner_close(&liner); }

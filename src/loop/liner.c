@@ -6,30 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum
-{
-    LINER_LINE_SIZE = 1024,
-    LINER_BUFF_SIZE = 2048
-};
-
-struct liner;
-struct looper;
-
-struct liner
-{
-    struct looper *looper;
-    struct uv_pipe_s pipe;
-    bool noclose;
-
-    liner_ioerror_fn_t *ioerror_cb;
-    liner_newline_fn_t *newline_cb;
-
-    char *pos;
-    char *end;
-    char buff[LINER_BUFF_SIZE];
-    char mem[LINER_LINE_SIZE];
-};
-
 static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
                        uv_buf_t *buf);
 static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
@@ -38,18 +14,15 @@ static void process_newlines(struct liner *);
 static void start_reading(struct liner *);
 static void stop_reading(struct liner *);
 
-struct liner *liner_new(struct looper *looper, liner_ioerror_fn_t *ioerror_cb,
-                        liner_newline_fn_t *newline_cb)
+void liner_init(struct liner *liner, struct looper *looper,
+                liner_ioerror_fn_t *ioerror_cb, liner_newline_fn_t *newline_cb)
 {
-    struct liner *liner = malloc(sizeof *liner);
-    if (!liner) return 0;
     liner->looper = looper;
     liner->noclose = true;
     liner->ioerror_cb = ioerror_cb;
     liner->newline_cb = newline_cb;
     liner->pos = liner->buff;
     liner->end = liner->pos;
-    return liner;
 }
 
 void liner_open(struct liner *liner, uv_file fd)
@@ -64,13 +37,12 @@ void liner_open(struct liner *liner, uv_file fd)
     liner->noclose = false;
 }
 
-void liner_del(struct liner *liner)
+void liner_close(struct liner *liner)
 {
     stop_reading(liner);
     if (liner->noclose) return;
     uv_close((struct uv_handle_s *)&liner->pipe, 0);
     liner->noclose = true;
-    mempool_del(liner->write_req_pool);
     free(liner);
 }
 
@@ -88,7 +60,7 @@ static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     if (nread < 0)
     {
         if (nread == UV_EOF)
-            liner_del(liner);
+            liner_close(liner);
         else
             process_error(liner);
     }
