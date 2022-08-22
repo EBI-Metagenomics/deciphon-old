@@ -56,6 +56,8 @@ static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
 
 static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
+    puts("read_pipe");
+    fflush(stdout);
     struct liner *liner = stream->data;
     if (nread < 0)
     {

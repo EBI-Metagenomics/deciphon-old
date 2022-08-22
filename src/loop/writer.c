@@ -47,6 +47,9 @@ static void write_cb(struct uv_write_s *write, int status);
 
 void writer_put(struct writer *writer, char const *msg)
 {
+    puts(msg);
+    fflush(stdout);
+    return;
     unsigned size = (unsigned)strlen(msg);
     struct request *request = malloc(sizeof(struct request));
     request->writer = writer;

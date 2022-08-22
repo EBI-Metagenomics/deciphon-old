@@ -8,7 +8,6 @@ typedef char const *schedy_cmd_fn_t(struct getcmd const *);
 char const *schedy_cmd_invalid(struct getcmd const *);
 char const *schedy_cmd_connect(struct getcmd const *);
 char const *schedy_cmd_online(struct getcmd const *);
-char const *schedy_cmd_disconnect(struct getcmd const *);
 char const *schedy_cmd_wipe(struct getcmd const *);
 
 char const *schedy_cmd_hmm_up(struct getcmd const *);
