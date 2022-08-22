@@ -144,7 +144,7 @@ static inline enum rc upload(char const *query, long *http,
     return xcurl_upload(query, http, body_store, &response, mime, filepath);
 }
 
-enum rc api_up_hmm(char const *filepath, struct sched_hmm *hmm)
+enum rc api_hmm_up(char const *filepath, struct sched_hmm *hmm)
 {
     reset_api_error();
 
@@ -178,7 +178,7 @@ cleanup:
     return rc;
 }
 
-enum rc api_dl_hmm(int64_t id, FILE *fp)
+enum rc api_hmm_dl(int64_t id, FILE *fp)
 {
     reset_api_error();
 
@@ -231,22 +231,22 @@ enum param_type
 
 static enum rc get_hmm_by(struct sched_hmm *, union param, enum param_type);
 
-enum rc api_get_hmm_by_id(int64_t id, struct sched_hmm *hmm)
+enum rc api_hmm_get_by_id(int64_t id, struct sched_hmm *hmm)
 {
     return get_hmm_by(hmm, (union param){.i = id}, HMM_ID);
 }
 
-enum rc api_get_hmm_by_xxh3(int64_t xxh3, struct sched_hmm *hmm)
+enum rc api_hmm_get_by_xxh3(int64_t xxh3, struct sched_hmm *hmm)
 {
     return get_hmm_by(hmm, (union param){.i = xxh3}, XXH3);
 }
 
-enum rc api_get_hmm_by_job_id(int64_t job_id, struct sched_hmm *hmm)
+enum rc api_hmm_get_by_job_id(int64_t job_id, struct sched_hmm *hmm)
 {
     return get_hmm_by(hmm, (union param){.i = job_id}, JOB_ID);
 }
 
-enum rc api_get_hmm_by_filename(char const *filename, struct sched_hmm *hmm)
+enum rc api_hmm_get_by_filename(char const *filename, struct sched_hmm *hmm)
 {
     return get_hmm_by(hmm, (union param){.s = filename}, FILENAME);
 }
@@ -293,7 +293,7 @@ cleanup:
     return rc;
 }
 
-enum rc api_up_db(char const *filepath, struct sched_db *db)
+enum rc api_db_up(char const *filepath, struct sched_db *db)
 {
     reset_api_error();
     sched_db_init(db);
@@ -326,7 +326,7 @@ cleanup:
     return rc;
 }
 
-enum rc api_dl_db(int64_t id, FILE *fp)
+enum rc api_db_dl(int64_t id, FILE *fp)
 {
     enum rc rc = RC_OK;
 
@@ -357,22 +357,22 @@ cleanup:
 static enum rc get_db_by(struct sched_db *db, union param p,
                          enum param_type type);
 
-enum rc api_get_db_by_id(int64_t id, struct sched_db *db)
+enum rc api_db_get_by_id(int64_t id, struct sched_db *db)
 {
     return get_db_by(db, (union param){.i = id}, DB_ID);
 }
 
-enum rc api_get_db_by_xxh3(int64_t xxh3, struct sched_db *db)
+enum rc api_db_get_by_xxh3(int64_t xxh3, struct sched_db *db)
 {
     return get_db_by(db, (union param){.i = xxh3}, XXH3);
 }
 
-enum rc api_get_db_by_job_id(int64_t job_id, struct sched_db *db)
+enum rc api_db_get_by_job_id(int64_t job_id, struct sched_db *db)
 {
     return get_db_by(db, (union param){.i = job_id}, JOB_ID);
 }
 
-enum rc api_get_db_by_filename(char const *filename, struct sched_db *db)
+enum rc api_db_get_by_filename(char const *filename, struct sched_db *db)
 {
     return get_db_by(db, (union param){.s = filename}, FILENAME);
 }
@@ -419,7 +419,7 @@ cleanup:
     return rc;
 }
 
-enum rc api_next_pend_job(struct sched_job *job)
+enum rc api_job_next_pend(struct sched_job *job)
 {
     sched_job_init(job);
     reset_api_error();
@@ -523,7 +523,7 @@ enum rc api_scan_num_seqs(int64_t scan_id, unsigned *num_seqs)
     return rc;
 }
 
-enum rc api_get_scan_by_job_id(int64_t job_id, struct sched_scan *scan)
+enum rc api_scan_get_by_job_id(int64_t job_id, struct sched_scan *scan)
 {
     sched_scan_init(scan);
     reset_api_error();
@@ -572,7 +572,7 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
     return patch(query("/jobs/%" PRId64 "/state", job_id), http);
 }
 
-enum rc api_set_job_state(int64_t job_id, enum sched_job_state state,
+enum rc api_job_set_state(int64_t job_id, enum sched_job_state state,
                           char const *msg)
 {
     reset_api_error();
@@ -603,7 +603,7 @@ cleanup:
     return rc;
 }
 
-enum rc api_up_prods_file(char const *filepath)
+enum rc api_prods_file_up(char const *filepath)
 {
     reset_api_error();
 
@@ -637,7 +637,7 @@ cleanup:
     return rc;
 }
 
-enum rc api_increment_job_progress(int64_t job_id, int increment)
+enum rc api_job_inc_progress(int64_t job_id, int increment)
 {
     reset_api_error();
 

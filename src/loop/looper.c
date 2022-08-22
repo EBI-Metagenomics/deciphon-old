@@ -1,4 +1,4 @@
-#include "deciphon/core/looper.h"
+#include "deciphon/loop/looper.h"
 #include "deciphon/core/logging.h"
 #include "uv.h"
 #include <stdbool.h>

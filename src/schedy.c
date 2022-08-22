@@ -1,9 +1,9 @@
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/getcmd.h"
-#include "deciphon/core/liner.h"
 #include "deciphon/core/logging.h"
-#include "deciphon/core/looper.h"
 #include "deciphon/core/to.h"
+#include "deciphon/loop/liner.h"
+#include "deciphon/loop/looper.h"
 #include "deciphon/sched/api.h"
 #include "schedy_cmd.h"
 #include <assert.h>
@@ -15,7 +15,7 @@ static void newline_cb(char *line);
 static void onterm_cb(void);
 
 static struct looper looper = {0};
-static struct liner liner = {0};
+static struct liner *liner = 0;
 
 #define CMD_MAP(X)                                                             \
     X(INVALID, schedy_cmd_invalid)                                             \
@@ -67,8 +67,8 @@ enum cmd parse_command(char const *cmd)
 int main(void)
 {
     looper_init(&looper, onterm_cb);
-    liner_init(&liner, &looper, ioerror_cb, newline_cb);
-    liner_open(&liner, 0);
+    if (!(liner = liner_new(&looper, ioerror_cb, newline_cb))) return 1;
+    liner_open(liner, 0);
 
     looper_run(&looper);
 
@@ -100,4 +100,4 @@ static void newline_cb(char *line)
     exec_cmd(&getcmd);
 }
 
-static void onterm_cb(void) { liner_close(&liner); }
+static void onterm_cb(void) { liner_del(liner); }

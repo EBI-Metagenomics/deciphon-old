@@ -27,11 +27,11 @@ enum rc job_next(struct job *job)
 {
     // struct api_error err = {0};
 
-    enum rc rc = api_next_pend_job(&job->sched);
+    enum rc rc = api_job_next_pend(&job->sched);
     if (rc) return rc;
     // if (err.rc) return eapi(err);
 
-    rc = api_set_job_state(job->sched.id, SCHED_RUN, "");
+    rc = api_job_set_state(job->sched.id, SCHED_RUN, "");
     return rc;
     // if (rc) return rc;
     // return err.rc ? eapi(err) : RC_OK;
@@ -52,5 +52,5 @@ void job_set_fail(int64_t job_id, char const *fmt, ...)
 
     warn("Job failed with message `%s`", msg);
 
-    api_set_job_state(job_id, SCHED_FAIL, msg);
+    api_job_set_state(job_id, SCHED_FAIL, msg);
 }

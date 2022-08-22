@@ -15,6 +15,8 @@ static inline void say_no(void) { puts("NO"); }
 
 #define error_parse() error("failed to parse command")
 
+static enum rc download_hmm(char const *filepath, void *data);
+
 static unsigned char buffer[6 * 1024 * 1024] = {0};
 
 void schedy_cmd_invalid(struct getcmd const *gc)
@@ -65,7 +67,7 @@ void schedy_cmd_hmm_up(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_up_hmm(gc->argv[1], &hmm))
+    else if (api_hmm_up(gc->argv[1], &hmm))
         say_fail();
     else
         say_ok();
@@ -96,7 +98,7 @@ void schedy_cmd_hmm_get_by_id(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_get_hmm_by_id(getcmd_i64(gc, 1), &hmm))
+    else if (api_hmm_get_by_id(getcmd_i64(gc, 1), &hmm))
         say_fail();
     else
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
@@ -111,7 +113,7 @@ void schedy_cmd_hmm_get_by_xxh3(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_get_hmm_by_xxh3(getcmd_i64(gc, 1), &hmm))
+    else if (api_hmm_get_by_xxh3(getcmd_i64(gc, 1), &hmm))
         say_fail();
     else
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
@@ -126,7 +128,7 @@ void schedy_cmd_hmm_get_by_job_id(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_get_hmm_by_job_id(getcmd_i64(gc, 1), &hmm))
+    else if (api_hmm_get_by_job_id(getcmd_i64(gc, 1), &hmm))
         say_fail();
     else
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
@@ -141,13 +143,11 @@ void schedy_cmd_hmm_get_by_filename(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_get_hmm_by_filename(gc->argv[1], &hmm))
+    else if (api_hmm_get_by_filename(gc->argv[1], &hmm))
         say_fail();
     else
         puts(sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer));
 }
-
-static enum rc download_hmm(char const *filepath, void *data);
 
 void schedy_cmd_db_up(struct getcmd const *gc)
 {
@@ -158,7 +158,7 @@ void schedy_cmd_db_up(struct getcmd const *gc)
         error_parse();
         say_fail();
     }
-    else if (api_up_db(gc->argv[1], &db))
+    else if (api_db_up(gc->argv[1], &db))
         say_fail();
     else
         say_ok();
@@ -186,12 +186,12 @@ static enum rc download_hmm(char const *filepath, void *data)
     static struct sched_hmm hmm = {0};
 
     int64_t xxh3 = *((int64_t *)data);
-    enum rc rc = api_get_hmm_by_xxh3(xxh3, &hmm);
+    enum rc rc = api_hmm_get_by_xxh3(xxh3, &hmm);
     if (rc) return rc;
 
     FILE *fp = fopen(filepath, "wb");
     if (!fp) return eio("fopen");
-    if ((rc = api_dl_hmm(hmm.id, fp)))
+    if ((rc = api_hmm_dl(hmm.id, fp)))
     {
         fclose(fp);
         return rc;

@@ -1,5 +1,5 @@
-#ifndef DECIPHON_CORE_LOOPER_H
-#define DECIPHON_CORE_LOOPER_H
+#ifndef DECIPHON_LOOP_LOOPER_H
+#define DECIPHON_LOOP_LOOPER_H
 
 #include "uv.h"
 #include <stdbool.h>

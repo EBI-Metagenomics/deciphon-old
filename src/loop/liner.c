@@ -1,9 +1,37 @@
-#include "deciphon/core/liner.h"
+#include "deciphon/loop/liner.h"
 #include "deciphon/core/logging.h"
-#include "deciphon/core/looper.h"
+#include "deciphon/core/mempool.h"
+#include "deciphon/loop/looper.h"
 #include "uv.h"
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
+
+enum
+{
+    LINER_LINE_SIZE = 1024,
+    LINER_BUFF_SIZE = 2048
+};
+
+struct liner;
+struct looper;
+
+struct liner
+{
+    struct looper *looper;
+    struct uv_pipe_s pipe;
+    bool noclose;
+
+    liner_ioerror_fn_t *ioerror_cb;
+    liner_newline_fn_t *newline_cb;
+
+    char *pos;
+    char *end;
+    char buff[LINER_BUFF_SIZE];
+    char mem[LINER_LINE_SIZE];
+
+    struct mempool *write_req_pool;
+};
 
 static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
                        uv_buf_t *buf);
@@ -13,15 +41,24 @@ static void process_newlines(struct liner *);
 static void start_reading(struct liner *);
 static void stop_reading(struct liner *);
 
-void liner_init(struct liner *liner, struct looper *looper,
-                liner_ioerror_fn_t *ioerror_cb, liner_newline_fn_t *newline_cb)
+struct liner *liner_new(struct looper *looper, liner_ioerror_fn_t *ioerror_cb,
+                        liner_newline_fn_t *newline_cb)
 {
+    struct liner *liner = malloc(sizeof *liner);
+    if (!liner) return 0;
     liner->looper = looper;
     liner->noclose = true;
     liner->ioerror_cb = ioerror_cb;
     liner->newline_cb = newline_cb;
     liner->pos = liner->buff;
     liner->end = liner->pos;
+    liner->write_req_pool = mempool_new(12, sizeof(struct uv_write_s));
+    if (!liner->write_req_pool)
+    {
+        free(liner);
+        return 0;
+    }
+    return liner;
 }
 
 void liner_open(struct liner *liner, uv_file fd)
@@ -36,12 +73,30 @@ void liner_open(struct liner *liner, uv_file fd)
     liner->noclose = false;
 }
 
-void liner_close(struct liner *liner)
+static void write_cb(struct uv_write_s *req, int status)
+{
+    struct liner *liner = req->data;
+    mempool_del_object(liner->write_req_pool, req);
+    if (status) eio(uv_strerror(status));
+}
+
+void liner_write(struct liner *liner, unsigned size, char *line)
+{
+    uv_buf_t bufs[1] = {{.base = line, .len = size}};
+    struct uv_write_s *req = mempool_new_object(liner->write_req_pool);
+    req->data = liner;
+    struct uv_stream_s *stream = (struct uv_stream_s *)&liner->pipe;
+    uv_write(req, stream, bufs, 1, write_cb);
+}
+
+void liner_del(struct liner *liner)
 {
     stop_reading(liner);
     if (liner->noclose) return;
     uv_close((struct uv_handle_s *)&liner->pipe, 0);
     liner->noclose = true;
+    mempool_del(liner->write_req_pool);
+    free(liner);
 }
 
 static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
@@ -58,7 +113,7 @@ static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     if (nread < 0)
     {
         if (nread == UV_EOF)
-            liner_close(liner);
+            liner_del(liner);
         else
             process_error(liner);
     }

@@ -28,9 +28,6 @@
     (sizeof(x) == 1 ? 8U : BUILD_BUG_ON_ZERO(0))))))))))
 /* clang-format on */
 
-#define TRUE (!!1)
-#define FALSE (!!0)
-
 /*
  * Evaluates to `ONE` in case of `EXPR` being `true`; `TWO` otherwise.
  *
