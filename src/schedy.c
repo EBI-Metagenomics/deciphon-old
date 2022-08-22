@@ -90,6 +90,8 @@ static void exec_cmd(struct getcmd const *gc)
 {
     enum cmd cmd = parse_command(gc->argv[0]);
     char const *msg = (*schedy_cmds[cmd])(gc);
+    puts(msg);
+    fflush(stdout);
 }
 
 static void newline_cb(char *line)
