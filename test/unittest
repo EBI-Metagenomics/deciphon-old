@@ -2,18 +2,18 @@
 
 unittest_origin=$PWD
 cd "$(mktemp -d)" || exit 1
-PID=
+unittest_pid=
 
 function unittest_exec() {
     program=$1
     mkfifo stdin
-    "$unittest_origin/unittest_run.sh" "$unittest_origin/$program" stdin stdout stderr &
-    PID=$!
+    exec "$unittest_origin/$program" <stdin >stdout 2>stderr &
+    unittest_pid=$!
 }
 
 function unittest_stop() {
     sleep 0.5
-    { kill -15 "$PID" && wait "$PID"; } 2>/dev/null
+    { kill -15 "$unittest_pid" && wait "$unittest_pid"; } 2>/dev/null
     sleep 0.5
 }
 
