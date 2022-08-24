@@ -6,7 +6,7 @@ set(URL https://pub.danilohorta.me)
 set(ExternalData_URL_TEMPLATES "${URL}/deciphon/%(algo)/%(hash)")
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_NUM_THREADS=1\n")
-file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_HOST=100.118.66.95\n")
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_HOST=127.0.0.1\n")
 file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_PORT=49329\n")
 file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_PREFIX=\n")
 file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_KEY=change-me\n")

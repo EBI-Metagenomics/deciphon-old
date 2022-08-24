@@ -13,14 +13,20 @@ jobs:
       IMM_DOUBLE_PRECISION: ${{ matrix.double_precision }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         double_precision: ["On", "Off"]
 
     steps:
       - uses: actions/checkout@v2
 
       - name: Install libcurl4
-        run: sudo apt-get install -y libcurl4 libcurl4-openssl-dev
+        run: sudo apt-get install -y libcurl4 libcurl4-openssl-dev python3-venv python3-pip
+
+      - name: Install pipx
+        run: python3 -m pip install --user -U pipx
+
+      - name: Start deciphon-api
+        run: python3 -m pipx run deciphon-api start &
 
       - name: Configure CMake
         if: runner.os == 'Linux'
