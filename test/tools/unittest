@@ -3,13 +3,16 @@
 unittest_pid=
 
 function unittest_setup() {
-    # shellcheck disable=SC2034
-    SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-
     tmpdir=$(mktemp -d)
 
-    for filepath in "$@"; do
-        cp "$("$SCRIPT_DIR/abspath" "$filepath")" "$tmpdir/"
+    for file in "$@"; do
+        if [[ "$file" = /* ]]; then
+            dst=$tmpdir
+        else
+            dst="$tmpdir"/"$(dirname "$file")"
+            mkdir -p "$dst"
+        fi
+        cp "$file" "$dst"
     done
 
     cd "$tmpdir" || exit 1

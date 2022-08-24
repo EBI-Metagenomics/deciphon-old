@@ -1,0 +1,24 @@
+#!/bin/bash
+
+PROGRAM=$1
+
+# shellcheck disable=SC1091
+source "tools/unittest"
+
+unittest_setup "$PROGRAM" tools/dotenv_get .env
+unittest_exec "$PROGRAM"
+
+HOST=$(tools/dotenv_get .env DCP_API_HOST)
+PORT=$(tools/dotenv_get .env DCP_API_PORT)
+KEY=$(tools/dotenv_get .env DCP_API_KEY)
+
+unittest_sendnl "CONNECT http://$HOST:$PORT $KEY"
+unittest_sendnl "ONLINE"
+unittest_stop
+
+{
+    echo "OK"
+    echo "YES"
+} >desired
+
+diff stdout desired

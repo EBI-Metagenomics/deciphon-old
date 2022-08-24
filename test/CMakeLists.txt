@@ -1,17 +1,20 @@
 set(TMPDIR "${CMAKE_CURRENT_BINARY_DIR}/tmp")
 file(MAKE_DIRECTORY "${TMPDIR}")
-add_compile_definitions(TMPDIR=\"${TMPDIR}\")
 
 include(ExternalData)
-set(ExternalData_URL_TEMPLATES
-    "https://pub.danilohorta.me/deciphon/%(algo)/%(hash)")
+set(URL https://pub.danilohorta.me)
+set(ExternalData_URL_TEMPLATES "${URL}/deciphon/%(algo)/%(hash)")
 
-file(COPY .env.test DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-file(COPY unittest DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_NUM_THREADS=1\n")
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_HOST=100.118.66.95\n")
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_PORT=49329\n")
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_PREFIX=\n")
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/.env" "DCP_API_KEY=change-me\n")
 
 function(deciphon_add_test name)
   add_executable(${name} ${name}.c)
   target_link_libraries(${name} PRIVATE DECIPHON::deciphon)
+  target_compile_definitions(${name} PRIVATE TMPDIR="${TMPDIR}")
   add_test(NAME test_${name} COMMAND ${name})
 endfunction()
 
@@ -30,9 +33,11 @@ endfunction()
 
 deciphon_add_data_test(protein_h3reader PF02545.hmm)
 
-add_test(NAME test_connection
-         COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/connection.sh"
-                 "${CMAKE_CURRENT_BINARY_DIR}/schedy")
+add_test(NAME test_schedy_connection
+         COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/schedy_connection"
+                 $<TARGET_FILE:schedy>)
 
-add_test(NAME test_hmm COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/hmm.sh"
-                               "${CMAKE_CURRENT_BINARY_DIR}/schedy")
+add_test(NAME test_schedy_hmm COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/schedy_hmm"
+                                      $<TARGET_FILE:schedy>)
+
+add_subdirectory(tools)
