@@ -30,4 +30,9 @@ endfunction()
 
 deciphon_add_data_test(protein_h3reader PF02545.hmm)
 
-# sched_add_test(sched sched.c) server_add_test(server server.c)
+add_test(NAME test_connection
+         COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/connection.sh"
+                 "${CMAKE_CURRENT_BINARY_DIR}/schedy")
+
+add_test(NAME test_hmm COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/hmm.sh"
+                               "${CMAKE_CURRENT_BINARY_DIR}/schedy")

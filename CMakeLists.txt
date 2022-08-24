@@ -17,7 +17,7 @@ cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.6")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.3.1")
 cpmaddpackage("gh:EBI-Metagenomics/deciphon-sched@0.4.5")
 cpmaddpackage("gh:EBI-Metagenomics/dotenv@0.1.1")
-cpmaddpackage("gh:EBI-Metagenomics/short-circuit@0.0.8")
+# cpmaddpackage("gh:EBI-Metagenomics/short-circuit@0.0.8")
 cpmaddpackage(
   NAME
   libuv
@@ -104,8 +104,8 @@ add_library(
   src/server/prod.c
   src/server/protein_match.c
   # src/server/scan.c
-  src/server/scan_thread.c
-  src/server/server.c)
+  src/server/scan_thread.c)
+  # src/server/server.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
 target_link_libraries(deciphon PUBLIC CURL::libcurl)
@@ -116,7 +116,7 @@ target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)
 target_link_libraries(deciphon PUBLIC OpenMP::OpenMP_C)
 target_link_libraries(deciphon PUBLIC SCHED::headers)
 target_link_libraries(deciphon PUBLIC DOTENV::dotenv)
-target_link_libraries(deciphon PUBLIC SC::sc)
+# target_link_libraries(deciphon PUBLIC SC::sc)
 target_link_libraries(deciphon PUBLIC uv_a)
 
 set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/deciphon/version.h)
