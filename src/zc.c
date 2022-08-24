@@ -6,10 +6,9 @@
 //    zc_path.c
 //    zc_string.c
 
-// --- zc_byteswap section
-// ----------------------------------------------------------
-
 #include "zc.h"
+
+/* --- zc_byteswap section -------------------------------- */
 
 uint16_t zc_byteswap16(uint16_t x) { return (uint16_t)(x << 8 | x >> 8); }
 
@@ -24,10 +23,8 @@ uint64_t zc_byteswap64(uint64_t x)
     return (uint64_t)((zc_byteswap32(x) + 0ULL) << 32 | zc_byteswap32(x >> 32));
 }
 
-// --- zc_endian section
-// ------------------------------------------------------------
+/* --- zc_endian section ---------------------------------- */
 
-#include "zc.h"
 #include <stdlib.h>
 
 enum
@@ -119,10 +116,8 @@ uint64_t zc_ntohll(uint64_t x) { return zc_htonll(x); }
 
 #endif
 
-// --- zc_memory section
-// ------------------------------------------------------------
+/* --- zc_memory section ---------------------------------- */
 
-#include "zc.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -138,15 +133,12 @@ void *zc_reallocf(void *ptr, size_t size)
 
 void zc_bzero(void *dst, size_t dsize) { memset(dst, 0, dsize); }
 
-// --- zc_mempool section
-// -----------------------------------------------------------
+/* --- zc_mempool section --------------------------------- */
 
 /* Acknowledgment: https://github.com/dcreager/libcork */
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
-#include "zc.h"
 
 struct proxy
 {
@@ -253,10 +245,8 @@ void zc_mempool_del_object(struct mempool *mp, void *object)
     mp->allocated_count--;
 }
 
-// --- zc_path section
-// --------------------------------------------------------------
+/* --- zc_path section ------------------------------------ */
 
-#include "zc.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -277,10 +267,8 @@ char *zc_dirname(char *path)
     return path;
 }
 
-// --- zc_string section
-// ------------------------------------------------------------
+/* --- zc_string section ---------------------------------- */
 
-#include "zc.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -292,6 +280,42 @@ char *zc_strdup(char const *str)
     if (new == NULL) return NULL;
 
     return (char *)memcpy(new, str, len);
+}
+
+/*
+ * Appends src to string dst of size dsize (unlike strncat, dsize is the
+ * full size of dst, not space left).  At most dsize-1 characters
+ * will be copied.  Always NUL terminates (unless dsize <= strlen(dst)).
+ * Returns strlen(src) + MIN(dsize, strlen(initial dst)).
+ * If retval >= dsize, truncation occurred.
+ *
+ * Copyright (c) 1998, 2015 Todd C. Miller <Todd.Miller@courtesan.com>
+ */
+size_t zc_strlcat(char *dst, char const *src, size_t dsize)
+{
+    const char *odst = dst;
+    const char *osrc = src;
+    size_t n = dsize;
+    size_t dlen;
+
+    while (n-- != 0 && *dst != '\0')
+        dst++;
+    dlen = dst - odst;
+    n = dsize - dlen;
+
+    if (n-- == 0) return (dlen + strlen(src));
+    while (*src != '\0')
+    {
+        if (n != 0)
+        {
+            *dst++ = *src;
+            n--;
+        }
+        src++;
+    }
+    *dst = '\0';
+
+    return (dlen + (src - osrc));
 }
 
 /*

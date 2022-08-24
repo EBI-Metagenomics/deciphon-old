@@ -1,6 +1,6 @@
 #include "deciphon/model/profile.h"
-#include "ctb/ctb.h"
 #include "deciphon/core/compiler.h"
+#include "zc.h"
 
 void profile_del(struct profile *prof)
 {
@@ -29,7 +29,7 @@ void profile_init(struct profile *prof, char const *accession,
                   imm_state_name *state_name)
 {
     prof->vtable = vtable;
-    CTB_STRLCPY(prof, accession, accession);
+    zc_strlcpy(prof->accession, accession, PROFILE_ACC_SIZE);
     prof->state_name = state_name;
     prof->code = code;
 }

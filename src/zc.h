@@ -8,9 +8,7 @@
 //    zc_path.h
 //    zc_pp.h
 //    zc_string.h
-
-// --- zc_byteswap section
-// ----------------------------------------------------------
+/* --- zc_byteswap section -------------------------------- */
 
 #ifndef ZC_BYTESWAP_H
 #define ZC_BYTESWAP_H
@@ -25,8 +23,7 @@ uint64_t zc_byteswap64(uint64_t x);
 
 #endif
 
-// --- zc_endian section
-// ------------------------------------------------------------
+/* --- zc_endian section ---------------------------------- */
 
 #ifndef ZC_ENDIAN_H
 #define ZC_ENDIAN_H
@@ -43,8 +40,7 @@ uint64_t zc_ntohll(uint64_t);
 
 #endif
 
-// --- zc_limits section
-// ------------------------------------------------------------
+/* --- zc_limits section ---------------------------------- */
 
 #ifndef ZC_LIMITS_H
 #define ZC_LIMITS_H
@@ -102,8 +98,7 @@ uint64_t zc_ntohll(uint64_t);
 
 #endif
 
-// --- zc_memory section
-// ------------------------------------------------------------
+/* --- zc_memory section ---------------------------------- */
 
 #ifndef ZC_MEMORY_H
 #define ZC_MEMORY_H
@@ -115,8 +110,7 @@ void zc_bzero(void *dst, size_t dsize);
 
 #endif
 
-// --- zc_mempool section
-// -----------------------------------------------------------
+/* --- zc_mempool section --------------------------------- */
 
 #ifndef ZC_MEMPOOL_H
 #define ZC_MEMPOOL_H
@@ -133,8 +127,7 @@ void zc_mempool_del_object(struct mempool *, void *object);
 
 #endif
 
-// --- zc_os section
-// ----------------------------------------------------------------
+/* --- zc_os section -------------------------------------- */
 
 #ifndef ZC_OS_H
 #define ZC_OS_H
@@ -164,8 +157,7 @@ enum
 
 #endif
 
-// --- zc_path section
-// --------------------------------------------------------------
+/* --- zc_path section ------------------------------------ */
 
 #ifndef ZC_PATH_H
 #define ZC_PATH_H
@@ -175,8 +167,7 @@ char *zc_dirname(char *path);
 
 #endif
 
-// --- zc_pp section
-// ----------------------------------------------------------------
+/* --- zc_pp section -------------------------------------- */
 
 #ifndef ZZ_PP_H
 #define ZZ_PP_H
@@ -215,8 +206,7 @@ char *zc_dirname(char *path);
 
 #endif
 
-// --- zc_string section
-// ------------------------------------------------------------
+/* --- zc_string section ---------------------------------- */
 
 #ifndef ZC_STRING_H
 #define ZC_STRING_H
@@ -224,6 +214,7 @@ char *zc_dirname(char *path);
 #include <stddef.h>
 
 char *zc_strdup(const char *s);
+size_t zc_strlcat(char *dst, char const *src, size_t dsize);
 size_t zc_strlcpy(char *dst, char const *src, size_t dsize);
 
 #endif

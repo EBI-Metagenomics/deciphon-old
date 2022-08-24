@@ -1,8 +1,8 @@
 #include "deciphon/core/xfile.h"
-#include "ctb/ctb.h"
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/logging.h"
 #include "sched/structs.h"
+#include "zc.h"
 #define XXH_INLINE_ALL
 #include "xxhash/xxhash.h"
 #include <assert.h>
@@ -101,7 +101,8 @@ cleanup:
 
 enum rc xfile_tmp_open(struct xfile_tmp *file)
 {
-    CTB_STRLCPY(file, path, XFILE_PATH_TEMP_TEMPLATE);
+    zc_strlcpy(file->path, XFILE_PATH_TEMP_TEMPLATE,
+               sizeof XFILE_PATH_TEMP_TEMPLATE);
     file->fp = 0;
 
     enum rc rc = xfile_mktemp(file->path);
@@ -198,7 +199,7 @@ enum rc xfile_set_ext(size_t max_size, char *str, char const *ext)
 void xfile_basename(char *filename, char const *path, size_t size)
 {
     char *p = glibc_basename(path);
-    ctb_strlcpy(filename, p, size);
+    zc_strlcpy(filename, p, size);
 }
 
 void xfile_strip_ext(char *str)

@@ -11,13 +11,11 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-cpmaddpackage("gh:horta/c-toolbelt@0.10.0")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.1.4")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.6")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.3.1")
 cpmaddpackage("gh:EBI-Metagenomics/deciphon-sched@0.4.5")
 cpmaddpackage("gh:EBI-Metagenomics/dotenv@0.1.2")
-# cpmaddpackage("gh:EBI-Metagenomics/short-circuit@0.0.8")
 cpmaddpackage(
   NAME
   libuv
@@ -109,7 +107,6 @@ add_library(
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
 target_link_libraries(deciphon PUBLIC CURL::libcurl)
-target_link_libraries(deciphon PUBLIC C_TOOLBELT::ctb)
 target_link_libraries(deciphon PUBLIC HMR::hmr)
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)

@@ -1,7 +1,6 @@
 #include "deciphon/core/xcurl.h"
 #include "core/xcurl_header.h"
 #include "core/xcurl_mime.h"
-#include "ctb/ctb.h"
 #include "deciphon/core/limits.h"
 #include "deciphon/core/logging.h"
 #include "xcurl_debug.h"

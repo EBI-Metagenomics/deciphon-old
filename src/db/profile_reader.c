@@ -1,9 +1,9 @@
-#include "ctb/ctb.h"
 #include "deciphon/core/expect.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
 #include "deciphon/db/db.h"
+#include "zc.h"
 
 static void cleanup(struct profile_reader *reader)
 {
@@ -46,8 +46,8 @@ static void partition_init(struct profile_reader *reader, int64_t offset)
     int64_t *poffset = reader->partition_offset;
     unsigned *psize = reader->partition_size;
 
-    memset(poffset, 0, CTB_SIZEOF_MEMBER(*reader, partition_offset));
-    memset(psize, 0, CTB_SIZEOF_MEMBER(*reader, partition_size));
+    zc_bzero(poffset, NUM_THREADS + 1);
+    zc_bzero(psize, NUM_THREADS);
     poffset[0] = offset;
 }
 

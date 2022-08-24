@@ -1,13 +1,14 @@
 #include "hmm.h"
-#include "ctb/ctb.h"
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/file.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/rc.h"
 #include "deciphon/db/protein_writer.h"
+#include "deciphon/model/profile.h"
 #include "deciphon/model/protein_h3reader.h"
 #include "deciphon/sched/api.h"
 #include "hmr/hmr.h"
+#include "zc.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -35,7 +36,8 @@ static enum rc profile_write(void)
     enum rc rc = protein_profile_absorb(&profile, &reader.h3.model);
     if (rc) return rc;
 
-    CTB_STRLCPY(&profile.super, accession, reader.h3.prof.meta.acc);
+    zc_strlcpy(profile.super->accession, reader.h3.prof.meta.acc,
+               PROFILE_ACC_SIZE);
 
     return protein_db_writer_pack_profile(&writer.db, &profile);
 }
