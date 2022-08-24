@@ -1,14 +1,18 @@
 #!/bin/bash
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-
-prog=$1
+PROGRAM=$1
 
 # shellcheck disable=SC1091
-source "$SCRIPT_DIR/unittest"
+source "tools/unittest"
 
-unittest_exec "$prog"
-unittest_sendnl "CONNECT http://100.71.124.99:49329 change-me"
+unittest_setup "$PROGRAM" tools/dotenv_get .env
+unittest_exec "$PROGRAM"
+
+HOST=$(tools/dotenv_get .env DCP_API_HOST)
+PORT=$(tools/dotenv_get .env DCP_API_PORT)
+KEY=$(tools/dotenv_get .env DCP_API_KEY)
+
+unittest_sendnl "CONNECT http://$HOST:$PORT $KEY"
 unittest_sendnl "ONLINE"
 unittest_sendnl "WIPE"
 unittest_sendnl "HMM_UP /Users/horta/data/minifam.hmm"
