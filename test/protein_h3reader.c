@@ -23,14 +23,16 @@ static char const sequence[] =
     "AAAGCGGCGCCGAAAGGCATTCCGTGCGCGAAAAGCTGCAACACCCGCGAAGTGGATGGC"
     "CGCCCGCTGAACCCGCTGCAGATTGCGTTTAGC";
 
-int main(void)
+int main(int argc, char **argv)
 {
+    if (argc != 2) return 1;
+    char const *hmm_filepath = argv[1];
     struct imm_amino const *amino = &imm_amino_iupac;
     struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
     struct imm_nuclt_code code;
     imm_nuclt_code_init(&code, nuclt);
 
-    FILE *fp = fopen(ASSETS "/PF02545.hmm", "r");
+    FILE *fp = fopen(hmm_filepath, "r");
     NOTNULL(fp);
     struct protein_cfg cfg = protein_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
 

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-source "$PWD/unittest.sh"
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+"$SCRIPT_DIR/unittest"
 
 unittest_exec schedy
 unittest_sendnl "CONNECT http://100.71.124.99:49329 change-me"
@@ -15,3 +16,5 @@ unittest_stop
     echo "OK"
     echo "OK"
 } >desired
+
+diff stdout desired
