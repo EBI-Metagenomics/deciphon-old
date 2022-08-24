@@ -1,0 +1,34 @@
+#!/bin/bash
+
+unittest_pid=
+
+function unittest_setup() {
+    # shellcheck disable=SC2034
+    SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+
+    tmpdir=$(mktemp -d)
+
+    for filepath in "$@"; do
+        cp "$("$SCRIPT_DIR/abspath" "$filepath")" "$tmpdir/"
+    done
+
+    cd "$tmpdir" || exit 1
+    echo "Working directory: $PWD"
+}
+
+function unittest_exec() {
+    program=$1
+    mkfifo stdin
+    exec "$program" <stdin >stdout 2>stderr &
+    unittest_pid=$!
+}
+
+function unittest_stop() {
+    sleep 0.5
+    { kill -15 "$unittest_pid" && wait "$unittest_pid"; } 2>/dev/null
+    sleep 0.5
+}
+
+function unittest_sendnl() {
+    echo "$1" >>stdin
+}
