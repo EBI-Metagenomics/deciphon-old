@@ -23,21 +23,24 @@ deciphon_add_test(protein_model)
 deciphon_add_test(protein_profile)
 deciphon_add_test(protein_db)
 
-function(deciphon_add_data_test name filename)
-  add_executable(${name} ${name}.c)
-  target_link_libraries(${name} PRIVATE DECIPHON::deciphon)
-  ExternalData_add_test(data_${name} NAME test_${name} COMMAND ${name}
-                        DATA{${filename}})
-  ExternalData_add_target(data_${name})
-endfunction()
-
-deciphon_add_data_test(protein_h3reader PF02545.hmm)
+add_executable(protein_h3reader protein_h3reader.c)
+target_link_libraries(protein_h3reader PRIVATE DECIPHON::deciphon)
+ExternalData_add_test(data_protein_h3reader NAME test_protein_h3reader COMMAND
+                      protein_h3reader DATA{PF02545.hmm})
+ExternalData_add_target(data_protein_h3reader)
 
 add_test(NAME test_schedy_connection
          COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/schedy_connection"
                  $<TARGET_FILE:schedy>)
 
-add_test(NAME test_schedy_hmm COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/schedy_hmm"
-                                      $<TARGET_FILE:schedy>)
+ExternalData_add_test(
+  data_schedy_hmm
+  NAME
+  test_schedy_hmm
+  COMMAND
+  "${CMAKE_CURRENT_SOURCE_DIR}/schedy_hmm"
+  $<TARGET_FILE:schedy>
+  DATA{PF02545.hmm})
+ExternalData_add_target(data_schedy_hmm)
 
 add_subdirectory(tools)

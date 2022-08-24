@@ -1,11 +1,12 @@
 #!/bin/bash
 
 PROGRAM=$1
+HMM=$2
 
 # shellcheck disable=SC1091
 source "tools/unittest"
 
-unittest_setup "$PROGRAM" tools/dotenv_get .env
+unittest_setup "$PROGRAM" tools/dotenv_get .env "$HMM"
 unittest_exec "$PROGRAM"
 
 HOST=$(tools/dotenv_get .env DCP_API_HOST)
@@ -15,7 +16,7 @@ KEY=$(tools/dotenv_get .env DCP_API_KEY)
 unittest_sendnl "CONNECT http://$HOST:$PORT $KEY"
 unittest_sendnl "ONLINE"
 unittest_sendnl "WIPE"
-unittest_sendnl "HMM_UP /Users/horta/data/minifam.hmm"
+unittest_sendnl "HMM_UP $HMM"
 unittest_stop
 
 {
