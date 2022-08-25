@@ -41,7 +41,7 @@ enum rc api_db_up(char const *filepath, struct sched_db *);
 enum rc api_db_dl(int64_t id, FILE *fp);
 enum rc api_db_get_by_id(int64_t id, struct sched_db *);
 enum rc api_db_get_by_xxh3(int64_t xxh3, struct sched_db *);
-enum rc api_db_get_by_job_id(int64_t job_id, struct sched_db *);
+enum rc api_db_get_by_hmm_id(int64_t job_id, struct sched_db *);
 enum rc api_db_get_by_filename(char const *filename, struct sched_db *);
 
 enum rc api_prods_file_up(char const *filepath);

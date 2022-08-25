@@ -13,3 +13,15 @@ char *sched_dump_hmm(struct sched_hmm const *hmm, unsigned size, char *buffer)
     ljson_close(&ctx);
     return buffer;
 }
+
+char *sched_dump_db(struct sched_db const *db, unsigned size, char *buffer)
+{
+    struct ljson_ctx ctx = {0};
+    ljson_open(&ctx, size, buffer);
+    ljson_int(&ctx, "id", db->id);
+    ljson_int(&ctx, "xxh3", db->xxh3);
+    ljson_str(&ctx, "filename", db->filename);
+    ljson_int(&ctx, "hmm_id", db->hmm_id);
+    ljson_close(&ctx);
+    return buffer;
+}

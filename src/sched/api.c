@@ -366,9 +366,9 @@ enum rc api_db_get_by_xxh3(int64_t xxh3, struct sched_db *db)
     return get_db_by(db, (union param){.i = xxh3}, XXH3);
 }
 
-enum rc api_db_get_by_job_id(int64_t job_id, struct sched_db *db)
+enum rc api_db_get_by_hmm_id(int64_t hmm_id, struct sched_db *db)
 {
-    return get_db_by(db, (union param){.i = job_id}, JOB_ID);
+    return get_db_by(db, (union param){.i = hmm_id}, HMM_ID);
 }
 
 enum rc api_db_get_by_filename(char const *filename, struct sched_db *db)
@@ -391,6 +391,8 @@ static enum rc get_db_by(struct sched_db *db, union param p,
         rc = get(query("/dbs/%" PRId64 "?id_type=xxh3", p.i), &http);
     if (type == JOB_ID)
         rc = get(query("/jobs/%" PRId64 "/db&id_type=job_id", p.i), &http);
+    if (type == HMM_ID)
+        rc = get(query("/jobs/%" PRId64 "/db&id_type=hmm_id", p.i), &http);
     if (type == FILENAME)
         rc = get(query("/dbs/%s?id_type=filename", p.s), &http);
 

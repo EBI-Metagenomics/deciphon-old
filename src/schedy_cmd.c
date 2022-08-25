@@ -16,6 +16,7 @@ static inline char const *say_no(void) { return "NO"; }
 #define error_parse() error("failed to parse command")
 
 static enum rc download_hmm(char const *filepath, void *data);
+static enum rc download_db(char const *filepath, void *data);
 
 static unsigned char buffer[6 * 1024 * 1024] = {0};
 
@@ -144,29 +145,66 @@ char const *schedy_cmd_db_up(struct getcmd const *gc)
 
 char const *schedy_cmd_db_dl(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    if (!getcmd_check(gc, "sis"))
+    {
+        error_parse();
+        return say_fail();
+    }
+
+    int64_t xxh3 = getcmd_i64(gc, 1);
+    if (file_ensure_local(gc->argv[2], xxh3, &download_db, &xxh3))
+        return say_fail();
+    else
+        return say_ok();
 }
 
 char const *schedy_cmd_db_get_by_id(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    static struct sched_db db = {0};
+
+    if (!getcmd_check(gc, "si"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    if (api_db_get_by_id(getcmd_i64(gc, 1), &db)) return say_fail();
+    return sched_dump_db(&db, sizeof buffer, (char *)buffer);
 }
 char const *schedy_cmd_db_get_by_xxh3(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    static struct sched_db db = {0};
+
+    if (!getcmd_check(gc, "si"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    if (api_db_get_by_xxh3(getcmd_i64(gc, 1), &db)) return say_fail();
+    return sched_dump_db(&db, sizeof buffer, (char *)buffer);
 }
-char const *schedy_cmd_db_get_by_job_id(struct getcmd const *gc)
+char const *schedy_cmd_db_get_by_hmm_id(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    static struct sched_db db = {0};
+
+    if (!getcmd_check(gc, "si"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    if (api_db_get_by_hmm_id(getcmd_i64(gc, 1), &db)) return say_fail();
+    return sched_dump_db(&db, sizeof buffer, (char *)buffer);
 }
 char const *schedy_cmd_db_get_by_filename(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    static struct sched_db db = {0};
+
+    if (!getcmd_check(gc, "ss"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    if (api_db_get_by_filename(gc->argv[1], &db)) return say_fail();
+    return sched_dump_db(&db, sizeof buffer, (char *)buffer);
 }
 
 char const *schedy_cmd_job_next_pend(struct getcmd const *gc)
@@ -218,6 +256,24 @@ static enum rc download_hmm(char const *filepath, void *data)
     FILE *fp = fopen(filepath, "wb");
     if (!fp) return eio("fopen");
     if ((rc = api_hmm_dl(hmm.id, fp)))
+    {
+        fclose(fp);
+        return rc;
+    }
+    return fclose(fp) ? eio("fclose") : RC_OK;
+}
+
+static enum rc download_db(char const *filepath, void *data)
+{
+    static struct sched_db db = {0};
+
+    int64_t xxh3 = *((int64_t *)data);
+    enum rc rc = api_db_get_by_xxh3(xxh3, &db);
+    if (rc) return rc;
+
+    FILE *fp = fopen(filepath, "wb");
+    if (!fp) return eio("fopen");
+    if ((rc = api_db_dl(db.id, fp)))
     {
         fclose(fp);
         return rc;

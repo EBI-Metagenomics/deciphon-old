@@ -21,7 +21,7 @@ char const *schedy_cmd_db_up(struct getcmd const *);
 char const *schedy_cmd_db_dl(struct getcmd const *);
 char const *schedy_cmd_db_get_by_id(struct getcmd const *);
 char const *schedy_cmd_db_get_by_xxh3(struct getcmd const *);
-char const *schedy_cmd_db_get_by_job_id(struct getcmd const *);
+char const *schedy_cmd_db_get_by_hmm_id(struct getcmd const *);
 char const *schedy_cmd_db_get_by_filename(struct getcmd const *);
 
 char const *schedy_cmd_job_next_pend(struct getcmd const *);

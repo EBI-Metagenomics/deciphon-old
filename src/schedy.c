@@ -36,7 +36,7 @@ static struct writer *writer = 0;
     X(DB_DL, schedy_cmd_db_dl)                                                 \
     X(DB_GET_BY_ID, schedy_cmd_db_get_by_id)                                   \
     X(DB_GET_BY_XXH3, schedy_cmd_db_get_by_xxh3)                               \
-    X(DB_GET_BY_JOB_ID, schedy_cmd_db_get_by_job_id)                           \
+    X(DB_GET_BY_HMM_ID, schedy_cmd_db_get_by_hmm_id)                           \
     X(DB_GET_BY_FILENAME, schedy_cmd_db_get_by_filename)                       \
                                                                                \
     X(JOB_NEXT_PEND, schedy_cmd_job_next_pend)                                 \

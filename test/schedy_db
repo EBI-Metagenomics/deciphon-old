@@ -1,0 +1,40 @@
+#!/bin/bash
+
+PROGRAM=$1
+HMM=$2
+DB=$3
+DB_FILENAME=$(basename "$DB")
+
+# shellcheck disable=SC1091
+source "tools/unittest"
+
+unittest_setup "$PROGRAM" tools/dotenv_get .env "$DB"
+unittest_exec "$PROGRAM"
+
+HOST=$(tools/dotenv_get .env DCP_API_HOST)
+PORT=$(tools/dotenv_get .env DCP_API_PORT)
+KEY=$(tools/dotenv_get .env DCP_API_KEY)
+
+unittest_sendnl "CONNECT http://$HOST:$PORT $KEY"
+unittest_sendnl "ONLINE"
+unittest_sendnl "WIPE"
+unittest_sendnl "HMM_UP $HMM"
+unittest_sendnl "DB_UP $DB"
+unittest_sendnl "DB_GET_BY_ID 1"
+unittest_sendnl "DB_GET_BY_XXH3 -7843725841264658444"
+unittest_sendnl "DB_GET_BY_FILENAME $DB_FILENAME"
+# unittest_sendnl "DB_DL -7843725841264658444 output.dcp"
+unittest_stop
+
+{
+    echo "OK"
+    echo "YES"
+    echo "OK"
+    echo "OK"
+    echo "OK"
+    echo '{"id":1,"xxh3":-7843725841264658444,"filename":"PF02545.dcp","hmm_id":1}'
+    echo '{"id":1,"xxh3":-7843725841264658444,"filename":"PF02545.dcp","hmm_id":1}'
+    echo '{"id":1,"xxh3":-7843725841264658444,"filename":"PF02545.dcp","hmm_id":1}'
+} >desired
+
+diff stdout desired
