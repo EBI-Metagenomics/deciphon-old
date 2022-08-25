@@ -25,3 +25,19 @@ char *sched_dump_db(struct sched_db const *db, unsigned size, char *buffer)
     ljson_close(&ctx);
     return buffer;
 }
+
+char *sched_dump_job(struct sched_job const *job, unsigned size, char *buffer)
+{
+    struct ljson_ctx ctx = {0};
+    ljson_open(&ctx, size, buffer);
+    ljson_int(&ctx, "id", job->id);
+    ljson_int(&ctx, "type", job->type);
+    ljson_str(&ctx, "state", job->state);
+    ljson_int(&ctx, "progress", job->progress);
+    ljson_str(&ctx, "error", job->error);
+    ljson_int(&ctx, "submission", job->submission);
+    ljson_int(&ctx, "exec_started", job->exec_started);
+    ljson_int(&ctx, "exec_ended", job->exec_ended);
+    ljson_close(&ctx);
+    return buffer;
+}

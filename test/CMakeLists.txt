@@ -54,4 +54,14 @@ ExternalData_add_test(
   DATA{PF02545.dcp})
 ExternalData_add_target(data_schedy_db)
 
+ExternalData_add_test(
+  data_schedy_job
+  NAME
+  test_schedy_job
+  COMMAND
+  "${CMAKE_CURRENT_SOURCE_DIR}/schedy_job"
+  $<TARGET_FILE:schedy>
+  DATA{PF02545.hmm})
+ExternalData_add_target(data_schedy_job)
+
 add_subdirectory(tools)

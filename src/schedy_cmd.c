@@ -209,8 +209,15 @@ char const *schedy_cmd_db_get_by_filename(struct getcmd const *gc)
 
 char const *schedy_cmd_job_next_pend(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    static struct sched_job job = {0};
+
+    if (!getcmd_check(gc, "s"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    if (api_job_next_pend(&job)) return say_fail();
+    return sched_dump_job(&job, sizeof buffer, (char *)buffer);
 }
 char const *schedy_cmd_job_set_state(struct getcmd const *gc)
 {

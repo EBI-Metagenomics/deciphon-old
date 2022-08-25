@@ -1,0 +1,33 @@
+#!/bin/bash
+
+PROGRAM=$1
+HMM=$2
+
+# shellcheck disable=SC1091
+source "tools/unittest"
+
+unittest_setup "$PROGRAM" tools/dotenv_get .env "$HMM"
+unittest_exec "$PROGRAM"
+
+HOST=$(tools/dotenv_get .env DCP_API_HOST)
+PORT=$(tools/dotenv_get .env DCP_API_PORT)
+KEY=$(tools/dotenv_get .env DCP_API_KEY)
+
+unittest_sendnl "CONNECT http://$HOST:$PORT $KEY"
+unittest_sendnl "ONLINE"
+unittest_sendnl "WIPE"
+unittest_sendnl "HMM_UP $HMM"
+unittest_sendnl "JOB_NEXT_PEND"
+unittest_stop
+
+{
+    echo "OK"
+    echo "YES"
+    echo "OK"
+    echo "OK"
+    echo '{"id":1,"type":1,"state":"pend","progress":0,"error":"","submission":XXX,"exec_started":0,"exec_ended":0}'
+} >desired
+
+sed 's/"submission":[0-9]*/"submission":XXX/g' <stdout >stdout.2 && mv stdout.2 stdout
+
+diff stdout desired
