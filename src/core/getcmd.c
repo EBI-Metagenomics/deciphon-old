@@ -34,7 +34,7 @@ int64_t getcmd_i64(struct getcmd const *gc, int i)
 
 bool getcmd_check(struct getcmd const *gc, char const *fmt)
 {
-    if (strlen(fmt) >= GETCMD_ARGC_MAX) return false;
+    if (strlen(fmt) > GETCMD_ARGC_MAX) return false;
 
     int const n = (int)strlen(fmt);
     if (n != gc->argc) return false;

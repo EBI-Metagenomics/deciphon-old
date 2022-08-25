@@ -4,6 +4,7 @@
 #include "deciphon/core/logging.h"
 #include "deciphon/sched/api.h"
 #include "deciphon/sched/dump.h"
+#include "deciphon/sched/job_state.h"
 
 static inline char const *say_ok(void) { return "OK"; }
 
@@ -221,13 +222,40 @@ char const *schedy_cmd_job_next_pend(struct getcmd const *gc)
 }
 char const *schedy_cmd_job_set_state(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    char const *msg = 0;
+    if (gc->argc == 3)
+    {
+        if (!getcmd_check(gc, "sis"))
+        {
+            error_parse();
+            return say_fail();
+        }
+        msg = "";
+    }
+    else
+    {
+        if (!getcmd_check(gc, "siss"))
+        {
+            error_parse();
+            return say_fail();
+        }
+        msg = gc->argv[3];
+    }
+    enum sched_job_state state = job_state_encode(gc->argv[2]);
+    int64_t job_id = getcmd_i64(gc, 1);
+    return api_job_set_state(job_id, state, msg) ? say_fail() : say_ok();
 }
+
 char const *schedy_cmd_job_inc_progress(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    if (!getcmd_check(gc, "sii"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    int64_t job_id = getcmd_i64(gc, 1);
+    int64_t increment = getcmd_i64(gc, 2);
+    return api_job_inc_progress(job_id, increment) ? say_fail() : say_ok();
 }
 
 char const *schedy_cmd_prods_file_up(struct getcmd const *gc)
