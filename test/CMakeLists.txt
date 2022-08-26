@@ -64,4 +64,17 @@ ExternalData_add_test(
   DATA{PF02545.hmm})
 ExternalData_add_target(data_schedy_job)
 
+ExternalData_add_test(
+  data_schedy_scan
+  NAME
+  test_schedy_scan
+  COMMAND
+  "${CMAKE_CURRENT_SOURCE_DIR}/schedy_scan"
+  $<TARGET_FILE:schedy>
+  DATA{minifam.hmm}
+  DATA{minifam.dcp}
+  DATA{consensus.faa}
+  DATA{prods_file.tsv})
+ExternalData_add_target(data_schedy_scan)
+
 add_subdirectory(tools)
