@@ -222,7 +222,8 @@ char const *schedy_cmd_job_next_pend(struct getcmd const *gc)
 }
 char const *schedy_cmd_job_set_state(struct getcmd const *gc)
 {
-    char const *msg = 0;
+    static char const empty[] = "";
+    char const *msg = empty;
     if (gc->argc == 3)
     {
         if (!getcmd_check(gc, "sis"))
@@ -230,7 +231,6 @@ char const *schedy_cmd_job_set_state(struct getcmd const *gc)
             error_parse();
             return say_fail();
         }
-        msg = "";
     }
     else
     {
@@ -241,7 +241,8 @@ char const *schedy_cmd_job_set_state(struct getcmd const *gc)
         }
         msg = gc->argv[3];
     }
-    enum sched_job_state state = job_state_encode(gc->argv[2]);
+    enum sched_job_state state = 0;
+    if (!job_state_encode(gc->argv[2], &state)) return say_fail();
     int64_t job_id = getcmd_i64(gc, 1);
     return api_job_set_state(job_id, state, msg) ? say_fail() : say_ok();
 }
