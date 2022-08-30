@@ -33,4 +33,9 @@ enum rc xcurl_upload(char const *query, long *http_code,
                      xcurl_callback_func_t callback, void *arg,
                      struct xcurl_mime_file const *mime, char const *filepath);
 
+enum rc xcurl_upload2(char const *query, long *http_code,
+                      xcurl_callback_func_t callback, void *arg, int64_t db_id,
+                      bool multi_hits, bool hmmer3_compat,
+                      struct xcurl_mime_file const *mime, char const *filepath);
+
 #endif

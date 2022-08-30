@@ -43,11 +43,12 @@ static struct writer *writer = 0;
     X(JOB_SET_STATE, schedy_cmd_job_set_state)                                 \
     X(JOB_INC_PROGRESS, schedy_cmd_job_inc_progress)                           \
                                                                                \
-    X(PRODS_FILE_UP, schedy_cmd_prods_file_up)                                 \
+    X(SCAN_SUBMIT, schedy_cmd_scan_submit)                                     \
+    X(SCAN_NEXT_SEQ, schedy_cmd_scan_next_seq)                                 \
+    X(SCAN_NUM_SEQS, schedy_cmd_scan_num_seqs)                                 \
+    X(SCAN_GET_BY_JOB_ID, schedy_cmd_scan_get_by_job_id)                       \
                                                                                \
-    X(SCAN_SCAN_NEXT_SEQ, schedy_cmd_scan_next_seq)                            \
-    X(SCAN_SCAN_NUM_SEQS, schedy_cmd_scan_num_seqs)                            \
-    X(SCAN_SCAN_GET_BY_JOB_ID, schedy_cmd_scan_get_by_job_id)
+    X(PRODS_FILE_UP, schedy_cmd_prods_file_up)
 
 enum cmd
 {

@@ -259,10 +259,21 @@ char const *schedy_cmd_job_inc_progress(struct getcmd const *gc)
     return api_job_inc_progress(job_id, increment) ? say_fail() : say_ok();
 }
 
-char const *schedy_cmd_prods_file_up(struct getcmd const *gc)
+char const *schedy_cmd_scan_submit(struct getcmd const *gc)
 {
-    (void)gc;
-    return "";
+    static struct sched_job job = {0};
+
+    if (!getcmd_check(gc, "siiis"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    int64_t db_id = getcmd_i64(gc, 1);
+    int64_t multi_hits = getcmd_i64(gc, 2);
+    int64_t hmmer3_compat = getcmd_i64(gc, 3);
+    if (api_scan_submit(db_id, multi_hits, hmmer3_compat, gc->argv[4], &job))
+        return say_fail();
+    return sched_dump_job(&job, sizeof buffer, (char *)buffer);
 }
 
 char const *schedy_cmd_scan_next_seq(struct getcmd const *gc)
@@ -276,6 +287,12 @@ char const *schedy_cmd_scan_num_seqs(struct getcmd const *gc)
     return "";
 }
 char const *schedy_cmd_scan_get_by_job_id(struct getcmd const *gc)
+{
+    (void)gc;
+    return "";
+}
+
+char const *schedy_cmd_prods_file_up(struct getcmd const *gc)
 {
     (void)gc;
     return "";

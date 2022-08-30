@@ -148,7 +148,7 @@ enum rc api_hmm_up(char const *filepath, struct sched_hmm *hmm)
     reset_api_error();
 
     xfile_basename(filename, filepath, sizeof filename);
-    XCURL_MIME_FILE_DEF(mime, "hmm_file", filename, "application/octet-stream");
+    XCURL_MIME_FILE_DEF(mime, "hmm_file", filename, "text/plain");
 
     long http = 0;
     enum rc rc = upload("/hmms/", &http, &mime, filepath);
@@ -462,6 +462,128 @@ cleanup:
     return rc;
 }
 
+static char const job_states[][5] = {[SCHED_PEND] = "pend",
+                                     [SCHED_RUN] = "run",
+                                     [SCHED_DONE] = "done",
+                                     [SCHED_FAIL] = "fail"};
+
+enum rc set_job_state(int64_t job_id, enum sched_job_state state,
+                      char const *state_error, long *http)
+{
+    ljson_open(&ljson, sizeof request, request);
+    ljson_int(&ljson, "job_id", job_id);
+    ljson_str(&ljson, "state", job_states[state]);
+    ljson_str(&ljson, "error", state_error);
+    ljson_close(&ljson);
+    if (ljson_error(&ljson)) return efail("failed to write json");
+
+    return patch(query("/jobs/%" PRId64 "/state", job_id), http);
+}
+
+enum rc api_job_set_state(int64_t job_id, enum sched_job_state state,
+                          char const *msg)
+{
+    reset_api_error();
+
+    long http = 0;
+    enum rc rc = set_job_state(job_id, state, msg, &http);
+    if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http == 200)
+    {
+        rc = RC_OK;
+    }
+    else if (recognized_http_status(http))
+    {
+        if (!(rc = parse_api_error(&xjson, 1)))
+        {
+            rc = eapi(api_err);
+        }
+    }
+    else
+    {
+        rc = ehttp(http_status_string(http));
+    }
+
+cleanup:
+    return rc;
+}
+
+enum rc api_job_inc_progress(int64_t job_id, int increment)
+{
+    reset_api_error();
+
+    ljson_open(&ljson, sizeof request, request);
+    ljson_int(&ljson, "increment", increment);
+    ljson_close(&ljson);
+    if (ljson_error(&ljson)) return efail("failed to write json");
+
+    long http = 0;
+    enum rc rc = patch(query("/jobs/%" PRId64 "/progress", job_id), &http);
+    if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http == 200)
+    {
+        rc = RC_OK;
+    }
+    else if (recognized_http_status(http))
+    {
+        if (!(rc = parse_api_error(&xjson, 1)))
+        {
+            rc = eapi(api_err);
+        }
+    }
+    else
+    {
+        rc = ehttp(http_status_string(http));
+    }
+
+cleanup:
+    return rc;
+}
+
+enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
+                        char const *filepath, struct sched_job *job)
+{
+    reset_api_error();
+
+    xfile_basename(filename, filepath, sizeof filename);
+    XCURL_MIME_FILE_DEF(mime, "fasta_file", filename, "text/plain");
+
+    long http = 0;
+
+    body_reset(response);
+    enum rc rc = xcurl_upload2("/scans/", &http, body_store, &response, db_id,
+                               multi_hits, hmmer3_compat, &mime, filepath);
+    if (rc) goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http == 201)
+    {
+        sched_job_init(job);
+        rc = sched_job_parse(job, &xjson, 1);
+    }
+    else if (recognized_http_status(http))
+    {
+        if (!(rc = parse_api_error(&xjson, 1)))
+        {
+            rc = eapi(api_err);
+        }
+    }
+    else
+    {
+        rc = ehttp(http_status_string(http));
+    }
+
+cleanup:
+    return rc;
+}
+
 enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
                           struct sched_seq *seq)
 {
@@ -555,55 +677,6 @@ cleanup:
     return rc;
 }
 
-static char const job_states[][5] = {[SCHED_PEND] = "pend",
-                                     [SCHED_RUN] = "run",
-                                     [SCHED_DONE] = "done",
-                                     [SCHED_FAIL] = "fail"};
-
-enum rc set_job_state(int64_t job_id, enum sched_job_state state,
-                      char const *state_error, long *http)
-{
-    ljson_open(&ljson, sizeof request, request);
-    ljson_int(&ljson, "job_id", job_id);
-    ljson_str(&ljson, "state", job_states[state]);
-    ljson_str(&ljson, "error", state_error);
-    ljson_close(&ljson);
-    if (ljson_error(&ljson)) return efail("failed to write json");
-
-    return patch(query("/jobs/%" PRId64 "/state", job_id), http);
-}
-
-enum rc api_job_set_state(int64_t job_id, enum sched_job_state state,
-                          char const *msg)
-{
-    reset_api_error();
-
-    long http = 0;
-    enum rc rc = set_job_state(job_id, state, msg, &http);
-    if (rc) goto cleanup;
-
-    if ((rc = parse_json())) goto cleanup;
-
-    if (http == 200)
-    {
-        rc = RC_OK;
-    }
-    else if (recognized_http_status(http))
-    {
-        if (!(rc = parse_api_error(&xjson, 1)))
-        {
-            rc = eapi(api_err);
-        }
-    }
-    else
-    {
-        rc = ehttp(http_status_string(http));
-    }
-
-cleanup:
-    return rc;
-}
-
 enum rc api_prods_file_up(char const *filepath)
 {
     reset_api_error();
@@ -621,41 +694,6 @@ enum rc api_prods_file_up(char const *filepath)
     {
         if (!(xjson_is_array(&xjson, 0) && xjson_is_array_empty(&xjson, 0)))
             rc = einval("expected empty array");
-    }
-    else if (recognized_http_status(http))
-    {
-        if (!(rc = parse_api_error(&xjson, 1)))
-        {
-            rc = eapi(api_err);
-        }
-    }
-    else
-    {
-        rc = ehttp(http_status_string(http));
-    }
-
-cleanup:
-    return rc;
-}
-
-enum rc api_job_inc_progress(int64_t job_id, int increment)
-{
-    reset_api_error();
-
-    ljson_open(&ljson, sizeof request, request);
-    ljson_int(&ljson, "increment", increment);
-    ljson_close(&ljson);
-    if (ljson_error(&ljson)) return efail("failed to write json");
-
-    long http = 0;
-    enum rc rc = patch(query("/jobs/%" PRId64 "/progress", job_id), &http);
-    if (rc) goto cleanup;
-
-    if ((rc = parse_json())) goto cleanup;
-
-    if (http == 200)
-    {
-        rc = RC_OK;
     }
     else if (recognized_http_status(http))
     {

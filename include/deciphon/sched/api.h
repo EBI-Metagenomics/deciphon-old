@@ -44,17 +44,16 @@ enum rc api_db_get_by_xxh3(int64_t xxh3, struct sched_db *);
 enum rc api_db_get_by_hmm_id(int64_t job_id, struct sched_db *);
 enum rc api_db_get_by_filename(char const *filename, struct sched_db *);
 
-enum rc api_prods_file_up(char const *filepath);
-
 enum rc api_job_next_pend(struct sched_job *job);
-enum rc api_job_set_state(int64_t job_id, enum sched_job_state state,
-                          char const *msg);
+enum rc api_job_set_state(int64_t job_id, enum sched_job_state, char const *);
 enum rc api_job_inc_progress(int64_t job_id, int increment);
 
-enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
-                          struct sched_seq *seq);
+enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
+                        char const *filepath, struct sched_job *);
+enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id, struct sched_seq *);
 enum rc api_scan_num_seqs(int64_t scan_id, unsigned *num_seqs);
-
 enum rc api_scan_get_by_job_id(int64_t job_id, struct sched_scan *);
+
+enum rc api_prods_file_up(char const *filepath);
 
 #endif

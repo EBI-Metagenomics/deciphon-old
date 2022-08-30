@@ -6,7 +6,7 @@
 
 enum
 {
-    GETCMD_ARGC_MAX = 4,
+    GETCMD_ARGC_MAX = 5,
 };
 
 struct getcmd

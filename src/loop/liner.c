@@ -43,7 +43,6 @@ void liner_close(struct liner *liner)
     if (liner->noclose) return;
     uv_close((struct uv_handle_s *)&liner->pipe, 0);
     liner->noclose = true;
-    free(liner);
 }
 
 static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
