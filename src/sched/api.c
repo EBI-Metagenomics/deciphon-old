@@ -8,6 +8,7 @@
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
 #include "deciphon/sched/sched.h"
+#include "sched/count.h"
 #include "xjson.h"
 #include <inttypes.h>
 #include <stdarg.h>
@@ -546,6 +547,50 @@ cleanup:
     return rc;
 }
 
+enum rc api_scan_seq_count(int64_t scan_id, unsigned *count)
+{
+    reset_api_error();
+    struct count c = {0};
+
+    enum rc rc = RC_OK;
+
+    long http = 0;
+    if ((rc = get(query("/scans/%" PRId64 "/seqs/count", scan_id), &http)))
+        goto cleanup;
+
+    if ((rc = parse_json())) goto cleanup;
+
+    if (http == 200)
+    {
+        rc = count_parse(&c, &xjson, 1);
+        *count = c.count;
+    }
+    else if (http == 404)
+    {
+        if (!(rc = parse_api_error(&xjson, 1)))
+        {
+            if (api_err.rc == 5)
+                rc = RC_END;
+            else
+                rc = eapi(api_err);
+        }
+    }
+    else if (recognized_http_status(http))
+    {
+        if (!(rc = parse_api_error(&xjson, 1)))
+        {
+            rc = eapi(api_err);
+        }
+    }
+    else
+    {
+        rc = ehttp(http_status_string(http));
+    }
+
+cleanup:
+    return rc;
+}
+
 enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
                         char const *filepath, struct sched_job *job)
 {
@@ -627,22 +672,6 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     }
 
 cleanup:
-    return rc;
-}
-
-enum rc api_scan_num_seqs(int64_t scan_id, unsigned *num_seqs)
-{
-    // TODO: implement an API call for that
-    static struct sched_seq seq = {0};
-
-    *num_seqs = 0;
-    seq.id = 0;
-    enum rc rc = RC_OK;
-
-    while (!(rc = api_scan_next_seq(scan_id, seq.id, &seq)))
-        *num_seqs += 1;
-
-    if (rc == RC_END) rc = RC_OK;
     return rc;
 }
 

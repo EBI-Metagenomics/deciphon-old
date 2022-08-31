@@ -19,7 +19,7 @@ static inline char const *say_no(void) { return "NO"; }
 static enum rc download_hmm(char const *filepath, void *data);
 static enum rc download_db(char const *filepath, void *data);
 
-static unsigned char buffer[6 * 1024 * 1024] = {0};
+static char buffer[6 * 1024 * 1024] = {0};
 
 char const *schedy_cmd_invalid(struct getcmd const *gc)
 {
@@ -171,6 +171,7 @@ char const *schedy_cmd_db_get_by_id(struct getcmd const *gc)
     if (api_db_get_by_id(getcmd_i64(gc, 1), &db)) return say_fail();
     return sched_dump_db(&db, sizeof buffer, (char *)buffer);
 }
+
 char const *schedy_cmd_db_get_by_xxh3(struct getcmd const *gc)
 {
     static struct sched_db db = {0};
@@ -183,6 +184,7 @@ char const *schedy_cmd_db_get_by_xxh3(struct getcmd const *gc)
     if (api_db_get_by_xxh3(getcmd_i64(gc, 1), &db)) return say_fail();
     return sched_dump_db(&db, sizeof buffer, (char *)buffer);
 }
+
 char const *schedy_cmd_db_get_by_hmm_id(struct getcmd const *gc)
 {
     static struct sched_db db = {0};
@@ -195,6 +197,7 @@ char const *schedy_cmd_db_get_by_hmm_id(struct getcmd const *gc)
     if (api_db_get_by_hmm_id(getcmd_i64(gc, 1), &db)) return say_fail();
     return sched_dump_db(&db, sizeof buffer, (char *)buffer);
 }
+
 char const *schedy_cmd_db_get_by_filename(struct getcmd const *gc)
 {
     static struct sched_db db = {0};
@@ -220,6 +223,7 @@ char const *schedy_cmd_job_next_pend(struct getcmd const *gc)
     if (api_job_next_pend(&job)) return say_fail();
     return sched_dump_job(&job, sizeof buffer, (char *)buffer);
 }
+
 char const *schedy_cmd_job_set_state(struct getcmd const *gc)
 {
     static char const empty[] = "";
@@ -259,6 +263,19 @@ char const *schedy_cmd_job_inc_progress(struct getcmd const *gc)
     return api_job_inc_progress(job_id, increment) ? say_fail() : say_ok();
 }
 
+char const *schedy_cmd_scan_seq_count(struct getcmd const *gc)
+{
+    if (!getcmd_check(gc, "si"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    unsigned count = 0;
+    if (api_scan_seq_count(getcmd_i64(gc, 1), &count)) return say_fail();
+    sprintf((char *)buffer, "%u", count);
+    return buffer;
+}
+
 char const *schedy_cmd_scan_submit(struct getcmd const *gc)
 {
     static struct sched_job job = {0};
@@ -281,11 +298,7 @@ char const *schedy_cmd_scan_next_seq(struct getcmd const *gc)
     (void)gc;
     return "";
 }
-char const *schedy_cmd_scan_num_seqs(struct getcmd const *gc)
-{
-    (void)gc;
-    return "";
-}
+
 char const *schedy_cmd_scan_get_by_job_id(struct getcmd const *gc)
 {
     (void)gc;

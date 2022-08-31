@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
 
 static void ioerror_cb(void);
 static void newline_cb(char *line);
@@ -43,9 +44,9 @@ static struct writer *writer = 0;
     X(JOB_SET_STATE, schedy_cmd_job_set_state)                                 \
     X(JOB_INC_PROGRESS, schedy_cmd_job_inc_progress)                           \
                                                                                \
+    X(SCAN_SEQ_COUNT, schedy_cmd_scan_seq_count)                               \
     X(SCAN_SUBMIT, schedy_cmd_scan_submit)                                     \
     X(SCAN_NEXT_SEQ, schedy_cmd_scan_next_seq)                                 \
-    X(SCAN_NUM_SEQS, schedy_cmd_scan_num_seqs)                                 \
     X(SCAN_GET_BY_JOB_ID, schedy_cmd_scan_get_by_job_id)                       \
                                                                                \
     X(PRODS_FILE_UP, schedy_cmd_prods_file_up)
@@ -66,15 +67,12 @@ enum cmd parse_command(char const *cmd)
     return CMD_INVALID;
 }
 
-#define STDIN_NUM 0
-#define STDOUT_NUM 1
-
 int main(void)
 {
     looper_init(&looper, onterm_cb);
     liner_init(&liner, &looper, ioerror_cb, newline_cb);
-    if (!(writer = writer_new(&looper, STDOUT_NUM))) return 1;
-    liner_open(&liner, STDIN_NUM);
+    if (!(writer = writer_new(&looper, STDOUT_FILENO))) return 1;
+    liner_open(&liner, STDIN_FILENO);
 
     looper_run(&looper);
 
@@ -102,7 +100,7 @@ static void exec_cmd(struct getcmd const *gc)
 
 static void newline_cb(char *line)
 {
-    struct getcmd getcmd = {0};
+    static struct getcmd getcmd = {0};
     if (!getcmd_parse(&getcmd, line)) error("too many arguments");
     exec_cmd(&getcmd);
 }

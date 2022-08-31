@@ -90,6 +90,7 @@ add_library(
   src/sched/dump.c
   src/sched/jsmn.c
   src/sched/sched.c
+  src/sched/count.c
   src/sched/job_state.c
   src/core/url.c
   src/core/xcurl.c

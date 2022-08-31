@@ -28,9 +28,9 @@ char const *schedy_cmd_job_next_pend(struct getcmd const *);
 char const *schedy_cmd_job_set_state(struct getcmd const *);
 char const *schedy_cmd_job_inc_progress(struct getcmd const *);
 
+char const *schedy_cmd_scan_seq_count(struct getcmd const *);
 char const *schedy_cmd_scan_submit(struct getcmd const *);
 char const *schedy_cmd_scan_next_seq(struct getcmd const *);
-char const *schedy_cmd_scan_num_seqs(struct getcmd const *);
 char const *schedy_cmd_scan_get_by_job_id(struct getcmd const *);
 
 char const *schedy_cmd_prods_file_up(struct getcmd const *);

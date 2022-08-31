@@ -24,6 +24,8 @@ unittest_sendnl "JOB_SET_STATE 1 run"
 unittest_sendnl "JOB_SET_STATE 1 done"
 unittest_sendnl "DB_UP $DB"
 unittest_sendnl "SCAN_SUBMIT 1 1 0 $CONSENSUS"
+unittest_sendnl "JOB_NEXT_PEND"
+unittest_sendnl "SCAN_SEQ_COUNT 1"
 unittest_stop
 
 {
@@ -35,6 +37,8 @@ unittest_stop
     echo "OK"
     echo "OK"
     echo '{"id":2,"type":0,"state":"pend","progress":0,"error":"","submission":XXX,"exec_started":0,"exec_ended":0}'
+    echo '{"id":2,"type":0,"state":"pend","progress":0,"error":"","submission":XXX,"exec_started":0,"exec_ended":0}'
+    echo "3"
 } >desired
 
 sed 's/"submission":[0-9]*/"submission":XXX/g' <stdout >stdout.2 && mv stdout.2 stdout
