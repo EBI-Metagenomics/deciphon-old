@@ -10,8 +10,7 @@
 unsigned lij_pack_bool(char buf[], bool val);
 unsigned lij_pack_int(char buf[], long val);
 unsigned lij_pack_null(char buf[]);
-unsigned lij_pack_cstr(char buf[], char const val[]);
-unsigned lij_pack_str(char buf[], unsigned size, char const val[]);
+unsigned lij_pack_str(char buf[], char const val[]);
 
 unsigned lij_pack_object_open(char buf[]);
 unsigned lij_pack_object_close(char buf[]);

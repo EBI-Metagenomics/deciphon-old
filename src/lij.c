@@ -23,19 +23,10 @@ unsigned lij_pack_int(char buf[], long val)
 
 unsigned lij_pack_null(char buf[]) { return pack_unquoted_cstr(buf, "null"); }
 
-unsigned lij_pack_cstr(char buf[], char const val[])
+unsigned lij_pack_str(char buf[], char const val[])
 {
     buf[0] = '\"';
     unsigned size = pack_unquoted_cstr(buf + 1, val);
-    buf[size + 1] = '\"';
-    return size + 2;
-}
-
-unsigned lij_pack_str(char buf[], unsigned size, char const val[])
-{
-    buf[0] = '\"';
-    for (unsigned i = 0; i < size; ++i)
-        buf[i + 1] = val[i];
     buf[size + 1] = '\"';
     return size + 2;
 }
