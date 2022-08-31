@@ -66,7 +66,6 @@ add_library(
   src/loop/looper.c
   src/loop/liner.c
   src/loop/writer.c
-  src/core/ljson.c
   src/core/logging.c
   src/core/mempool.c
   src/core/progress.c

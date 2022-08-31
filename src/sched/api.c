@@ -1,13 +1,13 @@
 #include "deciphon/sched/api.h"
 #include "deciphon/core/buff.h"
 #include "deciphon/core/http.h"
-#include "deciphon/core/ljson.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/xcurl.h"
 #include "deciphon/core/xcurl_mime.h"
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
 #include "deciphon/sched/sched.h"
+#include "lij.h"
 #include "sched/count.h"
 #include "xjson.h"
 #include <inttypes.h>
@@ -22,7 +22,6 @@ struct api_error api_err = {0};
 static char _query[128] = {0};
 
 static char request[1024] = {0};
-static struct ljson_ctx ljson = {0};
 
 #define eapi(x)                                                                \
     ({                                                                         \
@@ -471,12 +470,27 @@ static char const job_states[][5] = {[SCHED_PEND] = "pend",
 enum rc set_job_state(int64_t job_id, enum sched_job_state state,
                       char const *state_error, long *http)
 {
-    ljson_open(&ljson, sizeof request, request);
-    ljson_int(&ljson, "job_id", job_id);
-    ljson_str(&ljson, "state", job_states[state]);
-    ljson_str(&ljson, "error", state_error);
-    ljson_close(&ljson);
-    if (ljson_error(&ljson)) return efail("failed to write json");
+    char *p = request;
+    p += lij_pack_object_open(p);
+
+    p += lij_pack_str(p, "job_id");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, job_id);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_str(p, "state");
+    p += lij_pack_colon(p);
+    p += lij_pack_str(p, job_states[state]);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_str(p, "error");
+    p += lij_pack_colon(p);
+    p += lij_pack_str(p, state_error);
+
+    p += lij_pack_object_close(p);
+    *p = 0;
 
     return patch(query("/jobs/%" PRId64 "/state", job_id), http);
 }
@@ -516,10 +530,13 @@ enum rc api_job_inc_progress(int64_t job_id, int increment)
 {
     reset_api_error();
 
-    ljson_open(&ljson, sizeof request, request);
-    ljson_int(&ljson, "increment", increment);
-    ljson_close(&ljson);
-    if (ljson_error(&ljson)) return efail("failed to write json");
+    char *p = request;
+    p += lij_pack_object_open(p);
+    p += lij_pack_str(p, "increment");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, increment);
+    p += lij_pack_object_close(p);
+    *p = 0;
 
     long http = 0;
     enum rc rc = patch(query("/jobs/%" PRId64 "/progress", job_id), &http);
