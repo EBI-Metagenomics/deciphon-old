@@ -90,7 +90,7 @@ char const *schedy_cmd_hmm_get_by_id(struct getcmd const *gc)
         return say_fail();
     }
     if (api_hmm_get_by_id(getcmd_i64(gc, 1), &hmm)) return say_fail();
-    return sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer);
+    return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
 char const *schedy_cmd_hmm_get_by_xxh3(struct getcmd const *gc)
@@ -103,7 +103,7 @@ char const *schedy_cmd_hmm_get_by_xxh3(struct getcmd const *gc)
         return say_fail();
     }
     if (api_hmm_get_by_xxh3(getcmd_i64(gc, 1), &hmm)) return say_fail();
-    return sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer);
+    return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
 char const *schedy_cmd_hmm_get_by_job_id(struct getcmd const *gc)
@@ -116,7 +116,7 @@ char const *schedy_cmd_hmm_get_by_job_id(struct getcmd const *gc)
         return say_fail();
     }
     if (api_hmm_get_by_job_id(getcmd_i64(gc, 1), &hmm)) return say_fail();
-    return sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer);
+    return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
 char const *schedy_cmd_hmm_get_by_filename(struct getcmd const *gc)
@@ -129,7 +129,7 @@ char const *schedy_cmd_hmm_get_by_filename(struct getcmd const *gc)
         return say_fail();
     }
     if (api_hmm_get_by_filename(gc->argv[1], &hmm)) return say_fail();
-    return sched_dump_hmm(&hmm, sizeof buffer, (char *)buffer);
+    return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
 char const *schedy_cmd_db_up(struct getcmd const *gc)
@@ -169,7 +169,7 @@ char const *schedy_cmd_db_get_by_id(struct getcmd const *gc)
         return say_fail();
     }
     if (api_db_get_by_id(getcmd_i64(gc, 1), &db)) return say_fail();
-    return sched_dump_db(&db, sizeof buffer, (char *)buffer);
+    return sched_dump_db(&db, (char *)buffer);
 }
 
 char const *schedy_cmd_db_get_by_xxh3(struct getcmd const *gc)
@@ -182,7 +182,7 @@ char const *schedy_cmd_db_get_by_xxh3(struct getcmd const *gc)
         return say_fail();
     }
     if (api_db_get_by_xxh3(getcmd_i64(gc, 1), &db)) return say_fail();
-    return sched_dump_db(&db, sizeof buffer, (char *)buffer);
+    return sched_dump_db(&db, (char *)buffer);
 }
 
 char const *schedy_cmd_db_get_by_hmm_id(struct getcmd const *gc)
@@ -195,7 +195,7 @@ char const *schedy_cmd_db_get_by_hmm_id(struct getcmd const *gc)
         return say_fail();
     }
     if (api_db_get_by_hmm_id(getcmd_i64(gc, 1), &db)) return say_fail();
-    return sched_dump_db(&db, sizeof buffer, (char *)buffer);
+    return sched_dump_db(&db, (char *)buffer);
 }
 
 char const *schedy_cmd_db_get_by_filename(struct getcmd const *gc)
@@ -208,7 +208,7 @@ char const *schedy_cmd_db_get_by_filename(struct getcmd const *gc)
         return say_fail();
     }
     if (api_db_get_by_filename(gc->argv[1], &db)) return say_fail();
-    return sched_dump_db(&db, sizeof buffer, (char *)buffer);
+    return sched_dump_db(&db, (char *)buffer);
 }
 
 char const *schedy_cmd_job_next_pend(struct getcmd const *gc)
@@ -221,7 +221,7 @@ char const *schedy_cmd_job_next_pend(struct getcmd const *gc)
         return say_fail();
     }
     if (api_job_next_pend(&job)) return say_fail();
-    return sched_dump_job(&job, sizeof buffer, (char *)buffer);
+    return sched_dump_job(&job, (char *)buffer);
 }
 
 char const *schedy_cmd_job_set_state(struct getcmd const *gc)
@@ -290,7 +290,7 @@ char const *schedy_cmd_scan_submit(struct getcmd const *gc)
     int64_t hmmer3_compat = getcmd_i64(gc, 3);
     if (api_scan_submit(db_id, multi_hits, hmmer3_compat, gc->argv[4], &job))
         return say_fail();
-    return sched_dump_job(&job, sizeof buffer, (char *)buffer);
+    return sched_dump_job(&job, (char *)buffer);
 }
 
 char const *schedy_cmd_scan_next_seq(struct getcmd const *gc)

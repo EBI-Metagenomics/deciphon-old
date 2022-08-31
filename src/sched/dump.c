@@ -1,43 +1,123 @@
 #include "deciphon/sched/dump.h"
-#include "deciphon/core/ljson.h"
 #include "deciphon/sched/sched.h"
+#include "lij.h"
 
-char *sched_dump_hmm(struct sched_hmm const *hmm, unsigned size, char *buffer)
+char *sched_dump_hmm(struct sched_hmm const *hmm, char buffer[])
 {
-    struct ljson_ctx ctx = {0};
-    ljson_open(&ctx, size, buffer);
-    ljson_int(&ctx, "id", hmm->id);
-    ljson_int(&ctx, "xxh3", hmm->xxh3);
-    ljson_str(&ctx, "filename", hmm->filename);
-    ljson_int(&ctx, "job_id", hmm->job_id);
-    ljson_close(&ctx);
+    char *p = buffer;
+    p += lij_pack_object_open(p);
+
+    p += lij_pack_cstr(p, "id");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, hmm->id);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "xxh3");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, hmm->xxh3);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "filename");
+    p += lij_pack_colon(p);
+    p += lij_pack_cstr(p, hmm->filename);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "job_id");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, hmm->job_id);
+
+    p += lij_pack_object_close(p);
+
     return buffer;
 }
 
-char *sched_dump_db(struct sched_db const *db, unsigned size, char *buffer)
+char *sched_dump_db(struct sched_db const *db, char buffer[])
 {
-    struct ljson_ctx ctx = {0};
-    ljson_open(&ctx, size, buffer);
-    ljson_int(&ctx, "id", db->id);
-    ljson_int(&ctx, "xxh3", db->xxh3);
-    ljson_str(&ctx, "filename", db->filename);
-    ljson_int(&ctx, "hmm_id", db->hmm_id);
-    ljson_close(&ctx);
+    char *p = buffer;
+    p += lij_pack_object_open(p);
+
+    p += lij_pack_cstr(p, "id");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, db->id);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "xxh3");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, db->xxh3);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "filename");
+    p += lij_pack_colon(p);
+    p += lij_pack_cstr(p, db->filename);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "hmm_id");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, db->hmm_id);
+
+    p += lij_pack_object_close(p);
+
     return buffer;
 }
 
-char *sched_dump_job(struct sched_job const *job, unsigned size, char *buffer)
+char *sched_dump_job(struct sched_job const *job, char buffer[])
 {
-    struct ljson_ctx ctx = {0};
-    ljson_open(&ctx, size, buffer);
-    ljson_int(&ctx, "id", job->id);
-    ljson_int(&ctx, "type", job->type);
-    ljson_str(&ctx, "state", job->state);
-    ljson_int(&ctx, "progress", job->progress);
-    ljson_str(&ctx, "error", job->error);
-    ljson_int(&ctx, "submission", job->submission);
-    ljson_int(&ctx, "exec_started", job->exec_started);
-    ljson_int(&ctx, "exec_ended", job->exec_ended);
-    ljson_close(&ctx);
+    char *p = buffer;
+    p += lij_pack_object_open(p);
+
+    p += lij_pack_cstr(p, "id");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, job->id);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "type");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, job->type);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "state");
+    p += lij_pack_colon(p);
+    p += lij_pack_cstr(p, job->state);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "progress");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, job->progress);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "error");
+    p += lij_pack_colon(p);
+    p += lij_pack_cstr(p, job->error);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "submission");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, job->submission);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "exec_started");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, job->exec_started);
+
+    p += lij_pack_comma(p);
+
+    p += lij_pack_cstr(p, "exec_ended");
+    p += lij_pack_colon(p);
+    p += lij_pack_int(p, job->exec_ended);
+
+    p += lij_pack_object_close(p);
+
     return buffer;
 }

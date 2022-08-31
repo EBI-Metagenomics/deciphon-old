@@ -55,6 +55,7 @@ add_library(
   # src/schedy.c
   # src/hmmy.c
   src/zc.c
+  src/lij.c
   src/core/buff.c
   # src/core/buff_pool.c
   src/core/expect.c
