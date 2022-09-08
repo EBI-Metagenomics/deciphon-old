@@ -1,35 +1,35 @@
 #include "deciphon/sched/dump.h"
 #include "deciphon/sched/sched.h"
-#include "lij.h"
+#include "jx.h"
 
 char *sched_dump_hmm(struct sched_hmm const *hmm, char buffer[])
 {
     char *p = buffer;
-    p += lij_pack_object_open(p);
+    p += jw_object_open(p);
 
-    p += lij_pack_str(p, "id");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, hmm->id);
+    p += jw_string(p, "id");
+    p += jw_colon(p);
+    p += jw_long(p, hmm->id);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "xxh3");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, hmm->xxh3);
+    p += jw_string(p, "xxh3");
+    p += jw_colon(p);
+    p += jw_long(p, hmm->xxh3);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "filename");
-    p += lij_pack_colon(p);
-    p += lij_pack_str(p, hmm->filename);
+    p += jw_string(p, "filename");
+    p += jw_colon(p);
+    p += jw_string(p, hmm->filename);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "job_id");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, hmm->job_id);
+    p += jw_string(p, "job_id");
+    p += jw_colon(p);
+    p += jw_long(p, hmm->job_id);
 
-    p += lij_pack_object_close(p);
+    p += jw_object_close(p);
 
     return buffer;
 }
@@ -37,31 +37,31 @@ char *sched_dump_hmm(struct sched_hmm const *hmm, char buffer[])
 char *sched_dump_db(struct sched_db const *db, char buffer[])
 {
     char *p = buffer;
-    p += lij_pack_object_open(p);
+    p += jw_object_open(p);
 
-    p += lij_pack_str(p, "id");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, db->id);
+    p += jw_string(p, "id");
+    p += jw_colon(p);
+    p += jw_long(p, db->id);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "xxh3");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, db->xxh3);
+    p += jw_string(p, "xxh3");
+    p += jw_colon(p);
+    p += jw_long(p, db->xxh3);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "filename");
-    p += lij_pack_colon(p);
-    p += lij_pack_str(p, db->filename);
+    p += jw_string(p, "filename");
+    p += jw_colon(p);
+    p += jw_string(p, db->filename);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "hmm_id");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, db->hmm_id);
+    p += jw_string(p, "hmm_id");
+    p += jw_colon(p);
+    p += jw_long(p, db->hmm_id);
 
-    p += lij_pack_object_close(p);
+    p += jw_object_close(p);
 
     return buffer;
 }
@@ -69,55 +69,55 @@ char *sched_dump_db(struct sched_db const *db, char buffer[])
 char *sched_dump_job(struct sched_job const *job, char buffer[])
 {
     char *p = buffer;
-    p += lij_pack_object_open(p);
+    p += jw_object_open(p);
 
-    p += lij_pack_str(p, "id");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, job->id);
+    p += jw_string(p, "id");
+    p += jw_colon(p);
+    p += jw_long(p, job->id);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "type");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, job->type);
+    p += jw_string(p, "type");
+    p += jw_colon(p);
+    p += jw_long(p, job->type);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "state");
-    p += lij_pack_colon(p);
-    p += lij_pack_str(p, job->state);
+    p += jw_string(p, "state");
+    p += jw_colon(p);
+    p += jw_string(p, job->state);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "progress");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, job->progress);
+    p += jw_string(p, "progress");
+    p += jw_colon(p);
+    p += jw_long(p, job->progress);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "error");
-    p += lij_pack_colon(p);
-    p += lij_pack_str(p, job->error);
+    p += jw_string(p, "error");
+    p += jw_colon(p);
+    p += jw_string(p, job->error);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "submission");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, job->submission);
+    p += jw_string(p, "submission");
+    p += jw_colon(p);
+    p += jw_long(p, job->submission);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "exec_started");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, job->exec_started);
+    p += jw_string(p, "exec_started");
+    p += jw_colon(p);
+    p += jw_long(p, job->exec_started);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "exec_ended");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, job->exec_ended);
+    p += jw_string(p, "exec_ended");
+    p += jw_colon(p);
+    p += jw_long(p, job->exec_ended);
 
-    p += lij_pack_object_close(p);
+    p += jw_object_close(p);
 
     return buffer;
 }

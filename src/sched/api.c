@@ -8,7 +8,6 @@
 #include "deciphon/core/xmath.h"
 #include "deciphon/sched/sched.h"
 #include "jx.h"
-#include "lij.h"
 #include "sched/count.h"
 #include "xjson.h"
 #include <inttypes.h>
@@ -472,25 +471,25 @@ enum rc set_job_state(int64_t job_id, enum sched_job_state state,
                       char const *state_error, long *http)
 {
     char *p = request;
-    p += lij_pack_object_open(p);
+    p += jw_object_open(p);
 
-    p += lij_pack_str(p, "job_id");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, job_id);
+    p += jw_string(p, "job_id");
+    p += jw_colon(p);
+    p += jw_long(p, job_id);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "state");
-    p += lij_pack_colon(p);
-    p += lij_pack_str(p, job_states[state]);
+    p += jw_string(p, "state");
+    p += jw_colon(p);
+    p += jw_string(p, job_states[state]);
 
-    p += lij_pack_comma(p);
+    p += jw_comma(p);
 
-    p += lij_pack_str(p, "error");
-    p += lij_pack_colon(p);
-    p += lij_pack_str(p, state_error);
+    p += jw_string(p, "error");
+    p += jw_colon(p);
+    p += jw_string(p, state_error);
 
-    p += lij_pack_object_close(p);
+    p += jw_object_close(p);
     *p = 0;
 
     return patch(query("/jobs/%" PRId64 "/state", job_id), http);
@@ -532,11 +531,11 @@ enum rc api_job_inc_progress(int64_t job_id, int increment)
     reset_api_error();
 
     char *p = request;
-    p += lij_pack_object_open(p);
-    p += lij_pack_str(p, "increment");
-    p += lij_pack_colon(p);
-    p += lij_pack_int(p, increment);
-    p += lij_pack_object_close(p);
+    p += jw_object_open(p);
+    p += jw_string(p, "increment");
+    p += jw_colon(p);
+    p += jw_long(p, increment);
+    p += jw_object_close(p);
     *p = 0;
 
     long http = 0;
