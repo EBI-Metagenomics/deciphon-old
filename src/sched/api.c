@@ -38,7 +38,7 @@ static inline void reset_api_error(void)
     api_err.msg[0] = 0;
 }
 
-static enum rc parse_api_error(struct xjson *x, unsigned start);
+static enum rc parse_api_error(struct api_error *e, struct jr jr[]);
 
 static enum rc body_add(struct buff **body, size_t size, char const *data)
 {
@@ -168,7 +168,7 @@ enum rc api_hmm_up(char const *filepath, struct sched_hmm *hmm)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -198,7 +198,7 @@ enum rc api_hmm_dl(int64_t id, FILE *fp)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -264,14 +264,10 @@ static enum rc get_hmm_by(struct sched_hmm *hmm, union param p,
     long http = 0;
     enum rc rc = RC_OK;
 
-    if (type == HMM_ID)
-        rc = get(query("/hmms/%" PRId64 "?id_type=hmm_id", p.i), &http);
-    if (type == XXH3)
-        rc = get(query("/hmms/%" PRId64 "?id_type=xxh3", p.i), &http);
-    if (type == JOB_ID)
-        rc = get(query("/jobs/%" PRId64 "/hmm&id_type=job_id", p.i), &http);
-    if (type == FILENAME)
-        rc = get(query("/hmms/%s?id_type=filename", p.s), &http);
+    if (type == HMM_ID) rc = get(query("/hmms/%" PRId64, p.i), &http);
+    if (type == XXH3) rc = get(query("/hmms/xxh3/%" PRId64, p.i), &http);
+    if (type == JOB_ID) rc = get(query("/jobs/job_id/%" PRId64, p.i), &http);
+    if (type == FILENAME) rc = get(query("/hmms/filename/%s", p.s), &http);
 
     if (rc) goto cleanup;
 
@@ -283,7 +279,7 @@ static enum rc get_hmm_by(struct sched_hmm *hmm, union param p,
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -316,7 +312,7 @@ enum rc api_db_up(char const *filepath, struct sched_db *db)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -344,7 +340,7 @@ enum rc api_db_dl(int64_t id, FILE *fp)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -411,7 +407,7 @@ static enum rc get_db_by(struct sched_db *db, union param p,
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -443,7 +439,7 @@ enum rc api_job_next_pend(struct sched_job *job)
     }
     else if (http == 404)
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             if (api_err.rc == 5)
                 rc = RC_END;
@@ -453,7 +449,7 @@ enum rc api_job_next_pend(struct sched_job *job)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -517,7 +513,7 @@ enum rc api_job_set_state(int64_t job_id, enum sched_job_state state,
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -555,7 +551,7 @@ enum rc api_job_inc_progress(int64_t job_id, int increment)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -589,7 +585,7 @@ enum rc api_scan_seq_count(int64_t scan_id, unsigned *count)
     }
     else if (http == 404)
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             if (api_err.rc == 5)
                 rc = RC_END;
@@ -599,7 +595,7 @@ enum rc api_scan_seq_count(int64_t scan_id, unsigned *count)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -637,7 +633,7 @@ enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -673,7 +669,7 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     }
     else if (http == 404)
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             if (api_err.rc == 7)
                 rc = RC_END;
@@ -683,7 +679,7 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -714,7 +710,7 @@ enum rc api_scan_get_by_job_id(int64_t job_id, struct sched_scan *scan)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -748,7 +744,7 @@ enum rc api_prods_file_up(char const *filepath)
     }
     else if (recognized_http_status(http))
     {
-        if (!(rc = parse_api_error(&xjson, 1)))
+        if (!(rc = parse_api_error(&api_err, jr)))
         {
             rc = eapi(api_err);
         }
@@ -762,32 +758,10 @@ cleanup:
     return rc;
 }
 
-static enum rc parse_api_error(struct xjson *x, unsigned start)
+static enum rc parse_api_error(struct api_error *e, struct jr jr[])
 {
-    enum rc rc = RC_OK;
-    if (!x) return rc;
-    struct api_error *e = &api_err;
+    e->rc = jr_long_of(jr, "rc");
+    jr_strcpy_of(jr, "msg", e->msg, sizeof e->msg);
 
-    unsigned nitems = 0;
-    for (unsigned i = start; i < x->ntoks && nitems < 2; i += 2)
-    {
-        if (xjson_eqstr(x, i, "rc"))
-        {
-            if (!xjson_is_number(x, i + 1)) return einval("expected number");
-            rc = xjson_bind_int(x, i + 1, &e->rc);
-            if (rc) return rc;
-        }
-        else if (xjson_eqstr(x, i, "msg"))
-        {
-            if ((rc = xjson_copy_str(x, i + 1, SCHED_JOB_ERROR_SIZE, e->msg)))
-                return rc;
-        }
-        else
-            return einval("unexpected json key");
-        nitems++;
-    }
-
-    if (nitems != 2) return einval("expected two items");
-
-    return RC_OK;
+    return jr_error() ? einval("failed to parse api_error") : RC_OK;
 }
