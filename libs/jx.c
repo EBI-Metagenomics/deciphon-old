@@ -260,6 +260,30 @@ void jr_strcpy_of(struct jr jr[], char const *key, char *dst, int size)
     rollback(jr, pos);
 }
 
+bool jr_bool_of(struct jr jr[], char const *key)
+{
+    if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
+    if (error) return 0;
+
+    int pos = cursor(jr)->pos;
+    jr_object_at(jr, key);
+    bool val = jr_as_bool(jr);
+    rollback(jr, pos);
+    return val;
+}
+
+void *jr_null_of(struct jr jr[], char const *key)
+{
+    if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
+    if (error) return 0;
+
+    int pos = cursor(jr)->pos;
+    jr_object_at(jr, key);
+    void *val = jr_as_null(jr);
+    rollback(jr, pos);
+    return val;
+}
+
 long jr_long_of(struct jr jr[], char const *key)
 {
     if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
@@ -280,6 +304,18 @@ unsigned long jr_ulong_of(struct jr jr[], char const *key)
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
     unsigned long val = jr_as_ulong(jr);
+    rollback(jr, pos);
+    return val;
+}
+
+double jr_double_of(struct jr jr[], char const *key)
+{
+    if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
+    if (error) return 0;
+
+    int pos = cursor(jr)->pos;
+    jr_object_at(jr, key);
+    double val = jr_as_double(jr);
     rollback(jr, pos);
     return val;
 }

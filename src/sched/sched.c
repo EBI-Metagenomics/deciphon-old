@@ -53,45 +53,15 @@ enum rc sched_job_parse(struct sched_job *j, struct jr *jr)
     return jr_error() ? einval(jr->cursor.json) : RC_OK;
 }
 
-enum rc sched_scan_parse(struct sched_scan *scan, struct xjson *x,
-                         unsigned start)
+enum rc sched_scan_parse(struct sched_scan *s, struct jr *jr)
 {
-    enum rc rc = RC_OK;
-    static unsigned expected_items = 5;
+    s->id = jr_long_of(jr, "id");
+    s->db_id = jr_long_of(jr, "db_id");
+    s->multi_hits = jr_bool_of(jr, "multi_hits");
+    s->hmmer3_compat = jr_bool_of(jr, "hmmer3_compat");
+    s->job_id = jr_bool_of(jr, "job_id");
 
-    unsigned nitems = 0;
-    for (unsigned i = start; i < x->ntoks && nitems < expected_items; i += 2)
-    {
-        if (xjson_eqstr(x, i, "id"))
-        {
-            if ((rc = xjson_bind_int64(x, i + 1, &scan->id))) return rc;
-        }
-        else if (xjson_eqstr(x, i, "db_id"))
-        {
-            if ((rc = xjson_bind_int64(x, i + 1, &scan->db_id))) return rc;
-        }
-        else if (xjson_eqstr(x, i, "multi_hits"))
-        {
-            if (!xjson_is_bool(x, i + 1)) return einval("expected bool");
-            scan->multi_hits = xjson_to_bool(x, i + 1);
-        }
-        else if (xjson_eqstr(x, i, "hmmer3_compat"))
-        {
-            if (!xjson_is_bool(x, i + 1)) return einval("expected bool");
-            scan->hmmer3_compat = xjson_to_bool(x, i + 1);
-        }
-        else if (xjson_eqstr(x, i, "job_id"))
-        {
-            if ((rc = xjson_bind_int64(x, i + 1, &scan->job_id))) return rc;
-        }
-        else
-            return einval("unexpected json key");
-        nitems++;
-    }
-
-    if (nitems != expected_items) return einval("expected five items");
-
-    return RC_OK;
+    return jr_error() ? einval("failed to parse seq") : RC_OK;
 }
 
 enum rc sched_seq_parse(struct sched_seq *s, struct jr *jr)

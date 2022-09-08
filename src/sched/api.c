@@ -710,7 +710,7 @@ enum rc api_scan_get_by_job_id(int64_t job_id, struct sched_scan *scan)
 
     if (http == 200)
     {
-        rc = sched_scan_parse(scan, &xjson, 1);
+        rc = sched_scan_parse(scan, jr);
     }
     else if (recognized_http_status(http))
     {

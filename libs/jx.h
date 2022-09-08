@@ -89,8 +89,11 @@ struct jr *jr_object_at(struct jr[], char const *key);
 
 char *jr_string_of(struct jr[], char const *key);
 void jr_strcpy_of(struct jr[], char const *key, char *dst, int size);
+bool jr_bool_of(struct jr[], char const *key);
+void *jr_null_of(struct jr[], char const *key);
 long jr_long_of(struct jr[], char const *key);
 unsigned long jr_ulong_of(struct jr[], char const *key);
+double jr_double_of(struct jr[], char const *key);
 
 char *jr_as_string(struct jr[]);
 bool jr_as_bool(struct jr[]);

@@ -22,7 +22,7 @@ void sched_seq_init(struct sched_seq *);
 enum rc sched_db_parse(struct sched_db *, struct jr *);
 enum rc sched_hmm_parse(struct sched_hmm *, struct jr *);
 enum rc sched_job_parse(struct sched_job *, struct jr *);
-enum rc sched_scan_parse(struct sched_scan *, struct xjson *x, unsigned start);
+enum rc sched_scan_parse(struct sched_scan *s, struct jr *);
 enum rc sched_seq_parse(struct sched_seq *, struct jr *);
 
 #endif
