@@ -7,6 +7,7 @@
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
 #include "deciphon/sched/sched.h"
+#include "jx.h"
 #include "lij.h"
 #include "sched/count.h"
 #include "xjson.h"
@@ -22,6 +23,8 @@ struct api_error api_err = {0};
 static char _query[128] = {0};
 
 static char request[1024] = {0};
+
+static JR_DECLARE(jr, 128);
 
 #define eapi(x)                                                                \
     ({                                                                         \
@@ -63,7 +66,8 @@ static inline void body_reset(struct buff *body)
 
 static inline enum rc parse_json(void)
 {
-    return xjson_parse(&xjson, response->data, response->size);
+    return jr_parse(jr, response->size, response->data) ? RC_EFAIL : RC_OK;
+    // return xjson_parse(&xjson, response->data, response->size);
 }
 
 static char const *query(char const *fmt, ...)
@@ -78,6 +82,7 @@ static char const *query(char const *fmt, ...)
 
 enum rc api_init(char const *url_stem, char const *api_key)
 {
+    JR_INIT(jr);
     enum rc rc = xcurl_init(url_stem, api_key);
     if (rc) return rc;
 
@@ -159,7 +164,7 @@ enum rc api_hmm_up(char const *filepath, struct sched_hmm *hmm)
     if (http == 201)
     {
         sched_hmm_init(hmm);
-        rc = sched_hmm_parse(hmm, &xjson, 1);
+        rc = sched_hmm_parse(hmm, jr);
     }
     else if (recognized_http_status(http))
     {
@@ -274,7 +279,7 @@ static enum rc get_hmm_by(struct sched_hmm *hmm, union param p,
 
     if (http == 200)
     {
-        rc = sched_hmm_parse(hmm, &xjson, 1);
+        rc = sched_hmm_parse(hmm, jr);
     }
     else if (recognized_http_status(http))
     {
@@ -307,7 +312,7 @@ enum rc api_db_up(char const *filepath, struct sched_db *db)
 
     if (http == 201)
     {
-        rc = sched_db_parse(db, &xjson, 1);
+        rc = sched_db_parse(db, jr);
     }
     else if (recognized_http_status(http))
     {
@@ -402,7 +407,7 @@ static enum rc get_db_by(struct sched_db *db, union param p,
 
     if (http == 200)
     {
-        rc = sched_db_parse(db, &xjson, 1);
+        rc = sched_db_parse(db, jr);
     }
     else if (recognized_http_status(http))
     {
@@ -434,7 +439,7 @@ enum rc api_job_next_pend(struct sched_job *job)
 
     if (http == 200)
     {
-        rc = sched_job_parse(job, &xjson, 1);
+        rc = sched_job_parse(job, jr);
     }
     else if (http == 404)
     {
@@ -579,7 +584,7 @@ enum rc api_scan_seq_count(int64_t scan_id, unsigned *count)
 
     if (http == 200)
     {
-        rc = count_parse(&c, &xjson, 1);
+        rc = count_parse(&c, jr);
         *count = c.count;
     }
     else if (http == 404)
@@ -628,7 +633,7 @@ enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
     if (http == 201)
     {
         sched_job_init(job);
-        rc = sched_job_parse(job, &xjson, 1);
+        rc = sched_job_parse(job, jr);
     }
     else if (recognized_http_status(http))
     {
@@ -664,7 +669,7 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
 
     if (http == 200)
     {
-        rc = sched_seq_parse(seq, &xjson, 1);
+        rc = sched_seq_parse(seq, jr);
     }
     else if (http == 404)
     {

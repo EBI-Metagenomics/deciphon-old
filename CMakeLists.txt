@@ -54,6 +54,7 @@ add_library(
   # src/benchy.c
   # src/schedy.c
   # src/hmmy.c
+  libs/jx.c
   src/zc.c
   src/lij.c
   src/core/buff.c
@@ -129,7 +130,9 @@ target_include_directories(
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
-  PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>)
+         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+          $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   include(CheckIPOSupported)

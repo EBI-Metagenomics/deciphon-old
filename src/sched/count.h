@@ -8,8 +8,8 @@ struct count
     unsigned count;
 };
 
-struct xjson;
+struct jr;
 
-enum rc count_parse(struct count *count, struct xjson *x, unsigned start);
+enum rc count_parse(struct count *count, struct jr *jr);
 
 #endif
