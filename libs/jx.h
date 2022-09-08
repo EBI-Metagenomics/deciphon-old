@@ -88,6 +88,7 @@ struct jr *jr_array_at(struct jr[], int idx);
 struct jr *jr_object_at(struct jr[], char const *key);
 
 char *jr_string_of(struct jr[], char const *key);
+void jr_strcpy_of(struct jr[], char const *key, char *dst, int size);
 long jr_long_of(struct jr[], char const *key);
 unsigned long jr_ulong_of(struct jr[], char const *key);
 

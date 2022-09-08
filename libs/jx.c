@@ -73,6 +73,7 @@ static void sentinel_init(struct jr jr[]);
 static long strto_long(const char *restrict, char **restrict, int);
 static unsigned long strto_ulong(const char *restrict, char **restrict, int);
 static double strto_double(const char *restrict, char **restrict);
+static int jr_strlcpy(char *dst, const char *src, int size);
 static void jr_parser_init(struct jr_parser *parser, int size);
 static void jr_parser_reset(struct jr_parser *parser);
 static int jr_parser_parse(struct jr_parser *, int length, char *json,
@@ -245,6 +246,20 @@ char *jr_string_of(struct jr jr[], char const *key)
     return str;
 }
 
+void jr_strcpy_of(struct jr jr[], char const *key, char *dst, int size)
+{
+    if (size > 0) dst[0] = '\0';
+
+    if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
+    if (error) return;
+
+    int pos = cursor(jr)->pos;
+    jr_object_at(jr, key);
+    char *str = jr_as_string(jr);
+    if (jr_strlcpy(dst, str, size) >= size) error = JR_NOMEM;
+    rollback(jr, pos);
+}
+
 long jr_long_of(struct jr jr[], char const *key)
 {
     if (jr_type(jr) != JR_OBJECT) error = JR_INVAL;
@@ -383,6 +398,19 @@ static double strto_double(const char *restrict nptr, char **restrict endptr)
 {
     errno = 0;
     return strtod(nptr, endptr);
+}
+
+static int jr_strlcpy(char *dst, const char *src, int size)
+{
+    int ret = (int)strlen(src);
+
+    if (size > 0)
+    {
+        int len = (ret >= size) ? size - 1 : ret;
+        memcpy(dst, src, len);
+        dst[len] = '\0';
+    }
+    return ret;
 }
 
 static void jr_cursor_init(struct jr_cursor *cursor, int length, char *json)
