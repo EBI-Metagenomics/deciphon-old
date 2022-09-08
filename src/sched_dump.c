@@ -1,6 +1,6 @@
-#include "deciphon/sched/dump.h"
-#include "deciphon/sched/sched.h"
+#include "deciphon/sched_dump.h"
 #include "jx.h"
+#include "sched_structs.h"
 
 char *sched_dump_hmm(struct sched_hmm const *hmm, char buffer[])
 {

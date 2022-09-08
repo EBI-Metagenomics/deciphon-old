@@ -1,10 +1,10 @@
 #include "schedy_cmd.h"
+#include "deciphon/api.h"
 #include "deciphon/core/file.h"
 #include "deciphon/core/getcmd.h"
 #include "deciphon/core/logging.h"
-#include "deciphon/sched/api.h"
-#include "deciphon/sched/dump.h"
-#include "deciphon/sched/job_state.h"
+#include "deciphon/sched_dump.h"
+#include <string.h>
 
 static inline char const *say_ok(void) { return "OK"; }
 
@@ -18,6 +18,7 @@ static inline char const *say_no(void) { return "NO"; }
 
 static enum rc download_hmm(char const *filepath, void *data);
 static enum rc download_db(char const *filepath, void *data);
+static bool encode_job_state(char const *str, enum sched_job_state *);
 
 static char buffer[6 * 1024 * 1024] = {0};
 
@@ -246,7 +247,7 @@ char const *schedy_cmd_job_set_state(struct getcmd const *gc)
         msg = gc->argv[3];
     }
     enum sched_job_state state = 0;
-    if (!job_state_encode(gc->argv[2], &state)) return say_fail();
+    if (!encode_job_state(gc->argv[2], &state)) return say_fail();
     int64_t job_id = getcmd_i64(gc, 1);
     return api_job_set_state(job_id, state, msg) ? say_fail() : say_ok();
 }
@@ -345,4 +346,19 @@ static enum rc download_db(char const *filepath, void *data)
         return rc;
     }
     return fclose(fp) ? eio("fclose") : RC_OK;
+}
+
+static bool encode_job_state(char const *str, enum sched_job_state *state)
+{
+    static char const strings[][5] = {"pend", "run", "done", "fail"};
+    for (int i = 0; i < 4; ++i)
+    {
+        if (!strcmp(strings[i], str))
+        {
+            *state = i;
+            return true;
+        }
+    }
+    einval("invalid job state string");
+    return false;
 }

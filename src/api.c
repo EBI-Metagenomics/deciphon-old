@@ -1,4 +1,4 @@
-#include "deciphon/sched/api.h"
+#include "deciphon/api.h"
 #include "deciphon/core/buff.h"
 #include "deciphon/core/http.h"
 #include "deciphon/core/logging.h"
@@ -6,16 +6,14 @@
 #include "deciphon/core/xcurl_mime.h"
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
-#include "deciphon/sched/sched.h"
+#include "deciphon/sched.h"
 #include "jx.h"
 #include "sched/count.h"
-#include "xjson.h"
 #include <inttypes.h>
 #include <stdarg.h>
 #include <string.h>
 
 static struct buff *response = 0;
-static struct xjson xjson = {0};
 static char filename[SCHED_FILENAME_SIZE] = {0};
 struct api_error api_err = {0};
 
@@ -66,7 +64,6 @@ static inline void body_reset(struct buff *body)
 static inline enum rc parse_json(void)
 {
     return jr_parse(jr, response->size, response->data) ? RC_EFAIL : RC_OK;
-    // return xjson_parse(&xjson, response->data, response->size);
 }
 
 static char const *query(char const *fmt, ...)
@@ -738,7 +735,7 @@ enum rc api_prods_file_up(char const *filepath)
 
     if (http == 201)
     {
-        if (!(xjson_is_array(&xjson, 0) && xjson_is_array_empty(&xjson, 0)))
+        if (!(jr_type(jr) == JR_ARRAY && jr_nchild(jr) == 0))
             rc = einval("expected empty array");
     }
     else if (recognized_http_status(http))

@@ -86,25 +86,22 @@ add_library(
   src/db/protein_writer.c
   src/db/protein_reader.c
   src/db/profile_reader.c
-  src/sched/api.c
-  src/sched/dump.c
-  src/sched/jsmn.c
-  src/sched/sched.c
+  src/api.c
+  src/sched_dump.c
+  src/sched.c
   src/sched/count.c
-  src/sched/job_state.c
   src/core/url.c
   src/core/xcurl.c
   src/core/xcurl_header.c
   src/core/xcurl_mime.c
-  src/core/xcurl_debug.c
-  src/sched/xjson.c
+  src/core/xcurl_debug.c)
   # src/server/hmm.c
-  src/server/job.c
-  src/server/job_state.c
-  src/server/prod.c
-  src/server/protein_match.c
+  # src/server/job.c
+  # src/server/job_state.c
+  # src/server/prod.c
+  # src/server/protein_match.c
   # src/server/scan.c
-  src/server/scan_thread.c)
+  # src/server/scan_thread.c)
 # src/server/server.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
 

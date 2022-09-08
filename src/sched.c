@@ -1,10 +1,13 @@
-#include "deciphon/sched/sched.h"
+#include "deciphon/sched.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/rc.h"
 #include "jx.h"
-#include "xjson.h"
-#include "zc_string_static.h"
 #include <string.h>
+
+enum sched_job_type sched_job_type(struct sched_job const *job)
+{
+    return (enum sched_job_type)job->type;
+}
 
 void sched_db_init(struct sched_db *db) { memset(db, 0, sizeof(*db)); }
 

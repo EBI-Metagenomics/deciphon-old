@@ -1,17 +1,13 @@
-#ifndef DECIPHON_SCHED_SCHED_H
-#define DECIPHON_SCHED_SCHED_H
+#ifndef DECIPHON_SCHED_H
+#define DECIPHON_SCHED_H
 
-#include "sched/structs.h"
+#include "sched_structs.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-static inline enum sched_job_type sched_job_type(struct sched_job const *job)
-{
-    return (enum sched_job_type)job->type;
-}
-
-struct xjson;
 struct jr;
+
+enum sched_job_type sched_job_type(struct sched_job const *job);
 
 void sched_db_init(struct sched_db *);
 void sched_hmm_init(struct sched_hmm *);

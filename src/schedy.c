@@ -1,3 +1,4 @@
+#include "deciphon/api.h"
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/getcmd.h"
 #include "deciphon/core/logging.h"
@@ -5,7 +6,6 @@
 #include "deciphon/loop/liner.h"
 #include "deciphon/loop/looper.h"
 #include "deciphon/loop/writer.h"
-#include "deciphon/sched/api.h"
 #include "schedy_cmd.h"
 #include <assert.h>
 #include <stdbool.h>
