@@ -1,10 +1,10 @@
 #include "deciphon/api.h"
+#include "core/mime.h"
 #include "deciphon/core/buff.h"
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/http.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/xcurl.h"
-#include "deciphon/core/xcurl_mime.h"
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/xmath.h"
 #include "deciphon/sched.h"
@@ -14,7 +14,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-// static struct buff *response = 0;
 static char filename[SCHED_FILENAME_SIZE] = {0};
 static thread_local struct api_error api_err = {0};
 
@@ -38,30 +37,6 @@ static inline void reset_api_error(void)
 
 static enum rc parse_api_error(struct api_error *e, struct jr jr[]);
 
-// static enum rc body_add(struct buff **body, size_t size, char const *data)
-// {
-//     if (!buff_ensure(body, (*body)->size + size))
-//         return enomem("buff_ensure failed");
-//
-//     memcpy((*body)->data + (*body)->size - 1, data, size);
-//     (*body)->size += size;
-//
-//     (*body)->data[(*body)->size - 1] = '\0';
-//
-//     return RC_OK;
-// }
-
-// static inline size_t body_store(void *data, size_t size, void *arg)
-// {
-//     return body_add(arg, size, data) ? 0 : size;
-// }
-
-// static inline void body_reset(struct buff *body)
-// {
-//     body->data[0] = '\0';
-//     body->size = 1;
-// }
-
 static inline enum rc parse_json(void)
 {
     return jr_parse(jr, xcurl_body_size(), xcurl_body_data()) ? RC_EFAIL
@@ -84,27 +59,15 @@ enum rc api_init(char const *url_stem, char const *api_key)
     enum rc rc = xcurl_init(url_stem, api_key);
     if (rc) return rc;
 
-    // if (!(response = buff_new(1024)))
-    // {
-    //     xcurl_cleanup();
-    //     return enomem("buff_new failed");
-    // }
-    // // body_reset(response);
-
     return RC_OK;
 }
 
-void api_cleanup(void)
-{
-    xcurl_cleanup();
-    // buff_del(response);
-}
+void api_cleanup(void) { xcurl_cleanup(); }
 
 struct api_error const *api_error(void) { return &api_err; }
 
 static inline enum rc get(char const *query, long *http)
 {
-    // body_reset(response);
     return xcurl_get(query, http);
 }
 
@@ -139,8 +102,7 @@ cleanup:
 }
 
 static inline enum rc upload(char const *query, long *http,
-                             struct xcurl_mime_file const *mime,
-                             char const *filepath)
+                             struct mime_file const *mime, char const *filepath)
 {
     // body_reset(response);
     return xcurl_upload(query, http, mime, filepath);
@@ -151,7 +113,7 @@ enum rc api_hmm_up(char const *filepath, struct sched_hmm *hmm)
     reset_api_error();
 
     xfile_basename(filename, filepath, sizeof filename);
-    XCURL_MIME_FILE_DEF(mime, "hmm_file", filename, "text/plain");
+    MIME_FILE_DEF(mime, "hmm_file", filename, "text/plain");
 
     long http = 0;
     enum rc rc = upload("/hmms/", &http, &mime, filepath);
@@ -296,7 +258,7 @@ enum rc api_db_up(char const *filepath, struct sched_db *db)
     reset_api_error();
     sched_db_init(db);
 
-    XCURL_MIME_FILE_DEF(mime, "db_file", filename, "application/octet-stream");
+    MIME_FILE_DEF(mime, "db_file", filename, "application/octet-stream");
 
     long http = 0;
     enum rc rc = upload("/dbs/", &http, &mime, filepath);
@@ -613,7 +575,7 @@ enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
     reset_api_error();
 
     xfile_basename(filename, filepath, sizeof filename);
-    XCURL_MIME_FILE_DEF(mime, "fasta_file", filename, "text/plain");
+    MIME_FILE_DEF(mime, "fasta_file", filename, "text/plain");
 
     long http = 0;
 
@@ -726,8 +688,8 @@ enum rc api_prods_file_up(char const *filepath)
 {
     reset_api_error();
 
-    XCURL_MIME_FILE_DEF(mime, "prods_file", "prods_file.tsv",
-                        "text/tab-separated-values");
+    MIME_FILE_DEF(mime, "prods_file", "prods_file.tsv",
+                  "text/tab-separated-values");
 
     long http = 0;
     enum rc rc = upload("/prods/", &http, &mime, filepath);

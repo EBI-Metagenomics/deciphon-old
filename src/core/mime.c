@@ -1,7 +1,7 @@
-#include "core/xcurl_mime.h"
+#include "core/mime.h"
 
-curl_mime *xcurl_mime_new_file(CURL *curl, struct xcurl_mime_file const *mime,
-                               char const *filepath)
+curl_mime *mime_new_file(CURL *curl, struct mime_file const *mime,
+                         char const *filepath)
 {
     curl_mime *form = curl_mime_init(curl);
 
@@ -21,4 +21,4 @@ curl_mime *xcurl_mime_new_file(CURL *curl, struct xcurl_mime_file const *mime,
     return form;
 }
 
-void xcurl_mime_del(curl_mime *form) { curl_mime_free(form); }
+void mime_del(curl_mime *form) { curl_mime_free(form); }

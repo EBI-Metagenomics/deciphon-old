@@ -91,15 +91,10 @@ add_library(
   src/sched/count.c
   src/core/url.c
   src/core/xcurl.c
-  src/core/xcurl_mime.c
+  src/core/mime.c
   src/core/xcurl_debug.c)
-  # src/server/hmm.c
-  # src/server/job.c
-  # src/server/job_state.c
-  # src/server/prod.c
-  # src/server/protein_match.c
-  # src/server/scan.c
-  # src/server/scan_thread.c)
+# src/server/hmm.c src/server/job.c src/server/job_state.c src/server/prod.c
+# src/server/protein_match.c src/server/scan.c src/server/scan_thread.c)
 # src/server/server.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
 

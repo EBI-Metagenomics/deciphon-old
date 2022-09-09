@@ -1,14 +1,13 @@
 #include "deciphon/core/xcurl.h"
 #include "core/http_headers.h"
+#include "core/mime.h"
 #include "core/pp.h"
-#include "core/xcurl_mime.h"
 #include "deciphon/core/buff.h"
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/limits.h"
 #include "deciphon/core/logging.h"
 #include "xcurl_debug.h"
 #include "xcurl_error.h"
-#include "zc.h"
 #include <assert.h>
 #include <curl/curl.h>
 #include <stdarg.h>
@@ -24,9 +23,7 @@ static struct xcurl
     char x_api_key[API_KEY_LENGTH + 16];
     struct url url;
     struct buff *body;
-} x = {
-    0,
-};
+} x = {0};
 
 #define http_header(...) http_header_cnt(PP_NARG(__VA_ARGS__), __VA_ARGS__)
 static struct curl_slist const *http_header_cnt(unsigned cnt, ...);
@@ -215,7 +212,7 @@ enum rc xcurl_download(char const *query, long *http_code, FILE *fp)
 }
 
 enum rc xcurl_upload(char const *query, long *http_code,
-                     struct xcurl_mime_file const *mime, char const *filepath)
+                     struct mime_file const *mime, char const *filepath)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -229,21 +226,21 @@ enum rc xcurl_upload(char const *query, long *http_code,
     curl_easy_setopt(x.curl, CURLOPT_HTTPHEADER,
                      http_header(x.x_api_key, ACCEPT_JSON));
 
-    curl_mime *form = xcurl_mime_new_file(x.curl, mime, filepath);
+    curl_mime *form = mime_new_file(x.curl, mime, filepath);
     if (!form) return enomem("failed to allocate for mime");
     curl_easy_setopt(x.curl, CURLOPT_MIMEPOST, form);
 
     xcurl_debug_setup(x.curl);
 
     enum rc rc = perform_request(x.curl, http_code);
-    xcurl_mime_del(form);
+    mime_del(form);
 
     return rc;
 }
 
 enum rc xcurl_upload2(char const *query, long *http_code, int64_t db_id,
                       bool multi_hits, bool hmmer3_compat,
-                      struct xcurl_mime_file const *mime, char const *filepath)
+                      struct mime_file const *mime, char const *filepath)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -291,7 +288,7 @@ enum rc xcurl_upload2(char const *query, long *http_code, int64_t db_id,
     xcurl_debug_setup(x.curl);
 
     enum rc rc = perform_request(x.curl, http_code);
-    xcurl_mime_del(form);
+    mime_del(form);
 
     return rc;
 }
