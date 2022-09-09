@@ -14,7 +14,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-static struct buff *response = 0;
+// static struct buff *response = 0;
 static char filename[SCHED_FILENAME_SIZE] = {0};
 static thread_local struct api_error api_err = {0};
 
@@ -38,33 +38,34 @@ static inline void reset_api_error(void)
 
 static enum rc parse_api_error(struct api_error *e, struct jr jr[]);
 
-static enum rc body_add(struct buff **body, size_t size, char const *data)
-{
-    if (!buff_ensure(body, (*body)->size + size))
-        return enomem("buff_ensure failed");
+// static enum rc body_add(struct buff **body, size_t size, char const *data)
+// {
+//     if (!buff_ensure(body, (*body)->size + size))
+//         return enomem("buff_ensure failed");
+//
+//     memcpy((*body)->data + (*body)->size - 1, data, size);
+//     (*body)->size += size;
+//
+//     (*body)->data[(*body)->size - 1] = '\0';
+//
+//     return RC_OK;
+// }
 
-    memcpy((*body)->data + (*body)->size - 1, data, size);
-    (*body)->size += size;
+// static inline size_t body_store(void *data, size_t size, void *arg)
+// {
+//     return body_add(arg, size, data) ? 0 : size;
+// }
 
-    (*body)->data[(*body)->size - 1] = '\0';
-
-    return RC_OK;
-}
-
-static inline size_t body_store(void *data, size_t size, void *arg)
-{
-    return body_add(arg, size, data) ? 0 : size;
-}
-
-static inline void body_reset(struct buff *body)
-{
-    body->data[0] = '\0';
-    body->size = 1;
-}
+// static inline void body_reset(struct buff *body)
+// {
+//     body->data[0] = '\0';
+//     body->size = 1;
+// }
 
 static inline enum rc parse_json(void)
 {
-    return jr_parse(jr, response->size, response->data) ? RC_EFAIL : RC_OK;
+    return jr_parse(jr, xcurl_body_size(), xcurl_body_data()) ? RC_EFAIL
+                                                              : RC_OK;
 }
 
 static char const *query(char const *fmt, ...)
@@ -83,12 +84,12 @@ enum rc api_init(char const *url_stem, char const *api_key)
     enum rc rc = xcurl_init(url_stem, api_key);
     if (rc) return rc;
 
-    if (!(response = buff_new(1024)))
-    {
-        xcurl_cleanup();
-        return enomem("buff_new failed");
-    }
-    body_reset(response);
+    // if (!(response = buff_new(1024)))
+    // {
+    //     xcurl_cleanup();
+    //     return enomem("buff_new failed");
+    // }
+    // // body_reset(response);
 
     return RC_OK;
 }
@@ -96,15 +97,15 @@ enum rc api_init(char const *url_stem, char const *api_key)
 void api_cleanup(void)
 {
     xcurl_cleanup();
-    buff_del(response);
+    // buff_del(response);
 }
 
 struct api_error const *api_error(void) { return &api_err; }
 
 static inline enum rc get(char const *query, long *http)
 {
-    body_reset(response);
-    return xcurl_get(query, http, body_store, &response);
+    // body_reset(response);
+    return xcurl_get(query, http);
 }
 
 static inline bool recognized_http_status(long http_status)
@@ -141,8 +142,8 @@ static inline enum rc upload(char const *query, long *http,
                              struct xcurl_mime_file const *mime,
                              char const *filepath)
 {
-    body_reset(response);
-    return xcurl_upload(query, http, body_store, &response, mime, filepath);
+    // body_reset(response);
+    return xcurl_upload(query, http, mime, filepath);
 }
 
 enum rc api_hmm_up(char const *filepath, struct sched_hmm *hmm)
@@ -211,8 +212,8 @@ cleanup:
 
 static inline enum rc patch(char const *query, long *http)
 {
-    body_reset(response);
-    return xcurl_patch(query, http, body_store, &response, request);
+    // body_reset(response);
+    return xcurl_patch(query, http, request);
 }
 
 union param
@@ -616,9 +617,9 @@ enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
 
     long http = 0;
 
-    body_reset(response);
-    enum rc rc = xcurl_upload2("/scans/", &http, body_store, &response, db_id,
-                               multi_hits, hmmer3_compat, &mime, filepath);
+    // body_reset(response);
+    enum rc rc = xcurl_upload2("/scans/", &http, db_id, multi_hits,
+                               hmmer3_compat, &mime, filepath);
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
