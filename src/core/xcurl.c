@@ -23,6 +23,7 @@ static struct xcurl
     CURL *curl;
     char x_api_key[API_KEY_LENGTH + 16];
     struct url url;
+    long http_code;
     struct buff *body;
     struct
     {
@@ -35,7 +36,7 @@ static struct xcurl
 static struct curl_slist const *http_header_cnt(unsigned cnt, ...);
 static size_t noop_write(void *ptr, size_t size, size_t nmemb, void *data);
 static size_t write_callback(void *data, size_t, size_t size, void *);
-static enum rc perform_request(CURL *curl, long *http);
+static enum rc perform_request(void);
 static void setup_write_callback(void);
 
 enum rc xcurl_init(char const *url_stem, char const *api_key)
@@ -84,6 +85,8 @@ void xcurl_cleanup(void)
     curl_global_cleanup();
 }
 
+long xcurl_http_code(void) { return x.http_code; }
+
 size_t xcurl_body_size(void) { return x.body->size; }
 
 char *xcurl_body_data(void) { return x.body->data; }
@@ -121,7 +124,7 @@ void xcurl_mime_addpart(char const *name, char const *data)
 
 void xcurl_mime_cleanup(void) { curl_mime_free(x.mime.form); }
 
-enum rc xcurl_get(char const *query, long *http)
+enum rc xcurl_get(char const *query)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -133,10 +136,10 @@ enum rc xcurl_get(char const *query, long *http)
                      http_header(x.x_api_key, ACCEPT_JSON));
     curl_easy_setopt(x.curl, CURLOPT_HTTPGET, 1L);
 
-    return perform_request(x.curl, http);
+    return perform_request();
 }
 
-enum rc xcurl_post(char const *query, long *http_code, char const *json)
+enum rc xcurl_post(char const *query, char const *json)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -151,10 +154,10 @@ enum rc xcurl_post(char const *query, long *http_code, char const *json)
 
     xcurl_debug_setup(x.curl);
 
-    return perform_request(x.curl, http_code);
+    return perform_request();
 }
 
-enum rc xcurl_patch(char const *query, long *http_code, char const *json)
+enum rc xcurl_patch(char const *query, char const *json)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -169,10 +172,10 @@ enum rc xcurl_patch(char const *query, long *http_code, char const *json)
 
     xcurl_debug_setup(x.curl);
 
-    return perform_request(x.curl, http_code);
+    return perform_request();
 }
 
-enum rc xcurl_delete(char const *query, long *http_code)
+enum rc xcurl_delete(char const *query)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -187,10 +190,10 @@ enum rc xcurl_delete(char const *query, long *http_code)
 
     xcurl_debug_setup(x.curl);
 
-    return perform_request(x.curl, http_code);
+    return perform_request();
 }
 
-enum rc xcurl_download(char const *query, long *http_code, FILE *fp)
+enum rc xcurl_download(char const *query, FILE *fp)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -204,10 +207,10 @@ enum rc xcurl_download(char const *query, long *http_code, FILE *fp)
 
     xcurl_debug_setup(x.curl);
 
-    return perform_request(x.curl, http_code);
+    return perform_request();
 }
 
-enum rc xcurl_upload(char const *query, long *http_code)
+enum rc xcurl_upload(char const *query)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -223,7 +226,7 @@ enum rc xcurl_upload(char const *query, long *http_code)
 
     xcurl_debug_setup(x.curl);
 
-    return perform_request(x.curl, http_code);
+    return perform_request();
 }
 
 static struct curl_slist const *http_header_cnt(unsigned cnt, ...)
@@ -275,13 +278,12 @@ static size_t write_callback(void *data, size_t one, size_t size, void *arg)
     return size;
 }
 
-static enum rc perform_request(CURL *curl, long *http)
+static enum rc perform_request(void)
 {
-    CURLcode code = curl_easy_perform(curl);
+    CURLcode code = curl_easy_perform(x.curl);
     if (code) return xcurl_error(code);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http);
-
-    curl_easy_reset(curl);
+    curl_easy_getinfo(x.curl, CURLINFO_RESPONSE_CODE, &x.http_code);
+    curl_easy_reset(x.curl);
     return RC_OK;
 }
 

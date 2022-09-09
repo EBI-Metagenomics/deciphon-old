@@ -2,6 +2,7 @@
  * Acknowledgement: Code used bellow is mostly from
  * Apache HTTP Server soure code.
  */
+#include "core/http.h"
 
 /**
  * The size of the static status_lines array in http_protocol.c for
@@ -127,12 +128,10 @@ static const char *const status_lines[RESPONSE_CODES] = {
  * from status_lines[shortcut[i]] to status_lines[shortcut[i+1]-1];
  * or use 0 to fill the gaps.
  */
-static int index_of_response(int status)
+static long index_of_response(long status)
 {
-    static int shortcut[6] = {0,         LEVEL_200, LEVEL_300,
-                              LEVEL_400, LEVEL_500, RESPONSE_CODES};
-    int i, pos;
-
+    static long shortcut[6] = {0,         LEVEL_200, LEVEL_300,
+                               LEVEL_400, LEVEL_500, RESPONSE_CODES};
     if (status < 100)
     { /* Below 100 is illegal for HTTP status */
         return -1;
@@ -142,12 +141,12 @@ static int index_of_response(int status)
         return -1;
     }
 
-    for (i = 0; i < 5; i++)
+    for (int i = 0; i < 5; i++)
     {
         status -= 100;
         if (status < 100)
         {
-            pos = (status + shortcut[i]);
+            long pos = (status + shortcut[i]);
             if (pos < shortcut[i + 1] && status_lines[pos] != 0)
             {
                 return pos;
@@ -161,9 +160,9 @@ static int index_of_response(int status)
     return -2; /* Status unknown (falls in gap) or above 600 */
 }
 
-char const *http_status_string(int status)
+char const *http_strcode(long code)
 {
-    int index = index_of_response(status);
+    long index = index_of_response(code);
     if (index >= 0)
     {
         return status_lines[index];
