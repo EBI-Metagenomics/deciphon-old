@@ -12,9 +12,8 @@ include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.1.4")
-cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.6")
+cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.7")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.3.1")
-cpmaddpackage("gh:EBI-Metagenomics/deciphon-sched@0.4.7")
 cpmaddpackage("gh:EBI-Metagenomics/dotenv@0.1.2")
 cpmaddpackage(
   NAME
@@ -92,7 +91,6 @@ add_library(
   src/sched/count.c
   src/core/url.c
   src/core/xcurl.c
-  src/core/xcurl_header.c
   src/core/xcurl_mime.c
   src/core/xcurl_debug.c)
   # src/server/hmm.c
@@ -110,9 +108,7 @@ target_link_libraries(deciphon PUBLIC HMR::hmr)
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)
 target_link_libraries(deciphon PUBLIC OpenMP::OpenMP_C)
-target_link_libraries(deciphon PUBLIC SCHED::headers)
 target_link_libraries(deciphon PUBLIC DOTENV::dotenv)
-# target_link_libraries(deciphon PUBLIC SC::sc)
 target_link_libraries(deciphon PUBLIC uv_a)
 
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})

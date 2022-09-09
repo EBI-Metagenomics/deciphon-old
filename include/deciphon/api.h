@@ -1,11 +1,9 @@
-#ifndef DECIPHON_SERVER_API_H
-#define DECIPHON_SERVER_API_H
+#ifndef DECIPHON_API_H
+#define DECIPHON_API_H
 
 #include "deciphon/core/limits.h"
 #include "deciphon/core/rc.h"
-#include "sched/limits.h"
-#include "sched/rc.h"
-#include "sched/structs.h"
+#include "sched_structs.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -15,12 +13,6 @@ struct api_error
     int rc;
     char msg[SCHED_JOB_ERROR_SIZE];
 };
-
-struct sched_db;
-struct sched_hmm;
-struct sched_job;
-struct sched_scan;
-struct sched_seq;
 
 enum rc api_init(char const *url_stem, char const *api_key);
 void api_cleanup(void);

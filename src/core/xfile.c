@@ -1,7 +1,6 @@
 #include "deciphon/core/xfile.h"
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/logging.h"
-#include "sched/structs.h"
 #include "zc.h"
 #define XXH_INLINE_ALL
 #include "xxhash/xxhash.h"

@@ -1,5 +1,6 @@
 #include "deciphon/api.h"
 #include "deciphon/core/buff.h"
+#include "deciphon/core/compiler.h"
 #include "deciphon/core/http.h"
 #include "deciphon/core/logging.h"
 #include "deciphon/core/xcurl.h"
@@ -15,7 +16,7 @@
 
 static struct buff *response = 0;
 static char filename[SCHED_FILENAME_SIZE] = {0};
-struct api_error api_err = {0};
+static thread_local struct api_error api_err = {0};
 
 static char _query[128] = {0};
 
