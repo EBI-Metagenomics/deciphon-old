@@ -1,4 +1,5 @@
 #include "deciphon/core/xcurl.h"
+#include "core/http_headers.h"
 #include "core/pp.h"
 #include "core/xcurl_mime.h"
 #include "deciphon/core/compiler.h"
@@ -19,71 +20,11 @@ static char api_key_header[256 + 11] = "X-API-KEY: ";
 static struct xcurl
 {
     CURL *curl;
-    struct
-    {
-        struct curl_slist *send_json;
-        struct curl_slist *recv_json;
-        struct curl_slist *only_json;
-    } hdr;
     struct url url;
 } xcurl = {0};
 
 #define http_header(...) http_header_cnt(PP_NARG(__VA_ARGS__), __VA_ARGS__)
 static struct curl_slist const *http_header_cnt(unsigned cnt, ...);
-
-static inline enum rc list_add(struct curl_slist **list, const char *string)
-{
-    struct curl_slist *tmp = curl_slist_append(*list, string);
-    if (!tmp)
-    {
-        curl_slist_free_all(*list);
-        *list = 0;
-        return enomem("failed to add header");
-    }
-    *list = tmp;
-    return RC_OK;
-}
-
-static inline void list_free(struct curl_slist *list)
-{
-    curl_slist_free_all(list);
-}
-
-static enum rc setup_headers(char const *api_key)
-{
-    xcurl.hdr.send_json = 0;
-    xcurl.hdr.recv_json = 0;
-    xcurl.hdr.only_json = 0;
-
-    strcpy(api_key_header + strlen(api_key_header), api_key);
-
-    enum rc rc = RC_OK;
-
-    rc = list_add(&xcurl.hdr.send_json, "Content-Type: application/json");
-    if (rc) goto cleanup;
-    rc = list_add(&xcurl.hdr.send_json, api_key_header);
-    if (rc) goto cleanup;
-
-    rc = list_add(&xcurl.hdr.recv_json, "Accept: application/json");
-    if (rc) goto cleanup;
-    rc = list_add(&xcurl.hdr.recv_json, api_key_header);
-    if (rc) goto cleanup;
-
-    rc = list_add(&xcurl.hdr.only_json, "Content-Type: application/json");
-    if (rc) goto cleanup;
-    rc = list_add(&xcurl.hdr.only_json, "Accept: application/json");
-    if (rc) goto cleanup;
-    rc = list_add(&xcurl.hdr.only_json, api_key_header);
-    if (rc) goto cleanup;
-
-    return rc;
-
-cleanup:
-    list_free(xcurl.hdr.send_json);
-    list_free(xcurl.hdr.recv_json);
-    list_free(xcurl.hdr.only_json);
-    return rc;
-}
 
 static size_t noop_write(void *ptr, size_t size, size_t nmemb, void *data)
 {
@@ -102,7 +43,7 @@ enum rc xcurl_init(char const *url_stem, char const *api_key)
         goto cleanup;
     }
 
-    if ((rc = setup_headers(api_key))) goto cleanup;
+    strcpy(api_key_header + strlen(api_key_header), api_key);
 
     xcurl.curl = curl_easy_init();
     if (!xcurl.curl)
@@ -128,9 +69,6 @@ void xcurl_cleanup(void)
 {
     if (xcurl.curl) curl_easy_cleanup(xcurl.curl);
     xcurl.curl = 0;
-    list_free(xcurl.hdr.send_json);
-    list_free(xcurl.hdr.recv_json);
-    list_free(xcurl.hdr.only_json);
     curl_global_cleanup();
 }
 
@@ -170,7 +108,7 @@ enum rc xcurl_get(char const *query, long *http, xcurl_cb_t *callback,
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
 
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER,
-                     http_header(api_key_header, "Accept: application/json"));
+                     http_header(api_key_header, ACCEPT_JSON));
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPGET, 1L);
 
     return perform_request(xcurl.curl, http);
@@ -188,7 +126,8 @@ enum rc xcurl_post(char const *query, long *http_code, xcurl_cb_t *callback,
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
 
-    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.only_json);
+    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER,
+                     http_header(api_key_header, ACCEPT_JSON, CONTENT_JSON));
     curl_easy_setopt(xcurl.curl, CURLOPT_POST, 1L);
     curl_easy_setopt(xcurl.curl, CURLOPT_POSTFIELDS, json);
 
@@ -209,7 +148,8 @@ enum rc xcurl_patch(char const *query, long *http_code, xcurl_cb_t *callback,
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
 
-    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.only_json);
+    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER,
+                     http_header(api_key_header, ACCEPT_JSON, CONTENT_JSON));
     curl_easy_setopt(xcurl.curl, CURLOPT_POSTFIELDS, json);
     curl_easy_setopt(xcurl.curl, CURLOPT_CUSTOMREQUEST, "PATCH");
 
@@ -225,7 +165,8 @@ enum rc xcurl_delete(char const *query, long *http_code)
     curl_easy_setopt(xcurl.curl, CURLOPT_URL, xcurl.url.full);
     curl_easy_setopt(xcurl.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
 
-    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.recv_json);
+    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER,
+                     http_header(api_key_header, ACCEPT_JSON));
     curl_easy_setopt(xcurl.curl, CURLOPT_HTTPGET, 1L);
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEFUNCTION, noop_write);
     curl_easy_setopt(xcurl.curl, CURLOPT_CUSTOMREQUEST, "DELETE");
@@ -266,7 +207,8 @@ enum rc xcurl_upload(char const *query, long *http_code, xcurl_cb_t *callback,
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
 
-    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.recv_json);
+    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER,
+                     http_header(api_key_header, ACCEPT_JSON));
 
     curl_mime *form = xcurl_mime_new_file(xcurl.curl, mime, filepath);
     if (!form) return enomem("failed to allocate for mime");
@@ -295,7 +237,8 @@ enum rc xcurl_upload2(char const *query, long *http_code, xcurl_cb_t *callback,
     struct callback_data cd = {callback, arg};
     curl_easy_setopt(xcurl.curl, CURLOPT_WRITEDATA, &cd);
 
-    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER, xcurl.hdr.recv_json);
+    curl_easy_setopt(xcurl.curl, CURLOPT_HTTPHEADER,
+                     http_header(api_key_header, ACCEPT_JSON));
 
     curl_mime *form = curl_mime_init(xcurl.curl);
 
@@ -338,20 +281,22 @@ enum rc xcurl_upload2(char const *query, long *http_code, xcurl_cb_t *callback,
 
 static struct curl_slist const *http_header_cnt(unsigned cnt, ...)
 {
-    static thread_local struct curl_slist items[8] = {0};
+    static struct curl_slist items[8] = {0};
     assert(cnt < ARRAY_SIZE(items));
 
     va_list valist;
     va_start(valist, cnt);
 
+    struct curl_slist *it = items;
     for (unsigned i = 0; i + 1 < cnt; ++i)
     {
-        items[i].data = va_arg(valist, char *);
-        items[i].next = items + 1;
+        it->data = va_arg(valist, char *);
+        it->next = it + 1;
+        ++it;
     }
 
-    items[cnt - 1].data = va_arg(valist, char *);
-    items[cnt - 1].next = NULL;
+    it->data = va_arg(valist, char *);
+    it->next = NULL;
 
     va_end(valist);
 
