@@ -101,22 +101,16 @@ cleanup:
     return rc;
 }
 
-static inline enum rc upload(char const *query, long *http,
-                             struct mime_file const *mime, char const *filepath)
-{
-    // body_reset(response);
-    return xcurl_upload(query, http, mime, filepath);
-}
-
 enum rc api_hmm_up(char const *filepath, struct sched_hmm *hmm)
 {
     reset_api_error();
-
     xfile_basename(filename, filepath, sizeof filename);
-    MIME_FILE_DEF(mime, "hmm_file", filename, "text/plain");
 
     long http = 0;
-    enum rc rc = upload("/hmms/", &http, &mime, filepath);
+    xcurl_mime_init();
+    xcurl_mime_addfile("hmm_file", filename, MIME_PLAIN, filepath);
+    enum rc rc = xcurl_upload("/hmms/", &http);
+    xcurl_mime_cleanup();
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
@@ -258,10 +252,11 @@ enum rc api_db_up(char const *filepath, struct sched_db *db)
     reset_api_error();
     sched_db_init(db);
 
-    MIME_FILE_DEF(mime, "db_file", filename, "application/octet-stream");
-
     long http = 0;
-    enum rc rc = upload("/dbs/", &http, &mime, filepath);
+    xcurl_mime_init();
+    xcurl_mime_addfile("db_file", filename, MIME_OCTET, filepath);
+    enum rc rc = xcurl_upload("/dbs/", &http);
+    xcurl_mime_cleanup();
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
@@ -573,15 +568,18 @@ enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
                         char const *filepath, struct sched_job *job)
 {
     reset_api_error();
-
     xfile_basename(filename, filepath, sizeof filename);
-    MIME_FILE_DEF(mime, "fasta_file", filename, "text/plain");
 
     long http = 0;
-
-    // body_reset(response);
-    enum rc rc = xcurl_upload2("/scans/", &http, db_id, multi_hits,
-                               hmmer3_compat, &mime, filepath);
+    xcurl_mime_init();
+    static char db_id_str[18] = {0};
+    sprintf(db_id_str, "%lld", db_id);
+    xcurl_mime_addpart("db_id", db_id_str);
+    xcurl_mime_addpart("multi_hits", multi_hits ? "true" : "false");
+    xcurl_mime_addpart("hmmer3_compat", hmmer3_compat ? "true" : "false");
+    xcurl_mime_addfile("fasta_file", filename, MIME_PLAIN, filepath);
+    enum rc rc = xcurl_upload("/scans/", &http);
+    xcurl_mime_cleanup();
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;
@@ -688,11 +686,11 @@ enum rc api_prods_file_up(char const *filepath)
 {
     reset_api_error();
 
-    MIME_FILE_DEF(mime, "prods_file", "prods_file.tsv",
-                  "text/tab-separated-values");
-
     long http = 0;
-    enum rc rc = upload("/prods/", &http, &mime, filepath);
+    xcurl_mime_init();
+    xcurl_mime_addfile("prods_file", "prods_file.tsv", MIME_TAB, filepath);
+    enum rc rc = xcurl_upload("/prods/", &http);
+    xcurl_mime_cleanup();
     if (rc) goto cleanup;
 
     if ((rc = parse_json())) goto cleanup;

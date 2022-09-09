@@ -24,6 +24,11 @@ static struct xcurl
     char x_api_key[API_KEY_LENGTH + 16];
     struct url url;
     struct buff *body;
+    struct
+    {
+        curl_mime *form;
+        curl_mimepart *field;
+    } mime;
 } x = {0};
 
 #define http_header(...) http_header_cnt(PP_NARG(__VA_ARGS__), __VA_ARGS__)
@@ -82,6 +87,39 @@ void xcurl_cleanup(void)
 size_t xcurl_body_size(void) { return x.body->size; }
 
 char *xcurl_body_data(void) { return x.body->data; }
+
+void xcurl_mime_init(void)
+{
+    x.mime.form = curl_mime_init(x.curl);
+    if (!x.mime.form) enomem("failed to allocate for mime");
+}
+
+void xcurl_mime_addfile(char const *name, char const *filename,
+                        char const *type, char const *filepath)
+{
+    if (!(x.mime.field = curl_mime_addpart(x.mime.form))) efail("fail");
+    if (curl_mime_name(x.mime.field, "name")) efail("fail");
+    if (curl_mime_data(x.mime.field, name, CURL_ZERO_TERMINATED)) efail("fail");
+
+    if (!(x.mime.field = curl_mime_addpart(x.mime.form))) efail("fail");
+    if (curl_mime_name(x.mime.field, name)) efail("fail");
+    if (curl_mime_type(x.mime.field, type)) efail("fail");
+    if (curl_mime_filedata(x.mime.field, filepath)) efail("fail");
+
+    if (!(x.mime.field = curl_mime_addpart(x.mime.form))) efail("fail");
+    if (curl_mime_name(x.mime.field, "filename")) efail("fail");
+    if (curl_mime_data(x.mime.field, filename, CURL_ZERO_TERMINATED))
+        efail("fail");
+}
+
+void xcurl_mime_addpart(char const *name, char const *data)
+{
+    if (!(x.mime.field = curl_mime_addpart(x.mime.form))) efail("fail");
+    if (curl_mime_name(x.mime.field, name)) efail("fail");
+    if (curl_mime_data(x.mime.field, data, CURL_ZERO_TERMINATED)) efail("fail");
+}
+
+void xcurl_mime_cleanup(void) { curl_mime_free(x.mime.form); }
 
 enum rc xcurl_get(char const *query, long *http)
 {
@@ -169,8 +207,7 @@ enum rc xcurl_download(char const *query, long *http_code, FILE *fp)
     return perform_request(x.curl, http_code);
 }
 
-enum rc xcurl_upload(char const *query, long *http_code,
-                     struct mime_file const *mime, char const *filepath)
+enum rc xcurl_upload(char const *query, long *http_code)
 {
     url_set_query(&x.url, query);
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -182,69 +219,11 @@ enum rc xcurl_upload(char const *query, long *http_code,
     curl_easy_setopt(x.curl, CURLOPT_HTTPHEADER,
                      http_header(x.x_api_key, ACCEPT_JSON));
 
-    curl_mime *form = mime_new_file(x.curl, mime, filepath);
-    if (!form) return enomem("failed to allocate for mime");
-    curl_easy_setopt(x.curl, CURLOPT_MIMEPOST, form);
+    curl_easy_setopt(x.curl, CURLOPT_MIMEPOST, x.mime.form);
 
     xcurl_debug_setup(x.curl);
 
-    enum rc rc = perform_request(x.curl, http_code);
-    mime_del(form);
-
-    return rc;
-}
-
-enum rc xcurl_upload2(char const *query, long *http_code, int64_t db_id,
-                      bool multi_hits, bool hmmer3_compat,
-                      struct mime_file const *mime, char const *filepath)
-{
-    url_set_query(&x.url, query);
-    curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(x.curl, CURLOPT_URL, x.url.full);
-    curl_easy_setopt(x.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
-    curl_easy_setopt(x.curl, CURLOPT_TIMEOUT, TIMEOUT);
-    setup_write_callback();
-
-    curl_easy_setopt(x.curl, CURLOPT_HTTPHEADER,
-                     http_header(x.x_api_key, ACCEPT_JSON));
-
-    curl_mime *form = curl_mime_init(x.curl);
-
-    static char db_id_str[18] = {0};
-    sprintf(db_id_str, "%lld", db_id);
-    curl_mimepart *field = curl_mime_addpart(form);
-    curl_mime_name(field, "db_id");
-    curl_mime_data(field, db_id_str, CURL_ZERO_TERMINATED);
-
-    field = curl_mime_addpart(form);
-    curl_mime_name(field, "multi_hits");
-    curl_mime_data(field, multi_hits ? "True" : "False", CURL_ZERO_TERMINATED);
-
-    field = curl_mime_addpart(form);
-    curl_mime_name(field, "hmmer3_compat");
-    curl_mime_data(field, hmmer3_compat ? "True" : "False",
-                   CURL_ZERO_TERMINATED);
-
-    field = curl_mime_addpart(form);
-    curl_mime_name(field, "name");
-    curl_mime_data(field, mime->name, CURL_ZERO_TERMINATED);
-    field = curl_mime_addpart(form);
-    curl_mime_name(field, mime->name);
-    curl_mime_type(field, mime->type);
-    curl_mime_filedata(field, filepath);
-    field = curl_mime_addpart(form);
-    curl_mime_name(field, "filename");
-    curl_mime_data(field, mime->filename, CURL_ZERO_TERMINATED);
-
-    if (!form) return enomem("failed to allocate for mime");
-    curl_easy_setopt(x.curl, CURLOPT_MIMEPOST, form);
-
-    xcurl_debug_setup(x.curl);
-
-    enum rc rc = perform_request(x.curl, http_code);
-    mime_del(form);
-
-    return rc;
+    return perform_request(x.curl, http_code);
 }
 
 static struct curl_slist const *http_header_cnt(unsigned cnt, ...)
