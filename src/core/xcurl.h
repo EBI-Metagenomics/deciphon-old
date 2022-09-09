@@ -1,9 +1,8 @@
-#ifndef DECIPHON_CORE_XCURL_H
-#define DECIPHON_CORE_XCURL_H
+#ifndef CORE_XCURL_H
+#define CORE_XCURL_H
 
-#include "deciphon/core/limits.h"
 #include "deciphon/core/rc.h"
-#include "deciphon/core/url.h"
+#include <stdbool.h>
 #include <stdio.h>
 
 struct mime_file;

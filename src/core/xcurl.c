@@ -1,4 +1,4 @@
-#include "deciphon/core/xcurl.h"
+#include "core/xcurl.h"
 #include "core/http_headers.h"
 #include "core/mime.h"
 #include "core/pp.h"
@@ -6,6 +6,7 @@
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/limits.h"
 #include "deciphon/core/logging.h"
+#include "deciphon/core/url.h"
 #include "xcurl_debug.h"
 #include "xcurl_error.h"
 #include <assert.h>
@@ -27,19 +28,10 @@ static struct xcurl
 
 #define http_header(...) http_header_cnt(PP_NARG(__VA_ARGS__), __VA_ARGS__)
 static struct curl_slist const *http_header_cnt(unsigned cnt, ...);
-
-static size_t noop_write(void *ptr, size_t size, size_t nmemb, void *data)
-{
-    (void)ptr;
-    (void)data;
-    return size * nmemb;
-}
-
-static inline void body_reset(void)
-{
-    x.body->data[0] = '\0';
-    x.body->size = 1;
-}
+static size_t noop_write(void *ptr, size_t size, size_t nmemb, void *data);
+static size_t write_callback(void *data, size_t, size_t size, void *);
+static enum rc perform_request(CURL *curl, long *http);
+static void setup_write_callback(void);
 
 enum rc xcurl_init(char const *url_stem, char const *api_key)
 {
@@ -79,40 +71,12 @@ cleanup:
 void xcurl_cleanup(void)
 {
     if (x.curl) curl_easy_cleanup(x.curl);
-    x.curl = 0;
+    x.curl = NULL;
 
     if (x.body) buff_del(x.body);
-    x.body = 0;
+    x.body = NULL;
 
     curl_global_cleanup();
-}
-
-static size_t write_callback(void *data, size_t one, size_t size, void *arg)
-{
-    (void)one;
-    (void)arg;
-
-    if (!buff_ensure(&x.body, x.body->size + size))
-    {
-        enomem("buff_ensure failed");
-        return 0;
-    }
-
-    memcpy(x.body->data + x.body->size - 1, data, size);
-    x.body->size += size;
-    x.body->data[x.body->size - 1] = '\0';
-
-    return size;
-}
-
-static enum rc perform_request(CURL *curl, long *http_code)
-{
-    CURLcode code = curl_easy_perform(curl);
-    if (code) return xcurl_error(code);
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
-
-    curl_easy_reset(curl);
-    return RC_OK;
 }
 
 size_t xcurl_body_size(void) { return x.body->size; }
@@ -125,9 +89,7 @@ enum rc xcurl_get(char const *query, long *http)
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(x.curl, CURLOPT_URL, x.url.full);
     curl_easy_setopt(x.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
-
-    body_reset();
-    curl_easy_setopt(x.curl, CURLOPT_WRITEFUNCTION, write_callback);
+    setup_write_callback();
 
     curl_easy_setopt(x.curl, CURLOPT_HTTPHEADER,
                      http_header(x.x_api_key, ACCEPT_JSON));
@@ -142,9 +104,7 @@ enum rc xcurl_post(char const *query, long *http_code, char const *json)
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(x.curl, CURLOPT_URL, x.url.full);
     curl_easy_setopt(x.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
-
-    body_reset();
-    curl_easy_setopt(x.curl, CURLOPT_WRITEFUNCTION, write_callback);
+    setup_write_callback();
 
     curl_easy_setopt(x.curl, CURLOPT_HTTPHEADER,
                      http_header(x.x_api_key, ACCEPT_JSON, CONTENT_JSON));
@@ -162,9 +122,7 @@ enum rc xcurl_patch(char const *query, long *http_code, char const *json)
     curl_easy_setopt(x.curl, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(x.curl, CURLOPT_URL, x.url.full);
     curl_easy_setopt(x.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
-
-    body_reset();
-    curl_easy_setopt(x.curl, CURLOPT_WRITEFUNCTION, write_callback);
+    setup_write_callback();
 
     curl_easy_setopt(x.curl, CURLOPT_HTTPHEADER,
                      http_header(x.x_api_key, ACCEPT_JSON, CONTENT_JSON));
@@ -219,9 +177,7 @@ enum rc xcurl_upload(char const *query, long *http_code,
     curl_easy_setopt(x.curl, CURLOPT_URL, x.url.full);
     curl_easy_setopt(x.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
     curl_easy_setopt(x.curl, CURLOPT_TIMEOUT, TIMEOUT);
-
-    body_reset();
-    curl_easy_setopt(x.curl, CURLOPT_WRITEFUNCTION, write_callback);
+    setup_write_callback();
 
     curl_easy_setopt(x.curl, CURLOPT_HTTPHEADER,
                      http_header(x.x_api_key, ACCEPT_JSON));
@@ -247,9 +203,7 @@ enum rc xcurl_upload2(char const *query, long *http_code, int64_t db_id,
     curl_easy_setopt(x.curl, CURLOPT_URL, x.url.full);
     curl_easy_setopt(x.curl, CURLOPT_CONNECTTIMEOUT, CONNECTTIMEOUT);
     curl_easy_setopt(x.curl, CURLOPT_TIMEOUT, TIMEOUT);
-
-    body_reset();
-    curl_easy_setopt(x.curl, CURLOPT_WRITEFUNCTION, write_callback);
+    setup_write_callback();
 
     curl_easy_setopt(x.curl, CURLOPT_HTTPHEADER,
                      http_header(x.x_api_key, ACCEPT_JSON));
@@ -315,4 +269,46 @@ static struct curl_slist const *http_header_cnt(unsigned cnt, ...)
     va_end(valist);
 
     return items;
+}
+
+static size_t noop_write(void *ptr, size_t size, size_t nmemb, void *data)
+{
+    (void)ptr;
+    (void)data;
+    return size * nmemb;
+}
+
+static size_t write_callback(void *data, size_t one, size_t size, void *arg)
+{
+    (void)one;
+    (void)arg;
+
+    if (!buff_ensure(&x.body, x.body->size + size))
+    {
+        enomem("buff_ensure failed");
+        return 0;
+    }
+
+    memcpy(x.body->data + x.body->size - 1, data, size);
+    x.body->size += size;
+    x.body->data[x.body->size - 1] = '\0';
+
+    return size;
+}
+
+static enum rc perform_request(CURL *curl, long *http)
+{
+    CURLcode code = curl_easy_perform(curl);
+    if (code) return xcurl_error(code);
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http);
+
+    curl_easy_reset(curl);
+    return RC_OK;
+}
+
+static void setup_write_callback(void)
+{
+    x.body->data[0] = '\0';
+    x.body->size = 1;
+    curl_easy_setopt(x.curl, CURLOPT_WRITEFUNCTION, write_callback);
 }
