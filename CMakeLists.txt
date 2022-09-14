@@ -88,7 +88,6 @@ add_library(
   src/api.c
   src/sched_dump.c
   src/sched.c
-  src/sched/count.c
   src/core/url.c
   src/core/xcurl.c
   src/core/xcurl_debug.c)

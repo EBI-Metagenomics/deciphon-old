@@ -264,6 +264,25 @@ char const *schedy_cmd_job_inc_progress(struct getcmd const *gc)
     return api_job_inc_progress(job_id, increment) ? say_fail() : say_ok();
 }
 
+char const *schedy_cmd_scan_get_by_job_id(struct getcmd const *gc)
+{
+    static struct sched_scan scan = {0};
+
+    if (!getcmd_check(gc, "si"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    if (api_scan_get_by_job_id(getcmd_i64(gc, 1), &scan)) return say_fail();
+    return sched_dump_scan(&scan, (char *)buffer);
+}
+
+char const *schedy_cmd_scan_next_seq(struct getcmd const *gc)
+{
+    (void)gc;
+    return "";
+}
+
 char const *schedy_cmd_scan_seq_count(struct getcmd const *gc)
 {
     if (!getcmd_check(gc, "si"))
@@ -292,18 +311,6 @@ char const *schedy_cmd_scan_submit(struct getcmd const *gc)
     if (api_scan_submit(db_id, multi_hits, hmmer3_compat, gc->argv[4], &job))
         return say_fail();
     return sched_dump_job(&job, (char *)buffer);
-}
-
-char const *schedy_cmd_scan_next_seq(struct getcmd const *gc)
-{
-    (void)gc;
-    return "";
-}
-
-char const *schedy_cmd_scan_get_by_job_id(struct getcmd const *gc)
-{
-    (void)gc;
-    return "";
 }
 
 char const *schedy_cmd_prods_file_up(struct getcmd const *gc)

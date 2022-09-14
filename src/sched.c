@@ -24,6 +24,7 @@ void sched_seq_init(struct sched_seq *seq) { memset(seq, 0, sizeof(*seq)); }
 
 enum rc sched_db_parse(struct sched_db *db, struct jr *jr)
 {
+    sched_db_init(db);
     db->id = jr_long_of(jr, "id");
     db->xxh3 = jr_long_of(jr, "xxh3");
     jr_strcpy_of(jr, "filename", db->filename, sizeof db->filename);
@@ -34,6 +35,7 @@ enum rc sched_db_parse(struct sched_db *db, struct jr *jr)
 
 enum rc sched_hmm_parse(struct sched_hmm *h, struct jr *jr)
 {
+    sched_hmm_init(h);
     h->id = jr_long_of(jr, "id");
     h->xxh3 = jr_long_of(jr, "xxh3");
     jr_strcpy_of(jr, "filename", h->filename, sizeof h->filename);
@@ -44,6 +46,7 @@ enum rc sched_hmm_parse(struct sched_hmm *h, struct jr *jr)
 
 enum rc sched_job_parse(struct sched_job *j, struct jr *jr)
 {
+    sched_job_init(j);
     j->id = jr_long_of(jr, "id");
     j->type = (int)jr_long_of(jr, "type");
     jr_strcpy_of(jr, "state", j->state, sizeof j->state);
@@ -58,6 +61,7 @@ enum rc sched_job_parse(struct sched_job *j, struct jr *jr)
 
 enum rc sched_scan_parse(struct sched_scan *s, struct jr *jr)
 {
+    sched_scan_init(s);
     s->id = jr_long_of(jr, "id");
     s->db_id = jr_long_of(jr, "db_id");
     s->multi_hits = jr_bool_of(jr, "multi_hits");
@@ -69,6 +73,7 @@ enum rc sched_scan_parse(struct sched_scan *s, struct jr *jr)
 
 enum rc sched_seq_parse(struct sched_seq *s, struct jr *jr)
 {
+    sched_seq_init(s);
     s->id = jr_long_of(jr, "id");
     s->scan_id = jr_long_of(jr, "scan_id");
     jr_strcpy_of(jr, "name", s->name, sizeof s->name);
