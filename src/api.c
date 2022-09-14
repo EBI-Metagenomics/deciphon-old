@@ -335,6 +335,30 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     return handle_http_exception();
 }
 
+enum rc api_scan_dl_seqs(int64_t id, FILE *fp)
+{
+    api_error_reset();
+
+    enum rc rc = download(query("/scans/%lld/seqs/download", id), fp);
+    if (rc) return rc;
+
+    return xcurl_http_code() != 200 ? handle_http_exception() : RC_OK;
+}
+
+enum rc api_scan_get_by_id(int64_t id, struct sched_scan *scan)
+{
+    api_error_reset();
+
+    enum rc rc = get(query("/scans/%lld", id));
+    if (rc) return rc;
+
+    if ((rc = parse_json_body())) return rc;
+
+    if (xcurl_http_code() == 200) return sched_scan_parse(scan, jr);
+
+    return handle_http_exception();
+}
+
 enum rc api_scan_get_by_job_id(int64_t job_id, struct sched_scan *scan)
 {
     api_error_reset();

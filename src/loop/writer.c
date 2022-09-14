@@ -25,7 +25,7 @@ struct writer *writer_new(struct looper *looper, uv_file fd)
 
     writer->looper = looper;
 
-    if (uv_pipe_init(writer->looper->loop, &writer->pipe, fd))
+    if (uv_pipe_init(writer->looper->loop, &writer->pipe, 0))
         fatal("uv_pipe_init");
     ((struct uv_handle_s *)(&writer->pipe))->data = writer;
     ((struct uv_stream_s *)(&writer->pipe))->data = writer;

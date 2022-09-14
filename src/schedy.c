@@ -27,18 +27,18 @@ static struct
     struct
     {
         int fd;
-        FILE *fp;
+        struct uv_fs_s req;
     } input;
     struct
     {
         int fd;
-        FILE *fp;
+        struct uv_fs_s req;
     } output;
-} stream = {.input = {STDIN_FILENO, NULL}, .output = {STDOUT_FILENO, NULL}};
+} stream = {.input = {STDIN_FILENO, {0}}, .output = {STDOUT_FILENO, {0}}};
 
 static struct argl_option const options[] = {
-    {"input", 'i', "INPUT", "Input stream. Defaults to `stdin'.", false},
-    {"output", 'o', "OUTPUT", "Output stream. Defaults to `stdout'.", false},
+    {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.", false},
+    {"output", 'o', "OUTPUT", "Output stream. Defaults to `STDOUT'.", false},
     ARGL_DEFAULT_OPTS,
     ARGL_NULL_OPT,
 };
@@ -75,26 +75,26 @@ static bool stream_setup(void)
 {
     if (argl_has(&argl, "input"))
     {
-        FILE *fp = fopen(argl_get(&argl, "input"), "r");
-        if (!fp)
+        int fd = uv_fs_open(looper.loop, &stream.input.req,
+                            argl_get(&argl, "input"), O_RDONLY, 0, NULL);
+        if (fd == -1)
         {
             eio("failed to open input for reading");
             goto cleanup;
         }
-        stream.input.fd = fileno(fp);
-        stream.input.fp = fp;
+        stream.input.fd = fd;
     }
 
     if (argl_has(&argl, "output"))
     {
-        FILE *fp = fopen(argl_get(&argl, "output"), "w");
-        if (!fp)
+        int fd = uv_fs_open(looper.loop, &stream.output.req,
+                            argl_get(&argl, "output"), O_WRONLY, 0, NULL);
+        if (fd == -1)
         {
             eio("failed to open output for writing");
             goto cleanup;
         }
-        stream.output.fd = fileno(fp);
-        stream.output.fp = fp;
+        stream.output.fd = fd;
     }
     return true;
 
@@ -105,10 +105,13 @@ cleanup:
 
 static void stream_cleanup(void)
 {
-    if (stream.input.fp) fclose(stream.input.fp);
-    if (stream.output.fp) fclose(stream.output.fp);
-    stream.input.fp = NULL;
-    stream.output.fp = NULL;
+    if (stream.input.fd != STDIN_FILENO)
+        uv_fs_close(looper.loop, &stream.input.req, stream.input.fd, NULL);
+    if (stream.output.fd != STDOUT_FILENO)
+        uv_fs_close(looper.loop, &stream.output.req, stream.output.fd, NULL);
+
+    stream.input.fd = STDIN_FILENO;
+    stream.output.fd = STDOUT_FILENO;
 }
 
 #define CMD_MAP(X)                                                             \
@@ -135,6 +138,7 @@ static void stream_cleanup(void)
     X(JOB_SET_STATE, schedy_cmd_job_set_state)                                 \
     X(JOB_INC_PROGRESS, schedy_cmd_job_inc_progress)                           \
                                                                                \
+    X(SCAN_DL_SEQS, schedy_cmd_scan_dl_seqs)                                   \
     X(SCAN_SEQ_COUNT, schedy_cmd_scan_seq_count)                               \
     X(SCAN_SUBMIT, schedy_cmd_scan_submit)                                     \
     X(SCAN_NEXT_SEQ, schedy_cmd_scan_next_seq)                                 \

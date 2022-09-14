@@ -27,7 +27,7 @@ void liner_init(struct liner *liner, struct looper *looper,
 
 void liner_open(struct liner *liner, uv_file fd)
 {
-    if (uv_pipe_init(liner->looper->loop, &liner->pipe, fd))
+    if (uv_pipe_init(liner->looper->loop, &liner->pipe, 0))
         fatal("uv_pipe_init");
     ((struct uv_handle_s *)(&liner->pipe))->data = liner;
     ((struct uv_stream_s *)(&liner->pipe))->data = liner;

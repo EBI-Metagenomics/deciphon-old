@@ -3,6 +3,7 @@
 #include "deciphon/core/file.h"
 #include "deciphon/core/getcmd.h"
 #include "deciphon/core/logging.h"
+#include "deciphon/core/xfile.h"
 #include "deciphon/sched_dump.h"
 #include <string.h>
 
@@ -262,6 +263,30 @@ char const *schedy_cmd_job_inc_progress(struct getcmd const *gc)
     int64_t job_id = getcmd_i64(gc, 1);
     int64_t increment = getcmd_i64(gc, 2);
     return api_job_inc_progress(job_id, increment) ? say_fail() : say_ok();
+}
+
+char const *schedy_cmd_scan_dl_seqs(struct getcmd const *gc)
+{
+    static struct sched_scan scan = {0};
+    static struct xfile_tmp file = {0};
+
+    if (!getcmd_check(gc, "si"))
+    {
+        error_parse();
+        return say_fail();
+    }
+
+    enum rc rc = api_scan_get_by_id(getcmd_i64(gc, 1), &scan);
+    if (rc) return say_fail();
+
+    if ((rc = xfile_tmp_open(&file))) return say_fail();
+
+    if ((rc = api_scan_dl_seqs(scan.id, file.fp)))
+    {
+        xfile_tmp_del(&file);
+        return say_fail();
+    }
+    return file.path;
 }
 
 char const *schedy_cmd_scan_get_by_job_id(struct getcmd const *gc)

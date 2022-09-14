@@ -66,9 +66,9 @@ enum rc sched_scan_parse(struct sched_scan *s, struct jr *jr)
     s->db_id = jr_long_of(jr, "db_id");
     s->multi_hits = jr_bool_of(jr, "multi_hits");
     s->hmmer3_compat = jr_bool_of(jr, "hmmer3_compat");
-    s->job_id = jr_bool_of(jr, "job_id");
+    s->job_id = jr_long_of(jr, "job_id");
 
-    return jr_error() ? einval("failed to parse seq") : RC_OK;
+    return jr_error() ? einval("failed to parse scan") : RC_OK;
 }
 
 enum rc sched_seq_parse(struct sched_seq *s, struct jr *jr)
