@@ -1,3 +1,4 @@
+#include "argless.h"
 #include "deciphon/api.h"
 #include "deciphon/core/compiler.h"
 #include "deciphon/core/getcmd.h"
@@ -9,6 +10,7 @@
 #include "schedy_cmd.h"
 #include <assert.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -19,6 +21,95 @@ static void onterm_cb(void);
 static struct looper looper = {0};
 static struct liner liner = {0};
 static struct writer *writer = 0;
+
+static struct
+{
+    struct
+    {
+        int fd;
+        FILE *fp;
+    } input;
+    struct
+    {
+        int fd;
+        FILE *fp;
+    } output;
+} stream = {.input = {STDIN_FILENO, NULL}, .output = {STDOUT_FILENO, NULL}};
+
+static struct argl_option const options[] = {
+    {"input", 'i', "INPUT", "Input stream. Defaults to `stdin'.", false},
+    {"output", 'o', "OUTPUT", "Output stream. Defaults to `stdout'.", false},
+    ARGL_DEFAULT_OPTS,
+    ARGL_NULL_OPT,
+};
+
+static struct argl argl = {.options = options,
+                           .args_doc = nullptr,
+                           .doc = "Schedy program.",
+                           .version = "1.0.0"};
+
+static bool stream_setup(void);
+static void stream_cleanup(void);
+
+int main(int argc, char *argv[])
+{
+    argl_parse(&argl, argc, argv);
+    if (argl_nargs(&argl)) argl_usage(&argl);
+
+    if (!stream_setup()) return EXIT_FAILURE;
+
+    looper_init(&looper, onterm_cb);
+    liner_init(&liner, &looper, ioerror_cb, newline_cb);
+    if (!(writer = writer_new(&looper, stream.output.fd))) return EXIT_FAILURE;
+    liner_open(&liner, stream.input.fd);
+
+    looper_run(&looper);
+
+    looper_cleanup(&looper);
+
+    stream_cleanup();
+    return EXIT_SUCCESS;
+}
+
+static bool stream_setup(void)
+{
+    if (argl_has(&argl, "input"))
+    {
+        FILE *fp = fopen(argl_get(&argl, "input"), "r");
+        if (!fp)
+        {
+            eio("failed to open input for reading");
+            goto cleanup;
+        }
+        stream.input.fd = fileno(fp);
+        stream.input.fp = fp;
+    }
+
+    if (argl_has(&argl, "output"))
+    {
+        FILE *fp = fopen(argl_get(&argl, "output"), "w");
+        if (!fp)
+        {
+            eio("failed to open output for writing");
+            goto cleanup;
+        }
+        stream.output.fd = fileno(fp);
+        stream.output.fp = fp;
+    }
+    return true;
+
+cleanup:
+    stream_cleanup();
+    return false;
+}
+
+static void stream_cleanup(void)
+{
+    if (stream.input.fp) fclose(stream.input.fp);
+    if (stream.output.fp) fclose(stream.output.fp);
+    stream.input.fp = NULL;
+    stream.output.fp = NULL;
+}
 
 #define CMD_MAP(X)                                                             \
     X(INVALID, schedy_cmd_invalid)                                             \
@@ -65,18 +156,6 @@ enum cmd parse_command(char const *cmd)
     CMD_MAP(X)
 #undef X
     return CMD_INVALID;
-}
-
-int main(void)
-{
-    looper_init(&looper, onterm_cb);
-    liner_init(&liner, &looper, ioerror_cb, newline_cb);
-    if (!(writer = writer_new(&looper, STDOUT_FILENO))) return 1;
-    liner_open(&liner, STDIN_FILENO);
-
-    looper_run(&looper);
-
-    looper_cleanup(&looper);
 }
 
 static void ioerror_cb(void)

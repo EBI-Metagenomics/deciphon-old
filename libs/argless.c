@@ -501,8 +501,6 @@ void argl_parse(struct argl *al, int argc, char *argv[])
 
     if (argvec_has(argc, argv, al->options, "version"))
         help_version(progname, al->version, EXIT_SUCCESS);
-
-    if (argc == 1) help_usage(progname, al->options, EXIT_FAILURE);
 }
 
 bool argl_has(struct argl const *al, char const *name)
