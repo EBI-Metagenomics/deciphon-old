@@ -1,7 +1,6 @@
 #include "argless.h"
 #include "core/api.h"
 #include "core/compiler.h"
-#include "core/getcmd.h"
 #include "core/io.h"
 #include "core/logging.h"
 #include "core/to.h"
@@ -32,14 +31,14 @@ static struct argl argl = {.options = options,
                            .doc = "Schedy program.",
                            .version = "1.0.0"};
 
-static void ioerror_cb(void);
-static void newline_cb(char *line);
-static void onterm_cb(void);
-
 static inline char const *get(char const *name, char const *default_value)
 {
     return argl_has(&argl, name) ? argl_get(&argl, name) : default_value;
 }
+
+static void ioerror_cb(void);
+static void newline_cb(char *line);
+static void onterm_cb(void);
 
 int main(int argc, char *argv[])
 {
@@ -72,8 +71,8 @@ static void ioerror_cb(void)
 
 static void newline_cb(char *line)
 {
-    static struct getcmd gc = {0};
-    if (!getcmd_parse(&gc, line)) error("too many arguments");
+    static struct cmd gc = {0};
+    if (!cmd_parse(&gc, line)) error("too many arguments");
     writer_put(writer, (*schedy_cmd(gc.argv[0]))(&gc));
 }
 

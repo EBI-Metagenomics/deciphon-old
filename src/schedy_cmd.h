@@ -1,7 +1,7 @@
 #ifndef SCHEDY_CMD
 #define SCHEDY_CMD
 
-#include "core/getcmd.h"
+#include "core/cmd.h"
 
 #define SCHEDY_CMD_MAP(X)                                                      \
     X(INVALID, schedy_cmd_invalid)                                             \
@@ -37,14 +37,14 @@
 
 enum schedy_cmd
 {
-#define X(A, _) CMD_##A,
+#define X(A, _) SCHEDY_CMD_##A,
     SCHEDY_CMD_MAP(X)
 #undef X
 };
 
-getcmd_fn_t *schedy_cmd(char const *cmd);
+cmd_fn_t *schedy_cmd(char const *cmd);
 
-#define X(_, X) char const *X(struct getcmd const *);
+#define X(_, X) char const *X(struct cmd const *);
 SCHEDY_CMD_MAP(X)
 #undef X
 

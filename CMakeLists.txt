@@ -63,7 +63,7 @@ add_library(
   src/core/http.c
   # src/core/line.c
   src/core/file.c
-  src/core/getcmd.c
+  src/core/cmd.c
   src/loop/looper.c
   src/loop/liner.c
   src/loop/writer.c
