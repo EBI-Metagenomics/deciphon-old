@@ -1,5 +1,5 @@
-#ifndef DECIPHON_SCHED_H
-#define DECIPHON_SCHED_H
+#ifndef CORE_SCHED_H
+#define CORE_SCHED_H
 
 #include "sched_structs.h"
 #include <stdbool.h>

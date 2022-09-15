@@ -1,5 +1,5 @@
-#ifndef DECIPHON_SCHED_DUMP_H
-#define DECIPHON_SCHED_DUMP_H
+#ifndef CORE_SCHED_DUMP_H
+#define CORE_SCHED_DUMP_H
 
 struct sched_db;
 struct sched_hmm;

@@ -1,5 +1,5 @@
-#ifndef DECIPHON_API_H
-#define DECIPHON_API_H
+#ifndef CORE_API_H
+#define CORE_API_H
 
 #include "core/limits.h"
 #include "core/rc.h"

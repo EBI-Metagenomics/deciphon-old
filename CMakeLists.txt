@@ -57,6 +57,7 @@ add_library(
   libs/argless.c
   libs/zc.c
   src/core/buff.c
+  src/core/io.c
   # src/core/buff_pool.c
   src/core/expect.c
   src/core/http.c
