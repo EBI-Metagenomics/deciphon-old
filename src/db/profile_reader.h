@@ -1,5 +1,5 @@
-#ifndef DECIPHON_PROFILE_READER_H
-#define DECIPHON_PROFILE_READER_H
+#ifndef PROFILE_READER_H
+#define PROFILE_READER_H
 
 #include "core/limits.h"
 #include "core/lite_pack.h"

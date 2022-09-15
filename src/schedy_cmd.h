@@ -1,5 +1,5 @@
-#ifndef SCHEDY_CMD
-#define SCHEDY_CMD
+#ifndef SCHEDY_CMD_H
+#define SCHEDY_CMD_H
 
 #include "core/cmd.h"
 

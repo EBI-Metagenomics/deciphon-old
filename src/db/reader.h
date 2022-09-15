@@ -1,5 +1,5 @@
-#ifndef DECIPHON_DB_READER_H
-#define DECIPHON_DB_READER_H
+#ifndef DB_READER_H
+#define DB_READER_H
 
 #include "core/lite_pack.h"
 #include "model/profile.h"

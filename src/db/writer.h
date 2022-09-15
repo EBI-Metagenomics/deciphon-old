@@ -1,5 +1,5 @@
-#ifndef DECIPHON_DB_WRITER_H
-#define DECIPHON_DB_WRITER_H
+#ifndef DB_WRITER_H
+#define DB_WRITER_H
 
 #include "core/lite_pack.h"
 #include "model/profile.h"

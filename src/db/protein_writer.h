@@ -1,5 +1,5 @@
-#ifndef DECIPHON_PROTEIN_DB_WRITER_H
-#define DECIPHON_PROTEIN_DB_WRITER_H
+#ifndef PROTEIN_DB_WRITER_H
+#define PROTEIN_DB_WRITER_H
 
 #include "core/rc.h"
 #include "model/entry_dist.h"

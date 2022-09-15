@@ -1,5 +1,5 @@
-#ifndef DECIPHON_PROTEIN_DB_H
-#define DECIPHON_PROTEIN_DB_H
+#ifndef PROTEIN_DB_H
+#define PROTEIN_DB_H
 
 #include "db/profile_reader.h"
 #include "db/protein_reader.h"

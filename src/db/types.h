@@ -1,5 +1,5 @@
-#ifndef DECIPHON_DB_TYPES_H
-#define DECIPHON_DB_TYPES_H
+#ifndef DB_TYPES_H
+#define DB_TYPES_H
 
 enum db_typeid
 {

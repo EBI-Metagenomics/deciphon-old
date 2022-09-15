@@ -57,7 +57,7 @@ add_library(
   libs/argless.c
   libs/zc.c
   src/core/buff.c
-  src/core/io.c
+  src/loop/io.c
   # src/core/buff_pool.c
   src/core/expect.c
   src/core/http.c
@@ -84,6 +84,7 @@ add_library(
   src/model/standard_state.c
   src/db/reader.c
   src/db/writer.c
+  src/db/press.c
   src/db/protein_writer.c
   src/db/protein_reader.c
   src/db/profile_reader.c
@@ -124,6 +125,9 @@ endif()
 
 add_executable(schedy src/schedy.c src/schedy_cmd.c)
 target_link_libraries(schedy PUBLIC deciphon)
+
+add_executable(pressy src/pressy.c src/pressy_cmd.c)
+target_link_libraries(pressy PUBLIC deciphon)
 
 enable_testing()
 add_subdirectory(test)

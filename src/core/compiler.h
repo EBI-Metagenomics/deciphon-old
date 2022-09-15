@@ -39,24 +39,6 @@
              : ONE, default                                                    \
              : TWO)
 
-#define __MEMBER_REF(var, member) ((__typeof__(var) *)0)->member
-
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#define MEMBER_SIZE(var, member) sizeof(__MEMBER_REF((var), member))
-#define ARRAY_SIZE_OF(var, member) ARRAY_SIZE(__MEMBER_REF((var), member))
-
-/*
- * String related macros.
- */
-#define STRINGIFY(s) __STRINGIFY(s)
-#define __STRINGIFY(s) #s
-
-#ifdef __FILE_NAME__
-#define LOCAL __FILE_NAME__ ":" STRINGIFY(__LINE__)
-#else
-#define LOCAL __FILE__ ":" STRINGIFY(__LINE__)
-#endif
-
 /* Are two types/vars the same type (ignoring qualifiers)? */
 #define SAME_TYPE(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 

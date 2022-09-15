@@ -1,5 +1,5 @@
-#ifndef DECIPHON_PROTEIN_DB_READER_H
-#define DECIPHON_PROTEIN_DB_READER_H
+#ifndef PROTEIN_DB_READER_H
+#define PROTEIN_DB_READER_H
 
 #include "db/reader.h"
 #include "model/entry_dist.h"

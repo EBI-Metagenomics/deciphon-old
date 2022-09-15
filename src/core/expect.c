@@ -1,4 +1,5 @@
 #include "core/expect.h"
+#include "core/pp.h"
 #include <string.h>
 
 bool expect_map_size(struct lip_file *file, unsigned size)

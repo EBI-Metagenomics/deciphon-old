@@ -1,5 +1,5 @@
-#ifndef CORE_IO_H
-#define CORE_IO_H
+#ifndef LOOP_IO_H
+#define LOOP_IO_H
 
 #include "core/c23.h"
 #include "uv.h"

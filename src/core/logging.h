@@ -3,6 +3,7 @@
 
 #include "core/bug.h"
 #include "core/compiler.h"
+#include "core/pp.h"
 #include "core/rc.h"
 #include <stdbool.h>
 #include <stdio.h>
