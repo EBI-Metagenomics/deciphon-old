@@ -23,6 +23,23 @@ static bool encode_job_state(char const *str, enum sched_job_state *);
 
 static char buffer[6 * 1024 * 1024] = {0};
 
+static getcmd_fn_t *schedy_cmds[] = {
+#define X(_, A) &A,
+    SCHEDY_CMD_MAP(X)
+#undef X
+};
+
+static enum schedy_cmd parse(char const *cmd)
+{
+#define X(A, _)                                                                \
+    if (!strcmp(cmd, STRINGIFY(A))) return CMD_##A;
+    SCHEDY_CMD_MAP(X)
+#undef X
+    return CMD_INVALID;
+}
+
+getcmd_fn_t *schedy_cmd(char const *cmd) { return schedy_cmds[parse(cmd)]; }
+
 char const *schedy_cmd_invalid(struct getcmd const *gc)
 {
     (void)gc;
