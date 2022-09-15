@@ -1,6 +1,5 @@
 #include "loop/liner.h"
 #include "core/logging.h"
-#include "loop/looper.h"
 #include "uv.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -14,21 +13,22 @@ static void process_newlines(struct liner *);
 static void start_reading(struct liner *);
 static void stop_reading(struct liner *);
 
-void liner_init(struct liner *liner, struct looper *looper,
-                liner_ioerror_fn_t *ioerror_cb, liner_newline_fn_t *newline_cb)
+void liner_init(struct liner *liner, struct uv_loop_s *loop,
+                liner_ioerror_fn_t *ioerror_cb, liner_newline_fn_t *newline_cb,
+                liner_onclose_fn_t *onclose_cb)
 {
-    liner->looper = looper;
+    liner->loop = loop;
     liner->noclose = true;
     liner->ioerror_cb = ioerror_cb;
     liner->newline_cb = newline_cb;
+    liner->onclose_cb = onclose_cb;
     liner->pos = liner->buff;
     liner->end = liner->pos;
 }
 
 void liner_open(struct liner *liner, uv_file fd)
 {
-    if (uv_pipe_init(liner->looper->loop, &liner->pipe, 0))
-        fatal("uv_pipe_init");
+    if (uv_pipe_init(liner->loop, &liner->pipe, 0)) fatal("uv_pipe_init");
     ((struct uv_handle_s *)(&liner->pipe))->data = liner;
     ((struct uv_stream_s *)(&liner->pipe))->data = liner;
 
@@ -37,11 +37,17 @@ void liner_open(struct liner *liner, uv_file fd)
     liner->noclose = false;
 }
 
+static void onclose_cb(struct uv_handle_s *handle)
+{
+    struct liner *liner = handle->data;
+    (*liner->onclose_cb)();
+}
+
 void liner_close(struct liner *liner)
 {
     stop_reading(liner);
     if (liner->noclose) return;
-    uv_close((struct uv_handle_s *)&liner->pipe, 0);
+    uv_close((struct uv_handle_s *)&liner->pipe, &onclose_cb);
     liner->noclose = true;
 }
 

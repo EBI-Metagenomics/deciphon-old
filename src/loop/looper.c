@@ -6,11 +6,8 @@
 static void async_cb(struct uv_async_s *handle);
 static void sigterm_cb(struct uv_signal_s *handle, int signum);
 static void sigint_cb(struct uv_signal_s *handle, int signum);
-static void close_async(struct looper *);
-static void close_sigterm(struct looper *);
-static void close_sigint(struct looper *);
 
-void looper_init(struct looper *l, looper_on_terminate_fn_t *on_terminate_cb)
+void looper_init(struct looper *l, looper_onterm_fn_t *onterm_cb)
 {
     l->terminating = false;
 
@@ -24,11 +21,19 @@ void looper_init(struct looper *l, looper_on_terminate_fn_t *on_terminate_cb)
     l->sigterm.data = l;
     l->sigint.data = l;
 
+    ((struct uv_handle_s *)&l->async)->data = l;
+    ((struct uv_handle_s *)&l->sigterm)->data = l;
+    ((struct uv_handle_s *)&l->sigint)->data = l;
+
     l->closing.async = false;
     l->closing.sigterm = false;
     l->closing.sigint = false;
 
-    l->on_terminate_cb = on_terminate_cb;
+    l->closed.async = false;
+    l->closed.sigterm = false;
+    l->closed.sigint = false;
+
+    l->onterm_cb = onterm_cb;
 
     if (uv_signal_start(&l->sigterm, sigterm_cb, SIGTERM))
         fatal("uv_signal_start");
@@ -50,43 +55,51 @@ void looper_terminate(struct looper *l)
 
 void looper_cleanup(struct looper *l)
 {
-    close_async(l);
-    close_sigterm(l);
-    close_sigint(l);
-
     if (uv_loop_close(l->loop)) fatal("uv_loop_close");
 }
 
-static void close_async(struct looper *l)
+static void try_call_user_onterm(struct looper *l)
 {
-    if (!l->closing.async)
-    {
-        uv_close((struct uv_handle_s *)&l->async, 0);
-        l->closing.async = true;
-    }
+    if (l->closed.async && l->closed.sigterm && l->closed.sigint)
+        (*l->onterm_cb)();
+}
+
+static void onclose_sigterm_cb(struct uv_handle_s *handle)
+{
+    struct looper *l = handle->data;
+    l->closed.sigterm = true;
+    try_call_user_onterm(l);
 }
 
 static void close_sigterm(struct looper *l)
 {
     if (!l->closing.sigterm)
     {
-        uv_close((struct uv_handle_s *)&l->sigterm, 0);
+        uv_close((struct uv_handle_s *)&l->sigterm, onclose_sigterm_cb);
         l->closing.sigterm = true;
     }
+}
+
+static void onclose_sigint_cb(struct uv_handle_s *handle)
+{
+    struct looper *l = handle->data;
+    l->closed.sigint = true;
+    try_call_user_onterm(l);
 }
 
 static void close_sigint(struct looper *l)
 {
     if (!l->closing.sigint)
     {
-        uv_close((struct uv_handle_s *)&l->sigint, 0);
+        uv_close((struct uv_handle_s *)&l->sigint, onclose_sigint_cb);
         l->closing.sigint = true;
     }
 }
 
-static void close_signals_cb(struct uv_handle_s *handle)
+static void onclose_async_cb(struct uv_handle_s *handle)
 {
     struct looper *l = handle->data;
+    l->closed.async = true;
     close_sigterm(l);
     close_sigint(l);
 }
@@ -95,10 +108,9 @@ static void async_cb(struct uv_async_s *handle)
 {
     struct looper *l = handle->data;
     l->terminating = true;
-    (*l->on_terminate_cb)();
     if (!l->closing.async)
     {
-        uv_close((struct uv_handle_s *)&l->async, close_signals_cb);
+        uv_close((struct uv_handle_s *)&l->async, onclose_async_cb);
         l->closing.async = true;
     }
 }

@@ -1,14 +1,22 @@
-#ifndef DECIPHON_LOOP_WRITER_H
-#define DECIPHON_LOOP_WRITER_H
+#ifndef LOOP_WRITER_H
+#define LOOP_WRITER_H
 
 #include "uv.h"
 #include <stdbool.h>
 
-struct looper;
-struct writer;
+typedef void writer_onclose_fn_t(void);
 
-struct writer *writer_new(struct looper *looper, uv_file fd);
-void writer_put(struct writer *writer, char const *msg);
-void writer_del(struct writer *writer);
+struct writer
+{
+    struct uv_loop_s *loop;
+    struct uv_pipe_s pipe;
+    writer_onclose_fn_t *onclose_cb;
+};
+
+void writer_init(struct writer *, struct uv_loop_s *loop,
+                 writer_onclose_fn_t *);
+void writer_open(struct writer *, uv_file fd);
+void writer_put(struct writer *, char const *msg);
+void writer_close(struct writer *);
 
 #endif

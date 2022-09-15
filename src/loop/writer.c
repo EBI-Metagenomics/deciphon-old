@@ -1,15 +1,8 @@
 #include "loop/writer.h"
 #include "core/logging.h"
-#include "loop/looper.h"
 #include "uv.h"
 #include <stdbool.h>
 #include <stdlib.h>
-
-struct writer
-{
-    struct looper *looper;
-    struct uv_pipe_s pipe;
-};
 
 struct request
 {
@@ -18,20 +11,21 @@ struct request
     char const *msg;
 };
 
-struct writer *writer_new(struct looper *looper, uv_file fd)
+void writer_init(struct writer *writer, struct uv_loop_s *loop,
+                 writer_onclose_fn_t *onclose_cb)
 {
-    struct writer *writer = malloc(sizeof *writer);
-    if (!writer) return 0;
+    writer->loop = loop;
+    writer->onclose_cb = onclose_cb;
+}
 
-    writer->looper = looper;
+void writer_open(struct writer *writer, uv_file fd)
+{
+    if (uv_pipe_init(writer->loop, &writer->pipe, 0)) fatal("uv_pipe_init");
 
-    if (uv_pipe_init(writer->looper->loop, &writer->pipe, 0))
-        fatal("uv_pipe_init");
     ((struct uv_handle_s *)(&writer->pipe))->data = writer;
     ((struct uv_stream_s *)(&writer->pipe))->data = writer;
 
     if (uv_pipe_open(&writer->pipe, fd)) fatal("uv_pipe_open");
-    return writer;
 }
 
 static void *memdup(const void *mem, size_t size)
@@ -47,6 +41,7 @@ static void write_cb(struct uv_write_s *write, int status);
 
 void writer_put(struct writer *writer, char const *msg)
 {
+    /* TODO: fix it */
     puts(msg);
     fflush(stdout);
     return;
@@ -60,13 +55,18 @@ void writer_put(struct writer *writer, char const *msg)
     uv_buf_t bufs[2] = {uv_buf_init((char *)request->msg, size),
                         uv_buf_init((char *)"\n", 1)};
 
-    uv_write(&request->req, stream, bufs, 2, write_cb);
+    uv_write(&request->req, stream, bufs, 2, &write_cb);
 }
 
-void writer_del(struct writer *writer)
+void onclose_cb(struct uv_handle_s *handle)
 {
-    uv_close((struct uv_handle_s *)&writer->pipe, 0);
-    free(writer);
+    struct writer *writer = handle->data;
+    (*writer->onclose_cb)();
+}
+
+void writer_close(struct writer *writer)
+{
+    uv_close((struct uv_handle_s *)&writer->pipe, &onclose_cb);
 }
 
 static void write_cb(struct uv_write_s *write, int status)

@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
 
     looper_init(&looper, onterm_cb);
-    liner_init(&liner, &looper, ioerror_cb, newline_cb);
+    liner_init(&liner, &looper, ioerror_cb, newline_cb, 0);
     if (!(writer = writer_new(&looper, io.output.fd))) return EXIT_FAILURE;
     liner_open(&liner, io.input.fd);
 
@@ -57,7 +57,6 @@ int main(int argc, char *argv[])
 
     looper_cleanup(&looper);
 
-    io_cleanup(&io);
     return EXIT_SUCCESS;
 }
 
@@ -71,11 +70,12 @@ static void newline_cb(char *line)
 {
     static struct cmd gc = {0};
     if (!cmd_parse(&gc, line)) error("too many arguments");
-    writer_put(writer, (*pressy_cmd(gc.argv[0]))(&gc));
+    writer_put(writer, (*pressy_cmd(gc.argv[0], looper.loop))(&gc));
 }
 
 static void onterm_cb(void)
 {
     liner_close(&liner);
-    if (writer) writer_del(writer);
+    if (writer) writer_close(writer);
+    io_close(&io);
 }

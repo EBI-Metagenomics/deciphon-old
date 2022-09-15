@@ -15,7 +15,9 @@ enum pressy_cmd
 #undef X
 };
 
-cmd_fn_t *pressy_cmd(char const *cmd);
+struct uv_loop_s;
+
+cmd_fn_t *pressy_cmd(char const *cmd, struct uv_loop_s *);
 
 #define X(_, X) char const *X(struct cmd const *);
 PRESSY_CMD_MAP(X)
