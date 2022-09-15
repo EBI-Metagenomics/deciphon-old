@@ -1,5 +1,5 @@
-#include "deciphon/core/getcmd.h"
-#include "deciphon/core/to.h"
+#include "core/getcmd.h"
+#include "core/to.h"
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>

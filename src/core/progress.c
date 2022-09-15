@@ -1,6 +1,6 @@
-#include "deciphon/core/progress.h"
-#include "deciphon/core/limits.h"
-#include "deciphon/core/logging.h"
+#include "core/progress.h"
+#include "core/limits.h"
+#include "core/logging.h"
 
 struct thread
 {

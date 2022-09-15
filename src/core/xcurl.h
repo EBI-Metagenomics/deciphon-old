@@ -1,7 +1,7 @@
 #ifndef CORE_XCURL_H
 #define CORE_XCURL_H
 
-#include "deciphon/core/rc.h"
+#include "core/rc.h"
 #include <stdio.h>
 
 struct mime_file;

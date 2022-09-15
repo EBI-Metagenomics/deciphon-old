@@ -1,7 +1,7 @@
-#include "deciphon/model/protein_model.h"
-#include "deciphon/model/protein_profile.h"
+#include "model/protein_model.h"
 #include "hope.h"
 #include "imm/imm.h"
+#include "model/protein_profile.h"
 
 int main(void)
 {

@@ -86,9 +86,9 @@ add_library(
   src/db/protein_writer.c
   src/db/protein_reader.c
   src/db/profile_reader.c
-  src/api.c
-  src/sched_dump.c
-  src/sched.c
+  src/core/api.c
+  src/core/sched_dump.c
+  src/core/sched.c
   src/core/url.c
   src/core/xcurl.c
   src/core/xcurl_debug.c)
@@ -107,18 +107,13 @@ target_link_libraries(deciphon PUBLIC uv_a)
 
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
 
-set(VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/deciphon/version.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/deciphon/version.h.in
-               ${VERSION_FILE} @ONLY)
-
+# $<INSTALL_INTERFACE:include>
 target_include_directories(
   deciphon
-  PUBLIC $<INSTALL_INTERFACE:include>
-         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
          $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>
-  PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-          $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>)
+         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+  PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   include(CheckIPOSupported)

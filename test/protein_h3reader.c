@@ -1,7 +1,7 @@
-#include "deciphon/model/protein_h3reader.h"
-#include "deciphon/model/protein_profile.h"
+#include "model/protein_h3reader.h"
 #include "hope.h"
 #include "imm/imm.h"
+#include "model/protein_profile.h"
 
 static char const sequence[] =
     "GTGCTGGGCAGCAAAAGCCTGACCGCGAAAAGCCTGCTGGGCACCCTGGGCTTTCTGCAT"

@@ -1,5 +1,5 @@
-#include "deciphon/core/url.h"
-#include "deciphon/core/compiler.h"
+#include "core/url.h"
+#include "core/compiler.h"
 #include "zc.h"
 #include <assert.h>
 

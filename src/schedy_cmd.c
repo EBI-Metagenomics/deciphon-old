@@ -1,10 +1,10 @@
 #include "schedy_cmd.h"
-#include "deciphon/api.h"
-#include "deciphon/core/file.h"
-#include "deciphon/core/getcmd.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/core/xfile.h"
-#include "deciphon/sched_dump.h"
+#include "core/api.h"
+#include "core/file.h"
+#include "core/getcmd.h"
+#include "core/logging.h"
+#include "core/sched_dump.h"
+#include "core/xfile.h"
 #include <string.h>
 
 static inline char const *say_ok(void) { return "OK"; }

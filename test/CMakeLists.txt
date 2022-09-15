@@ -77,4 +77,6 @@ ExternalData_add_test(
   DATA{prods_file.tsv})
 ExternalData_add_target(data_schedy_scan)
 
+# deciphon_add_test(schedy_overall)
+
 add_subdirectory(tools)

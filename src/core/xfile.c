@@ -1,9 +1,9 @@
-#include "deciphon/core/xfile.h"
-#include "deciphon/core/compiler.h"
-#include "deciphon/core/logging.h"
+#include "core/xfile.h"
+#include "core/compiler.h"
+#include "core/logging.h"
 #include "zc.h"
 #define XXH_INLINE_ALL
-#include "xxhash/xxhash.h"
+#include "xxhash.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

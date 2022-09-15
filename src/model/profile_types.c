@@ -1,4 +1,4 @@
-#include "deciphon/model/profile_typeid.h"
+#include "model/profile_typeid.h"
 
 static char const *const names[] = {[PROFILE_NULL] = "null",
                                     [PROFILE_STANDARD] = "standard",

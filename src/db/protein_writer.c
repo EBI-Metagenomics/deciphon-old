@@ -1,8 +1,8 @@
-#include "deciphon/db/protein_writer.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/core/rc.h"
-#include "deciphon/db/types.h"
-#include "deciphon/model/model.h"
+#include "db/protein_writer.h"
+#include "core/logging.h"
+#include "core/rc.h"
+#include "db/types.h"
+#include "model/model.h"
 
 static enum rc pack_entry_dist(struct lip_file *file,
                                enum entry_dist const *edist)

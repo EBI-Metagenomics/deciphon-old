@@ -1,11 +1,11 @@
-#include "deciphon/db/reader.h"
-#include "deciphon/core/compiler.h"
-#include "deciphon/core/expect.h"
-#include "deciphon/core/limits.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/db/types.h"
-#include "deciphon/model/model.h"
+#include "db/reader.h"
+#include "core/compiler.h"
+#include "core/expect.h"
+#include "core/limits.h"
+#include "core/logging.h"
+#include "db/types.h"
 #include "imm/imm.h"
+#include "model/model.h"
 #include <stdlib.h>
 
 enum rc db_reader_open(struct db_reader *db, FILE *fp)

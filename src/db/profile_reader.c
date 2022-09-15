@@ -1,8 +1,8 @@
-#include "deciphon/core/expect.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/core/xfile.h"
-#include "deciphon/core/xmath.h"
-#include "deciphon/db/db.h"
+#include "core/expect.h"
+#include "core/logging.h"
+#include "core/xfile.h"
+#include "core/xmath.h"
+#include "db/db.h"
 #include "zc.h"
 
 static void cleanup(struct profile_reader *reader)

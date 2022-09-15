@@ -1,5 +1,5 @@
-#include "deciphon/core/logging.h"
-#include "deciphon/core/spinlock.h"
+#include "core/logging.h"
+#include "core/spinlock.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>

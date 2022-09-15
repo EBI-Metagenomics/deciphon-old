@@ -1,13 +1,13 @@
-#include "deciphon/model/standard_profile.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/core/rc.h"
-#include "deciphon/model/profile.h"
-#include "deciphon/model/profile_typeid.h"
-#include "deciphon/model/standard_profile.h"
-#include "deciphon/model/standard_state.h"
+#include "model/standard_profile.h"
+#include "core/logging.h"
+#include "core/rc.h"
 #include "imm/imm.h"
 #include "lite_pack/file/file.h"
 #include "lite_pack/lite_pack.h"
+#include "model/profile.h"
+#include "model/profile_typeid.h"
+#include "model/standard_profile.h"
+#include "model/standard_state.h"
 
 static void del(struct profile *prof)
 {

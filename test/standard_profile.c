@@ -1,4 +1,4 @@
-#include "deciphon/model/standard_profile.h"
+#include "model/standard_profile.h"
 #include "hope.h"
 #include "imm/imm.h"
 

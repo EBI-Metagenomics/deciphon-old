@@ -1,5 +1,5 @@
-#include "deciphon/loop/looper.h"
-#include "deciphon/core/logging.h"
+#include "loop/looper.h"
+#include "core/logging.h"
 #include "uv.h"
 #include <stdbool.h>
 

@@ -1,6 +1,6 @@
 #include "prod.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/core/xfile.h"
+#include "core/logging.h"
+#include "core/xfile.h"
 #include "deciphon/version.h"
 #include "imm/imm.h"
 #include "match.h"

@@ -1,5 +1,5 @@
-#include "deciphon/model/profile.h"
-#include "deciphon/core/compiler.h"
+#include "model/profile.h"
+#include "core/compiler.h"
 #include "zc.h"
 
 void profile_del(struct profile *prof)

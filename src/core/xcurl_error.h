@@ -1,7 +1,7 @@
 #ifndef CORE_XCURL_ERROR_H
 #define CORE_XCURL_ERROR_H
 
-#include "deciphon/core/logging.h"
+#include "core/logging.h"
 #include <curl/curl.h>
 
 /* clang-format off */

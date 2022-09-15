@@ -1,9 +1,9 @@
 #include "scan_thread.h"
-#include "deciphon/core/hash.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/core/progress.h"
-#include "deciphon/core/xmath.h"
-#include "deciphon/db/profile_reader.h"
+#include "core/hash.h"
+#include "core/logging.h"
+#include "core/progress.h"
+#include "core/xmath.h"
+#include "db/profile_reader.h"
 #include "deciphon/sched/api.h"
 
 void thread_init(struct scan_thread *t, unsigned id,

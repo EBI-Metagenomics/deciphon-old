@@ -1,7 +1,7 @@
-#include "deciphon/model/protein_profile.h"
-#include "deciphon/model/protein_codec.h"
+#include "model/protein_profile.h"
 #include "hope.h"
 #include "imm/imm.h"
+#include "model/protein_codec.h"
 
 void test_protein_profile_uniform(void);
 void test_protein_profile_occupancy(void);

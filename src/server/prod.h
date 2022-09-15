@@ -1,7 +1,7 @@
 #ifndef PROD_H
 #define PROD_H
 
-#include "deciphon/core/limits.h"
+#include "core/limits.h"
 #include "sched/structs.h"
 #include <stdint.h>
 #include <stdio.h>

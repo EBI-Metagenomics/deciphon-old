@@ -1,7 +1,7 @@
-#include "deciphon/model/protein_codec.h"
-#include "deciphon/model/protein_profile.h"
-#include "deciphon/model/protein_state.h"
+#include "model/protein_codec.h"
 #include "imm/imm.h"
+#include "model/protein_profile.h"
+#include "model/protein_state.h"
 
 enum rc protein_codec_next(struct protein_codec *codec,
                            struct imm_seq const *seq, struct imm_codon *codon)

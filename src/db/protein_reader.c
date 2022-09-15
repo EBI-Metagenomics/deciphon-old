@@ -1,9 +1,9 @@
-#include "deciphon/db/protein_reader.h"
-#include "deciphon/core/expect.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/db/reader.h"
-#include "deciphon/model/model.h"
+#include "db/protein_reader.h"
+#include "core/expect.h"
+#include "core/logging.h"
+#include "db/reader.h"
 #include "imm/imm.h"
+#include "model/model.h"
 
 static enum rc unpack_entry_dist(struct lip_file *file, enum entry_dist *edist)
 {

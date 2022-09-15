@@ -1,6 +1,6 @@
-#include "deciphon/loop/writer.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/loop/looper.h"
+#include "loop/writer.h"
+#include "core/logging.h"
+#include "loop/looper.h"
 #include "uv.h"
 #include <stdbool.h>
 #include <stdlib.h>

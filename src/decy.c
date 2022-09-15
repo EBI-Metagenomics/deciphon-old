@@ -1,6 +1,6 @@
-#include "deciphon/core/liner.h"
-#include "deciphon/core/logging.h"
-#include "deciphon/core/looper.h"
+#include "core/liner.h"
+#include "core/logging.h"
+#include "core/looper.h"
 #include <assert.h>
 #include <stdbool.h>
 
