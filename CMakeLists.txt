@@ -55,7 +55,7 @@ add_library(
   # src/hmmy.c
   libs/jx.c
   libs/argless.c
-  src/zc.c
+  libs/zc.c
   src/core/buff.c
   # src/core/buff_pool.c
   src/core/expect.c
