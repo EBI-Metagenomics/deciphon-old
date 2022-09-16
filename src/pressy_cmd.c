@@ -19,6 +19,7 @@ enum state
 };
 
 static atomic_bool cancel_session = false;
+static atomic_int session_progress = 0;
 static enum state state = PRESS_IDLE;
 static struct db_press db_press = {0};
 static char const *state_string[] = {[PRESS_IDLE] = "PRESS_IDLE",
@@ -81,6 +82,7 @@ char const *pressy_cmd_press(struct cmd const *cmd)
     }
 
     if (state == PRESS_RUN) return say_busy();
+    atomic_store(&session_progress, 0);
     state = PRESS_RUN;
 
     char const *p = cmd->argv[1];
@@ -137,6 +139,25 @@ char const *pressy_cmd_state(struct cmd const *cmd)
     return state_string[state];
 }
 
+char const *pressy_cmd_progress(struct cmd const *cmd)
+{
+    if (!cmd_check(cmd, "s"))
+    {
+        error_parse();
+        return say_fail();
+    }
+
+    static char progress[5] = "100%";
+    if (state == PRESS_RUN)
+    {
+        sprintf(progress, "%d%%", atomic_load(&session_progress));
+        return progress;
+    }
+    else if (state == PRESS_DONE)
+        return "100%";
+    return say_fail();
+}
+
 static void press_session(struct uv_work_s *req)
 {
     (void)req;
@@ -173,16 +194,26 @@ static void press_session(struct uv_work_s *req)
         return;
     }
 
-    // unsigned nsteps = db_press_nsteps(&db_press);
-
+    int i = 0;
+    long nsteps = (long)db_press_nsteps(&db_press);
+    int progress = 0;
     while (!(rc = db_press_step(&db_press)))
     {
-        if (atomic_load(&cancel_session))
+        ++i;
+        if ((i * 100) / nsteps > progress)
         {
-            state = PRESS_CANCEL;
-            fclose(hmm);
-            fclose(db);
-            return;
+            if (atomic_load(&cancel_session))
+            {
+                state = PRESS_CANCEL;
+                fclose(hmm);
+                fclose(db);
+                return;
+            }
+
+            int inc = (int)((i * 100) / nsteps) - progress;
+            progress += inc;
+            atomic_store(&session_progress, progress);
+            info("Pressed %d%% of the profiles", progress);
         }
     }
 
@@ -203,6 +234,8 @@ static void press_session(struct uv_work_s *req)
         return;
     }
     state = PRESS_DONE;
+    atomic_store(&session_progress, 100);
+    info("Pressing has finished");
 }
 
 static void press_cleanup(struct uv_work_s *req, int status)

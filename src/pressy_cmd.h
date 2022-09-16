@@ -7,7 +7,8 @@
     X(INVALID, pressy_cmd_invalid)                                             \
     X(PRESS, pressy_cmd_press)                                                 \
     X(CANCEL, pressy_cmd_cancel)                                               \
-    X(STATE, pressy_cmd_state)
+    X(STATE, pressy_cmd_state)                                                 \
+    X(PROGRESS, pressy_cmd_progress)
 
 enum pressy_cmd
 {
