@@ -39,4 +39,6 @@ FILE *xfile_open_from_fptr(FILE *fp, char const *mode);
 bool xfile_exists(char const *filepath);
 enum rc xfile_touch(char const *filepath);
 
+unsigned char *xfile_readall(char const *filepath);
+
 #endif

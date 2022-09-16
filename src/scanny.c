@@ -1,12 +1,11 @@
 #include "argless.h"
 #include "core/cmd.h"
 #include "core/logging.h"
-#include "hmr/hmr.h"
 #include "loop/io.h"
 #include "loop/liner.h"
 #include "loop/looper.h"
 #include "loop/writer.h"
-#include "pressy_cmd.h"
+#include "scanny_cmd.h"
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -25,7 +24,7 @@ static struct argl_option const options[] = {
 
 static struct argl argl = {.options = options,
                            .args_doc = nullptr,
-                           .doc = "Pressy program.",
+                           .doc = "Scanny program.",
                            .version = "1.0.0"};
 
 static inline char const *get(char const *name, char const *default_value)
@@ -75,7 +74,7 @@ static void looper_onterm_cb(void)
     writer_close(&writer);
     struct cmd cmd = {0};
     cmd_parse(&cmd, "CANCEL");
-    pressy_cmd_cancel(&cmd);
+    scanny_cmd_cancel(&cmd);
 }
 
 static void input_onopen_cb(bool ok)
@@ -112,7 +111,7 @@ static void liner_onread_cb(char *line)
 {
     static struct cmd gc = {0};
     if (!cmd_parse(&gc, line)) error("too many arguments");
-    writer_put(&writer, (*pressy_cmd(gc.argv[0], looper.loop))(&gc));
+    writer_put(&writer, (*scanny_cmd(gc.argv[0], looper.loop))(&gc));
 }
 
 static void liner_onclose_cb(void) { io_close(&input); }

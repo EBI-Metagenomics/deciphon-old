@@ -236,3 +236,23 @@ enum rc xfile_touch(char const *filepath)
     if (fclose(fp)) return eio("fclose");
     return RC_OK;
 }
+
+unsigned char *xfile_readall(char const *filepath)
+{
+    int64_t size = 0;
+    if (xfile_size(filepath, &size)) return NULL;
+
+    FILE *f = fopen(filepath, "rb");
+
+    unsigned char *string = malloc(size + 1);
+    if (!string) fatal("failed to malloc");
+    if (fread(string, size, 1, f) < 1)
+    {
+        fclose(f);
+        free(string);
+        return NULL;
+    }
+    fclose(f);
+    string[size] = 0;
+    return string;
+}

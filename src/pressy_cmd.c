@@ -37,13 +37,6 @@ static char db_filepath[PATH_MAX] = {0};
 static struct uv_work_s request = {0};
 static struct uv_loop_s *loop = nullptr;
 
-struct baton
-{
-    enum state state;
-    char hmm_filepath[PATH_MAX];
-    char db_filepath[PATH_MAX];
-};
-
 static cmd_fn_t *pressy_cmds[] = {
 #define X(_, A) &A,
     PRESSY_CMD_MAP(X)
@@ -240,6 +233,7 @@ static void press_session(struct uv_work_s *req)
 
 static void press_cleanup(struct uv_work_s *req, int status)
 {
+    (void)req;
     if (status == UV_ECANCELED) state = PRESS_CANCEL;
     atomic_store(&cancel_session, false);
 }

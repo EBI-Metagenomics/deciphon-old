@@ -129,6 +129,9 @@ target_link_libraries(schedy PUBLIC deciphon)
 add_executable(pressy src/pressy.c src/pressy_cmd.c)
 target_link_libraries(pressy PUBLIC deciphon)
 
+add_executable(scanny src/scanny.c src/scanny_cmd.c)
+target_link_libraries(scanny PUBLIC deciphon)
+
 enable_testing()
 add_subdirectory(test)
 
