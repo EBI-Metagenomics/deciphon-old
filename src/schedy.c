@@ -17,7 +17,8 @@
 static struct looper looper = {0};
 static struct liner liner = {0};
 static struct writer writer = {0};
-static struct io io = {0};
+static struct io input = {0};
+static struct io output = {0};
 
 static struct argl_option const options[] = {
     {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.", false},
@@ -37,15 +38,14 @@ static inline char const *get(char const *name, char const *default_value)
 }
 
 static void looper_onterm_cb(void);
-static void io_onopen_cb(bool ok);
-static void io_onclose_cb(void);
+static void input_onopen_cb(bool ok);
+static void input_onclose_cb(void);
+static void output_onopen_cb(bool ok);
+static void output_onclose_cb(void);
 static void liner_ioerror_cb(void);
 static void liner_onread_cb(char *line);
 static void liner_onclose_cb(void);
 static void writer_onclose_cb(void);
-
-static bool liner_closed = false;
-static bool writer_closed = false;
 
 int main(int argc, char *argv[])
 {
@@ -58,8 +58,11 @@ int main(int argc, char *argv[])
                &liner_onclose_cb);
     writer_init(&writer, looper.loop, &writer_onclose_cb);
 
-    io_init(&io, looper.loop, &io_onopen_cb, &io_onclose_cb);
-    io_setup(&io, get("input", nullptr), get("output", nullptr));
+    io_init(&input, looper.loop, &input_onopen_cb, &input_onclose_cb);
+    io_open(&input, get("input", "&1"), O_RDONLY);
+
+    io_init(&output, looper.loop, &output_onopen_cb, &output_onclose_cb);
+    io_open(&output, get("output", "&2"), O_WRONLY);
 
     looper_run(&looper);
     looper_cleanup(&looper);
@@ -73,19 +76,29 @@ static void looper_onterm_cb(void)
     writer_close(&writer);
 }
 
-static void io_onopen_cb(bool ok)
+static void input_onopen_cb(bool ok)
 {
     if (!ok)
     {
         looper_terminate(&looper);
         return;
     }
-
-    liner_open(&liner, io.input.fd);
-    writer_open(&writer, io.output.fd);
+    liner_open(&liner, io_fd(&input));
 }
 
-static void io_onclose_cb(void) {}
+static void output_onopen_cb(bool ok)
+{
+    if (!ok)
+    {
+        looper_terminate(&looper);
+        return;
+    }
+    writer_open(&writer, io_fd(&output));
+}
+
+static void input_onclose_cb(void) {}
+
+static void output_onclose_cb(void) {}
 
 static void liner_ioerror_cb(void)
 {
@@ -100,14 +113,6 @@ static void liner_onread_cb(char *line)
     writer_put(&writer, (*schedy_cmd(gc.argv[0]))(&gc));
 }
 
-static void liner_onclose_cb(void)
-{
-    liner_closed = true;
-    if (liner_closed && writer_closed) io_close(&io);
-}
+static void liner_onclose_cb(void) { io_close(&input); }
 
-static void writer_onclose_cb(void)
-{
-    writer_closed = true;
-    if (liner_closed && writer_closed) io_close(&io);
-}
+static void writer_onclose_cb(void) { io_close(&output); }
