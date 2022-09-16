@@ -6,6 +6,7 @@
 #define PRESSY_CMD_MAP(X)                                                      \
     X(INVALID, pressy_cmd_invalid)                                             \
     X(PRESS, pressy_cmd_press)                                                 \
+    X(CANCEL, pressy_cmd_cancel)                                               \
     X(STATE, pressy_cmd_state)
 
 enum pressy_cmd

@@ -49,6 +49,9 @@ int main(int argc, char *argv[])
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
 
+    if (setenv("UV_THREADPOOL_SIZE", "1", true))
+        warn("failed to set UV_THREADPOOL_SIZE=1");
+
     looper_init(&looper, &looper_onterm_cb);
 
     liner_init(&liner, looper.loop, &liner_ioerror_cb, &liner_onread_cb,
@@ -71,6 +74,9 @@ static void looper_onterm_cb(void)
 {
     liner_close(&liner);
     writer_close(&writer);
+    struct cmd cmd = {0};
+    cmd_parse(&cmd, "CANCEL");
+    pressy_cmd_cancel(&cmd);
 }
 
 static void input_onopen_cb(bool ok)
