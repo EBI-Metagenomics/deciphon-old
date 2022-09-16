@@ -59,10 +59,10 @@ int main(int argc, char *argv[])
     writer_init(&writer, looper.loop, &writer_onclose_cb);
 
     io_init(&input, looper.loop, &input_onopen_cb, &input_onclose_cb);
-    io_open(&input, get("input", "&1"), O_RDONLY);
+    io_open(&input, get("input", "&1"), UV_FS_O_RDONLY, 0);
 
     io_init(&output, looper.loop, &output_onopen_cb, &output_onclose_cb);
-    io_open(&output, get("output", "&2"), O_WRONLY);
+    io_open(&output, get("output", "&2"), UV_FS_O_WRONLY, UV_FS_O_CREAT);
 
     looper_run(&looper);
     looper_cleanup(&looper);

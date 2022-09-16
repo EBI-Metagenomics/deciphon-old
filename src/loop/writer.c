@@ -25,7 +25,8 @@ void writer_open(struct writer *writer, uv_file fd)
     ((struct uv_handle_s *)(&writer->pipe))->data = writer;
     ((struct uv_stream_s *)(&writer->pipe))->data = writer;
 
-    if (uv_pipe_open(&writer->pipe, fd)) fatal("uv_pipe_open");
+    int rc = uv_pipe_open(&writer->pipe, fd);
+    if (rc) fatal(uv_strerror(rc));
 }
 
 static void *memdup(const void *mem, size_t size)
@@ -41,10 +42,6 @@ static void write_cb(struct uv_write_s *write, int status);
 
 void writer_put(struct writer *writer, char const *msg)
 {
-    /* TODO: fix it */
-    puts(msg);
-    fflush(stdout);
-    return;
     unsigned size = (unsigned)strlen(msg);
     struct request *request = malloc(sizeof(struct request));
     request->writer = writer;
@@ -55,7 +52,8 @@ void writer_put(struct writer *writer, char const *msg)
     uv_buf_t bufs[2] = {uv_buf_init((char *)request->msg, size),
                         uv_buf_init((char *)"\n", 1)};
 
-    uv_write(&request->req, stream, bufs, 2, &write_cb);
+    int rc = uv_write(&request->req, stream, bufs, 2, &write_cb);
+    if (rc) eio(uv_strerror(rc));
 }
 
 void onclose_cb(struct uv_handle_s *handle)

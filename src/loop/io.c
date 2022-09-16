@@ -15,7 +15,7 @@ void io_init(struct io *io, struct uv_loop_s *loop, io_onopen_fn_t *onopen_fn,
     io->fd = -1;
 }
 
-void io_open(struct io *io, char const *file, int mode)
+void io_open(struct io *io, char const *file, int flags, int mode)
 {
     io->req.data = io;
 
@@ -30,7 +30,7 @@ void io_open(struct io *io, char const *file, int mode)
         (*io->onopen_cb)(true);
     }
     else
-        uv_fs_open(io->loop, &io->req, file, mode, 0, onopen);
+        uv_fs_open(io->loop, &io->req, file, flags, mode, onopen);
 }
 
 void io_close(struct io *io)
@@ -45,7 +45,7 @@ static void onopen(struct uv_fs_s *fs)
 {
     struct io *io = fs->data;
     io->fd = fs->result;
-    if (io->fd == -1) eio("failed to open input");
+    if (io->fd < -1) fatal(uv_strerror(fs->result));
     (*io->onopen_cb)(io->fd != -1);
 }
 

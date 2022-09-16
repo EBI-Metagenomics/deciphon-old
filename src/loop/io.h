@@ -19,7 +19,7 @@ struct io
 
 void io_init(struct io *, struct uv_loop_s *, io_onopen_fn_t *,
              io_onclose_fn_t *);
-void io_open(struct io *, char const *file, int mode);
+void io_open(struct io *, char const *file, int flags, int mode);
 static inline int io_fd(struct io const *io) { return io->fd; }
 void io_close(struct io *);
 
