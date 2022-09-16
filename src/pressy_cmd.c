@@ -3,15 +3,19 @@
 #include "core/logging.h"
 #include "core/pp.h"
 #include "core/xfile.h"
+#include "db/press.h"
 #include "uv.h"
 #include "zc.h"
 #include <string.h>
+
+static struct db_press db_press = {0};
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
 
 static char hmm_filepath[PATH_MAX] = {0};
+static char db_filepath[PATH_MAX] = {0};
 static struct uv_work_s request = {0};
 static struct uv_loop_s *loop = nullptr;
 
@@ -64,7 +68,8 @@ char const *pressy_cmd_press(struct cmd const *cmd)
         return say_fail();
     }
 
-    uv_queue_work(loop, &request, press_session, press_cleanup);
+    press_session(0);
+    // uv_queue_work(loop, &request, press_session, press_cleanup);
     return say_ok();
 }
 
@@ -72,8 +77,41 @@ char const *pressy_cmd_state(struct cmd const *cmd) {}
 
 static void press_session(struct uv_work_s *req)
 {
-    printf("press_session\n");
+    strcpy(db_filepath, hmm_filepath);
+    db_filepath[strlen(db_filepath) - 3] = 'd';
+    db_filepath[strlen(db_filepath) - 2] = 'c';
+    db_filepath[strlen(db_filepath) - 1] = 'p';
+
+    FILE *hmm = fopen(hmm_filepath, "rb");
+    if (!hmm)
+    {
+        eio("failed to open hmm file");
+        return;
+    }
+
+    FILE *db = fopen(db_filepath, "wb");
+    if (!db)
+    {
+        eio("failed to open db file");
+        fclose(hmm);
+        return;
+    }
+
+    enum rc rc = db_press_init(&db_press, hmm, db);
+    if (rc) return;
+    unsigned nsteps = db_press_nsteps(&db_press);
+    printf("Nsteps: %u\n", nsteps);
     fflush(stdout);
+
+    while (!(rc = db_press_step(&db_press)))
+        ;
+
+    printf("Final RC1: %d\n", rc);
+    rc = db_press_cleanup(&db_press);
+    printf("Final RC2: %d\n", rc);
+
+    fclose(hmm);
+    fclose(db);
 }
 
 static void press_cleanup(struct uv_work_s *req, int status)

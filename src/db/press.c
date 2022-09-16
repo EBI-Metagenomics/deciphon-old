@@ -12,11 +12,11 @@ static enum rc profile_write(struct db_press *p);
 
 enum rc db_press_init(struct db_press *p, FILE *hmm_fp, FILE *db_fp)
 {
-    prepare_reader(p, hmm_fp);
-    enum rc rc = count_profiles(p);
+    enum rc rc = prepare_writer(p, db_fp);
     if (rc) return rc;
-
-    if ((rc = prepare_writer(p, db_fp))) return rc;
+    prepare_reader(p, hmm_fp);
+    rc = count_profiles(p);
+    if (rc) return rc;
 
     protein_profile_init(&p->profile, p->reader.h3.prof.meta.acc,
                          &p->writer.db.amino, &p->writer.db.code,
@@ -44,6 +44,8 @@ static enum rc count_profiles(struct db_press *p)
         return eio("failed to count profiles");
     }
 
+    p->profile_count = count;
+    rewind(p->reader.fp);
     return RC_OK;
 }
 
