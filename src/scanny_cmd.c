@@ -2,6 +2,8 @@
 #include "core/c23.h"
 #include "core/logging.h"
 #include "core/xfile.h"
+#include "db/profile_reader.h"
+#include "db/protein_reader.h"
 #include "jx.h"
 #include "uv.h"
 #include "zc.h"
@@ -26,6 +28,8 @@ static char const *state_string[] = {[SCAN_IDLE] = "SCAN_IDLE",
                                      [SCAN_DONE] = "SCAN_DONE",
                                      [SCAN_FAIL] = "SCAN_FAIL",
                                      [SCAN_CANCEL] = "SCAN_CANCEL"};
+static struct protein_db_reader db_protein_reader = {0};
+static struct profile_reader profile_reader = {0};
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
@@ -162,44 +166,55 @@ static void scan_session(struct uv_work_s *req)
     (void)req;
     JR_INIT(jr);
     char *json = (char *)xfile_readall(seqs_filepath);
-    if (!json)
-    {
-        state = SCAN_FAIL;
-        free(json);
-        return;
-    }
+    if (!json) goto cleanup_fail;
 
     if (jr_parse(jr, strlen(json), json))
     {
         eparse("failed to parse seqs json");
-        state = SCAN_FAIL;
-        free(json);
-        return;
+        goto cleanup_fail;
     }
-    free(json);
 
     if (jr_type(jr) != JR_ARRAY)
     {
         eparse("failed to parse seqs json");
-        state = SCAN_FAIL;
-        free(json);
-        return;
+        goto cleanup_fail;
     }
 
     jr_next(jr);
 
-    long id = jr_long_of(jr, "id");
+    long seq_id = jr_long_of(jr, "id");
     long scan_id = jr_long_of(jr, "scan_id");
     char const *name = jr_string_of(jr, "name");
-    char const *seq = jr_string_of(jr, "data");
+    char const *seq_data = jr_string_of(jr, "data");
     if (jr_error())
     {
         eparse("failed to parse seqs json");
-        state = SCAN_FAIL;
-        free(json);
-        return;
+        goto cleanup_fail;
     }
-    printf("%ld %ld\n %s\n %s\n", id, scan_id, name, seq);
+
+    FILE *fp = fopen(db_filepath, "rb");
+    if (!fp)
+    {
+        eio("failed to open database");
+        goto cleanup_fail;
+    }
+
+    enum rc rc = protein_db_reader_open(&db_protein_reader, fp);
+    if (rc) goto cleanup_fail;
+
+    struct db_reader *db_reader = (struct db_reader *)&db_protein_reader;
+
+    rc = profile_reader_setup(&profile_reader, db_reader, 4);
+    if (rc) goto cleanup_fail;
+
+    struct imm_abc const *abc =
+        (struct imm_abc const *)&db_protein_reader.nuclt;
+    struct imm_seq seq = imm_seq(imm_str(seq_data), abc);
+
+    return;
+cleanup_fail:
+    state = SCAN_FAIL;
+    free(json);
 }
 
 static void scan_cleanup(struct uv_work_s *req, int status)
