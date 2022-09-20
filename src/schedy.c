@@ -1,24 +1,12 @@
+#include "schedy.h"
 #include "argless.h"
 #include "core/api.h"
-#include "core/compiler.h"
 #include "core/logging.h"
-#include "core/to.h"
-#include "loop/io.h"
-#include "loop/looper.h"
-#include "loop/reader.h"
-#include "loop/writer.h"
+#include "sched.h"
 #include "schedy_cmd.h"
-#include <assert.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
-static struct looper looper = {0};
-static struct reader reader = {0};
-static struct writer writer = {0};
-static struct io input = {0};
-static struct io output = {0};
+struct schedy schedy = {0};
 
 static struct argl_option const options[] = {
     {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.", false},
@@ -37,82 +25,36 @@ static inline char const *get(char const *name, char const *default_value)
     return argl_has(&argl, name) ? argl_get(&argl, name) : default_value;
 }
 
-static void looper_onterm(void);
-static void input_onopen(bool ok);
-static void input_onclose(void);
-static void output_onopen(bool ok);
-static void output_onclose(void);
-static void reader_onerror(void);
-static void reader_onread(char *line);
-static void reader_onclose(void);
-static void writer_onclose(void);
+static void onread(char *line, void *);
+static void onterm(void *);
 
 int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
 
-    looper_init(&looper, &looper_onterm);
+    looper_init(&schedy.looper, &onterm, &schedy);
 
-    reader_init(&reader, looper.loop, &reader_onerror, &reader_onread,
-                &reader_onclose);
-    writer_init(&writer, looper.loop, &writer_onclose);
+    loopio_init(&schedy.loopio, &schedy.looper, onread, &schedy);
+    loopio_iopen(&schedy.loopio, get("input", "&1"), 0);
+    loopio_oopen(&schedy.loopio, get("output", "&2"), UV_FS_O_CREAT);
 
-    io_init(&input, looper.loop, &input_onopen, &input_onclose);
-    io_open(&input, get("input", "&1"), UV_FS_O_RDONLY, 0);
-
-    io_init(&output, looper.loop, &output_onopen, &output_onclose);
-    io_open(&output, get("output", "&2"), UV_FS_O_WRONLY, UV_FS_O_CREAT);
-
-    looper_run(&looper);
-    looper_cleanup(&looper);
+    looper_run(&schedy.looper);
+    looper_cleanup(&schedy.looper);
 
     return EXIT_SUCCESS;
 }
 
-static void looper_onterm(void)
+static void onread(char *line, void *arg)
 {
-    reader_close(&reader);
-    writer_close(&writer);
-}
-
-static void input_onopen(bool ok)
-{
-    if (!ok)
-    {
-        looper_terminate(&looper);
-        return;
-    }
-    reader_open(&reader, io_fd(&input));
-}
-
-static void output_onopen(bool ok)
-{
-    if (!ok)
-    {
-        looper_terminate(&looper);
-        return;
-    }
-    writer_open(&writer, io_fd(&output));
-}
-
-static void input_onclose(void) {}
-
-static void output_onclose(void) {}
-
-static void reader_onerror(void)
-{
-    error("io error");
-    looper_terminate(&looper);
-}
-
-static void reader_onread(char *line)
-{
+    struct schedy *schedy = arg;
     static struct cmd gc = {0};
     if (!cmd_parse(&gc, line)) error("too many arguments");
-    writer_put(&writer, (*schedy_cmd(gc.argv[0]))(&gc));
+    loopio_put(&schedy->loopio, (*schedy_cmd(gc.argv[0]))(&gc));
 }
 
-static void reader_onclose(void) { io_close(&input); }
-
-static void writer_onclose(void) { io_close(&output); }
+static void onterm(void *arg)
+{
+    struct schedy *schedy = arg;
+    loopio_terminate(&schedy->loopio);
+}

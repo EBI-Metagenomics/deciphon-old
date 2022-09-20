@@ -12,10 +12,11 @@ struct request
 };
 
 void writer_init(struct writer *writer, struct uv_loop_s *loop,
-                 writer_onclose_fn_t *onclose_cb)
+                 writer_onclose_fn_t *onclose_cb, void *arg)
 {
     writer->loop = loop;
     writer->onclose_cb = onclose_cb;
+    writer->arg = arg;
 }
 
 void writer_open(struct writer *writer, uv_file fd)
@@ -59,7 +60,7 @@ void writer_put(struct writer *writer, char const *msg)
 void onclose_cb(struct uv_handle_s *handle)
 {
     struct writer *writer = handle->data;
-    (*writer->onclose_cb)();
+    (*writer->onclose_cb)(writer->arg);
 }
 
 void writer_close(struct writer *writer)

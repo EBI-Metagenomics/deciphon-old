@@ -15,15 +15,15 @@ static void start_reading(struct reader *);
 static void stop_reading(struct reader *);
 
 void reader_init(struct reader *reader, struct uv_loop_s *loop,
-                 reader_onerror_fn_t *onerror_cb,
-                 reader_onread_fn_t *newline_cb,
-                 reader_onclose_fn_t *onclose_cb)
+                 reader_onerror_fn_t *onerror_cb, reader_onread_fn_t *onread_cb,
+                 reader_onclose_fn_t *onclose_cb, void *arg)
 {
     reader->loop = loop;
     reader->noclose = true;
     reader->onerror_cb = onerror_cb;
-    reader->onread_cb = newline_cb;
+    reader->onread_cb = onread_cb;
     reader->onclose_cb = onclose_cb;
+    reader->arg = arg;
     reader->pos = reader->buff;
     reader->end = reader->pos;
 }
@@ -58,13 +58,13 @@ static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
 static void onclose_cb(struct uv_handle_s *handle)
 {
     struct reader *reader = handle->data;
-    (*reader->onclose_cb)();
+    (*reader->onclose_cb)(reader->arg);
 }
 
 static void process_error(struct reader *reader)
 {
     stop_reading(reader);
-    (*reader->onerror_cb)();
+    (*reader->onerror_cb)(reader->arg);
 }
 
 static void process_newlines(struct reader *reader)
@@ -79,7 +79,7 @@ static void process_newlines(struct reader *reader)
     while (z)
     {
         *z = 0;
-        (*reader->onread_cb)(reader->pos);
+        (*reader->onread_cb)(reader->pos, reader->arg);
         reader->pos = z + 1;
     enter:
         z = memchr(reader->pos, '\n', (unsigned)(reader->end - reader->pos));

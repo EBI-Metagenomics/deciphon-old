@@ -1,12 +1,12 @@
-#ifndef DECIPHON_LOOP_LOOPER_H
-#define DECIPHON_LOOP_LOOPER_H
+#ifndef LOOP_LOOPER_H
+#define LOOP_LOOPER_H
 
 #include "uv.h"
 #include <stdbool.h>
 
 struct looper;
 
-typedef void looper_onterm_fn_t(void);
+typedef void looper_onterm_fn_t(void *arg);
 
 struct looper
 {
@@ -17,6 +17,7 @@ struct looper
     struct uv_signal_s sigint;
 
     looper_onterm_fn_t *onterm_cb;
+    void *arg;
 
     struct
     {
@@ -33,7 +34,7 @@ struct looper
     } closed;
 };
 
-void looper_init(struct looper *, looper_onterm_fn_t *);
+void looper_init(struct looper *, looper_onterm_fn_t *, void *arg);
 void looper_run(struct looper *);
 void looper_terminate(struct looper *);
 void looper_cleanup(struct looper *);

@@ -7,7 +7,7 @@ static void async_cb(struct uv_async_s *handle);
 static void sigterm_cb(struct uv_signal_s *handle, int signum);
 static void sigint_cb(struct uv_signal_s *handle, int signum);
 
-void looper_init(struct looper *l, looper_onterm_fn_t *onterm_cb)
+void looper_init(struct looper *l, looper_onterm_fn_t *onterm_cb, void *arg)
 {
     l->terminating = false;
 
@@ -34,6 +34,7 @@ void looper_init(struct looper *l, looper_onterm_fn_t *onterm_cb)
     l->closed.sigint = false;
 
     l->onterm_cb = onterm_cb;
+    l->arg = arg;
 
     if (uv_signal_start(&l->sigterm, sigterm_cb, SIGTERM))
         fatal("uv_signal_start");
@@ -61,7 +62,7 @@ void looper_cleanup(struct looper *l)
 static void try_call_user_onterm(struct looper *l)
 {
     if (l->closed.async && l->closed.sigterm && l->closed.sigint)
-        (*l->onterm_cb)();
+        (*l->onterm_cb)(l->arg);
 }
 
 static void onclose_sigterm_cb(struct uv_handle_s *handle)

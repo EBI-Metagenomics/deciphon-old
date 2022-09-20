@@ -65,6 +65,7 @@ add_library(
   src/core/file.c
   src/core/cmd.c
   src/loop/looper.c
+  src/loop/loopio.c
   src/loop/reader.c
   src/loop/writer.c
   src/core/logging.c
@@ -126,11 +127,11 @@ endif()
 add_executable(schedy src/schedy.c src/schedy_cmd.c)
 target_link_libraries(schedy PUBLIC deciphon)
 
-add_executable(pressy src/pressy.c src/pressy_cmd.c)
-target_link_libraries(pressy PUBLIC deciphon)
-
-add_executable(scanny src/scanny.c src/scanny_cmd.c)
-target_link_libraries(scanny PUBLIC deciphon)
+# add_executable(pressy src/pressy.c src/pressy_cmd.c)
+# target_link_libraries(pressy PUBLIC deciphon)
+#
+# add_executable(scanny src/scanny.c src/scanny_cmd.c)
+# target_link_libraries(scanny PUBLIC deciphon)
 
 enable_testing()
 add_subdirectory(test)
