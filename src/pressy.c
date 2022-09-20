@@ -3,15 +3,15 @@
 #include "core/logging.h"
 #include "hmr/hmr.h"
 #include "loop/io.h"
-#include "loop/liner.h"
 #include "loop/looper.h"
+#include "loop/reader.h"
 #include "loop/writer.h"
 #include "pressy_cmd.h"
 #include <stdlib.h>
 #include <unistd.h>
 
 static struct looper looper = {0};
-static struct liner liner = {0};
+static struct reader reader = {0};
 static struct writer writer = {0};
 static struct io input = {0};
 static struct io output = {0};
@@ -53,8 +53,8 @@ int main(int argc, char *argv[])
 
     looper_init(&looper, &looper_onterm_cb);
 
-    liner_init(&liner, looper.loop, &liner_ioerror_cb, &liner_onread_cb,
-               &liner_onclose_cb);
+    reader_init(&reader, looper.loop, &liner_ioerror_cb, &liner_onread_cb,
+                &liner_onclose_cb);
     writer_init(&writer, looper.loop, &writer_onclose_cb);
 
     io_init(&input, looper.loop, &input_onopen_cb, &input_onclose_cb);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
 static void looper_onterm_cb(void)
 {
-    liner_close(&liner);
+    reader_close(&reader);
     writer_close(&writer);
     struct cmd cmd = {0};
     cmd_parse(&cmd, "CANCEL");
@@ -85,7 +85,7 @@ static void input_onopen_cb(bool ok)
         looper_terminate(&looper);
         return;
     }
-    liner_open(&liner, io_fd(&input));
+    reader_open(&reader, io_fd(&input));
 }
 
 static void output_onopen_cb(bool ok)

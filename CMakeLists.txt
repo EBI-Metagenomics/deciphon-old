@@ -65,7 +65,7 @@ add_library(
   src/core/file.c
   src/core/cmd.c
   src/loop/looper.c
-  src/loop/liner.c
+  src/loop/reader.c
   src/loop/writer.c
   src/core/logging.c
   src/core/mempool.c
