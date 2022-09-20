@@ -31,12 +31,8 @@ static char const *state_string[] = {[SCAN_IDLE] = "SCAN_IDLE",
 static struct protein_db_reader db_protein_reader = {0};
 static struct profile_reader profile_reader = {0};
 
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
-
-static char db_filepath[PATH_MAX] = {0};
-static char seqs_filepath[PATH_MAX] = {0};
+static char db_filepath[PATH_SIZE] = {0};
+static char seqs_filepath[PATH_SIZE] = {0};
 static struct uv_work_s request = {0};
 static struct uv_loop_s *loop = nullptr;
 

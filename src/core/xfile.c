@@ -1,5 +1,6 @@
 #include "core/xfile.h"
 #include "core/compiler.h"
+#include "core/limits.h"
 #include "core/logging.h"
 #include "zc.h"
 #define XXH_INLINE_ALL
@@ -9,10 +10,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#ifndef PATH_MAX
-#define PATH_MAX 4096
-#endif
 
 #ifdef __APPLE__
 #include <fcntl.h>
@@ -220,7 +217,7 @@ enum rc xfile_filepath_from_fptr(FILE *fp, char *filepath)
 
 FILE *xfile_open_from_fptr(FILE *fp, char const *mode)
 {
-    char filepath[PATH_MAX] = {0};
+    char filepath[PATH_SIZE] = {0};
     enum rc rc = xfile_filepath_from_fptr(fp, filepath);
     if (rc) return NULL;
     return fopen(filepath, mode);

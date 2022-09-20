@@ -10,6 +10,7 @@ enum limits
     PROF_NAME_SIZE = 256,
     PROTEIN_MODEL_CORE_SIZE_MAX = 4096,
     MIME_TYPE_SIZE = 128,
+    PATH_SIZE = 4096,
 };
 
 #endif
