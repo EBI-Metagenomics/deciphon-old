@@ -73,6 +73,10 @@ add_library(
   src/core/progress.c
   src/core/to.c
   src/core/xfile.c
+  src/scan/prod.c
+  src/scan/protein_match.c
+  src/scan/scan.c
+  src/scan/thread.c
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c
@@ -129,9 +133,9 @@ target_link_libraries(schedy PUBLIC deciphon)
 
 add_executable(pressy src/pressy.c src/pressy_cmd.c src/pressy_session.c)
 target_link_libraries(pressy PUBLIC deciphon)
-#
-# add_executable(scanny src/scanny.c src/scanny_cmd.c)
-# target_link_libraries(scanny PUBLIC deciphon)
+
+add_executable(scanny src/scanny.c src/scanny_cmd.c src/scanny_session.c)
+target_link_libraries(scanny PUBLIC deciphon)
 
 enable_testing()
 add_subdirectory(test)
