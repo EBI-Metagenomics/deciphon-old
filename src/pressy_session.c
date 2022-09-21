@@ -11,11 +11,11 @@
 
 enum state
 {
-    PRESS_IDLE,
-    PRESS_RUN,
-    PRESS_DONE,
-    PRESS_FAIL,
-    PRESS_CANCEL,
+    IDLE,
+    RUN,
+    DONE,
+    FAIL,
+    CANCEL,
 };
 
 static struct
@@ -30,11 +30,11 @@ static struct
     struct progress progress;
 } session;
 
-static char const *state_string[] = {[PRESS_IDLE] = "PRESS_IDLE",
-                                     [PRESS_RUN] = "PRESS_RUN",
-                                     [PRESS_DONE] = "PRESS_DONE",
-                                     [PRESS_FAIL] = "PRESS_FAIL",
-                                     [PRESS_CANCEL] = "PRESS_CANCEL"};
+static char const *state_string[] = {[IDLE] = "IDLE",
+                                     [RUN] = "RUN",
+                                     [DONE] = "DONE",
+                                     [FAIL] = "FAIL",
+                                     [CANCEL] = "CANCEL"};
 
 static void after_work(struct uv_work_s *, int status);
 static void work(struct uv_work_s *);
@@ -44,13 +44,13 @@ void pressy_session_init(struct uv_loop_s *loop)
     session.loop = loop;
     session.cancel = false;
     atomic_store(&session.cancel, false);
-    session.state = PRESS_IDLE;
+    session.state = IDLE;
     progress_init(&session.progress, 0);
 }
 
-bool pressy_session_is_running(void) { return session.state == PRESS_RUN; }
+bool pressy_session_is_running(void) { return session.state == RUN; }
 
-bool pressy_session_is_done(void) { return session.state == PRESS_DONE; }
+bool pressy_session_is_done(void) { return session.state == DONE; }
 
 bool pressy_session_start(char const *hmm)
 {
@@ -60,7 +60,7 @@ bool pressy_session_start(char const *hmm)
         return false;
     }
 
-    session.state = PRESS_RUN;
+    session.state = RUN;
 
     strcpy(session.db, session.hmm);
     session.db[strlen(session.db) - 3] = 'd';
@@ -103,7 +103,7 @@ char const *pressy_session_state_string(void)
 static void after_work(struct uv_work_s *req, int status)
 {
     (void)req;
-    if (status == UV_ECANCELED) session.state = PRESS_CANCEL;
+    if (status == UV_ECANCELED) session.state = CANCEL;
     atomic_store(&session.cancel, false);
 }
 
@@ -114,7 +114,7 @@ static void work(struct uv_work_s *req)
     enum rc rc = db_press_init(&session.db_press, session.hmm, session.db);
     if (rc)
     {
-        session.state = PRESS_FAIL;
+        session.state = FAIL;
         return;
     }
 
@@ -126,7 +126,7 @@ static void work(struct uv_work_s *req)
             if (atomic_load(&session.cancel))
             {
                 info("Cancelled");
-                session.state = PRESS_CANCEL;
+                session.state = CANCEL;
                 db_press_cleanup(&session.db_press, false);
                 return;
             }
@@ -137,16 +137,16 @@ static void work(struct uv_work_s *req)
 
     if (rc != RC_END)
     {
-        session.state = PRESS_FAIL;
+        session.state = FAIL;
         db_press_cleanup(&session.db_press, false);
         return;
     }
 
     if ((rc = db_press_cleanup(&session.db_press, true)))
     {
-        session.state = PRESS_FAIL;
+        session.state = FAIL;
         return;
     }
-    session.state = PRESS_DONE;
+    session.state = DONE;
     info("Pressing has finished");
 }
