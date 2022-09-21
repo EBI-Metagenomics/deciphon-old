@@ -27,8 +27,10 @@ enum logging_level
 void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
                      ...);
 
-void logging_setup(FILE *restrict user_stream, enum logging_level user_level,
-                   FILE *restrict sys_stream, enum logging_level sys_level);
+void logging_setup(char const *user_file, enum logging_level user_level,
+                   char const *sys_file, enum logging_level sys_level);
+
+void logging_cleanup(void);
 
 #define efail(...)                                                             \
     ({                                                                         \

@@ -80,6 +80,7 @@ unsigned pressy_session_progress(void)
 
 bool pressy_session_cancel(void)
 {
+    info("Cancelling...");
     if (atomic_load(&session.cancel))
     {
         int rc = uv_cancel((struct uv_req_s *)&session.request);
@@ -109,6 +110,7 @@ static void after_work(struct uv_work_s *req, int status)
 static void work(struct uv_work_s *req)
 {
     (void)req;
+    info("Preparing to press...");
     enum rc rc = db_press_init(&session.db_press, session.hmm, session.db);
     if (rc)
     {
@@ -123,6 +125,7 @@ static void work(struct uv_work_s *req)
         {
             if (atomic_load(&session.cancel))
             {
+                info("Cancelled");
                 session.state = PRESS_CANCEL;
                 db_press_cleanup(&session.db_press, false);
                 return;
