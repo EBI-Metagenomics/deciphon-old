@@ -1,7 +1,6 @@
 #include "pressy_cmd.h"
 #include "core/c23.h"
 #include "core/logging.h"
-#include "core/pp.h"
 #include "core/xfile.h"
 #include "db/press.h"
 #include "pressy.h"
