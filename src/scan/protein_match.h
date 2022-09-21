@@ -1,9 +1,9 @@
-#ifndef PROTEIN_MATCH_H
-#define PROTEIN_MATCH_H
+#ifndef SCAN_PROTEIN_MATCH_H
+#define SCAN_PROTEIN_MATCH_H
 
 #include "core/rc.h"
 #include "imm/imm.h"
-#include "match.h"
+#include "scan/match.h"
 #include <stdio.h>
 
 struct protein_match

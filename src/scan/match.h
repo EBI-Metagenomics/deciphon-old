@@ -1,5 +1,5 @@
-#ifndef MATCH_H
-#define MATCH_H
+#ifndef SCAN_MATCH_H
+#define SCAN_MATCH_H
 
 struct imm_profile;
 struct imm_seq;

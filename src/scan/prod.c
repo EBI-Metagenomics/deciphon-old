@@ -1,9 +1,9 @@
-#include "prod.h"
+#include "scan/prod.h"
 #include "core/logging.h"
+#include "core/version.h"
 #include "core/xfile.h"
-#include "deciphon/version.h"
 #include "imm/imm.h"
-#include "match.h"
+#include "scan/match.h"
 #include <inttypes.h>
 
 static unsigned num_threads = 0;

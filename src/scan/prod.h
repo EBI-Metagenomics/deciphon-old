@@ -1,8 +1,8 @@
-#ifndef PROD_H
-#define PROD_H
+#ifndef SCAN_PROD_H
+#define SCAN_PROD_H
 
 #include "core/limits.h"
-#include "sched/structs.h"
+#include "sched_structs.h"
 #include <stdint.h>
 #include <stdio.h>
 

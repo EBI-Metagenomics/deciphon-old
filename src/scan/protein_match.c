@@ -1,4 +1,4 @@
-#include "protein_match.h"
+#include "scan/protein_match.h"
 #include "core/logging.h"
 #include "model/protein_profile.h"
 
