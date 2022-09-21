@@ -8,6 +8,7 @@
     X(CONNECT, schedy_cmd_connect)                                             \
     X(ONLINE, schedy_cmd_online)                                               \
     X(WIPE, schedy_cmd_wipe)                                                   \
+    X(CANCEL, schedy_cmd_cancel)                                               \
                                                                                \
     X(HMM_UP, schedy_cmd_hmm_up)                                               \
     X(HMM_DL, schedy_cmd_hmm_dl)                                               \

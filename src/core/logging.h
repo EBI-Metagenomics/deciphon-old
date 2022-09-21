@@ -18,6 +18,15 @@ enum logging_level
     LOGGING_FATAL
 };
 
+enum
+{
+    LOGGING_USER_DEFAULT_LEVEL = LOGGING_INFO,
+    LOGGING_SYS_DEFAULT_LEVEL = LOGGING_WARN,
+};
+
+#define LOGGING_DEFAULT_FILE "&2"
+#define LOGGING_DEFAULT_FILE "&2"
+
 #define debug(...) __logging_print(LOGGING_DEBUG, LOCAL, __VA_ARGS__)
 #define info(...) __logging_print(LOGGING_INFO, LOCAL, __VA_ARGS__)
 #define warn(...) __logging_print(LOGGING_WARN, LOCAL, __VA_ARGS__)
@@ -27,8 +36,10 @@ enum logging_level
 void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
                      ...);
 
-void logging_setup(char const *user_file, enum logging_level user_level,
-                   char const *sys_file, enum logging_level sys_level);
+void logging_set_user_file(char const *user_file);
+void logging_set_user_level(enum logging_level user_level);
+void logging_set_sys_file(char const *sys_file);
+void logging_set_sys_level(enum logging_level sys_level);
 
 void logging_cleanup(void);
 

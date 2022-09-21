@@ -70,6 +70,12 @@ char const *schedy_cmd_wipe(struct cmd const *cmd)
     return api_wipe() ? say_fail() : say_ok();
 }
 
+char const *schedy_cmd_cancel(struct cmd const *cmd)
+{
+    (void)cmd;
+    return say_ok();
+}
+
 char const *schedy_cmd_hmm_up(struct cmd const *cmd)
 {
     static struct sched_hmm hmm = {0};

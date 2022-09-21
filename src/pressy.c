@@ -10,7 +10,7 @@ struct pressy pressy = {0};
 static struct argl_option const options[] = {
     {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.", false},
     {"output", 'o', "OUTPUT", "Output stream. Defaults to `STDOUT'.", false},
-    {"userlog", 'u', "USERLOG", "User logging stream. Defaults to `STDIN'.",
+    {"userlog", 'u', "USERLOG", "User logging stream. Defaults to `STDERR'.",
      false},
     {"syslog", 's', "SYSLOG", "System logging stream. Defaults to `STDERR'.",
      false},
@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    logging_setup(get("userlog", "&1"), LOGGING_DEBUG, get("syslog", "&2"),
-                  LOGGING_DEBUG);
+    logging_set_user_file(get("userlog", LOGGING_DEFAULT_FILE));
+    logging_set_sys_file(get("syslog", LOGGING_DEFAULT_FILE));
 
     if (setenv("UV_THREADPOOL_SIZE", "1", true))
         warn("failed to set UV_THREADPOOL_SIZE=1");

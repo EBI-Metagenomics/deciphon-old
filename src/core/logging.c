@@ -19,14 +19,24 @@ static void pipe_into(FILE *restrict stream, char const *ctx, char const *fmt,
                       va_list args);
 static void initialize_if_not_yet(void);
 
-void logging_setup(char const *user_file, enum logging_level user_level,
-                   char const *sys_file, enum logging_level sys_level)
+void logging_set_user_file(char const *user_file)
 {
-    streams[USER_PIPE] = open_file(user_file, "&1");
-    streams[SYS_PIPE] = open_file(sys_file, "&2");
+    streams[USER_PIPE] = open_file(user_file, LOGGING_DEFAULT_FILE);
+}
 
-    levels[USER_PIPE] = sys_level;
-    levels[SYS_PIPE] = user_level;
+void logging_set_user_level(enum logging_level user_level)
+{
+    levels[USER_PIPE] = user_level;
+}
+
+void logging_set_sys_file(char const *sys_file)
+{
+    streams[SYS_PIPE] = open_file(sys_file, LOGGING_DEFAULT_FILE);
+}
+
+void logging_set_sys_level(enum logging_level sys_level)
+{
+    levels[SYS_PIPE] = sys_level;
 }
 
 void logging_cleanup(void)
@@ -71,11 +81,11 @@ void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
 
 static void initialize_if_not_yet(void)
 {
-    if (!streams[USER_PIPE]) streams[USER_PIPE] = stdout;
+    if (!streams[USER_PIPE]) streams[USER_PIPE] = stderr;
     if (!streams[SYS_PIPE]) streams[SYS_PIPE] = stderr;
 
-    if (!levels[USER_PIPE]) levels[USER_PIPE] = LOGGING_INFO;
-    if (!levels[SYS_PIPE]) levels[SYS_PIPE] = LOGGING_INFO;
+    if (!levels[USER_PIPE]) levels[USER_PIPE] = LOGGING_USER_DEFAULT_LEVEL;
+    if (!levels[SYS_PIPE]) levels[SYS_PIPE] = LOGGING_SYS_DEFAULT_LEVEL;
 }
 
 static void pipe_into(FILE *restrict stream, char const *ctx, char const *fmt,
@@ -100,14 +110,8 @@ static void pipe_into(FILE *restrict stream, char const *ctx, char const *fmt,
 
 static FILE *open_file(char const *file, char const *default_file)
 {
-    if (!strcmp(file, "&1"))
-    {
-        return stdin;
-    }
-    if (!strcmp(file, "&2"))
-    {
-        return stdout;
-    }
+    if (!strcmp(file, "&1")) return stdout;
+    if (!strcmp(file, "&2")) return stderr;
     FILE *fp = fopen(file, "wa");
     if (!fp) return open_file(default_file, default_file);
     return fp;

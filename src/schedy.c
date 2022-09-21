@@ -1,6 +1,5 @@
 #include "schedy.h"
 #include "argless.h"
-#include "core/api.h"
 #include "core/logging.h"
 #include "sched.h"
 #include "schedy_cmd.h"
@@ -11,6 +10,10 @@ struct schedy schedy = {0};
 static struct argl_option const options[] = {
     {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.", false},
     {"output", 'o', "OUTPUT", "Output stream. Defaults to `STDOUT'.", false},
+    {"userlog", 'u', "USERLOG", "User logging stream. Defaults to `STDERR'.",
+     false},
+    {"syslog", 's', "SYSLOG", "System logging stream. Defaults to `STDERR'.",
+     false},
     ARGL_DEFAULT_OPTS,
     ARGL_NULL_OPT,
 };
@@ -32,6 +35,11 @@ int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
+    logging_set_user_file(get("userlog", LOGGING_DEFAULT_FILE));
+    logging_set_sys_file(get("syslog", LOGGING_DEFAULT_FILE));
+
+    if (setenv("UV_THREADPOOL_SIZE", "1", true))
+        warn("failed to set UV_THREADPOOL_SIZE=1");
 
     looper_init(&schedy.looper, &onterm, &schedy);
 
@@ -42,11 +50,13 @@ int main(int argc, char *argv[])
     looper_run(&schedy.looper);
     looper_cleanup(&schedy.looper);
 
+    logging_cleanup();
     return EXIT_SUCCESS;
 }
 
 static void onread(char *line, void *arg)
 {
+    info("Received: %s", line);
     struct schedy *schedy = arg;
     static struct cmd gc = {0};
     if (!cmd_parse(&gc, line)) error("too many arguments");
@@ -57,4 +67,7 @@ static void onterm(void *arg)
 {
     struct schedy *schedy = arg;
     loopio_terminate(&schedy->loopio);
+    struct cmd cmd = {0};
+    cmd_parse(&cmd, "CANCEL");
+    schedy_cmd_cancel(&cmd);
 }
