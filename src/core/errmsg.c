@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-char const *errmsg(char *dst, char const *fmt, ...)
+char const *errfmt(char *dst, char const *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

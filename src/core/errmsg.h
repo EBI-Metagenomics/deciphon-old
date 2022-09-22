@@ -5,7 +5,7 @@
 
 #define ERRMSG_DECLARE(name) char name[ERROR_SIZE];
 
-char const *errmsg(char *dst, char const *fmt, ...)
+char const *errfmt(char *dst, char const *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 
 #endif

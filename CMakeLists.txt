@@ -77,7 +77,8 @@ add_library(
   src/scan/prod.c
   src/scan/protein_match.c
   src/scan/scan.c
-  src/scan/seqs.c
+  src/scan/seq.c
+  src/scan/seqlist.c
   src/scan/thread.c
   src/model/nuclt_dist.c
   src/model/profile.c
