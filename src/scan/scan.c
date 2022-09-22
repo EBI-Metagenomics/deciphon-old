@@ -87,6 +87,8 @@ enum rc scan_setup(char const *db, char const *seqs)
     return rc;
 }
 
+static enum rc work_finishup(int64_t job_id);
+
 enum rc scan_run(void)
 {
     enum rc rc = RC_OK;
@@ -94,6 +96,7 @@ enum rc scan_run(void)
     // int64_t scan_id = scan.seqs.scan_id;
     // int64_t seq_id = scan.seq.id;
     struct seq const *seq = nullptr;
+    seqs_rewind(&scan.seqs);
     while (!(rc = seqs_next(&scan.seqs, &seq)))
     {
         struct imm_seq iseq = seq->iseq;
@@ -118,6 +121,16 @@ enum rc scan_run(void)
                     _Pragma ("omp cancel for")
                 }
             }
+#else
+        for (unsigned i = 0; i < nparts; ++i)
+        {
+            int tid = 0;
+            enum rc local_rc = thread_run(&scan.thread[i], tid);
+            if (local_rc)
+            {
+                rc = local_rc;
+            }
+        }
 #endif
 
 #if 0
@@ -130,6 +143,9 @@ enum rc scan_run(void)
 #endif
     }
 
+    int64_t job_id = 0;
+    if (rc == RC_END) return work_finishup(job_id);
+
 #if 0
     if (rc == RC_END) return work_finishup(job_id);
 
@@ -140,6 +156,36 @@ enum rc scan_run(void)
 #endif
 
 cleanup:
+    return rc;
+}
+
+static enum rc work_finishup(int64_t job_id)
+{
+    // progress_finishup();
+    enum rc rc = prod_fclose();
+#if 0
+    if (rc)
+    {
+        job_set_fail(job_id, "failed to finish up work");
+        goto cleanup;
+    }
+
+    char const *filepath = prod_final_path();
+
+    if ((rc = api_upload_prods_file(filepath)))
+    {
+        job_set_fail(job_id, "failed to submit prods_file");
+        goto cleanup;
+    }
+
+    rc = api_set_job_state(job_id, SCHED_DONE, "");
+    if (rc) return rc;
+
+    // return api_rc.rc ? eapi(api_rc) : RC_OK;
+    return RC_OK;
+
+cleanup:
+#endif
     return rc;
 }
 

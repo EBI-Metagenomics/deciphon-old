@@ -1,4 +1,5 @@
 #include "scan/prod.h"
+#include "core/limits.h"
 #include "core/logging.h"
 #include "core/version.h"
 #include "imm/imm.h"
@@ -11,7 +12,7 @@ static FILE *prod_file[NUM_THREADS] = {NULL};
 static struct
 {
     FILE *file;
-    char path[FILENAME_MAX];
+    char path[PATH_SIZE];
 } final = {0};
 
 static enum rc write_begin(struct prod const *prod, unsigned thread_num)
@@ -185,7 +186,12 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
 
 static enum rc open_final_file(void)
 {
-    if (!(final.file = tmpfile())) return eio("fail to finish product");
+    if (xfile_mkstemp(PATH_SIZE, final.path))
+        return eio("fail to finish product");
+
+    final.file = fopen(final.path, "wb");
+    if (!final.file) return eio("fail to finish product");
+
     int r = xfile_getpath(final.file, sizeof final.path, final.path);
     if (r)
     {

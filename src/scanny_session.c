@@ -74,7 +74,7 @@ bool scanny_session_start(char const *seqs, char const *db, bool multi_hits,
         return false;
     }
 
-    struct scan_cfg cfg = {4, 10., multi_hits, hmmer3_compat};
+    struct scan_cfg cfg = {1, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 
     session.cancel = false;
