@@ -104,7 +104,8 @@ enum rc thread_run(struct scan_thread *t, int tid)
         rc = setup_hypothesis(alt, profile_alt_dp(prof), seq);
         if (rc) goto cleanup;
 
-        rc = protein_profile_setup(pp, size, t->multi_hits, t->hmmer3_compat);
+        rc = protein_profile_setup(pp, size, t->cfg.multi_hits,
+                                   t->cfg.hmmer3_compat);
         if (rc) goto cleanup;
 
         rc = viterbi(null_dp, null->task, &null->prod, &t->prod.null_loglik);
@@ -115,7 +116,7 @@ enum rc thread_run(struct scan_thread *t, int tid)
         // progress_consume(tid, 1);
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
-        if (!imm_lprob_is_finite(lrt) || lrt < t->lrt_threshold) continue;
+        if (!imm_lprob_is_finite(lrt) || lrt < t->cfg.lrt_threshold) continue;
 
         strcpy(t->prod.profile_name, prof->accession);
 

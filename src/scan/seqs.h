@@ -9,7 +9,7 @@ struct seqs
 {
     JR_DECLARE(json, 128);
     char *data;
-    unsigned size;
+    int size;
     int64_t scan_id;
 };
 

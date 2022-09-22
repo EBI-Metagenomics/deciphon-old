@@ -13,8 +13,6 @@
 
 struct scan
 {
-    int64_t scan_id;
-
     struct scan_cfg cfg;
     struct scan_thread thread[NUM_THREADS];
 
@@ -77,7 +75,7 @@ enum rc scan_setup(char const *db, char const *seqs)
 
         enum imm_abc_typeid abc_typeid = scan.abc->vtable.typeid;
         enum profile_typeid profile_typeid = reader->profile_typeid;
-        thread_setup_job(t, abc_typeid, profile_typeid, scan.scan_id);
+        thread_setup_job(t, abc_typeid, profile_typeid, scan.seqs.scan_id);
     }
 
     unsigned long total =

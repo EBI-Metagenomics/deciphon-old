@@ -2,6 +2,8 @@
 #include "core/c23.h"
 #include "core/logging.h"
 #include "xfile.h"
+#include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -10,8 +12,11 @@ enum rc seqs_init(struct seqs *seqs, char const *filepath)
     seqs->data = nullptr;
     JR_INIT(seqs->json);
 
-    seqs->data = (char *)xfile_readall(filepath);
-    if (!seqs->data) return eio("failed to read seqs file");
+    int64_t size = 0;
+    int r = xfile_readall(filepath, &size, (unsigned char **)&seqs->data);
+    if (r) return eio(xfile_strerror(r));
+
+    assert(size <= INT_MAX);
 
     if (jr_parse(seqs->json, strlen(seqs->data), seqs->data))
     {
@@ -41,13 +46,16 @@ enum rc seqs_init(struct seqs *seqs, char const *filepath)
         return eparse("failed to fetch scan_id from seq file");
     }
 
-    seqs->size = (unsigned)nseqs;
+    seqs->size = nseqs;
 
     return RC_OK;
 }
 
 void seqs_cleanup(struct seqs *seqs)
 {
-    free(seqs->data);
-    seqs->data = nullptr;
+    if (seqs->data)
+    {
+        free(seqs->data);
+        seqs->data = nullptr;
+    }
 }

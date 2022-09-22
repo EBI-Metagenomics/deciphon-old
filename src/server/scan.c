@@ -3,7 +3,6 @@
 #include "core/logging.h"
 #include "core/progress.h"
 #include "core/rc.h"
-#include "core/xfile.h"
 #include "core/xmath.h"
 #include "db/db.h"
 #include "db/profile_reader.h"
@@ -14,6 +13,7 @@
 #include "prod.h"
 #include "protein_match.h"
 #include "scan_thread.h"
+#include "xfile.h"
 #include "xomp.h"
 #include <stdatomic.h>
 #include <string.h>

@@ -7,22 +7,23 @@
 
 #define XFILE_MAP(X)                                                           \
     X(OK, "not an error")                                                      \
-    X(EFCLOSE, "fclose failure")                                               \
-    X(EFCNTL, "fcntl failure")                                                 \
-    X(EFILENO, "fileno failure")                                               \
-    X(EFOPEN, "fopen failure")                                                 \
-    X(EFREAD, "fread failure")                                                 \
-    X(EFSEEK, "fseek failure")                                                 \
-    X(EFSTAT, "fstat failure")                                                 \
-    X(EFSYNC, "fsync failure")                                                 \
-    X(EFTELL, "ftell failure")                                                 \
-    X(EFWRITE, "fwrite failure")                                               \
+    X(EFCLOSE, "fclose failed")                                                \
+    X(EFCNTL, "fcntl failed")                                                  \
+    X(EFILENO, "fileno failed")                                                \
+    X(EFOPEN, "fopen failed")                                                  \
+    X(EFREAD, "fread failed")                                                  \
+    X(EFSEEK, "fseek failed")                                                  \
+    X(EFSTAT, "fstat failed")                                                  \
+    X(EFSYNC, "fsync failed")                                                  \
+    X(EFTELL, "ftell failed")                                                  \
+    X(EFWRITE, "fwrite failed")                                                \
+    X(EMKSTEMP, "mkstemp failed")                                              \
     X(ENOMEM, "not enough memory")                                             \
-    X(EREADLINK, "readlink failure")                                           \
-    X(ERMDIR, "rmdir failure")                                                 \
-    X(ESTAT, "stat failure")                                                   \
+    X(EREADLINK, "readlink failed")                                            \
+    X(ERMDIR, "rmdir failed")                                                  \
+    X(ESTAT, "stat failed")                                                    \
     X(ETRUNCPATH, "truncated path")                                            \
-    X(EUNLINK, "unlink failure")
+    X(EUNLINK, "unlink failed")
 
 enum xfile_rc
 {
@@ -41,6 +42,7 @@ int xfile_seek(FILE *restrict fp, int64_t offset, int whence);
 int xfile_copy(FILE *restrict dst, FILE *restrict src);
 int xfile_unlink(char const *filepath);
 int xfile_rmdir(char const *dirpath);
+int xfile_mkstemp(unsigned size, char *filepath);
 
 int xfile_refopen(FILE *fp, char const *mode, FILE **out);
 int xfile_fileno(FILE *fp, int *fd);

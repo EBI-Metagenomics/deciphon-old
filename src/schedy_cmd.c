@@ -290,7 +290,7 @@ char const *schedy_cmd_job_inc_progress(struct cmd const *cmd)
 char const *schedy_cmd_scan_dl_seqs(struct cmd const *cmd)
 {
     static struct sched_scan scan = {0};
-    static struct xfile_tmp file = {0};
+    static char filepath[PATH_SIZE] = {0};
 
     if (!cmd_check(cmd, "si"))
     {
@@ -298,17 +298,29 @@ char const *schedy_cmd_scan_dl_seqs(struct cmd const *cmd)
         return say_fail();
     }
 
-    enum rc rc = api_scan_get_by_id(cmd_get_i64(cmd, 1), &scan);
-    if (rc) return say_fail();
+    if (api_scan_get_by_id(cmd_get_i64(cmd, 1), &scan)) return say_fail();
 
-    if ((rc = xfile_tmp_open(&file))) return say_fail();
-
-    if ((rc = api_scan_dl_seqs(scan.id, file.fp)))
+    int rc = xfile_mkstemp(sizeof filepath, filepath);
+    if (rc)
     {
-        xfile_tmp_del(&file);
+        error(xfile_strerror(rc));
         return say_fail();
     }
-    return file.path;
+    FILE *fp = fopen(filepath, "wb");
+    if (!fp)
+    {
+        eio("fopen failed");
+        return say_fail();
+    }
+
+    if (api_scan_dl_seqs(scan.id, fp))
+    {
+        fclose(fp);
+        return say_fail();
+    }
+
+    fclose(fp);
+    return filepath;
 }
 
 char const *schedy_cmd_scan_get_by_job_id(struct cmd const *cmd)
