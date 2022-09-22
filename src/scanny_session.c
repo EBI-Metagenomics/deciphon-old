@@ -30,7 +30,6 @@ static struct
     char db[PATH_SIZE];
 
     unsigned num_threads;
-    struct scan_thread thread[NUM_THREADS];
     double lrt_threshold;
 
     atomic_bool cancel;
@@ -52,7 +51,6 @@ void scanny_session_init(struct uv_loop_s *loop)
 {
     session.loop = loop;
     session.cancel = false;
-    atomic_store(&session.cancel, false);
     session.state = IDLE;
     progress_init(&session.progress, 0);
 }
@@ -76,8 +74,11 @@ bool scanny_session_start(char const *seqs, char const *db, bool multi_hits,
         return false;
     }
 
+    struct scan_cfg cfg = {4, 0.01, multi_hits, hmmer3_compat};
+    scan_init(cfg);
+
+    session.cancel = false;
     session.state = RUN;
-    atomic_store(&session.cancel, false);
     work(0);
     // uv_queue_work(session.loop, &session.request, work, after_work);
 
@@ -123,51 +124,8 @@ static void work(struct uv_work_s *req)
     (void)req;
     info("Preparing to scan...");
 
-    JR_INIT(session.jr);
-    char *json = (char *)xfile_readall(session.seqs);
-    if (!json) goto cleanup_fail;
-
-    if (jr_parse(session.jr, strlen(json), json))
-    {
-        eparse("failed to parse seqs json");
-        goto cleanup_fail;
-    }
-
-    if (jr_type(session.jr) != JR_ARRAY)
-    {
-        eparse("failed to parse seqs json");
-        goto cleanup_fail;
-    }
-
-    unsigned nseqs = (unsigned)jr_nchild(session.jr);
-    assert(nseqs > 0);
-    enum rc rc = scan_init(session.db, nseqs, 2, 0.01);
-
-    jr_next(session.jr);
-
-#if 0
-    long seq_id = jr_long_of(session.jr, "id");
-    long scan_id = jr_long_of(session.jr, "scan_id");
-    char const *name = jr_string_of(session.jr, "name");
-    char const *seq_data = jr_string_of(session.jr, "data");
-    if (jr_error())
-    {
-        eparse("failed to parse seqs json");
-        goto cleanup_fail;
-    }
-
-    FILE *fp = fopen(session.db, "rb");
-    if (!fp)
-    {
-        eio("failed to open database");
-        goto cleanup_fail;
-    }
-#endif
-
-    free(json);
-    return;
-
-cleanup_fail:
-    session.state = FAIL;
-    free(json);
+    enum rc rc = scan_setup(session.db, session.seqs);
+    // cleanup_fail:
+    //     session.state = FAIL;
+    //     free(json);
 }
