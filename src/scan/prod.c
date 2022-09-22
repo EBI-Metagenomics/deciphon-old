@@ -1,19 +1,23 @@
 #include "scan/prod.h"
 #include "core/logging.h"
 #include "core/version.h"
-#include "core/xfile.h"
 #include "imm/imm.h"
 #include "scan/match.h"
+#include "xfile.h"
 #include <inttypes.h>
 
 static unsigned num_threads = 0;
-static struct xfile_tmp prod_file[NUM_THREADS] = {0};
-static struct xfile_tmp final_file = {0};
+static FILE *prod_file[NUM_THREADS] = {NULL};
+static struct
+{
+    FILE *file;
+    char path[FILENAME_MAX];
+} final = {0};
 
 static enum rc write_begin(struct prod const *prod, unsigned thread_num)
 {
 #define TAB "\t"
-#define echo(fmt, var) fprintf(prod_file[thread_num].fp, fmt, prod->var) < 0
+#define echo(fmt, var) fprintf(prod_file[thread_num], fmt, prod->var) < 0
 #define Fd64 "%" PRId64 TAB
 #define Fs "%s" TAB
 #define Fg "%.17g" TAB
@@ -42,13 +46,13 @@ static enum rc write_begin(struct prod const *prod, unsigned thread_num)
 
 static enum rc write_match_sep(unsigned thread_num)
 {
-    FILE *fp = prod_file[thread_num].fp;
+    FILE *fp = prod_file[thread_num];
     return fputc(';', fp) == EOF ? eio("fputc") : RC_OK;
 }
 
 static enum rc write_end(unsigned thread_num)
 {
-    FILE *fp = prod_file[thread_num].fp;
+    FILE *fp = prod_file[thread_num];
     return fputc('\n', fp) == EOF ? eio("fputc") : RC_OK;
 }
 
@@ -57,7 +61,7 @@ enum rc prod_fopen(unsigned nthreads)
     assert(nthreads <= NUM_THREADS);
     for (num_threads = 0; num_threads < nthreads; ++num_threads)
     {
-        if (xfile_tmp_open(prod_file + num_threads))
+        if (!(prod_file[num_threads] = tmpfile()))
         {
             prod_fcleanup();
             return efail("begin prod submission");
@@ -83,7 +87,7 @@ void prod_setup_seq(struct prod *prod, int64_t seq_id)
 void prod_fcleanup(void)
 {
     for (unsigned i = 0; i < num_threads; ++i)
-        xfile_tmp_del(prod_file + i);
+        fclose(prod_file[i]);
     num_threads = 0;
 }
 
@@ -103,52 +107,51 @@ void prod_fcleanup(void)
  *                      ---------------
  */
 
+static enum rc open_final_file(void);
+
 enum rc prod_fclose(void)
 {
-    enum rc rc = RC_OK;
+    enum rc rc = open_final_file();
+    if (rc) goto cleanup;
 
-    if (xfile_tmp_open(&final_file))
-    {
-        rc = eio("fail to finish product");
-        goto cleanup;
-    }
     fputs("scan_id	seq_id	profile_name	abc_name	alt_loglik	"
           "null_loglik	profile_typeid	version	match\n",
-          final_file.fp);
+          final.file);
 
     for (unsigned i = 0; i < num_threads; ++i)
     {
-        if (fflush(prod_file[i].fp))
+        if (fflush(prod_file[i]))
         {
             rc = eio("failed to flush");
-            xfile_tmp_del(&final_file);
+            fclose(final.file);
             goto cleanup;
         }
-        rewind(prod_file[i].fp);
-        rc = xfile_copy(final_file.fp, prod_file[i].fp);
-        if (rc)
+        rewind(prod_file[i]);
+        int r = xfile_copy(final.file, prod_file[i]);
+        if (r)
         {
-            xfile_tmp_del(&final_file);
+            rc = eio(xfile_strerror(r));
+            fclose(final.file);
             goto cleanup;
         }
     }
-    if (fflush(final_file.fp))
+    if (fflush(final.file))
     {
         rc = eio("failed to flush");
         goto cleanup;
     }
-    rewind(final_file.fp);
+    rewind(final.file);
 
 cleanup:
     prod_fcleanup();
     return rc;
 }
 
-FILE *prod_final_fp(void) { return final_file.fp; }
+FILE *prod_final_fp(void) { return final.file; }
 
-char const *prod_final_path(void) { return final_file.path; }
+char const *prod_final_path(void) { return final.path; }
 
-void prod_final_cleanup(void) { xfile_tmp_del(&final_file); }
+void prod_final_cleanup(void) { fclose(final.file); }
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
                     struct imm_path const *path, unsigned thread_num,
@@ -170,7 +173,7 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
             if (write_match_sep(thread_num)) return eio("failed to write prod");
         }
 
-        if (fwrite_match(prod_file[thread_num].fp, match))
+        if (fwrite_match(prod_file[thread_num], match))
             return eio("write prod");
 
         start += match->step->seqlen;
@@ -178,4 +181,16 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
     if (write_end(thread_num)) return eio("failed to write prod");
 
     return rc;
+}
+
+static enum rc open_final_file(void)
+{
+    if (!(final.file = tmpfile())) return eio("fail to finish product");
+    int r = xfile_getpath(final.file, sizeof final.path, final.path);
+    if (r)
+    {
+        fclose(final.file);
+        return eio(xfile_strerror(r));
+    }
+    return RC_OK;
 }

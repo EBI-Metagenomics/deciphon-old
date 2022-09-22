@@ -4,8 +4,8 @@
 #include "core/mime.h"
 #include "core/sched.h"
 #include "core/xcurl.h"
-#include "core/xfile.h"
 #include "jx.h"
+#include "zc.h"
 #include <inttypes.h>
 #include <stdarg.h>
 #include <string.h>
@@ -60,11 +60,9 @@ enum rc api_wipe(void)
 enum rc api_hmm_up(char const *filepath, struct sched_hmm *hmm)
 {
     api_error_reset();
-    static char filename[SCHED_FILENAME_SIZE] = {0};
-    xfile_basename(filename, filepath, sizeof filename);
 
     xcurl_mime_init();
-    xcurl_mime_addfile("hmm_file", filename, MIME_PLAIN, filepath);
+    xcurl_mime_addfile("hmm_file", zc_basename(filepath), MIME_PLAIN, filepath);
 
     enum rc rc = xcurl_upload("/hmms/");
     if (rc) goto cleanup;
@@ -150,11 +148,9 @@ static enum rc get_hmm_by(struct sched_hmm *hmm, union param p,
 enum rc api_db_up(char const *filepath, struct sched_db *db)
 {
     api_error_reset();
-    static char filename[SCHED_FILENAME_SIZE] = {0};
-    xfile_basename(filename, filepath, sizeof filename);
 
     xcurl_mime_init();
-    xcurl_mime_addfile("db_file", filename, MIME_OCTET, filepath);
+    xcurl_mime_addfile("db_file", zc_basename(filepath), MIME_OCTET, filepath);
     enum rc rc = xcurl_upload("/dbs/");
     if (rc) goto cleanup;
 
@@ -291,8 +287,6 @@ enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
                         char const *filepath, struct sched_job *job)
 {
     api_error_reset();
-    static char filename[SCHED_FILENAME_SIZE] = {0};
-    xfile_basename(filename, filepath, sizeof filename);
 
     xcurl_mime_init();
     static char db_id_str[18] = {0};
@@ -300,7 +294,8 @@ enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
     xcurl_mime_addpart("db_id", db_id_str);
     xcurl_mime_addpart("multi_hits", multi_hits ? "true" : "false");
     xcurl_mime_addpart("hmmer3_compat", hmmer3_compat ? "true" : "false");
-    xcurl_mime_addfile("fasta_file", filename, MIME_PLAIN, filepath);
+    xcurl_mime_addfile("fasta_file", zc_basename(filepath), MIME_PLAIN,
+                       filepath);
     enum rc rc = xcurl_upload("/scans/");
     if (rc) goto cleanup;
 

@@ -56,6 +56,7 @@ add_library(
   libs/jx.c
   libs/argless.c
   libs/zc.c
+  libs/xfile.c
   src/core/buff.c
   src/loop/io.c
   # src/core/buff_pool.c
@@ -72,10 +73,10 @@ add_library(
   src/core/mempool.c
   src/core/progress.c
   src/core/to.c
-  src/core/xfile.c
   src/scan/prod.c
   src/scan/protein_match.c
   src/scan/scan.c
+  src/scan/seqs.c
   src/scan/thread.c
   src/model/nuclt_dist.c
   src/model/profile.c

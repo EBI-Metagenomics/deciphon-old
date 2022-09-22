@@ -17,9 +17,7 @@ enum scanny_cmd
 #undef X
 };
 
-struct uv_loop_s;
-
-cmd_fn_t *scanny_cmd(char const *cmd, struct uv_loop_s *);
+cmd_fn_t *scanny_cmd(char const *cmd);
 
 #define X(_, X) char const *X(struct cmd const *);
 SCANNY_CMD_MAP(X)

@@ -3,7 +3,7 @@
 #include "core/file.h"
 #include "core/logging.h"
 #include "core/sched_dump.h"
-#include "core/xfile.h"
+#include "xfile.h"
 #include <string.h>
 
 static inline char const *say_ok(void) { return "OK"; }

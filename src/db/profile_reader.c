@@ -1,8 +1,8 @@
 #include "core/expect.h"
 #include "core/logging.h"
-#include "core/xfile.h"
 #include "core/xmath.h"
 #include "db/db.h"
+#include "xfile.h"
 #include "zc.h"
 
 static void cleanup(struct profile_reader *reader)
@@ -15,8 +15,9 @@ static enum rc open_files(struct profile_reader *reader, FILE *fp)
 {
     for (unsigned i = 0; i < reader->npartitions; ++i)
     {
-        FILE *f = xfile_open_from_fptr(fp, "rb");
-        if (!f) return eio("failed to open file");
+        FILE *f = NULL;
+        int rc = xfile_refopen(fp, "rb", &f);
+        if (rc) return eio(xfile_strerror(rc));
         lip_file_init(reader->file + i, f);
     }
     return RC_OK;
@@ -86,7 +87,9 @@ enum rc profile_reader_setup(struct profile_reader *reader,
     if (!lip_read_array_size(&db->file, &n)) eio("read array size");
     if (n != db->nprofiles) return einval("invalid nprofiles");
 
-    int64_t profiles_offset = xfile_tell(db->file.fp);
+    int64_t profiles_offset = 0;
+    int r = xfile_tell(db->file.fp, &profiles_offset);
+    if (r) return eio(xfile_strerror(r));
 
     enum rc rc = RC_OK;
     reader->profile_typeid = db->profile_typeid;
@@ -131,7 +134,7 @@ enum rc profile_reader_rewind_all(struct profile_reader *reader)
     for (unsigned i = 0; i < reader->npartitions; ++i)
     {
         FILE *fp = lip_file_ptr(reader->file + i);
-        if (!xfile_seek(fp, reader->partition_offset[i], SEEK_SET))
+        if (xfile_seek(fp, reader->partition_offset[i], SEEK_SET))
             return eio("failed to fseek");
     }
     return RC_OK;
@@ -140,15 +143,16 @@ enum rc profile_reader_rewind_all(struct profile_reader *reader)
 enum rc profile_reader_rewind(struct profile_reader *reader, unsigned partition)
 {
     FILE *fp = lip_file_ptr(reader->file + partition);
-    if (!xfile_seek(fp, reader->partition_offset[partition], SEEK_SET))
+    if (xfile_seek(fp, reader->partition_offset[partition], SEEK_SET))
         return eio("failed to fseek");
     return RC_OK;
 }
 
 static enum rc reached_end(struct profile_reader *reader, unsigned partition)
 {
-    int64_t offset = xfile_tell(lip_file_ptr(reader->file + partition));
-    if (offset == -1) return eio("failed to ftello");
+    int64_t offset = 0;
+    if (xfile_tell(lip_file_ptr(reader->file + partition), &offset))
+        return eio("failed to ftello");
     if (offset == reader->partition_offset[partition + 1]) return RC_END;
     return RC_OK;
 }

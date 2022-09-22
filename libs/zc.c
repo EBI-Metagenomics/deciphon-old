@@ -251,20 +251,20 @@ void zc_mempool_del_object(struct mempool *mp, void *object)
 #include <string.h>
 
 // Acknowledgment: gblic
-char *zc_basename(char *path)
+char *zc_basename(char const *path)
 {
     char *p = strrchr(path, ZC_PATH_SEP);
-    return p ? p + 1 : path;
+    return p ? p + 1 : (char *)path;
 }
 
-char *zc_dirname(char *path)
+char *zc_dirname(char const *path)
 {
     char *p = strrchr(path, ZC_PATH_SEP);
     while (p > path)
     {
         *p-- = 0;
     }
-    return path;
+    return (char *)path;
 }
 
 /* --- zc_string section ---------------------------------- */
