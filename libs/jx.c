@@ -94,11 +94,11 @@ int jr_parse(struct jr jr[], int length, char *json)
     struct jr_parser *p = get_parser(jr);
     struct jr_cursor *c = cursor(jr);
     int n = p->alloc_size - 2;
-    int rc = jr_parser_parse(p, c->length, c->json, n, nodes(jr));
-    if (rc) return rc;
+    error = jr_parser_parse(p, c->length, c->json, n, nodes(jr));
+    if (error) return error;
     sentinel_init(jr);
     if (p->size > 0) cnode(jr)->parent = -1;
-    return rc;
+    return error;
 }
 
 int jr_error(void) { return error; }
@@ -454,6 +454,19 @@ static void jr_cursor_init(struct jr_cursor *cursor, int length, char *json)
     cursor->length = length;
     cursor->json = json;
     cursor->pos = 0;
+}
+
+static char const *error_strings[] = {
+#define X(_, A) A,
+    JR_ERROR_MAP(X)
+#undef X
+};
+
+char const *jr_strerror(int code)
+{
+    if (code < 0 || code >= (int)__JR_ARRAY_SIZE(error_strings))
+        return "unknown error";
+    return error_strings[code];
 }
 
 struct jr_node *__jr_node_alloc(struct jr_parser *parser, int nnodes,

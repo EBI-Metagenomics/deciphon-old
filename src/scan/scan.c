@@ -41,8 +41,17 @@ enum rc scan_setup(char const *db, char const *seqs)
 {
     enum rc rc = RC_OK;
 
+    info("Preparing readers");
+    if ((rc = prepare_readers(db)))
+    {
+        scan_cleanup();
+        prod_fcleanup();
+        return rc;
+    }
+
     info("Reading seqs");
-    if ((rc = seqs_init(&scan.seqs, seqs)))
+    scan.abc = (struct imm_abc const *)&scan.db_reader.nuclt;
+    if ((rc = seqs_init(&scan.seqs, seqs, scan.abc)))
     {
         fail_job("failed to read seqs file");
         return rc;
@@ -55,13 +64,6 @@ enum rc scan_setup(char const *db, char const *seqs)
         return rc;
     }
 
-    info("Preparing readers");
-    if ((rc = prepare_readers(db)))
-    {
-        scan_cleanup();
-        prod_fcleanup();
-        return rc;
-    }
     scan.write_match_func = protein_match_write_func;
 
     unsigned npartitions = profile_reader_npartitions(&scan.profile_reader);
@@ -78,38 +80,32 @@ enum rc scan_setup(char const *db, char const *seqs)
         thread_setup_job(t, abc_typeid, profile_typeid, scan.seqs.scan_id);
     }
 
-    unsigned long total =
+    unsigned long ntasks =
         scan.seqs.size * profile_reader_nprofiles(&scan.profile_reader);
-    info("%lu tasks to run", total);
+    info("%lu tasks to run", ntasks);
 
     return rc;
 }
 
-#if 0
 enum rc scan_run(void)
 {
     enum rc rc = RC_OK;
 
-    if ((rc = api_get_scan_by_job_id(job_id, &scan.sched))) return rc;
-
-    if ((rc = scan_init(num_threads, 10.))) return rc;
-
-    sched_seq_init(&scan.seq);
-
-    int64_t scan_id = scan.sched.id;
-    int64_t seq_id = scan.seq.id;
-    while (!(rc = api_scan_next_seq(scan_id, seq_id, &scan.seq)))
+    // int64_t scan_id = scan.seqs.scan_id;
+    // int64_t seq_id = scan.seq.id;
+    struct seq const *seq = nullptr;
+    while (!(rc = seqs_next(&scan.seqs, &seq)))
     {
-        struct imm_seq seq = imm_seq(imm_str(scan.seq.data), scan.abc);
+        struct imm_seq iseq = seq->iseq;
 
         unsigned nparts = profile_reader_npartitions(&scan.profile_reader);
         for (unsigned i = 0; i < nparts; ++i)
         {
             struct scan_thread *t = scan.thread + i;
-            thread_setup_seq(t, &seq, scan.seq.id);
-            t->job_id = job_id;
+            thread_setup_seq(t, &iseq, seq->id);
         }
 
+#if 0
         _Pragma ("omp parallel for firstprivate(job_id) schedule(static, 1)")
             for (unsigned i = 0; i < nparts; ++i)
             {
@@ -122,26 +118,30 @@ enum rc scan_run(void)
                     _Pragma ("omp cancel for")
                 }
             }
+#endif
 
+#if 0
         if (rc)
         {
             job_set_fail(job_id, "thread_run error (%s)", RC_STRING(rc));
             goto cleanup;
         }
         seq_id = scan.seq.id;
+#endif
     }
 
+#if 0
     if (rc == RC_END) return work_finishup(job_id);
 
     if (rc == RC_EAPI)
         job_set_fail(job_id, api_rc.msg);
     else
         job_set_fail(job_id, "BUG: unexpected return code");
+#endif
 
 cleanup:
     return rc;
 }
-#endif
 
 static char const *fail_job(char const *msg)
 {

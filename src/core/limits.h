@@ -11,6 +11,7 @@ enum limits
     PROTEIN_MODEL_CORE_SIZE_MAX = 4096,
     MIME_TYPE_SIZE = 128,
     PATH_SIZE = 256,
+    ERROR_SIZE = 256,
 };
 
 #endif

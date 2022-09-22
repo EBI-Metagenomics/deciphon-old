@@ -17,13 +17,18 @@ enum jr_type
     JR_NUMBER = 6,
 };
 
+#define JR_ERROR_MAP(X)                                                        \
+    X(OK, "no error")                                                          \
+    X(INVAL, "invalid value")                                                  \
+    X(NOMEM, "not enough memory")                                              \
+    X(OUTRANGE, "out-of-range")                                                \
+    X(NOTFOUND, "not found")
+
 enum jr_error
 {
-    JR_OK,
-    JR_INVAL,
-    JR_NOMEM,
-    JR_OUTRANGE,
-    JR_NOTFOUND,
+#define X(A, _) JR_##A,
+    JR_ERROR_MAP(X)
+#undef X
 };
 
 struct jr_node
@@ -74,6 +79,7 @@ struct jr
 void __jr_init(struct jr[], int alloc_size);
 int jr_parse(struct jr[], int length, char *json);
 int jr_error(void);
+char const *jr_strerror(int code);
 void jr_reset(struct jr[]);
 int jr_type(struct jr const[]);
 int jr_nchild(struct jr const[]);

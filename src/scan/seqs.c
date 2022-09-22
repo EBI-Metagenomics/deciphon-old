@@ -1,5 +1,6 @@
 #include "scan/seqs.h"
 #include "core/c23.h"
+#include "core/errmsg.h"
 #include "core/logging.h"
 #include "xfile.h"
 #include <assert.h>
@@ -7,7 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum rc seqs_init(struct seqs *seqs, char const *filepath)
+enum rc seqs_init(struct seqs *seqs, char const *filepath,
+                  struct imm_abc const *abc)
 {
     seqs->data = nullptr;
     JR_INIT(seqs->json);
@@ -46,8 +48,32 @@ enum rc seqs_init(struct seqs *seqs, char const *filepath)
         return eparse("failed to fetch scan_id from seq file");
     }
 
+    seqs->abc = abc;
     seqs->size = nseqs;
 
+    return RC_OK;
+}
+
+void seqs_rewind(struct seqs *seqs)
+{
+    jr_reset(seqs->json);
+    jr_array_at(seqs->json, 0);
+}
+
+enum rc seqs_next(struct seqs *seqs, struct seq const **seq)
+{
+    if (jr_type(seqs->json) == JR_SENTINEL) return RC_END;
+
+    seqs->curr.id = jr_long_of(seqs->json, "id");
+    seqs->curr.name = jr_string_of(seqs->json, "name");
+    seqs->curr.iseq =
+        imm_seq(imm_str(jr_string_of(seqs->json, "data")), seqs->abc);
+
+    jr_right(seqs->json);
+    if (jr_error())
+        return efail(errmsg(seqs->errmsg, "json: %s", jr_strerror(jr_error())));
+
+    *seq = &seqs->curr;
     return RC_OK;
 }
 

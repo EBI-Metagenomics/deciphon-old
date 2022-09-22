@@ -71,6 +71,7 @@ add_library(
   src/loop/writer.c
   src/core/logging.c
   src/core/mempool.c
+  src/core/errmsg.c
   src/core/progress.c
   src/core/to.c
   src/scan/prod.c

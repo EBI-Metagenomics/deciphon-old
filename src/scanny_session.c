@@ -74,7 +74,7 @@ bool scanny_session_start(char const *seqs, char const *db, bool multi_hits,
         return false;
     }
 
-    struct scan_cfg cfg = {4, 0.01, multi_hits, hmmer3_compat};
+    struct scan_cfg cfg = {4, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 
     session.cancel = false;
@@ -125,6 +125,7 @@ static void work(struct uv_work_s *req)
     info("Preparing to scan...");
 
     enum rc rc = scan_setup(session.db, session.seqs);
+    rc = scan_run();
     // cleanup_fail:
     //     session.state = FAIL;
     //     free(json);
