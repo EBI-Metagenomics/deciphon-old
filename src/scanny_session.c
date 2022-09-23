@@ -56,7 +56,8 @@ static void after_work(struct uv_work_s *, int status);
 static void work(struct uv_work_s *);
 
 static void monitor_start(void);
-static void monitor_progress(struct uv_timer_s *);
+static struct progress const *monitor_progress(void);
+static void monitor_progress_cb(struct uv_timer_s *);
 static void monitor_stop(void);
 
 void scanny_session_init(struct uv_loop_s *loop)
@@ -99,7 +100,7 @@ bool scanny_session_start(char const *seqs, char const *db, char const *prod,
         return !(errnum = enomem(errfmt(errmsg, "file path is too long")));
     }
 
-    struct scan_cfg cfg = {1, 10., multi_hits, hmmer3_compat};
+    struct scan_cfg cfg = {4, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 
     monitor_start();
@@ -108,9 +109,11 @@ bool scanny_session_start(char const *seqs, char const *db, char const *prod,
     return true;
 }
 
-unsigned scanny_session_progress(void)
+int scanny_session_progress(void)
 {
-    return progress_percent(&session.progress);
+    struct progress const *p = monitor_progress();
+    if (p) return (unsigned)progress_percent(p);
+    return -1;
 }
 
 bool scanny_session_cancel(void)
@@ -193,11 +196,18 @@ static void work(struct uv_work_s *req)
 static void monitor_start(void)
 {
     if (uv_timer_init(session.loop, &monitor_timer)) efail("uv_timer_init");
-    if (uv_timer_start(&monitor_timer, &monitor_progress, 1000, 1000))
+    if (uv_timer_start(&monitor_timer, &monitor_progress_cb, 1000, 1000))
         efail("uv_timer_start");
 }
 
-static void monitor_progress(struct uv_timer_s *req)
+static struct progress const *monitor_progress(void)
+{
+    if (atomic_load_explicit(&nomonitor, memory_order_consume)) return NULL;
+    scan_progress_update();
+    return scan_progress();
+}
+
+static void monitor_progress_cb(struct uv_timer_s *req)
 {
     (void)req;
     if (atomic_load_explicit(&nomonitor, memory_order_consume)) return;
@@ -208,4 +218,8 @@ static void monitor_progress(struct uv_timer_s *req)
     }
 }
 
-static void monitor_stop(void) { uv_timer_stop(&monitor_timer); }
+static void monitor_stop(void)
+{
+    uv_timer_stop(&monitor_timer);
+    if (session.state == DONE) info("Scanned %d%%", 100);
+}

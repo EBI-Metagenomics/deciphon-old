@@ -91,11 +91,13 @@ char const *scanny_cmd_progress(struct cmd const *cmd)
     }
 
     static char progress[5] = "100%";
-    if (scanny_session_is_done()) return progress;
+    if (scanny_session_is_done()) return "100%";
 
     if (scanny_session_is_running())
     {
-        sprintf(progress, "%u%%", scanny_session_progress());
+        int perc = scanny_session_progress();
+        if (perc < 0) return say_fail();
+        sprintf(progress, "%u%%", (unsigned)perc);
         return progress;
     }
 

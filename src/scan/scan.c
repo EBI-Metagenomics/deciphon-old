@@ -97,6 +97,8 @@ enum rc scan_setup(char const *db, char const *seqs)
 enum rc scan_run(void)
 {
     struct seq const *seq = nullptr;
+    enum rc rc[NUM_THREADS] = {0};
+    unsigned last_tid = UINT_MAX;
     seqlist_rewind();
     while ((seq = seqlist_next()))
     {
@@ -119,14 +121,22 @@ enum rc scan_run(void)
         //                    _Pragma ("omp cancel for")
         //                }
         //            }
-        for (unsigned i = 0; i < nparts; ++i)
-        {
-            enum rc rc = thread_run(&thread[i]);
-            if (rc)
+        //
+        _Pragma ("omp parallel for schedule(static, 1)")
+            for (unsigned i = 0; i < nparts; ++i)
             {
-                errnum = rc;
-                errfmt(errmsg, "%s", thread_errmsg(&thread[i]));
+                if ((rc[i] = thread_run(&thread[i])))
+                {
+                    _Pragma ("omp atomic write")
+                        last_tid = i;
+                    _Pragma ("omp cancel for")
+                }
             }
+        if (last_tid != UINT_MAX)
+        {
+            errnum = rc[last_tid];
+            errfmt(errmsg, "%s", thread_errmsg(&thread[last_tid]));
+            break;
         }
     }
 
