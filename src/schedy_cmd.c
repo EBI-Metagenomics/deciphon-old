@@ -292,7 +292,7 @@ char const *schedy_cmd_scan_dl_seqs(struct cmd const *cmd)
     static struct sched_scan scan = {0};
     static char filepath[PATH_SIZE] = {0};
 
-    if (!cmd_check(cmd, "si"))
+    if (!cmd_check(cmd, "sis"))
     {
         error_parse();
         return say_fail();
@@ -303,13 +303,14 @@ char const *schedy_cmd_scan_dl_seqs(struct cmd const *cmd)
     int rc = xfile_mkstemp(sizeof filepath, filepath);
     if (rc)
     {
-        error(xfile_strerror(rc));
+        eio(xfile_strerror(rc));
         return say_fail();
     }
     FILE *fp = fopen(filepath, "wb");
     if (!fp)
     {
         eio("fopen failed");
+        xfile_unlink(filepath);
         return say_fail();
     }
 
@@ -320,7 +321,13 @@ char const *schedy_cmd_scan_dl_seqs(struct cmd const *cmd)
     }
 
     fclose(fp);
-    return filepath;
+    rc = xfile_move(cmd->argv[2], filepath);
+    if (rc)
+    {
+        eio(xfile_strerror(rc));
+        return say_fail();
+    }
+    return cmd->argv[2];
 }
 
 char const *schedy_cmd_scan_get_by_job_id(struct cmd const *cmd)
