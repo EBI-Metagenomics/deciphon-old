@@ -13,10 +13,19 @@
 #include <string.h>
 
 static cmd_fn_t *scanny_cmds[] = {
-#define X(_, A) &A,
+#define X(_1, A, _2) &scanny_cmd_##A,
     SCANNY_CMD_MAP(X)
 #undef X
 };
+
+static enum scanny_cmd parse(char const *cmd)
+{
+#define X(A, B, _)                                                             \
+    if (!strcmp(cmd, STRINGIFY(B))) return SCANNY_CMD_##A;
+    SCANNY_CMD_MAP(X)
+#undef X
+    return SCANNY_CMD_INVALID;
+}
 
 static inline char const *say_ok(void) { return "OK"; }
 
@@ -28,8 +37,6 @@ static inline char const *say_busy(void) { return "BUSY"; }
 
 #define error_parse() error("failed to parse command")
 
-static enum scanny_cmd parse(char const *);
-
 cmd_fn_t *scanny_cmd(char const *cmd) { return scanny_cmds[parse(cmd)]; }
 
 char const *scanny_cmd_invalid(struct cmd const *cmd)
@@ -37,6 +44,23 @@ char const *scanny_cmd_invalid(struct cmd const *cmd)
     (void)cmd;
     eparse("invalid command");
     return say_fail();
+}
+
+static char help_table[512] = {0};
+
+char const *scanny_cmd_help(struct cmd const *cmd)
+{
+    (void)cmd;
+    char *p = help_table;
+    p += sprintf(p, "Commands:");
+
+#define X(_, A, B)                                                             \
+    if (strcmp(STRINGIFY(A), "invalid"))                                       \
+        p += sprintf(p, "\n  %-11s %s", STRINGIFY(A), B);
+    SCANNY_CMD_MAP(X);
+#undef X
+
+    return help_table;
 }
 
 char const *scanny_cmd_scan(struct cmd const *cmd)
@@ -104,13 +128,4 @@ char const *scanny_cmd_progress(struct cmd const *cmd)
     }
 
     return say_fail();
-}
-
-static enum scanny_cmd parse(char const *cmd)
-{
-#define X(A, _)                                                                \
-    if (!strcmp(cmd, STRINGIFY(A))) return SCANNY_CMD_##A;
-    SCANNY_CMD_MAP(X)
-#undef X
-    return SCANNY_CMD_INVALID;
 }

@@ -23,15 +23,15 @@ static bool encode_job_state(char const *str, enum sched_job_state *);
 static char buffer[6 * 1024 * 1024] = {0};
 
 static cmd_fn_t *schedy_cmds[] = {
-#define X(_, A) &A,
+#define X(_1, A, _2) &schedy_cmd_##A,
     SCHEDY_CMD_MAP(X)
 #undef X
 };
 
 static enum schedy_cmd parse(char const *cmd)
 {
-#define X(A, _)                                                                \
-    if (!strcmp(cmd, STRINGIFY(A))) return SCHEDY_CMD_##A;
+#define X(A, B, _)                                                             \
+    if (!strcmp(cmd, STRINGIFY(B))) return SCHEDY_CMD_##A;
     SCHEDY_CMD_MAP(X)
 #undef X
     return SCHEDY_CMD_INVALID;
@@ -44,6 +44,23 @@ char const *schedy_cmd_invalid(struct cmd const *cmd)
     (void)cmd;
     eparse("invalid command");
     return say_fail();
+}
+
+static char help_table[1024] = {0};
+
+char const *schedy_cmd_help(struct cmd const *cmd)
+{
+    (void)cmd;
+    char *p = help_table;
+    p += sprintf(p, "Commands:");
+
+#define X(_, A, B)                                                             \
+    if (strcmp(STRINGIFY(A), "invalid"))                                       \
+        p += sprintf(p, "\n  %-22s %s", STRINGIFY(A), B);
+    SCHEDY_CMD_MAP(X);
+#undef X
+
+    return help_table;
 }
 
 char const *schedy_cmd_connect(struct cmd const *cmd)
@@ -341,12 +358,6 @@ char const *schedy_cmd_scan_get_by_job_id(struct cmd const *cmd)
     }
     if (api_scan_get_by_job_id(cmd_get_i64(cmd, 1), &scan)) return say_fail();
     return sched_dump_scan(&scan, (char *)buffer);
-}
-
-char const *schedy_cmd_scan_next_seq(struct cmd const *cmd)
-{
-    (void)cmd;
-    return "";
 }
 
 char const *schedy_cmd_scan_seq_count(struct cmd const *cmd)

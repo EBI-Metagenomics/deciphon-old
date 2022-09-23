@@ -13,14 +13,14 @@ HOST=$(tools/dotenv_get .env DCP_API_HOST)
 PORT=$(tools/dotenv_get .env DCP_API_PORT)
 KEY=$(tools/dotenv_get .env DCP_API_KEY)
 
-unittest_sendnl "CONNECT http://$HOST:$PORT $KEY"
-unittest_sendnl "ONLINE"
-unittest_sendnl "WIPE"
-unittest_sendnl "HMM_UP $HMM"
-unittest_sendnl "JOB_NEXT_PEND"
-unittest_sendnl "JOB_SET_STATE 1 run"
-unittest_sendnl "JOB_INC_PROGRESS 1 10"
-unittest_sendnl "JOB_SET_STATE 1 fail error-message"
+unittest_sendnl "connect http://$HOST:$PORT $KEY"
+unittest_sendnl "online"
+unittest_sendnl "wipe"
+unittest_sendnl "hmm_up $HMM"
+unittest_sendnl "job_next_pend"
+unittest_sendnl "job_set_state 1 run"
+unittest_sendnl "job_inc_progress 1 10"
+unittest_sendnl "job_set_state 1 fail error-message"
 unittest_stop
 
 {

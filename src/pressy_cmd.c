@@ -11,10 +11,19 @@
 #include <string.h>
 
 static cmd_fn_t *pressy_cmds[] = {
-#define X(_, A) &A,
+#define X(_1, A, _2) &pressy_cmd_##A,
     PRESSY_CMD_MAP(X)
 #undef X
 };
+
+static enum pressy_cmd parse(char const *cmd)
+{
+#define X(A, B, _)                                                             \
+    if (!strcmp(cmd, STRINGIFY(B))) return PRESSY_CMD_##A;
+    PRESSY_CMD_MAP(X)
+#undef X
+    return PRESSY_CMD_INVALID;
+}
 
 static inline char const *say_ok(void) { return "OK"; }
 
@@ -26,8 +35,6 @@ static inline char const *say_busy(void) { return "BUSY"; }
 
 #define error_parse() error("failed to parse command")
 
-static enum pressy_cmd parse(char const *);
-
 cmd_fn_t *pressy_cmd(char const *cmd) { return pressy_cmds[parse(cmd)]; }
 
 char const *pressy_cmd_invalid(struct cmd const *cmd)
@@ -35,6 +42,23 @@ char const *pressy_cmd_invalid(struct cmd const *cmd)
     (void)cmd;
     eparse("invalid command");
     return say_fail();
+}
+
+static char help_table[512] = {0};
+
+char const *pressy_cmd_help(struct cmd const *cmd)
+{
+    (void)cmd;
+    char *p = help_table;
+    p += sprintf(p, "Commands:");
+
+#define X(_, A, B)                                                             \
+    if (strcmp(STRINGIFY(A), "invalid"))                                       \
+        p += sprintf(p, "\n  %-11s %s", STRINGIFY(A), B);
+    PRESSY_CMD_MAP(X);
+#undef X
+
+    return help_table;
 }
 
 char const *pressy_cmd_press(struct cmd const *cmd)
@@ -91,13 +115,4 @@ char const *pressy_cmd_progress(struct cmd const *cmd)
     }
 
     return say_fail();
-}
-
-static enum pressy_cmd parse(char const *cmd)
-{
-#define X(A, _)                                                                \
-    if (!strcmp(cmd, STRINGIFY(A))) return PRESSY_CMD_##A;
-    PRESSY_CMD_MAP(X)
-#undef X
-    return PRESSY_CMD_INVALID;
 }

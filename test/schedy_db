@@ -15,14 +15,14 @@ HOST=$(tools/dotenv_get .env DCP_API_HOST)
 PORT=$(tools/dotenv_get .env DCP_API_PORT)
 KEY=$(tools/dotenv_get .env DCP_API_KEY)
 
-unittest_sendnl "CONNECT http://$HOST:$PORT $KEY"
-unittest_sendnl "ONLINE"
-unittest_sendnl "WIPE"
-unittest_sendnl "HMM_UP $HMM"
-unittest_sendnl "DB_UP $DB"
-unittest_sendnl "DB_GET_BY_ID 1"
-unittest_sendnl "DB_GET_BY_XXH3 -7843725841264658444"
-unittest_sendnl "DB_GET_BY_FILENAME $DB_FILENAME"
+unittest_sendnl "connect http://$HOST:$PORT $KEY"
+unittest_sendnl "online"
+unittest_sendnl "wipe"
+unittest_sendnl "hmm_up $HMM"
+unittest_sendnl "db_up $DB"
+unittest_sendnl "db_get_by_id 1"
+unittest_sendnl "db_get_by_xxh3 -7843725841264658444"
+unittest_sendnl "db_get_by_filename $DB_FILENAME"
 # unittest_sendnl "DB_DL -7843725841264658444 output.dcp"
 unittest_stop
 

@@ -16,16 +16,16 @@ HOST=$(tools/dotenv_get .env DCP_API_HOST)
 PORT=$(tools/dotenv_get .env DCP_API_PORT)
 KEY=$(tools/dotenv_get .env DCP_API_KEY)
 
-unittest_sendnl "CONNECT http://$HOST:$PORT $KEY"
-unittest_sendnl "ONLINE"
-unittest_sendnl "WIPE"
-unittest_sendnl "HMM_UP $HMM"
-unittest_sendnl "JOB_SET_STATE 1 run"
-unittest_sendnl "JOB_SET_STATE 1 done"
-unittest_sendnl "DB_UP $DB"
-unittest_sendnl "SCAN_SUBMIT 1 1 0 $CONSENSUS"
-unittest_sendnl "JOB_NEXT_PEND"
-unittest_sendnl "SCAN_SEQ_COUNT 1"
+unittest_sendnl "connect http://$HOST:$PORT $KEY"
+unittest_sendnl "online"
+unittest_sendnl "wipe"
+unittest_sendnl "hmm_up $HMM"
+unittest_sendnl "job_set_state 1 run"
+unittest_sendnl "job_set_state 1 done"
+unittest_sendnl "db_up $DB"
+unittest_sendnl "scan_submit 1 1 0 $CONSENSUS"
+unittest_sendnl "job_next_pend"
+unittest_sendnl "scan_seq_count 1"
 unittest_stop
 
 {

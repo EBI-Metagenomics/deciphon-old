@@ -4,22 +4,24 @@
 #include "core/cmd.h"
 
 #define SCANNY_CMD_MAP(X)                                                      \
-    X(INVALID, scanny_cmd_invalid)                                             \
-    X(SCAN, scanny_cmd_scan)                                                   \
-    X(CANCEL, scanny_cmd_cancel)                                               \
-    X(STATE, scanny_cmd_state)                                                 \
-    X(PROGRESS, scanny_cmd_progress)
+    X(INVALID, invalid, "")                                                    \
+    X(HELP, help, "")                                                          \
+    X(SCAN, scan,                                                              \
+      "SEQS_FILE DB_FILE PROD_FILE NUM_THREADS MULTI_HITS HMMER3_COMPAT")      \
+    X(CANCEL, cancel, "")                                                      \
+    X(STATE, state, "")                                                        \
+    X(PROGRESS, progress, "")
 
 enum scanny_cmd
 {
-#define X(A, _) SCANNY_CMD_##A,
+#define X(A, _1, _2) SCANNY_CMD_##A,
     SCANNY_CMD_MAP(X)
 #undef X
 };
 
 cmd_fn_t *scanny_cmd(char const *cmd);
 
-#define X(_, X) char const *X(struct cmd const *);
+#define X(_1, A, _2) char const *scanny_cmd_##A(struct cmd const *);
 SCANNY_CMD_MAP(X)
 #undef X
 
