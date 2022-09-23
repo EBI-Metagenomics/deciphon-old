@@ -71,8 +71,8 @@ enum rc scan_setup(char const *db, char const *seqs)
 
     long ntasks = 0;
     long ntasks_total = 0;
-    unsigned npartitions = profile_reader_npartitions(&profreader);
-    for (unsigned i = 0; i < npartitions; ++i)
+    unsigned nparts = profile_reader_npartitions(&profreader);
+    for (unsigned i = 0; i < nparts; ++i)
     {
         struct thread *t = thread + i;
         struct profile_reader *reader = &profreader;
@@ -134,6 +134,21 @@ enum rc scan_run(void)
 
     return errnum;
 }
+
+int scan_progress_update(void)
+{
+    unsigned nparts = profile_reader_npartitions(&profreader);
+    long prev = progress_consumed(&progress);
+    long now = 0;
+    for (unsigned i = 0; i < nparts; ++i)
+    {
+        struct progress const *p = thread_progress(thread + i);
+        now += progress_consumed(p);
+    }
+    return progress_consume(&progress, now - prev);
+}
+
+struct progress const *scan_progress(void) { return &progress; }
 
 char const *scan_errmsg(void) { return errmsg; }
 

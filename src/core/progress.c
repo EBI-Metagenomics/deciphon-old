@@ -19,10 +19,16 @@ int progress_consume(struct progress *p, long total)
     return inc;
 }
 
-unsigned progress_percent(struct progress *p)
+long progress_total(struct progress const *p) { return p->total; }
+
+long progress_consumed(struct progress const *p)
 {
-    long consumed = atomic_load_explicit(&p->consumed, memory_order_consume);
-    return (unsigned)percent(p->total, consumed);
+    return atomic_load_explicit(&p->consumed, memory_order_consume);
+}
+
+unsigned progress_percent(struct progress const *p)
+{
+    return (unsigned)percent(p->total, progress_consumed(p));
 }
 
 static int percent(long total, long consumed)

@@ -1,0 +1,1 @@
+SCAN seqs.json Pfam-A.one_tenth.dcp prod.tsv 1 0

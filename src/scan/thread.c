@@ -103,6 +103,11 @@ cleanup:
     return rc;
 }
 
+struct progress const *thread_progress(struct thread const *t)
+{
+    return &t->progress;
+}
+
 char const *thread_errmsg(struct thread const *t) { return t->errmsg; }
 
 static enum rc reset_task(struct thread *t, struct imm_task **task,

@@ -40,6 +40,9 @@ static struct
     struct progress progress;
 } session;
 
+struct uv_timer_s monitor_timer = {0};
+atomic_bool nomonitor = true;
+
 static enum rc errnum = RC_OK;
 static char errmsg[ERROR_SIZE] = {0};
 
@@ -51,6 +54,10 @@ static char const *state_string[] = {[IDLE] = "IDLE",
 
 static void after_work(struct uv_work_s *, int status);
 static void work(struct uv_work_s *);
+
+static void monitor_start(void);
+static void monitor_progress(struct uv_timer_s *);
+static void monitor_stop(void);
 
 void scanny_session_init(struct uv_loop_s *loop)
 {
@@ -95,6 +102,7 @@ bool scanny_session_start(char const *seqs, char const *db, char const *prod,
     struct scan_cfg cfg = {1, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 
+    monitor_start();
     uv_queue_work(session.loop, &session.request, work, after_work);
 
     return true;
@@ -132,6 +140,8 @@ static void after_work(struct uv_work_s *req, int status)
     (void)req;
     if (status == UV_ECANCELED) session.state = CANCEL;
     atomic_store(&session.cancel, false);
+    atomic_store_explicit(&nomonitor, true, memory_order_release);
+    monitor_stop();
 }
 
 static void work(struct uv_work_s *req)
@@ -146,6 +156,7 @@ static void work(struct uv_work_s *req)
         session.state = FAIL;
         return;
     }
+    atomic_store_explicit(&nomonitor, false, memory_order_release);
 
     if (atomic_load(&session.cancel))
     {
@@ -178,3 +189,23 @@ static void work(struct uv_work_s *req)
 
     session.state = DONE;
 }
+
+static void monitor_start(void)
+{
+    if (uv_timer_init(session.loop, &monitor_timer)) efail("uv_timer_init");
+    if (uv_timer_start(&monitor_timer, &monitor_progress, 1000, 1000))
+        efail("uv_timer_start");
+}
+
+static void monitor_progress(struct uv_timer_s *req)
+{
+    (void)req;
+    if (atomic_load_explicit(&nomonitor, memory_order_consume)) return;
+    if (scan_progress_update())
+    {
+        struct progress const *p = scan_progress();
+        info("Scanned %d%%", progress_percent(p));
+    }
+}
+
+static void monitor_stop(void) { uv_timer_stop(&monitor_timer); }

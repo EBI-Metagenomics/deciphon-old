@@ -11,6 +11,8 @@ struct progress
 
 void progress_init(struct progress *, long total);
 int progress_consume(struct progress *, long total);
-unsigned progress_percent(struct progress *);
+long progress_total(struct progress const *);
+long progress_consumed(struct progress const *);
+unsigned progress_percent(struct progress const *);
 
 #endif
