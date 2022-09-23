@@ -9,7 +9,6 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
-#include <string.h>
 
 static JR_DECLARE(json, 128);
 static char *data = nullptr;

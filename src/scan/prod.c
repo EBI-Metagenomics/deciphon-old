@@ -156,7 +156,7 @@ void prod_final_cleanup(void) { fclose(final.file); }
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
                     struct imm_path const *path, unsigned thread_num,
-                    prod_fwrite_match_func_t fwrite_match, struct match *match)
+                    prod_fwrite_match_fn_t *fwrite_match, struct match *match)
 {
     enum rc rc = RC_OK;
 

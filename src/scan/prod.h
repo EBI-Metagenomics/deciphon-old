@@ -32,11 +32,11 @@ struct prod
     char match[SCHED_MATCH_SIZE];
 };
 
-typedef enum rc (*prod_fwrite_match_func_t)(FILE *fp, void const *match);
+typedef enum rc prod_fwrite_match_fn_t(FILE *fp, void const *match);
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
                     struct imm_path const *path, unsigned thread_num,
-                    prod_fwrite_match_func_t fwrite_match, struct match *match);
+                    prod_fwrite_match_fn_t *, struct match *match);
 
 enum rc prod_fopen(unsigned nthreads);
 void prod_setup_job(struct prod *prod, char const *abc_name,
