@@ -12,6 +12,7 @@
 
 static JR_DECLARE(json, 128);
 static char *data = nullptr;
+static int num_seqs = 0;
 static struct seq curr = {0};
 static enum rc errnum = RC_OK;
 static char errmsg[ERROR_SIZE] = {0};
@@ -22,6 +23,9 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
     JR_INIT(json);
     seq_init(&curr, abc);
     data = nullptr;
+    num_seqs = 0;
+    errnum = RC_OK;
+    errmsg[0] = '\0';
 
     int64_t size = 0;
     int r = xfile_readall(filepath, &size, (unsigned char **)&data);
@@ -45,7 +49,7 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
         goto cleanup;
     }
 
-    if (jr_nchild(json) <= 0)
+    if ((num_seqs = jr_nchild(json)) <= 0)
     {
         errnum = efail(errfmt(errmsg, "no sequence found"));
         goto cleanup;
@@ -93,6 +97,10 @@ struct seq const *seqlist_next(void)
 
     return &curr;
 }
+
+int seqlist_size(void) { return num_seqs; }
+
+char const *seqlist_errmsg(void) { return errmsg; }
 
 void seqlist_cleanup(void)
 {

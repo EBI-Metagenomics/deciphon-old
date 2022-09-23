@@ -1,4 +1,5 @@
 #include "scanny_session.h"
+#include "core/errmsg.h"
 #include "core/limits.h"
 #include "core/logging.h"
 #include "core/progress.h"
@@ -28,6 +29,7 @@ static struct
     struct uv_loop_s *loop;
     char seqs[PATH_SIZE];
     char db[PATH_SIZE];
+    char prod[PATH_SIZE];
 
     unsigned num_threads;
     double lrt_threshold;
@@ -37,6 +39,9 @@ static struct
     struct uv_work_s request;
     struct progress progress;
 } session;
+
+static enum rc errnum = RC_OK;
+static char errmsg[ERROR_SIZE] = {0};
 
 static char const *state_string[] = {[IDLE] = "IDLE",
                                      [RUN] = "RUN",
@@ -52,6 +57,8 @@ void scanny_session_init(struct uv_loop_s *loop)
     session.loop = loop;
     session.cancel = false;
     session.state = IDLE;
+    errnum = RC_OK;
+    errmsg[0] = '\0';
     progress_init(&session.progress, 0);
 }
 
@@ -59,28 +66,36 @@ bool scanny_session_is_running(void) { return session.state == RUN; }
 
 bool scanny_session_is_done(void) { return session.state == DONE; }
 
-bool scanny_session_start(char const *seqs, char const *db, bool multi_hits,
-                          bool hmmer3_compat)
+bool scanny_session_start(char const *seqs, char const *db, char const *prod,
+                          bool multi_hits, bool hmmer3_compat)
 {
+    errnum = RC_OK;
+    errmsg[0] = '\0';
+    session.cancel = false;
+    session.state = RUN;
+
     if (zc_strlcpy(session.seqs, seqs, PATH_SIZE) >= PATH_SIZE)
     {
-        enomem("file path is too long");
-        return false;
+        session.state = FAIL;
+        return !(errnum = enomem(errfmt(errmsg, "file path is too long")));
     }
 
     if (zc_strlcpy(session.db, db, PATH_SIZE) >= PATH_SIZE)
     {
-        enomem("file path is too long");
-        return false;
+        session.state = FAIL;
+        return !(errnum = enomem(errfmt(errmsg, "file path is too long")));
+    }
+
+    if (zc_strlcpy(session.prod, prod, PATH_SIZE) >= PATH_SIZE)
+    {
+        session.state = FAIL;
+        return !(errnum = enomem(errfmt(errmsg, "file path is too long")));
     }
 
     struct scan_cfg cfg = {1, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 
-    session.cancel = false;
-    session.state = RUN;
-    work(0);
-    // uv_queue_work(session.loop, &session.request, work, after_work);
+    uv_queue_work(session.loop, &session.request, work, after_work);
 
     return true;
 }
@@ -122,11 +137,44 @@ static void after_work(struct uv_work_s *req, int status)
 static void work(struct uv_work_s *req)
 {
     (void)req;
-    info("Preparing to scan...");
+    info("Preparing to scan");
 
-    enum rc rc = scan_setup(session.db, session.seqs);
-    rc = scan_run();
-    // cleanup_fail:
-    //     session.state = FAIL;
-    //     free(json);
+    errnum = scan_setup(session.db, session.seqs);
+    if (errnum)
+    {
+        errfmt(errmsg, "%s", scan_errmsg());
+        session.state = FAIL;
+        return;
+    }
+
+    if (atomic_load(&session.cancel))
+    {
+        info("Cancelled");
+        session.state = CANCEL;
+        return;
+    }
+
+    if ((errnum = scan_run()))
+    {
+        errfmt(errmsg, "%s", scan_errmsg());
+        session.state = FAIL;
+        return;
+    }
+
+    if (atomic_load(&session.cancel))
+    {
+        info("Cancelled");
+        session.state = CANCEL;
+        return;
+    }
+
+    int r = xfile_move(session.prod, scan_prod_filepath());
+    if (r)
+    {
+        errnum = eio(errfmt(errmsg, "%s", xfile_strerror(r)));
+        session.state = FAIL;
+        return;
+    }
+
+    session.state = DONE;
 }

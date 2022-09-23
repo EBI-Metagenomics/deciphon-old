@@ -41,5 +41,6 @@ void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
                       int64_t scan_id, long ntasks);
 void thread_setup_seq(struct thread *, struct imm_seq const *, int64_t seq_id);
 enum rc thread_run(struct thread *);
+char const *thread_errmsg(struct thread const *);
 
 #endif

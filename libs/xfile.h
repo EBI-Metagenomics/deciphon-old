@@ -43,6 +43,7 @@ int xfile_copy(FILE *restrict dst, FILE *restrict src);
 int xfile_unlink(char const *filepath);
 int xfile_rmdir(char const *dirpath);
 int xfile_mkstemp(unsigned size, char *filepath);
+int xfile_move(char const *restrict dst, char const *restrict src);
 
 int xfile_refopen(FILE *fp, char const *mode, FILE **out);
 int xfile_fileno(FILE *fp, int *fd);

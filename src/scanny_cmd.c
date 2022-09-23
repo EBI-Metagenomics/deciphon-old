@@ -41,7 +41,7 @@ char const *scanny_cmd_invalid(struct cmd const *cmd)
 
 char const *scanny_cmd_scan(struct cmd const *cmd)
 {
-    if (!cmd_check(cmd, "sssii"))
+    if (!cmd_check(cmd, "ssssii"))
     {
         error_parse();
         return say_fail();
@@ -50,9 +50,10 @@ char const *scanny_cmd_scan(struct cmd const *cmd)
     if (scanny_session_is_running()) return say_busy();
     char const *seqs = cmd->argv[1];
     char const *db = cmd->argv[2];
-    bool multi_hits = !!cmd_get_i64(cmd, 3);
-    bool hmmer3_compat = !!cmd_get_i64(cmd, 4);
-    return scanny_session_start(seqs, db, multi_hits, hmmer3_compat)
+    char const *prod = cmd->argv[3];
+    bool multi_hits = !!cmd_get_i64(cmd, 4);
+    bool hmmer3_compat = !!cmd_get_i64(cmd, 5);
+    return scanny_session_start(seqs, db, prod, multi_hits, hmmer3_compat)
                ? say_ok()
                : say_fail();
 }

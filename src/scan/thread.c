@@ -1,5 +1,6 @@
 #include "scan/thread.h"
 #include "core/c23.h"
+#include "core/errmsg.h"
 #include "core/logging.h"
 #include "core/progress.h"
 #include "core/xmath.h"
@@ -36,12 +37,16 @@ void thread_setup_seq(struct thread *t, struct imm_seq const *seq,
     prod_setup_seq(&t->prod, seq_id);
 }
 
-static enum rc reset_task(struct imm_task **task, struct imm_dp const *dp);
-static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq);
-static enum rc setup_hypothesis(struct hypothesis *hyp, struct imm_dp const *dp,
+static enum rc reset_task(struct thread *t, struct imm_task **task,
+                          struct imm_dp const *dp);
+static enum rc setup_task(struct thread *t, struct imm_task *task,
+                          struct imm_seq const *seq);
+static enum rc setup_hypothesis(struct thread *t, struct hypothesis *hyp,
+                                struct imm_dp const *dp,
                                 struct imm_seq const *seq);
-static enum rc viterbi(struct imm_dp const *dp, struct imm_task *task,
-                       struct imm_prod *prod, double *loglik);
+static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
+                       struct imm_task *task, struct imm_prod *prod,
+                       double *loglik);
 static enum rc write_product(struct thread const *t,
                              struct imm_path const *path);
 
@@ -65,19 +70,20 @@ enum rc thread_run(struct thread *t)
         struct protein_profile *pp = (struct protein_profile *)prof;
         unsigned size = imm_seq_size(seq);
 
-        rc = setup_hypothesis(null, profile_null_dp(prof), seq);
+        rc = setup_hypothesis(t, null, profile_null_dp(prof), seq);
         if (rc) goto cleanup;
 
-        rc = setup_hypothesis(alt, profile_alt_dp(prof), seq);
+        rc = setup_hypothesis(t, alt, profile_alt_dp(prof), seq);
         if (rc) goto cleanup;
 
         rc = protein_profile_setup(pp, size, t->cfg.multi_hits,
                                    t->cfg.hmmer3_compat);
         if (rc) goto cleanup;
 
-        rc = viterbi(null_dp, null->task, &null->prod, &t->prod.null_loglik);
+        rc = viterbi(t, null_dp, null->task, &null->prod, &t->prod.null_loglik);
+        if (rc) goto cleanup;
 
-        rc = viterbi(alt_dp, alt->task, &alt->prod, &t->prod.alt_loglik);
+        rc = viterbi(t, alt_dp, alt->task, &alt->prod, &t->prod.alt_loglik);
         if (rc) goto cleanup;
 
         progress_consume(&t->progress, 1);
@@ -97,40 +103,48 @@ cleanup:
     return rc;
 }
 
-static enum rc reset_task(struct imm_task **task, struct imm_dp const *dp)
+char const *thread_errmsg(struct thread const *t) { return t->errmsg; }
+
+static enum rc reset_task(struct thread *t, struct imm_task **task,
+                          struct imm_dp const *dp)
 {
     if (*task && imm_task_reset(*task, dp))
-        return efail("failed to reset task");
+        return efail(errfmt(t->errmsg, "failed to reset task"));
 
     if (!*task && !(*task = imm_task_new(dp)))
-        return efail("failed to create task");
+        return efail(errfmt(t->errmsg, "failed to create task"));
 
     return RC_OK;
 }
 
-static enum rc setup_task(struct imm_task *task, struct imm_seq const *seq)
+static enum rc setup_task(struct thread *t, struct imm_task *task,
+                          struct imm_seq const *seq)
 {
-    if (imm_task_setup(task, seq)) return efail("failed to setup task");
+    if (imm_task_setup(task, seq))
+        return efail(errfmt(t->errmsg, "failed to setup task"));
     return RC_OK;
 }
 
 typedef struct imm_dp const *(*profile_dp_func_t)(struct profile const *prof);
 
-static enum rc setup_hypothesis(struct hypothesis *hyp, struct imm_dp const *dp,
+static enum rc setup_hypothesis(struct thread *t, struct hypothesis *hyp,
+                                struct imm_dp const *dp,
                                 struct imm_seq const *seq)
 {
     enum rc rc = RC_OK;
-    if ((rc = reset_task(&hyp->task, dp))) return rc;
-    if ((rc = setup_task(hyp->task, seq))) return rc;
+    if ((rc = reset_task(t, &hyp->task, dp))) return rc;
+    if ((rc = setup_task(t, hyp->task, seq))) return rc;
     imm_prod_reset(&hyp->prod);
     return rc;
 }
 
-static enum rc viterbi(struct imm_dp const *dp, struct imm_task *task,
-                       struct imm_prod *prod, double *loglik)
+static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
+                       struct imm_task *task, struct imm_prod *prod,
+                       double *loglik)
 
 {
-    if (imm_dp_viterbi(dp, task, prod)) return efail("failed to run viterbi");
+    if (imm_dp_viterbi(dp, task, prod))
+        return efail(errfmt(t->errmsg, "failed to run viterbi"));
     *loglik = (double)prod->loglik;
     return RC_OK;
 }

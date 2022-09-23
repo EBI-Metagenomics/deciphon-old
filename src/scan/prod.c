@@ -108,11 +108,12 @@ void prod_fcleanup(void)
  *                      ---------------
  */
 
-static enum rc open_final_file(void);
+static enum rc prod_final_fopen(void);
+static enum rc prod_final_fclose(bool succesfully);
 
 enum rc prod_fclose(void)
 {
-    enum rc rc = open_final_file();
+    enum rc rc = prod_final_fopen();
     if (rc) goto cleanup;
 
     fputs("scan_id	seq_id	profile_name	abc_name	alt_loglik	"
@@ -124,7 +125,6 @@ enum rc prod_fclose(void)
         if (fflush(prod_file[i]))
         {
             rc = eio("failed to flush");
-            fclose(final.file);
             goto cleanup;
         }
         rewind(prod_file[i]);
@@ -132,7 +132,6 @@ enum rc prod_fclose(void)
         if (r)
         {
             rc = eio(xfile_strerror(r));
-            fclose(final.file);
             goto cleanup;
         }
     }
@@ -145,14 +144,11 @@ enum rc prod_fclose(void)
 
 cleanup:
     prod_fcleanup();
-    return rc;
+    enum rc rc_pf = prod_final_fclose(!rc);
+    return rc ? rc : rc_pf;
 }
 
-FILE *prod_final_fp(void) { return final.file; }
-
 char const *prod_final_path(void) { return final.path; }
-
-void prod_final_cleanup(void) { fclose(final.file); }
 
 enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
                     struct imm_path const *path, unsigned thread_num,
@@ -184,19 +180,23 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
     return rc;
 }
 
-static enum rc open_final_file(void)
+static enum rc prod_final_fopen(void)
 {
+    final.file = NULL;
     if (xfile_mkstemp(PATH_SIZE, final.path))
         return eio("fail to finish product");
 
     final.file = fopen(final.path, "wb");
-    if (!final.file) return eio("fail to finish product");
+    return final.file ? RC_OK : eio("fail to finish product");
+}
 
-    int r = xfile_getpath(final.file, sizeof final.path, final.path);
-    if (r)
-    {
-        fclose(final.file);
-        return eio(xfile_strerror(r));
-    }
+static enum rc prod_final_fclose(bool succesfully)
+{
+    FILE *fp = final.file;
+    final.file = NULL;
+
+    if (succesfully)
+        return fclose(fp) ? eio("failed to close final product") : RC_OK;
+
     return RC_OK;
 }

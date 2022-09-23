@@ -18,7 +18,7 @@
  *                      ---------------
  */
 
-enum rc protein_match_write_func(FILE *fp, void const *match)
+enum rc protein_match_write(FILE *fp, void const *match)
 {
     struct match const *m = (struct match const *)match;
     struct protein_profile const *prof =

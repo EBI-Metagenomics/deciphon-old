@@ -45,8 +45,6 @@ void prod_setup_seq(struct prod *prod, int64_t seq_id);
 void prod_fcleanup(void);
 enum rc prod_fclose(void);
 
-FILE *prod_final_fp(void);
 char const *prod_final_path(void);
-void prod_final_cleanup(void);
 
 #endif

@@ -118,6 +118,24 @@ int xfile_mkstemp(unsigned size, char *filepath)
     return mkstemp(filepath) < 0 ? XFILE_EMKSTEMP : XFILE_OK;
 }
 
+int xfile_move(char const *restrict dst, char const *restrict src)
+{
+    if (rename(src, dst) == 0) return XFILE_OK;
+    FILE *fdst = fopen(dst, "wb");
+    if (!fdst) return XFILE_EFOPEN;
+
+    FILE *fsrc = fopen(src, "rb");
+    if (!fsrc)
+    {
+        fclose(fdst);
+        return XFILE_EFOPEN;
+    }
+
+    int rc = xfile_copy(fdst, fsrc);
+    if (!fclose(fdst) && fclose(fsrc)) xfile_unlink(src);
+    return rc;
+}
+
 int xfile_refopen(FILE *fp, char const *mode, FILE **out)
 {
     char filepath[FILENAME_MAX] = {0};

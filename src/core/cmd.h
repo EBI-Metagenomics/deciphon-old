@@ -6,7 +6,7 @@
 
 enum
 {
-    CMD_ARGC_MAX = 5,
+    CMD_ARGC_MAX = 8,
 };
 
 struct cmd
