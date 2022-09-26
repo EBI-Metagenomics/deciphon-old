@@ -3,6 +3,7 @@
 #include "zc.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -82,6 +83,8 @@ void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
         pipe_into(streams[SYS_PIPE], ctx, fmt, args);
         va_end(args);
     }
+
+    if (level == LOGGING_FATAL) exit(1);
 
     spinlock_unlock(&lock);
 }
