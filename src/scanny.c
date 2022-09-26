@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
+    logging_set_prefix(argl_progname(&argl));
     logging_set_user_file(get("userlog", LOGGING_DEFAULT_FILE));
     logging_set_sys_file(get("syslog", LOGGING_DEFAULT_FILE));
 

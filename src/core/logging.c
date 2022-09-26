@@ -1,5 +1,6 @@
 #include "core/logging.h"
 #include "core/spinlock.h"
+#include "zc.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,11 +14,17 @@ static spinlock_t lock = SPINLOCK_INIT;
 
 static FILE *streams[2] = {0};
 static enum logging_level levels[2] = {LOGGING_NOTSET};
+static char prefix[16] = "";
 
 static FILE *open_file(char const *file, char const *default_file);
 static void pipe_into(FILE *restrict stream, char const *ctx, char const *fmt,
                       va_list args);
 static void initialize_if_not_yet(void);
+
+void logging_set_prefix(char const *pfix)
+{
+    zc_strlcpy(prefix, pfix, sizeof prefix);
+}
 
 void logging_set_user_file(char const *user_file)
 {
@@ -93,6 +100,13 @@ static void pipe_into(FILE *restrict stream, char const *ctx, char const *fmt,
 {
     fputs(stamp, stream);
     fputc(' ', stream);
+    if (strlen(prefix) > 0)
+    {
+        fputc('[', stream);
+        fputs(prefix, stream);
+        fputc(']', stream);
+        fputc(' ', stream);
+    }
 
     if (ctx)
     {

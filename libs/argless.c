@@ -429,6 +429,7 @@ static void help_help(char const *prog, char const *args_doc, char const *doc,
         start = end + 1;
         end = strchr(start, ' ');
     }
+    if (strlen(start) > 0) echof(" %s", start);
     echo_end();
 
     echo_start(0);
@@ -527,4 +528,9 @@ void argl_usage(struct argl const *al)
 {
     char const *progname = al_basename(al->argv[0]);
     help_usage(progname, al->options, EXIT_FAILURE);
+}
+
+char const *argl_progname(struct argl const *al)
+{
+    return al_basename(al->argv[0]);
 }

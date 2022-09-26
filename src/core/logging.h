@@ -36,6 +36,7 @@ enum
 void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
                      ...);
 
+void logging_set_prefix(char const *prefix);
 void logging_set_user_file(char const *user_file);
 void logging_set_user_level(enum logging_level user_level);
 void logging_set_sys_file(char const *sys_file);
