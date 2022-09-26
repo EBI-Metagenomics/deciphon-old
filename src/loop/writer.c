@@ -17,15 +17,13 @@ void writer_init(struct writer *writer, struct uv_loop_s *loop,
     writer->loop = loop;
     writer->onclose_cb = onclose_cb;
     writer->arg = arg;
-}
-
-void writer_open(struct writer *writer, uv_file fd)
-{
-    if (uv_pipe_init(writer->loop, &writer->pipe, 0)) fatal("uv_pipe_init");
-
+    uv_pipe_init(writer->loop, &writer->pipe, 0);
     ((struct uv_handle_s *)(&writer->pipe))->data = writer;
     ((struct uv_stream_s *)(&writer->pipe))->data = writer;
+}
 
+void writer_fopen(struct writer *writer, uv_file fd)
+{
     int rc = uv_pipe_open(&writer->pipe, fd);
     if (rc) fatal(uv_strerror(rc));
 }

@@ -33,7 +33,7 @@ struct reader
 
 void reader_init(struct reader *, struct uv_loop_s *, reader_onerror_fn_t *,
                  reader_onread_fn_t *, reader_onclose_fn_t *, void *arg);
-void reader_open(struct reader *, uv_file fd);
+void reader_fopen(struct reader *, uv_file fd);
 void reader_close(struct reader *);
 
 #endif

@@ -58,7 +58,7 @@ add_library(
   libs/zc.c
   libs/xfile.c
   src/core/buff.c
-  src/loop/io.c
+  src/loop/fio.c
   # src/core/buff_pool.c
   src/core/expect.c
   src/core/http.c

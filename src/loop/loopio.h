@@ -1,7 +1,7 @@
 #ifndef LOOP_LOOPIO_H
 #define LOOP_LOOPIO_H
 
-#include "loop/io.h"
+#include "loop/fio.h"
 #include "loop/reader.h"
 #include "loop/writer.h"
 
@@ -12,8 +12,8 @@ struct looper;
 struct loopio
 {
     struct looper *looper;
-    struct io input;
-    struct io output;
+    struct fio input;
+    struct fio output;
     struct reader reader;
     struct writer writer;
     loopio_onread_fn_t *onread_cb;

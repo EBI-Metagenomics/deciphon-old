@@ -16,7 +16,7 @@ struct writer
 
 void writer_init(struct writer *, struct uv_loop_s *loop, writer_onclose_fn_t *,
                  void *arg);
-void writer_open(struct writer *, uv_file fd);
+void writer_fopen(struct writer *, uv_file fd);
 void writer_put(struct writer *, char const *msg);
 void writer_close(struct writer *);
 

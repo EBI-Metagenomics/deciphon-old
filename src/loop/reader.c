@@ -26,15 +26,15 @@ void reader_init(struct reader *reader, struct uv_loop_s *loop,
     reader->arg = arg;
     reader->pos = reader->buff;
     reader->end = reader->pos;
-}
-
-void reader_open(struct reader *reader, uv_file fd)
-{
-    if (uv_pipe_init(reader->loop, &reader->pipe, 0)) fatal("uv_pipe_init");
+    uv_pipe_init(reader->loop, &reader->pipe, 0);
     ((struct uv_handle_s *)(&reader->pipe))->data = reader;
     ((struct uv_stream_s *)(&reader->pipe))->data = reader;
+}
 
-    if (uv_pipe_open(&reader->pipe, fd)) fatal("uv_pipe_open");
+void reader_fopen(struct reader *reader, uv_file fd)
+{
+    int rc = uv_pipe_open(&reader->pipe, fd);
+    if (rc) fatal(uv_strerror(rc));
     start_reading(reader);
     reader->noclose = false;
 }
