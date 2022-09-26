@@ -11,4 +11,6 @@
 #define nullptr NULL
 #endif
 
+#include <stdbool.h>
+
 #endif
