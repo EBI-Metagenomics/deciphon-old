@@ -23,6 +23,18 @@ deciphon_add_test(protein_model)
 deciphon_add_test(protein_profile)
 deciphon_add_test(protein_db)
 
+find_program(CURL curl)
+if(CURL_NOTFOUND)
+  message(FATAL_ERROR "curl program not found!")
+else()
+  message(STATUS "CURL: ${CURL}")
+endif()
+
+add_subdirectory(tools)
+execute_process(
+  COMMAND "${CMAKE_CURRENT_BINARY_DIR}/tools/is_api_online" ECHO_ERROR_VARIABLE
+  TIMEOUT 2 COMMAND_ERROR_IS_FATAL ANY)
+
 add_executable(protein_h3reader protein_h3reader.c)
 target_link_libraries(protein_h3reader PRIVATE DECIPHON::deciphon)
 ExternalData_add_test(data_protein_h3reader NAME test_protein_h3reader COMMAND
@@ -78,5 +90,3 @@ ExternalData_add_test(
 ExternalData_add_target(data_schedy_scan)
 
 # deciphon_add_test(schedy_overall)
-
-add_subdirectory(tools)

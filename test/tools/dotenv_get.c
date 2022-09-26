@@ -1,4 +1,4 @@
-#include "dotenv/dotenv.h"
+#include "dotenv.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -14,7 +14,6 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.1.4")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.7")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.3.1")
-cpmaddpackage("gh:EBI-Metagenomics/dotenv@0.1.2")
 cpmaddpackage(
   NAME
   libuv
@@ -55,6 +54,7 @@ add_library(
   # src/hmmy.c
   libs/jx.c
   libs/argless.c
+  libs/dotenv.c
   libs/zc.c
   libs/xfile.c
   src/core/buff.c
@@ -112,7 +112,6 @@ target_link_libraries(deciphon PUBLIC HMR::hmr)
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)
 target_link_libraries(deciphon PUBLIC OpenMP::OpenMP_C)
-target_link_libraries(deciphon PUBLIC DOTENV::dotenv)
 target_link_libraries(deciphon PUBLIC uv_a)
 
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
