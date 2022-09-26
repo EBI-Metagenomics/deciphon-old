@@ -40,8 +40,8 @@ void decy_session_cleanup(void) { schedy_cleanup(); }
 static void schedy_init(void)
 {
     schedy.opts.stdio_count = ARRAY_SIZE(schedy.stdio);
-    uv_pipe_init(loop, &schedy.opipe, 1);
-    uv_pipe_init(loop, &schedy.ipipe, 1);
+    uv_pipe_init(loop, &schedy.opipe, 0);
+    uv_pipe_init(loop, &schedy.ipipe, 0);
 
     schedy.stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
     schedy.stdio[0].data.stream = (struct uv_stream_s *)&schedy.opipe;
