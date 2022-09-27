@@ -1,8 +1,7 @@
-#include "schedy.h"
+#include "schedy/schedy.h"
 #include "argless.h"
 #include "core/logging.h"
-#include "sched.h"
-#include "schedy_cmd.h"
+#include "schedy/cmd.h"
 #include <stdlib.h>
 
 struct schedy schedy = {0};

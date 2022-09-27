@@ -48,20 +48,14 @@ endif()
 
 add_library(
   deciphon
-  # src/decy.c
-  # src/benchy.c
-  # src/schedy.c
-  # src/hmmy.c
   libs/jx.c
   libs/argless.c
   libs/dotenv.c
   libs/zc.c
   libs/xfile.c
   src/core/buff.c
-  # src/core/buff_pool.c
   src/core/expect.c
   src/core/http.c
-  # src/core/line.c
   src/core/file.c
   src/core/cmd.c
   src/loop/fio.c
@@ -103,9 +97,6 @@ add_library(
   src/core/url.c
   src/core/xcurl.c
   src/core/xcurl_debug.c)
-# src/server/hmm.c src/server/job.c src/server/job_state.c src/server/prod.c
-# src/server/protein_match.c src/server/scan.c src/server/scan_thread.c)
-# src/server/server.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
 target_link_libraries(deciphon PUBLIC CURL::libcurl)
@@ -117,7 +108,6 @@ target_link_libraries(deciphon PUBLIC uv_a)
 
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
 
-# $<INSTALL_INTERFACE:include>
 target_include_directories(
   deciphon
   PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
@@ -131,16 +121,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-add_executable(schedy src/schedy.c src/schedy_cmd.c)
+add_executable(schedy src/schedy/schedy.c src/schedy/cmd.c)
 target_link_libraries(schedy PUBLIC deciphon)
 
-add_executable(pressy src/pressy.c src/pressy_cmd.c src/pressy_session.c)
+add_executable(pressy src/pressy/pressy.c src/pressy/cmd.c src/pressy/session.c)
 target_link_libraries(pressy PUBLIC deciphon)
 
-add_executable(scanny src/scanny.c src/scanny_cmd.c src/scanny_session.c)
+add_executable(scanny src/scanny/scanny.c src/scanny/cmd.c src/scanny/session.c)
 target_link_libraries(scanny PUBLIC deciphon)
 
-add_executable(decy src/decy.c src/decy_schedy.c)
+add_executable(decy src/decy/decy.c src/decy/schedy.c)
 target_link_libraries(decy PUBLIC deciphon)
 
 enable_testing()

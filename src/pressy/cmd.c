@@ -1,12 +1,11 @@
-#include "pressy_cmd.h"
+#include "pressy/cmd.h"
 #include "core/c23.h"
 #include "core/logging.h"
 #include "db/press.h"
-#include "pressy.h"
-#include "pressy_session.h"
+#include "pressy/pressy.h"
+#include "pressy/session.h"
 #include "uv.h"
 #include "xfile.h"
-#include "zc.h"
 #include <stdatomic.h>
 #include <string.h>
 

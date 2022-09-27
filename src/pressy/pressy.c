@@ -1,11 +1,11 @@
-#include "scanny.h"
+#include "pressy/pressy.h"
 #include "argless.h"
 #include "core/logging.h"
-#include "scanny_cmd.h"
-#include "scanny_session.h"
+#include "pressy/cmd.h"
+#include "pressy/session.h"
 #include <stdlib.h>
 
-struct scanny scanny = {0};
+struct pressy pressy = {0};
 
 static struct argl_option const options[] = {
     {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.",
@@ -22,7 +22,7 @@ static struct argl_option const options[] = {
 
 static struct argl argl = {.options = options,
                            .args_doc = nullptr,
-                           .doc = "Scanny program.",
+                           .doc = "Pressy program.",
                            .version = "1.0.0"};
 
 static void onlooper_term(void *);
@@ -42,16 +42,16 @@ int main(int argc, char *argv[])
     if (setenv("UV_THREADPOOL_SIZE", "1", true))
         warn("failed to set UV_THREADPOOL_SIZE=1");
 
-    looper_init(&scanny.looper, &onlooper_term, &scanny);
+    looper_init(&pressy.looper, &onlooper_term, &pressy);
 
-    loopio_init(&scanny.loopio, scanny.looper.loop, &onread, &oneof, &onerror,
-                &onterm, &scanny);
-    loopio_open(&scanny.loopio, argl_grab(&argl, "input", "&1"),
+    loopio_init(&pressy.loopio, pressy.looper.loop, &onread, &oneof, &onerror,
+                &onterm, &pressy);
+    loopio_open(&pressy.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
-    scanny_session_init(scanny.looper.loop);
-    looper_run(&scanny.looper);
-    looper_cleanup(&scanny.looper);
+    pressy_session_init(pressy.looper.loop);
+    looper_run(&pressy.looper);
+    looper_cleanup(&pressy.looper);
 
     logging_cleanup();
     return EXIT_SUCCESS;
@@ -59,35 +59,35 @@ int main(int argc, char *argv[])
 
 static void onlooper_term(void *arg)
 {
-    struct scanny *scanny = arg;
-    loopio_terminate(&scanny->loopio);
+    struct pressy *pressy = arg;
+    loopio_terminate(&pressy->loopio);
     struct cmd cmd = {0};
     cmd_parse(&cmd, "CANCEL");
-    scanny_cmd_cancel(&cmd);
+    pressy_cmd_cancel(&cmd);
 }
 
 static void oneof(void *arg)
 {
-    struct scanny *scanny = arg;
-    looper_terminate(&scanny->looper);
+    struct pressy *pressy = arg;
+    looper_terminate(&pressy->looper);
 }
 
 static void onerror(void *arg)
 {
-    struct scanny *scanny = arg;
-    looper_terminate(&scanny->looper);
+    struct pressy *pressy = arg;
+    looper_terminate(&pressy->looper);
 }
 
 static void onread(char *line, void *arg)
 {
-    struct scanny *scanny = arg;
+    struct pressy *pressy = arg;
     static struct cmd cmd = {0};
     if (!cmd_parse(&cmd, line)) eparse("too many arguments");
-    loopio_put(&scanny->loopio, (*scanny_cmd(cmd.argv[0]))(&cmd));
+    loopio_put(&pressy->loopio, (*pressy_cmd(cmd.argv[0]))(&cmd));
 }
 
 static void onterm(void *arg)
 {
-    struct scanny *scanny = arg;
-    looper_terminate(&scanny->looper);
+    struct pressy *pressy = arg;
+    looper_terminate(&pressy->looper);
 }

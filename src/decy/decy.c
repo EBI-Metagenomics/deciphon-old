@@ -1,7 +1,7 @@
-#include "decy.h"
+#include "decy/decy.h"
 #include "argless.h"
 #include "core/logging.h"
-#include "decy_schedy.h"
+#include "decy/schedy.h"
 #include <stdlib.h>
 
 struct decy decy = {0};

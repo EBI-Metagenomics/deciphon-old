@@ -1,5 +1,5 @@
-#ifndef DECY_H
-#define DECY_H
+#ifndef DECY_DECY_H
+#define DECY_DECY_H
 
 #include "core/limits.h"
 #include "loop/looper.h"

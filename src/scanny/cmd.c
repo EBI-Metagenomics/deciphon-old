@@ -1,13 +1,11 @@
-#include "scanny_cmd.h"
+#include "scanny/cmd.h"
 #include "core/c23.h"
 #include "core/logging.h"
 #include "db/profile_reader.h"
 #include "db/protein_reader.h"
 #include "jx.h"
-#include "scanny_session.h"
+#include "scanny/session.h"
 #include "uv.h"
-#include "xfile.h"
-#include "zc.h"
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>

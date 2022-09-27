@@ -1,7 +1,7 @@
 #ifndef DECY_SCHEDY_H
 #define DECY_SCHEDY_H
 
-#include "decy_reply.h"
+#include "decy/reply.h"
 #include <stdbool.h>
 
 struct uv_loop_s;

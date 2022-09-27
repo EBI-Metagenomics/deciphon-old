@@ -1,4 +1,4 @@
-#include "schedy_cmd.h"
+#include "schedy/cmd.h"
 #include "core/api.h"
 #include "core/file.h"
 #include "core/logging.h"
