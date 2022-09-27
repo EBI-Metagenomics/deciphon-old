@@ -22,7 +22,8 @@ static struct argl argl = {.options = options,
 
 static void onlooper_term(void *);
 static void onschedy_term(void *);
-static void onschedy_conn(char *line, void *);
+static void onschedy_connection(char *line, void *);
+static void onschedy_online(char *line, void *);
 
 int main(int argc, char *argv[])
 {
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
 
     decy_schedy_init(decy.looper.loop, onschedy_term, nullptr);
     decy_schedy_connect("connect http://127.0.0.1:49329 change-me",
-                        &onschedy_conn);
+                        &onschedy_connection);
     looper_run(&decy.looper);
     looper_cleanup(&decy.looper);
 
@@ -51,17 +52,39 @@ static void onlooper_term(void *arg)
 {
     (void)arg;
     info("%s", __FUNCTION__);
-    decy_schedy_terminate();
+    if (!decy_schedy_isterminated()) decy_schedy_terminate();
 }
 
 static void onschedy_term(void *arg)
 {
     (void)arg;
     info("%s", __FUNCTION__);
+    if (decy_schedy_isterminated()) looper_terminate(&decy.looper);
 }
 
-static void onschedy_conn(char *line, void *arg)
+static void onschedy_connection(char *line, void *arg)
 {
     (void)arg;
     info("%s: %s", __FUNCTION__, line);
+    if (!strcmp(line, "OK"))
+        decy_schedy_is_online(&onschedy_online);
+    else
+    {
+        efail("failed to connect: %s", line);
+        decy_schedy_terminate();
+    }
+}
+
+static void onschedy_online(char *line, void *arg)
+{
+    (void)arg;
+    if (!strcmp(line, "YES")) return;
+    if (!strcmp(line, "NO"))
+    {
+        efail("offline");
+        decy_schedy_terminate();
+        return;
+    }
+    eparse("unexpected reply: %s", line);
+    decy_schedy_terminate();
 }

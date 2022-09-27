@@ -8,6 +8,7 @@ static void reader_onerror(void *arg);
 static void reader_onread(char *line, void *arg);
 static void writer_onerror(void *arg);
 static void writer_onclose(void *arg);
+static void try_call_user_onterm(struct ipc *);
 
 void ipc_init(struct ipc *ipc, struct uv_loop_s *loop,
               ipc_onread_fn_t *onread_cb, ipc_oneof_fn_t *oneof_cb,
@@ -51,7 +52,11 @@ void ipc_terminate(struct ipc *ipc)
     writer_close(&ipc->writer);
 }
 
-static void reader_onclose(void *arg) { (void)arg; }
+static void reader_onclose(void *arg)
+{
+    struct ipc *ipc = arg;
+    try_call_user_onterm(ipc);
+}
 
 static void reader_oneof(void *arg)
 {
@@ -77,4 +82,14 @@ static void writer_onerror(void *arg)
     (*ipc->onerror_cb)(ipc->arg);
 }
 
-static void writer_onclose(void *arg) { (void)arg; }
+static void writer_onclose(void *arg)
+{
+    struct ipc *ipc = arg;
+    try_call_user_onterm(ipc);
+}
+
+static void try_call_user_onterm(struct ipc *ipc)
+{
+    if (reader_isclosed(&ipc->reader) && writer_isclosed(&ipc->writer))
+        (*ipc->onterm_cb)(ipc->arg);
+}

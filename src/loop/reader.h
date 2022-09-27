@@ -26,6 +26,7 @@ struct reader
     reader_onclose_fn_t *onclose_cb;
     void *arg;
     bool closed;
+    bool nostart_reading;
 
     char *pos;
     char *end;
