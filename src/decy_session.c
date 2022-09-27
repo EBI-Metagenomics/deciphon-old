@@ -2,6 +2,8 @@
 #include "core/c23.h"
 #include "core/logging.h"
 #include "core/pp.h"
+#include "loop/reader.h"
+#include "loop/writer.h"
 #include "uv.h"
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -16,8 +18,8 @@ static struct
     char *args[3];
     struct uv_process_s request;
     struct uv_process_options_s opts;
-    struct uv_pipe_s opipe;
-    struct uv_pipe_s ipipe;
+    struct writer writer;
+    struct reader reader;
 
     struct uv_stdio_container_s stdio[3];
 } schedy = {.args = {"./schedy", "--syslog=/dev/null", nullptr}};
@@ -27,6 +29,7 @@ static void schedy_cleanup(void);
 static void schedy_onclose(struct uv_handle_s *handle);
 static void close_process(struct uv_process_s *, int64_t exit_status,
                           int signal);
+static void schedy_writer_onclose(void *arg);
 
 void decy_session_init(struct uv_loop_s *loop_)
 {
@@ -39,12 +42,16 @@ void decy_session_cleanup(void) { schedy_cleanup(); }
 
 static void schedy_init(void)
 {
-    schedy.opts.stdio_count = ARRAY_SIZE(schedy.stdio);
-    uv_pipe_init(loop, &schedy.opipe, 0);
+    writer_init(&schedy.writer, loop, schedy_writer_onclose, &schedy);
+    reader_init(&schedy.reader, loop, schedy_reader_onerror,
+                schedy_reader_onread, &schedy);
+
+    uv_pipe_init(loop, writer_pipe(&schedy.writer), 0);
     uv_pipe_init(loop, &schedy.ipipe, 0);
 
     schedy.stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
-    schedy.stdio[0].data.stream = (struct uv_stream_s *)&schedy.opipe;
+    schedy.stdio[0].data.stream =
+        (struct uv_stream_s *)writer_pipe(&schedy.writer);
 
     schedy.stdio[1].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
     schedy.stdio[1].data.stream = (struct uv_stream_s *)&schedy.ipipe;
@@ -60,10 +67,7 @@ static void schedy_init(void)
 
     int r = 0;
     if ((r = uv_spawn(loop, &schedy.request, &schedy.opts)))
-    {
         fatal("Failed to launch schedy: %s", uv_strerror(r));
-        exit(1);
-    }
     else
         info("Launched schedy with ID %d", schedy.request.pid);
 
@@ -84,13 +88,12 @@ static void schedy_init(void)
 static void schedy_cleanup(void)
 {
     int r = uv_process_kill(&schedy.request, SIGTERM);
-    if (r) error("Failed to kill schedy: %s", uv_strerror(r));
+    if (r) efail("Failed to kill schedy: %s", uv_strerror(r));
 }
 
 static void schedy_onclose(struct uv_handle_s *handle)
 {
     (void)handle;
-    info("%s", __FUNCTION__);
     uv_close((struct uv_handle_s *)&schedy.opipe, nullptr);
     uv_close((struct uv_handle_s *)&schedy.ipipe, nullptr);
 }

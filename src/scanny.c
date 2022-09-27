@@ -25,6 +25,7 @@ static struct argl argl = {.options = options,
                            .doc = "Scanny program.",
                            .version = "1.0.0"};
 
+static void oneof(void *);
 static void onerror(void *);
 static void onread(char *line, void *);
 static void onterm(void *);
@@ -42,7 +43,8 @@ int main(int argc, char *argv[])
 
     looper_init(&scanny.looper, &onterm, &scanny);
 
-    loopio_init(&scanny.loopio, scanny.looper.loop, onread, onerror, &scanny);
+    loopio_init(&scanny.loopio, scanny.looper.loop, &onread, &oneof, &onerror,
+                &scanny);
     loopio_open(&scanny.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
@@ -54,6 +56,12 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
+static void oneof(void *arg)
+{
+    struct scanny *scanny = arg;
+    looper_terminate(&scanny->looper);
+}
+
 static void onerror(void *arg)
 {
     struct scanny *scanny = arg;
@@ -62,10 +70,9 @@ static void onerror(void *arg)
 
 static void onread(char *line, void *arg)
 {
-    info("Received: %s", line);
     struct scanny *scanny = arg;
     static struct cmd cmd = {0};
-    if (!cmd_parse(&cmd, line)) error("too many arguments");
+    if (!cmd_parse(&cmd, line)) eparse("too many arguments");
     loopio_put(&scanny->loopio, (*scanny_cmd(cmd.argv[0]))(&cmd));
 }
 

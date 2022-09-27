@@ -25,6 +25,7 @@ static struct argl argl = {.options = options,
                            .doc = "Schedy program.",
                            .version = "1.0.0"};
 
+static void oneof(void *);
 static void onerror(void *);
 static void onread(char *line, void *);
 static void onterm(void *);
@@ -42,7 +43,8 @@ int main(int argc, char *argv[])
 
     looper_init(&schedy.looper, &onterm, &schedy);
 
-    loopio_init(&schedy.loopio, schedy.looper.loop, onread, onerror, &schedy);
+    loopio_init(&schedy.loopio, schedy.looper.loop, &onread, &oneof, &onerror,
+                &schedy);
     loopio_open(&schedy.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
@@ -53,6 +55,12 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
+static void oneof(void *arg)
+{
+    struct schedy *schedy = arg;
+    looper_terminate(&schedy->looper);
+}
+
 static void onerror(void *arg)
 {
     struct schedy *schedy = arg;
@@ -61,10 +69,9 @@ static void onerror(void *arg)
 
 static void onread(char *line, void *arg)
 {
-    info("Received: %s", line);
     struct schedy *schedy = arg;
     static struct cmd gc = {0};
-    if (!cmd_parse(&gc, line)) error("too many arguments");
+    if (!cmd_parse(&gc, line)) eparse("too many arguments");
     loopio_put(&schedy->loopio, (*schedy_cmd(gc.argv[0]))(&gc));
 }
 

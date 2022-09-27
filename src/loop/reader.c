@@ -15,11 +15,12 @@ static void start_reading(struct reader *);
 static void stop_reading(struct reader *);
 
 void reader_init(struct reader *reader, struct uv_loop_s *loop,
-                 reader_onerror_fn_t *onerror_cb, reader_onread_fn_t *onread_cb,
-                 reader_onclose_fn_t *onclose_cb, void *arg)
+                 reader_oneof_fn_t *oneof_cb, reader_onerror_fn_t *onerror_cb,
+                 reader_onread_fn_t *onread_cb, reader_onclose_fn_t *onclose_cb,
+                 void *arg)
 {
     reader->loop = loop;
-    reader->noclose = true;
+    reader->oneof_cb = oneof_cb;
     reader->onerror_cb = onerror_cb;
     reader->onread_cb = onread_cb;
     reader->onclose_cb = onclose_cb;
@@ -31,20 +32,17 @@ void reader_init(struct reader *reader, struct uv_loop_s *loop,
     ((struct uv_stream_s *)(&reader->pipe))->data = reader;
 }
 
-void reader_fopen(struct reader *reader, uv_file fd)
+void reader_fopen(struct reader *reader, int fd)
 {
     int rc = uv_pipe_open(&reader->pipe, fd);
     if (rc) fatal(uv_strerror(rc));
     start_reading(reader);
-    reader->noclose = false;
 }
 
 void reader_close(struct reader *reader)
 {
     stop_reading(reader);
-    if (reader->noclose) return;
     uv_close((struct uv_handle_s *)&reader->pipe, &onclose_cb);
-    reader->noclose = true;
 }
 
 static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
@@ -99,7 +97,7 @@ static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     if (nread < 0)
     {
         if (nread == UV_EOF)
-            reader_close(reader);
+            (*reader->oneof_cb)(reader->arg);
         else
             process_error(reader);
     }

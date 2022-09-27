@@ -12,9 +12,11 @@ struct request
 };
 
 void writer_init(struct writer *writer, struct uv_loop_s *loop,
+                 writer_onerror_fn_t *onerror_cb,
                  writer_onclose_fn_t *onclose_cb, void *arg)
 {
     writer->loop = loop;
+    writer->onerror_cb = onerror_cb;
     writer->onclose_cb = onclose_cb;
     writer->arg = arg;
     uv_pipe_init(writer->loop, &writer->pipe, 0);
@@ -22,7 +24,7 @@ void writer_init(struct writer *writer, struct uv_loop_s *loop,
     ((struct uv_stream_s *)(&writer->pipe))->data = writer;
 }
 
-void writer_fopen(struct writer *writer, uv_file fd)
+void writer_fopen(struct writer *writer, int fd)
 {
     int rc = uv_pipe_open(&writer->pipe, fd);
     if (rc) fatal(uv_strerror(rc));
@@ -31,9 +33,8 @@ void writer_fopen(struct writer *writer, uv_file fd)
 static void *memdup(const void *mem, size_t size)
 {
     void *out = malloc(size);
-
-    if (out != NULL) memcpy(out, mem, size);
-
+    if (!out) fatal("out of memory");
+    memcpy(out, mem, size);
     return out;
 }
 
@@ -52,8 +53,14 @@ void writer_put(struct writer *writer, char const *msg)
                         uv_buf_init((char *)"\n", 1)};
 
     int rc = uv_write(&request->req, stream, bufs, 2, &write_cb);
-    if (rc) eio(uv_strerror(rc));
+    if (rc)
+    {
+        eio(uv_strerror(rc));
+        (*writer->onerror_cb)(writer->arg);
+    }
 }
+
+struct uv_pipe_s *writer_pipe(struct writer *writer) { return &writer->pipe; }
 
 void onclose_cb(struct uv_handle_s *handle)
 {
