@@ -25,6 +25,7 @@ static struct argl argl = {.options = options,
                            .doc = "Pressy program.",
                            .version = "1.0.0"};
 
+static void onlooper_term(void *);
 static void oneof(void *);
 static void onerror(void *);
 static void onread(char *line, void *);
@@ -41,10 +42,10 @@ int main(int argc, char *argv[])
     if (setenv("UV_THREADPOOL_SIZE", "1", true))
         warn("failed to set UV_THREADPOOL_SIZE=1");
 
-    looper_init(&pressy.looper, &onterm, &pressy);
+    looper_init(&pressy.looper, &onlooper_term, &pressy);
 
     loopio_init(&pressy.loopio, pressy.looper.loop, &onread, &oneof, &onerror,
-                &pressy);
+                &onterm, &pressy);
     loopio_open(&pressy.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
@@ -54,6 +55,15 @@ int main(int argc, char *argv[])
 
     logging_cleanup();
     return EXIT_SUCCESS;
+}
+
+static void onlooper_term(void *arg)
+{
+    struct pressy *pressy = arg;
+    loopio_terminate(&pressy->loopio);
+    struct cmd cmd = {0};
+    cmd_parse(&cmd, "CANCEL");
+    pressy_cmd_cancel(&cmd);
 }
 
 static void oneof(void *arg)
@@ -79,8 +89,5 @@ static void onread(char *line, void *arg)
 static void onterm(void *arg)
 {
     struct pressy *pressy = arg;
-    loopio_terminate(&pressy->loopio);
-    struct cmd cmd = {0};
-    cmd_parse(&cmd, "CANCEL");
-    pressy_cmd_cancel(&cmd);
+    looper_terminate(&pressy->looper);
 }

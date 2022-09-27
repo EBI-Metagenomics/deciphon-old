@@ -25,6 +25,7 @@ static struct argl argl = {.options = options,
                            .doc = "Schedy program.",
                            .version = "1.0.0"};
 
+static void onlooper_term(void *);
 static void oneof(void *);
 static void onerror(void *);
 static void onread(char *line, void *);
@@ -41,10 +42,10 @@ int main(int argc, char *argv[])
     if (setenv("UV_THREADPOOL_SIZE", "1", true))
         warn("failed to set UV_THREADPOOL_SIZE=1");
 
-    looper_init(&schedy.looper, &onterm, &schedy);
+    looper_init(&schedy.looper, &onlooper_term, &schedy);
 
     loopio_init(&schedy.loopio, schedy.looper.loop, &onread, &oneof, &onerror,
-                &schedy);
+                &onterm, &schedy);
     loopio_open(&schedy.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
@@ -53,6 +54,15 @@ int main(int argc, char *argv[])
 
     logging_cleanup();
     return EXIT_SUCCESS;
+}
+
+static void onlooper_term(void *arg)
+{
+    struct schedy *schedy = arg;
+    loopio_terminate(&schedy->loopio);
+    struct cmd cmd = {0};
+    cmd_parse(&cmd, "CANCEL");
+    schedy_cmd_cancel(&cmd);
 }
 
 static void oneof(void *arg)
@@ -78,8 +88,5 @@ static void onread(char *line, void *arg)
 static void onterm(void *arg)
 {
     struct schedy *schedy = arg;
-    loopio_terminate(&schedy->loopio);
-    struct cmd cmd = {0};
-    cmd_parse(&cmd, "CANCEL");
-    schedy_cmd_cancel(&cmd);
+    looper_terminate(&schedy->looper);
 }

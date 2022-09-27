@@ -14,7 +14,8 @@ struct fio
     fio_onclose_fn_t *onclose_cb;
     void *arg;
     int fd;
-    bool noclose;
+    bool nofs_close;
+    bool closed;
     struct uv_fs_s req;
 };
 
@@ -23,5 +24,6 @@ void fio_init(struct fio *, struct uv_loop_s *, fio_onopen_fn_t *,
 void fio_open(struct fio *, char const *file, int flags, int mode);
 void fio_close(struct fio *);
 int fio_fd(struct fio const *);
+bool fio_isclosed(struct fio const *);
 
 #endif

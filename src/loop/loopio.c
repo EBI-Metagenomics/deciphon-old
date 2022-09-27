@@ -14,7 +14,8 @@ static void writer_onclose(void *arg);
 
 void loopio_init(struct loopio *l, struct uv_loop_s *loop,
                  loopio_onread_fn_t *onread_cb, loopio_oneof_fn_t *oneof_cb,
-                 loopio_onerror_fn_t onerror_cb, void *arg)
+                 loopio_onerror_fn_t onerror_cb, loopio_onterm_fn_t *onterm_cb,
+                 void *arg)
 {
     l->loop = loop;
     fio_init(&l->input, loop, &input_onopen, &input_onclose, l);
@@ -25,6 +26,7 @@ void loopio_init(struct loopio *l, struct uv_loop_s *loop,
     l->onread_cb = onread_cb;
     l->oneof_cb = oneof_cb;
     l->onerror_cb = onerror_cb;
+    l->onterm_cb = onterm_cb;
     l->arg = arg;
     l->reader_noclose = true;
     l->writer_noclose = true;
@@ -49,7 +51,13 @@ void loopio_terminate(struct loopio *l)
     if (!l->writer_noclose) writer_close(&l->writer);
 }
 
-static void input_onclose(void *arg) { (void)arg; }
+static void try_call_user_onterm(struct loopio *);
+
+static void input_onclose(void *arg)
+{
+    struct loopio *l = arg;
+    try_call_user_onterm(l);
+}
 
 static void input_onopen(bool ok, void *arg)
 {
@@ -63,7 +71,11 @@ static void input_onopen(bool ok, void *arg)
     reader_fopen(&l->reader, fio_fd(&l->input));
 }
 
-static void output_onclose(void *arg) { (void)arg; }
+static void output_onclose(void *arg)
+{
+    struct loopio *l = arg;
+    try_call_user_onterm(l);
+}
 
 static void output_onopen(bool ok, void *arg)
 {
@@ -111,4 +123,10 @@ static void writer_onclose(void *arg)
 {
     struct loopio *l = arg;
     fio_close(&l->output);
+}
+
+static void try_call_user_onterm(struct loopio *l)
+{
+    if (fio_isclosed(&l->input) && fio_isclosed(&l->output))
+        (*l->onterm_cb)(l->arg);
 }

@@ -8,6 +8,7 @@
 typedef void loopio_onread_fn_t(char *line, void *arg);
 typedef void loopio_oneof_fn_t(void *arg);
 typedef void loopio_onerror_fn_t(void *arg);
+typedef void loopio_onterm_fn_t(void *arg);
 
 struct loopio
 {
@@ -19,13 +20,15 @@ struct loopio
     loopio_onread_fn_t *onread_cb;
     loopio_oneof_fn_t *oneof_cb;
     loopio_onerror_fn_t *onerror_cb;
+    loopio_onterm_fn_t *onterm_cb;
     void *arg;
     bool reader_noclose;
     bool writer_noclose;
 };
 
 void loopio_init(struct loopio *, struct uv_loop_s *, loopio_onread_fn_t *,
-                 loopio_oneof_fn_t *, loopio_onerror_fn_t *, void *arg);
+                 loopio_oneof_fn_t *, loopio_onerror_fn_t *,
+                 loopio_onterm_fn_t *, void *arg);
 void loopio_open(struct loopio *, char const *input, char const *output);
 void loopio_put(struct loopio *, char const *msg);
 void loopio_terminate(struct loopio *);
