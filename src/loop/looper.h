@@ -4,8 +4,6 @@
 #include "uv.h"
 #include <stdbool.h>
 
-struct looper;
-
 typedef void looper_onterm_fn_t(void *arg);
 
 struct looper

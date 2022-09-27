@@ -25,6 +25,7 @@ static struct argl argl = {.options = options,
                            .doc = "Pressy program.",
                            .version = "1.0.0"};
 
+static void onerror(void *);
 static void onread(char *line, void *);
 static void onterm(void *);
 
@@ -41,7 +42,7 @@ int main(int argc, char *argv[])
 
     looper_init(&pressy.looper, &onterm, &pressy);
 
-    loopio_init(&pressy.loopio, &pressy.looper, onread, &pressy);
+    loopio_init(&pressy.loopio, pressy.looper.loop, onread, onerror, &pressy);
     loopio_open(&pressy.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
@@ -51,6 +52,12 @@ int main(int argc, char *argv[])
 
     logging_cleanup();
     return EXIT_SUCCESS;
+}
+
+static void onerror(void *arg)
+{
+    struct pressy *pressy = arg;
+    looper_terminate(&pressy->looper);
 }
 
 static void onread(char *line, void *arg)

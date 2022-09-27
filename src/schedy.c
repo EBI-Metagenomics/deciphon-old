@@ -25,6 +25,7 @@ static struct argl argl = {.options = options,
                            .doc = "Schedy program.",
                            .version = "1.0.0"};
 
+static void onerror(void *);
 static void onread(char *line, void *);
 static void onterm(void *);
 
@@ -41,7 +42,7 @@ int main(int argc, char *argv[])
 
     looper_init(&schedy.looper, &onterm, &schedy);
 
-    loopio_init(&schedy.loopio, &schedy.looper, onread, &schedy);
+    loopio_init(&schedy.loopio, schedy.looper.loop, onread, onerror, &schedy);
     loopio_open(&schedy.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
@@ -50,6 +51,12 @@ int main(int argc, char *argv[])
 
     logging_cleanup();
     return EXIT_SUCCESS;
+}
+
+static void onerror(void *arg)
+{
+    struct schedy *schedy = arg;
+    looper_terminate(&schedy->looper);
 }
 
 static void onread(char *line, void *arg)

@@ -25,6 +25,7 @@ static struct argl argl = {.options = options,
                            .doc = "Scanny program.",
                            .version = "1.0.0"};
 
+static void onerror(void *);
 static void onread(char *line, void *);
 static void onterm(void *);
 
@@ -41,7 +42,7 @@ int main(int argc, char *argv[])
 
     looper_init(&scanny.looper, &onterm, &scanny);
 
-    loopio_init(&scanny.loopio, &scanny.looper, onread, &scanny);
+    loopio_init(&scanny.loopio, scanny.looper.loop, onread, onerror, &scanny);
     loopio_open(&scanny.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
@@ -51,6 +52,12 @@ int main(int argc, char *argv[])
 
     logging_cleanup();
     return EXIT_SUCCESS;
+}
+
+static void onerror(void *arg)
+{
+    struct scanny *scanny = arg;
+    looper_terminate(&scanny->looper);
 }
 
 static void onread(char *line, void *arg)
