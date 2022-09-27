@@ -22,12 +22,13 @@ static void close_process(struct uv_process_s *, int64_t exit_status,
 static void oneof(void *);
 static void onerror(void *);
 static void onread(char *line, void *);
+static void onterm(void *);
 
 void decy_schedy_init(struct uv_loop_s *loop_,
                       decy_schedy_onterm_fn_t *onterm_cb_, void *arg_)
 {
     loop = loop_;
-    ipc_init(&ipc, loop, onread, oneof, onerror, nullptr);
+    ipc_init(&ipc, loop, onread, oneof, onerror, onterm, nullptr);
     onterm_cb = onterm_cb_;
     arg = arg_;
 
@@ -44,12 +45,7 @@ void decy_schedy_init(struct uv_loop_s *loop_,
         info("Launched " PROGRAM " with ID %d", request.pid);
 }
 
-void decy_schedy_cleanup(void)
-{
-    ipc_terminate(&ipc);
-    int r = uv_process_kill(&request, SIGTERM);
-    if (r) efail("Failed to kill " PROGRAM ": %s", uv_strerror(r));
-}
+void decy_schedy_terminate(void) { ipc_terminate(&ipc); }
 
 static void close_process(uv_process_t *req, int64_t exit_status, int signal)
 {
@@ -76,4 +72,13 @@ static void onread(char *line, void *arg_)
 {
     (void)arg_;
     info("DECY_SCHEDY: %s", line);
+}
+
+static void onterm(void *arg_)
+{
+    (void)arg_;
+    info("%s", __FUNCTION__);
+    int r = uv_process_kill(&request, SIGTERM);
+    if (r) efail("Failed to kill " PROGRAM ": %s", uv_strerror(r));
+    (*onterm_cb)(arg);
 }

@@ -20,7 +20,8 @@ static struct argl argl = {.options = options,
                            .doc = "Decy program.",
                            .version = "1.0.0"};
 
-static void onterm(void *);
+static void onlooper_term(void *);
+static void onschedy_term(void *);
 
 int main(int argc, char *argv[])
 {
@@ -33,9 +34,9 @@ int main(int argc, char *argv[])
     if (setenv("UV_THREADPOOL_SIZE", "1", true))
         warn("failed to set UV_THREADPOOL_SIZE=1");
 
-    looper_init(&decy.looper, &onterm, &decy);
+    looper_init(&decy.looper, &onlooper_term, &decy);
 
-    decy_session_init(decy.looper.loop);
+    decy_schedy_init(decy.looper.loop, onschedy_term, nullptr);
     looper_run(&decy.looper);
     looper_cleanup(&decy.looper);
 
@@ -43,9 +44,15 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
-static void onterm(void *arg)
+static void onlooper_term(void *arg)
 {
-    struct decy *decy = arg;
-    info("Ponto 1");
-    decy_session_cleanup();
+    (void)arg;
+    info("%s", __FUNCTION__);
+    decy_schedy_terminate();
+}
+
+static void onschedy_term(void *arg)
+{
+    (void)arg;
+    info("%s", __FUNCTION__);
 }
