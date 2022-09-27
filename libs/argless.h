@@ -19,6 +19,7 @@ struct argl
 void argl_parse(struct argl *, int argc, char *argv[]);
 bool argl_has(struct argl const *, char const *name);
 char const *argl_get(struct argl const *, char const *name);
+char const *argl_grab(struct argl const *, char const *name, char const *value);
 int argl_nargs(struct argl const *);
 char **argl_args(struct argl const *);
 void argl_usage(struct argl const *);

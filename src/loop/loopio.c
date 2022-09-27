@@ -26,15 +26,11 @@ void loopio_init(struct loopio *l, struct looper *looper,
     l->writer_noclose = true;
 }
 
-void loopio_iopen(struct loopio *l, char const *file, int mode)
+void loopio_open(struct loopio *l, char const *input, char const *output)
 {
-    fio_open(&l->input, file, UV_FS_O_RDONLY, mode);
+    fio_open(&l->input, input, UV_FS_O_RDONLY, 0);
     l->reader_noclose = false;
-}
-
-void loopio_oopen(struct loopio *l, char const *file, int mode)
-{
-    fio_open(&l->output, file, UV_FS_O_WRONLY, mode);
+    fio_open(&l->output, output, UV_FS_O_WRONLY, UV_FS_O_CREAT);
     l->writer_noclose = false;
 }
 

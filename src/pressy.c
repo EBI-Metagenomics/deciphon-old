@@ -25,11 +25,6 @@ static struct argl argl = {.options = options,
                            .doc = "Pressy program.",
                            .version = "1.0.0"};
 
-static inline char const *get(char const *name, char const *default_value)
-{
-    return argl_has(&argl, name) ? argl_get(&argl, name) : default_value;
-}
-
 static void onread(char *line, void *);
 static void onterm(void *);
 
@@ -38,8 +33,8 @@ int main(int argc, char *argv[])
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     logging_set_prefix(argl_program(&argl));
-    logging_set_user_file(get("userlog", LOGGING_DEFAULT_FILE));
-    logging_set_sys_file(get("syslog", LOGGING_DEFAULT_FILE));
+    logging_set_user_file(argl_grab(&argl, "userlog", LOGGING_DEFAULT_FILE));
+    logging_set_sys_file(argl_grab(&argl, "syslog", LOGGING_DEFAULT_FILE));
 
     if (setenv("UV_THREADPOOL_SIZE", "1", true))
         warn("failed to set UV_THREADPOOL_SIZE=1");
@@ -47,8 +42,8 @@ int main(int argc, char *argv[])
     looper_init(&pressy.looper, &onterm, &pressy);
 
     loopio_init(&pressy.loopio, &pressy.looper, onread, &pressy);
-    loopio_iopen(&pressy.loopio, get("input", "&1"), 0);
-    loopio_oopen(&pressy.loopio, get("output", "&2"), UV_FS_O_CREAT);
+    loopio_open(&pressy.loopio, argl_grab(&argl, "input", "&1"),
+                argl_grab(&argl, "output", "&2"));
 
     pressy_session_init(pressy.looper.loop);
     looper_run(&pressy.looper);

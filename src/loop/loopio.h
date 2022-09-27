@@ -24,8 +24,7 @@ struct loopio
 
 void loopio_init(struct loopio *, struct looper *, loopio_onread_fn_t *,
                  void *arg);
-void loopio_iopen(struct loopio *, char const *file, int mode);
-void loopio_oopen(struct loopio *, char const *file, int mode);
+void loopio_open(struct loopio *, char const *input, char const *output);
 void loopio_put(struct loopio *, char const *msg);
 void loopio_terminate(struct loopio *);
 

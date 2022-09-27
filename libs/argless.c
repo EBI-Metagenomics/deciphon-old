@@ -514,6 +514,12 @@ char const *argl_get(struct argl const *al, char const *name)
     return argvec_get(al->argc, al->argv, al->options, name);
 }
 
+char const *argl_grab(struct argl const *al, char const *name,
+                      char const *value)
+{
+    return argl_has(al, name) ? argl_get(al, name) : value;
+}
+
 int argl_nargs(struct argl const *al)
 {
     return argvec_nargs(al->argc, al->argv, al->options);
