@@ -33,10 +33,11 @@ struct reader
     char mem[READER_LINE_SIZE];
 };
 
-void reader_init(struct reader *, struct uv_loop_s *, reader_oneof_fn_t *,
-                 reader_onerror_fn_t *, reader_onread_fn_t *,
-                 reader_onclose_fn_t *, void *arg);
+void reader_init(struct reader *, struct uv_loop_s *, int ipc,
+                 reader_oneof_fn_t *, reader_onerror_fn_t *,
+                 reader_onread_fn_t *, reader_onclose_fn_t *, void *arg);
 void reader_fopen(struct reader *, int fd);
+void reader_start(struct reader *);
 struct uv_pipe_s *reader_pipe(struct reader *);
 void reader_close(struct reader *);
 bool reader_isclosed(struct reader const *);

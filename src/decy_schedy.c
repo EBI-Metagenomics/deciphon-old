@@ -8,12 +8,14 @@
 #include <unistd.h>
 
 #define PROGRAM "schedy"
-static char *args[3] = {"./" PROGRAM, "--syslog=/dev/null", nullptr};
+static char *args[] = {"./" PROGRAM, "--syslog=/dev/null",
+                       "--userlog=schedy_user.log", nullptr};
 static struct uv_loop_s *loop = nullptr;
 static struct uv_process_s request = {0};
 static struct uv_process_options_s opts = {0};
 static struct ipc ipc = {0};
 static decy_schedy_onterm_fn_t *onterm_cb = nullptr;
+static decy_schedy_onreply_fn_t *onreply_cb = nullptr;
 static void *arg = nullptr;
 
 static void onclose_process(struct uv_handle_s *handle);
@@ -43,6 +45,14 @@ void decy_schedy_init(struct uv_loop_s *loop_,
         fatal("Failed to launch " PROGRAM ": %s", uv_strerror(r));
     else
         info("Launched " PROGRAM " with ID %d", request.pid);
+
+    ipc_start_reading(&ipc);
+}
+
+void decy_schedy_connect(char const *msg, decy_schedy_onreply_fn_t *onreply_cb_)
+{
+    onreply_cb = onreply_cb_;
+    ipc_put(&ipc, msg);
 }
 
 void decy_schedy_terminate(void) { ipc_terminate(&ipc); }
@@ -71,7 +81,10 @@ static void onerror(void *arg_)
 static void onread(char *line, void *arg_)
 {
     (void)arg_;
-    info("DECY_SCHEDY: %s", line);
+    if (onreply_cb)
+        (*onreply_cb)(line, arg_);
+    else
+        warn("ignored reply: %s", line);
 }
 
 static void onterm(void *arg_)

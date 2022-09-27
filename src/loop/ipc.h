@@ -30,6 +30,7 @@ void ipc_init(struct ipc *, struct uv_loop_s *, ipc_onread_fn_t *,
 void ipc_put(struct ipc *, char const *msg);
 struct uv_stdio_container_s *ipc_stdio(struct ipc *);
 int ipc_stdio_count(struct ipc const *);
+void ipc_start_reading(struct ipc *);
 void ipc_terminate(struct ipc *);
 
 #endif

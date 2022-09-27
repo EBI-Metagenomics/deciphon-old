@@ -14,7 +14,7 @@ static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 static void start_reading(struct reader *);
 static void stop_reading(struct reader *);
 
-void reader_init(struct reader *reader, struct uv_loop_s *loop,
+void reader_init(struct reader *reader, struct uv_loop_s *loop, int ipc,
                  reader_oneof_fn_t *oneof_cb, reader_onerror_fn_t *onerror_cb,
                  reader_onread_fn_t *onread_cb, reader_onclose_fn_t *onclose_cb,
                  void *arg)
@@ -28,7 +28,7 @@ void reader_init(struct reader *reader, struct uv_loop_s *loop,
     reader->closed = false;
     reader->pos = reader->buff;
     reader->end = reader->pos;
-    uv_pipe_init(reader->loop, &reader->pipe, 0);
+    uv_pipe_init(reader->loop, &reader->pipe, ipc);
     ((struct uv_handle_s *)(&reader->pipe))->data = reader;
     ((struct uv_stream_s *)(&reader->pipe))->data = reader;
 }
@@ -40,6 +40,8 @@ void reader_fopen(struct reader *reader, int fd)
     start_reading(reader);
     reader->closed = false;
 }
+
+void reader_start(struct reader *reader) { start_reading(reader); }
 
 struct uv_pipe_s *reader_pipe(struct reader *reader) { return &reader->pipe; }
 

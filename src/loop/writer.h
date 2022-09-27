@@ -17,8 +17,8 @@ struct writer
     bool closed;
 };
 
-void writer_init(struct writer *, struct uv_loop_s *loop, writer_onerror_fn_t *,
-                 writer_onclose_fn_t *, void *arg);
+void writer_init(struct writer *, struct uv_loop_s *, int ipc,
+                 writer_onerror_fn_t *, writer_onclose_fn_t *, void *arg);
 void writer_fopen(struct writer *, int fd);
 void writer_put(struct writer *, char const *msg);
 struct uv_pipe_s *writer_pipe(struct writer *);

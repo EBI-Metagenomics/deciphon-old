@@ -22,6 +22,7 @@ static struct argl argl = {.options = options,
 
 static void onlooper_term(void *);
 static void onschedy_term(void *);
+static void onschedy_conn(char *line, void *);
 
 int main(int argc, char *argv[])
 {
@@ -37,6 +38,8 @@ int main(int argc, char *argv[])
     looper_init(&decy.looper, &onlooper_term, &decy);
 
     decy_schedy_init(decy.looper.loop, onschedy_term, nullptr);
+    decy_schedy_connect("connect http://127.0.0.1:49329 change-me",
+                        &onschedy_conn);
     looper_run(&decy.looper);
     looper_cleanup(&decy.looper);
 
@@ -55,4 +58,10 @@ static void onschedy_term(void *arg)
 {
     (void)arg;
     info("%s", __FUNCTION__);
+}
+
+static void onschedy_conn(char *line, void *arg)
+{
+    (void)arg;
+    info("%s: %s", __FUNCTION__, line);
 }

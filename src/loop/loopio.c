@@ -20,9 +20,9 @@ void loopio_init(struct loopio *l, struct uv_loop_s *loop,
     l->loop = loop;
     fio_init(&l->input, loop, &input_onopen, &input_onclose, l);
     fio_init(&l->output, loop, &output_onopen, &output_onclose, l);
-    reader_init(&l->reader, loop, &reader_oneof, &reader_onerror,
+    reader_init(&l->reader, loop, 0, &reader_oneof, &reader_onerror,
                 &reader_onread, &reader_onclose, l);
-    writer_init(&l->writer, loop, &writer_onerror, &writer_onclose, l);
+    writer_init(&l->writer, loop, 0, &writer_onerror, &writer_onclose, l);
     l->onread_cb = onread_cb;
     l->oneof_cb = oneof_cb;
     l->onerror_cb = onerror_cb;

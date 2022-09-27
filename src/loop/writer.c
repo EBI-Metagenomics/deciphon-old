@@ -12,7 +12,7 @@ struct request
     char const *msg;
 };
 
-void writer_init(struct writer *writer, struct uv_loop_s *loop,
+void writer_init(struct writer *writer, struct uv_loop_s *loop, int ipc,
                  writer_onerror_fn_t *onerror_cb,
                  writer_onclose_fn_t *onclose_cb, void *arg)
 {
@@ -21,7 +21,7 @@ void writer_init(struct writer *writer, struct uv_loop_s *loop,
     writer->onclose_cb = onclose_cb;
     writer->arg = arg;
     writer->closed = false;
-    uv_pipe_init(writer->loop, &writer->pipe, 0);
+    uv_pipe_init(writer->loop, &writer->pipe, ipc);
     ((struct uv_handle_s *)(&writer->pipe))->data = writer;
     ((struct uv_stream_s *)(&writer->pipe))->data = writer;
 }

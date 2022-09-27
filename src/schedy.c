@@ -82,7 +82,8 @@ static void onread(char *line, void *arg)
     struct schedy *schedy = arg;
     static struct cmd gc = {0};
     if (!cmd_parse(&gc, line)) eparse("too many arguments");
-    loopio_put(&schedy->loopio, (*schedy_cmd(gc.argv[0]))(&gc));
+    char const *msg = (*schedy_cmd(gc.argv[0]))(&gc);
+    loopio_put(&schedy->loopio, msg);
 }
 
 static void onterm(void *arg)

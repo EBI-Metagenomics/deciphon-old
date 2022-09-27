@@ -15,9 +15,9 @@ void ipc_init(struct ipc *ipc, struct uv_loop_s *loop,
               void *arg)
 {
     ipc->loop = loop;
-    reader_init(&ipc->reader, loop, &reader_oneof, &reader_onerror,
+    reader_init(&ipc->reader, loop, 1, &reader_oneof, &reader_onerror,
                 &reader_onread, &reader_onclose, ipc);
-    writer_init(&ipc->writer, loop, &writer_onerror, &writer_onclose, ipc);
+    writer_init(&ipc->writer, loop, 1, &writer_onerror, &writer_onclose, ipc);
     ipc->onread_cb = onread_cb;
     ipc->oneof_cb = oneof_cb;
     ipc->onerror_cb = onerror_cb;
@@ -42,6 +42,8 @@ void ipc_put(struct ipc *ipc, char const *msg)
 struct uv_stdio_container_s *ipc_stdio(struct ipc *ipc) { return ipc->stdio; }
 
 int ipc_stdio_count(struct ipc const *ipc) { return ARRAY_SIZE(ipc->stdio); }
+
+void ipc_start_reading(struct ipc *ipc) { reader_start(&ipc->reader); }
 
 void ipc_terminate(struct ipc *ipc)
 {
