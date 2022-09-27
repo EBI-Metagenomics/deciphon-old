@@ -11,7 +11,8 @@ static void writer_onclose(void *arg);
 
 void ipc_init(struct ipc *ipc, struct uv_loop_s *loop,
               ipc_onread_fn_t *onread_cb, ipc_oneof_fn_t *oneof_cb,
-              ipc_onerror_fn_t *onerror_cb, void *arg)
+              ipc_onerror_fn_t *onerror_cb, ipc_onterm_fn_t *onterm_cb,
+              void *arg)
 {
     ipc->loop = loop;
     reader_init(&ipc->reader, loop, &reader_oneof, &reader_onerror,
@@ -20,6 +21,7 @@ void ipc_init(struct ipc *ipc, struct uv_loop_s *loop,
     ipc->onread_cb = onread_cb;
     ipc->oneof_cb = oneof_cb;
     ipc->onerror_cb = onerror_cb;
+    ipc->onterm_cb = onterm_cb;
     ipc->arg = arg;
 
     ipc->stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;

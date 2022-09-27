@@ -1,6 +1,7 @@
 #include "loop/fio.h"
 #include "core/c23.h"
 #include "core/logging.h"
+#include <assert.h>
 #include <unistd.h>
 
 static void onopen(struct uv_fs_s *fs);
@@ -45,7 +46,7 @@ void fio_open(struct fio *io, char const *file, int flags, int mode)
 
 void fio_close(struct fio *io)
 {
-    if (io->closed) return;
+    assert(!io->closed);
     if (io->nofs_close)
     {
         io->closed = true;

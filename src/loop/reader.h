@@ -25,6 +25,7 @@ struct reader
     reader_onread_fn_t *onread_cb;
     reader_onclose_fn_t *onclose_cb;
     void *arg;
+    bool closed;
 
     char *pos;
     char *end;
@@ -38,5 +39,6 @@ void reader_init(struct reader *, struct uv_loop_s *, reader_oneof_fn_t *,
 void reader_fopen(struct reader *, int fd);
 struct uv_pipe_s *reader_pipe(struct reader *);
 void reader_close(struct reader *);
+bool reader_isclosed(struct reader const *);
 
 #endif

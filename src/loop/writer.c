@@ -1,6 +1,7 @@
 #include "loop/writer.h"
 #include "core/logging.h"
 #include "uv.h"
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -19,6 +20,7 @@ void writer_init(struct writer *writer, struct uv_loop_s *loop,
     writer->onerror_cb = onerror_cb;
     writer->onclose_cb = onclose_cb;
     writer->arg = arg;
+    writer->closed = false;
     uv_pipe_init(writer->loop, &writer->pipe, 0);
     ((struct uv_handle_s *)(&writer->pipe))->data = writer;
     ((struct uv_stream_s *)(&writer->pipe))->data = writer;
@@ -28,6 +30,7 @@ void writer_fopen(struct writer *writer, int fd)
 {
     int rc = uv_pipe_open(&writer->pipe, fd);
     if (rc) fatal(uv_strerror(rc));
+    writer->closed = false;
 }
 
 static void *memdup(const void *mem, size_t size)
@@ -65,13 +68,17 @@ struct uv_pipe_s *writer_pipe(struct writer *writer) { return &writer->pipe; }
 void onclose_cb(struct uv_handle_s *handle)
 {
     struct writer *writer = handle->data;
+    writer->closed = true;
     (*writer->onclose_cb)(writer->arg);
 }
 
 void writer_close(struct writer *writer)
 {
+    assert(!writer->closed);
     uv_close((struct uv_handle_s *)&writer->pipe, &onclose_cb);
 }
+
+bool writer_isclosed(struct writer const *writer) { return writer->closed; }
 
 static void write_cb(struct uv_write_s *write, int status)
 {
