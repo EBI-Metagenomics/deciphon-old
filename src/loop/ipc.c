@@ -3,49 +3,62 @@
 #include <unistd.h>
 
 static void reader_onclose(void *arg);
+static void reader_oneof(void *arg);
 static void reader_onerror(void *arg);
 static void reader_onread(char *line, void *arg);
+static void writer_onerror(void *arg);
 static void writer_onclose(void *arg);
 
 void ipc_init(struct ipc *ipc, struct uv_loop_s *loop,
-              ipc_onread_fn_t *onread_cb, void *arg)
+              ipc_onread_fn_t *onread_cb, ipc_oneof_fn_t *oneof_cb,
+              ipc_onerror_fn_t *onerror_cb, void *arg)
 {
     ipc->loop = loop;
-    reader_init(&ipc->reader, loop, &reader_onerror, &reader_onread,
-                &reader_onclose, ipc);
-    writer_init(&ipc->writer, loop, &writer_onclose, ipc);
+    reader_init(&ipc->reader, loop, &reader_oneof, &reader_onerror,
+                &reader_onread, &reader_onclose, ipc);
+    writer_init(&ipc->writer, loop, &writer_onerror, &writer_onclose, ipc);
     ipc->onread_cb = onread_cb;
+    ipc->oneof_cb = oneof_cb;
+    ipc->onerror_cb = onerror_cb;
     ipc->arg = arg;
-    ipc->reader_noclose = true;
-    ipc->writer_noclose = true;
 
     ipc->stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
-    ipc->stdio[0].data.stream = (struct uv_stream_s *)&ipc->writer.pipe;
+    ipc->stdio[0].data.stream = (struct uv_stream_s *)writer_pipe(&ipc->writer);
 
     ipc->stdio[1].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
-    ipc->stdio[1].data.stream = (struct uv_stream_s *)&ipc->reader.pipe;
+    ipc->stdio[1].data.stream = (struct uv_stream_s *)reader_pipe(&ipc->reader);
 
     ipc->stdio[2].flags = UV_INHERIT_FD;
     ipc->stdio[2].data.fd = STDERR_FILENO;
 }
 
-void ipc_terminate(struct ipc *ipc)
+void ipc_put(struct ipc *ipc, char const *msg)
 {
-    if (!ipc->reader_noclose) reader_close(&ipc->reader);
-    if (!ipc->writer_noclose) writer_close(&ipc->writer);
+    writer_put(&ipc->writer, msg);
 }
 
-static void reader_onclose(void *arg)
+struct uv_stdio_container_s *ipc_stdio(struct ipc *ipc) { return ipc->stdio; }
+
+int ipc_stdio_count(struct ipc const *ipc) { return ARRAY_SIZE(ipc->stdio); }
+
+void ipc_terminate(struct ipc *ipc)
+{
+    reader_close(&ipc->reader);
+    writer_close(&ipc->writer);
+}
+
+static void reader_onclose(void *arg) { (void)arg; }
+
+static void reader_oneof(void *arg)
 {
     struct ipc *ipc = arg;
-    io_close(&ipc->input);
+    (*ipc->oneof_cb)(ipc->arg);
 }
 
 static void reader_onerror(void *arg)
 {
-    eio("read error");
     struct ipc *ipc = arg;
-    looper_terminate(l->looper);
+    (*ipc->onerror_cb)(ipc->arg);
 }
 
 static void reader_onread(char *line, void *arg)
@@ -54,8 +67,10 @@ static void reader_onread(char *line, void *arg)
     (*ipc->onread_cb)(line, ipc->arg);
 }
 
-static void writer_onclose(void *arg)
+static void writer_onerror(void *arg)
 {
     struct ipc *ipc = arg;
-    io_close(&ipc->output);
+    (*ipc->onerror_cb)(ipc->arg);
 }
+
+static void writer_onclose(void *arg) { (void)arg; }

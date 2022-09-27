@@ -39,6 +39,8 @@ void reader_fopen(struct reader *reader, int fd)
     start_reading(reader);
 }
 
+struct uv_pipe_s *reader_pipe(struct reader *reader) { return &reader->pipe; }
+
 void reader_close(struct reader *reader)
 {
     stop_reading(reader);
