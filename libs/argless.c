@@ -31,16 +31,16 @@ static void echor(char const *str);
 static void echo_flush(void);
 static void echo_end(void);
 
-static void help_usage(char const *progname, struct argl_option const *opts,
+static void help_usage(char const *program, struct argl_option const *opts,
                        int exit_status);
-static void help_help(char const *progname, char const *args_doc,
+static void help_help(char const *program, char const *args_doc,
                       char const *doc, struct argl_option const *opts,
                       int exit_status);
 static void help_version(char const *prog, char const *version,
                          int exit_status);
-static void help_requires_arg(char const *progname, char const *arg,
+static void help_requires_arg(char const *program, char const *arg,
                               int exit_status);
-static void help_unrecognized_arg(char const *progname, char const *arg,
+static void help_unrecognized_arg(char const *program, char const *arg,
                                   int exit_status);
 
 static struct argl_option const *opt_get(struct argl_option const *opts,
@@ -184,15 +184,7 @@ static bool argvec_check_valid(int argc, char *argv[],
             return false;
         }
 
-        if (opt->is_flag)
-        {
-            if (arg_is_opt_compact(argv[i]))
-            {
-                if (die) help_unrecognized_arg(prg, argv[i], EXIT_FAILURE);
-                return false;
-            }
-        }
-        else
+        if (opt->has_value)
         {
             if (arg_is_opt_compact(argv[i])) continue;
             if (i + 1 == argc || arg_is_opt(argv[i + 1]))
@@ -201,6 +193,14 @@ static bool argvec_check_valid(int argc, char *argv[],
                 return false;
             }
             ++i;
+        }
+        else
+        {
+            if (arg_is_opt_compact(argv[i]))
+            {
+                if (die) help_unrecognized_arg(prg, argv[i], EXIT_FAILURE);
+                return false;
+            }
         }
     }
     return true;
@@ -223,7 +223,7 @@ static void argvec_sort(int argc, char *argv[], struct argl_option const *opts)
         else
         {
             struct argl_option const *opt = opt_get(opts, argv[i]);
-            i += !opt->is_flag && !arg_is_opt_compact(argv[i]);
+            i += opt->has_value && !arg_is_opt_compact(argv[i]);
         }
     }
 }
@@ -262,7 +262,7 @@ static char **argvec_args(int argc, char *argv[],
         if (arg_is_opt(argv[i]))
         {
             struct argl_option const *opt = opt_get(opts, argv[i]);
-            if (opt) i += !opt->is_flag && !arg_is_opt_compact(argv[i]);
+            if (opt) i += opt->has_value && !arg_is_opt_compact(argv[i]);
         }
         else
             break;
@@ -281,7 +281,7 @@ static int option_index(int argc, char *argv[], struct argl_option const *opts,
             if (opt)
             {
                 if (!strcmp(opt->name, name)) return i;
-                i += !opt->is_flag && !arg_is_opt_compact(argv[i]);
+                i += opt->has_value && !arg_is_opt_compact(argv[i]);
             }
         }
     }
@@ -396,14 +396,14 @@ static void help_usage(char const *prog, struct argl_option const *opts,
 
     for (int i = 0; i < opt_count(opts); ++i)
     {
-        if (isprint(opts[i].key) && !opts[i].is_flag)
+        if (isprint(opts[i].key) && opts[i].has_value)
         {
             echof(" [-%c %s]", opts[i].key, opts[i].arg_name);
         }
-        if (opts[i].is_flag)
-            echof(" [--%s]", opts[i].name);
-        else
+        if (opts[i].has_value)
             echof(" [--%s=%s]", opts[i].name, opts[i].arg_name);
+        else
+            echof(" [--%s]", opts[i].name);
     }
 
     echo_end();
@@ -492,16 +492,16 @@ void argl_parse(struct argl *al, int argc, char *argv[])
     if (!argvec_check_valid(argc, argv, al->options, true)) return;
     argvec_sort(argc, argv, al->options);
 
-    char const *progname = al_basename(argv[0]);
+    char const *program = al_basename(argv[0]);
 
     if (argvec_has(argc, argv, al->options, "usage"))
-        help_usage(progname, al->options, EXIT_SUCCESS);
+        help_usage(program, al->options, EXIT_SUCCESS);
 
     if (argvec_has(argc, argv, al->options, "help"))
-        help_help(progname, al->args_doc, al->doc, al->options, EXIT_SUCCESS);
+        help_help(program, al->args_doc, al->doc, al->options, EXIT_SUCCESS);
 
     if (argvec_has(argc, argv, al->options, "version"))
-        help_version(progname, al->version, EXIT_SUCCESS);
+        help_version(program, al->version, EXIT_SUCCESS);
 }
 
 bool argl_has(struct argl const *al, char const *name)
@@ -526,11 +526,11 @@ char **argl_args(struct argl const *al)
 
 void argl_usage(struct argl const *al)
 {
-    char const *progname = al_basename(al->argv[0]);
-    help_usage(progname, al->options, EXIT_FAILURE);
+    char const *program = al_basename(al->argv[0]);
+    help_usage(program, al->options, EXIT_FAILURE);
 }
 
-char const *argl_progname(struct argl const *al)
+char const *argl_program(struct argl const *al)
 {
     return al_basename(al->argv[0]);
 }

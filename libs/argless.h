@@ -22,7 +22,13 @@ char const *argl_get(struct argl const *, char const *name);
 int argl_nargs(struct argl const *);
 char **argl_args(struct argl const *);
 void argl_usage(struct argl const *);
-char const *argl_progname(struct argl const *);
+char const *argl_program(struct argl const *);
+
+enum
+{
+    ARGL_NOVALUE = 0,
+    ARGL_HASVALUE = 1,
+};
 
 struct argl_option
 {
@@ -30,15 +36,11 @@ struct argl_option
     char const key;
     char const *arg_name;
     char const *arg_doc;
-    bool const is_flag;
+    bool const has_value;
 };
 
 #ifndef NULL
 #define NULL ((void *)0)
-#endif
-
-#ifndef nullptr
-#define nullptr NULL
 #endif
 
 #define ARGL_HELP_KEY '?'
@@ -47,21 +49,23 @@ struct argl_option
 
 #define ARGL_HELP_OPT                                                          \
     {                                                                          \
-        "help", ARGL_HELP_KEY, nullptr, "Give this help list", true            \
+        "help", ARGL_HELP_KEY, NULL, "Give this help list", ARGL_NOVALUE       \
     }
 #define ARGL_USAGE_OPT                                                         \
     {                                                                          \
-        "usage", ARGL_USAGE_KEY, nullptr, "Give a short usage message", true   \
+        "usage", ARGL_USAGE_KEY, NULL, "Give a short usage message",           \
+            ARGL_NOVALUE                                                       \
     }
 
 #define ARGL_VERSION_OPT                                                       \
     {                                                                          \
-        "version", ARGL_VERSION_KEY, nullptr, "Print program version", true    \
+        "version", ARGL_VERSION_KEY, NULL, "Print program version",            \
+            ARGL_NOVALUE                                                       \
     }
 
 #define ARGL_NULL_OPT                                                          \
     {                                                                          \
-        nullptr, '\0', nullptr, nullptr, false                                 \
+        0, 0, 0, 0, 0                                                          \
     }
 
 #define ARGL_DEFAULT_OPTS ARGL_HELP_OPT, ARGL_USAGE_OPT, ARGL_VERSION_OPT

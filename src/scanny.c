@@ -8,12 +8,14 @@
 struct scanny scanny = {0};
 
 static struct argl_option const options[] = {
-    {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.", false},
-    {"output", 'o', "OUTPUT", "Output stream. Defaults to `STDOUT'.", false},
+    {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.",
+     ARGL_HASVALUE},
+    {"output", 'o', "OUTPUT", "Output stream. Defaults to `STDOUT'.",
+     ARGL_HASVALUE},
     {"userlog", 'u', "USERLOG", "User logging stream. Defaults to `STDERR'.",
-     false},
+     ARGL_HASVALUE},
     {"syslog", 's', "SYSLOG", "System logging stream. Defaults to `STDERR'.",
-     false},
+     ARGL_HASVALUE},
     ARGL_DEFAULT_OPTS,
     ARGL_NULL_OPT,
 };
@@ -35,7 +37,7 @@ int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    logging_set_prefix(argl_progname(&argl));
+    logging_set_prefix(argl_program(&argl));
     logging_set_user_file(get("userlog", LOGGING_DEFAULT_FILE));
     logging_set_sys_file(get("syslog", LOGGING_DEFAULT_FILE));
 
