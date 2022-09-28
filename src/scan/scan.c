@@ -45,7 +45,7 @@ void scan_init(struct scan_cfg cfg)
 
 enum rc scan_setup(char const *db, char const *seqs)
 {
-    if ((errnum = prod_fopen(scan_cfg.num_threads)))
+    if ((errnum = prod_fopen(scan_cfg.nthreads)))
     {
         errfmt(errmsg, "failed to open product files");
         scan_cleanup();
@@ -182,7 +182,7 @@ static enum rc prepare_readers(char const *db)
         goto cleanup;
     }
 
-    rc = profile_reader_setup(&profreader, db_reader, scan_cfg.num_threads);
+    rc = profile_reader_setup(&profreader, db_reader, scan_cfg.nthreads);
     if (rc)
     {
         errfmt(errmsg, "failed to setup profile reader");

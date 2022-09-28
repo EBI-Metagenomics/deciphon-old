@@ -30,7 +30,7 @@ static struct
     char db[PATH_SIZE];
     char prod[PATH_SIZE];
 
-    unsigned num_threads;
+    int nthreads;
     double lrt_threshold;
 
     atomic_bool cancel;
@@ -62,6 +62,7 @@ static void monitor_stop(void);
 void scanny_session_init(struct uv_loop_s *loop)
 {
     session.loop = loop;
+    session.nthreads = 1;
     session.cancel = false;
     session.state = IDLE;
     errnum = RC_OK;
@@ -69,13 +70,17 @@ void scanny_session_init(struct uv_loop_s *loop)
     progress_init(&session.progress, 0);
 }
 
+void scanny_session_set_nthreads(int num_threads)
+{
+    session.nthreads = num_threads;
+}
+
 bool scanny_session_is_running(void) { return session.state == RUN; }
 
 bool scanny_session_is_done(void) { return session.state == DONE; }
 
 bool scanny_session_start(char const *seqs, char const *db, char const *prod,
-                          unsigned num_threads, bool multi_hits,
-                          bool hmmer3_compat)
+                          bool multi_hits, bool hmmer3_compat)
 {
     errnum = RC_OK;
     errmsg[0] = '\0';
@@ -100,7 +105,7 @@ bool scanny_session_start(char const *seqs, char const *db, char const *prod,
         return !(errnum = enomem(errfmt(errmsg, "file path is too long")));
     }
 
-    struct scan_cfg cfg = {num_threads, 10., multi_hits, hmmer3_compat};
+    struct scan_cfg cfg = {session.nthreads, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 
     monitor_start();

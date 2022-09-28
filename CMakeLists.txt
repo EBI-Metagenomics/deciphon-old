@@ -131,7 +131,7 @@ target_link_libraries(pressy PUBLIC deciphon)
 add_executable(scanny src/scanny/scanny.c src/scanny/cmd.c src/scanny/session.c)
 target_link_libraries(scanny PUBLIC deciphon)
 
-add_executable(decy src/decy/decy.c src/decy/schedy.c)
+add_executable(decy src/decy/decy.c src/decy/schedy.c src/decy/cfg.c)
 target_link_libraries(decy PUBLIC deciphon)
 
 enable_testing()

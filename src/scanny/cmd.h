@@ -6,8 +6,8 @@
 #define SCANNY_CMD_MAP(X)                                                      \
     X(INVALID, invalid, "")                                                    \
     X(HELP, help, "")                                                          \
-    X(SCAN, scan,                                                              \
-      "SEQS_FILE DB_FILE PROD_FILE NUM_THREADS MULTI_HITS HMMER3_COMPAT")      \
+    X(SET_NTHREADS, set_nthreads, "NTHREADS")                                  \
+    X(SCAN, scan, "SEQS_FILE DB_FILE PROD_FILE MULTI_HITS HMMER3_COMPAT")      \
     X(CANCEL, cancel, "")                                                      \
     X(STATE, state, "")                                                        \
     X(PROGRESS, progress, "")

@@ -7,7 +7,7 @@
 #include "xfile.h"
 #include <inttypes.h>
 
-static unsigned num_threads = 0;
+static int num_threads = 0;
 static FILE *prod_file[NUM_THREADS] = {NULL};
 static struct
 {
@@ -57,7 +57,7 @@ static enum rc write_end(unsigned thread_num)
     return fputc('\n', fp) == EOF ? eio("fputc") : RC_OK;
 }
 
-enum rc prod_fopen(unsigned nthreads)
+enum rc prod_fopen(int nthreads)
 {
     assert(nthreads <= NUM_THREADS);
     for (num_threads = 0; num_threads < nthreads; ++num_threads)
@@ -87,7 +87,7 @@ void prod_setup_seq(struct prod *prod, int64_t seq_id)
 
 void prod_fcleanup(void)
 {
-    for (unsigned i = 0; i < num_threads; ++i)
+    for (int i = 0; i < num_threads; ++i)
         fclose(prod_file[i]);
     num_threads = 0;
 }
@@ -120,7 +120,7 @@ enum rc prod_fclose(void)
           "null_loglik	profile_typeid	version	match\n",
           final.file);
 
-    for (unsigned i = 0; i < num_threads; ++i)
+    for (int i = 0; i < num_threads; ++i)
     {
         if (fflush(prod_file[i]))
         {

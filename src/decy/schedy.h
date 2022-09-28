@@ -7,7 +7,7 @@
 struct uv_loop_s;
 
 void schedy_init(struct uv_loop_s *, onterm_fn_t *, void *arg);
-void schedy_setup(char const *msg, onreply_fn_t *);
+void schedy_setup(char const *uri, char const *key, onreply_fn_t *);
 void schedy_is_online(onreply_fn_t *);
 void schedy_terminate(void);
 bool schedy_isterminated(void);

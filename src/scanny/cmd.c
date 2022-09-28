@@ -61,9 +61,20 @@ char const *scanny_cmd_help(struct cmd const *cmd)
     return help_table;
 }
 
+char const *scanny_cmd_set_nthreads(struct cmd const *cmd)
+{
+    if (!cmd_check(cmd, "si"))
+    {
+        error_parse();
+        return say_fail();
+    }
+    scanny_session_set_nthreads(cmd_get_i64(cmd, 1));
+    return say_ok();
+}
+
 char const *scanny_cmd_scan(struct cmd const *cmd)
 {
-    if (!cmd_check(cmd, "ssssiii"))
+    if (!cmd_check(cmd, "ssssii"))
     {
         error_parse();
         return say_fail();
@@ -73,11 +84,9 @@ char const *scanny_cmd_scan(struct cmd const *cmd)
     char const *seqs = cmd->argv[1];
     char const *db = cmd->argv[2];
     char const *prod = cmd->argv[3];
-    unsigned num_threads = cmd_get_i64(cmd, 4);
-    bool multi_hits = !!cmd_get_i64(cmd, 5);
-    bool hmmer3_compat = !!cmd_get_i64(cmd, 6);
-    return scanny_session_start(seqs, db, prod, num_threads, multi_hits,
-                                hmmer3_compat)
+    bool multi_hits = !!cmd_get_i64(cmd, 4);
+    bool hmmer3_compat = !!cmd_get_i64(cmd, 5);
+    return scanny_session_start(seqs, db, prod, multi_hits, hmmer3_compat)
                ? say_ok()
                : say_fail();
 }

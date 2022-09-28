@@ -1,5 +1,6 @@
 #include "decy/schedy.h"
 #include "core/c23.h"
+#include "core/fmt.h"
 #include "core/logging.h"
 #include "core/pp.h"
 #include "loop/ipc.h"
@@ -63,10 +64,10 @@ void schedy_init(struct uv_loop_s *loop, onterm_fn_t *onterm_cb_, void *arg)
     ipc_start_reading(&self.ipc);
 }
 
-void schedy_setup(char const *msg, onreply_fn_t *onreply_cb)
+void schedy_setup(char const *uri, char const *key, onreply_fn_t *onreply_cb)
 {
     self.onreply_cb = onreply_cb;
-    ipc_put(&self.ipc, msg);
+    ipc_put(&self.ipc, fmt("setup\t%s\t%s", uri, key));
 }
 
 void schedy_is_online(onreply_fn_t *onreply_cb)

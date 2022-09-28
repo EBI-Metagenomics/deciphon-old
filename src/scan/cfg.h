@@ -5,7 +5,7 @@
 
 struct scan_cfg
 {
-    unsigned num_threads;
+    int nthreads;
     double lrt_threshold;
     bool multi_hits;
     bool hmmer3_compat;

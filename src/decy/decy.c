@@ -1,6 +1,8 @@
 #include "decy/decy.h"
 #include "argless.h"
+#include "core/fmt.h"
 #include "core/logging.h"
+#include "decy/cfg.h"
 #include "decy/schedy.h"
 #include <stdlib.h>
 
@@ -32,12 +34,13 @@ int main(int argc, char *argv[])
     logging_set_prefix(argl_program(&argl));
     logging_set_user_file(argl_grab(&argl, "userlog", LOGGING_DEFAULT_FILE));
     logging_set_sys_file(argl_grab(&argl, "syslog", LOGGING_DEFAULT_FILE));
+    cfg_init();
 
     looper_init(&decy.looper, &onlooper_term, &decy);
 
     schedy_init(decy.looper.loop, onschedy_term, nullptr);
-    schedy_setup("connect http://127.0.0.1:49329 change-me",
-                 &onschedy_connection);
+    schedy_setup(cfg_uri(), cfg_key(), &onschedy_connection);
+
     looper_run(&decy.looper);
     looper_cleanup(&decy.looper);
 

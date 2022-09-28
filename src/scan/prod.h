@@ -38,7 +38,7 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
                     struct imm_path const *path, unsigned thread_num,
                     prod_fwrite_match_fn_t *, struct match *match);
 
-enum rc prod_fopen(unsigned nthreads);
+enum rc prod_fopen(int nthreads);
 void prod_setup_job(struct prod *prod, char const *abc_name,
                     char const *prof_typeid, int64_t scan_id);
 void prod_setup_seq(struct prod *prod, int64_t seq_id);
