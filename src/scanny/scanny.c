@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     loopio_open(&scanny.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
-    scanny_session_init(scanny.looper.loop);
+    session_init(scanny.looper.loop);
     looper_run(&scanny.looper);
     looper_cleanup(&scanny.looper);
 
@@ -60,7 +60,7 @@ static void onlooper_term(void *arg)
     loopio_terminate(&scanny->loopio);
     struct cmd cmd = {0};
     cmd_parse(&cmd, "CANCEL");
-    scanny_cmd_cancel(&cmd);
+    cmd_cancel(&cmd);
 }
 
 static void oneof(void *arg)
@@ -80,7 +80,7 @@ static void onread(char *line, void *arg)
     struct scanny *scanny = arg;
     static struct cmd cmd = {0};
     if (!cmd_parse(&cmd, line)) eparse("too many arguments");
-    loopio_put(&scanny->loopio, (*scanny_cmd(cmd.argv[0]))(&cmd));
+    loopio_put(&scanny->loopio, (*cmd_get_callback(cmd.argv[0]))(&cmd));
 }
 
 static void onterm(void *arg)

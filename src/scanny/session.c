@@ -59,7 +59,7 @@ static struct progress const *monitor_progress(void);
 static void monitor_progress_cb(struct uv_timer_s *);
 static void monitor_stop(void);
 
-void scanny_session_init(struct uv_loop_s *loop)
+void session_init(struct uv_loop_s *loop)
 {
     session.loop = loop;
     session.nthreads = 1;
@@ -70,17 +70,14 @@ void scanny_session_init(struct uv_loop_s *loop)
     progress_init(&session.progress, 0);
 }
 
-void scanny_session_set_nthreads(int num_threads)
-{
-    session.nthreads = num_threads;
-}
+void session_set_nthreads(int num_threads) { session.nthreads = num_threads; }
 
-bool scanny_session_is_running(void) { return session.state == RUN; }
+bool session_is_running(void) { return session.state == RUN; }
 
-bool scanny_session_is_done(void) { return session.state == DONE; }
+bool session_is_done(void) { return session.state == DONE; }
 
-bool scanny_session_start(char const *seqs, char const *db, char const *prod,
-                          bool multi_hits, bool hmmer3_compat)
+bool session_start(char const *seqs, char const *db, char const *prod,
+                   bool multi_hits, bool hmmer3_compat)
 {
     errnum = RC_OK;
     errmsg[0] = '\0';
@@ -114,14 +111,14 @@ bool scanny_session_start(char const *seqs, char const *db, char const *prod,
     return true;
 }
 
-int scanny_session_progress(void)
+int session_progress(void)
 {
     struct progress const *p = monitor_progress();
     if (p) return (unsigned)progress_percent(p);
     return -1;
 }
 
-bool scanny_session_cancel(void)
+bool session_cancel(void)
 {
     info("Cancelling...");
     if (atomic_load(&session.cancel))
@@ -138,10 +135,7 @@ bool scanny_session_cancel(void)
     return true;
 }
 
-char const *scanny_session_state_string(void)
-{
-    return state_string[session.state];
-}
+char const *session_state_string(void) { return state_string[session.state]; }
 
 static void after_work(struct uv_work_s *req, int status)
 {
