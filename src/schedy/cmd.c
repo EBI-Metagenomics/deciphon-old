@@ -63,7 +63,7 @@ char const *schedy_cmd_help(struct cmd const *cmd)
     return help_table;
 }
 
-char const *schedy_cmd_connect(struct cmd const *cmd)
+char const *schedy_cmd_setup(struct cmd const *cmd)
 {
     if (!cmd_check(cmd, "sss"))
     {

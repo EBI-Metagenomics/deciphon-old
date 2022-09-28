@@ -6,7 +6,7 @@
 #define SCHEDY_CMD_MAP(X)                                                      \
     X(INVALID, invalid, "")                                                    \
     X(HELP, help, "")                                                          \
-    X(CONNECT, connect, "URL API_KEY")                                         \
+    X(SETUP, setup, "URL API_KEY")                                             \
     X(ONLINE, online, "")                                                      \
     X(WIPE, wipe, "")                                                          \
     X(CANCEL, cancel, "")                                                      \
