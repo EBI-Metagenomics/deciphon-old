@@ -38,9 +38,6 @@ int main(int argc, char *argv[])
     logging_set_user_file(argl_grab(&argl, "userlog", LOGGING_DEFAULT_FILE));
     logging_set_sys_file(argl_grab(&argl, "syslog", LOGGING_DEFAULT_FILE));
 
-    if (setenv("UV_THREADPOOL_SIZE", "1", true))
-        warn("failed to set UV_THREADPOOL_SIZE=1");
-
     looper_init(&schedy.looper, &onlooper_term, &schedy);
 
     loopio_init(&schedy.loopio, schedy.looper.loop, &onread, &oneof, &onerror,

@@ -1,17 +1,15 @@
 #ifndef DECY_SCHEDY_H
 #define DECY_SCHEDY_H
 
-#include "decy/reply.h"
+#include "decy/callbacks.h"
 #include <stdbool.h>
 
 struct uv_loop_s;
 
-typedef void decy_schedy_onterm_fn_t(void *arg);
-
-void decy_schedy_init(struct uv_loop_s *, decy_schedy_onterm_fn_t *, void *arg);
-void decy_schedy_connect(char const *msg, decy_onreply_fn_t *);
-void decy_schedy_is_online(decy_onreply_fn_t *);
-void decy_schedy_terminate(void);
-bool decy_schedy_isterminated(void);
+void schedy_init(struct uv_loop_s *, onterm_fn_t *, void *arg);
+void schedy_connect(char const *msg, onreply_fn_t *);
+void schedy_is_online(onreply_fn_t *);
+void schedy_terminate(void);
+bool schedy_isterminated(void);
 
 #endif

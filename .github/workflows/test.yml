@@ -26,7 +26,7 @@ jobs:
         run: python3 -m pip install --user -U pipx
 
       - name: Start deciphon-api
-        run: python3 -m pipx run deciphon-api start &
+        run: python3 -m pipx run deciphon-api start --daemon
 
       - name: Configure CMake
         if: runner.os == 'Linux'

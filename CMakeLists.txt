@@ -48,33 +48,39 @@ endif()
 
 add_library(
   deciphon
-  libs/jx.c
   libs/argless.c
   libs/dotenv.c
-  libs/zc.c
+  libs/jx.c
   libs/xfile.c
+  libs/zc.c
+  src/core/api.c
   src/core/buff.c
-  src/core/expect.c
-  src/core/http.c
-  src/core/file.c
   src/core/cmd.c
+  src/core/errmsg.c
+  src/core/expect.c
+  src/core/file.c
+  src/core/http.c
+  src/core/logging.c
+  src/core/mempool.c
+  src/core/progress.c
+  src/core/sched.c
+  src/core/sched_dump.c
+  src/core/to.c
+  src/core/url.c
+  src/core/xcurl.c
+  src/core/xcurl_debug.c
+  src/db/press.c
+  src/db/profile_reader.c
+  src/db/protein_reader.c
+  src/db/protein_writer.c
+  src/db/reader.c
+  src/db/writer.c
   src/loop/fio.c
   src/loop/ipc.c
   src/loop/looper.c
   src/loop/loopio.c
   src/loop/reader.c
   src/loop/writer.c
-  src/core/logging.c
-  src/core/mempool.c
-  src/core/errmsg.c
-  src/core/progress.c
-  src/core/to.c
-  src/scan/prod.c
-  src/scan/protein_match.c
-  src/scan/scan.c
-  src/scan/seq.c
-  src/scan/seqlist.c
-  src/scan/thread.c
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c
@@ -85,18 +91,12 @@ add_library(
   src/model/protein_state.c
   src/model/standard_profile.c
   src/model/standard_state.c
-  src/db/reader.c
-  src/db/writer.c
-  src/db/press.c
-  src/db/protein_writer.c
-  src/db/protein_reader.c
-  src/db/profile_reader.c
-  src/core/api.c
-  src/core/sched_dump.c
-  src/core/sched.c
-  src/core/url.c
-  src/core/xcurl.c
-  src/core/xcurl_debug.c)
+  src/scan/prod.c
+  src/scan/protein_match.c
+  src/scan/scan.c
+  src/scan/seq.c
+  src/scan/seqlist.c
+  src/scan/thread.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
 target_link_libraries(deciphon PUBLIC CURL::libcurl)

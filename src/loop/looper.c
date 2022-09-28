@@ -2,6 +2,7 @@
 #include "core/logging.h"
 #include "uv.h"
 #include <stdbool.h>
+#include <stdlib.h>
 
 static void async_cb(struct uv_async_s *handle);
 static void sigterm_cb(struct uv_signal_s *handle, int signum);
@@ -41,6 +42,9 @@ void looper_init(struct looper *l, looper_onterm_fn_t *onterm_cb, void *arg)
 
     if (uv_signal_start(&l->sigint, sigint_cb, SIGINT))
         fatal("uv_signal_start");
+
+    if (setenv("UV_THREADPOOL_SIZE", "1", true))
+        fatal("failed to set UV_THREADPOOL_SIZE=1");
 }
 
 void looper_run(struct looper *l)

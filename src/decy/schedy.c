@@ -17,8 +17,8 @@ static struct
     struct uv_process_options_s opts;
     struct ipc ipc;
     bool terminated;
-    decy_schedy_onterm_fn_t *onterm_cb;
-    decy_onreply_fn_t *onreply_cb;
+    onterm_fn_t *onterm_cb;
+    onreply_fn_t *onreply_cb;
     void *cb_arg;
 } self = {
     .args = {"./" PROGRAM, "--syslog=/dev/null", "--userlog=schedy_user.log",
@@ -41,8 +41,7 @@ static void onerror(void *);
 static void onread(char *line, void *);
 static void onterm(void *);
 
-void decy_schedy_init(struct uv_loop_s *loop,
-                      decy_schedy_onterm_fn_t *onterm_cb_, void *arg)
+void schedy_init(struct uv_loop_s *loop, onterm_fn_t *onterm_cb_, void *arg)
 {
     self.loop = loop;
     ipc_init(&self.ipc, self.loop, onread, oneof, onerror, onterm, nullptr);
@@ -64,25 +63,25 @@ void decy_schedy_init(struct uv_loop_s *loop,
     ipc_start_reading(&self.ipc);
 }
 
-void decy_schedy_connect(char const *msg, decy_onreply_fn_t *onreply_cb)
+void schedy_connect(char const *msg, onreply_fn_t *onreply_cb)
 {
     self.onreply_cb = onreply_cb;
     ipc_put(&self.ipc, msg);
 }
 
-void decy_schedy_is_online(decy_onreply_fn_t *onreply_cb)
+void schedy_is_online(onreply_fn_t *onreply_cb)
 {
     self.onreply_cb = onreply_cb;
     ipc_put(&self.ipc, "online");
 }
 
-void decy_schedy_terminate(void)
+void schedy_terminate(void)
 {
     info("%s", __FUNCTION__);
     ipc_terminate(&self.ipc);
 }
 
-bool decy_schedy_isterminated(void) { return self.terminated; }
+bool schedy_isterminated(void) { return self.terminated; }
 
 static void close_process(uv_process_t *req, int64_t exit_status, int signal)
 {
