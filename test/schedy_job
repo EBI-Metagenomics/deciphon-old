@@ -13,7 +13,7 @@ HOST=$(tools/dotenv_get .env DCP_API_HOST)
 PORT=$(tools/dotenv_get .env DCP_API_PORT)
 KEY=$(tools/dotenv_get .env DCP_API_KEY)
 
-unittest_sendnl "connect http://$HOST:$PORT $KEY"
+unittest_sendnl "setup http://$HOST:$PORT $KEY"
 unittest_sendnl "online"
 unittest_sendnl "wipe"
 unittest_sendnl "hmm_up $HMM"

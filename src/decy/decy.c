@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
     looper_init(&decy.looper, &onlooper_term, &decy);
 
     schedy_init(decy.looper.loop, onschedy_term, nullptr);
-    schedy_connect("connect http://127.0.0.1:49329 change-me",
-                   &onschedy_connection);
+    schedy_setup("connect http://127.0.0.1:49329 change-me",
+                 &onschedy_connection);
     looper_run(&decy.looper);
     looper_cleanup(&decy.looper);
 

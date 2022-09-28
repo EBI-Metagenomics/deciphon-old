@@ -59,6 +59,7 @@ add_library(
   src/core/errmsg.c
   src/core/expect.c
   src/core/file.c
+  src/core/fmt.c
   src/core/http.c
   src/core/logging.c
   src/core/mempool.c

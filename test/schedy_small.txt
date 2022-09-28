@@ -1,4 +1,4 @@
-CONNECT http://127.0.0.1:49329 change-me
+SETUP http://127.0.0.1:49329 change-me
 ONLINE
 WIPE
 

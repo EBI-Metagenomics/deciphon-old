@@ -63,7 +63,7 @@ void schedy_init(struct uv_loop_s *loop, onterm_fn_t *onterm_cb_, void *arg)
     ipc_start_reading(&self.ipc);
 }
 
-void schedy_connect(char const *msg, onreply_fn_t *onreply_cb)
+void schedy_setup(char const *msg, onreply_fn_t *onreply_cb)
 {
     self.onreply_cb = onreply_cb;
     ipc_put(&self.ipc, msg);
