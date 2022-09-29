@@ -18,7 +18,8 @@ struct cmd
 typedef char const *cmd_fn_t(struct cmd const *);
 
 bool cmd_parse(struct cmd *, char *str);
-int64_t cmd_get_i64(struct cmd const *, int i);
+char const *cmd_get(struct cmd const *, int i);
+int64_t cmd_as_i64(struct cmd const *, int i);
 bool cmd_check(struct cmd const *, char const *fmt);
 
 #endif

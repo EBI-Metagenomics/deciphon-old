@@ -25,7 +25,9 @@ bool cmd_parse(struct cmd *c, char *str)
     return !p;
 }
 
-int64_t cmd_get_i64(struct cmd const *gc, int i)
+char const *cmd_get(struct cmd const *gc, int i) { return gc->argv[i]; }
+
+int64_t cmd_as_i64(struct cmd const *gc, int i)
 {
     int64_t i64 = 0;
     (void)to_int64(gc->argv[i], &i64);

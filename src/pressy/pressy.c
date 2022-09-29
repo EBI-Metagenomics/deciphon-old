@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 struct pressy pressy = {0};
+static struct cmd cmd = {0};
 
 static struct argl_option const options[] = {
     {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.",
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
     loopio_open(&pressy.loopio, argl_grab(&argl, "input", "&1"),
                 argl_grab(&argl, "output", "&2"));
 
-    pressy_session_init(pressy.looper.loop);
+    session_init(pressy.looper.loop);
     looper_run(&pressy.looper);
     looper_cleanup(&pressy.looper);
 
@@ -58,9 +59,8 @@ static void onlooper_term(void *arg)
 {
     struct pressy *pressy = arg;
     loopio_terminate(&pressy->loopio);
-    struct cmd cmd = {0};
-    cmd_parse(&cmd, "CANCEL");
-    pressy_cmd_cancel(&cmd);
+    cmd_parse(&cmd, "cancel");
+    (*cmd_fn(cmd.argv[0]))(&cmd);
 }
 
 static void oneof(void *arg)
@@ -78,9 +78,8 @@ static void onerror(void *arg)
 static void onread(char *line, void *arg)
 {
     struct pressy *pressy = arg;
-    static struct cmd cmd = {0};
     if (!cmd_parse(&cmd, line)) eparse("too many arguments");
-    loopio_put(&pressy->loopio, (*pressy_cmd(cmd.argv[0]))(&cmd));
+    loopio_put(&pressy->loopio, (*cmd_fn(cmd.argv[0]))(&cmd));
 }
 
 static void onterm(void *arg)

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 struct schedy schedy = {0};
+static struct cmd cmd = {0};
 
 static struct argl_option const options[] = {
     {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.",
@@ -56,9 +57,8 @@ static void onlooper_term(void *arg)
 {
     struct schedy *schedy = arg;
     loopio_terminate(&schedy->loopio);
-    struct cmd cmd = {0};
-    cmd_parse(&cmd, "CANCEL");
-    schedy_cmd_cancel(&cmd);
+    cmd_parse(&cmd, "cancel");
+    (*cmd_fn(cmd.argv[0]))(&cmd);
 }
 
 static void oneof(void *arg)
@@ -76,9 +76,8 @@ static void onerror(void *arg)
 static void onread(char *line, void *arg)
 {
     struct schedy *schedy = arg;
-    static struct cmd gc = {0};
-    if (!cmd_parse(&gc, line)) eparse("too many arguments");
-    char const *msg = (*schedy_cmd(gc.argv[0]))(&gc);
+    if (!cmd_parse(&cmd, line)) eparse("too many arguments");
+    char const *msg = (*cmd_fn(cmd.argv[0]))(&cmd);
     loopio_put(&schedy->loopio, msg);
 }
 

@@ -39,7 +39,7 @@ static char const *state_string[] = {[IDLE] = "IDLE",
 static void after_work(struct uv_work_s *, int status);
 static void work(struct uv_work_s *);
 
-void pressy_session_init(struct uv_loop_s *loop)
+void session_init(struct uv_loop_s *loop)
 {
     session.loop = loop;
     session.cancel = false;
@@ -48,11 +48,11 @@ void pressy_session_init(struct uv_loop_s *loop)
     progress_init(&session.progress, 0);
 }
 
-bool pressy_session_is_running(void) { return session.state == RUN; }
+bool session_is_running(void) { return session.state == RUN; }
 
-bool pressy_session_is_done(void) { return session.state == DONE; }
+bool session_is_done(void) { return session.state == DONE; }
 
-bool pressy_session_start(char const *hmm)
+bool session_start(char const *hmm)
 {
     if (zc_strlcpy(session.hmm, hmm, PATH_SIZE) >= PATH_SIZE)
     {
@@ -73,12 +73,9 @@ bool pressy_session_start(char const *hmm)
     return true;
 }
 
-unsigned pressy_session_progress(void)
-{
-    return progress_percent(&session.progress);
-}
+unsigned session_progress(void) { return progress_percent(&session.progress); }
 
-bool pressy_session_cancel(void)
+bool session_cancel(void)
 {
     info("Cancelling...");
     if (atomic_load(&session.cancel))
@@ -95,10 +92,7 @@ bool pressy_session_cancel(void)
     return true;
 }
 
-char const *pressy_session_state_string(void)
-{
-    return state_string[session.state];
-}
+char const *session_state_string(void) { return state_string[session.state]; }
 
 static void after_work(struct uv_work_s *req, int status)
 {

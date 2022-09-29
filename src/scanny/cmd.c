@@ -1,54 +1,32 @@
 #include "scanny/cmd.h"
-#include "core/c23.h"
 #include "core/logging.h"
-#include "db/profile_reader.h"
-#include "db/protein_reader.h"
-#include "jx.h"
 #include "scanny/session.h"
-#include "uv.h"
-#include <stdatomic.h>
-#include <stdlib.h>
-#include <string.h>
+#include "scanny/strings.h"
 
-static cmd_fn_t *cmds[] = {
-#define X(_1, A, _2) &cmd_##A,
-    CMD_MAP(X)
-#undef X
-};
+#define CMD_MAP(X)                                                             \
+    X(INVALID, invalid, "")                                                    \
+    X(HELP, help, "")                                                          \
+    X(SET_NTHREADS, set_nthreads, "NTHREADS")                                  \
+    X(SCAN, scan, "SEQS_FILE DB_FILE PROD_FILE MULTI_HITS HMMER3_COMPAT")      \
+    X(CANCEL, cancel, "")                                                      \
+    X(STATE, state, "")                                                        \
+    X(PROGRESS, progress, "")
 
-static int parse(char const *cmd)
+#define CMD_TEMPLATE_ENABLE
+#include "core/cmd_template.h"
+#undef CMD_TEMPLATE_ENABLE
+
+static char const *fn_invalid(struct cmd const *cmd)
 {
-#define X(A, B, _)                                                             \
-    if (!strcmp(cmd, STRINGIFY(B))) return CMD_##A;
-    CMD_MAP(X)
-#undef X
-    return CMD_INVALID;
+    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    return eparse("invalid command"), FAIL;
 }
 
-static inline char const *say_ok(void) { return "OK"; }
-
-static inline char const *say_done(void) { return "DONE"; }
-
-static inline char const *say_fail(void) { return "FAIL"; }
-
-static inline char const *say_busy(void) { return "BUSY"; }
-
-#define error_parse() error("failed to parse command")
-
-cmd_fn_t *cmd_get_callback(char const *cmd) { return cmds[parse(cmd)]; }
-
-char const *cmd_invalid(struct cmd const *cmd)
+static char const *fn_help(struct cmd const *cmd)
 {
-    (void)cmd;
-    eparse("invalid command");
-    return say_fail();
-}
+    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
 
-static char help_table[512] = {0};
-
-char const *cmd_help(struct cmd const *cmd)
-{
-    (void)cmd;
+    static char help_table[512] = {0};
     char *p = help_table;
     p += sprintf(p, "Commands:");
 
@@ -61,67 +39,42 @@ char const *cmd_help(struct cmd const *cmd)
     return help_table;
 }
 
-char const *cmd_set_nthreads(struct cmd const *cmd)
+static char const *fn_set_nthreads(struct cmd const *cmd)
 {
-    if (!cmd_check(cmd, "si"))
-    {
-        error_parse();
-        return say_fail();
-    }
-    session_set_nthreads(cmd_get_i64(cmd, 1));
-    return say_ok();
+    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    session_set_nthreads(cmd_as_i64(cmd, 1));
+    return OK;
 }
 
-char const *cmd_scan(struct cmd const *cmd)
+static char const *fn_scan(struct cmd const *cmd)
 {
-    if (!cmd_check(cmd, "ssssii"))
-    {
-        error_parse();
-        return say_fail();
-    }
+    if (!cmd_check(cmd, "ssssii")) return eparse(FAIL_PARSE), FAIL;
 
-    if (session_is_running()) return say_busy();
-    char const *seqs = cmd->argv[1];
-    char const *db = cmd->argv[2];
-    char const *prod = cmd->argv[3];
-    bool multi_hits = !!cmd_get_i64(cmd, 4);
-    bool hmmer3_compat = !!cmd_get_i64(cmd, 5);
-    return session_start(seqs, db, prod, multi_hits, hmmer3_compat)
-               ? say_ok()
-               : say_fail();
+    if (session_is_running()) return BUSY;
+    char const *seqs = cmd_get(cmd, 1);
+    char const *db = cmd_get(cmd, 2);
+    char const *prod = cmd_get(cmd, 3);
+    bool multi_hits = !!cmd_as_i64(cmd, 4);
+    bool hmmer3_compat = !!cmd_as_i64(cmd, 5);
+    return session_start(seqs, db, prod, multi_hits, hmmer3_compat) ? OK : FAIL;
 }
 
-char const *cmd_cancel(struct cmd const *cmd)
+static char const *fn_cancel(struct cmd const *cmd)
 {
-    if (!cmd_check(cmd, "s"))
-    {
-        error_parse();
-        return say_fail();
-    }
-
-    if (!session_is_running()) return say_done();
-
-    return session_cancel() ? say_ok() : say_fail();
+    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    if (!session_is_running()) return DONE;
+    return session_cancel() ? OK : FAIL;
 }
 
-char const *cmd_state(struct cmd const *cmd)
+static char const *fn_state(struct cmd const *cmd)
 {
-    if (!cmd_check(cmd, "s"))
-    {
-        error_parse();
-        return say_fail();
-    }
-
+    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return session_state_string();
 }
 
-char const *cmd_progress(struct cmd const *cmd)
+static char const *fn_progress(struct cmd const *cmd)
 {
-    if (!cmd_check(cmd, "s"))
-    {
-        error_parse();
-        return say_fail();
-    }
+    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
 
     static char progress[5] = "100%";
     if (session_is_done()) return "100%";
@@ -129,10 +82,10 @@ char const *cmd_progress(struct cmd const *cmd)
     if (session_is_running())
     {
         int perc = session_progress();
-        if (perc < 0) return say_fail();
+        if (perc < 0) return FAIL;
         sprintf(progress, "%u%%", (unsigned)perc);
         return progress;
     }
 
-    return say_fail();
+    return FAIL;
 }
