@@ -1,5 +1,5 @@
 #include "loop/writer.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "uv.h"
 #include <assert.h>
 #include <stdbool.h>
@@ -29,7 +29,7 @@ void writer_init(struct writer *writer, struct uv_loop_s *loop, int ipc,
 void writer_fopen(struct writer *writer, int fd)
 {
     int rc = uv_pipe_open(&writer->pipe, fd);
-    if (rc) fatal(uv_strerror(rc));
+    if (rc) fatal("%s", uv_strerror(rc));
     writer->closed = false;
 }
 
@@ -58,7 +58,7 @@ void writer_put(struct writer *writer, char const *msg)
     int rc = uv_write(&request->req, stream, bufs, 2, &write_cb);
     if (rc)
     {
-        eio(uv_strerror(rc));
+        eio("%s", uv_strerror(rc));
         (*writer->onerror_cb)(writer->arg);
     }
 }
@@ -85,5 +85,5 @@ static void write_cb(struct uv_write_s *write, int status)
     struct request *request = write->data;
     free((void *)request->msg);
     free(request);
-    if (status) eio(uv_strerror(status));
+    if (status) eio("%s", uv_strerror(status));
 }

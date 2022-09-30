@@ -3,6 +3,7 @@
 
 #ifdef CMD_TEMPLATE_ENABLE
 
+#include "core/pp.h"
 #include <string.h>
 
 enum

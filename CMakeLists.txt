@@ -40,8 +40,6 @@ else()
   add_compile_definitions(NDEBUG_HTTP_REQUESTS=1)
 endif()
 
-add_compile_definitions(_XOPEN_SOURCE=700)
-add_compile_definitions(_DARWIN_C_SOURCE=1)
 if(OpenMP_FOUND)
   add_compile_definitions(DECIPHON_OPENM=1)
 endif()
@@ -51,17 +49,18 @@ add_library(
   libs/argless.c
   libs/dotenv.c
   libs/jx.c
+  libs/lazylog.c
   libs/xfile.c
   libs/zc.c
   src/core/api.c
   src/core/buff.c
   src/core/cmd.c
+  src/core/daemonize.c
   src/core/errmsg.c
   src/core/expect.c
   src/core/file.c
   src/core/fmt.c
   src/core/http.c
-  src/core/logging.c
   src/core/mempool.c
   src/core/progress.c
   src/core/sched.c
@@ -136,18 +135,3 @@ target_link_libraries(decy PUBLIC deciphon)
 
 enable_testing()
 add_subdirectory(test)
-
-set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
-set(CPACK_PACKAGE_VENDOR "Danilo Horta")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "DECIPHON")
-set(CPACK_PACKAGE_CONTACT "Danilo Horta")
-set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md)
-set(CPACK_RESOURCE_FILE_README ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
-set(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/package)
-set(CPACK_VERBATIM_VARIABLES YES)
-set(CPACK_PACKAGE_RELOCATABLE YES)
-set(CPACK_MONOLITHIC_INSTALL YES)
-include(CPack)

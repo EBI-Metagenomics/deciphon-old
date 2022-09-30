@@ -1,5 +1,5 @@
 #include "loop/reader.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "uv.h"
 #include <assert.h>
 #include <stdlib.h>
@@ -37,7 +37,7 @@ void reader_init(struct reader *reader, struct uv_loop_s *loop, int ipc,
 void reader_fopen(struct reader *reader, int fd)
 {
     int rc = uv_pipe_open(&reader->pipe, fd);
-    if (rc) fatal(uv_strerror(rc));
+    if (rc) fatal("%s", uv_strerror(rc));
     start_reading(reader);
     reader->closed = false;
 }

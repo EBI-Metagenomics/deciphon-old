@@ -1,5 +1,5 @@
 #include "core/sched.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/rc.h"
 #include "jx.h"
 #include <string.h>
@@ -56,7 +56,7 @@ enum rc sched_job_parse(struct sched_job *j, struct jr *jr)
     j->exec_started = jr_long_of(jr, "exec_started");
     j->exec_ended = jr_long_of(jr, "exec_ended");
 
-    return jr_error() ? einval(jr->cursor.json) : RC_OK;
+    return jr_error() ? einval("%s", jr->cursor.json) : RC_OK;
 }
 
 enum rc sched_scan_parse(struct sched_scan *s, struct jr *jr)

@@ -1,6 +1,6 @@
 #include "model/protein_profile.h"
 #include "core/expect.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "imm/imm.h"
 #include "lite_pack/file/file.h"
 #include "lite_pack/lite_pack.h"

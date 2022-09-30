@@ -1,5 +1,5 @@
 #include "core/expect.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/xmath.h"
 #include "db/db.h"
 #include "xfile.h"
@@ -17,7 +17,7 @@ static enum rc open_files(struct profile_reader *reader, FILE *fp)
     {
         FILE *f = NULL;
         int rc = xfile_refopen(fp, "rb", &f);
-        if (rc) return eio(xfile_strerror(rc));
+        if (rc) return eio("%s", xfile_strerror(rc));
         lip_file_init(reader->file + i, f);
     }
     return RC_OK;
@@ -89,7 +89,7 @@ enum rc profile_reader_setup(struct profile_reader *reader,
 
     int64_t profiles_offset = 0;
     int r = xfile_tell(db->file.fp, &profiles_offset);
-    if (r) return eio(xfile_strerror(r));
+    if (r) return eio("%s", xfile_strerror(r));
 
     enum rc rc = RC_OK;
     reader->profile_typeid = db->profile_typeid;

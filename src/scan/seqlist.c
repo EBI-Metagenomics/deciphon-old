@@ -1,7 +1,8 @@
 #include "scan/seqlist.h"
 #include "core/c23.h"
 #include "core/errmsg.h"
-#include "core/logging.h"
+#include "core/logy.h"
+#include "core/strings.h"
 #include "imm/abc.h"
 #include "jx.h"
 #include "scan/seq.h"
@@ -31,7 +32,7 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
     int r = xfile_readall(filepath, &size, (unsigned char **)&data);
     if (r)
     {
-        errnum = eio(errfmt(errmsg, "reading seqs, %s", xfile_strerror(r)));
+        errnum = eio("%s", errfmt(errmsg, "%s", xfile_strerror(r)));
         goto cleanup;
     }
 
@@ -39,19 +40,19 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
 
     if (jr_parse(json, (int)size, data))
     {
-        errnum = eparse(errfmt(errmsg, "failed to parse seqs json"));
+        errnum = eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
         goto cleanup;
     }
 
     if (jr_type(json) != JR_ARRAY)
     {
-        errnum = eparse(errfmt(errmsg, "wrong seqs file format"));
+        errnum = eparse("%s", errfmt(errmsg, "wrong seqs file format"));
         goto cleanup;
     }
 
     if ((num_seqs = jr_nchild(json)) <= 0)
     {
-        errnum = efail(errfmt(errmsg, "no sequence found"));
+        errnum = efail("%s", errfmt(errmsg, "no sequence found"));
         goto cleanup;
     }
 
@@ -60,7 +61,7 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
     scan_id = jr_long_of(json, "scan_id");
     if (jr_error())
     {
-        errnum = eparse(errfmt(errmsg, "failed to get scan_id from seq file"));
+        errnum = eparse("%s", errfmt(errmsg, "failed to get scan_id"));
         goto cleanup;
     }
 
@@ -91,7 +92,8 @@ struct seq const *seqlist_next(void)
     jr_right(json);
     if (jr_error())
     {
-        errnum = efail(errfmt(errmsg, "json: %s", jr_strerror(jr_error())));
+        int rc = jr_error();
+        errnum = efail("%s", errfmt(errmsg, "json: %s", jr_strerror(rc)));
         return nullptr;
     }
 

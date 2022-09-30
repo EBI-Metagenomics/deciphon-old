@@ -28,6 +28,7 @@ static void echof(char const *fmt, ...);
 static void echos(char const *str);
 static void echoc(char c);
 static void echor(char const *str);
+void echor2(char const *str, char const *default_value);
 static void echo_flush(void);
 static void echo_end(void);
 
@@ -43,9 +44,15 @@ static void help_requires_arg(char const *program, char const *arg,
 static void help_unrecognized_arg(char const *program, char const *arg,
                                   int exit_status);
 
-static struct argl_option const *opt_get(struct argl_option const *opts,
-                                         char const *arg);
-static int opt_count(struct argl_option const *opts);
+struct argl_option const *opts_search(struct argl_option const *opts,
+                                      char const *arg);
+struct argl_option const *opts_get(struct argl_option const *opts,
+                                   char const *name);
+int opts_count(struct argl_option const *opts);
+static bool opt_has_user_default(struct argl_option const *opt);
+static char const *opt_get_default(struct argl_option const *opt);
+static bool opt_is_flag(struct argl_option const *opt);
+static char const *opt_arg_name(struct argl_option const *opt);
 
 enum
 {
@@ -141,20 +148,30 @@ static size_t arg_long_compact_opt_size(char const *arg)
 #include <stddef.h>
 #include <string.h>
 
-static struct argl_option const *opt_get(struct argl_option const *opts,
-                                         char const *arg)
+struct argl_option const *opts_search(struct argl_option const *opts,
+                                      char const *arg)
 {
-    for (int i = 0; i < opt_count(opts); ++i)
+    for (int i = 0; i < opts_count(opts); ++i)
     {
         if (arg_is_key_opt(arg) && arg_key_opt_eq(arg, opts[i].key))
             return &opts[i];
         if (arg_is_name_opt(arg) && arg_name_opt_eq(arg, opts[i].name))
             return &opts[i];
     }
-    return 0;
+    return NULL;
 }
 
-static int opt_count(struct argl_option const *opts)
+struct argl_option const *opts_get(struct argl_option const *opts,
+                                   char const *name)
+{
+    for (int i = 0; i < opts_count(opts); ++i)
+    {
+        if (!strcmp(name, opts[i].name)) return &opts[i];
+    }
+    return NULL;
+}
+
+int opts_count(struct argl_option const *opts)
 {
     struct argl_option const *opt = opts;
     int size = 0;
@@ -164,6 +181,27 @@ static int opt_count(struct argl_option const *opts)
         opt++;
     }
     return size;
+}
+
+static bool opt_has_user_default(struct argl_option const *opt)
+{
+    return !opt_is_flag(opt) && opt->arg_def.s.default_value;
+}
+
+static char const *opt_get_default(struct argl_option const *opt)
+{
+    if (opt_is_flag(opt)) return "false";
+    return opt->arg_def.s.default_value;
+}
+
+static bool opt_is_flag(struct argl_option const *opt)
+{
+    return opt->arg_def.type == ARGL_FLAG_TYPE;
+}
+
+static char const *opt_arg_name(struct argl_option const *opt)
+{
+    return opt->arg_def.s.name;
 }
 
 #include <stdlib.h>
@@ -177,14 +215,14 @@ static bool argvec_check_valid(int argc, char *argv[],
     {
         if (!arg_is_opt(argv[i])) continue;
 
-        struct argl_option const *opt = opt_get(opts, argv[i]);
+        struct argl_option const *opt = opts_search(opts, argv[i]);
         if (!opt)
         {
             if (die) help_unrecognized_arg(prg, argv[i], EXIT_FAILURE);
             return false;
         }
 
-        if (opt->has_value)
+        if (!opt_is_flag(opt))
         {
             if (arg_is_opt_compact(argv[i])) continue;
             if (i + 1 == argc || arg_is_opt(argv[i + 1]))
@@ -222,8 +260,8 @@ static void argvec_sort(int argc, char *argv[], struct argl_option const *opts)
         }
         else
         {
-            struct argl_option const *opt = opt_get(opts, argv[i]);
-            i += opt->has_value && !arg_is_opt_compact(argv[i]);
+            struct argl_option const *opt = opts_search(opts, argv[i]);
+            i += !opt_is_flag(opt) && !arg_is_opt_compact(argv[i]);
         }
     }
 }
@@ -241,7 +279,7 @@ static char const *argvec_get(int argc, char *argv[],
                               struct argl_option const *opts, char const *name)
 {
     int i = option_index(argc, argv, opts, name);
-    if (i == -1) return 0;
+    if (i == -1) return "";
 
     return arg_is_opt_compact(argv[i]) ? arg_opt_compact_value(argv[i])
                                        : argv[i + 1];
@@ -261,8 +299,8 @@ static char **argvec_args(int argc, char *argv[],
     {
         if (arg_is_opt(argv[i]))
         {
-            struct argl_option const *opt = opt_get(opts, argv[i]);
-            if (opt) i += opt->has_value && !arg_is_opt_compact(argv[i]);
+            struct argl_option const *opt = opts_search(opts, argv[i]);
+            if (opt) i += !opt_is_flag(opt) && !arg_is_opt_compact(argv[i]);
         }
         else
             break;
@@ -277,11 +315,11 @@ static int option_index(int argc, char *argv[], struct argl_option const *opts,
     {
         if (arg_is_opt(argv[i]))
         {
-            struct argl_option const *opt = opt_get(opts, argv[i]);
+            struct argl_option const *opt = opts_search(opts, argv[i]);
             if (opt)
             {
                 if (!strcmp(opt->name, name)) return i;
-                i += opt->has_value && !arg_is_opt_compact(argv[i]);
+                i += !opt_is_flag(opt) && !arg_is_opt_compact(argv[i]);
             }
         }
     }
@@ -351,6 +389,21 @@ static void echor(char const *str)
     }
 }
 
+void echor2(char const *str, char const *default_value)
+{
+    size_t size = strlen(str) + 2;
+    if (sizeof(buf) > pos + size)
+    {
+        echo_empty_spaces((int)(width - pos + 2));
+        echof("%s [%s]", str, default_value);
+    }
+    else
+    {
+        echo_flush();
+        echof("  %s [%s]", str, default_value);
+    }
+}
+
 static void echo_end(void)
 {
     if (pos > 0) puts(buf);
@@ -388,20 +441,20 @@ static void help_usage(char const *prog, struct argl_option const *opts,
     echof("Usage: %s", prog);
 
     echos(" [-");
-    for (int i = 0; i < opt_count(opts); ++i)
+    for (int i = 0; i < opts_count(opts); ++i)
     {
         if (isprint(opts[i].key)) echoc(opts[i].key);
     }
     echos("]");
 
-    for (int i = 0; i < opt_count(opts); ++i)
+    for (int i = 0; i < opts_count(opts); ++i)
     {
-        if (isprint(opts[i].key) && opts[i].has_value)
+        if (isprint(opts[i].key) && !opt_is_flag(opts + i))
         {
-            echof(" [-%c %s]", opts[i].key, opts[i].arg_name);
+            echof(" [-%c %s]", opts[i].key, opt_arg_name(opts + i));
         }
-        if (opts[i].has_value)
-            echof(" [--%s=%s]", opts[i].name, opts[i].arg_name);
+        if (!opt_is_flag(opts + i))
+            echof(" [--%s=%s]", opts[i].name, opt_arg_name(opts + i));
         else
             echof(" [--%s]", opts[i].name);
     }
@@ -438,18 +491,17 @@ static void help_help(char const *prog, char const *args_doc, char const *doc,
     echo_end();
 
     echo_start(28);
-    for (int i = 0; i < opt_count(opts); ++i)
+    for (int i = 0; i < opts_count(opts); ++i)
     {
         if (isprint(opts[i].key))
-        {
             echof("  -%c, --%s", opts[i].key, opts[i].name);
-            echor(opts[i].arg_doc);
-        }
         else
-        {
             echof("      --%s", opts[i].name);
+
+        if (opt_has_user_default(opts + i))
+            echor2(opts[i].arg_doc, opt_get_default(opts + i));
+        else
             echor(opts[i].arg_doc);
-        }
         echo_flush();
     }
     echo_end();
@@ -511,13 +563,16 @@ bool argl_has(struct argl const *al, char const *name)
 
 char const *argl_get(struct argl const *al, char const *name)
 {
-    return argvec_get(al->argc, al->argv, al->options, name);
-}
+    struct argl_option const *opt = opts_get(al->options, name);
+    if (!opt) return "";
 
-char const *argl_grab(struct argl const *al, char const *name,
-                      char const *value)
-{
-    return argl_has(al, name) ? argl_get(al, name) : value;
+    if (opt_is_flag(opt)) return argl_has(al, name) ? "true" : "false";
+
+    if (argl_has(al, name))
+        return argvec_get(al->argc, al->argv, al->options, name);
+
+    char const *value = opt_get_default(opt);
+    return value ? value : "";
 }
 
 int argl_nargs(struct argl const *al)

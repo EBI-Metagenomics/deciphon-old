@@ -1,6 +1,6 @@
 #include "loop/fio.h"
 #include "core/c23.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include <assert.h>
 #include <unistd.h>
 
@@ -64,7 +64,7 @@ static void onopen(struct uv_fs_s *fs)
 {
     struct fio *io = fs->data;
     io->fd = fs->result;
-    if (io->fd < -1) fatal(uv_strerror(fs->result));
+    if (io->fd < -1) fatal("%s", uv_strerror(fs->result));
     (*io->onopen_cb)(io->fd != -1, io->arg);
 }
 

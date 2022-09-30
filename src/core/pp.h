@@ -19,12 +19,6 @@
 #define STRINGIFY(s) __STRINGIFY(s)
 #define __STRINGIFY(s) #s
 
-#ifdef __FILE_NAME__
-#define LOCAL __FILE_NAME__ ":" STRINGIFY(__LINE__)
-#else
-#define LOCAL __FILE__ ":" STRINGIFY(__LINE__)
-#endif
-
 #define __MEMBER_REF(var, member) ((__typeof__(var) *)0)->member
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))

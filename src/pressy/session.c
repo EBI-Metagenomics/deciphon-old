@@ -1,6 +1,6 @@
 #include "pressy/session.h"
 #include "core/c23.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/progress.h"
 #include "db/press.h"
 #include "uv.h"
@@ -83,7 +83,7 @@ bool session_cancel(void)
         int rc = uv_cancel((struct uv_req_s *)&session.request);
         if (rc)
         {
-            warn(uv_strerror(rc));
+            warn("%s", uv_strerror(rc));
             return false;
         }
         return true;

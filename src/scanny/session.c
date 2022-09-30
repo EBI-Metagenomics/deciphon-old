@@ -1,8 +1,9 @@
 #include "scanny/session.h"
 #include "core/errmsg.h"
 #include "core/limits.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/progress.h"
+#include "core/strings.h"
 #include "db/profile_reader.h"
 #include "db/protein_reader.h"
 #include "scan/scan.h"
@@ -87,19 +88,19 @@ bool session_start(char const *seqs, char const *db, char const *prod,
     if (zc_strlcpy(session.seqs, seqs, PATH_SIZE) >= PATH_SIZE)
     {
         session.state = FAIL;
-        return !(errnum = enomem(errfmt(errmsg, "file path is too long")));
+        return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
     if (zc_strlcpy(session.db, db, PATH_SIZE) >= PATH_SIZE)
     {
         session.state = FAIL;
-        return !(errnum = enomem(errfmt(errmsg, "file path is too long")));
+        return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
     if (zc_strlcpy(session.prod, prod, PATH_SIZE) >= PATH_SIZE)
     {
         session.state = FAIL;
-        return !(errnum = enomem(errfmt(errmsg, "file path is too long")));
+        return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
     struct scan_cfg cfg = {session.nthreads, 10., multi_hits, hmmer3_compat};
@@ -126,7 +127,7 @@ bool session_cancel(void)
         int rc = uv_cancel((struct uv_req_s *)&session.request);
         if (rc)
         {
-            warn(uv_strerror(rc));
+            warn("%s", uv_strerror(rc));
             return false;
         }
         return true;
@@ -184,7 +185,7 @@ static void work(struct uv_work_s *req)
     int r = xfile_move(session.prod, scan_prod_filepath());
     if (r)
     {
-        errnum = eio(errfmt(errmsg, "%s", xfile_strerror(r)));
+        errnum = eio("%s", errfmt(errmsg, "%s", xfile_strerror(r)));
         session.state = FAIL;
         return;
     }

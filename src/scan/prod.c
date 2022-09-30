@@ -1,6 +1,6 @@
 #include "scan/prod.h"
 #include "core/limits.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/version.h"
 #include "imm/imm.h"
 #include "scan/match.h"
@@ -131,7 +131,7 @@ enum rc prod_fclose(void)
         int r = xfile_copy(final.file, prod_file[i]);
         if (r)
         {
-            rc = eio(xfile_strerror(r));
+            rc = eio("%s", xfile_strerror(r));
             goto cleanup;
         }
     }

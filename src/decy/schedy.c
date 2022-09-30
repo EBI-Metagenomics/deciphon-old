@@ -1,7 +1,7 @@
 #include "decy/schedy.h"
 #include "core/c23.h"
 #include "core/fmt.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/pp.h"
 #include "loop/ipc.h"
 #include "uv.h"

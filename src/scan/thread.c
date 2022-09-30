@@ -1,7 +1,7 @@
 #include "scan/thread.h"
 #include "core/c23.h"
 #include "core/errmsg.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/progress.h"
 #include "core/xmath.h"
 #include "db/profile_reader.h"
@@ -114,10 +114,10 @@ static enum rc reset_task(struct thread *t, struct imm_task **task,
                           struct imm_dp const *dp)
 {
     if (*task && imm_task_reset(*task, dp))
-        return efail(errfmt(t->errmsg, "failed to reset task"));
+        return efail("%s", errfmt(t->errmsg, "failed to reset task"));
 
     if (!*task && !(*task = imm_task_new(dp)))
-        return efail(errfmt(t->errmsg, "failed to create task"));
+        return efail("%s", errfmt(t->errmsg, "failed to create task"));
 
     return RC_OK;
 }
@@ -126,7 +126,7 @@ static enum rc setup_task(struct thread *t, struct imm_task *task,
                           struct imm_seq const *seq)
 {
     if (imm_task_setup(task, seq))
-        return efail(errfmt(t->errmsg, "failed to setup task"));
+        return efail("%s", errfmt(t->errmsg, "failed to setup task"));
     return RC_OK;
 }
 
@@ -149,7 +149,7 @@ static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
 
 {
     if (imm_dp_viterbi(dp, task, prod))
-        return efail(errfmt(t->errmsg, "failed to run viterbi"));
+        return efail("%s", errfmt(t->errmsg, "failed to run viterbi"));
     *loglik = (double)prod->loglik;
     return RC_OK;
 }

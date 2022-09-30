@@ -1,5 +1,5 @@
 #include "core/limits.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/progress.h"
 
 struct thread

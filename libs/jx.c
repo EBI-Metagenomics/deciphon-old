@@ -754,6 +754,7 @@ static int primitive_type(char c)
         assert(false);
     }
     assert(false);
+    return 0;
 }
 
 static void fill_node(struct jr_node *token, const int type, const int start,

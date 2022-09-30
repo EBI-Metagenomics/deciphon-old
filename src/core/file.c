@@ -1,7 +1,7 @@
 #define XXH_INLINE_ALL
 #include "core/file.h"
 #include "core/compiler.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "xfile.h"
 #include "xxhash.h"
 #include <assert.h>

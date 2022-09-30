@@ -3,7 +3,7 @@
 #include "core/compiler.h"
 #include "core/http_headers.h"
 #include "core/limits.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/mime.h"
 #include "core/pp.h"
 #include "core/url.h"

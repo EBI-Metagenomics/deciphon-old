@@ -1,9 +1,8 @@
 #include "core/fmt.h"
-#include "core/compiler.h"
 #include <stdarg.h>
 #include <stdio.h>
 
-static thread_local char buffer[4096] = {0};
+static _Thread_local char buffer[4096] = {0};
 
 char const *fmt(char const *format, ...)
 {

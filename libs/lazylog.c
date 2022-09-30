@@ -46,10 +46,13 @@ bool zlog_setup(char const *sink, enum zlog_lvl lvl)
     return !!self.fp;
 }
 
+static void ensure_open_fp(void);
+
 void zlog_print(enum zlog_lvl lvl, char const *func, char const *file, int line,
                 char const *fmt, ...)
 {
     lock();
+    ensure_open_fp();
     time_t timer = time(NULL);
     struct tm *tm_info = localtime(&timer);
     strftime(self.stamp, sizeof(self.stamp), "%H:%M:%S", tm_info);
@@ -66,4 +69,12 @@ void zlog_print(enum zlog_lvl lvl, char const *func, char const *file, int line,
         va_end(ap);
     }
     unlock();
+}
+
+static void ensure_open_fp(void)
+{
+    if (!self.fp)
+    {
+        self.fp = fdopen(2, "w");
+    }
 }

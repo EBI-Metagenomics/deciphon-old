@@ -1,5 +1,5 @@
 #include "db/protein_writer.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/rc.h"
 #include "db/types.h"
 #include "model/model.h"

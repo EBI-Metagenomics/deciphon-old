@@ -1,7 +1,8 @@
 #include "decy/decy.h"
 #include "argless.h"
+#include "core/daemonize.h"
 #include "core/fmt.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "decy/cfg.h"
 #include "decy/schedy.h"
 #include <stdlib.h>
@@ -9,12 +10,12 @@
 struct decy decy = {0};
 
 static struct argl_option const options[] = {
-    {"userlog", 'u', "USERLOG", "User logging stream. Defaults to `STDERR'.",
-     ARGL_HASVALUE},
-    {"syslog", 's', "SYSLOG", "System logging stream. Defaults to `STDERR'.",
-     ARGL_HASVALUE},
-    ARGL_DEFAULT_OPTS,
-    ARGL_NULL_OPT,
+    {"logstream", 's', ARGL_TEXT("LOGSTREAM", "&3"), "Logging stream."},
+    {"loglevel", 'l', ARGL_TEXT("LOGLEVEL", "2"), "Logging level."},
+    {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
+    {"daemon", 'D', ARGL_FLAG(), "Daemonize this program."},
+    ARGL_DEFAULT,
+    ARGL_END,
 };
 
 static struct argl argl = {.options = options,
@@ -31,9 +32,10 @@ int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    logging_set_prefix(argl_program(&argl));
-    logging_set_user_file(argl_grab(&argl, "userlog", LOGGING_DEFAULT_FILE));
-    logging_set_sys_file(argl_grab(&argl, "syslog", LOGGING_DEFAULT_FILE));
+    if (argl_has(&argl, "daemon")) daemonize();
+
+    zlog_setup(argl_get(&argl, "logstream"),
+               argl_get(&argl, "loglevel")[0] - '0');
     cfg_init();
 
     looper_init(&decy.looper, &onlooper_term, &decy);
@@ -44,7 +46,6 @@ int main(int argc, char *argv[])
     looper_run(&decy.looper);
     looper_cleanup(&decy.looper);
 
-    logging_cleanup();
     return EXIT_SUCCESS;
 }
 

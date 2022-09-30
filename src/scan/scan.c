@@ -1,7 +1,7 @@
 #include "scan/scan.h"
 #include "core/c23.h"
 #include "core/errmsg.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/progress.h"
 #include "db/profile_reader.h"
 #include "db/protein_reader.h"
@@ -173,7 +173,7 @@ static void work_finishup(bool succesfully)
 static enum rc prepare_readers(char const *db)
 {
     db_file = fopen(db, "rb");
-    if (!db_file) return eio(errfmt(errmsg, "failed to open database"));
+    if (!db_file) return eio("%s", errfmt(errmsg, "failed to open database"));
 
     enum rc rc = protein_db_reader_open(&pro_db_reader, db_file);
     if (rc)

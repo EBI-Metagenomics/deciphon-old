@@ -1,6 +1,7 @@
 #include "pressy/pressy.h"
 #include "argless.h"
-#include "core/logging.h"
+#include "core/daemonize.h"
+#include "core/logy.h"
 #include "pressy/cmd.h"
 #include "pressy/session.h"
 #include <stdlib.h>
@@ -9,16 +10,14 @@ struct pressy pressy = {0};
 static struct cmd cmd = {0};
 
 static struct argl_option const options[] = {
-    {"input", 'i', "INPUT", "Input stream. Defaults to `STDIN'.",
-     ARGL_HASVALUE},
-    {"output", 'o', "OUTPUT", "Output stream. Defaults to `STDOUT'.",
-     ARGL_HASVALUE},
-    {"userlog", 'u', "USERLOG", "User logging stream. Defaults to `STDERR'.",
-     ARGL_HASVALUE},
-    {"syslog", 's', "SYSLOG", "System logging stream. Defaults to `STDERR'.",
-     ARGL_HASVALUE},
-    ARGL_DEFAULT_OPTS,
-    ARGL_NULL_OPT,
+    {"input", 'i', ARGL_TEXT("INPUT", "&1"), "Input stream."},
+    {"output", 'o', ARGL_TEXT("OUTPUT", "&2"), "Output stream."},
+    {"logstream", 's', ARGL_TEXT("LOGSTREAM", "&3"), "Logging stream."},
+    {"loglevel", 'l', ARGL_TEXT("LOGLEVEL", "2"), "Logging level."},
+    {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
+    {"daemon", 'D', ARGL_FLAG(), "Daemonize this program."},
+    ARGL_DEFAULT,
+    ARGL_END,
 };
 
 static struct argl argl = {.options = options,
@@ -36,22 +35,22 @@ int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    logging_set_prefix(argl_program(&argl));
-    logging_set_user_file(argl_grab(&argl, "userlog", LOGGING_DEFAULT_FILE));
-    logging_set_sys_file(argl_grab(&argl, "syslog", LOGGING_DEFAULT_FILE));
+    if (argl_has(&argl, "daemon")) daemonize();
+
+    zlog_setup(argl_get(&argl, "logstream"),
+               argl_get(&argl, "loglevel")[0] - '0');
 
     looper_init(&pressy.looper, &onlooper_term, &pressy);
 
     loopio_init(&pressy.loopio, pressy.looper.loop, &onread, &oneof, &onerror,
                 &onterm, &pressy);
-    loopio_open(&pressy.loopio, argl_grab(&argl, "input", "&1"),
-                argl_grab(&argl, "output", "&2"));
+    loopio_open(&pressy.loopio, argl_get(&argl, "input"),
+                argl_get(&argl, "output"));
 
     session_init(pressy.looper.loop);
     looper_run(&pressy.looper);
     looper_cleanup(&pressy.looper);
 
-    logging_cleanup();
     return EXIT_SUCCESS;
 }
 

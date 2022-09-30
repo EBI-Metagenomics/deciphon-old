@@ -1,6 +1,6 @@
 #include "core/api.h"
 #include "core/http.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/mime.h"
 #include "core/sched.h"
 #include "core/xcurl.h"
@@ -418,7 +418,7 @@ static enum rc handle_http_exception(void)
         if (!(rc = api_error_parse())) rc = eapi(api_err);
     }
     else
-        rc = ehttp(http_strcode(xcurl_http_code()));
+        rc = ehttp("%s", http_strcode(xcurl_http_code()));
     return rc;
 }
 

@@ -1,48 +1,20 @@
-#ifndef CORE_LOGGING_H
-#define CORE_LOGGING_H
+#ifndef CORE_LOGY_H
+#define CORE_LOGY_H
 
-#include "core/bug.h"
-#include "core/compiler.h"
-#include "core/pp.h"
 #include "core/rc.h"
-#include <stdbool.h>
-#include <stdio.h>
+#include "lazylog.h"
+#include <stdlib.h>
 
-enum logging_level
-{
-    LOGGING_NOTSET,
-    LOGGING_DEBUG,
-    LOGGING_INFO,
-    LOGGING_WARN,
-    LOGGING_ERROR,
-    LOGGING_FATAL
-};
-
-enum
-{
-    LOGGING_USER_DEFAULT_LEVEL = LOGGING_INFO,
-    LOGGING_SYS_DEFAULT_LEVEL = LOGGING_WARN,
-};
-
-#define LOGGING_DEFAULT_FILE "&2"
-#define LOGGING_DEFAULT_FILE "&2"
-
-#define debug(...) __logging_print(LOGGING_DEBUG, LOCAL, __VA_ARGS__)
-#define info(...) __logging_print(LOGGING_INFO, LOCAL, __VA_ARGS__)
-#define warn(...) __logging_print(LOGGING_WARN, LOCAL, __VA_ARGS__)
-#define error(...) __logging_print(LOGGING_ERROR, LOCAL, __VA_ARGS__)
-#define fatal(...) __logging_print(LOGGING_FATAL, LOCAL, __VA_ARGS__)
-
-void __logging_print(enum logging_level level, char const *ctx, char const *fmt,
-                     ...);
-
-void logging_set_prefix(char const *prefix);
-void logging_set_user_file(char const *user_file);
-void logging_set_user_level(enum logging_level user_level);
-void logging_set_sys_file(char const *sys_file);
-void logging_set_sys_level(enum logging_level sys_level);
-
-void logging_cleanup(void);
+#define debug(...) zlog_debug(__VA_ARGS__)
+#define info(...) zlog_info(__VA_ARGS__)
+#define warn(...) zlog_warn(__VA_ARGS__)
+#define error(...) zlog_error(__VA_ARGS__)
+#define fatal(...)                                                             \
+    do                                                                         \
+    {                                                                          \
+        zlog_fatal(__VA_ARGS__);                                               \
+        exit(1);                                                               \
+    } while (0)
 
 #define efail(...)                                                             \
     ({                                                                         \

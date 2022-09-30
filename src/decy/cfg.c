@@ -1,7 +1,7 @@
 #include "decy/cfg.h"
 #include "core/c23.h"
 #include "core/fmt.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "dotenv.h"
 #include "zc.h"
 #include <errno.h>

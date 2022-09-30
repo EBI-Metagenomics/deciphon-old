@@ -23,7 +23,7 @@
 #ifdef _DARWIN_C_SOURCE
 #undef _DARWIN_C_SOURCE
 #endif
-#define _DARWIN_C_SOURCE
+#define _DARWIN_C_SOURCE 1
 #include <fcntl.h>
 #include <sys/param.h>
 #endif

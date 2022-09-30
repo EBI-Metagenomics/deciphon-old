@@ -1,7 +1,8 @@
 #include "pressy/cmd.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "pressy/session.h"
 #include "pressy/strings.h"
+#include <stdio.h>
 
 #define CMD_MAP(X)                                                             \
     X(INVALID, invalid, "")                                                    \

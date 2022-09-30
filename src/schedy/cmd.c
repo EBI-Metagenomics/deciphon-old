@@ -1,7 +1,7 @@
 #include "schedy/cmd.h"
 #include "core/api.h"
 #include "core/file.h"
-#include "core/logging.h"
+#include "core/logy.h"
 #include "core/sched_dump.h"
 #include "schedy/strings.h"
 #include "xfile.h"
@@ -244,7 +244,7 @@ static char const *fn_scan_dl_seqs(struct cmd const *cmd)
     int rc = xfile_mkstemp(sizeof filepath, filepath);
     if (rc)
     {
-        eio(xfile_strerror(rc));
+        eio("%s", xfile_strerror(rc));
         return FAIL;
     }
     FILE *fp = fopen(filepath, "wb");
@@ -265,7 +265,7 @@ static char const *fn_scan_dl_seqs(struct cmd const *cmd)
     rc = xfile_move(cmd_get(cmd, 2), filepath);
     if (rc)
     {
-        eio(xfile_strerror(rc));
+        eio("%s", xfile_strerror(rc));
         return FAIL;
     }
     return cmd_get(cmd, 2);

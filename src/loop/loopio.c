@@ -1,5 +1,5 @@
 #include "loop/loopio.h"
-#include "core/logging.h"
+#include "core/logy.h"
 
 static void input_onclose(void *arg);
 static void input_onopen(bool ok, void *arg);
