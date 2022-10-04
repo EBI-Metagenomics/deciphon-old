@@ -5,6 +5,7 @@
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/pp.h"
+#include "core/str.h"
 #include "pressy/cmd.h"
 #include "pressy/session.h"
 #include <stdlib.h>
@@ -82,6 +83,7 @@ static void on_read_error(void *arg)
 static void on_read(char *line, void *arg)
 {
     UNUSED(arg);
+    if (str_all_spaces(line)) return;
     if (!cmd_parse(&cmd, line)) eparse("too many arguments");
     output_put(&output, (*cmd_fn(cmd.argv[0]))(&cmd));
 }

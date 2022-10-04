@@ -67,6 +67,7 @@ add_library(
   src/core/progress.c
   src/core/sched.c
   src/core/sched_dump.c
+  src/core/str.c
   src/core/to.c
   src/core/url.c
   src/core/xcurl.c
@@ -131,11 +132,10 @@ endif()
 add_executable(pressy src/pressy/pressy.c src/pressy/cmd.c src/pressy/session.c)
 target_link_libraries(pressy PUBLIC deciphon)
 
-# add_executable(scanny src/scanny/scanny.c src/scanny/cmd.c src/scanny/session.c)
-# target_link_libraries(scanny PUBLIC deciphon)
+# add_executable(scanny src/scanny/scanny.c src/scanny/cmd.c
+# src/scanny/session.c) target_link_libraries(scanny PUBLIC deciphon)
 #
 # add_executable(decy src/decy/decy.c src/decy/schedy.c src/decy/cfg.c)
 # target_link_libraries(decy PUBLIC deciphon)
 
-# enable_testing()
-# add_subdirectory(test)
+# enable_testing() add_subdirectory(test)

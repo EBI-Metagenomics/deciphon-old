@@ -1,5 +1,6 @@
 #include "pressy/session.h"
 #include "core/c23.h"
+#include "core/global.h"
 #include "core/logy.h"
 #include "core/progress.h"
 #include "db/press.h"
@@ -20,7 +21,6 @@ enum state
 
 static struct
 {
-    struct uv_loop_s *loop;
     char hmm[PATH_SIZE];
     char db[PATH_SIZE];
     atomic_bool cancel;
@@ -67,7 +67,7 @@ bool session_start(char const *hmm)
     self.db[strlen(self.db) - 1] = 'p';
 
     atomic_store(&self.cancel, false);
-    uv_queue_work(self.loop, &self.request, work, after_work);
+    uv_queue_work(global_loop(), &self.request, work, after_work);
 
     return true;
 }
