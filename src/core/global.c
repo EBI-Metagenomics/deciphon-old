@@ -1,6 +1,6 @@
-#include "global.h"
-#include "logy.h"
-#include "pp.h"
+#include "core/global.h"
+#include "core/logy.h"
+#include "core/pp.h"
 #include "uv.h"
 #include <stdlib.h>
 

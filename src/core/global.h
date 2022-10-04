@@ -1,7 +1,7 @@
-#ifndef PIPE_GLOBAL_H
-#define PIPE_GLOBAL_H
+#ifndef CORE_GLOBAL_H
+#define CORE_GLOBAL_H
 
-#include "callbacks.h"
+#include "loop/callbacks.h"
 
 struct uv_loop_s;
 
