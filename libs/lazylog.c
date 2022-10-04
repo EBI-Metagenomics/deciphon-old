@@ -1,20 +1,18 @@
 #include "lazylog.h"
 #include <stdarg.h>
 #include <stdatomic.h>
-#include <stdio.h>
-#include <string.h>
 #include <time.h>
 
-static struct
-{
-    FILE *fp;
-    char stamp[sizeof("24:00:00")];
-    enum zlog_lvl lvl;
-} self = {NULL, {0}, ZLOG_NOTSET};
+#define NANOPRINTF_IMPLEMENTATION 1
+#define NANOPRINTF_VISIBILITY_STATIC 1
+#include "nanoprintf.h"
 
+static enum zlog_lvl level = ZLOG_INFO;
+static char buffer[2048] = {0};
+static zlog_print_fn_t *print_cb = NULL;
+static void *user_arg = NULL;
 static const char *strings[] = {"NOTSET", "DEBUG", "INFO",
                                 "WARN",   "ERROR", "FATAL"};
-
 static atomic_flag flag = ATOMIC_FLAG_INIT;
 
 static inline void lock(void)
@@ -25,56 +23,46 @@ static inline void lock(void)
 
 static inline void unlock(void) { atomic_flag_clear(&flag); }
 
-bool zlog_setup(char const *sink, enum zlog_lvl lvl)
+void zlog_setup(zlog_print_fn_t *print_fn, void *arg, enum zlog_lvl lvl)
 {
-    if (!strcmp(sink, "&1"))
-    {
-        self.fp = fdopen(1, "w");
-    }
-    else if (!strcmp(sink, "&2"))
-    {
-        self.fp = fdopen(2, "w");
-    }
-    else if (!sink)
-    {
-        self.fp = fopen("/dev/null", "w");
-    }
-    else
-        self.fp = fopen(sink, "w");
-
-    self.lvl = lvl;
-    return !!self.fp;
+    level = lvl;
+    print_cb = print_fn;
+    user_arg = arg;
 }
-
-static void ensure_open_fp(void);
 
 void zlog_print(enum zlog_lvl lvl, char const *func, char const *file, int line,
                 char const *fmt, ...)
 {
     lock();
-    ensure_open_fp();
+    if (!print_cb) goto noop;
+
     time_t timer = time(NULL);
     struct tm *tm_info = localtime(&timer);
-    strftime(self.stamp, sizeof(self.stamp), "%H:%M:%S", tm_info);
 
-    if (lvl >= self.lvl)
+    char *p = buffer;
+    char *end = buffer + sizeof(buffer);
+
+    p += strftime(buffer, sizeof(buffer), "%H:%M:%S", tm_info);
+
+    if (lvl >= level)
     {
+        p += npf_snprintf(p, end - p, " | %-5s", strings[lvl]);
+        p += npf_snprintf(p, end - p, " | %s:%s:%d - ", func, file, line);
+
         va_list ap;
-        fprintf(self.fp, "%s | %-5s | %s:%s:%d - ", self.stamp, strings[lvl],
-                func, file, line);
         va_start(ap, fmt);
-        vfprintf(self.fp, fmt, ap);
-        fprintf(self.fp, "\n");
-        fflush(self.fp);
+        p += npf_vsnprintf(p, end - p, fmt, ap);
         va_end(ap);
-    }
-    unlock();
-}
 
-static void ensure_open_fp(void)
-{
-    if (!self.fp)
-    {
-        self.fp = fdopen(2, "w");
+        p += npf_snprintf(p, end - p, "%c", '\n');
+
+        if (p >= end) p = end - 1;
     }
+
+    if (p + 1 == end) *(p - 1) = '\n';
+    *p = '\0';
+    (*print_cb)(buffer, user_arg);
+
+noop:
+    unlock();
 }
