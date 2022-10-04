@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 
     looper_init(&decy.looper, &onlooper_term, &decy);
 
-    schedy_init(decy.looper.loop, onschedy_term, nullptr);
+    schedy_init(&decy.looper.loop, onschedy_term, nullptr);
     schedy_setup(cfg_uri(), cfg_key(), &onschedy_connection);
 
     looper_run(&decy.looper);

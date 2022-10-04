@@ -38,7 +38,7 @@ static struct
     enum state state;
     struct uv_work_s request;
     struct progress progress;
-} session;
+} self;
 
 struct uv_timer_s monitor_timer = {0};
 atomic_bool nomonitor = true;
@@ -62,52 +62,52 @@ static void monitor_stop(void);
 
 void session_init(struct uv_loop_s *loop)
 {
-    session.loop = loop;
-    session.nthreads = 1;
-    session.cancel = false;
-    session.state = IDLE;
+    self.loop = loop;
+    self.nthreads = 1;
+    self.cancel = false;
+    self.state = IDLE;
     errnum = RC_OK;
     errmsg[0] = '\0';
-    progress_init(&session.progress, 0);
+    progress_init(&self.progress, 0);
 }
 
-void session_set_nthreads(int num_threads) { session.nthreads = num_threads; }
+void session_set_nthreads(int num_threads) { self.nthreads = num_threads; }
 
-bool session_is_running(void) { return session.state == RUN; }
+bool session_is_running(void) { return self.state == RUN; }
 
-bool session_is_done(void) { return session.state == DONE; }
+bool session_is_done(void) { return self.state == DONE; }
 
 bool session_start(char const *seqs, char const *db, char const *prod,
                    bool multi_hits, bool hmmer3_compat)
 {
     errnum = RC_OK;
     errmsg[0] = '\0';
-    session.cancel = false;
-    session.state = RUN;
+    self.cancel = false;
+    self.state = RUN;
 
-    if (zc_strlcpy(session.seqs, seqs, PATH_SIZE) >= PATH_SIZE)
+    if (zc_strlcpy(self.seqs, seqs, PATH_SIZE) >= PATH_SIZE)
     {
-        session.state = FAIL;
+        self.state = FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
-    if (zc_strlcpy(session.db, db, PATH_SIZE) >= PATH_SIZE)
+    if (zc_strlcpy(self.db, db, PATH_SIZE) >= PATH_SIZE)
     {
-        session.state = FAIL;
+        self.state = FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
-    if (zc_strlcpy(session.prod, prod, PATH_SIZE) >= PATH_SIZE)
+    if (zc_strlcpy(self.prod, prod, PATH_SIZE) >= PATH_SIZE)
     {
-        session.state = FAIL;
+        self.state = FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
-    struct scan_cfg cfg = {session.nthreads, 10., multi_hits, hmmer3_compat};
+    struct scan_cfg cfg = {self.nthreads, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 
     monitor_start();
-    uv_queue_work(session.loop, &session.request, work, after_work);
+    uv_queue_work(self.loop, &self.request, work, after_work);
 
     return true;
 }
@@ -122,9 +122,9 @@ int session_progress(void)
 bool session_cancel(void)
 {
     info("Cancelling...");
-    if (atomic_load(&session.cancel))
+    if (atomic_load(&self.cancel))
     {
-        int rc = uv_cancel((struct uv_req_s *)&session.request);
+        int rc = uv_cancel((struct uv_req_s *)&self.request);
         if (rc)
         {
             warn("%s", uv_strerror(rc));
@@ -132,17 +132,17 @@ bool session_cancel(void)
         }
         return true;
     }
-    atomic_store(&session.cancel, true);
+    atomic_store(&self.cancel, true);
     return true;
 }
 
-char const *session_state_string(void) { return state_string[session.state]; }
+char const *session_state_string(void) { return state_string[self.state]; }
 
 static void after_work(struct uv_work_s *req, int status)
 {
     (void)req;
-    if (status == UV_ECANCELED) session.state = CANCEL;
-    atomic_store(&session.cancel, false);
+    if (status == UV_ECANCELED) self.state = CANCEL;
+    atomic_store(&self.cancel, false);
     atomic_store_explicit(&nomonitor, true, memory_order_release);
     monitor_stop();
 }
@@ -152,50 +152,50 @@ static void work(struct uv_work_s *req)
     (void)req;
     info("Preparing to scan");
 
-    errnum = scan_setup(session.db, session.seqs);
+    errnum = scan_setup(self.db, self.seqs);
     if (errnum)
     {
         errfmt(errmsg, "%s", scan_errmsg());
-        session.state = FAIL;
+        self.state = FAIL;
         return;
     }
     atomic_store_explicit(&nomonitor, false, memory_order_release);
 
-    if (atomic_load(&session.cancel))
+    if (atomic_load(&self.cancel))
     {
         info("Cancelled");
-        session.state = CANCEL;
+        self.state = CANCEL;
         return;
     }
 
     if ((errnum = scan_run()))
     {
         errfmt(errmsg, "%s", scan_errmsg());
-        session.state = FAIL;
+        self.state = FAIL;
         return;
     }
 
-    if (atomic_load(&session.cancel))
+    if (atomic_load(&self.cancel))
     {
         info("Cancelled");
-        session.state = CANCEL;
+        self.state = CANCEL;
         return;
     }
 
-    int r = xfile_move(session.prod, scan_prod_filepath());
+    int r = xfile_move(self.prod, scan_prod_filepath());
     if (r)
     {
         errnum = eio("%s", errfmt(errmsg, "%s", xfile_strerror(r)));
-        session.state = FAIL;
+        self.state = FAIL;
         return;
     }
 
-    session.state = DONE;
+    self.state = DONE;
 }
 
 static void monitor_start(void)
 {
-    if (uv_timer_init(session.loop, &monitor_timer)) efail("uv_timer_init");
+    if (uv_timer_init(self.loop, &monitor_timer)) efail("uv_timer_init");
     if (uv_timer_start(&monitor_timer, &monitor_progress_cb, 1000, 1000))
         efail("uv_timer_start");
 }
@@ -221,5 +221,5 @@ static void monitor_progress_cb(struct uv_timer_s *req)
 static void monitor_stop(void)
 {
     uv_timer_stop(&monitor_timer);
-    if (session.state == DONE) info("Scanned %d%%", 100);
+    if (self.state == DONE) info("Scanned %d%%", 100);
 }

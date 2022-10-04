@@ -1,5 +1,5 @@
-#include "reader.h"
-#include "logy.h"
+#include "loop/reader.h"
+#include "core/logy.h"
 #include "uv.h"
 #include <assert.h>
 #include <stdlib.h>

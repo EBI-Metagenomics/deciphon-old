@@ -28,7 +28,7 @@ static struct
     struct db_press db_press;
     struct uv_work_s request;
     struct progress progress;
-} session;
+} self;
 
 static char const *state_string[] = {[IDLE] = "IDLE",
                                      [RUN] = "RUN",
@@ -39,48 +39,47 @@ static char const *state_string[] = {[IDLE] = "IDLE",
 static void after_work(struct uv_work_s *, int status);
 static void work(struct uv_work_s *);
 
-void session_init(struct uv_loop_s *loop)
+void session_init(void)
 {
-    session.loop = loop;
-    session.cancel = false;
-    atomic_store(&session.cancel, false);
-    session.state = IDLE;
-    progress_init(&session.progress, 0);
+    self.cancel = false;
+    atomic_store(&self.cancel, false);
+    self.state = IDLE;
+    progress_init(&self.progress, 0);
 }
 
-bool session_is_running(void) { return session.state == RUN; }
+bool session_is_running(void) { return self.state == RUN; }
 
-bool session_is_done(void) { return session.state == DONE; }
+bool session_is_done(void) { return self.state == DONE; }
 
 bool session_start(char const *hmm)
 {
-    if (zc_strlcpy(session.hmm, hmm, PATH_SIZE) >= PATH_SIZE)
+    if (zc_strlcpy(self.hmm, hmm, PATH_SIZE) >= PATH_SIZE)
     {
         enomem("file path is too long");
         return false;
     }
 
-    session.state = RUN;
+    self.state = RUN;
 
-    strcpy(session.db, session.hmm);
-    session.db[strlen(session.db) - 3] = 'd';
-    session.db[strlen(session.db) - 2] = 'c';
-    session.db[strlen(session.db) - 1] = 'p';
+    strcpy(self.db, self.hmm);
+    self.db[strlen(self.db) - 3] = 'd';
+    self.db[strlen(self.db) - 2] = 'c';
+    self.db[strlen(self.db) - 1] = 'p';
 
-    atomic_store(&session.cancel, false);
-    uv_queue_work(session.loop, &session.request, work, after_work);
+    atomic_store(&self.cancel, false);
+    uv_queue_work(self.loop, &self.request, work, after_work);
 
     return true;
 }
 
-unsigned session_progress(void) { return progress_percent(&session.progress); }
+unsigned session_progress(void) { return progress_percent(&self.progress); }
 
 bool session_cancel(void)
 {
     info("Cancelling...");
-    if (atomic_load(&session.cancel))
+    if (atomic_load(&self.cancel))
     {
-        int rc = uv_cancel((struct uv_req_s *)&session.request);
+        int rc = uv_cancel((struct uv_req_s *)&self.request);
         if (rc)
         {
             warn("%s", uv_strerror(rc));
@@ -88,59 +87,58 @@ bool session_cancel(void)
         }
         return true;
     }
-    atomic_store(&session.cancel, true);
+    atomic_store(&self.cancel, true);
     return true;
 }
 
-char const *session_state_string(void) { return state_string[session.state]; }
+char const *session_state_string(void) { return state_string[self.state]; }
 
 static void after_work(struct uv_work_s *req, int status)
 {
     (void)req;
-    if (status == UV_ECANCELED) session.state = CANCEL;
-    atomic_store(&session.cancel, false);
+    if (status == UV_ECANCELED) self.state = CANCEL;
+    atomic_store(&self.cancel, false);
 }
 
 static void work(struct uv_work_s *req)
 {
     (void)req;
     info("Preparing to press...");
-    enum rc rc = db_press_init(&session.db_press, session.hmm, session.db);
+    enum rc rc = db_press_init(&self.db_press, self.hmm, self.db);
     if (rc)
     {
-        session.state = FAIL;
+        self.state = FAIL;
         return;
     }
 
-    progress_init(&session.progress, (long)db_press_nsteps(&session.db_press));
-    while (!(rc = db_press_step(&session.db_press)))
+    progress_init(&self.progress, (long)db_press_nsteps(&self.db_press));
+    while (!(rc = db_press_step(&self.db_press)))
     {
-        if (progress_consume(&session.progress, 1))
+        if (progress_consume(&self.progress, 1))
         {
-            if (atomic_load(&session.cancel))
+            if (atomic_load(&self.cancel))
             {
                 info("Cancelled");
-                session.state = CANCEL;
-                db_press_cleanup(&session.db_press, false);
+                self.state = CANCEL;
+                db_press_cleanup(&self.db_press, false);
                 return;
             }
-            info("Pressed %d%% of profiles",
-                 progress_percent(&session.progress));
+            info("Pressed %d%% of profiles", progress_percent(&self.progress));
         }
     }
 
     if (rc != RC_END)
     {
-        session.state = FAIL;
-        db_press_cleanup(&session.db_press, false);
+        self.state = FAIL;
+        db_press_cleanup(&self.db_press, false);
         return;
     }
 
-    if ((rc = db_press_cleanup(&session.db_press, true)))
+    if ((rc = db_press_cleanup(&self.db_press, true)))
     {
-        session.state = FAIL;
+        self.state = FAIL;
         return;
     }
-    session.state = DONE;
+    self.state = DONE;
     info("Pressing has finished");
 }

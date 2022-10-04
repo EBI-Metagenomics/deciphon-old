@@ -60,8 +60,10 @@ add_library(
   src/core/expect.c
   src/core/file.c
   src/core/fmt.c
+  src/core/global.c
   src/core/http.c
   src/core/mempool.c
+  src/core/pidfile.c
   src/core/progress.c
   src/core/sched.c
   src/core/sched_dump.c
@@ -69,18 +71,20 @@ add_library(
   src/core/url.c
   src/core/xcurl.c
   src/core/xcurl_debug.c
+  src/core/xmem.c
   src/db/press.c
   src/db/profile_reader.c
   src/db/protein_reader.c
   src/db/protein_writer.c
   src/db/reader.c
   src/db/writer.c
-  src/loop/fio.c
-  src/loop/ipc.c
-  src/loop/looper.c
-  src/loop/loopio.c
+  src/loop/input.c
+  src/loop/output.c
   src/loop/reader.c
+  src/loop/stdpipe.c
   src/loop/writer.c
+  src/loop/writer_req.c
+  src/loop/writer_req_pool.c
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c
@@ -121,17 +125,17 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-add_executable(schedy src/schedy/schedy.c src/schedy/cmd.c)
-target_link_libraries(schedy PUBLIC deciphon)
+# add_executable(schedy src/schedy/schedy.c src/schedy/cmd.c)
+# target_link_libraries(schedy PUBLIC deciphon)
 
 add_executable(pressy src/pressy/pressy.c src/pressy/cmd.c src/pressy/session.c)
 target_link_libraries(pressy PUBLIC deciphon)
 
-add_executable(scanny src/scanny/scanny.c src/scanny/cmd.c src/scanny/session.c)
-target_link_libraries(scanny PUBLIC deciphon)
+# add_executable(scanny src/scanny/scanny.c src/scanny/cmd.c src/scanny/session.c)
+# target_link_libraries(scanny PUBLIC deciphon)
+#
+# add_executable(decy src/decy/decy.c src/decy/schedy.c src/decy/cfg.c)
+# target_link_libraries(decy PUBLIC deciphon)
 
-add_executable(decy src/decy/decy.c src/decy/schedy.c src/decy/cfg.c)
-target_link_libraries(decy PUBLIC deciphon)
-
-enable_testing()
-add_subdirectory(test)
+# enable_testing()
+# add_subdirectory(test)

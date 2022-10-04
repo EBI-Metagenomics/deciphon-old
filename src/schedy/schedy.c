@@ -2,9 +2,16 @@
 #include "argless.h"
 #include "core/daemonize.h"
 #include "core/logy.h"
+#include "core/pidfile.h"
 #include "lazylog.h"
 #include "schedy/cmd.h"
 #include <stdlib.h>
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdnoreturn.h>
+#include <unistd.h>
 
 struct schedy schedy = {0};
 static struct cmd cmd = {0};
@@ -36,13 +43,15 @@ int main(int argc, char *argv[])
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "daemon")) daemonize();
+    if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
 
     zlog_setup(argl_get(&argl, "logstream"),
                argl_get(&argl, "loglevel")[0] - '0');
 
+    info("starting %s", argl_program(&argl));
     looper_init(&schedy.looper, &onlooper_term, &schedy);
 
-    loopio_init(&schedy.loopio, schedy.looper.loop, &onread, &oneof, &onerror,
+    loopio_init(&schedy.loopio, &schedy.looper.loop, &onread, &oneof, &onerror,
                 &onterm, &schedy);
     loopio_open(&schedy.loopio, argl_get(&argl, "input"),
                 argl_get(&argl, "output"));
@@ -57,12 +66,11 @@ static void onlooper_term(void *arg)
 {
     struct schedy *schedy = arg;
     loopio_terminate(&schedy->loopio);
-    cmd_parse(&cmd, "cancel");
-    (*cmd_fn(cmd.argv[0]))(&cmd);
 }
 
 static void oneof(void *arg)
 {
+    info("returned end of file");
     struct schedy *schedy = arg;
     looper_terminate(&schedy->looper);
 }

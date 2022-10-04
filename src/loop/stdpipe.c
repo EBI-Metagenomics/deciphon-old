@@ -1,6 +1,6 @@
-#include "stdpipe.h"
-#include "global.h"
-#include "logy.h"
+#include "loop/stdpipe.h"
+#include "core/global.h"
+#include "core/logy.h"
 #include <assert.h>
 
 void stdpipe_init(struct stdpipe *pipe, struct uv_loop_s *loop)

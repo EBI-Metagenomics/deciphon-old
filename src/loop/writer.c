@@ -1,9 +1,9 @@
-#include "writer.h"
-#include "logy.h"
+#include "loop/writer.h"
+#include "core/logy.h"
+#include "core/xmem.h"
+#include "loop/writer_req.h"
+#include "loop/writer_req_pool.h"
 #include "uv.h"
-#include "writer_req.h"
-#include "writer_req_pool.h"
-#include "xmem.h"
 
 void writer_init(struct writer *writer, struct uv_pipe_s *pipe,
                  on_error_fn_t *onerror, void *arg)

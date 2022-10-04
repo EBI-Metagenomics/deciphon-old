@@ -1,5 +1,5 @@
-#include "writer_req.h"
-#include "xmem.h"
+#include "loop/writer_req.h"
+#include "core/xmem.h"
 #include <stdlib.h>
 #include <string.h>
 

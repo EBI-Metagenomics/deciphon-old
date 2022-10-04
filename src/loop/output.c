@@ -1,6 +1,6 @@
-#include "output.h"
-#include "global.h"
-#include "logy.h"
+#include "loop/output.h"
+#include "core/global.h"
+#include "core/logy.h"
 
 void output_init(struct output *o, int fd)
 {

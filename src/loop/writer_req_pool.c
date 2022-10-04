@@ -1,6 +1,6 @@
-#include "writer_req_pool.h"
-#include "logy.h"
-#include "writer_req.h"
+#include "loop/writer_req_pool.h"
+#include "core/logy.h"
+#include "loop/writer_req.h"
 #include <assert.h>
 #include <stdbool.h>
 

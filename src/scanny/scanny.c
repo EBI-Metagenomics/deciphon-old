@@ -40,14 +40,15 @@ int main(int argc, char *argv[])
     zlog_setup(argl_get(&argl, "logstream"),
                argl_get(&argl, "loglevel")[0] - '0');
 
+    info("starting %s", argl_program(&argl));
     looper_init(&scanny.looper, &onlooper_term, &scanny);
 
-    loopio_init(&scanny.loopio, scanny.looper.loop, &onread, &oneof, &onerror,
+    loopio_init(&scanny.loopio, &scanny.looper.loop, &onread, &oneof, &onerror,
                 &onterm, &scanny);
     loopio_open(&scanny.loopio, argl_get(&argl, "input"),
                 argl_get(&argl, "output"));
 
-    session_init(scanny.looper.loop);
+    session_init(&scanny.looper.loop);
     looper_run(&scanny.looper);
     looper_cleanup(&scanny.looper);
 
@@ -64,6 +65,7 @@ static void onlooper_term(void *arg)
 
 static void oneof(void *arg)
 {
+    info("returned end of file");
     struct scanny *scanny = arg;
     looper_terminate(&scanny->looper);
 }

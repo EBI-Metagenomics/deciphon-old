@@ -3,9 +3,7 @@
 
 #include <stdbool.h>
 
-struct uv_loop_s;
-
-void session_init(struct uv_loop_s *loop);
+void session_init(void);
 bool session_is_running(void);
 bool session_is_done(void);
 bool session_start(char const *hmm_filepath);

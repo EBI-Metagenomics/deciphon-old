@@ -1,15 +1,10 @@
 #ifndef PRESSY_PRESSY_H
 #define PRESSY_PRESSY_H
 
-#include "loop/looper.h"
-#include "loop/loopio.h"
+#include "loop/input.h"
+#include "loop/output.h"
 
-struct pressy
-{
-    struct looper looper;
-    struct loopio loopio;
-};
-
-extern struct pressy pressy;
+extern struct input input;
+extern struct output output;
 
 #endif

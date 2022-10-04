@@ -1,6 +1,6 @@
-#include "input.h"
+#include "loop/input.h"
 #include "core/global.h"
-#include "logy.h"
+#include "core/logy.h"
 
 void input_init(struct input *i, int fd)
 {
