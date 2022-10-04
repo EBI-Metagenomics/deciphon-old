@@ -1,5 +1,5 @@
-#ifndef PIPE_WRITER_REQ_POOL
-#define PIPE_WRITER_REQ_POOL
+#ifndef LOOP_WRITER_REQ_POOL
+#define LOOP_WRITER_REQ_POOL
 
 struct writer;
 struct writer_req;

@@ -1,7 +1,7 @@
-#ifndef PIPE_WRITER_H
-#define PIPE_WRITER_H
+#ifndef LOOP_WRITER_H
+#define LOOP_WRITER_H
 
-#include "callbacks.h"
+#include "loop/callbacks.h"
 #include "uv.h"
 #include <stdbool.h>
 

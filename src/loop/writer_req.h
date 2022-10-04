@@ -1,5 +1,5 @@
-#ifndef PIPE_WRITER_REQ
-#define PIPE_WRITER_REQ
+#ifndef LOOP_WRITER_REQ
+#define LOOP_WRITER_REQ
 
 #include "uv.h"
 
