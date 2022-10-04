@@ -29,10 +29,12 @@ void writer_put(struct writer *writer, char const *string)
 {
     struct writer_req *req = writer_req_pool_pop(writer);
     writer_req_set_string(req, string);
-    uv_buf_t buf = uv_buf_init(req->data, req->size);
+    static char newline[] = "\n";
+    uv_buf_t bufs[2] = {uv_buf_init(req->data, req->size - 1),
+                        uv_buf_init(newline, 1)};
 
     struct uv_stream_s *stream = (struct uv_stream_s *)writer->pipe;
-    int rc = uv_write(&req->uvreq, stream, &buf, 1, &write_fwd);
+    int rc = uv_write(&req->uvreq, stream, bufs, 2, &write_fwd);
     if (rc)
     {
         error("failed to write: %s", uv_strerror(rc));

@@ -1,26 +1,22 @@
 #include "schedy/schedy.h"
 #include "argless.h"
+#include "core/c23.h"
 #include "core/daemonize.h"
+#include "core/global.h"
 #include "core/logy.h"
 #include "core/pidfile.h"
+#include "core/pp.h"
+#include "core/str.h"
 #include "lazylog.h"
 #include "schedy/cmd.h"
 #include <stdlib.h>
 
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdnoreturn.h>
-#include <unistd.h>
-
-struct schedy schedy = {0};
+struct input input = {0};
+struct output output = {0};
 static struct cmd cmd = {0};
 
 static struct argl_option const options[] = {
-    {"input", 'i', ARGL_TEXT("INPUT", "&1"), "Input stream."},
-    {"output", 'o', ARGL_TEXT("OUTPUT", "&2"), "Output stream."},
-    {"logstream", 's', ARGL_TEXT("LOGSTREAM", "&3"), "Logging stream."},
-    {"loglevel", 'l', ARGL_TEXT("LOGLEVEL", "2"), "Logging level."},
+    {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
     {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
     {"daemon", 'D', ARGL_FLAG(), "Daemonize this program."},
     ARGL_DEFAULT,
@@ -32,65 +28,79 @@ static struct argl argl = {.options = options,
                            .doc = "Schedy program.",
                            .version = "1.0.0"};
 
-static void onlooper_term(void *);
-static void oneof(void *);
-static void onerror(void *);
-static void onread(char *line, void *);
-static void onterm(void *);
+static void on_eof(void *arg);
+static void on_read_error(void *arg);
+static void on_read(char *line, void *);
+static void on_write_error(void *arg);
+static void on_term(void);
+
+static void myprint(char const *string, void *arg) { fputs(string, arg); }
 
 int main(int argc, char *argv[])
 {
+    global_init(on_term, argc, argv);
+
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    if (argl_has(&argl, "daemon")) daemonize();
+    if (argl_has(&argl, "daemon")) daemonize(true, true, false, true);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
 
-    zlog_setup(argl_get(&argl, "logstream"),
-               argl_get(&argl, "loglevel")[0] - '0');
+    zlog_setup(myprint, stderr, argl_get(&argl, "loglevel")[0] - '0');
 
     info("starting %s", argl_program(&argl));
-    looper_init(&schedy.looper, &onlooper_term, &schedy);
 
-    loopio_init(&schedy.loopio, &schedy.looper.loop, &onread, &oneof, &onerror,
-                &onterm, &schedy);
-    loopio_open(&schedy.loopio, argl_get(&argl, "input"),
-                argl_get(&argl, "output"));
+    info("starting %s", argl_program(&argl));
+    input_init(&input, STDIN_FILENO);
+    input_cb(&input)->on_eof = &on_eof;
+    input_cb(&input)->on_error = &on_read_error;
+    input_cb(&input)->on_read = &on_read;
+    input_cb(&input)->arg = NULL;
+    input_start(&input);
 
-    looper_run(&schedy.looper);
-    looper_cleanup(&schedy.looper);
+    output_init(&output, STDOUT_FILENO);
+    output_cb(&output)->on_error = &on_write_error;
+    output_cb(&output)->arg = NULL;
+    output_start(&output);
+
+    global_run();
+    global_cleanup();
 
     return EXIT_SUCCESS;
 }
 
-static void onlooper_term(void *arg)
+static void on_eof(void *arg)
 {
-    struct schedy *schedy = arg;
-    loopio_terminate(&schedy->loopio);
+    UNUSED(arg);
+    warn("%s", __FUNCTION__);
+    global_terminate();
 }
 
-static void oneof(void *arg)
+static void on_read_error(void *arg)
 {
-    info("returned end of file");
-    struct schedy *schedy = arg;
-    looper_terminate(&schedy->looper);
+    UNUSED(arg);
+    warn("%s", __FUNCTION__);
+    global_terminate();
 }
 
-static void onerror(void *arg)
+static void on_read(char *line, void *arg)
 {
-    struct schedy *schedy = arg;
-    looper_terminate(&schedy->looper);
-}
-
-static void onread(char *line, void *arg)
-{
-    struct schedy *schedy = arg;
+    UNUSED(arg);
+    if (str_all_spaces(line)) return;
     if (!cmd_parse(&cmd, line)) eparse("too many arguments");
-    char const *msg = (*cmd_fn(cmd.argv[0]))(&cmd);
-    loopio_put(&schedy->loopio, msg);
+    output_put(&output, (*cmd_fn(cmd.argv[0]))(&cmd));
 }
 
-static void onterm(void *arg)
+static void on_write_error(void *arg)
 {
-    struct schedy *schedy = arg;
-    looper_terminate(&schedy->looper);
+    UNUSED(arg);
+    warn("%s", __FUNCTION__);
+    global_terminate();
+}
+
+static void on_term(void)
+{
+    cmd_parse(&cmd, "cancel");
+    (*cmd_fn(cmd.argv[0]))(&cmd);
+    input_close(&input);
+    output_close(&output);
 }

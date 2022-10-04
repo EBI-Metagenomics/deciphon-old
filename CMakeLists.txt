@@ -126,8 +126,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-# add_executable(schedy src/schedy/schedy.c src/schedy/cmd.c)
-# target_link_libraries(schedy PUBLIC deciphon)
+add_executable(schedy src/schedy/schedy.c src/schedy/cmd.c)
+target_link_libraries(schedy PUBLIC deciphon)
 
 add_executable(pressy src/pressy/pressy.c src/pressy/cmd.c src/pressy/session.c)
 target_link_libraries(pressy PUBLIC deciphon)
@@ -138,4 +138,5 @@ target_link_libraries(pressy PUBLIC deciphon)
 # add_executable(decy src/decy/decy.c src/decy/schedy.c src/decy/cfg.c)
 # target_link_libraries(decy PUBLIC deciphon)
 
-# enable_testing() add_subdirectory(test)
+enable_testing()
+add_subdirectory(test)

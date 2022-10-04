@@ -1,13 +1,10 @@
 #ifndef SCHEDY_SCHEDY_H
 #define SCHEDY_SCHEDY_H
 
-#include "loop/looper.h"
-#include "loop/loopio.h"
+#include "loop/input.h"
+#include "loop/output.h"
 
-struct schedy
-{
-    struct looper looper;
-    struct loopio loopio;
-};
+extern struct input input;
+extern struct output output;
 
 #endif
