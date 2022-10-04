@@ -25,4 +25,23 @@
 #define MEMBER_SIZE(var, member) sizeof(__MEMBER_REF((var), member))
 #define ARRAY_SIZE_OF(var, member) ARRAY_SIZE(__MEMBER_REF((var), member))
 
+#define PASTE(x, y) PASTE_(x, y)
+#define PASTE_(x, y) x##y
+
+#define UNUSED(...) UNUSED_n(PP_NARG(__VA_ARGS__), __VA_ARGS__)
+#define UNUSED_n(N, ...) PASTE(UNUSED_, N)(__VA_ARGS__)
+#define UNUSED_1(a) (void)(a)
+#define UNUSED_2(a, b)                                                         \
+    (void)(a);                                                                 \
+    (void)b
+#define UNUSED_3(a, b, c)                                                      \
+    (void)(a);                                                                 \
+    (void)b;                                                                   \
+    (void)c
+#define UNUSED_4(a, b, c, d)                                                   \
+    (void)(a);                                                                 \
+    (void)b;                                                                   \
+    (void)c;                                                                   \
+    (void)d
+
 #endif
