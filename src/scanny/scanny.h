@@ -1,15 +1,10 @@
 #ifndef SCANNY_SCANNY_H
 #define SCANNY_SCANNY_H
 
-#include "loop/looper.h"
-#include "loop/loopio.h"
+#include "loop/input.h"
+#include "loop/output.h"
 
-struct scanny
-{
-    struct looper looper;
-    struct loopio loopio;
-};
-
-extern struct scanny scanny;
+extern struct input input;
+extern struct output output;
 
 #endif

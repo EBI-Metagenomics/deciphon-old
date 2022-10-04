@@ -1,5 +1,6 @@
 #include "scanny/session.h"
 #include "core/errmsg.h"
+#include "core/global.h"
 #include "core/limits.h"
 #include "core/logy.h"
 #include "core/progress.h"
@@ -26,7 +27,6 @@ enum state
 
 static struct
 {
-    struct uv_loop_s *loop;
     char seqs[PATH_SIZE];
     char db[PATH_SIZE];
     char prod[PATH_SIZE];
@@ -60,9 +60,8 @@ static struct progress const *monitor_progress(void);
 static void monitor_progress_cb(struct uv_timer_s *);
 static void monitor_stop(void);
 
-void session_init(struct uv_loop_s *loop)
+void session_init(void)
 {
-    self.loop = loop;
     self.nthreads = 1;
     self.cancel = false;
     self.state = IDLE;
@@ -107,7 +106,7 @@ bool session_start(char const *seqs, char const *db, char const *prod,
     scan_init(cfg);
 
     monitor_start();
-    uv_queue_work(self.loop, &self.request, work, after_work);
+    uv_queue_work(global_loop(), &self.request, work, after_work);
 
     return true;
 }
@@ -195,7 +194,7 @@ static void work(struct uv_work_s *req)
 
 static void monitor_start(void)
 {
-    if (uv_timer_init(self.loop, &monitor_timer)) efail("uv_timer_init");
+    if (uv_timer_init(global_loop(), &monitor_timer)) efail("uv_timer_init");
     if (uv_timer_start(&monitor_timer, &monitor_progress_cb, 1000, 1000))
         efail("uv_timer_start");
 }
