@@ -1,13 +1,10 @@
-#ifndef LOOP_READER_H
-#define LOOP_READER_H
+#ifndef PIPE_READER_H
+#define PIPE_READER_H
 
-#include "uv.h"
+#include "callbacks.h"
 #include <stdbool.h>
 
-typedef void reader_oneof_fn_t(void *arg);
-typedef void reader_onerror_fn_t(void *arg);
-typedef void reader_onread_fn_t(char *line, void *arg);
-typedef void reader_onclose_fn_t(void *arg);
+struct uv_pipe_s;
 
 enum
 {
@@ -17,16 +14,15 @@ enum
 
 struct reader
 {
-    struct uv_loop_s *loop;
-    struct uv_pipe_s pipe;
+    struct uv_pipe_s *pipe;
 
-    reader_oneof_fn_t *oneof_cb;
-    reader_onerror_fn_t *onerror_cb;
-    reader_onread_fn_t *onread_cb;
-    reader_onclose_fn_t *onclose_cb;
-    void *arg;
-    bool closed;
-    bool nostart_reading;
+    struct
+    {
+        on_eof_fn_t *oneof;
+        on_error_fn_t *onerror;
+        on_read_fn_t *onread;
+        void *arg;
+    } cb;
 
     char *pos;
     char *end;
@@ -34,13 +30,9 @@ struct reader
     char mem[READER_LINE_SIZE];
 };
 
-void reader_init(struct reader *, struct uv_loop_s *, int ipc,
-                 reader_oneof_fn_t *, reader_onerror_fn_t *,
-                 reader_onread_fn_t *, reader_onclose_fn_t *, void *arg);
-void reader_fopen(struct reader *, int fd);
+void reader_init(struct reader *, struct uv_pipe_s *, on_eof_fn_t *,
+                 on_error_fn_t *, on_read_fn_t *, void *arg);
 void reader_start(struct reader *);
-struct uv_pipe_s *reader_pipe(struct reader *);
-void reader_close(struct reader *);
-bool reader_isclosed(struct reader const *);
+void reader_stop(struct reader *);
 
 #endif

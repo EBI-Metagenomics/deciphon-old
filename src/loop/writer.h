@@ -1,28 +1,26 @@
-#ifndef LOOP_WRITER_H
-#define LOOP_WRITER_H
+#ifndef PIPE_WRITER_H
+#define PIPE_WRITER_H
 
+#include "callbacks.h"
 #include "uv.h"
 #include <stdbool.h>
 
-typedef void writer_onerror_fn_t(void *arg);
-typedef void writer_onclose_fn_t(void *arg);
+struct uv_pipe_s;
 
 struct writer
 {
-    struct uv_loop_s *loop;
-    struct uv_pipe_s pipe;
-    writer_onclose_fn_t *onerror_cb;
-    writer_onclose_fn_t *onclose_cb;
-    void *arg;
-    bool closed;
+    struct uv_pipe_s *pipe;
+
+    struct
+    {
+        on_error_fn_t *onerror;
+        void *arg;
+    } cb;
 };
 
-void writer_init(struct writer *, struct uv_loop_s *, int ipc,
-                 writer_onerror_fn_t *, writer_onclose_fn_t *, void *arg);
-void writer_fopen(struct writer *, int fd);
-void writer_put(struct writer *, char const *msg);
-struct uv_pipe_s *writer_pipe(struct writer *);
-void writer_close(struct writer *);
-bool writer_isclosed(struct writer const *);
+void writer_init(struct writer *, struct uv_pipe_s *, on_error_fn_t *,
+                 void *arg);
+void writer_try_put(struct writer *, char const *string);
+void writer_put(struct writer *, char const *string);
 
 #endif

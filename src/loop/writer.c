@@ -1,89 +1,53 @@
-#include "loop/writer.h"
-#include "core/logy.h"
+#include "writer.h"
+#include "logy.h"
 #include "uv.h"
-#include <assert.h>
-#include <stdbool.h>
-#include <stdlib.h>
+#include "writer_req.h"
+#include "writer_req_pool.h"
+#include "xmem.h"
 
-struct request
+void writer_init(struct writer *writer, struct uv_pipe_s *pipe,
+                 on_error_fn_t *onerror, void *arg)
 {
-    struct writer *writer;
-    struct uv_write_s req;
-    char const *msg;
-};
+    writer->pipe = pipe;
+    writer->pipe->data = writer;
 
-void writer_init(struct writer *writer, struct uv_loop_s *loop, int ipc,
-                 writer_onerror_fn_t *onerror_cb,
-                 writer_onclose_fn_t *onclose_cb, void *arg)
-{
-    writer->loop = loop;
-    writer->onerror_cb = onerror_cb;
-    writer->onclose_cb = onclose_cb;
-    writer->arg = arg;
-    writer->closed = false;
-    uv_pipe_init(writer->loop, &writer->pipe, ipc);
-    ((struct uv_handle_s *)(&writer->pipe))->data = writer;
-    ((struct uv_stream_s *)(&writer->pipe))->data = writer;
+    writer->cb.onerror = onerror;
+    writer->cb.arg = arg;
 }
 
-void writer_fopen(struct writer *writer, int fd)
+static void write_fwd(struct uv_write_s *write, int status);
+
+void writer_try_put(struct writer *writer, char const *string)
 {
-    int rc = uv_pipe_open(&writer->pipe, fd);
-    if (rc) fatal("%s", uv_strerror(rc));
-    writer->closed = false;
+    uv_buf_t buf = uv_buf_init((char *)string, strlen(string));
+
+    struct uv_stream_s *stream = (struct uv_stream_s *)writer->pipe;
+    uv_try_write(stream, &buf, 1);
 }
 
-static void *memdup(const void *mem, size_t size)
+void writer_put(struct writer *writer, char const *string)
 {
-    void *out = malloc(size);
-    if (!out) fatal("out of memory");
-    memcpy(out, mem, size);
-    return out;
-}
+    struct writer_req *req = writer_req_pool_pop(writer);
+    writer_req_set_string(req, string);
+    uv_buf_t buf = uv_buf_init(req->data, req->size);
 
-static void write_cb(struct uv_write_s *write, int status);
-
-void writer_put(struct writer *writer, char const *msg)
-{
-    unsigned size = (unsigned)strlen(msg);
-    struct request *request = malloc(sizeof(struct request));
-    request->writer = writer;
-    request->msg = memdup(msg, size);
-    request->req.data = request;
-
-    struct uv_stream_s *stream = (struct uv_stream_s *)&writer->pipe;
-    uv_buf_t bufs[2] = {uv_buf_init((char *)request->msg, size),
-                        uv_buf_init((char *)"\n", 1)};
-
-    int rc = uv_write(&request->req, stream, bufs, 2, &write_cb);
+    struct uv_stream_s *stream = (struct uv_stream_s *)writer->pipe;
+    int rc = uv_write(&req->uvreq, stream, &buf, 1, &write_fwd);
     if (rc)
     {
-        eio("%s", uv_strerror(rc));
-        (*writer->onerror_cb)(writer->arg);
+        error("failed to write: %s", uv_strerror(rc));
+        (*writer->cb.onerror)(writer->cb.arg);
     }
 }
 
-struct uv_pipe_s *writer_pipe(struct writer *writer) { return &writer->pipe; }
-
-void onclose_cb(struct uv_handle_s *handle)
+static void write_fwd(struct uv_write_s *write, int rc)
 {
-    struct writer *writer = handle->data;
-    writer->closed = true;
-    (*writer->onclose_cb)(writer->arg);
-}
-
-void writer_close(struct writer *writer)
-{
-    assert(!writer->closed);
-    uv_close((struct uv_handle_s *)&writer->pipe, &onclose_cb);
-}
-
-bool writer_isclosed(struct writer const *writer) { return writer->closed; }
-
-static void write_cb(struct uv_write_s *write, int status)
-{
-    struct request *request = write->data;
-    free((void *)request->msg);
-    free(request);
-    if (status) eio("%s", uv_strerror(status));
+    struct writer_req *req = write->data;
+    struct writer *writer = req->writer;
+    if (rc)
+    {
+        error("failed to write: %s", uv_strerror(rc));
+        (*writer->cb.onerror)(writer->cb.arg);
+    }
+    writer_req_pool_put(req);
 }
