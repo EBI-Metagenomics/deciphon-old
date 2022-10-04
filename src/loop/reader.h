@@ -1,7 +1,7 @@
-#ifndef PIPE_READER_H
-#define PIPE_READER_H
+#ifndef LOOP_READER_H
+#define LOOP_READER_H
 
-#include "callbacks.h"
+#include "loop/callbacks.h"
 #include <stdbool.h>
 
 struct uv_pipe_s;

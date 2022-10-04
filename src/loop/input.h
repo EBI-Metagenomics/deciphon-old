@@ -1,8 +1,8 @@
-#ifndef PIPE_INPUT_H
-#define PIPE_INPUT_H
+#ifndef LOOP_INPUT_H
+#define LOOP_INPUT_H
 
-#include "callbacks.h"
-#include "reader.h"
+#include "loop/callbacks.h"
+#include "loop/reader.h"
 #include "stdpipe.h"
 
 struct input_cb

@@ -1,5 +1,5 @@
-#ifndef PIPE_STDPIPE_H
-#define PIPE_STDPIPE_H
+#ifndef LOOP_STDPIPE_H
+#define LOOP_STDPIPE_H
 
 #include "uv.h"
 #include <stdbool.h>

@@ -1,8 +1,8 @@
-#ifndef PIPE_OUTPUT_H
-#define PIPE_OUTPUT_H
+#ifndef LOOP_OUTPUT_H
+#define LOOP_OUTPUT_H
 
-#include "callbacks.h"
-#include "stdpipe.h"
+#include "loop/callbacks.h"
+#include "loop/stdpipe.h"
 #include "writer.h"
 
 struct output_cb
