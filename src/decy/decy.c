@@ -14,17 +14,11 @@
 #include "loop/child.h"
 #include <stdlib.h>
 
-enum target
-{
-    TARGET_DECY,
-    TARGET_PRESSY,
-};
-
 struct input input = {0};
 struct output output = {0};
+enum target target = TARGET_DECY;
 static struct cmd cmd = {0};
 static struct child pressy = {0};
-static enum target target = TARGET_PRESSY;
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
