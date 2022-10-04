@@ -3,7 +3,6 @@
 #include "core/fmt.h"
 #include "core/logy.h"
 #include "core/pp.h"
-#include "loop/ipc.h"
 #include "uv.h"
 #include <stdatomic.h>
 #include <unistd.h>

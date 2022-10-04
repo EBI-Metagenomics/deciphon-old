@@ -16,7 +16,7 @@ static char uri[2048] = "http://127.0.0.1:49329";
 
 void cfg_init(void)
 {
-    if (dotenv_load(".", true)) fatal("failed to load config");
+    if (dotenv_load(".", true)) info("config file not found");
     char const *str = nullptr;
 
     if ((str = getenv("DCP_NTHREADS")))

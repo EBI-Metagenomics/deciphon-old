@@ -48,8 +48,6 @@ int main(int argc, char *argv[])
     zlog_setup(myprint, stderr, argl_get(&argl, "loglevel")[0] - '0');
 
     info("starting %s", argl_program(&argl));
-
-    info("starting %s", argl_program(&argl));
     input_init(&input, STDIN_FILENO);
     input_cb(&input)->on_eof = &on_eof;
     input_cb(&input)->on_error = &on_read_error;
