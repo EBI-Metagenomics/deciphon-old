@@ -1,28 +1,27 @@
 #!/bin/bash
 
 setup() {
-    load '/Users/horta/code/deciphon/test/test_helper/bats-support/load'
-    load '/Users/horta/code/deciphon/test/test_helper/bats-assert/load'
+    bats_load_library bats-support
+    bats_load_library bats-assert
+    bats_load_library bats-file
     PATH="$BATS_TEST_DIRNAME/../build:$PATH"
-    TIMEOUT=0.01
-
-    # exec 7>&-
-    # exec 8>&-
-    # exec 9>&-
+    cd "$BATS_TEST_TMPDIR" || exit 1
+    PIDS="$BATS_FILE_TMPDIR/pids"
+    touch "$PIDS"
 }
 
-# teardown() {
-#     exec 7>&-
-#     exec 8>&-
-#     exec 9>&-
-# }
-
-snore() {
-    sleep $TIMEOUT
+teardown() {
+    while read -r pid; do
+        echo "$pid"
+        kill -s SIGTERM "$pid"
+        if kill -0 "$pid"; then continue; fi
+        sleep 0.01
+        kill -s SIGKILL "$pid"
+    done <"$PIDS"
 }
 
 peek() {
-    timeout $TIMEOUT cat "$1"
+    timeout 0.01 cat "$1"
 }
 
 keep_fifos_open() {
@@ -31,20 +30,22 @@ keep_fifos_open() {
     exec 9<stderr
 }
 
+catnl() {
+    cat "$@"
+    echo
+}
+
 @test "schedy help" {
     schedy --help
 }
 
 @test "schedy daemon" {
-    cd "$BATS_TEST_TMPDIR"
-
     run daemonize schedy
+    assert_file_exists "$PIDS"
+    catnl pid >>"$PIDS"
     assert_success
-
-    # snore
     keep_fifos_open
 
-    # snore
     run ps -p "$(cat pid)"
     assert_success
 
