@@ -85,6 +85,5 @@ ensure_PF02545_hmm() {
     echo "hmm_up PF02545.hmm" >stdin
     run peek stdout
     assert_output "OK"
-
     schedy_kill
 }
