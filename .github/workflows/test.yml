@@ -4,6 +4,7 @@ on: push
 
 env:
   BUILD_TYPE: Release
+  BATS_LIB_PATH: ${{ home }}/.bats/lib"
 
 jobs:
   test:
@@ -27,6 +28,9 @@ jobs:
 
       - name: Install eviltest
         run: curl -fsSL "https://app.danilohorta.me/eviltest" | bash
+
+      - name: Setup eviltest path
+        run: echo "$HOME/.bats/bin" >> $GITHUB_PATH
 
       - name: Start deciphon-api
         run: python3 -m pipx run deciphon-api start --daemon
