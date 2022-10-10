@@ -5,6 +5,8 @@ enum target
 {
     TARGET_DECY,
     TARGET_PRESSY,
+    TARGET_SCHEDY,
+    TARGET_SCANNY,
 };
 
 #include "loop/input.h"

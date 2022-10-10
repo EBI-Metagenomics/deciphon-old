@@ -38,12 +38,12 @@ static void myprint(char const *string, void *arg) { fputs(string, arg); }
 
 int main(int argc, char *argv[])
 {
-    global_init(on_term, argc, argv);
-
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    if (argl_has(&argl, "daemon")) daemonize(true, true, false, true);
+    if (argl_has(&argl, "daemon")) daemonize(false, false, false, true);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
+
+    global_init(on_term, argc, argv);
 
     zlog_setup(myprint, stderr, argl_get(&argl, "loglevel")[0] - '0');
 

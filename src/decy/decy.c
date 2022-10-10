@@ -8,6 +8,7 @@
 #include "core/pidfile.h"
 #include "core/pp.h"
 #include "core/str.h"
+#include "core/xmem.h"
 #include "decy/cfg.h"
 #include "decy/cmd.h"
 #include "decy/schedy.h"
@@ -19,6 +20,8 @@ struct output output = {0};
 enum target target = TARGET_DECY;
 static struct cmd cmd = {0};
 static struct child pressy = {0};
+static struct child schedy = {0};
+static struct child scanny = {0};
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
@@ -47,18 +50,38 @@ static void on_term(void);
 static void myprint(char const *string, void *arg) { fputs(string, arg); }
 
 static void on_pressy_exit(void) { global_terminate(); }
-
 static void on_pressy_eof(void *arg) { UNUSED(arg); }
-
 static void on_pressy_read_error(void *arg) { UNUSED(arg); }
-
 static void on_pressy_write_error(void *arg) { UNUSED(arg); }
-
 static void on_pressy_read(char *line, void *arg)
 {
     UNUSED(arg);
-    static char string[128] = {0};
-    snprintf(string, sizeof string, "%s\n", line);
+    static char string[512] = {0};
+    snprintf(string, sizeof string, "%s", line);
+    output_put(&output, string);
+}
+
+static void on_schedy_exit(void) { global_terminate(); }
+static void on_schedy_eof(void *arg) { UNUSED(arg); }
+static void on_schedy_read_error(void *arg) { UNUSED(arg); }
+static void on_schedy_write_error(void *arg) { UNUSED(arg); }
+static void on_schedy_read(char *line, void *arg)
+{
+    UNUSED(arg);
+    static char string[512] = {0};
+    snprintf(string, sizeof string, "%s", line);
+    output_put(&output, string);
+}
+
+static void on_scanny_exit(void) { global_terminate(); }
+static void on_scanny_eof(void *arg) { UNUSED(arg); }
+static void on_scanny_read_error(void *arg) { UNUSED(arg); }
+static void on_scanny_write_error(void *arg) { UNUSED(arg); }
+static void on_scanny_read(char *line, void *arg)
+{
+    UNUSED(arg);
+    static char string[512] = {0};
+    snprintf(string, sizeof string, "%s", line);
     output_put(&output, string);
 }
 
@@ -97,8 +120,32 @@ int main(int argc, char *argv[])
     child_input_cb(&pressy)->arg = NULL;
     child_output_cb(&pressy)->on_error = &on_pressy_write_error;
     child_output_cb(&pressy)->arg = NULL;
-    static char *args[2] = {"./pressy", NULL};
-    child_spawn(&pressy, args);
+    static char *pressy_args[2] = {"./pressy", NULL};
+    child_spawn(&pressy, pressy_args);
+
+    child_init(&schedy);
+    child_cb(&schedy)->on_exit = &on_schedy_exit;
+    child_cb(&schedy)->arg = NULL;
+    child_input_cb(&schedy)->on_eof = &on_schedy_eof;
+    child_input_cb(&schedy)->on_error = &on_schedy_read_error;
+    child_input_cb(&schedy)->on_read = &on_schedy_read;
+    child_input_cb(&schedy)->arg = NULL;
+    child_output_cb(&schedy)->on_error = &on_schedy_write_error;
+    child_output_cb(&schedy)->arg = NULL;
+    static char *schedy_args[2] = {"./schedy", NULL};
+    child_spawn(&schedy, schedy_args);
+
+    child_init(&scanny);
+    child_cb(&scanny)->on_exit = &on_scanny_exit;
+    child_cb(&scanny)->arg = NULL;
+    child_input_cb(&scanny)->on_eof = &on_scanny_eof;
+    child_input_cb(&scanny)->on_error = &on_scanny_read_error;
+    child_input_cb(&scanny)->on_read = &on_scanny_read;
+    child_input_cb(&scanny)->arg = NULL;
+    child_output_cb(&scanny)->on_error = &on_scanny_write_error;
+    child_output_cb(&scanny)->arg = NULL;
+    static char *scanny_args[2] = {"./scanny", NULL};
+    child_spawn(&scanny, scanny_args);
 
     global_run();
     global_cleanup();
@@ -177,15 +224,21 @@ static void on_read_error(void *arg)
 
 static void on_read(char *line, void *arg)
 {
+
+    char *saved = xmemdup(line, strlen(line) + 1);
     UNUSED(arg);
     if (str_all_spaces(line)) return;
-    if (target == TARGET_DECY)
-    {
-        if (!cmd_parse(&cmd, line)) eparse("too many arguments");
+    if (!cmd_parse(&cmd, line)) eparse("too many arguments");
+    if (!strcmp(cmd_get(&cmd, 0), "target"))
         output_put(&output, (*cmd_fn(cmd.argv[0]))(&cmd));
-    }
+    else if (target == TARGET_DECY)
+        output_put(&output, (*cmd_fn(cmd.argv[0]))(&cmd));
     else if (target == TARGET_PRESSY)
-        child_send(&pressy, line);
+        child_send(&pressy, saved);
+    else if (target == TARGET_SCHEDY)
+        child_send(&schedy, saved);
+    else if (target == TARGET_SCANNY)
+        child_send(&scanny, saved);
     else
         error("unknown target");
 }

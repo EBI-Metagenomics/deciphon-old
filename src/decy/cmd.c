@@ -53,5 +53,15 @@ static char const *fn_target(struct cmd const *cmd)
         target = TARGET_PRESSY;
         return OK;
     }
+    if (!strcmp(cmd_get(cmd, 1), "schedy"))
+    {
+        target = TARGET_SCHEDY;
+        return OK;
+    }
+    if (!strcmp(cmd_get(cmd, 1), "scanny"))
+    {
+        target = TARGET_SCANNY;
+        return OK;
+    }
     return FAIL;
 }
