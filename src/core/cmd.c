@@ -8,19 +8,20 @@
 
 bool cmd_parse(struct cmd *c, char *str)
 {
+    c->delim = '\t';
     char *p = str;
     c->argc = 0;
     c->argv[c->argc++] = p;
 
     if (!(p = strpbrk(str, DELIM_CHARS))) goto cleanup;
 
-    char const delim = *p;
+    c->delim = *p;
 
     while (p && c->argc + 1 < CMD_ARGV_SIZE)
     {
-        *p++ = 0;
+        *p++ = '\0';
         c->argv[c->argc++] = p;
-        p = strchr(p, delim);
+        p = strchr(p, c->delim);
     }
 
 cleanup:
@@ -28,11 +29,24 @@ cleanup:
     return !p;
 }
 
-void cmd_shift(struct cmd *c)
+char *cmd_unparse(struct cmd *c)
 {
+    if (c->argc <= 0) return NULL;
+    for (int i = 0; i < c->argc - 1; ++i)
+    {
+        size_t n = strlen(c->argv[i]);
+        c->argv[i][n] = c->delim;
+    }
+    return c->argv[0];
+}
+
+char const *cmd_shift(struct cmd *c)
+{
+    char const *argv0 = c->argv[0];
     for (int i = 0; i < c->argc; ++i)
         c->argv[i] = c->argv[i + 1];
     c->argc--;
+    return argv0;
 }
 
 char const *cmd_get(struct cmd const *gc, int i) { return gc->argv[i]; }

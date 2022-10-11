@@ -4,6 +4,7 @@
 #include "core/logy.h"
 #include "core/sched_dump.h"
 #include "decy/decy.h"
+#include "decy/session.h"
 #include "schedy/strings.h"
 #include "xfile.h"
 #include <string.h>
@@ -45,19 +46,17 @@ static char const *fn_help(struct cmd *cmd)
 static char const *fn_pressy(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
-    return OK;
+    return session_forward_command(cmd_shift(cmd), cmd);
 }
 
 static char const *fn_scanny(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
-
-    cmd_shift(cmd);
-    return OK;
+    return session_forward_command(cmd_shift(cmd), cmd);
 }
 
 static char const *fn_schedy(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
-    return OK;
+    return session_forward_command(cmd_shift(cmd), cmd);
 }
