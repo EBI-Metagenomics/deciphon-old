@@ -13,7 +13,7 @@ enum
 #undef X
 };
 
-#define X(_1, A, _2) static char const *fn_##A(struct cmd const *);
+#define X(_1, A, _2) static char const *fn_##A(struct cmd *);
 CMD_MAP(X)
 #undef X
 

@@ -50,13 +50,13 @@ static bool encode_job_state(char const *str, enum sched_job_state *);
 
 static char buffer[6 * 1024 * 1024] = {0};
 
-static char const *fn_invalid(struct cmd const *cmd)
+static char const *fn_invalid(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return eparse("invalid command"), FAIL;
 }
 
-static char const *fn_help(struct cmd const *cmd)
+static char const *fn_help(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
 
@@ -73,39 +73,39 @@ static char const *fn_help(struct cmd const *cmd)
     return help_table;
 }
 
-static char const *fn_setup(struct cmd const *cmd)
+static char const *fn_setup(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "sss")) return eparse(FAIL_PARSE), FAIL;
     if (api_init(cmd_get(cmd, 1), cmd_get(cmd, 2))) return FAIL;
     return OK;
 }
 
-static char const *fn_online(struct cmd const *cmd)
+static char const *fn_online(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return api_is_reachable() ? YES : NO;
 }
 
-static char const *fn_wipe(struct cmd const *cmd)
+static char const *fn_wipe(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return api_wipe() ? FAIL : OK;
 }
 
-static char const *fn_cancel(struct cmd const *cmd)
+static char const *fn_cancel(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return OK;
 }
 
-static char const *fn_hmm_up(struct cmd const *cmd)
+static char const *fn_hmm_up(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
     return api_hmm_up(cmd_get(cmd, 1), &hmm) ? FAIL : OK;
 }
 
-static char const *fn_hmm_dl(struct cmd const *cmd)
+static char const *fn_hmm_dl(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
 
@@ -116,7 +116,7 @@ static char const *fn_hmm_dl(struct cmd const *cmd)
         return OK;
 }
 
-static char const *fn_hmm_get_by_id(struct cmd const *cmd)
+static char const *fn_hmm_get_by_id(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
@@ -124,7 +124,7 @@ static char const *fn_hmm_get_by_id(struct cmd const *cmd)
     return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
-static char const *fn_hmm_get_by_xxh3(struct cmd const *cmd)
+static char const *fn_hmm_get_by_xxh3(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
@@ -132,7 +132,7 @@ static char const *fn_hmm_get_by_xxh3(struct cmd const *cmd)
     return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
-static char const *fn_hmm_get_by_job_id(struct cmd const *cmd)
+static char const *fn_hmm_get_by_job_id(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
@@ -140,7 +140,7 @@ static char const *fn_hmm_get_by_job_id(struct cmd const *cmd)
     return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
-static char const *fn_hmm_get_by_filename(struct cmd const *cmd)
+static char const *fn_hmm_get_by_filename(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
@@ -148,14 +148,14 @@ static char const *fn_hmm_get_by_filename(struct cmd const *cmd)
     return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
-static char const *fn_db_up(struct cmd const *cmd)
+static char const *fn_db_up(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
     return api_db_up(cmd_get(cmd, 1), &db) ? FAIL : OK;
 }
 
-static char const *fn_db_dl(struct cmd const *cmd)
+static char const *fn_db_dl(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
     int64_t xxh3 = cmd_as_i64(cmd, 1);
@@ -165,7 +165,7 @@ static char const *fn_db_dl(struct cmd const *cmd)
         return OK;
 }
 
-static char const *fn_db_get_by_id(struct cmd const *cmd)
+static char const *fn_db_get_by_id(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
@@ -173,7 +173,7 @@ static char const *fn_db_get_by_id(struct cmd const *cmd)
     return sched_dump_db(&db, (char *)buffer);
 }
 
-static char const *fn_db_get_by_xxh3(struct cmd const *cmd)
+static char const *fn_db_get_by_xxh3(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
@@ -181,7 +181,7 @@ static char const *fn_db_get_by_xxh3(struct cmd const *cmd)
     return sched_dump_db(&db, (char *)buffer);
 }
 
-static char const *fn_db_get_by_hmm_id(struct cmd const *cmd)
+static char const *fn_db_get_by_hmm_id(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
@@ -189,7 +189,7 @@ static char const *fn_db_get_by_hmm_id(struct cmd const *cmd)
     return sched_dump_db(&db, (char *)buffer);
 }
 
-static char const *fn_db_get_by_filename(struct cmd const *cmd)
+static char const *fn_db_get_by_filename(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
@@ -197,7 +197,7 @@ static char const *fn_db_get_by_filename(struct cmd const *cmd)
     return sched_dump_db(&db, (char *)buffer);
 }
 
-static char const *fn_job_next_pend(struct cmd const *cmd)
+static char const *fn_job_next_pend(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_job job = {0};
@@ -205,7 +205,7 @@ static char const *fn_job_next_pend(struct cmd const *cmd)
     return sched_dump_job(&job, (char *)buffer);
 }
 
-static char const *fn_job_set_state(struct cmd const *cmd)
+static char const *fn_job_set_state(struct cmd *cmd)
 {
     static char const empty[] = "";
     char const *msg = empty;
@@ -224,7 +224,7 @@ static char const *fn_job_set_state(struct cmd const *cmd)
     return api_job_set_state(job_id, state, msg) ? FAIL : OK;
 }
 
-static char const *fn_job_inc_progress(struct cmd const *cmd)
+static char const *fn_job_inc_progress(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "sii")) return eparse(FAIL_PARSE), FAIL;
     int64_t job_id = cmd_as_i64(cmd, 1);
@@ -232,7 +232,7 @@ static char const *fn_job_inc_progress(struct cmd const *cmd)
     return api_job_inc_progress(job_id, increment) ? FAIL : OK;
 }
 
-static char const *fn_scan_dl_seqs(struct cmd const *cmd)
+static char const *fn_scan_dl_seqs(struct cmd *cmd)
 {
     static struct sched_scan scan = {0};
     static char filepath[PATH_SIZE] = {0};
@@ -271,7 +271,7 @@ static char const *fn_scan_dl_seqs(struct cmd const *cmd)
     return cmd_get(cmd, 2);
 }
 
-static char const *fn_scan_get_by_job_id(struct cmd const *cmd)
+static char const *fn_scan_get_by_job_id(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_scan scan = {0};
@@ -279,7 +279,7 @@ static char const *fn_scan_get_by_job_id(struct cmd const *cmd)
     return sched_dump_scan(&scan, (char *)buffer);
 }
 
-static char const *fn_scan_seq_count(struct cmd const *cmd)
+static char const *fn_scan_seq_count(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     unsigned count = 0;
@@ -288,7 +288,7 @@ static char const *fn_scan_seq_count(struct cmd const *cmd)
     return buffer;
 }
 
-static char const *fn_scan_submit(struct cmd const *cmd)
+static char const *fn_scan_submit(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "siiis")) return eparse(FAIL_PARSE), FAIL;
     int64_t db_id = cmd_as_i64(cmd, 1);
@@ -301,7 +301,7 @@ static char const *fn_scan_submit(struct cmd const *cmd)
     return sched_dump_job(&job, (char *)buffer);
 }
 
-static char const *fn_prods_file_up(struct cmd const *cmd)
+static char const *fn_prods_file_up(struct cmd *cmd)
 {
     (void)cmd;
     return "";

@@ -17,13 +17,13 @@
 #include "core/cmd_template.h"
 #undef CMD_TEMPLATE_ENABLE
 
-static char const *fn_invalid(struct cmd const *cmd)
+static char const *fn_invalid(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return eparse("invalid command"), FAIL;
 }
 
-static char const *fn_help(struct cmd const *cmd)
+static char const *fn_help(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
 
@@ -40,14 +40,14 @@ static char const *fn_help(struct cmd const *cmd)
     return help_table;
 }
 
-static char const *fn_set_nthreads(struct cmd const *cmd)
+static char const *fn_set_nthreads(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     session_set_nthreads(cmd_as_i64(cmd, 1));
     return OK;
 }
 
-static char const *fn_scan(struct cmd const *cmd)
+static char const *fn_scan(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "ssssii")) return eparse(FAIL_PARSE), FAIL;
 
@@ -60,20 +60,20 @@ static char const *fn_scan(struct cmd const *cmd)
     return session_start(seqs, db, prod, multi_hits, hmmer3_compat) ? OK : FAIL;
 }
 
-static char const *fn_cancel(struct cmd const *cmd)
+static char const *fn_cancel(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     if (!session_is_running()) return DONE;
     return session_cancel() ? OK : FAIL;
 }
 
-static char const *fn_state(struct cmd const *cmd)
+static char const *fn_state(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return session_state_string();
 }
 
-static char const *fn_progress(struct cmd const *cmd)
+static char const *fn_progress(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
 

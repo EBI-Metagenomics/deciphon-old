@@ -11,19 +11,21 @@
 #define CMD_MAP(X)                                                             \
     X(INVALID, invalid, "")                                                    \
     X(HELP, help, "")                                                          \
-    X(TARGET, target, "PROCESS")
+    X(PRESSY, pressy, "PRESSY_COMMAND [...]")                                  \
+    X(SCANNY, scanny, "SCANNY_COMMAND [...]")                                  \
+    X(SCHEDY, schedy, "SCHEDY_COMMAND [...]")
 
 #define CMD_TEMPLATE_ENABLE
 #include "core/cmd_template.h"
 #undef CMD_TEMPLATE_ENABLE
 
-static char const *fn_invalid(struct cmd const *cmd)
+static char const *fn_invalid(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return eparse("invalid command"), FAIL;
 }
 
-static char const *fn_help(struct cmd const *cmd)
+static char const *fn_help(struct cmd *cmd)
 {
     if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
 
@@ -33,35 +35,29 @@ static char const *fn_help(struct cmd const *cmd)
 
 #define X(_, A, B)                                                             \
     if (strcmp(STRINGIFY(A), "invalid"))                                       \
-        p += sprintf(p, "\n  %-22s %s", STRINGIFY(A), B);
+        p += sprintf(p, "\n  %-11s %s", STRINGIFY(A), B);
     CMD_MAP(X);
 #undef X
 
     return help_table;
 }
 
-static char const *fn_target(struct cmd const *cmd)
+static char const *fn_pressy(struct cmd *cmd)
 {
-    if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
-    if (!strcmp(cmd_get(cmd, 1), "decy"))
-    {
-        target = TARGET_DECY;
-        return OK;
-    }
-    if (!strcmp(cmd_get(cmd, 1), "pressy"))
-    {
-        target = TARGET_PRESSY;
-        return OK;
-    }
-    if (!strcmp(cmd_get(cmd, 1), "schedy"))
-    {
-        target = TARGET_SCHEDY;
-        return OK;
-    }
-    if (!strcmp(cmd_get(cmd, 1), "scanny"))
-    {
-        target = TARGET_SCANNY;
-        return OK;
-    }
-    return FAIL;
+    if (!cmd_check(cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
+    return OK;
+}
+
+static char const *fn_scanny(struct cmd *cmd)
+{
+    if (!cmd_check(cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
+
+    cmd_shift(cmd);
+    return OK;
+}
+
+static char const *fn_schedy(struct cmd *cmd)
+{
+    if (!cmd_check(cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
+    return OK;
 }
