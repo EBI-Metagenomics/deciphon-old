@@ -52,10 +52,6 @@ schedy_kill() {
     schedy --help
 }
 
-@test "pooch help" {
-    pooch --help
-}
-
 ensure_PF02545_hmm() {
     pipx run pooch-cli https://pub.danilohorta.me/deciphon/PF02545.hmm --hash ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
 }
