@@ -1,9 +1,9 @@
 #include "pressy/pressy.h"
 #include "argless.h"
 #include "core/c23.h"
-#include "core/daemonize.h"
 #include "core/global.h"
 #include "core/logy.h"
+#include "core/pidfile.h"
 #include "core/pp.h"
 #include "core/str.h"
 #include "pressy/cmd.h"
@@ -17,7 +17,6 @@ static struct cmd cmd = {0};
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
     {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
-    {"daemon", 'D', ARGL_FLAG(), "Daemonize this program."},
     ARGL_DEFAULT,
     ARGL_END,
 };
@@ -41,7 +40,7 @@ int main(int argc, char *argv[])
 
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    if (argl_has(&argl, "daemon")) daemonize(true, true, false, true);
+    if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
 
     zlog_setup(myprint, stderr, argl_get(&argl, "loglevel")[0] - '0');
 

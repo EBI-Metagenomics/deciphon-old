@@ -1,7 +1,6 @@
 #include "decy/decy.h"
 #include "argless.h"
 #include "core/c23.h"
-#include "core/daemonize.h"
 #include "core/fmt.h"
 #include "core/global.h"
 #include "core/logy.h"
@@ -26,7 +25,6 @@ static struct child scanny = {0};
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
     {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
-    {"daemon", 'D', ARGL_FLAG(), "Daemonize this program."},
     ARGL_DEFAULT,
     ARGL_END,
 };
@@ -91,7 +89,6 @@ int main(int argc, char *argv[])
 
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    if (argl_has(&argl, "daemon")) daemonize(true, true, false, true);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
 
     zlog_setup(myprint, stderr, argl_get(&argl, "loglevel")[0] - '0');
@@ -120,7 +117,7 @@ int main(int argc, char *argv[])
     child_input_cb(&pressy)->arg = NULL;
     child_output_cb(&pressy)->on_error = &on_pressy_write_error;
     child_output_cb(&pressy)->arg = NULL;
-    static char *pressy_args[2] = {"./pressy", NULL};
+    static char *pressy_args[] = {"./pressy", "--pid", "pressy.pid", NULL};
     child_spawn(&pressy, pressy_args);
 
     child_init(&schedy);
@@ -132,7 +129,7 @@ int main(int argc, char *argv[])
     child_input_cb(&schedy)->arg = NULL;
     child_output_cb(&schedy)->on_error = &on_schedy_write_error;
     child_output_cb(&schedy)->arg = NULL;
-    static char *schedy_args[2] = {"./schedy", NULL};
+    static char *schedy_args[] = {"./schedy", "--pid", "schedy.pid", NULL};
     child_spawn(&schedy, schedy_args);
 
     child_init(&scanny);
@@ -144,17 +141,11 @@ int main(int argc, char *argv[])
     child_input_cb(&scanny)->arg = NULL;
     child_output_cb(&scanny)->on_error = &on_scanny_write_error;
     child_output_cb(&scanny)->arg = NULL;
-    static char *scanny_args[2] = {"./scanny", NULL};
+    static char *scanny_args[] = {"./scanny", "--pid", "scanny.pid", NULL};
     child_spawn(&scanny, scanny_args);
 
     global_run();
     global_cleanup();
-
-    // pass
-    // pass
-    // pass
-    // pass
-    // pass
 
     // schedy_init(&decy.looper.loop, onschedy_term, nullptr);
     // schedy_setup(cfg_uri(), cfg_key(), &onschedy_connection);

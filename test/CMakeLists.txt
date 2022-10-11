@@ -14,6 +14,7 @@ deciphon_add_test(protein_profile)
 deciphon_add_test(protein_db)
 
 file(CREATE_LINK "${CMAKE_CURRENT_SOURCE_DIR}/schedy.bats" "${CMAKE_CURRENT_BINARY_DIR}/schedy.bats" COPY_ON_ERROR)
+file(CREATE_LINK "${CMAKE_CURRENT_SOURCE_DIR}/pressy.bats" "${CMAKE_CURRENT_BINARY_DIR}/pressy.bats" COPY_ON_ERROR)
 
 # include(ExternalData)
 # set(URL https://pub.danilohorta.me)

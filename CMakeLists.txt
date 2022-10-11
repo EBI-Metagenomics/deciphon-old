@@ -55,7 +55,6 @@ add_library(
   src/core/api.c
   src/core/buff.c
   src/core/cmd.c
-  src/core/daemonize.c
   src/core/errmsg.c
   src/core/expect.c
   src/core/file.c
