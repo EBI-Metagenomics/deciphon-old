@@ -105,4 +105,5 @@ static void on_term(void)
 {
     input_close(&input);
     output_close(&output);
+    session_terminate();
 }

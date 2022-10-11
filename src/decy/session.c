@@ -7,6 +7,7 @@
 #include "decy/decy.h"
 #include "decy/strings.h"
 #include "loop/child.h"
+#include <stdatomic.h>
 
 static void on_pressy_exit(void) { global_terminate(); }
 static void on_pressy_eof(void *arg) { UNUSED(arg); }
@@ -82,6 +83,11 @@ static struct output_cb output_callbacks[] = {
     [SCHEDY_ID] = {&on_schedy_write_error, NULL},
 };
 
+struct uv_timer_s job_next_pend_timer = {0};
+atomic_bool no_job_next_pend = false;
+
+static void job_next_pend_cb(struct uv_timer_s *req);
+
 void session_init(void)
 {
     for (int i = 0; i <= SCHEDY_ID; ++i)
@@ -97,6 +103,20 @@ void session_init(void)
         child_output_cb(&proc[i])->arg = output_callbacks[i].arg;
         child_spawn(&proc[i], proc_args[i]);
     }
+    atomic_store_explicit(&no_job_next_pend, false, memory_order_release);
+
+    if (uv_timer_init(global_loop(), &job_next_pend_timer))
+        efail("uv_timer_init");
+    if (uv_timer_start(&job_next_pend_timer, &job_next_pend_cb, 2000, 1000))
+        efail("uv_timer_start");
+}
+
+static void job_next_pend_cb(struct uv_timer_s *req)
+{
+    (void)req;
+    if (atomic_load_explicit(&no_job_next_pend, memory_order_consume)) return;
+    debug("Asking for pending job");
+    child_send(&proc[SCHEDY_ID], "job_next_pend");
 }
 
 char const *session_forward_command(char const *proc_name, struct cmd *cmd)
@@ -107,6 +127,8 @@ char const *session_forward_command(char const *proc_name, struct cmd *cmd)
     child_send(&proc[i], cmd_unparse(cmd));
     return OK;
 }
+
+void session_terminate(void) { uv_timer_stop(&job_next_pend_timer); }
 
 static int proc_idx(char const *name)
 {

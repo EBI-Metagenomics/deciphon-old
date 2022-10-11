@@ -41,7 +41,7 @@ static struct
 } self;
 
 struct uv_timer_s monitor_timer = {0};
-atomic_bool nomonitor = true;
+atomic_bool no_monitor = true;
 
 static enum rc errnum = RC_OK;
 static char errmsg[ERROR_SIZE] = {0};
@@ -142,7 +142,7 @@ static void after_work(struct uv_work_s *req, int status)
     (void)req;
     if (status == UV_ECANCELED) self.state = CANCEL;
     atomic_store(&self.cancel, false);
-    atomic_store_explicit(&nomonitor, true, memory_order_release);
+    atomic_store_explicit(&no_monitor, true, memory_order_release);
     monitor_stop();
 }
 
@@ -158,7 +158,7 @@ static void work(struct uv_work_s *req)
         self.state = FAIL;
         return;
     }
-    atomic_store_explicit(&nomonitor, false, memory_order_release);
+    atomic_store_explicit(&no_monitor, false, memory_order_release);
 
     if (atomic_load(&self.cancel))
     {
@@ -201,7 +201,7 @@ static void monitor_start(void)
 
 static struct progress const *monitor_progress(void)
 {
-    if (atomic_load_explicit(&nomonitor, memory_order_consume)) return NULL;
+    if (atomic_load_explicit(&no_monitor, memory_order_consume)) return NULL;
     scan_progress_update();
     return scan_progress();
 }
@@ -209,7 +209,7 @@ static struct progress const *monitor_progress(void)
 static void monitor_progress_cb(struct uv_timer_s *req)
 {
     (void)req;
-    if (atomic_load_explicit(&nomonitor, memory_order_consume)) return;
+    if (atomic_load_explicit(&no_monitor, memory_order_consume)) return;
     if (scan_progress_update())
     {
         struct progress const *p = scan_progress();

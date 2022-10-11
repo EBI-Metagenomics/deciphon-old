@@ -14,5 +14,6 @@ enum proc_id
 
 void session_init(void);
 char const *session_forward_command(char const *proc_name, struct cmd *cmd);
+void session_terminate(void);
 
 #endif
