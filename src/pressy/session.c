@@ -103,7 +103,6 @@ static void after_work(struct uv_work_s *req, int status)
 static void work(struct uv_work_s *req)
 {
     (void)req;
-    info("Preparing to press...");
     enum rc rc = db_press_init(&self.db_press, self.hmm, self.db);
     if (rc)
     {
@@ -112,6 +111,7 @@ static void work(struct uv_work_s *req)
     }
 
     progress_init(&self.progress, (long)db_press_nsteps(&self.db_press));
+    info("Found %u profiles. Pressing...", db_press_nsteps(&self.db_press));
     while (!(rc = db_press_step(&self.db_press)))
     {
         if (progress_consume(&self.progress, 1))
