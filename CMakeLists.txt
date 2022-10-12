@@ -52,7 +52,6 @@ add_library(
   libs/lazylog.c
   libs/xfile.c
   libs/zc.c
-  src/core/api.c
   src/core/buff.c
   src/core/cmd.c
   src/core/errmsg.c
@@ -60,7 +59,6 @@ add_library(
   src/core/file.c
   src/core/fmt.c
   src/core/global.c
-  src/core/http.c
   src/core/mempool.c
   src/core/pidfile.c
   src/core/progress.c
@@ -69,8 +67,6 @@ add_library(
   src/core/str.c
   src/core/to.c
   src/core/url.c
-  src/core/xcurl.c
-  src/core/xcurl_debug.c
   src/core/xmem.c
   src/db/press.c
   src/db/profile_reader.c
@@ -126,7 +122,15 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-add_executable(schedy src/schedy/schedy.c src/schedy/cmd.c)
+add_executable(
+  schedy
+  src/schedy/api.c
+  src/schedy/cmd.c
+  src/schedy/http.c
+  src/schedy/schedy.c
+  src/schedy/schedy.c
+  src/schedy/xcurl.c
+  src/schedy/xcurl_debug.c)
 target_link_libraries(schedy PUBLIC deciphon)
 
 add_executable(pressy src/pressy/pressy.c src/pressy/cmd.c src/pressy/session.c)

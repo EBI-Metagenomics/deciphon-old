@@ -1,5 +1,4 @@
 #include "decy/cmd.h"
-#include "core/api.h"
 #include "core/file.h"
 #include "core/logy.h"
 #include "core/sched_dump.h"

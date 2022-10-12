@@ -1,5 +1,5 @@
-#ifndef CORE_XCURL_ERROR_H
-#define CORE_XCURL_ERROR_H
+#ifndef SCHEDY_XCURL_ERROR_H
+#define SCHEDY_XCURL_ERROR_H
 
 #include "core/logy.h"
 #include <curl/curl.h>

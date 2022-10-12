@@ -1,5 +1,5 @@
-#ifndef CORE_MIME_H
-#define CORE_MIME_H
+#ifndef SCHEDY_MIME_H
+#define SCHEDY_MIME_H
 
 #define MIME_JSON "application/json"
 #define MIME_PLAIN "text/plain"

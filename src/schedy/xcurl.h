@@ -1,5 +1,5 @@
-#ifndef CORE_XCURL_H
-#define CORE_XCURL_H
+#ifndef SCHEDY_XCURL_H
+#define SCHEDY_XCURL_H
 
 #include "core/rc.h"
 #include <stdio.h>
