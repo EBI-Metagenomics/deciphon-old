@@ -1,4 +1,4 @@
-#include "decy/schedy.h"
+#include "schedy.h"
 #include "core/c23.h"
 #include "core/fmt.h"
 #include "core/logy.h"

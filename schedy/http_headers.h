@@ -1,7 +1,7 @@
 #ifndef SCHEDY_HTTP_HEADERS_H
 #define SCHEDY_HTTP_HEADERS_H
 
-#include "schedy/mime.h"
+#include "mime.h"
 
 #define ACCEPT_JSON "Accept: " MIME_JSON
 #define ACCEPT_PLAIN "Accept: " MIME_PLAIN

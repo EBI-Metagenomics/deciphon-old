@@ -2,7 +2,7 @@
  * Acknowledgement: Code used bellow is mostly from
  * Apache HTTP Server soure code.
  */
-#include "schedy/http.h"
+#include "http.h"
 
 /**
  * The size of the static status_lines array in http_protocol.c for

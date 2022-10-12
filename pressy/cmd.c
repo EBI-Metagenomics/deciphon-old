@@ -1,7 +1,7 @@
-#include "pressy/cmd.h"
+#include "cmd.h"
 #include "core/logy.h"
-#include "pressy/session.h"
-#include "pressy/strings.h"
+#include "session.h"
+#include "strings.h"
 #include <stdio.h>
 
 #define CMD_MAP(X)                                                             \

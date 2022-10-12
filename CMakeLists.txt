@@ -124,23 +124,22 @@ endif()
 
 add_executable(
   schedy
-  src/schedy/api.c
-  src/schedy/cmd.c
-  src/schedy/http.c
-  src/schedy/schedy.c
-  src/schedy/schedy.c
-  src/schedy/xcurl.c
-  src/schedy/xcurl_debug.c)
+  schedy/api.c
+  schedy/cmd.c
+  schedy/http.c
+  schedy/schedy.c
+  schedy/schedy.c
+  schedy/xcurl.c
+  schedy/xcurl_debug.c)
 target_link_libraries(schedy PUBLIC deciphon)
 
-add_executable(pressy src/pressy/pressy.c src/pressy/cmd.c src/pressy/session.c)
+add_executable(pressy pressy/pressy.c pressy/cmd.c pressy/session.c)
 target_link_libraries(pressy PUBLIC deciphon)
 
-add_executable(scanny src/scanny/scanny.c src/scanny/cmd.c src/scanny/session.c)
+add_executable(scanny scanny/scanny.c scanny/cmd.c scanny/session.c)
 target_link_libraries(scanny PUBLIC deciphon)
 
-add_executable(decy src/decy/decy.c src/decy/cmd.c src/decy/cfg.c
-                    src/decy/session.c)
+add_executable(decy decy/decy.c decy/cmd.c decy/cfg.c decy/session.c)
 target_link_libraries(decy PUBLIC deciphon)
 
 enable_testing()

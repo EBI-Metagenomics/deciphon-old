@@ -1,5 +1,7 @@
-#include "decy/decy.h"
+#include "decy.h"
 #include "argless.h"
+#include "cfg.h"
+#include "cmd.h"
 #include "core/c23.h"
 #include "core/fmt.h"
 #include "core/global.h"
@@ -8,10 +10,8 @@
 #include "core/pp.h"
 #include "core/str.h"
 #include "core/xmem.h"
-#include "decy/cfg.h"
-#include "decy/cmd.h"
-#include "decy/schedy.h"
-#include "decy/session.h"
+#include "schedy.h"
+#include "session.h"
 #include <stdlib.h>
 
 struct input input = {0};

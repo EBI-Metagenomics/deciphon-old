@@ -1,12 +1,12 @@
-#include "decy/session.h"
+#include "session.h"
 #include "core/cmd.h"
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/pp.h"
 #include "core/rc.h"
-#include "decy/decy.h"
-#include "decy/strings.h"
+#include "decy.h"
 #include "loop/child.h"
+#include "strings.h"
 #include <stdatomic.h>
 
 static void on_pressy_exit(void) { global_terminate(); }

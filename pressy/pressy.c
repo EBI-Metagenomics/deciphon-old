@@ -1,13 +1,13 @@
-#include "scanny/scanny.h"
+#include "pressy.h"
 #include "argless.h"
+#include "cmd.h"
 #include "core/c23.h"
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/pidfile.h"
 #include "core/pp.h"
 #include "core/str.h"
-#include "scanny/cmd.h"
-#include "scanny/session.h"
+#include "session.h"
 #include <stdlib.h>
 
 struct input input = {0};
@@ -23,7 +23,7 @@ static struct argl_option const options[] = {
 
 static struct argl argl = {.options = options,
                            .args_doc = nullptr,
-                           .doc = "Scanny program.",
+                           .doc = "Pressy program.",
                            .version = "1.0.0"};
 
 static void on_eof(void *arg);

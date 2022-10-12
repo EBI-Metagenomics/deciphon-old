@@ -1,10 +1,10 @@
-#include "decy/cmd.h"
+#include "cmd.h"
 #include "core/file.h"
 #include "core/logy.h"
 #include "core/sched_dump.h"
-#include "decy/decy.h"
-#include "decy/session.h"
-#include "schedy/strings.h"
+#include "decy.h"
+#include "session.h"
+#include "strings.h"
 #include "xfile.h"
 #include <string.h>
 

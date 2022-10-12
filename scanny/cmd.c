@@ -1,7 +1,7 @@
-#include "scanny/cmd.h"
+#include "cmd.h"
 #include "core/logy.h"
-#include "scanny/session.h"
-#include "scanny/strings.h"
+#include "session.h"
+#include "strings.h"
 #include <stdio.h>
 
 #define CMD_MAP(X)                                                             \

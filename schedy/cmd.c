@@ -1,9 +1,9 @@
-#include "schedy/cmd.h"
+#include "cmd.h"
+#include "api.h"
 #include "core/file.h"
 #include "core/logy.h"
 #include "core/sched_dump.h"
-#include "schedy/api.h"
-#include "schedy/strings.h"
+#include "strings.h"
 #include "xfile.h"
 #include <string.h>
 

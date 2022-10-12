@@ -1,10 +1,10 @@
-#include "schedy/api.h"
+#include "api.h"
 #include "core/logy.h"
 #include "core/sched.h"
+#include "http.h"
 #include "jx.h"
-#include "schedy/http.h"
-#include "schedy/mime.h"
-#include "schedy/xcurl.h"
+#include "mime.h"
+#include "xcurl.h"
 #include "zc.h"
 #include <inttypes.h>
 #include <stdarg.h>

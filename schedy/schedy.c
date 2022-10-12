@@ -1,13 +1,13 @@
-#include "pressy/pressy.h"
+#include "schedy.h"
 #include "argless.h"
+#include "cmd.h"
 #include "core/c23.h"
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/pidfile.h"
 #include "core/pp.h"
 #include "core/str.h"
-#include "pressy/cmd.h"
-#include "pressy/session.h"
+#include "lazylog.h"
 #include <stdlib.h>
 
 struct input input = {0};
@@ -23,7 +23,7 @@ static struct argl_option const options[] = {
 
 static struct argl argl = {.options = options,
                            .args_doc = nullptr,
-                           .doc = "Pressy program.",
+                           .doc = "Schedy program.",
                            .version = "1.0.0"};
 
 static void on_eof(void *arg);
@@ -56,8 +56,6 @@ int main(int argc, char *argv[])
     output_cb(&output)->on_error = &on_write_error;
     output_cb(&output)->arg = NULL;
     output_start(&output);
-
-    session_init();
 
     global_run();
     global_cleanup();

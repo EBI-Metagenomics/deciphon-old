@@ -1,4 +1,4 @@
-#include "decy/cfg.h"
+#include "cfg.h"
 #include "core/c23.h"
 #include "core/fmt.h"
 #include "core/logy.h"

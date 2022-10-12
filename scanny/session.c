@@ -1,4 +1,4 @@
-#include "scanny/session.h"
+#include "session.h"
 #include "core/errmsg.h"
 #include "core/global.h"
 #include "core/limits.h"
