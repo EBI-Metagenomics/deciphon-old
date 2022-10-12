@@ -13,12 +13,6 @@
 static struct api_error api_err = {0};
 static JR_DECLARE(jr, 128);
 
-#define eapi(x)                                                                \
-    ({                                                                         \
-        error(" api_rc[%d] %s", (x).rc, (x).msg);                              \
-        RC_EAPI;                                                               \
-    })
-
 static enum rc api_error_parse(void);
 static void api_error_reset(void);
 static enum rc download(char const *query, FILE *fp);
@@ -409,6 +403,12 @@ static enum rc download(char const *query, FILE *fp)
 }
 
 static enum rc get(char const *query) { return xcurl_get(query); }
+
+#define eapi(x)                                                                \
+    ({                                                                         \
+        error(" api_rc[%d] %s", (x).rc, (x).msg);                              \
+        RC_EAPI;                                                               \
+    })
 
 static enum rc handle_http_exception(void)
 {

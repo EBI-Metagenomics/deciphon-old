@@ -10,7 +10,6 @@
 #define CMD_MAP(X)                                                             \
     X(INVALID, invalid, "")                                                    \
     X(HELP, help, "")                                                          \
-    X(SETUP, setup, "URL API_KEY")                                             \
     X(ONLINE, online, "")                                                      \
     X(WIPE, wipe, "")                                                          \
     X(CANCEL, cancel, "")                                                      \
@@ -71,13 +70,6 @@ static char const *fn_help(struct cmd *cmd)
 #undef X
 
     return help_table;
-}
-
-static char const *fn_setup(struct cmd *cmd)
-{
-    if (!cmd_check(cmd, "sss")) return eparse(FAIL_PARSE), FAIL;
-    if (api_init(cmd_get(cmd, 1), cmd_get(cmd, 2))) return FAIL;
-    return OK;
 }
 
 static char const *fn_online(struct cmd *cmd)

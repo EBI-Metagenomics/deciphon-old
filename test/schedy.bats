@@ -30,9 +30,9 @@ catnl() {
 }
 
 schedy_spawn() {
-    run daemonize -i stdin -o stdout -e stderr -p pid schedy
-    catnl pid >>"$PIDS"
+    run daemonize -i stdin -o stdout -e stderr -p pid schedy -- -u http://127.0.0.1:49329 -k change-me
     assert_success
+    catnl pid >>"$PIDS"
 
     # Keep fifos open
     exec 7<>stdin
@@ -62,10 +62,6 @@ ensure_PF02545_hmm() {
     echo "invalid" >stdin
     run peek stdout
     assert_output "FAIL"
-
-    echo "setup http://127.0.0.1:49329 change-me" >stdin
-    run peek stdout
-    assert_output "OK"
 
     echo "online" >stdin
     run peek stdout

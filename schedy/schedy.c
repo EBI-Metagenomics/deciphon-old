@@ -1,7 +1,7 @@
 #include "schedy.h"
+#include "api.h"
 #include "argless.h"
 #include "cmd.h"
-#include "core/c23.h"
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/pidfile.h"
@@ -14,7 +14,12 @@ struct input input = {0};
 struct output output = {0};
 static struct cmd cmd = {0};
 
+#define API_URL "http://127.0.0.1:49329"
+#define API_KEY "change-me"
+
 static struct argl_option const options[] = {
+    {"url", 'u', ARGL_TEXT("APIURL", API_URL), "API url."},
+    {"key", 'k', ARGL_TEXT("APIKEY", API_KEY), "API key."},
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
     {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
     ARGL_DEFAULT,
@@ -22,7 +27,7 @@ static struct argl_option const options[] = {
 };
 
 static struct argl argl = {.options = options,
-                           .args_doc = nullptr,
+                           .args_doc = NULL,
                            .doc = "Schedy program.",
                            .version = "1.0.0"};
 
@@ -41,10 +46,14 @@ int main(int argc, char *argv[])
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
+    char const *url = argl_get(&argl, "url");
+    char const *key = argl_get(&argl, "key");
 
     zlog_setup(myprint, stderr, argl_get(&argl, "loglevel")[0] - '0');
 
     info("starting %s", argl_program(&argl));
+    if (api_init(url, key)) return EXIT_FAILURE;
+
     input_init(&input, STDIN_FILENO);
     input_cb(&input)->on_eof = &on_eof;
     input_cb(&input)->on_error = &on_read_error;
@@ -59,6 +68,7 @@ int main(int argc, char *argv[])
 
     global_run();
     global_cleanup();
+    api_cleanup();
 
     return EXIT_SUCCESS;
 }
