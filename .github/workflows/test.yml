@@ -53,4 +53,6 @@ jobs:
 
       - name: Evil test
         working-directory: ${{github.workspace}}/build
-        run: bats test/schedy.bats
+        run: |
+          bats test/pressy.bats
+          bats test/schedy.bats
