@@ -60,10 +60,12 @@ add_library(
   src/core/fmt.c
   src/core/global.c
   src/core/mempool.c
+  src/core/msg.c
   src/core/pidfile.c
   src/core/progress.c
   src/core/sched.c
   src/core/sched_dump.c
+  src/core/sharg.c
   src/core/str.c
   src/core/to.c
   src/core/url.c
