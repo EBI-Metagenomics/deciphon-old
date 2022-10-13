@@ -195,7 +195,9 @@ static char const *fn_job_next_pend(struct msg *msg)
     if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_job job = {0};
     if (api_job_next_pend(&job)) return FAIL;
-    return sched_dump_job(&job, (char *)buffer);
+    if (!sharg_replace(&msg->echo, "$1", sched_dump_job(&job, (char *)buffer)))
+        return FAIL;
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_job_set_state(struct msg *msg)

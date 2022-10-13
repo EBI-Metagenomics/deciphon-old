@@ -13,7 +13,8 @@
     X(HELP, help, "")                                                          \
     X(PRESSY, pressy, "PRESSY_COMMAND [...]")                                  \
     X(SCANNY, scanny, "SCANNY_COMMAND [...]")                                  \
-    X(SCHEDY, schedy, "SCHEDY_COMMAND [...]")
+    X(SCHEDY, schedy, "SCHEDY_COMMAND [...]")                                  \
+    X(EXEC_PEND_JOB, exec_pend_job, "JSON")
 
 #define MSG_TEMPLATE_ENABLE
 #include "core/msg_template.h"
@@ -58,4 +59,12 @@ static char const *fn_schedy(struct msg *msg)
 {
     if (!sharg_check(&msg->cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
     return session_forward_msg(sharg_shift(&msg->cmd), msg);
+}
+
+static char const *fn_exec_pend_job(struct msg *msg)
+{
+    if (!sharg_check(&msg->cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
+    char const *job = msg->cmd.argv[1];
+    info("JOB: %s", job);
+    return OK;
 }

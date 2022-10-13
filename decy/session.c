@@ -107,7 +107,7 @@ void session_init(void)
 
     if (uv_timer_init(global_loop(), &job_next_pend_timer))
         efail("uv_timer_init");
-    if (uv_timer_start(&job_next_pend_timer, &job_next_pend_cb, 2000, 1000))
+    if (uv_timer_start(&job_next_pend_timer, &job_next_pend_cb, 1000, 5000))
         efail("uv_timer_start");
 }
 
@@ -116,7 +116,7 @@ static void job_next_pend_cb(struct uv_timer_s *req)
     (void)req;
     if (atomic_load_explicit(&no_job_next_pend, memory_order_consume)) return;
     debug("Asking for pending job");
-    child_send(&proc[SCHEDY_ID], "job_next_pend");
+    child_send(&proc[SCHEDY_ID], "job_next_pend | exec_pend_job $1");
 }
 
 char const *session_forward_msg(char const *proc_name, struct msg *msg)
