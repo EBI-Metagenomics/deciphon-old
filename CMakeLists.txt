@@ -53,12 +53,13 @@ add_library(
   libs/xfile.c
   libs/zc.c
   src/core/buff.c
-  src/core/cmd.c
+  src/core/as.c
   src/core/errmsg.c
   src/core/expect.c
   src/core/file.c
   src/core/fmt.c
   src/core/global.c
+  src/core/is.c
   src/core/mempool.c
   src/core/msg.c
   src/core/pidfile.c
@@ -127,7 +128,7 @@ endif()
 add_executable(
   schedy
   schedy/api.c
-  schedy/cmd.c
+  schedy/msg.c
   schedy/http.c
   schedy/schedy.c
   schedy/schedy.c
@@ -135,13 +136,13 @@ add_executable(
   schedy/xcurl_debug.c)
 target_link_libraries(schedy PUBLIC deciphon)
 
-add_executable(pressy pressy/pressy.c pressy/cmd.c pressy/session.c)
+add_executable(pressy pressy/pressy.c pressy/msg.c pressy/session.c)
 target_link_libraries(pressy PUBLIC deciphon)
 
-add_executable(scanny scanny/scanny.c scanny/cmd.c scanny/session.c)
+add_executable(scanny scanny/scanny.c scanny/msg.c scanny/session.c)
 target_link_libraries(scanny PUBLIC deciphon)
 
-add_executable(decy decy/decy.c decy/cmd.c decy/cfg.c decy/session.c)
+add_executable(decy decy/decy.c decy/msg.c decy/cfg.c decy/session.c)
 target_link_libraries(decy PUBLIC deciphon)
 
 enable_testing()

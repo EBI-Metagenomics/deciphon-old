@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-struct cmd;
+struct msg;
 
 enum proc_id
 {
@@ -13,7 +13,7 @@ enum proc_id
 };
 
 void session_init(void);
-char const *session_forward_command(char const *proc_name, struct cmd *cmd);
+char const *session_forward_msg(char const *proc_name, struct msg *msg);
 void session_terminate(void);
 
 #endif

@@ -1,18 +1,18 @@
 #include "schedy.h"
 #include "api.h"
 #include "argless.h"
-#include "cmd.h"
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/pidfile.h"
 #include "core/pp.h"
 #include "core/str.h"
 #include "lazylog.h"
+#include "msg.h"
 #include <stdlib.h>
 
 struct input input = {0};
 struct output output = {0};
-static struct cmd cmd = {0};
+static struct msg msg = {0};
 
 #define API_URL "http://127.0.0.1:49329"
 #define API_KEY "change-me"
@@ -91,8 +91,8 @@ static void on_read(char *line, void *arg)
 {
     UNUSED(arg);
     if (str_all_spaces(line)) return;
-    if (!cmd_parse(&cmd, line)) eparse("too many arguments");
-    output_put(&output, (*cmd_fn(cmd.argv[0]))(&cmd));
+    if (!msg_parse(&msg, line)) eparse("too many arguments");
+    output_put(&output, (*msg_fn(msg.cmd.argv[0]))(&msg));
 }
 
 static void on_write_error(void *arg)
@@ -104,8 +104,8 @@ static void on_write_error(void *arg)
 
 static void on_term(void)
 {
-    cmd_parse(&cmd, "cancel");
-    (*cmd_fn(cmd.argv[0]))(&cmd);
+    msg_parse(&msg, "cancel");
+    (*msg_fn(msg.cmd.argv[0]))(&msg);
     input_close(&input);
     output_close(&output);
 }

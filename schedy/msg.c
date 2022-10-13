@@ -1,5 +1,6 @@
-#include "cmd.h"
+#include "msg.h"
 #include "api.h"
+#include "core/as.h"
 #include "core/file.h"
 #include "core/logy.h"
 #include "core/sched_dump.h"
@@ -7,7 +8,7 @@
 #include "xfile.h"
 #include <string.h>
 
-#define CMD_MAP(X)                                                             \
+#define MSG_MAP(X)                                                             \
     X(INVALID, invalid, "")                                                    \
     X(HELP, help, "")                                                          \
     X(ONLINE, online, "")                                                      \
@@ -39,9 +40,9 @@
                                                                                \
     X(PRODS_FILE_UP, prods_file_up, "PRODS_FILE")
 
-#define CMD_TEMPLATE_ENABLE
-#include "core/cmd_template.h"
-#undef CMD_TEMPLATE_ENABLE
+#define MSG_TEMPLATE_ENABLE
+#include "core/msg_template.h"
+#undef MSG_TEMPLATE_ENABLE
 
 static enum rc download_hmm(char const *filepath, void *data);
 static enum rc download_db(char const *filepath, void *data);
@@ -49,15 +50,15 @@ static bool encode_job_state(char const *str, enum sched_job_state *);
 
 static char buffer[6 * 1024 * 1024] = {0};
 
-static char const *fn_invalid(struct cmd *cmd)
+static char const *fn_invalid(struct msg *msg)
 {
-    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return eparse("invalid command"), FAIL;
 }
 
-static char const *fn_help(struct cmd *cmd)
+static char const *fn_help(struct msg *msg)
 {
-    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
 
     static char help_table[1024] = {0};
     char *p = help_table;
@@ -66,172 +67,172 @@ static char const *fn_help(struct cmd *cmd)
 #define X(_, A, B)                                                             \
     if (strcmp(STRINGIFY(A), "invalid"))                                       \
         p += sprintf(p, "\n  %-22s %s", STRINGIFY(A), B);
-    CMD_MAP(X);
+    MSG_MAP(X);
 #undef X
 
     return help_table;
 }
 
-static char const *fn_online(struct cmd *cmd)
+static char const *fn_online(struct msg *msg)
 {
-    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return api_is_reachable() ? YES : NO;
 }
 
-static char const *fn_wipe(struct cmd *cmd)
+static char const *fn_wipe(struct msg *msg)
 {
-    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return api_wipe() ? FAIL : OK;
 }
 
-static char const *fn_cancel(struct cmd *cmd)
+static char const *fn_cancel(struct msg *msg)
 {
-    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     return OK;
 }
 
-static char const *fn_hmm_up(struct cmd *cmd)
+static char const *fn_hmm_up(struct msg *msg)
 {
-    if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
-    return api_hmm_up(cmd_get(cmd, 1), &hmm) ? FAIL : OK;
+    return api_hmm_up(msg->cmd.argv[1], &hmm) ? FAIL : OK;
 }
 
-static char const *fn_hmm_dl(struct cmd *cmd)
+static char const *fn_hmm_dl(struct msg *msg)
 {
-    if (!cmd_check(cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
 
-    int64_t xxh3 = cmd_as_i64(cmd, 1);
-    if (file_ensure_local(cmd_get(cmd, 2), xxh3, &download_hmm, &xxh3))
+    int64_t xxh3 = as_int64(msg->cmd.argv[1]);
+    if (file_ensure_local(msg->cmd.argv[2], xxh3, &download_hmm, &xxh3))
         return FAIL;
     else
         return OK;
 }
 
-static char const *fn_hmm_get_by_id(struct cmd *cmd)
+static char const *fn_hmm_get_by_id(struct msg *msg)
 {
-    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
-    if (api_hmm_get_by_id(cmd_as_i64(cmd, 1), &hmm)) return FAIL;
+    if (api_hmm_get_by_id(as_int64(msg->cmd.argv[1]), &hmm)) return FAIL;
     return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
-static char const *fn_hmm_get_by_xxh3(struct cmd *cmd)
+static char const *fn_hmm_get_by_xxh3(struct msg *msg)
 {
-    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
-    if (api_hmm_get_by_xxh3(cmd_as_i64(cmd, 1), &hmm)) return FAIL;
+    if (api_hmm_get_by_xxh3(as_int64(msg->cmd.argv[1]), &hmm)) return FAIL;
     return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
-static char const *fn_hmm_get_by_job_id(struct cmd *cmd)
+static char const *fn_hmm_get_by_job_id(struct msg *msg)
 {
-    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
-    if (api_hmm_get_by_job_id(cmd_as_i64(cmd, 1), &hmm)) return FAIL;
+    if (api_hmm_get_by_job_id(as_int64(msg->cmd.argv[1]), &hmm)) return FAIL;
     return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
-static char const *fn_hmm_get_by_filename(struct cmd *cmd)
+static char const *fn_hmm_get_by_filename(struct msg *msg)
 {
-    if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_hmm hmm = {0};
-    if (api_hmm_get_by_filename(cmd_get(cmd, 1), &hmm)) return FAIL;
+    if (api_hmm_get_by_filename(msg->cmd.argv[1], &hmm)) return FAIL;
     return sched_dump_hmm(&hmm, (char *)buffer);
 }
 
-static char const *fn_db_up(struct cmd *cmd)
+static char const *fn_db_up(struct msg *msg)
 {
-    if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
-    return api_db_up(cmd_get(cmd, 1), &db) ? FAIL : OK;
+    return api_db_up(msg->cmd.argv[1], &db) ? FAIL : OK;
 }
 
-static char const *fn_db_dl(struct cmd *cmd)
+static char const *fn_db_dl(struct msg *msg)
 {
-    if (!cmd_check(cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
-    int64_t xxh3 = cmd_as_i64(cmd, 1);
-    if (file_ensure_local(cmd_get(cmd, 2), xxh3, &download_db, &xxh3))
+    if (!sharg_check(&msg->cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
+    int64_t xxh3 = as_int64(msg->cmd.argv[1]);
+    if (file_ensure_local(msg->cmd.argv[2], xxh3, &download_db, &xxh3))
         return FAIL;
     else
         return OK;
 }
 
-static char const *fn_db_get_by_id(struct cmd *cmd)
+static char const *fn_db_get_by_id(struct msg *msg)
 {
-    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
-    if (api_db_get_by_id(cmd_as_i64(cmd, 1), &db)) return FAIL;
+    if (api_db_get_by_id(as_int64(msg->cmd.argv[1]), &db)) return FAIL;
     return sched_dump_db(&db, (char *)buffer);
 }
 
-static char const *fn_db_get_by_xxh3(struct cmd *cmd)
+static char const *fn_db_get_by_xxh3(struct msg *msg)
 {
-    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
-    if (api_db_get_by_xxh3(cmd_as_i64(cmd, 1), &db)) return FAIL;
+    if (api_db_get_by_xxh3(as_int64(msg->cmd.argv[1]), &db)) return FAIL;
     return sched_dump_db(&db, (char *)buffer);
 }
 
-static char const *fn_db_get_by_hmm_id(struct cmd *cmd)
+static char const *fn_db_get_by_hmm_id(struct msg *msg)
 {
-    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
-    if (api_db_get_by_hmm_id(cmd_as_i64(cmd, 1), &db)) return FAIL;
+    if (api_db_get_by_hmm_id(as_int64(msg->cmd.argv[1]), &db)) return FAIL;
     return sched_dump_db(&db, (char *)buffer);
 }
 
-static char const *fn_db_get_by_filename(struct cmd *cmd)
+static char const *fn_db_get_by_filename(struct msg *msg)
 {
-    if (!cmd_check(cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_db db = {0};
-    if (api_db_get_by_filename(cmd_get(cmd, 1), &db)) return FAIL;
+    if (api_db_get_by_filename(msg->cmd.argv[1], &db)) return FAIL;
     return sched_dump_db(&db, (char *)buffer);
 }
 
-static char const *fn_job_next_pend(struct cmd *cmd)
+static char const *fn_job_next_pend(struct msg *msg)
 {
-    if (!cmd_check(cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_job job = {0};
     if (api_job_next_pend(&job)) return FAIL;
     return sched_dump_job(&job, (char *)buffer);
 }
 
-static char const *fn_job_set_state(struct cmd *cmd)
+static char const *fn_job_set_state(struct msg *msg)
 {
     static char const empty[] = "";
-    char const *msg = empty;
-    if (cmd->argc == 3)
+    char const *status_msg = empty;
+    if (msg->cmd.argc == 3)
     {
-        if (!cmd_check(cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
+        if (!sharg_check(&msg->cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
     }
     else
     {
-        if (!cmd_check(cmd, "siss")) return eparse(FAIL_PARSE), FAIL;
-        msg = cmd_get(cmd, 3);
+        if (!sharg_check(&msg->cmd, "siss")) return eparse(FAIL_PARSE), FAIL;
+        status_msg = msg->cmd.argv[3];
     }
     enum sched_job_state state = 0;
-    if (!encode_job_state(cmd_get(cmd, 2), &state)) return FAIL;
-    int64_t job_id = cmd_as_i64(cmd, 1);
-    return api_job_set_state(job_id, state, msg) ? FAIL : OK;
+    if (!encode_job_state(msg->cmd.argv[2], &state)) return FAIL;
+    int64_t job_id = as_int64(msg->cmd.argv[1]);
+    return api_job_set_state(job_id, state, status_msg) ? FAIL : OK;
 }
 
-static char const *fn_job_inc_progress(struct cmd *cmd)
+static char const *fn_job_inc_progress(struct msg *msg)
 {
-    if (!cmd_check(cmd, "sii")) return eparse(FAIL_PARSE), FAIL;
-    int64_t job_id = cmd_as_i64(cmd, 1);
-    int64_t increment = cmd_as_i64(cmd, 2);
+    if (!sharg_check(&msg->cmd, "sii")) return eparse(FAIL_PARSE), FAIL;
+    int64_t job_id = as_int64(msg->cmd.argv[1]);
+    int64_t increment = as_int64(msg->cmd.argv[2]);
     return api_job_inc_progress(job_id, increment) ? FAIL : OK;
 }
 
-static char const *fn_scan_dl_seqs(struct cmd *cmd)
+static char const *fn_scan_dl_seqs(struct msg *msg)
 {
     static struct sched_scan scan = {0};
     static char filepath[PATH_SIZE] = {0};
 
-    if (!cmd_check(cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
 
-    if (api_scan_get_by_id(cmd_as_i64(cmd, 1), &scan)) return FAIL;
+    if (api_scan_get_by_id(as_int64(msg->cmd.argv[1]), &scan)) return FAIL;
 
     int rc = xfile_mkstemp(sizeof filepath, filepath);
     if (rc)
@@ -254,48 +255,48 @@ static char const *fn_scan_dl_seqs(struct cmd *cmd)
     }
 
     fclose(fp);
-    rc = xfile_move(cmd_get(cmd, 2), filepath);
+    rc = xfile_move(msg->cmd.argv[2], filepath);
     if (rc)
     {
         eio("%s", xfile_strerror(rc));
         return FAIL;
     }
-    return cmd_get(cmd, 2);
+    return msg->cmd.argv[2];
 }
 
-static char const *fn_scan_get_by_job_id(struct cmd *cmd)
+static char const *fn_scan_get_by_job_id(struct msg *msg)
 {
-    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     static struct sched_scan scan = {0};
-    if (api_scan_get_by_job_id(cmd_as_i64(cmd, 1), &scan)) return FAIL;
+    if (api_scan_get_by_job_id(as_int64(msg->cmd.argv[1]), &scan)) return FAIL;
     return sched_dump_scan(&scan, (char *)buffer);
 }
 
-static char const *fn_scan_seq_count(struct cmd *cmd)
+static char const *fn_scan_seq_count(struct msg *msg)
 {
-    if (!cmd_check(cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
     unsigned count = 0;
-    if (api_scan_seq_count(cmd_as_i64(cmd, 1), &count)) return FAIL;
+    if (api_scan_seq_count(as_int64(msg->cmd.argv[1]), &count)) return FAIL;
     sprintf((char *)buffer, "%u", count);
     return buffer;
 }
 
-static char const *fn_scan_submit(struct cmd *cmd)
+static char const *fn_scan_submit(struct msg *msg)
 {
-    if (!cmd_check(cmd, "siiis")) return eparse(FAIL_PARSE), FAIL;
-    int64_t db_id = cmd_as_i64(cmd, 1);
-    int64_t multi_hits = cmd_as_i64(cmd, 2);
-    int64_t hmmer3_compat = cmd_as_i64(cmd, 3);
+    if (!sharg_check(&msg->cmd, "siiis")) return eparse(FAIL_PARSE), FAIL;
+    int64_t db_id = as_int64(msg->cmd.argv[1]);
+    int64_t multi_hits = as_int64(msg->cmd.argv[2]);
+    int64_t hmmer3_compat = as_int64(msg->cmd.argv[3]);
     static struct sched_job job = {0};
-    if (api_scan_submit(db_id, multi_hits, hmmer3_compat, cmd_get(cmd, 4),
+    if (api_scan_submit(db_id, multi_hits, hmmer3_compat, msg->cmd.argv[4],
                         &job))
         return FAIL;
     return sched_dump_job(&job, (char *)buffer);
 }
 
-static char const *fn_prods_file_up(struct cmd *cmd)
+static char const *fn_prods_file_up(struct msg *msg)
 {
-    (void)cmd;
+    (void)msg;
     return "";
 }
 

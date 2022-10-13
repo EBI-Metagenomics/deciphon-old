@@ -1,4 +1,5 @@
 #include "core/sharg.h"
+#include "core/is.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -54,6 +55,21 @@ char const *sharg_shift(struct sharg *sharg)
     return argv0;
 }
 
+void sharg_append(struct sharg *sharg, char const *str)
+{
+    int offset = 0;
+    for (int i = 0; i < sharg->argc; ++i)
+        offset += (int)strlen(sharg->argv[i]) + 1;
+
+    assert(offset < SHARG_BUFF_SIZE);
+    sharg->argv[sharg->argc] = sharg->buff + offset;
+    assert(offset + strlen(str) + 1 < SHARG_BUFF_SIZE);
+    memcpy(sharg->argv[sharg->argc], str, strlen(str) + 1);
+
+    assert(sharg->argc + 1 < SHARG_ARGV_SIZE);
+    sharg->argv[++sharg->argc] = NULL;
+}
+
 bool sharg_replace(struct sharg *sharg, char const *tag, char const *value)
 {
     for (int i = 0; i < sharg->argc; ++i)
@@ -77,4 +93,34 @@ bool sharg_replace(struct sharg *sharg, char const *tag, char const *value)
         }
     }
     return true;
+}
+
+bool sharg_check(struct sharg const *sharg, char const *fmt)
+{
+    int n = (int)strcspn(fmt, "*");
+    if (n > SHARG_ARGV_SIZE + 1) return false;
+
+    int m = (int)strlen(fmt);
+    if (n == m && n != sharg->argc) return false;
+    if (n < m && n > sharg->argc) return false;
+
+    for (int i = 0; i < n; ++i)
+    {
+        if (fmt[i] == 's') continue;
+
+        if (fmt[i] == 'i' && !is_int64(sharg->argv[i])) return false;
+    }
+
+    return true;
+}
+
+char *sharg_unparse(struct sharg *sharg)
+{
+    if (sharg->argc <= 0) return NULL;
+    for (int i = 0; i < sharg->argc - 1; ++i)
+    {
+        size_t n = strlen(sharg->argv[i]);
+        sharg->argv[i][n] = sharg->delim;
+    }
+    return sharg->argv[0];
 }

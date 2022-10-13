@@ -1,7 +1,6 @@
 #include "decy.h"
 #include "argless.h"
 #include "cfg.h"
-#include "cmd.h"
 #include "core/c23.h"
 #include "core/fmt.h"
 #include "core/global.h"
@@ -10,6 +9,7 @@
 #include "core/pp.h"
 #include "core/str.h"
 #include "core/xmem.h"
+#include "msg.h"
 #include "schedy.h"
 #include "session.h"
 #include <stdlib.h>
@@ -17,7 +17,7 @@
 struct input input = {0};
 struct output output = {0};
 enum target target = TARGET_DECY;
-static struct cmd cmd = {0};
+static struct msg msg = {0};
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
@@ -90,8 +90,8 @@ static void on_read(char *line, void *arg)
 {
     UNUSED(arg);
     if (str_all_spaces(line)) return;
-    if (!cmd_parse(&cmd, line)) eparse("too many arguments");
-    output_put(&output, (*cmd_fn(cmd.argv[0]))(&cmd));
+    if (!msg_parse(&msg, line)) eparse("too many arguments");
+    output_put(&output, (*msg_fn(msg.cmd.argv[0]))(&msg));
 }
 
 static void on_write_error(void *arg)

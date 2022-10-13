@@ -1,7 +1,7 @@
 #include "session.h"
-#include "core/cmd.h"
 #include "core/global.h"
 #include "core/logy.h"
+#include "core/msg.h"
 #include "core/pp.h"
 #include "core/rc.h"
 #include "decy.h"
@@ -119,12 +119,12 @@ static void job_next_pend_cb(struct uv_timer_s *req)
     child_send(&proc[SCHEDY_ID], "job_next_pend");
 }
 
-char const *session_forward_command(char const *proc_name, struct cmd *cmd)
+char const *session_forward_msg(char const *proc_name, struct msg *msg)
 {
-    if (!cmd_check(cmd, "s*")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "s*")) return eparse(FAIL_PARSE), FAIL;
     int i = proc_idx(proc_name);
     if (i < 0) return FAIL;
-    child_send(&proc[i], cmd_unparse(cmd));
+    child_send(&proc[i], msg_unparse(msg));
     return OK;
 }
 

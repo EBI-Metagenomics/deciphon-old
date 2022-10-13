@@ -23,6 +23,9 @@ char sharg_delim(struct sharg const *);
 int sharg_argc(struct sharg const *);
 char **sharg_argv(struct sharg *);
 char const *sharg_shift(struct sharg *);
+void sharg_append(struct sharg *, char const *str);
 bool sharg_replace(struct sharg *, char const *tag, char const *value);
+bool sharg_check(struct sharg const *, char const *fmt);
+char *sharg_unparse(struct sharg *sharg);
 
 #endif

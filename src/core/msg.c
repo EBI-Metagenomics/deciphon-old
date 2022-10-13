@@ -32,6 +32,13 @@ bool msg_parse(struct msg *msg, char *str)
     return true;
 }
 
+char *msg_unparse(struct msg *msg)
+{
+    for (int i = 0; i < msg->echo.argc; ++i)
+        sharg_append(&msg->cmd, msg->echo.argv[i]);
+    return sharg_unparse(&msg->cmd);
+}
+
 static int find_pipe(char const *str, char delim)
 {
     int size = (int)strlen(str);
