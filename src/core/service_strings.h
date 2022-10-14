@@ -1,9 +1,11 @@
 #ifndef CORE_SERVICE_STRINGS
 #define CORE_SERVICE_STRINGS
 
-#define OK "OK"
-#define DONE "DONE"
-#define FAIL "FAIL"
-#define BUSY "BUSY"
+#define OK "ok"
+#define DONE "done"
+#define FAIL "fail"
+#define BUSY "busy"
+#define YES "yes"
+#define NO "no"
 
 #endif

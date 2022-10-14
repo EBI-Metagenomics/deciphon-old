@@ -4,7 +4,8 @@
 #include "core/file.h"
 #include "core/logy.h"
 #include "core/sched_dump.h"
-#include "strings.h"
+#include "core/service_strings.h"
+#include "core/strings.h"
 #include "xfile.h"
 #include <string.h>
 
@@ -49,17 +50,22 @@ static enum rc download_db(char const *filepath, void *data);
 static bool encode_job_state(char const *str, enum sched_job_state *);
 
 static char buffer[6 * 1024 * 1024] = {0};
+static struct sched_hmm hmm = {0};
+static struct sched_db db = {0};
+static struct sched_job job = {0};
+enum sched_job_state state = 0;
+static struct sched_scan scan = {0};
 
 static char const *fn_invalid(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    return eparse("invalid command"), FAIL;
+    UNUSED(msg);
+    sharg_replace(&msg->echo, "{1}", FAIL);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_help(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-
+    UNUSED(msg);
     static char help_table[1024] = {0};
     char *p = help_table;
     p += sprintf(p, "Commands:");
@@ -73,227 +79,366 @@ static char const *fn_help(struct msg *msg)
     return help_table;
 }
 
+#define eparse_cleanup()                                                       \
+    do                                                                         \
+    {                                                                          \
+        eparse(FAIL_PARSE_CMD);                                                \
+        goto cleanup;                                                          \
+    } while (0);
+
 static char const *fn_online(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    return api_is_reachable() ? YES : NO;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+
+    ans = api_is_reachable() ? YES : NO;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_wipe(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    return api_wipe() ? FAIL : OK;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+    if (!api_wipe()) ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_cancel(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    return OK;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+    ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_hmm_up(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_hmm hmm = {0};
-    return api_hmm_up(msg->cmd.argv[1], &hmm) ? FAIL : OK;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "ss")) eparse_cleanup();
+    if (!api_hmm_up(msg->cmd.argv[1], &hmm)) ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_hmm_dl(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
-
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "sis")) eparse_cleanup();
     int64_t xxh3 = as_int64(msg->cmd.argv[1]);
-    if (file_ensure_local(msg->cmd.argv[2], xxh3, &download_hmm, &xxh3))
-        return FAIL;
-    else
-        return OK;
+
+    if (!file_ensure_local(msg->cmd.argv[2], xxh3, &download_hmm, &xxh3))
+        ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_hmm_get_by_id(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_hmm hmm = {0};
-    if (api_hmm_get_by_id(as_int64(msg->cmd.argv[1]), &hmm)) return FAIL;
-    return sched_dump_hmm(&hmm, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
+    if (api_hmm_get_by_id(as_int64(msg->cmd.argv[1]), &hmm)) goto cleanup;
+    ans = OK;
+    json = sched_dump_hmm(&hmm, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_hmm_get_by_xxh3(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_hmm hmm = {0};
-    if (api_hmm_get_by_xxh3(as_int64(msg->cmd.argv[1]), &hmm)) return FAIL;
-    return sched_dump_hmm(&hmm, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
+    if (api_hmm_get_by_xxh3(as_int64(msg->cmd.argv[1]), &hmm)) goto cleanup;
+    ans = OK;
+    json = sched_dump_hmm(&hmm, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_hmm_get_by_job_id(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_hmm hmm = {0};
-    if (api_hmm_get_by_job_id(as_int64(msg->cmd.argv[1]), &hmm)) return FAIL;
-    return sched_dump_hmm(&hmm, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
+    if (api_hmm_get_by_job_id(as_int64(msg->cmd.argv[1]), &hmm)) goto cleanup;
+    ans = OK;
+    json = sched_dump_hmm(&hmm, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_hmm_get_by_filename(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_hmm hmm = {0};
-    if (api_hmm_get_by_filename(msg->cmd.argv[1], &hmm)) return FAIL;
-    return sched_dump_hmm(&hmm, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "ss")) eparse_cleanup();
+    if (api_hmm_get_by_filename(msg->cmd.argv[1], &hmm)) goto cleanup;
+    ans = OK;
+    json = sched_dump_hmm(&hmm, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_db_up(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_db db = {0};
-    return api_db_up(msg->cmd.argv[1], &db) ? FAIL : OK;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "ss")) eparse_cleanup();
+    if (!api_db_up(msg->cmd.argv[1], &db)) ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_db_dl(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "sis")) eparse_cleanup();
     int64_t xxh3 = as_int64(msg->cmd.argv[1]);
-    if (file_ensure_local(msg->cmd.argv[2], xxh3, &download_db, &xxh3))
-        return FAIL;
-    else
-        return OK;
+    if (!file_ensure_local(msg->cmd.argv[2], xxh3, &download_db, &xxh3))
+        ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_db_get_by_id(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_db db = {0};
-    if (api_db_get_by_id(as_int64(msg->cmd.argv[1]), &db)) return FAIL;
-    return sched_dump_db(&db, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
+    if (api_db_get_by_id(as_int64(msg->cmd.argv[1]), &db)) goto cleanup;
+    ans = OK;
+    json = sched_dump_db(&db, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_db_get_by_xxh3(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_db db = {0};
-    if (api_db_get_by_xxh3(as_int64(msg->cmd.argv[1]), &db)) return FAIL;
-    return sched_dump_db(&db, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
+    if (api_db_get_by_xxh3(as_int64(msg->cmd.argv[1]), &db)) goto cleanup;
+    ans = OK;
+    json = sched_dump_db(&db, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_db_get_by_hmm_id(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_db db = {0};
-    if (api_db_get_by_hmm_id(as_int64(msg->cmd.argv[1]), &db)) return FAIL;
-    return sched_dump_db(&db, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
+    if (api_db_get_by_hmm_id(as_int64(msg->cmd.argv[1]), &db)) goto cleanup;
+    ans = OK;
+    json = sched_dump_db(&db, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_db_get_by_filename(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ss")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_db db = {0};
-    if (api_db_get_by_filename(msg->cmd.argv[1], &db)) return FAIL;
-    return sched_dump_db(&db, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "ss")) eparse_cleanup();
+    if (api_db_get_by_filename(msg->cmd.argv[1], &db)) goto cleanup;
+    ans = OK;
+    json = sched_dump_db(&db, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_job_next_pend(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_job job = {0};
-    if (api_job_next_pend(&job)) return FAIL;
-    if (!sharg_replace(&msg->echo, "$1", sched_dump_job(&job, (char *)buffer)))
-        return FAIL;
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+    if (api_job_next_pend(&job)) goto cleanup;
+    ans = OK;
+    json = sched_dump_job(&job, (char *)buffer);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
     return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_job_set_state(struct msg *msg)
 {
-    static char const empty[] = "";
-    char const *status_msg = empty;
-    if (msg->cmd.argc == 3)
-    {
-        if (!sharg_check(&msg->cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
-    }
-    else
-    {
-        if (!sharg_check(&msg->cmd, "siss")) return eparse(FAIL_PARSE), FAIL;
-        status_msg = msg->cmd.argv[3];
-    }
-    enum sched_job_state state = 0;
-    if (!encode_job_state(msg->cmd.argv[2], &state)) return FAIL;
+    char const *ans = FAIL;
+    char const *error = "";
+
+    if (msg->cmd.argc == 3 && !sharg_check(&msg->cmd, "sis")) eparse_cleanup();
+    if (!sharg_check(&msg->cmd, "siss")) eparse_cleanup();
+    error = msg->cmd.argc == 3 ? "" : msg->cmd.argv[3];
+
+    if (!encode_job_state(msg->cmd.argv[2], &state)) goto cleanup;
     int64_t job_id = as_int64(msg->cmd.argv[1]);
-    return api_job_set_state(job_id, state, status_msg) ? FAIL : OK;
+    ans = api_job_set_state(job_id, state, error) ? FAIL : OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", error);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_job_inc_progress(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "sii")) return eparse(FAIL_PARSE), FAIL;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "sii")) eparse_cleanup();
+
     int64_t job_id = as_int64(msg->cmd.argv[1]);
     int64_t increment = as_int64(msg->cmd.argv[2]);
-    return api_job_inc_progress(job_id, increment) ? FAIL : OK;
+    if (!api_job_inc_progress(job_id, increment)) ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_scan_dl_seqs(struct msg *msg)
 {
-    static struct sched_scan scan = {0};
-    static char filepath[PATH_SIZE] = {0};
+    char const *ans = FAIL;
+    char const *filepath = "";
+    static char tmpfpath[PATH_SIZE] = {0};
 
-    if (!sharg_check(&msg->cmd, "sis")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "sis")) eparse_cleanup();
+    filepath = msg->cmd.argv[2];
 
-    if (api_scan_get_by_id(as_int64(msg->cmd.argv[1]), &scan)) return FAIL;
+    if (api_scan_get_by_id(as_int64(msg->cmd.argv[1]), &scan)) goto cleanup;
 
-    int rc = xfile_mkstemp(sizeof filepath, filepath);
+    int rc = xfile_mkstemp(sizeof tmpfpath, tmpfpath);
     if (rc)
     {
         eio("%s", xfile_strerror(rc));
-        return FAIL;
+        goto cleanup;
     }
-    FILE *fp = fopen(filepath, "wb");
+    FILE *fp = fopen(tmpfpath, "wb");
     if (!fp)
     {
         eio("fopen failed");
-        xfile_unlink(filepath);
-        return FAIL;
+        xfile_unlink(tmpfpath);
+        goto cleanup;
     }
 
     if (api_scan_dl_seqs(scan.id, fp))
     {
         fclose(fp);
-        return FAIL;
+        goto cleanup;
     }
 
     fclose(fp);
-    rc = xfile_move(msg->cmd.argv[2], filepath);
+    rc = xfile_move(msg->cmd.argv[2], tmpfpath);
     if (rc)
     {
         eio("%s", xfile_strerror(rc));
-        return FAIL;
+        goto cleanup;
     }
-    return msg->cmd.argv[2];
+    ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", filepath);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_scan_get_by_job_id(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
-    static struct sched_scan scan = {0};
-    if (api_scan_get_by_job_id(as_int64(msg->cmd.argv[1]), &scan)) return FAIL;
-    return sched_dump_scan(&scan, (char *)buffer);
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
+    if (!api_scan_get_by_job_id(as_int64(msg->cmd.argv[1]), &scan))
+    {
+        ans = OK;
+        json = sched_dump_scan(&scan, (char *)buffer);
+    }
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_scan_seq_count(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    char const *ans = FAIL;
+    buffer[0] = '\0';
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
+
     unsigned count = 0;
-    if (api_scan_seq_count(as_int64(msg->cmd.argv[1]), &count)) return FAIL;
-    sprintf((char *)buffer, "%u", count);
-    return buffer;
+    if (!api_scan_seq_count(as_int64(msg->cmd.argv[1]), &count))
+    {
+        ans = OK;
+        sprintf((char *)buffer, "%u", count);
+    }
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", buffer);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_scan_submit(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "siiis")) return eparse(FAIL_PARSE), FAIL;
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!sharg_check(&msg->cmd, "siiis")) eparse_cleanup();
+
     int64_t db_id = as_int64(msg->cmd.argv[1]);
     int64_t multi_hits = as_int64(msg->cmd.argv[2]);
     int64_t hmmer3_compat = as_int64(msg->cmd.argv[3]);
-    static struct sched_job job = {0};
-    if (api_scan_submit(db_id, multi_hits, hmmer3_compat, msg->cmd.argv[4],
-                        &job))
-        return FAIL;
-    return sched_dump_job(&job, (char *)buffer);
+    if (!api_scan_submit(db_id, multi_hits, hmmer3_compat, msg->cmd.argv[4],
+                         &job))
+    {
+        ans = OK;
+        json = sched_dump_job(&job, (char *)buffer);
+    }
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_prods_file_up(struct msg *msg)
@@ -304,8 +449,6 @@ static char const *fn_prods_file_up(struct msg *msg)
 
 static enum rc download_hmm(char const *filepath, void *data)
 {
-    static struct sched_hmm hmm = {0};
-
     int64_t xxh3 = *((int64_t *)data);
     enum rc rc = api_hmm_get_by_xxh3(xxh3, &hmm);
     if (rc) return rc;
@@ -322,8 +465,6 @@ static enum rc download_hmm(char const *filepath, void *data)
 
 static enum rc download_db(char const *filepath, void *data)
 {
-    static struct sched_db db = {0};
-
     int64_t xxh3 = *((int64_t *)data);
     enum rc rc = api_db_get_by_xxh3(xxh3, &db);
     if (rc) return rc;

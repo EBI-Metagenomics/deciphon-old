@@ -59,23 +59,19 @@ ensure_PF02545_hmm() {
 @test "schedy daemon" {
     schedy_spawn
 
-    echo "invalid" >stdin
+    echo "online | {1}" >stdin
     run peek stdout
-    assert_output "FAIL"
-
-    echo "online" >stdin
-    run peek stdout
-    assert_output "YES"
+    assert_output "yes"
 
     ensure_PF02545_hmm
     assert_file_exists "PF02545.hmm"
 
-    echo "wipe" >stdin
+    echo "wipe | {1}" >stdin
     run peek stdout
-    assert_output "OK"
+    assert_output "ok"
 
-    echo "hmm_up PF02545.hmm" >stdin
+    echo "hmm_up PF02545.hmm | {1}" >stdin
     run peek stdout
-    assert_output "OK"
+    assert_output "ok"
     schedy_kill
 }

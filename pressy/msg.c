@@ -21,13 +21,13 @@
 static char const *fn_invalid(struct msg *msg)
 {
     UNUSED(msg);
-    return eparse("invalid command"), NULL;
+    sharg_replace(&msg->echo, "{1}", FAIL);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_help(struct msg *msg)
 {
     UNUSED(msg);
-
     static char help_table[512] = {0};
     char *p = help_table;
     p += sprintf(p, "Commands:");
@@ -41,9 +41,16 @@ static char const *fn_help(struct msg *msg)
     return help_table;
 }
 
+#define eparse_cleanup()                                                       \
+    do                                                                         \
+    {                                                                          \
+        eparse(FAIL_PARSE_CMD);                                                \
+        goto cleanup;                                                          \
+    } while (0);
+
 static char const *fn_press(struct msg *msg)
 {
-    char const *ans = NULL;
+    char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "ss"))
     {
         eparse(FAIL_PARSE_CMD);
@@ -55,56 +62,42 @@ static char const *fn_press(struct msg *msg)
         ans = OK;
     else
         ans = FAIL;
-    sharg_replace(&msg->echo, "$1", ans);
+    sharg_replace(&msg->echo, "{1}", ans);
     return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_cancel(struct msg *msg)
 {
-    char const *ans = NULL;
-    if (!sharg_check(&msg->cmd, "s"))
-    {
-        eparse(FAIL_PARSE_CMD);
-        ans = FAIL;
-    }
-    else if (!session_is_running() || session_cancel())
-        ans = OK;
-    else
-        ans = FAIL;
-    sharg_replace(&msg->echo, "$1", ans);
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+    if (!session_is_running() || session_cancel()) ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
     return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_state(struct msg *msg)
 {
-    char const *ans = NULL;
-    char const *state = NULL;
-    if (!sharg_check(&msg->cmd, "s"))
-    {
-        eparse(FAIL_PARSE_CMD);
-        ans = FAIL;
-        state = "";
-    }
-    else
-    {
-        ans = OK;
-        state = session_state_string();
-    }
-    sharg_replace(&msg->echo, "$1", ans);
-    sharg_replace(&msg->echo, "$2", state);
+    char const *ans = FAIL;
+    char const *state = "";
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+    ans = OK;
+    state = session_state_string();
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", state);
     return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_progress(struct msg *msg)
 {
-    char const *ans = NULL;
+    char const *ans = FAIL;
     char progress[16] = {0};
-    if (!sharg_check(&msg->cmd, "s"))
-    {
-        eparse(FAIL_PARSE_CMD);
-        ans = FAIL;
-    }
-    else if (session_is_done())
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+
+    if (session_is_done())
     {
         ans = OK;
         zc_strlcpy(progress, "100%", sizeof progress);
@@ -115,10 +108,10 @@ static char const *fn_progress(struct msg *msg)
         sprintf(progress, "%u%%", session_progress());
     }
     else
-    {
         ans = FAIL;
-    }
-    sharg_replace(&msg->echo, "$1", ans);
-    sharg_replace(&msg->echo, "$2", progress);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", progress);
     return sharg_unparse(&msg->echo);
 }

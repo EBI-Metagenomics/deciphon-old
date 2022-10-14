@@ -64,16 +64,12 @@ checksum() {
 @test "pressy daemon" {
     pressy_spawn
 
-    echo "invalid" >stdin
-    run peek stdout
-    assert_output "FAIL"
-
     ensure_PF02545_hmm
     assert_file_exists "PF02545.hmm"
 
-    echo "press PF02545.hmm" >stdin
+    echo "press PF02545.hmm | ack {1} PF02545.hmm" >stdin
     run peek stdout
-    assert_output "OK"
+    assert_output "ack ok PF02545.hmm"
     assert_file_exists "PF02545.dcp"
 
     run checksum "PF02545.dcp"
