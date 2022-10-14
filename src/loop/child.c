@@ -24,12 +24,12 @@ struct child_cb *child_cb(struct child *child) { return &child->cb; }
 
 struct input_cb *child_input_cb(struct child *child)
 {
-    return input_cb(&child->input);
+    return &child->input.cb;
 }
 
 struct output_cb *child_output_cb(struct child *child)
 {
-    return output_cb(&child->output);
+    return &child->output.cb;
 }
 
 static void on_exit_fwd(uv_process_t *proc, int64_t exit_status, int sig);

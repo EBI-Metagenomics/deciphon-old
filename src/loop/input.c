@@ -12,7 +12,14 @@ void input_init(struct input *i, int fd)
     i->cb.arg = NULL;
 }
 
-struct input_cb *input_cb(struct input *i) { return &i->cb; }
+void input_setup(struct input *i, on_eof_fn_t *on_eof, on_error_fn_t *on_error,
+                 on_read_fn_t *on_read, void *arg)
+{
+    i->cb.on_eof = on_eof;
+    i->cb.on_error = on_error;
+    i->cb.on_read = on_read;
+    i->cb.arg = arg;
+}
 
 static void fwd_eof(void *arg)
 {

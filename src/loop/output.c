@@ -10,12 +10,16 @@ void output_init(struct output *o, int fd)
     o->cb.arg = NULL;
 }
 
+void output_setup(struct output *o, on_error_fn_t *on_error, void *arg)
+{
+    o->cb.on_error = on_error;
+    o->cb.arg = arg;
+}
+
 void output_start(struct output *o)
 {
     writer_init(&o->writer, &o->pipe.uvpipe, o->cb.on_error, o->cb.arg);
 }
-
-struct output_cb *output_cb(struct output *o) { return &o->cb; }
 
 void output_put(struct output *o, char const *string)
 {

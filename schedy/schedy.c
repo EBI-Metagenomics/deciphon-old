@@ -49,15 +49,11 @@ int main(int argc, char *argv[])
     if (api_init(url, key)) return EXIT_FAILURE;
 
     input_init(&input, STDIN_FILENO);
-    input_cb(&input)->on_eof = &on_eof;
-    input_cb(&input)->on_error = &on_read_error;
-    input_cb(&input)->on_read = &on_read;
-    input_cb(&input)->arg = NULL;
+    input_setup(&input, &on_eof, &on_read_error, &on_read, NULL);
     input_start(&input);
 
     output_init(&output, STDOUT_FILENO);
-    output_cb(&output)->on_error = &on_write_error;
-    output_cb(&output)->arg = NULL;
+    output_setup(&output, &on_write_error, NULL);
     output_start(&output);
 
     global_run();
