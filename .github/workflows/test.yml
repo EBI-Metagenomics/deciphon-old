@@ -9,13 +9,9 @@ jobs:
   test:
     name: Test on ${{ matrix.os }} with double precision ${{ matrix.double_precision }}
     runs-on: ${{ matrix.os }}
-    env:
-      IMM_DOUBLE_PRECISION: ${{ matrix.double_precision }}
     strategy:
       matrix:
         os: [ubuntu-22.04]
-        double_precision: ["Off"]
-        # double_precision: ["On", "Off"]
 
     steps:
       - uses: actions/checkout@v2

@@ -1,8 +1,10 @@
 #include "msg.h"
 #include "core/as.h"
 #include "core/logy.h"
+#include "core/service_strings.h"
+#include "core/strings.h"
 #include "session.h"
-#include "strings.h"
+#include "zc.h"
 #include <stdio.h>
 
 #define MSG_MAP(X)                                                             \
@@ -20,14 +22,14 @@
 
 static char const *fn_invalid(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    return eparse("invalid command"), FAIL;
+    UNUSED(msg);
+    sharg_replace(&msg->echo, "{1}", FAIL);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_help(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-
+    UNUSED(msg);
     static char help_table[512] = {0};
     char *p = help_table;
     p += sprintf(p, "Commands:");
@@ -41,53 +43,100 @@ static char const *fn_help(struct msg *msg)
     return help_table;
 }
 
+#define eparse_cleanup()                                                       \
+    do                                                                         \
+    {                                                                          \
+        eparse(FAIL_PARSE_CMD);                                                \
+        goto cleanup;                                                          \
+    } while (0);
+
 static char const *fn_set_nthreads(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "si")) return eparse(FAIL_PARSE), FAIL;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
     session_set_nthreads(as_int64(msg->cmd.argv[1]));
-    return OK;
+    ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_scan(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ssssii")) return eparse(FAIL_PARSE), FAIL;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "ssssii")) eparse_cleanup();
 
-    if (session_is_running()) return BUSY;
+    if (session_is_running())
+    {
+        ans = BUSY;
+        goto cleanup;
+    }
+
     char const *seqs = msg->cmd.argv[1];
     char const *db = msg->cmd.argv[2];
     char const *prod = msg->cmd.argv[3];
     bool multi_hits = !!as_int64(msg->cmd.argv[4]);
     bool hmmer3_compat = !!as_int64(msg->cmd.argv[5]);
-    return session_start(seqs, db, prod, multi_hits, hmmer3_compat) ? OK : FAIL;
+    if (session_start(seqs, db, prod, multi_hits, hmmer3_compat)) ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_cancel(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    if (!session_is_running()) return DONE;
-    return session_cancel() ? OK : FAIL;
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+
+    if (!session_is_running())
+    {
+        ans = OK;
+        goto cleanup;
+    }
+    if (session_cancel()) ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_state(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    return session_state_string();
+    char const *ans = FAIL;
+    char const *state = "";
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
+
+    state = session_state_string();
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", state);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_progress(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
+    char const *ans = FAIL;
+    char progress[16] = {0};
+    if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
 
-    static char progress[5] = "100%";
-    if (session_is_done()) return "100%";
-
-    if (session_is_running())
+    if (session_is_done())
     {
-        int perc = session_progress();
-        if (perc < 0) return FAIL;
-        sprintf(progress, "%u%%", (unsigned)perc);
-        return progress;
+        ans = OK;
+        zc_strlcpy(progress, "100%", sizeof progress);
     }
+    else if (session_is_running())
+    {
+        ans = OK;
+        sprintf(progress, "%u%%", session_progress());
+    }
+    else
+        ans = FAIL;
 
-    return FAIL;
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    sharg_replace(&msg->echo, "{2}", progress);
+    return sharg_unparse(&msg->echo);
 }
