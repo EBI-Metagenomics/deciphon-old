@@ -92,6 +92,7 @@ static void on_read(char *line, void *arg)
     UNUSED(arg);
     if (str_all_spaces(line)) return;
     if (!msg_parse(&msg, line)) eparse("too many arguments");
+    debug("OLA!!!!!!!!!!!!!!!!!!!!!!!!!!11");
     output_put(&output, (*msg_fn(msg.cmd.argv[0]))(&msg));
 }
 

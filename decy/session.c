@@ -1,10 +1,14 @@
 #include "session.h"
+#include "core/errmsg.h"
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/msg.h"
 #include "core/pp.h"
 #include "core/rc.h"
+#include "core/sched.h"
+#include "core/strings.h"
 #include "decy.h"
+#include "jx.h"
 #include "loop/child.h"
 #include "strings.h"
 #include <stdatomic.h>
@@ -83,13 +87,16 @@ static struct output_cb output_callbacks[] = {
     [SCHEDY_ID] = {&on_schedy_write_error, NULL},
 };
 
-struct uv_timer_s job_next_pend_timer = {0};
-atomic_bool no_job_next_pend = false;
+static JR_DECLARE(json_parser, 128);
+static struct uv_timer_s job_next_pend_timer = {0};
+static atomic_bool no_job_next_pend = false;
+static char errmsg[ERROR_SIZE] = {0};
 
 static void job_next_pend_cb(struct uv_timer_s *req);
 
 void session_init(void)
 {
+    JR_INIT(json_parser);
     for (int i = 0; i <= SCHEDY_ID; ++i)
     {
         child_init(&proc[i]);
@@ -116,7 +123,7 @@ static void job_next_pend_cb(struct uv_timer_s *req)
     (void)req;
     if (atomic_load_explicit(&no_job_next_pend, memory_order_consume)) return;
     debug("Asking for pending job");
-    child_send(&proc[SCHEDY_ID], "job_next_pend | exec_pend_job $1");
+    child_send(&proc[SCHEDY_ID], "job_next_pend | exec_pend_job {1} {2}");
 }
 
 char const *session_forward_msg(char const *proc_name, struct msg *msg)
@@ -129,6 +136,41 @@ char const *session_forward_msg(char const *proc_name, struct msg *msg)
 }
 
 void session_terminate(void) { uv_timer_stop(&job_next_pend_timer); }
+
+bool session_parse_db(struct sched_db *db, char *json)
+{
+    if (jr_parse(json_parser, (int)strlen(json), json))
+        return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
+    return !sched_db_parse(db, json_parser);
+}
+
+bool session_parse_hmm(struct sched_hmm *hmm, char *json)
+{
+    if (jr_parse(json_parser, (int)strlen(json), json))
+        return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
+    return !sched_hmm_parse(hmm, json_parser);
+}
+
+bool session_parse_job(struct sched_job *job, char *json)
+{
+    if (jr_parse(json_parser, (int)strlen(json), json))
+        return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
+    return !sched_job_parse(job, json_parser);
+}
+
+bool session_parse_scan(struct sched_scan *scan, char *json)
+{
+    if (jr_parse(json_parser, (int)strlen(json), json))
+        return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
+    return !sched_scan_parse(scan, json_parser);
+}
+
+bool session_parse_seq(struct sched_seq *seq, char *json)
+{
+    if (jr_parse(json_parser, (int)strlen(json), json))
+        return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
+    return !sched_seq_parse(seq, json_parser);
+}
 
 static int proc_idx(char const *name)
 {

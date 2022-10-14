@@ -1,10 +1,12 @@
 #include "msg.h"
 #include "core/file.h"
 #include "core/logy.h"
+#include "core/sched.h"
 #include "core/sched_dump.h"
+#include "core/service_strings.h"
+#include "core/strings.h"
 #include "decy.h"
 #include "session.h"
-#include "strings.h"
 #include "xfile.h"
 #include <string.h>
 
@@ -14,22 +16,24 @@
     X(PRESSY, pressy, "PRESSY_COMMAND [...]")                                  \
     X(SCANNY, scanny, "SCANNY_COMMAND [...]")                                  \
     X(SCHEDY, schedy, "SCHEDY_COMMAND [...]")                                  \
-    X(EXEC_PEND_JOB, exec_pend_job, "JSON")
+    X(EXEC_PEND_JOB, exec_pend_job, "ANS JSON")
 
 #define MSG_TEMPLATE_ENABLE
 #include "core/msg_template.h"
 #undef MSG_TEMPLATE_ENABLE
 
+static struct sched_job job = {0};
+
 static char const *fn_invalid(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-    return eparse("invalid command"), FAIL;
+    UNUSED(msg);
+    sharg_replace(&msg->echo, "{1}", FAIL);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_help(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s")) return eparse(FAIL_PARSE), FAIL;
-
+    UNUSED(msg);
     static char help_table[1024] = {0};
     char *p = help_table;
     p += sprintf(p, "Commands:");
@@ -43,28 +47,58 @@ static char const *fn_help(struct msg *msg)
     return help_table;
 }
 
+#define eparse_cleanup()                                                       \
+    do                                                                         \
+    {                                                                          \
+        eparse(FAIL_PARSE_CMD);                                                \
+        goto cleanup;                                                          \
+    } while (0);
+
 static char const *fn_pressy(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
-    return session_forward_msg(sharg_shift(&msg->cmd), msg);
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
+    ans = session_forward_msg(sharg_shift(&msg->cmd), msg);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_scanny(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
-    return session_forward_msg(sharg_shift(&msg->cmd), msg);
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
+    ans = session_forward_msg(sharg_shift(&msg->cmd), msg);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_schedy(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
-    return session_forward_msg(sharg_shift(&msg->cmd), msg);
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
+    ans = session_forward_msg(sharg_shift(&msg->cmd), msg);
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    return sharg_unparse(&msg->echo);
 }
 
 static char const *fn_exec_pend_job(struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "ss*")) return eparse(FAIL_PARSE), FAIL;
-    char const *job = msg->cmd.argv[1];
-    info("JOB: %s", job);
-    return OK;
+    info("%s", __FUNCTION__);
+    char const *ans = FAIL;
+    if (!sharg_check(&msg->cmd, "sss")) eparse_cleanup();
+    if (strcmp(msg->cmd.argv[1], "ok")) return NULL;
+
+    info("JOB: %s", msg->cmd.argv[2]);
+    if (session_parse_job(&job, msg->cmd.argv[2])) ans = OK;
+
+cleanup:
+    sharg_replace(&msg->echo, "{1}", ans);
+    // sharg_replace(&msg->echo, "{2}", json);
+    return sharg_unparse(&msg->echo);
 }

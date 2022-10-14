@@ -49,7 +49,7 @@ void child_spawn(struct child *child, char *args[])
 
 void child_send(struct child *child, char const *string)
 {
-    writer_put(&child->output.writer, string);
+    if (string) writer_put(&child->output.writer, string);
 }
 
 void child_stop_reading(struct child *child) { input_stop(&child->input); }
