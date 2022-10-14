@@ -1,4 +1,5 @@
 #include "msg.h"
+#include "broker.h"
 #include "core/file.h"
 #include "core/logy.h"
 #include "core/sched.h"
@@ -6,7 +7,6 @@
 #include "core/service_strings.h"
 #include "core/strings.h"
 #include "decy.h"
-#include "session.h"
 #include "xfile.h"
 #include <string.h>
 
@@ -58,7 +58,7 @@ static char const *fn_pressy(struct msg *msg)
 {
     char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
-    ans = session_forward_msg(sharg_shift(&msg->cmd), msg);
+    ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
 
 cleanup:
     sharg_replace(&msg->echo, "{1}", ans);
@@ -69,7 +69,7 @@ static char const *fn_scanny(struct msg *msg)
 {
     char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
-    ans = session_forward_msg(sharg_shift(&msg->cmd), msg);
+    ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
 
 cleanup:
     sharg_replace(&msg->echo, "{1}", ans);
@@ -80,7 +80,7 @@ static char const *fn_schedy(struct msg *msg)
 {
     char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
-    ans = session_forward_msg(sharg_shift(&msg->cmd), msg);
+    ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
 
 cleanup:
     sharg_replace(&msg->echo, "{1}", ans);
@@ -94,10 +94,9 @@ static char const *fn_exec_pend_job(struct msg *msg)
     if (strcmp(msg->cmd.argv[1], "ok")) return NULL;
 
     info("JOB: %s", msg->cmd.argv[2]);
-    if (session_parse_job(&job, msg->cmd.argv[2])) ans = OK;
+    if (broker_parse_job(&job, msg->cmd.argv[2])) ans = OK;
 
 cleanup:
     sharg_replace(&msg->echo, "{1}", ans);
-    // sharg_replace(&msg->echo, "{2}", json);
     return sharg_unparse(&msg->echo);
 }

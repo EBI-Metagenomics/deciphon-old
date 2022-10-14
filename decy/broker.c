@@ -1,4 +1,4 @@
-#include "session.h"
+#include "broker.h"
 #include "core/errmsg.h"
 #include "core/global.h"
 #include "core/logy.h"
@@ -88,7 +88,7 @@ static char errmsg[ERROR_SIZE] = {0};
 
 static void job_next_pend_cb(struct uv_timer_s *req);
 
-void session_init(void)
+void broker_init(void)
 {
     JR_INIT(json_parser);
     for (int i = 0; i <= SCHEDY_ID; ++i)
@@ -120,7 +120,7 @@ static void job_next_pend_cb(struct uv_timer_s *req)
     child_send(&proc[SCHEDY_ID], "job_next_pend | exec_pend_job {1} {2}");
 }
 
-char const *session_forward_msg(char const *proc_name, struct msg *msg)
+char const *broker_forward_msg(char const *proc_name, struct msg *msg)
 {
     if (!sharg_check(&msg->cmd, "s*")) return eparse(FAIL_PARSE), FAIL;
     int i = proc_idx(proc_name);
@@ -129,37 +129,37 @@ char const *session_forward_msg(char const *proc_name, struct msg *msg)
     return OK;
 }
 
-void session_terminate(void) { uv_timer_stop(&job_next_pend_timer); }
+void broker_terminate(void) { uv_timer_stop(&job_next_pend_timer); }
 
-bool session_parse_db(struct sched_db *db, char *json)
+bool broker_parse_db(struct sched_db *db, char *json)
 {
     if (jr_parse(json_parser, (int)strlen(json), json))
         return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
     return !sched_db_parse(db, json_parser);
 }
 
-bool session_parse_hmm(struct sched_hmm *hmm, char *json)
+bool broker_parse_hmm(struct sched_hmm *hmm, char *json)
 {
     if (jr_parse(json_parser, (int)strlen(json), json))
         return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
     return !sched_hmm_parse(hmm, json_parser);
 }
 
-bool session_parse_job(struct sched_job *job, char *json)
+bool broker_parse_job(struct sched_job *job, char *json)
 {
     if (jr_parse(json_parser, (int)strlen(json), json))
         return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
     return !sched_job_parse(job, json_parser);
 }
 
-bool session_parse_scan(struct sched_scan *scan, char *json)
+bool broker_parse_scan(struct sched_scan *scan, char *json)
 {
     if (jr_parse(json_parser, (int)strlen(json), json))
         return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
     return !sched_scan_parse(scan, json_parser);
 }
 
-bool session_parse_seq(struct sched_seq *seq, char *json)
+bool broker_parse_seq(struct sched_seq *seq, char *json)
 {
     if (jr_parse(json_parser, (int)strlen(json), json))
         return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));

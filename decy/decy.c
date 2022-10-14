@@ -1,5 +1,6 @@
 #include "decy.h"
 #include "argless.h"
+#include "broker.h"
 #include "cfg.h"
 #include "core/c23.h"
 #include "core/fmt.h"
@@ -10,7 +11,6 @@
 #include "core/str.h"
 #include "core/xmem.h"
 #include "msg.h"
-#include "session.h"
 #include <stdlib.h>
 
 struct input input = {0};
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     output_setup(&output, &on_write_error, NULL);
     output_start(&output);
 
-    session_init();
+    broker_init();
 
     global_run();
     global_cleanup();
@@ -95,5 +95,5 @@ static void on_term(void)
 {
     input_close(&input);
     output_close(&output);
-    session_terminate();
+    broker_terminate();
 }
