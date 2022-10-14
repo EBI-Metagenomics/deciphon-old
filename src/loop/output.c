@@ -5,7 +5,6 @@
 void output_init(struct output *o, int fd)
 {
     stdpipe_init(&o->pipe, global_loop());
-    debug("%s: fd: %d", __FUNCTION__, fd);
     if (fd >= 0) stdpipe_open(&o->pipe, fd);
     o->cb.on_error = NULL;
     o->cb.arg = NULL;

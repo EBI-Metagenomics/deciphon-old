@@ -131,7 +131,6 @@ add_executable(
   schedy/msg.c
   schedy/http.c
   schedy/schedy.c
-  schedy/schedy.c
   schedy/xcurl.c
   schedy/xcurl_debug.c)
 target_link_libraries(schedy PUBLIC deciphon)

@@ -291,6 +291,7 @@ cleanup:
 
 static char const *fn_job_next_pend(struct msg *msg)
 {
+    debug("SCHEDY: %s", __FUNCTION__);
     char const *ans = FAIL;
     char const *json = "";
     if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();

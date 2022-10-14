@@ -2,6 +2,7 @@
 #include "core/logy.h"
 #include "core/pp.h"
 #include "uv.h"
+#include "zc.h"
 #include <stdlib.h>
 
 static struct uv_async_s async = {0};
@@ -14,11 +15,16 @@ static char process_title[128] = {0};
 static void async_cb(struct uv_async_s *handle);
 static void sigterm_cb(struct uv_signal_s *handle, int signum);
 static void sigint_cb(struct uv_signal_s *handle, int signum);
+static void logprinter(char const *string, void *arg);
 
-void global_init(on_term_fn_t *on_term, int argc, char *argv[])
+void global_init(on_term_fn_t *on_term, int argc, char *argv[], int log_level)
 {
+    zlog_setup(logprinter, stderr, log_level);
     uv_setup_args(argc, argv);
     uv_get_process_title(process_title, sizeof process_title);
+    char *title = zc_basename(process_title);
+    memmove(process_title, title, strlen(title) + 1);
+    uv_set_process_title(process_title);
     if (uv_async_init(global_loop(), &async, async_cb)) exit(1);
     if (uv_signal_init(global_loop(), &sigterm)) exit(1);
     if (uv_signal_init(global_loop(), &sigint)) exit(1);
@@ -26,6 +32,7 @@ void global_init(on_term_fn_t *on_term, int argc, char *argv[])
     if (uv_signal_start(&sigint, sigint_cb, SIGINT)) exit(1);
     terminated = 3;
     on_term_fn = on_term;
+    info("starting");
 }
 
 char const *global_title(void) { return process_title; }
@@ -73,4 +80,11 @@ static void sigint_cb(struct uv_signal_s *handle, int signum)
     UNUSED(handle, signum);
     uv_signal_stop(&sigint);
     if (uv_async_send(&async)) exit(1);
+}
+
+static void logprinter(char const *string, void *arg)
+{
+    FILE *fp = arg;
+    fprintf(fp, "[%6s] ", global_title());
+    fputs(string, fp);
 }

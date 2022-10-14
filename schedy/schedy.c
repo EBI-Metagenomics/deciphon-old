@@ -37,21 +37,15 @@ static void on_read(char *line, void *);
 static void on_write_error(void *arg);
 static void on_term(void);
 
-static void myprint(char const *string, void *arg) { fputs(string, arg); }
-
 int main(int argc, char *argv[])
 {
-    global_init(on_term, argc, argv);
-
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
+    global_init(on_term, argc, argv, argl_get(&argl, "loglevel")[0] - '0');
+
     char const *url = argl_get(&argl, "url");
     char const *key = argl_get(&argl, "key");
-
-    zlog_setup(myprint, stderr, argl_get(&argl, "loglevel")[0] - '0');
-
-    info("starting %s", argl_program(&argl));
     if (api_init(url, key)) return EXIT_FAILURE;
 
     input_init(&input, STDIN_FILENO);
@@ -89,10 +83,10 @@ static void on_read_error(void *arg)
 
 static void on_read(char *line, void *arg)
 {
+    debug("SCHEDY: %s", __FUNCTION__);
     UNUSED(arg);
     if (str_all_spaces(line)) return;
     if (!msg_parse(&msg, line)) eparse("too many arguments");
-    debug("OLA!!!!!!!!!!!!!!!!!!!!!!!!!!11");
     output_put(&output, (*msg_fn(msg.cmd.argv[0]))(&msg));
 }
 

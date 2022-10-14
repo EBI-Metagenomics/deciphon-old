@@ -10,8 +10,10 @@ void child_init(struct child *child)
 
     child->stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
     child->stdio[0].data.stream = (uv_stream_t *)&child->output.pipe;
+
     child->stdio[1].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
     child->stdio[1].data.stream = (uv_stream_t *)&child->input.pipe;
+
     child->stdio[2].flags = UV_INHERIT_FD;
     child->stdio[2].data.fd = STDERR_FILENO;
 

@@ -10,7 +10,6 @@
 #include "core/str.h"
 #include "core/xmem.h"
 #include "msg.h"
-#include "schedy.h"
 #include "session.h"
 #include <stdlib.h>
 
@@ -37,21 +36,15 @@ static void on_read(char *line, void *);
 static void on_write_error(void *arg);
 static void on_term(void);
 
-static void myprint(char const *string, void *arg) { fputs(string, arg); }
-
 int main(int argc, char *argv[])
 {
-    global_init(on_term, argc, argv);
-
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
-
-    zlog_setup(myprint, stderr, argl_get(&argl, "loglevel")[0] - '0');
+    global_init(on_term, argc, argv, argl_get(&argl, "loglevel")[0] - '0');
 
     cfg_init();
 
-    info("starting %s", argl_program(&argl));
     input_init(&input, STDIN_FILENO);
     input_cb(&input)->on_eof = &on_eof;
     input_cb(&input)->on_error = &on_read_error;
@@ -88,10 +81,13 @@ static void on_read_error(void *arg)
 
 static void on_read(char *line, void *arg)
 {
+    debug("DECY: %s", __FUNCTION__);
     UNUSED(arg);
     if (str_all_spaces(line)) return;
     if (!msg_parse(&msg, line)) eparse("too many arguments");
-    output_put(&output, (*msg_fn(msg.cmd.argv[0]))(&msg));
+    char const *m = (*msg_fn(msg.cmd.argv[0]))(&msg);
+    debug("DECY: %s: %s", __FUNCTION__, m);
+    output_put(&output, m);
 }
 
 static void on_write_error(void *arg)

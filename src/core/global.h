@@ -5,7 +5,7 @@
 
 struct uv_loop_s;
 
-void global_init(on_term_fn_t *, int argc, char *argv[]);
+void global_init(on_term_fn_t *, int argc, char *argv[], int log_level);
 char const *global_title(void);
 struct uv_loop_s *global_loop(void);
 void global_terminate(void);
