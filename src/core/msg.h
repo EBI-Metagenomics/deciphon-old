@@ -6,7 +6,7 @@
 struct msg
 {
     struct sharg cmd;
-    struct sharg echo;
+    struct sharg ctx;
 };
 
 typedef char const *msg_fn_t(struct msg *);

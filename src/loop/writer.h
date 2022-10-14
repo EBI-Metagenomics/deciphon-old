@@ -13,13 +13,11 @@ struct writer
 
     struct
     {
-        on_error_fn_t *onerror;
-        void *arg;
+        on_error2_fn_t *on_error;
     } cb;
 };
 
-void writer_init(struct writer *, struct uv_pipe_s *, on_error_fn_t *,
-                 void *arg);
+void writer_init(struct writer *, struct uv_pipe_s *, on_error2_fn_t *);
 void writer_try_put(struct writer *, char const *string);
 void writer_put(struct writer *, char const *string);
 

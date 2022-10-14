@@ -27,8 +27,8 @@ static struct sched_job job = {0};
 static char const *fn_invalid(struct msg *msg)
 {
     UNUSED(msg);
-    sharg_replace(&msg->echo, "{1}", FAIL);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", FAIL);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_help(struct msg *msg)
@@ -61,8 +61,8 @@ static char const *fn_pressy(struct msg *msg)
     ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_scanny(struct msg *msg)
@@ -72,8 +72,8 @@ static char const *fn_scanny(struct msg *msg)
     ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_schedy(struct msg *msg)
@@ -83,8 +83,8 @@ static char const *fn_schedy(struct msg *msg)
     ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_exec_pend_job(struct msg *msg)
@@ -97,6 +97,6 @@ static char const *fn_exec_pend_job(struct msg *msg)
     if (broker_parse_job(&job, msg->cmd.argv[2])) ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }

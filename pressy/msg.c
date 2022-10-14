@@ -21,8 +21,8 @@
 static char const *fn_invalid(struct msg *msg)
 {
     UNUSED(msg);
-    sharg_replace(&msg->echo, "{1}", FAIL);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", FAIL);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_help(struct msg *msg)
@@ -62,8 +62,8 @@ static char const *fn_press(struct msg *msg)
         ans = OK;
     else
         ans = FAIL;
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_cancel(struct msg *msg)
@@ -73,8 +73,8 @@ static char const *fn_cancel(struct msg *msg)
     if (!session_is_running() || session_cancel()) ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_state(struct msg *msg)
@@ -86,9 +86,9 @@ static char const *fn_state(struct msg *msg)
     state = session_state_string();
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", state);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", state);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_progress(struct msg *msg)
@@ -111,7 +111,7 @@ static char const *fn_progress(struct msg *msg)
         ans = FAIL;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", progress);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", progress);
+    return sharg_unparse(&msg->ctx);
 }

@@ -67,7 +67,6 @@ add_library(
   src/core/sched.c
   src/core/sched_dump.c
   src/core/sharg.c
-  src/core/str.c
   src/core/to.c
   src/core/url.c
   src/core/xmem.c

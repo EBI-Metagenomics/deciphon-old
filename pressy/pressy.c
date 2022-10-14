@@ -4,8 +4,6 @@
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/pidfile.h"
-#include "core/pp.h"
-#include "core/str.h"
 #include "msg.h"
 #include "session.h"
 #include <stdlib.h>
@@ -26,10 +24,10 @@ static struct argl argl = {.options = options,
                            .doc = "Pressy program.",
                            .version = "1.0.0"};
 
-static void on_eof(void *arg);
-static void on_read_error(void *arg);
-static void on_read(char *line, void *);
-static void on_write_error(void *arg);
+static void on_eof(void);
+static void on_read_error(void);
+static void on_read(char *line);
+static void on_write_error(void);
 static void on_term(void);
 
 int main(int argc, char *argv[])
@@ -40,11 +38,11 @@ int main(int argc, char *argv[])
     global_init(on_term, argc, argv, argl_get(&argl, "loglevel")[0] - '0');
 
     input_init(&input, STDIN_FILENO);
-    input_setup(&input, &on_eof, &on_read_error, &on_read, NULL);
+    input_setup(&input, &on_eof, &on_read_error, &on_read);
     input_start(&input);
 
     output_init(&output, STDOUT_FILENO);
-    output_setup(&output, &on_write_error, NULL);
+    output_setup(&output, &on_write_error);
     output_start(&output);
 
     session_init();
@@ -55,31 +53,26 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
-static void on_eof(void *arg)
+static void on_eof(void)
 {
-    UNUSED(arg);
     warn("%s", __FUNCTION__);
     global_terminate();
 }
 
-static void on_read_error(void *arg)
+static void on_read_error(void)
 {
-    UNUSED(arg);
     warn("%s", __FUNCTION__);
     global_terminate();
 }
 
-static void on_read(char *line, void *arg)
+static void on_read(char *line)
 {
-    UNUSED(arg);
-    if (str_all_spaces(line)) return;
     if (!msg_parse(&msg, line)) eparse("too many arguments");
     output_put(&output, (*msg_fn(msg.cmd.argv[0]))(&msg));
 }
 
-static void on_write_error(void *arg)
+static void on_write_error(void)
 {
-    UNUSED(arg);
     warn("%s", __FUNCTION__);
     global_terminate();
 }

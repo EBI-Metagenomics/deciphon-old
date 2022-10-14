@@ -59,8 +59,8 @@ static struct sched_scan scan = {0};
 static char const *fn_invalid(struct msg *msg)
 {
     UNUSED(msg);
-    sharg_replace(&msg->echo, "{1}", FAIL);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", FAIL);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_help(struct msg *msg)
@@ -94,8 +94,8 @@ static char const *fn_online(struct msg *msg)
     ans = api_is_reachable() ? YES : NO;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_wipe(struct msg *msg)
@@ -105,8 +105,8 @@ static char const *fn_wipe(struct msg *msg)
     if (!api_wipe()) ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_cancel(struct msg *msg)
@@ -116,8 +116,8 @@ static char const *fn_cancel(struct msg *msg)
     ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_hmm_up(struct msg *msg)
@@ -127,8 +127,8 @@ static char const *fn_hmm_up(struct msg *msg)
     if (!api_hmm_up(msg->cmd.argv[1], &hmm)) ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_hmm_dl(struct msg *msg)
@@ -141,8 +141,8 @@ static char const *fn_hmm_dl(struct msg *msg)
         ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_hmm_get_by_id(struct msg *msg)
@@ -155,9 +155,9 @@ static char const *fn_hmm_get_by_id(struct msg *msg)
     json = sched_dump_hmm(&hmm, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_hmm_get_by_xxh3(struct msg *msg)
@@ -170,9 +170,9 @@ static char const *fn_hmm_get_by_xxh3(struct msg *msg)
     json = sched_dump_hmm(&hmm, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_hmm_get_by_job_id(struct msg *msg)
@@ -185,9 +185,9 @@ static char const *fn_hmm_get_by_job_id(struct msg *msg)
     json = sched_dump_hmm(&hmm, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_hmm_get_by_filename(struct msg *msg)
@@ -200,9 +200,9 @@ static char const *fn_hmm_get_by_filename(struct msg *msg)
     json = sched_dump_hmm(&hmm, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_db_up(struct msg *msg)
@@ -212,8 +212,8 @@ static char const *fn_db_up(struct msg *msg)
     if (!api_db_up(msg->cmd.argv[1], &db)) ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_db_dl(struct msg *msg)
@@ -225,8 +225,8 @@ static char const *fn_db_dl(struct msg *msg)
         ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_db_get_by_id(struct msg *msg)
@@ -239,9 +239,9 @@ static char const *fn_db_get_by_id(struct msg *msg)
     json = sched_dump_db(&db, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_db_get_by_xxh3(struct msg *msg)
@@ -254,9 +254,9 @@ static char const *fn_db_get_by_xxh3(struct msg *msg)
     json = sched_dump_db(&db, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_db_get_by_hmm_id(struct msg *msg)
@@ -269,9 +269,9 @@ static char const *fn_db_get_by_hmm_id(struct msg *msg)
     json = sched_dump_db(&db, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_db_get_by_filename(struct msg *msg)
@@ -284,9 +284,9 @@ static char const *fn_db_get_by_filename(struct msg *msg)
     json = sched_dump_db(&db, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_job_next_pend(struct msg *msg)
@@ -300,9 +300,9 @@ static char const *fn_job_next_pend(struct msg *msg)
     json = sched_dump_job(&job, (char *)buffer);
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_job_set_state(struct msg *msg)
@@ -319,9 +319,9 @@ static char const *fn_job_set_state(struct msg *msg)
     ans = api_job_set_state(job_id, state, error) ? FAIL : OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", error);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", error);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_job_inc_progress(struct msg *msg)
@@ -334,8 +334,8 @@ static char const *fn_job_inc_progress(struct msg *msg)
     if (!api_job_inc_progress(job_id, increment)) ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_scan_dl_seqs(struct msg *msg)
@@ -379,9 +379,9 @@ static char const *fn_scan_dl_seqs(struct msg *msg)
     ans = OK;
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", filepath);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", filepath);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_scan_get_by_job_id(struct msg *msg)
@@ -396,9 +396,9 @@ static char const *fn_scan_get_by_job_id(struct msg *msg)
     }
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_scan_seq_count(struct msg *msg)
@@ -415,9 +415,9 @@ static char const *fn_scan_seq_count(struct msg *msg)
     }
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", buffer);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", buffer);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_scan_submit(struct msg *msg)
@@ -437,9 +437,9 @@ static char const *fn_scan_submit(struct msg *msg)
     }
 
 cleanup:
-    sharg_replace(&msg->echo, "{1}", ans);
-    sharg_replace(&msg->echo, "{2}", json);
-    return sharg_unparse(&msg->echo);
+    sharg_replace(&msg->ctx, "{1}", ans);
+    sharg_replace(&msg->ctx, "{2}", json);
+    return sharg_unparse(&msg->ctx);
 }
 
 static char const *fn_prods_file_up(struct msg *msg)

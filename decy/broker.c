@@ -3,7 +3,6 @@
 #include "core/global.h"
 #include "core/logy.h"
 #include "core/msg.h"
-#include "core/pp.h"
 #include "core/rc.h"
 #include "core/sched.h"
 #include "core/strings.h"
@@ -14,34 +13,22 @@
 #include <stdatomic.h>
 
 static void on_pressy_exit(void) { global_terminate(); }
-static void on_pressy_eof(void *arg) { UNUSED(arg); }
-static void on_pressy_read_error(void *arg) { UNUSED(arg); }
-static void on_pressy_write_error(void *arg) { UNUSED(arg); }
-static void on_pressy_read(char *line, void *arg)
-{
-    UNUSED(arg);
-    input_forward(&input, line);
-}
+static void on_pressy_eof(void) {}
+static void on_pressy_read_error(void) {}
+static void on_pressy_write_error(void) {}
+static void on_pressy_read(char *line) { input_forward(&input, line); }
 
 static void on_schedy_exit(void) { global_terminate(); }
-static void on_schedy_eof(void *arg) { UNUSED(arg); }
-static void on_schedy_read_error(void *arg) { UNUSED(arg); }
-static void on_schedy_write_error(void *arg) { UNUSED(arg); }
-static void on_schedy_read(char *line, void *arg)
-{
-    UNUSED(arg);
-    input_forward(&input, line);
-}
+static void on_schedy_eof(void) {}
+static void on_schedy_read_error(void) {}
+static void on_schedy_write_error(void) {}
+static void on_schedy_read(char *line) { input_forward(&input, line); }
 
 static void on_scanny_exit(void) { global_terminate(); }
-static void on_scanny_eof(void *arg) { UNUSED(arg); }
-static void on_scanny_read_error(void *arg) { UNUSED(arg); }
-static void on_scanny_write_error(void *arg) { UNUSED(arg); }
-static void on_scanny_read(char *line, void *arg)
-{
-    UNUSED(arg);
-    input_forward(&input, line);
-}
+static void on_scanny_eof(void) {}
+static void on_scanny_read_error(void) {}
+static void on_scanny_write_error(void) {}
+static void on_scanny_read(char *line) { input_forward(&input, line); }
 
 static struct child proc[3] = {
     [PRESSY_ID] = {0}, [SCANNY_ID] = {0}, [SCHEDY_ID] = {0}};
@@ -67,18 +54,15 @@ static struct child_cb child_callbacks[] = {
 };
 
 static struct input_cb input_callbacks[] = {
-    [PRESSY_ID] = {&on_pressy_eof, &on_pressy_read_error, &on_pressy_read,
-                   NULL},
-    [SCANNY_ID] = {&on_scanny_eof, &on_scanny_read_error, &on_scanny_read,
-                   NULL},
-    [SCHEDY_ID] = {&on_schedy_eof, &on_schedy_read_error, &on_schedy_read,
-                   NULL},
+    [PRESSY_ID] = {&on_pressy_eof, &on_pressy_read_error, &on_pressy_read},
+    [SCANNY_ID] = {&on_scanny_eof, &on_scanny_read_error, &on_scanny_read},
+    [SCHEDY_ID] = {&on_schedy_eof, &on_schedy_read_error, &on_schedy_read},
 };
 
 static struct output_cb output_callbacks[] = {
-    [PRESSY_ID] = {&on_pressy_write_error, NULL},
-    [SCANNY_ID] = {&on_scanny_write_error, NULL},
-    [SCHEDY_ID] = {&on_schedy_write_error, NULL},
+    [PRESSY_ID] = {&on_pressy_write_error},
+    [SCANNY_ID] = {&on_scanny_write_error},
+    [SCHEDY_ID] = {&on_schedy_write_error},
 };
 
 static JR_DECLARE(json_parser, 128);
@@ -99,9 +83,7 @@ void broker_init(void)
         child_input_cb(&proc[i])->on_eof = input_callbacks[i].on_eof;
         child_input_cb(&proc[i])->on_error = input_callbacks[i].on_error;
         child_input_cb(&proc[i])->on_read = input_callbacks[i].on_read;
-        child_input_cb(&proc[i])->arg = input_callbacks[i].arg;
         child_output_cb(&proc[i])->on_error = output_callbacks[i].on_error;
-        child_output_cb(&proc[i])->arg = output_callbacks[i].arg;
         child_spawn(&proc[i], proc_args[i]);
     }
     atomic_store_explicit(&no_job_next_pend, false, memory_order_release);

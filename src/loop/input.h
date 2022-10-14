@@ -7,10 +7,9 @@
 
 struct input_cb
 {
-    on_eof_fn_t *on_eof;
-    on_error_fn_t *on_error;
-    on_read_fn_t *on_read;
-    void *arg;
+    on_eof2_fn_t *on_eof;
+    on_error2_fn_t *on_error;
+    on_read2_fn_t *on_read;
 };
 
 struct input
@@ -21,8 +20,8 @@ struct input
 };
 
 void input_init(struct input *, int fd);
-void input_setup(struct input *, on_eof_fn_t *, on_error_fn_t *, on_read_fn_t *,
-                 void *);
+void input_setup(struct input *, on_eof2_fn_t *, on_error2_fn_t *,
+                 on_read2_fn_t *);
 void input_forward(struct input *, char *line);
 void input_start(struct input *);
 void input_stop(struct input *);

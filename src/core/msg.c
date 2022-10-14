@@ -4,7 +4,7 @@
 void msg_init(struct msg *msg)
 {
     sharg_init(&msg->cmd);
-    sharg_init(&msg->echo);
+    sharg_init(&msg->ctx);
 }
 
 static int find_pipe(char const *str, char delim);
@@ -12,7 +12,7 @@ static int find_pipe(char const *str, char delim);
 bool msg_parse(struct msg *msg, char *str)
 {
     sharg_init(&msg->cmd);
-    sharg_init(&msg->echo);
+    sharg_init(&msg->ctx);
 
     if (!sharg_parse(&msg->cmd, str)) return false;
 
@@ -27,15 +27,15 @@ bool msg_parse(struct msg *msg, char *str)
     char *echo_start = str + pipe + 1 + (pipe + 1 != n);
 
     if (!sharg_parse(&msg->cmd, cmd_start)) return false;
-    if (!sharg_parse(&msg->echo, echo_start)) return false;
+    if (!sharg_parse(&msg->ctx, echo_start)) return false;
 
     return true;
 }
 
 char *msg_unparse(struct msg *msg)
 {
-    for (int i = 0; i < msg->echo.argc; ++i)
-        sharg_append(&msg->cmd, msg->echo.argv[i]);
+    for (int i = 0; i < msg->ctx.argc; ++i)
+        sharg_append(&msg->cmd, msg->ctx.argv[i]);
     return sharg_unparse(&msg->cmd);
 }
 

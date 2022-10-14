@@ -18,9 +18,9 @@ struct reader
 
     struct
     {
-        on_eof_fn_t *oneof;
-        on_error_fn_t *onerror;
-        on_read_fn_t *onread;
+        on_eof_fn_t *on_eof;
+        on_error_fn_t *on_error;
+        on_read_fn_t *on_read;
         void *arg;
     } cb;
 
@@ -31,7 +31,7 @@ struct reader
 };
 
 void reader_init(struct reader *, struct uv_pipe_s *, on_eof_fn_t *,
-                 on_error_fn_t *, on_read_fn_t *, void *arg);
+                 on_error_fn_t *, on_read_fn_t *, void *);
 void reader_start(struct reader *);
 void reader_stop(struct reader *);
 

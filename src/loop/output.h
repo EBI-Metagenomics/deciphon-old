@@ -7,8 +7,7 @@
 
 struct output_cb
 {
-    on_error_fn_t *on_error;
-    void *arg;
+    on_error2_fn_t *on_error;
 };
 
 struct output
@@ -19,7 +18,7 @@ struct output
 };
 
 void output_init(struct output *, int fd);
-void output_setup(struct output *, on_error_fn_t *, void *);
+void output_setup(struct output *, on_error2_fn_t *);
 void output_start(struct output *o);
 void output_put(struct output *, char const *string);
 void output_close(struct output *);

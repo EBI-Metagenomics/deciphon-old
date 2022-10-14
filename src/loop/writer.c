@@ -6,13 +6,12 @@
 #include "uv.h"
 
 void writer_init(struct writer *writer, struct uv_pipe_s *pipe,
-                 on_error_fn_t *onerror, void *arg)
+                 on_error2_fn_t *on_error)
 {
     writer->pipe = pipe;
     writer->pipe->data = writer;
 
-    writer->cb.onerror = onerror;
-    writer->cb.arg = arg;
+    writer->cb.on_error = on_error;
 }
 
 static void write_fwd(struct uv_write_s *write, int status);
@@ -38,7 +37,7 @@ void writer_put(struct writer *writer, char const *string)
     if (rc)
     {
         error("failed to write: %s", uv_strerror(rc));
-        (*writer->cb.onerror)(writer->cb.arg);
+        (*writer->cb.on_error)();
     }
 }
 
@@ -49,7 +48,7 @@ static void write_fwd(struct uv_write_s *write, int rc)
     if (rc)
     {
         error("failed to write: %s", uv_strerror(rc));
-        (*writer->cb.onerror)(writer->cb.arg);
+        (*writer->cb.on_error)();
     }
     writer_req_pool_put(req);
 }

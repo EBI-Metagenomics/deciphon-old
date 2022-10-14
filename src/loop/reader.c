@@ -6,15 +6,15 @@
 #include <string.h>
 
 void reader_init(struct reader *reader, struct uv_pipe_s *pipe,
-                 on_eof_fn_t *oneof, on_error_fn_t *onerror,
-                 on_read_fn_t *onread, void *arg)
+                 on_eof_fn_t *on_eof, on_error_fn_t *on_error,
+                 on_read_fn_t *on_read, void *arg)
 {
     reader->pipe = pipe;
     reader->pipe->data = reader;
 
-    reader->cb.oneof = oneof;
-    reader->cb.onerror = onerror;
-    reader->cb.onread = onread;
+    reader->cb.on_eof = on_eof;
+    reader->cb.on_error = on_error;
+    reader->cb.on_read = on_read;
     reader->cb.arg = arg;
 
     reader->pos = reader->buff;
@@ -31,7 +31,7 @@ void reader_stop(struct reader *reader) { stop_reading(reader); }
 static void process_error(struct reader *reader)
 {
     stop_reading(reader);
-    (*reader->cb.onerror)(reader->cb.arg);
+    (*reader->cb.on_error)(reader->cb.arg);
 }
 
 static void process_newlines(struct reader *reader)
@@ -46,7 +46,7 @@ static void process_newlines(struct reader *reader)
     while (z)
     {
         *z = 0;
-        (*reader->cb.onread)(reader->pos, reader->cb.arg);
+        (*reader->cb.on_read)(reader->pos, reader->cb.arg);
         reader->pos = z + 1;
     enter:
         z = memchr(reader->pos, '\n', (unsigned)(reader->end - reader->pos));
@@ -66,7 +66,7 @@ static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
     if (nread < 0)
     {
         if (nread == UV_EOF)
-            (*reader->cb.oneof)(reader->cb.arg);
+            (*reader->cb.on_eof)(reader->cb.arg);
         else
             process_error(reader);
     }
