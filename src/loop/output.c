@@ -19,7 +19,7 @@ struct output_cb *output_cb(struct output *o) { return &o->cb; }
 
 void output_put(struct output *o, char const *string)
 {
-    writer_put(&o->writer, string);
+    if (string) writer_put(&o->writer, string);
 }
 
 void output_close(struct output *o) { stdpipe_close(&o->pipe); }
