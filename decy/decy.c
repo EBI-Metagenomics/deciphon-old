@@ -13,7 +13,7 @@
 
 struct input input = {0};
 struct output output = {0};
-static struct msg msg = {0};
+struct msg msg = {0};
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},

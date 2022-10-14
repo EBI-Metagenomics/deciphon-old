@@ -5,10 +5,12 @@
 #include "core/msg.h"
 #include "core/rc.h"
 #include "core/sched.h"
+#include "core/service_strings.h"
 #include "core/strings.h"
 #include "decy.h"
 #include "jx.h"
 #include "loop/child.h"
+#include "msg.h"
 #include "strings.h"
 #include <stdatomic.h>
 
@@ -16,19 +18,22 @@ static void on_pressy_exit(void) { global_terminate(); }
 static void on_pressy_eof(void) {}
 static void on_pressy_read_error(void) {}
 static void on_pressy_write_error(void) {}
-static void on_pressy_read(char *line) { input_forward(&input, line); }
 
 static void on_schedy_exit(void) { global_terminate(); }
 static void on_schedy_eof(void) {}
 static void on_schedy_read_error(void) {}
 static void on_schedy_write_error(void) {}
-static void on_schedy_read(char *line) { input_forward(&input, line); }
 
 static void on_scanny_exit(void) { global_terminate(); }
 static void on_scanny_eof(void) {}
 static void on_scanny_read_error(void) {}
 static void on_scanny_write_error(void) {}
-static void on_scanny_read(char *line) { input_forward(&input, line); }
+
+static void on_read(char *line)
+{
+    if (!msg_parse(&msg, line)) eparse("too many arguments");
+    (*msg_fn(msg.cmd.argv[0]))(&msg);
+}
 
 static struct child proc[3] = {
     [PRESSY_ID] = {0}, [SCANNY_ID] = {0}, [SCHEDY_ID] = {0}};
@@ -54,9 +59,9 @@ static struct child_cb child_callbacks[] = {
 };
 
 static struct input_cb input_callbacks[] = {
-    [PRESSY_ID] = {&on_pressy_eof, &on_pressy_read_error, &on_pressy_read},
-    [SCANNY_ID] = {&on_scanny_eof, &on_scanny_read_error, &on_scanny_read},
-    [SCHEDY_ID] = {&on_schedy_eof, &on_schedy_read_error, &on_schedy_read},
+    [PRESSY_ID] = {&on_pressy_eof, &on_pressy_read_error, &on_read},
+    [SCANNY_ID] = {&on_scanny_eof, &on_scanny_read_error, &on_read},
+    [SCHEDY_ID] = {&on_schedy_eof, &on_schedy_read_error, &on_read},
 };
 
 static struct output_cb output_callbacks[] = {
@@ -104,7 +109,7 @@ static void job_next_pend_cb(struct uv_timer_s *req)
 
 char const *broker_forward_msg(char const *proc_name, struct msg *msg)
 {
-    if (!sharg_check(&msg->cmd, "s*")) return eparse(FAIL_PARSE), FAIL;
+    if (!sharg_check(&msg->cmd, "s*")) return eparse(INVALID_ARGS), FAIL;
     int i = proc_idx(proc_name);
     if (i < 0) return FAIL;
     child_send(&proc[i], msg_unparse(msg));

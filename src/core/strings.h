@@ -3,6 +3,6 @@
 
 #define FILE_PATH_LONG "file path is too long"
 #define FAIL_PARSE_JSON "failed to parse json"
-#define FAIL_PARSE_CMD "failed to parse command"
+#define INVALID_ARGS "invalid arguments"
 
 #endif

@@ -20,11 +20,6 @@ void input_setup(struct input *i, on_eof2_fn_t *on_eof,
     i->cb.on_read = on_read;
 }
 
-void input_forward(struct input *i, char *line)
-{
-    if (i->cb.on_read) (*i->cb.on_read)(line);
-}
-
 static void fwd_eof(void *arg)
 {
     struct input *i = arg;

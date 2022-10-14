@@ -22,7 +22,6 @@ struct input
 void input_init(struct input *, int fd);
 void input_setup(struct input *, on_eof2_fn_t *, on_error2_fn_t *,
                  on_read2_fn_t *);
-void input_forward(struct input *, char *line);
 void input_start(struct input *);
 void input_stop(struct input *);
 void input_close(struct input *);

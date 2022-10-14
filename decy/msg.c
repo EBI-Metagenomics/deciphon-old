@@ -50,7 +50,7 @@ static char const *fn_help(struct msg *msg)
 #define eparse_cleanup()                                                       \
     do                                                                         \
     {                                                                          \
-        eparse(FAIL_PARSE_CMD);                                                \
+        eparse(INVALID_ARGS);                                                  \
         goto cleanup;                                                          \
     } while (0);
 

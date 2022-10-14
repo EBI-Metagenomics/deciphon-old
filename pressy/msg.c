@@ -44,24 +44,22 @@ static char const *fn_help(struct msg *msg)
 #define eparse_cleanup()                                                       \
     do                                                                         \
     {                                                                          \
-        eparse(FAIL_PARSE_CMD);                                                \
+        eparse(INVALID_ARGS);                                                  \
         goto cleanup;                                                          \
     } while (0);
 
 static char const *fn_press(struct msg *msg)
 {
     char const *ans = FAIL;
-    if (!sharg_check(&msg->cmd, "ss"))
-    {
-        eparse(FAIL_PARSE_CMD);
-        ans = FAIL;
-    }
-    else if (session_is_running())
+    if (!sharg_check(&msg->cmd, "ss")) eparse_cleanup();
+    if (session_is_running())
         ans = BUSY;
     else if (session_start(msg->cmd.argv[1]))
         ans = OK;
     else
         ans = FAIL;
+
+cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);
     return sharg_unparse(&msg->ctx);
 }
