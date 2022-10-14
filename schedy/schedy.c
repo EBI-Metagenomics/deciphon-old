@@ -79,7 +79,6 @@ static void on_read_error(void *arg)
 
 static void on_read(char *line, void *arg)
 {
-    debug("SCHEDY: %s", __FUNCTION__);
     UNUSED(arg);
     if (str_all_spaces(line)) return;
     if (!msg_parse(&msg, line)) eparse("too many arguments");

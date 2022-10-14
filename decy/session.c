@@ -20,9 +20,7 @@ static void on_pressy_write_error(void *arg) { UNUSED(arg); }
 static void on_pressy_read(char *line, void *arg)
 {
     UNUSED(arg);
-    static char string[512] = {0};
-    snprintf(string, sizeof string, "%s", line);
-    output_put(&output, string);
+    input_forward(&input, line);
 }
 
 static void on_schedy_exit(void) { global_terminate(); }
@@ -32,9 +30,7 @@ static void on_schedy_write_error(void *arg) { UNUSED(arg); }
 static void on_schedy_read(char *line, void *arg)
 {
     UNUSED(arg);
-    static char string[512] = {0};
-    snprintf(string, sizeof string, "%s", line);
-    output_put(&output, string);
+    input_forward(&input, line);
 }
 
 static void on_scanny_exit(void) { global_terminate(); }
@@ -44,9 +40,7 @@ static void on_scanny_write_error(void *arg) { UNUSED(arg); }
 static void on_scanny_read(char *line, void *arg)
 {
     UNUSED(arg);
-    static char string[512] = {0};
-    snprintf(string, sizeof string, "%s", line);
-    output_put(&output, string);
+    input_forward(&input, line);
 }
 
 static struct child proc[3] = {

@@ -89,7 +89,6 @@ cleanup:
 
 static char const *fn_exec_pend_job(struct msg *msg)
 {
-    info("%s", __FUNCTION__);
     char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "sss")) eparse_cleanup();
     if (strcmp(msg->cmd.argv[1], "ok")) return NULL;
