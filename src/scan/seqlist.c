@@ -36,7 +36,6 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
         goto cleanup;
     }
 
-    info("seqlist_init: 2");
     assert(size <= INT_MAX);
 
     if (jr_parse(parser, (int)size, data))

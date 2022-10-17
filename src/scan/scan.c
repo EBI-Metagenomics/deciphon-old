@@ -71,9 +71,7 @@ enum rc scan_setup(char const *db, char const *seqs)
 
     long ntasks = 0;
     long ntasks_total = 0;
-    debug("Ponto 1");
     unsigned nparts = profile_reader_npartitions(&profreader);
-    debug("Ponto 2: %u", nparts);
     for (unsigned i = 0; i < nparts; ++i)
     {
         struct thread *t = thread + i;

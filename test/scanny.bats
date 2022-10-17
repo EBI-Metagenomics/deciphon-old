@@ -52,8 +52,8 @@ scanny_kill() {
     scanny --help
 }
 
-ensure_PF02545_dcp() {
-    pipx run pooch-cli https://pub.danilohorta.me/deciphon/PF02545.dcp --hash 62f3961caa6580baf68126947031af16cff90ae7f6ec0a0ec0f7b2d7950da8e1
+ensure_minifam_dcp() {
+    pipx run pooch-cli https://pub.danilohorta.me/deciphon/minifam.dcp --hash 40d96b5a62ff669e19571c392ab711c7188dd5490744edf6c66051ecb4f2243d
 }
 
 ensure_consensus_faa() {
@@ -68,8 +68,8 @@ checksum() {
 @test "scanny daemon" {
     scanny_spawn
 
-    ensure_PF02545_dcp
-    assert_file_exists "PF02545.dcp"
+    ensure_minifam
+    assert_file_exists "minifam.dcp"
 
     ensure_consensus_faa
     assert_file_exists "consensus.faa"
