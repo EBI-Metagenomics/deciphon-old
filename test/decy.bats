@@ -16,7 +16,7 @@ teardown() {
         kill -s SIGTERM "$pid" 2>/dev/null
         if ! kill -0 "$pid" 2>/dev/null; then continue; fi
         sleep 0.01
-        kill -s SIGKILL "$pid"
+        kill -s SIGKILL "$pid" 2>/dev/null
     done <"$PIDS"
 }
 

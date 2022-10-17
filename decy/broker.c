@@ -11,8 +11,8 @@
 #include "jx.h"
 #include "loop/child.h"
 #include "msg.h"
-#include "strings.h"
 #include <stdatomic.h>
+#include <string.h>
 
 static void on_pressy_exit(void) { global_terminate(); }
 static void on_pressy_eof(void) {}

@@ -16,7 +16,7 @@ teardown() {
         kill -s SIGTERM "$pid" 2>/dev/null
         if ! kill -0 "$pid" 2>/dev/null; then continue; fi
         sleep 0.01
-        kill -s SIGKILL "$pid"
+        kill -s SIGKILL "$pid" 2>/dev/null
     done <"$PIDS"
 }
 
@@ -53,7 +53,7 @@ pressy_kill() {
 }
 
 ensure_PF02545_hmm() {
-    pipx run pooch-cli https://pub.danilohorta.me/deciphon/PF02545.hmm --hash ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
+    python3 -m pipx run pooch-cli https://pub.danilohorta.me/deciphon/PF02545.hmm --hash ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
 }
 
 checksum() {
@@ -67,13 +67,10 @@ checksum() {
     ensure_PF02545_hmm
     assert_file_exists "PF02545.hmm"
 
-    echo "press PF02545.hmm | ack {1} PF02545.hmm" >stdin
+    echo "press PF02545.hmm | {1} PF02545.hmm" >stdin
     run peek stdout
-    assert_output "ack ok PF02545.hmm"
+    assert_output "ok PF02545.hmm"
     assert_file_exists "PF02545.dcp"
-
-    run checksum "PF02545.dcp"
-    assert_output 62f3961caa6580baf68126947031af16cff90ae7f6ec0a0ec0f7b2d7950da8e1
 
     pressy_kill
 }

@@ -16,7 +16,7 @@ teardown() {
         kill -s SIGTERM "$pid" 2>/dev/null
         if ! kill -0 "$pid" 2>/dev/null; then continue; fi
         sleep 0.01
-        kill -s SIGKILL "$pid"
+        kill -s SIGKILL "$pid" 2>/dev/null
     done <"$PIDS"
 }
 
@@ -53,7 +53,7 @@ schedy_kill() {
 }
 
 ensure_PF02545_hmm() {
-    pipx run pooch-cli https://pub.danilohorta.me/deciphon/PF02545.hmm --hash ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
+    python3 -m pipx run pooch-cli https://pub.danilohorta.me/deciphon/PF02545.hmm --hash ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
 }
 
 @test "schedy daemon" {

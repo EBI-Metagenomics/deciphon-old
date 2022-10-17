@@ -16,7 +16,7 @@ teardown() {
         kill -s SIGTERM "$pid" 2>/dev/null
         if ! kill -0 "$pid" 2>/dev/null; then continue; fi
         sleep 0.01
-        kill -s SIGKILL "$pid"
+        kill -s SIGKILL "$pid" 2>/dev/null
     done <"$PIDS"
 }
 
@@ -53,11 +53,15 @@ scanny_kill() {
 }
 
 ensure_minifam_dcp() {
-    pipx run pooch-cli https://pub.danilohorta.me/deciphon/minifam.dcp --hash 40d96b5a62ff669e19571c392ab711c7188dd5490744edf6c66051ecb4f2243d
+    python3 -m pipx run pooch-cli https://pub.danilohorta.me/deciphon/minifam.dcp --hash 40d96b5a62ff669e19571c392ab711c7188dd5490744edf6c66051ecb4f2243d
 }
 
-ensure_consensus_faa() {
-    pipx run pooch-cli https://pub.danilohorta.me/deciphon/consensus.faa --hash dd8fc237e249f550890ec58e64bc4aa31fd708e341f1cb14a6800bee27fd8962
+ensure_consensus_json() {
+    python3 -m pipx run pooch-cli https://pub.danilohorta.me/deciphon/consensus.json --hash af483ed5aa42010e8f6c950c42d81bac69f995876bf78a5965f319e83dc3923e
+}
+
+ensure_prods_file_20221017_tsv() {
+    python3 -m pipx run pooch-cli https://pub.danilohorta.me/deciphon/prods_file_20221017.tsv --hash 5cfdaf4283ae0801709ce42efd61c1ee06873c20647154140aafd09db9a366a7
 }
 
 checksum() {
@@ -68,16 +72,31 @@ checksum() {
 @test "scanny daemon" {
     scanny_spawn
 
-    ensure_minifam
+    ensure_minifam_dcp
     assert_file_exists "minifam.dcp"
 
-    ensure_consensus_faa
-    assert_file_exists "consensus.faa"
+    ensure_consensus_json
+    assert_file_exists "consensus.json"
 
-    # echo "press PF02545.hmm | ack {1} PF02545.hmm" >stdin
-    # run peek stdout
-    # assert_output "ack ok PF02545.hmm"
-    # assert_file_exists "PF02545.dcp"
+    ensure_prods_file_20221017_tsv
+    assert_file_exists "prods_file_20221017.tsv"
+
+    echo "state | {1} {2}" >stdin
+    run peek stdout
+    assert_output "ok IDLE"
+
+    echo "scan consensus.json minifam.dcp prods_file.tsv 1 0 | {1}" >stdin
+    run peek stdout
+    assert_output "ok"
+
+    sleep 2
+    echo "state | {1} {2}" >stdin
+    run peek stdout
+    assert_output "ok DONE"
+
+    run sort -o prods_file.tsv prods_file.tsv
+    run diff prods_file.tsv prods_file_20221017.tsv
+    assert_output ""
 
     scanny_kill
 }

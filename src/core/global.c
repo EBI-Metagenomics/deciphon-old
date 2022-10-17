@@ -4,6 +4,7 @@
 #include "uv.h"
 #include "zc.h"
 #include <stdlib.h>
+#include <string.h>
 
 static struct uv_async_s async = {0};
 static struct uv_signal_s sigterm = {0};

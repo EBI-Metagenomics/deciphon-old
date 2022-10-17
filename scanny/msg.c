@@ -108,6 +108,7 @@ static char const *fn_state(struct msg *msg)
     if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
 
     state = session_state_string();
+    ans = OK;
 
 cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);
