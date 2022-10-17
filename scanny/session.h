@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 void session_init(void);
-void session_set_nthreads(int num_threads);
+void session_set_nthreads(int nthreads);
 bool session_is_running(void);
 bool session_is_done(void);
 bool session_start(char const *seqs, char const *db, char const *prod,

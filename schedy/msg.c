@@ -58,9 +58,8 @@ static struct sched_scan scan = {0};
 
 static char const *fn_invalid(struct msg *msg)
 {
-    UNUSED(msg);
-    sharg_replace(&msg->ctx, "{1}", FAIL);
-    return sharg_unparse(&msg->ctx);
+    warn("invalid command: %s", msg->cmd.argv[0]);
+    return msg_unparse(msg);
 }
 
 static char const *fn_help(struct msg *msg)
