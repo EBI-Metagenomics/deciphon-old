@@ -52,14 +52,15 @@ add_library(
   libs/lazylog.c
   libs/xfile.c
   libs/zc.c
-  src/core/buff.c
   src/core/as.c
+  src/core/buff.c
   src/core/errmsg.c
   src/core/expect.c
   src/core/file.c
   src/core/fmt.c
   src/core/global.c
   src/core/is.c
+  src/core/machine.c
   src/core/mempool.c
   src/core/msg.c
   src/core/pidfile.c

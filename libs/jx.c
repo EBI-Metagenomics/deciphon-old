@@ -241,6 +241,8 @@ char *jr_string_of(struct jr jr[], char const *key)
 
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
+    if (jr_error()) return 0;
+
     char *str = jr_as_string(jr);
     rollback(jr, pos);
     return str;
@@ -255,6 +257,8 @@ void jr_strcpy_of(struct jr jr[], char const *key, char *dst, int size)
 
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
+    if (jr_error()) return;
+
     char *str = jr_as_string(jr);
     if (jr_strlcpy(dst, str, size) >= size) error = JR_NOMEM;
     rollback(jr, pos);
@@ -267,6 +271,8 @@ bool jr_bool_of(struct jr jr[], char const *key)
 
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
+    if (jr_error()) return 0;
+
     bool val = jr_as_bool(jr);
     rollback(jr, pos);
     return val;
@@ -279,6 +285,8 @@ void *jr_null_of(struct jr jr[], char const *key)
 
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
+    if (jr_error()) return 0;
+
     void *val = jr_as_null(jr);
     rollback(jr, pos);
     return val;
@@ -291,6 +299,8 @@ long jr_long_of(struct jr jr[], char const *key)
 
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
+    if (jr_error()) return 0;
+
     long val = jr_as_long(jr);
     rollback(jr, pos);
     return val;
@@ -303,6 +313,8 @@ unsigned long jr_ulong_of(struct jr jr[], char const *key)
 
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
+    if (jr_error()) return 0;
+
     unsigned long val = jr_as_ulong(jr);
     rollback(jr, pos);
     return val;
@@ -315,6 +327,8 @@ double jr_double_of(struct jr jr[], char const *key)
 
     int pos = cursor(jr)->pos;
     jr_object_at(jr, key);
+    if (jr_error()) return 0;
+
     double val = jr_as_double(jr);
     rollback(jr, pos);
     return val;

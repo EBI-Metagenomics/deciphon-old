@@ -11,7 +11,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
-static JR_DECLARE(json, 128);
+static JR_DECLARE(parser, 128);
 static char *data = nullptr;
 static int num_seqs = 0;
 static struct seq curr = {0};
@@ -21,7 +21,7 @@ static int64_t scan_id = 0;
 
 enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
 {
-    JR_INIT(json);
+    JR_INIT(parser);
     seq_init(&curr, abc);
     data = nullptr;
     num_seqs = 0;
@@ -36,29 +36,30 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
         goto cleanup;
     }
 
+    info("seqlist_init: 2");
     assert(size <= INT_MAX);
 
-    if (jr_parse(json, (int)size, data))
+    if (jr_parse(parser, (int)size, data))
     {
         errnum = eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
         goto cleanup;
     }
 
-    if (jr_type(json) != JR_ARRAY)
+    if (jr_type(parser) != JR_ARRAY)
     {
         errnum = eparse("%s", errfmt(errmsg, "wrong seqs file format"));
         goto cleanup;
     }
 
-    if ((num_seqs = jr_nchild(json)) <= 0)
+    if ((num_seqs = jr_nchild(parser)) <= 0)
     {
         errnum = efail("%s", errfmt(errmsg, "no sequence found"));
         goto cleanup;
     }
 
-    jr_reset(json);
-    jr_array_at(json, 0);
-    scan_id = jr_long_of(json, "scan_id");
+    jr_reset(parser);
+    jr_array_at(parser, 0);
+    scan_id = jr_long_of(parser, "scan_id");
     if (jr_error())
     {
         errnum = eparse("%s", errfmt(errmsg, "failed to get scan_id"));
@@ -76,24 +77,24 @@ int64_t seqlist_scan_id(void) { return scan_id; }
 
 void seqlist_rewind(void)
 {
-    jr_reset(json);
-    jr_array_at(json, 0);
+    jr_reset(parser);
+    jr_array_at(parser, 0);
 }
 
 struct seq const *seqlist_next(void)
 {
-    if (jr_type(json) == JR_SENTINEL) return nullptr;
+    if (jr_type(parser) == JR_SENTINEL) return nullptr;
 
     struct imm_abc const *abc = imm_seq_abc(&curr.iseq);
-    curr.id = jr_long_of(json, "id");
-    curr.name = jr_string_of(json, "name");
-    curr.iseq = imm_seq(imm_str(jr_string_of(json, "data")), abc);
+    curr.id = jr_long_of(parser, "id");
+    curr.name = jr_string_of(parser, "name");
+    curr.iseq = imm_seq(imm_str(jr_string_of(parser, "data")), abc);
 
-    jr_right(json);
+    jr_right(parser);
     if (jr_error())
     {
         int rc = jr_error();
-        errnum = efail("%s", errfmt(errmsg, "json: %s", jr_strerror(rc)));
+        errnum = efail("%s", errfmt(errmsg, "parser: %s", jr_strerror(rc)));
         return nullptr;
     }
 

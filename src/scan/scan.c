@@ -52,7 +52,7 @@ enum rc scan_setup(char const *db, char const *seqs)
         return errnum;
     }
 
-    info("Preparing readers");
+    info("preparing readers...");
     if ((errnum = prepare_readers(db)))
     {
         scan_cleanup();
@@ -60,7 +60,7 @@ enum rc scan_setup(char const *db, char const *seqs)
         return errnum;
     }
 
-    info("Reading seqs");
+    info("reading sequences...");
     if ((errnum = seqlist_init(seqs, abc)))
     {
         errfmt(errmsg, "%s", seqlist_errmsg());
@@ -71,7 +71,9 @@ enum rc scan_setup(char const *db, char const *seqs)
 
     long ntasks = 0;
     long ntasks_total = 0;
+    debug("Ponto 1");
     unsigned nparts = profile_reader_npartitions(&profreader);
+    debug("Ponto 2: %u", nparts);
     for (unsigned i = 0; i < nparts; ++i)
     {
         struct thread *t = thread + i;

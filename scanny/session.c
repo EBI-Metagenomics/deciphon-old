@@ -3,6 +3,7 @@
 #include "core/global.h"
 #include "core/limits.h"
 #include "core/logy.h"
+#include "core/machine.h"
 #include "core/progress.h"
 #include "core/strings.h"
 #include "db/profile_reader.h"
@@ -62,7 +63,7 @@ static void monitor_stop(void);
 
 void session_init(void)
 {
-    self.nthreads = 1;
+    self.nthreads = machine_ncpus() > 1 ? machine_ncpus() - 1 : 1;
     self.cancel = false;
     self.state = IDLE;
     errnum = RC_OK;
@@ -79,6 +80,7 @@ bool session_is_done(void) { return self.state == DONE; }
 bool session_start(char const *seqs, char const *db, char const *prod,
                    bool multi_hits, bool hmmer3_compat)
 {
+    info("starting scan with %d threads", self.nthreads);
     errnum = RC_OK;
     errmsg[0] = '\0';
     self.cancel = false;
@@ -149,8 +151,8 @@ static void after_work(struct uv_work_s *req, int status)
 static void work(struct uv_work_s *req)
 {
     (void)req;
-    info("Preparing to scan");
 
+    info("scan setup...");
     errnum = scan_setup(self.db, self.seqs);
     if (errnum)
     {
