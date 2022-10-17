@@ -4,6 +4,7 @@
 #include "loop/writer_req.h"
 #include "loop/writer_req_pool.h"
 #include "uv.h"
+#include <string.h>
 
 void writer_init(struct writer *writer, struct uv_pipe_s *pipe,
                  on_error2_fn_t *on_error)
