@@ -57,7 +57,7 @@ char const *sharg_shift(struct sharg *sharg)
 
 void sharg_append(struct sharg *sharg, char const *str)
 {
-    int offset = 0;
+    int offset = sharg->argv[0] - sharg->buff;
     for (int i = 0; i < sharg->argc; ++i)
         offset += (int)strlen(sharg->argv[i]) + 1;
 

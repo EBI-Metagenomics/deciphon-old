@@ -24,16 +24,17 @@ bool msg_parse(struct msg *msg, char *str)
     char *cmd_start = str;
     *(str + pipe - (pipe != 0)) = '\0';
 
-    char *echo_start = str + pipe + 1 + (pipe + 1 != n);
+    char *ctx_start = str + pipe + 1 + (pipe + 1 != n);
 
     if (!sharg_parse(&msg->cmd, cmd_start)) return false;
-    if (!sharg_parse(&msg->ctx, echo_start)) return false;
+    if (!sharg_parse(&msg->ctx, ctx_start)) return false;
 
     return true;
 }
 
 char *msg_unparse(struct msg *msg)
 {
+    if (msg->ctx.argc > 0) sharg_append(&msg->cmd, "|");
     for (int i = 0; i < msg->ctx.argc; ++i)
         sharg_append(&msg->cmd, msg->ctx.argv[i]);
     return sharg_unparse(&msg->cmd);
