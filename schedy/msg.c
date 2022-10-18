@@ -12,6 +12,7 @@
 #define MSG_MAP(X)                                                             \
     X(INVALID, invalid, "")                                                    \
     X(HELP, help, "")                                                          \
+    X(ECHO, echo, "[...]")                                                     \
     X(ONLINE, online, "")                                                      \
     X(WIPE, wipe, "")                                                          \
     X(CANCEL, cancel, "")                                                      \
@@ -77,6 +78,8 @@ static char const *fn_help(struct msg *msg)
 
     return help_table;
 }
+
+static char const *fn_echo(struct msg *msg) { return msg_unparse(msg); }
 
 #define eparse_cleanup()                                                       \
     do                                                                         \
@@ -294,9 +297,10 @@ static char const *fn_job_next_pend(struct msg *msg)
     char const *json = "";
 
     if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
-    if (api_job_next_pend(&job)) goto cleanup;
-    ans = OK;
-    json = sched_dump_job(&job, (char *)buffer);
+    enum rc rc = api_job_next_pend(&job);
+    if (rc && rc != RC_END) goto cleanup;
+    ans = rc == RC_END ? END : OK;
+    json = rc != RC_END ? sched_dump_job(&job, (char *)buffer) : "";
 
 cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);

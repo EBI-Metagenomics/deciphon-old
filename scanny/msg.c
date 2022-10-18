@@ -10,6 +10,7 @@
 #define MSG_MAP(X)                                                             \
     X(INVALID, invalid, "")                                                    \
     X(HELP, help, "")                                                          \
+    X(ECHO, echo, "[...]")                                                     \
     X(SET_NTHREADS, set_nthreads, "NTHREADS")                                  \
     X(SCAN, scan, "SEQS_FILE DB_FILE PROD_FILE MULTI_HITS HMMER3_COMPAT")      \
     X(CANCEL, cancel, "")                                                      \
@@ -41,6 +42,8 @@ static char const *fn_help(struct msg *msg)
 
     return help_table;
 }
+
+static char const *fn_echo(struct msg *msg) { return msg_unparse(msg); }
 
 #define eparse_cleanup()                                                       \
     do                                                                         \

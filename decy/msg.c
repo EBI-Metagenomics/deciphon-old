@@ -14,6 +14,7 @@
 #define MSG_MAP(X)                                                             \
     X(INVALID, invalid, "")                                                    \
     X(HELP, help, "")                                                          \
+    X(ECHO, echo, "[...]")                                                     \
     X(PRESSY, pressy, "PRESSY_COMMAND [...]")                                  \
     X(SCANNY, scanny, "SCANNY_COMMAND [...]")                                  \
     X(SCHEDY, schedy, "SCHEDY_COMMAND [...]")                                  \
@@ -48,6 +49,8 @@ static char const *fn_help(struct msg *msg)
 
     return help_table;
 }
+
+static char const *fn_echo(struct msg *msg) { return msg_unparse(msg); }
 
 #define eparse_cleanup()                                                       \
     do                                                                         \
