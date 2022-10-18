@@ -9,7 +9,7 @@ struct msg
     struct sharg ctx;
 };
 
-typedef char const *msg_fn_t(struct msg *);
+typedef void msg_fn_t(struct msg *);
 
 void msg_init(struct msg *);
 bool msg_parse(struct msg *, char *str);

@@ -28,13 +28,14 @@
 
 static struct sched_job job = {0};
 
-static char const *fn_invalid(struct msg *msg)
+static void fn_invalid(struct msg *msg)
 {
     warn("invalid command: %s", msg->cmd.argv[0]);
-    return msg_unparse(msg);
+    sharg_replace(&msg->ctx, "{1}", OK);
+    output_put(&output, sharg_unparse(&msg->ctx));
 }
 
-static char const *fn_help(struct msg *msg)
+static void fn_help(struct msg *msg)
 {
     UNUSED(msg);
     static char help_table[1024] = {0};
@@ -47,10 +48,10 @@ static char const *fn_help(struct msg *msg)
     MSG_MAP(X);
 #undef X
 
-    return help_table;
+    output_put(&output, help_table);
 }
 
-static char const *fn_echo(struct msg *msg) { return msg_unparse(msg); }
+static void fn_echo(struct msg *msg) { output_put(&output, msg_unparse(msg)); }
 
 #define eparse_cleanup()                                                       \
     do                                                                         \
@@ -59,44 +60,44 @@ static char const *fn_echo(struct msg *msg) { return msg_unparse(msg); }
         goto cleanup;                                                          \
     } while (0);
 
-static char const *fn_pressy(struct msg *msg)
+static void fn_pressy(struct msg *msg)
 {
-    char const *ans = FAIL;
+    debug("forwarding to pressy");
     if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
-    ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
-
+    sharg_shift(&msg->cmd);
+    broker_send(PRESSY_ID, msg_unparse(msg));
 cleanup:
-    sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    return;
 }
 
-static char const *fn_scanny(struct msg *msg)
+static void fn_scanny(struct msg *msg)
 {
-    char const *ans = FAIL;
+    debug("forwarding to scanny");
     if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
-    ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
-
+    sharg_shift(&msg->cmd);
+    broker_send(SCANNY_ID, msg_unparse(msg));
 cleanup:
-    sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    return;
 }
 
-static char const *fn_schedy(struct msg *msg)
+static void fn_schedy(struct msg *msg)
 {
-    char const *ans = FAIL;
+    debug("forwarding to schedy");
     if (!sharg_check(&msg->cmd, "ss*")) eparse_cleanup();
-    ans = broker_forward_msg(sharg_shift(&msg->cmd), msg);
-
+    sharg_shift(&msg->cmd);
+    broker_send(SCHEDY_ID, msg_unparse(msg));
 cleanup:
-    sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    return;
 }
 
-static char const *fn_exec_pend_job(struct msg *msg)
+static void fn_exec_pend_job(struct msg *msg)
 {
-    char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "sss")) eparse_cleanup();
-    if (strcmp(msg->cmd.argv[1], "ok")) return NULL;
+    if (strcmp(msg->cmd.argv[1], "ok"))
+    {
+        error("expected ok but got %s", msg->cmd.argv[1]);
+        goto cleanup;
+    }
 
     char *json = msg->cmd.argv[2];
     if (!broker_parse_job(&job, json)) goto cleanup;
@@ -106,8 +107,6 @@ static char const *fn_exec_pend_job(struct msg *msg)
         error("unrecognized job type");
         goto cleanup;
     }
-
-    ans = OK;
 
     if (sched_job_type(&job) == SCHED_SCAN)
         broker_send(
@@ -120,15 +119,17 @@ static char const *fn_exec_pend_job(struct msg *msg)
             fmt("job_set_state %lld run | exec_press_job {1} {2}", job.id));
 
 cleanup:
-    sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    return;
 }
 
-static char const *fn_exec_press_job(struct msg *msg)
+static void fn_exec_press_job(struct msg *msg)
 {
-    char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "sss")) eparse_cleanup();
-    if (strcmp(msg->cmd.argv[1], "ok")) return NULL;
+    if (strcmp(msg->cmd.argv[1], "ok"))
+    {
+        error("expected ok but got %s", msg->cmd.argv[1]);
+        goto cleanup;
+    }
 
     char *json = msg->cmd.argv[2];
     if (!broker_parse_job(&job, json)) goto cleanup;
@@ -139,18 +140,18 @@ static char const *fn_exec_press_job(struct msg *msg)
         goto cleanup;
     }
 
-    ans = OK;
-
 cleanup:
-    sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    return;
 }
 
-static char const *fn_exec_scan_job(struct msg *msg)
+static void fn_exec_scan_job(struct msg *msg)
 {
-    char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "sss")) eparse_cleanup();
-    if (strcmp(msg->cmd.argv[1], "ok")) return NULL;
+    if (strcmp(msg->cmd.argv[1], "ok"))
+    {
+        error("expected ok but got %s", msg->cmd.argv[1]);
+        goto cleanup;
+    }
 
     char *json = msg->cmd.argv[2];
     if (!broker_parse_job(&job, json)) goto cleanup;
@@ -161,9 +162,6 @@ static char const *fn_exec_scan_job(struct msg *msg)
         goto cleanup;
     }
 
-    ans = OK;
-
 cleanup:
-    sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    return;
 }

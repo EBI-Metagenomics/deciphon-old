@@ -76,7 +76,7 @@ static void on_read_error(void)
 static void on_read(char *line)
 {
     if (!msg_parse(&msg, line)) eparse("too many arguments");
-    output_put(&output, (*msg_fn(msg.cmd.argv[0]))(&msg));
+    (*msg_fn(msg.cmd.argv[0]))(&msg);
 }
 
 static void on_write_error(void)

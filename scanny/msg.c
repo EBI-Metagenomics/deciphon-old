@@ -3,6 +3,7 @@
 #include "core/logy.h"
 #include "core/service_strings.h"
 #include "core/strings.h"
+#include "scanny.h"
 #include "session.h"
 #include "zc.h"
 #include <stdio.h>
@@ -21,13 +22,13 @@
 #include "core/msg_template.h"
 #undef MSG_TEMPLATE_ENABLE
 
-static char const *fn_invalid(struct msg *msg)
+static void fn_invalid(struct msg *msg)
 {
     warn("invalid command: %s", msg->cmd.argv[0]);
-    return msg_unparse(msg);
+    output_put(&output, msg_unparse(msg));
 }
 
-static char const *fn_help(struct msg *msg)
+static void fn_help(struct msg *msg)
 {
     UNUSED(msg);
     static char help_table[512] = {0};
@@ -40,10 +41,10 @@ static char const *fn_help(struct msg *msg)
     MSG_MAP(X);
 #undef X
 
-    return help_table;
+    output_put(&output, help_table);
 }
 
-static char const *fn_echo(struct msg *msg) { return msg_unparse(msg); }
+static void fn_echo(struct msg *msg) { output_put(&output, msg_unparse(msg)); }
 
 #define eparse_cleanup()                                                       \
     do                                                                         \
@@ -52,7 +53,7 @@ static char const *fn_echo(struct msg *msg) { return msg_unparse(msg); }
         goto cleanup;                                                          \
     } while (0);
 
-static char const *fn_set_nthreads(struct msg *msg)
+static void fn_set_nthreads(struct msg *msg)
 {
     char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "si")) eparse_cleanup();
@@ -61,10 +62,10 @@ static char const *fn_set_nthreads(struct msg *msg)
 
 cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    output_put(&output, sharg_unparse(&msg->ctx));
 }
 
-static char const *fn_scan(struct msg *msg)
+static void fn_scan(struct msg *msg)
 {
     char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "ssssii")) eparse_cleanup();
@@ -84,10 +85,10 @@ static char const *fn_scan(struct msg *msg)
 
 cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    output_put(&output, sharg_unparse(&msg->ctx));
 }
 
-static char const *fn_cancel(struct msg *msg)
+static void fn_cancel(struct msg *msg)
 {
     char const *ans = FAIL;
     if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
@@ -101,10 +102,10 @@ static char const *fn_cancel(struct msg *msg)
 
 cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);
-    return sharg_unparse(&msg->ctx);
+    output_put(&output, sharg_unparse(&msg->ctx));
 }
 
-static char const *fn_state(struct msg *msg)
+static void fn_state(struct msg *msg)
 {
     char const *ans = FAIL;
     char const *state = "";
@@ -116,10 +117,10 @@ static char const *fn_state(struct msg *msg)
 cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);
     sharg_replace(&msg->ctx, "{2}", state);
-    return sharg_unparse(&msg->ctx);
+    output_put(&output, sharg_unparse(&msg->ctx));
 }
 
-static char const *fn_progress(struct msg *msg)
+static void fn_progress(struct msg *msg)
 {
     char const *ans = FAIL;
     char progress[16] = {0};
@@ -141,5 +142,5 @@ static char const *fn_progress(struct msg *msg)
 cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);
     sharg_replace(&msg->ctx, "{2}", progress);
-    return sharg_unparse(&msg->ctx);
+    output_put(&output, sharg_unparse(&msg->ctx));
 }

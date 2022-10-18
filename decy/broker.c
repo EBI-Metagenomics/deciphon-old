@@ -38,14 +38,6 @@ static void on_read(char *line)
 static struct child proc[3] = {
     [PRESSY_ID] = {0}, [SCANNY_ID] = {0}, [SCHEDY_ID] = {0}};
 
-static char const *proc_name[] = {
-    [PRESSY_ID] = "pressy",
-    [SCANNY_ID] = "scanny",
-    [SCHEDY_ID] = "schedy",
-};
-
-static int proc_idx(char const *name);
-
 static char *proc_args[][16] = {
     [PRESSY_ID] = {"./pressy", "--pid", "pressy.pid", NULL},
     [SCANNY_ID] = {"./scanny", "--pid", "scanny.pid", NULL},
@@ -114,15 +106,6 @@ static void next_pend_job(struct uv_timer_s *req)
     child_send(&proc[SCHEDY_ID], "job_next_pend | exec_pend_job {1} {2}");
 }
 
-char const *broker_forward_msg(char const *proc_name, struct msg *msg)
-{
-    if (!sharg_check(&msg->cmd, "s*")) return eparse(INVALID_ARGS), FAIL;
-    int i = proc_idx(proc_name);
-    if (i < 0) return FAIL;
-    child_send(&proc[i], msg_unparse(msg));
-    return OK;
-}
-
 void broker_send(enum proc_id proc_id, char const *msg)
 {
     child_send(&proc[proc_id], msg);
@@ -166,11 +149,4 @@ bool broker_parse_seq(struct sched_seq *seq, char *json)
     if (jr_parse(json_parser, (int)strlen(json), json))
         return !eparse("%s", errfmt(errmsg, FAIL_PARSE_JSON));
     return !sched_seq_parse(seq, json_parser);
-}
-
-static int proc_idx(char const *name)
-{
-    for (int i = 0; i <= SCHEDY_ID; ++i)
-        if (!strcmp(proc_name[i], name)) return i;
-    return -1;
 }

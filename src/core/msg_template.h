@@ -13,7 +13,7 @@ enum
 #undef X
 };
 
-#define X(_1, A, _2) static char const *fn_##A(struct msg *);
+#define X(_1, A, _2) static void fn_##A(struct msg *);
 MSG_MAP(X)
 #undef X
 
