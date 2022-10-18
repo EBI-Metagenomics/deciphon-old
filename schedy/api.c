@@ -211,6 +211,37 @@ static enum rc get_db_by(struct sched_db *db, union param p,
     return handle_http_exception();
 }
 
+enum rc api_job_get_by_id(int64_t job_id, struct sched_job *job)
+{
+    api_error_reset();
+
+    enum rc rc = get(query("/jobs/%lld", job_id));
+    if (rc) return rc;
+
+    if ((rc = parse_json_body())) return rc;
+
+    if (xcurl_http_code() == 200) return sched_job_parse(job, jr);
+
+    if (xcurl_http_code() == 204 && is_empty_json_object()) return RC_END;
+
+    return handle_http_exception();
+}
+
+enum rc api_job_inc_progress(int64_t job_id, int increment)
+{
+    api_error_reset();
+
+    enum rc rc = patch(query("/jobs/%lld/progress", job_id),
+                       inc_progress_json(increment));
+    if (rc) return rc;
+
+    if ((rc = parse_json_body())) return rc;
+
+    if (xcurl_http_code() == 200) return RC_OK;
+
+    return handle_http_exception();
+}
+
 enum rc api_job_next_pend(struct sched_job *job)
 {
     api_error_reset();
@@ -234,21 +265,6 @@ enum rc api_job_set_state(int64_t job_id, enum sched_job_state state,
 
     enum rc rc = patch(query("/jobs/%lld/state", job_id),
                        job_state_json(job_id, state, msg));
-    if (rc) return rc;
-
-    if ((rc = parse_json_body())) return rc;
-
-    if (xcurl_http_code() == 200) return RC_OK;
-
-    return handle_http_exception();
-}
-
-enum rc api_job_inc_progress(int64_t job_id, int increment)
-{
-    api_error_reset();
-
-    enum rc rc = patch(query("/jobs/%lld/progress", job_id),
-                       inc_progress_json(increment));
     if (rc) return rc;
 
     if ((rc = parse_json_body())) return rc;

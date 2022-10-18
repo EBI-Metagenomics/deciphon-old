@@ -116,6 +116,11 @@ char const *broker_forward_msg(char const *proc_name, struct msg *msg)
     return OK;
 }
 
+void broker_send(enum proc_id proc_id, char const *msg)
+{
+    child_send(&proc[proc_id], msg);
+}
+
 void broker_terminate(void) { uv_timer_stop(&job_next_pend_timer); }
 
 bool broker_parse_db(struct sched_db *db, char *json)

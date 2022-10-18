@@ -290,9 +290,9 @@ cleanup:
 
 static char const *fn_job_next_pend(struct msg *msg)
 {
-    debug("SCHEDY: %s", __FUNCTION__);
     char const *ans = FAIL;
     char const *json = "";
+
     if (!sharg_check(&msg->cmd, "s")) eparse_cleanup();
     if (api_job_next_pend(&job)) goto cleanup;
     ans = OK;
@@ -308,18 +308,23 @@ static char const *fn_job_set_state(struct msg *msg)
 {
     char const *ans = FAIL;
     char const *error = "";
+    char const *json = "";
 
     if (msg->cmd.argc == 3 && !sharg_check(&msg->cmd, "sis")) eparse_cleanup();
-    if (!sharg_check(&msg->cmd, "siss")) eparse_cleanup();
+    if (!sharg_check(&msg->cmd, "sis*")) eparse_cleanup();
     error = msg->cmd.argc == 3 ? "" : msg->cmd.argv[3];
 
     if (!encode_job_state(msg->cmd.argv[2], &state)) goto cleanup;
     int64_t job_id = as_int64(msg->cmd.argv[1]);
-    ans = api_job_set_state(job_id, state, error) ? FAIL : OK;
+    if (api_job_set_state(job_id, state, error)) goto cleanup;
+    if (api_job_get_by_id(job_id, &job)) goto cleanup;
+    ans = OK;
+    json = sched_dump_job(&job, (char *)buffer);
 
 cleanup:
     sharg_replace(&msg->ctx, "{1}", ans);
     sharg_replace(&msg->ctx, "{2}", error);
+    sharg_replace(&msg->ctx, "{3}", json);
     return sharg_unparse(&msg->ctx);
 }
 

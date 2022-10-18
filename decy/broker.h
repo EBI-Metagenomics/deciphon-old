@@ -16,6 +16,7 @@ enum proc_id
 
 void broker_init(void);
 char const *broker_forward_msg(char const *proc_name, struct msg *msg);
+void broker_send(enum proc_id proc_id, char const *msg);
 void broker_init(void);
 void broker_terminate(void);
 
