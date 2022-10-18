@@ -440,7 +440,7 @@ static enum rc handle_http_exception(void)
 
 static bool is_empty_json_object(void)
 {
-    return jr_type(jr) == JR_OBJECT && jr_nchild(jr) == 0;
+    return jr_type(jr) == JR_SENTINEL && jr_nchild(jr) == 0;
 }
 
 static char const *inc_progress_json(int increment)

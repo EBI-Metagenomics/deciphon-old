@@ -14,10 +14,9 @@ enum proc_id
     SCHEDY_ID = 2,
 };
 
-void broker_init(void);
+void broker_init(int64_t repeat);
 char const *broker_forward_msg(char const *proc_name, struct msg *msg);
 void broker_send(enum proc_id proc_id, char const *msg);
-void broker_init(void);
 void broker_terminate(void);
 
 bool broker_parse_db(struct sched_db *, char *json);

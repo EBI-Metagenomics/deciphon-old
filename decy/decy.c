@@ -2,9 +2,11 @@
 #include "argless.h"
 #include "broker.h"
 #include "cfg.h"
+#include "core/as.h"
 #include "core/c23.h"
 #include "core/fmt.h"
 #include "core/global.h"
+#include "core/is.h"
 #include "core/logy.h"
 #include "core/pidfile.h"
 #include "core/xmem.h"
@@ -18,6 +20,8 @@ struct msg msg = {0};
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
     {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
+    {"polling", 'r', ARGL_TEXT("RATE", "1"),
+     "Pending job polling frequency per second."},
     ARGL_DEFAULT,
     ARGL_END,
 };
@@ -38,6 +42,12 @@ int main(int argc, char *argv[])
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
+    char const *polling = argl_get(&argl, "polling");
+    if (!is_int64(polling) || as_int64(polling) < 0) argl_usage(&argl);
+    int64_t repeat = as_int64(polling) > 0
+                         ? 1000 / as_int64(polling) + 1000 % as_int64(polling)
+                         : 0;
+
     global_init(on_term, argc, argv, argl_get(&argl, "loglevel")[0] - '0');
 
     cfg_init();
@@ -50,7 +60,7 @@ int main(int argc, char *argv[])
     output_setup(&output, &on_write_error);
     output_start(&output);
 
-    broker_init();
+    broker_init(repeat);
 
     global_run();
     global_cleanup();

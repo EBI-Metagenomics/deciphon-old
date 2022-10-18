@@ -71,14 +71,17 @@ static struct output_cb output_callbacks[] = {
 };
 
 static JR_DECLARE(json_parser, 128);
-static struct uv_timer_s job_next_pend_timer = {0};
+static struct uv_timer_s next_pend_job_timer = {0};
+static uint64_t polling = 1000;
 static atomic_bool no_job_next_pend = false;
 static char errmsg[ERROR_SIZE] = {0};
 
-static void job_next_pend_cb(struct uv_timer_s *req);
+static void next_pend_job(struct uv_timer_s *req);
 
-void broker_init(void)
+void broker_init(int64_t repeat)
 {
+    polling = (uint64_t)repeat;
+
     JR_INIT(json_parser);
     for (int i = 0; i <= SCHEDY_ID; ++i)
     {
@@ -93,13 +96,17 @@ void broker_init(void)
     }
     atomic_store_explicit(&no_job_next_pend, false, memory_order_release);
 
-    if (uv_timer_init(global_loop(), &job_next_pend_timer))
+    if (uv_timer_init(global_loop(), &next_pend_job_timer))
         efail("uv_timer_init");
-    if (uv_timer_start(&job_next_pend_timer, &job_next_pend_cb, 1000, 5000))
-        efail("uv_timer_start");
+
+    if (polling > 0)
+    {
+        if (uv_timer_start(&next_pend_job_timer, &next_pend_job, 1000, polling))
+            efail("uv_timer_start");
+    }
 }
 
-static void job_next_pend_cb(struct uv_timer_s *req)
+static void next_pend_job(struct uv_timer_s *req)
 {
     (void)req;
     if (atomic_load_explicit(&no_job_next_pend, memory_order_consume)) return;
@@ -121,7 +128,10 @@ void broker_send(enum proc_id proc_id, char const *msg)
     child_send(&proc[proc_id], msg);
 }
 
-void broker_terminate(void) { uv_timer_stop(&job_next_pend_timer); }
+void broker_terminate(void)
+{
+    if (polling > 0) uv_timer_stop(&next_pend_job_timer);
+}
 
 bool broker_parse_db(struct sched_db *db, char *json)
 {
