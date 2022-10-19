@@ -1,4 +1,5 @@
 #include "core/msg.h"
+#include "core/as.h"
 #include "core/fmt.h"
 #include "core/logy.h"
 #include "core/rc.h"
@@ -50,7 +51,23 @@ int msg_check(struct msg const *msg, char const *fmt)
                                        : einval("invalid message format");
 }
 
+int msg_argc(struct msg const *msg) { return sharg_argc(&msg->cmd); }
+
+char **msg_argv(struct msg *msg) { return sharg_argv(&msg->cmd); }
+
 char const *msg_cmd(struct msg const *msg) { return msg->cmd.argv[0]; }
+
+char const *msg_str(struct msg const *msg, int idx)
+{
+    struct sharg *sharg = (struct sharg *)&msg->cmd;
+    return sharg_argv(sharg)[idx];
+}
+
+int64_t msg_int(struct msg const *msg, int idx)
+{
+    struct sharg *sharg = (struct sharg *)&msg->cmd;
+    return as_int64(sharg_argv(sharg)[idx]);
+}
 
 static void ctx_set(struct msg *msg, char const *tag, char const *value)
 {
