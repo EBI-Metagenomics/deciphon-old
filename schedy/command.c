@@ -104,6 +104,7 @@ static void fn_hmm_up(struct msg *msg)
 
 static void fn_hmm_dl(struct msg *msg)
 {
+    debug("HMM_DL");
     if (msg_check(msg, "sis")) return;
 
     int64_t xxh3 = msg_int(msg, 1);

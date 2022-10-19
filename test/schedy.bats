@@ -73,5 +73,9 @@ ensure_PF02545_hmm() {
     echo "hmm_up PF02545.hmm | {1}" >stdin
     run peek stdout
     assert_output "ok"
+
+    rm PF02545.hmm
+    echo "hmm_dl -7843725841264658000 output.hmm" >stdin
+
     schedy_kill
 }
