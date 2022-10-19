@@ -29,6 +29,11 @@ catnl() {
     echo
 }
 
+checksum() {
+    file=$1
+    sha256sum "$file" | cut -f1 -d' '
+}
+
 schedy_spawn() {
     run daemonize -i stdin -o stdout -e stderr -p pid schedy -- -u http://127.0.0.1:49329 -k change-me
     assert_success
@@ -74,8 +79,11 @@ ensure_PF02545_hmm() {
     run peek stdout
     assert_output "ok"
 
-    rm PF02545.hmm
-    echo "hmm_dl -7843725841264658000 output.hmm" >stdin
+    echo "hmm_dl -7843725841264658444 output.hmm" >stdin
+    sleep 1
+    assert_file_exists output.hmm
+    run checksum output.hmm
+    assert_output "ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68"
 
     schedy_kill
 }
