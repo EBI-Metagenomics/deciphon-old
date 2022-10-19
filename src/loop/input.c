@@ -22,6 +22,7 @@ void input_setup(struct input *i, on_eof2_fn_t *on_eof,
 
 static void fwd_eof(void *arg)
 {
+    debug("input end-of-file");
     struct input *i = arg;
     reader_stop(&i->reader);
     if (i->cb.on_eof) (*i->cb.on_eof)();

@@ -11,7 +11,6 @@ void writer_init(struct writer *writer, struct uv_pipe_s *pipe,
 {
     writer->pipe = pipe;
     writer->pipe->data = writer;
-
     writer->cb.on_error = on_error;
 }
 

@@ -1,29 +1,26 @@
 #ifndef CORE_RC_H
 #define CORE_RC_H
 
+#define RC_MAP(X)                                                              \
+    X(RC_OK, "ok")                                                             \
+    X(RC_END, "end")                                                           \
+    X(RC_TIMEDOUT, "timed out")                                                \
+    X(RC_EFAIL, "unspecified error")                                           \
+    X(RC_EINVAL, "invalid values")                                             \
+    X(RC_EIO, "i/o failure")                                                   \
+    X(RC_ENOMEM, "not-enough-memory")                                          \
+    X(RC_EPARSE, "parsing error")                                              \
+    X(RC_EAPI, "api error")                                                    \
+    X(RC_EHTTP, "http error")
+
 enum rc
 {
-    RC_OK,
-    RC_END,
-    RC_EFAIL,
-    RC_EINVAL,
-    RC_EIO,
-    RC_ENOMEM,
-    RC_EPARSE,
-    RC_EAPI,
-    RC_EHTTP,
+#define X(A, _) A,
+    RC_MAP(X)
+#undef X
+        RC_ENUM_SIZE,
 };
 
-#define RC_STRING(rc)                                                          \
-    rc == RC_OK       ? "RC_OK"                                                \
-    : rc == RC_END    ? "RC_END"                                               \
-    : rc == RC_EFAIL  ? "RC_EFAIL"                                             \
-    : rc == RC_EINVAL ? "RC_EINVAL"                                            \
-    : rc == RC_EIO    ? "RC_EIO"                                               \
-    : rc == RC_ENOMEM ? "RC_ENOMEM"                                            \
-    : rc == RC_EPARSE ? "RC_EPARSE"                                            \
-    : rc == RC_EAPI   ? "RC_EAPI"                                              \
-    : rc == RC_EHTTP  ? "RC_EHTTP"                                             \
-                      : "invalid return code"
+char const *rc_string(int rc);
 
 #endif

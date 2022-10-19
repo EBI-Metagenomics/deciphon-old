@@ -68,7 +68,10 @@ static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
         if (nread == UV_EOF)
             (*reader->cb.on_eof)(reader->cb.arg);
         else
+        {
+            error("failed to read: %s", uv_strerror(nread));
             process_error(reader);
+        }
     }
     else if (nread > 0)
     {
@@ -77,6 +80,7 @@ static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
         size_t avail = READER_BUFF_SIZE - (reader->pos - reader->buff);
         if (avail < count)
         {
+            error("not-enough-memory to read");
             process_error(reader);
             return;
         }

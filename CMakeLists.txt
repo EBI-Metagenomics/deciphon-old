@@ -54,6 +54,7 @@ add_library(
   libs/zc.c
   src/core/as.c
   src/core/buff.c
+  src/core/command_help.c
   src/core/errmsg.c
   src/core/expect.c
   src/core/file.c
@@ -65,6 +66,7 @@ add_library(
   src/core/msg.c
   src/core/pidfile.c
   src/core/progress.c
+  src/core/rc.c
   src/core/sched.c
   src/core/sched_dump.c
   src/core/sharg.c
@@ -80,6 +82,7 @@ add_library(
   src/loop/child.c
   src/loop/input.c
   src/loop/output.c
+  src/loop/parent.c
   src/loop/reader.c
   src/loop/stdpipe.c
   src/loop/writer.c
@@ -125,18 +128,18 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-add_executable(schedy schedy/api.c schedy/msg.c schedy/http.c schedy/schedy.c
-                      schedy/xcurl.c schedy/xcurl_debug.c)
-target_link_libraries(schedy PRIVATE deciphon)
+# add_executable(schedy schedy/api.c schedy/msg.c schedy/http.c schedy/schedy.c
+# schedy/xcurl.c schedy/xcurl_debug.c) target_link_libraries(schedy PRIVATE
+# deciphon)
 
-add_executable(pressy pressy/pressy.c pressy/msg.c pressy/session.c)
+add_executable(pressy pressy/pressy.c pressy/command.c pressy/presser.c)
 target_link_libraries(pressy PRIVATE deciphon)
 
-add_executable(scanny scanny/scanny.c scanny/msg.c scanny/session.c)
-target_link_libraries(scanny PRIVATE deciphon)
-
-add_executable(decy decy/decy.c decy/msg.c decy/cfg.c decy/broker.c)
-target_link_libraries(decy PRIVATE deciphon)
+# add_executable(scanny scanny/scanny.c scanny/msg.c scanny/session.c)
+# target_link_libraries(scanny PRIVATE deciphon)
+#
+# add_executable(decy decy/decy.c decy/msg.c decy/cfg.c decy/broker.c)
+# target_link_libraries(decy PRIVATE deciphon)
 
 enable_testing()
 add_subdirectory(test)
