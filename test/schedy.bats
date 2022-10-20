@@ -4,10 +4,12 @@ setup() {
     bats_load_library bats-support
     bats_load_library bats-assert
     bats_load_library bats-file
+    load helper
     PATH="$BATS_TEST_DIRNAME/..:$PATH"
     cd "$BATS_TEST_TMPDIR" || exit 1
     PIDS="$BATS_FILE_TMPDIR/pids"
     touch "$PIDS"
+    pipx install pooch-cli
 }
 
 teardown() {
@@ -20,24 +22,11 @@ teardown() {
     done <"$PIDS"
 }
 
-peek() {
-    timeout -t 500 cat "$1"
-}
-
-catnl() {
-    cat "$@"
-    echo
-}
-
-checksum() {
-    file=$1
-    sha256sum "$file" | cut -f1 -d' '
-}
-
 schedy_spawn() {
     run daemonize -i stdin -o stdout -e stderr -p pid schedy -- -u http://127.0.0.1:49329 -k change-me
     assert_success
-    catnl pid >>"$PIDS"
+    cat pid >>"$PIDS"
+    echo >>"$PIDS"
 
     # Keep fifos open
     exec 7<>stdin
@@ -57,33 +46,25 @@ schedy_kill() {
     schedy --help
 }
 
-ensure_PF02545_hmm() {
-    python3 -m pipx run pooch-cli https://pub.danilohorta.me/deciphon/PF02545.hmm --hash ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
-}
-
 @test "schedy daemon" {
     schedy_spawn
+    download PF02545.hmm ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
 
-    echo "online | {1}" >stdin
-    run peek stdout
+    run send "online | {1}"
     assert_output "yes"
 
-    ensure_PF02545_hmm
-    assert_file_exists "PF02545.hmm"
-
-    echo "wipe | {1}" >stdin
-    run peek stdout
+    run send "wipe | {1}"
     assert_output "ok"
 
-    echo "hmm_up PF02545.hmm | {1}" >stdin
-    run peek stdout
+    run send "hmm_up PF02545.hmm | {1}"
     assert_output "ok"
 
-    echo "hmm_dl -7843725841264658444 output.hmm" >stdin
-    sleep 1
+    run send_nb "hmm_dl -7843725841264658444 output.hmm"
+    sleep 0.5
     assert_file_exists output.hmm
+
     run checksum output.hmm
-    assert_output "ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68"
+    assert_output ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
 
     schedy_kill
 }
