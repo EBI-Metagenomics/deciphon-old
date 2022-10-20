@@ -69,9 +69,12 @@ bool presser_start(char const *hmm)
     return true;
 }
 
-unsigned presser_progress(void) { return progress_percent(&self.progress); }
+int presser_progress(void)
+{
+    return presser_is_done() ? 100 : progress_percent(&self.progress);
+}
 
-int presser_cancel(unsigned timeout_msec)
+int presser_cancel(int timeout_msec)
 {
     info("Cancelling...");
     if (!presser_is_running()) return RC_OK;

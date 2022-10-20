@@ -1,11 +1,11 @@
 #include "command.h"
 #include "core/command_help.h"
+#include "core/fmt.h"
 #include "core/logy.h"
 #include "core/msg.h"
 #include "core/strings.h"
 #include "presser.h"
 #include "pressy.h"
-#include "zc.h"
 
 #define CMD_MAP(X)                                                             \
     X(CANCEL, cancel, "")                                                      \
@@ -23,8 +23,7 @@ static void fn_cancel(struct msg *msg)
 {
     if (msg_check(msg, "s")) return;
 
-    char const *ans = FAIL;
-    if (!presser_cancel(0)) ans = OK;
+    char const *ans = presser_cancel(0) ? FAIL : OK;
     parent_send(&parent, msg_ctx(msg, ans));
 }
 
@@ -61,23 +60,10 @@ static void fn_progress(struct msg *msg)
 {
     if (msg_check(msg, "s")) return;
 
-    char const *ans = FAIL;
-    char progress[16] = {0};
-
-    if (presser_is_done())
-    {
-        ans = OK;
-        zc_strlcpy(progress, "100%", sizeof progress);
-    }
-    else if (presser_is_running())
-    {
-        ans = OK;
-        sprintf(progress, "%u%%", presser_progress());
-    }
-    else
-        ans = FAIL;
-
-    parent_send(&parent, msg_ctx(msg, ans, progress));
+    char const *ans = presser_is_done() || presser_is_running() ? OK : FAIL;
+    char perc[] = "100%";
+    fmt_percent(perc, presser_progress());
+    parent_send(&parent, msg_ctx(msg, ans, perc));
 }
 
 static void fn_state(struct msg *msg)

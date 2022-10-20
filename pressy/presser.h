@@ -8,8 +8,8 @@ void presser_init(void);
 bool presser_is_running(void);
 bool presser_is_done(void);
 bool presser_start(char const *hmm_filepath);
-unsigned presser_progress(void);
-int presser_cancel(unsigned timeout_msec);
+int presser_progress(void);
+int presser_cancel(int timeout_msec);
 char const *presser_state_string(void);
 
 #endif

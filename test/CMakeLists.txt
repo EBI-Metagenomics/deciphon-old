@@ -24,4 +24,5 @@ file(CREATE_LINK "${SRC}/helper.bash" "${DST}/helper.bash" COPY_ON_ERROR)
 find_program(BATS_PROGRAM bats REQUIRED)
 
 add_test(test_pressy "${BATS_PROGRAM}" "${DST}/pressy.bats")
+add_test(test_scanny "${BATS_PROGRAM}" "${DST}/scanny.bats")
 add_test(test_schedy "${BATS_PROGRAM}" "${DST}/schedy.bats")

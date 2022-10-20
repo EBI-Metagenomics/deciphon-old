@@ -1,10 +1,8 @@
 #ifndef SCANNY_SCANNY_H
 #define SCANNY_SCANNY_H
 
-#include "loop/input.h"
-#include "loop/output.h"
+#include "loop/parent.h"
 
-extern struct input input;
-extern struct output output;
+extern struct parent parent;
 
 #endif

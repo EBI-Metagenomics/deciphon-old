@@ -24,7 +24,7 @@ teardown() {
     daemon_kill
 }
 
-@test "pressy daemon" {
+@test "pressy press" {
     daemon_spawn pressy
     download PF02545.hmm ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
 

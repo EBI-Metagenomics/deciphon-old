@@ -1,6 +1,5 @@
 #include "core/progress.h"
 #include "core/compiler.h"
-#include <stdio.h>
 
 static int percent(long total, long consumed);
 
@@ -26,9 +25,9 @@ long progress_consumed(struct progress const *p)
     return atomic_load_explicit(&p->consumed, memory_order_consume);
 }
 
-unsigned progress_percent(struct progress const *p)
+int progress_percent(struct progress const *p)
 {
-    return (unsigned)percent(p->total, progress_consumed(p));
+    return percent(p->total, progress_consumed(p));
 }
 
 static int percent(long total, long consumed)

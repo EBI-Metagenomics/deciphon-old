@@ -1,4 +1,4 @@
-#include "session.h"
+#include "scanner.h"
 #include "core/errmsg.h"
 #include "core/global.h"
 #include "core/limits.h"
@@ -19,11 +19,11 @@
 
 enum state
 {
-    IDLE,
-    RUN,
-    DONE,
-    FAIL,
-    CANCEL,
+    STATE_IDLE,
+    STATE_RUN,
+    STATE_DONE,
+    STATE_FAIL,
+    STATE_CANCEL,
 };
 
 static struct
@@ -47,11 +47,11 @@ atomic_bool no_monitor = true;
 static enum rc errnum = RC_OK;
 static char errmsg[ERROR_SIZE] = {0};
 
-static char const *state_string[] = {[IDLE] = "IDLE",
-                                     [RUN] = "RUN",
-                                     [DONE] = "DONE",
-                                     [FAIL] = "FAIL",
-                                     [CANCEL] = "CANCEL"};
+static char const *state_string[] = {[STATE_IDLE] = "idle",
+                                     [STATE_RUN] = "run",
+                                     [STATE_DONE] = "done",
+                                     [STATE_FAIL] = "fail",
+                                     [STATE_CANCEL] = "cancel"};
 
 static void after_work(struct uv_work_s *, int status);
 static void work(struct uv_work_s *);
@@ -61,46 +61,46 @@ static struct progress const *monitor_progress(void);
 static void monitor_progress_cb(struct uv_timer_s *);
 static void monitor_stop(void);
 
-void session_init(void)
+void scanner_init(void)
 {
     self.nthreads = machine_ncpus() > 1 ? machine_ncpus() - 1 : 1;
     self.cancel = false;
-    self.state = IDLE;
+    self.state = STATE_IDLE;
     errnum = RC_OK;
     errmsg[0] = '\0';
     progress_init(&self.progress, 0);
 }
 
-void session_set_nthreads(int num_threads) { self.nthreads = num_threads; }
+void scanner_set_nthreads(int num_threads) { self.nthreads = num_threads; }
 
-bool session_is_running(void) { return self.state == RUN; }
+bool scanner_is_running(void) { return self.state == STATE_RUN; }
 
-bool session_is_done(void) { return self.state == DONE; }
+bool scanner_is_done(void) { return self.state == STATE_DONE; }
 
-bool session_start(char const *seqs, char const *db, char const *prod,
+bool scanner_start(char const *seqs, char const *db, char const *prod,
                    bool multi_hits, bool hmmer3_compat)
 {
     info("starting scan with %d threads", self.nthreads);
     errnum = RC_OK;
     errmsg[0] = '\0';
-    self.cancel = false;
-    self.state = RUN;
+    atomic_store_explicit(&self.cancel, false, memory_order_release);
+    self.state = STATE_RUN;
 
     if (zc_strlcpy(self.seqs, seqs, PATH_SIZE) >= PATH_SIZE)
     {
-        self.state = FAIL;
+        self.state = STATE_FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
     if (zc_strlcpy(self.db, db, PATH_SIZE) >= PATH_SIZE)
     {
-        self.state = FAIL;
+        self.state = STATE_FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
     if (zc_strlcpy(self.prod, prod, PATH_SIZE) >= PATH_SIZE)
     {
-        self.state = FAIL;
+        self.state = STATE_FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
@@ -113,37 +113,47 @@ bool session_start(char const *seqs, char const *db, char const *prod,
     return true;
 }
 
-int session_progress(void)
+int scanner_progress(void)
 {
     struct progress const *p = monitor_progress();
-    if (p) return (unsigned)progress_percent(p);
-    return -1;
+    return p ? progress_percent(p) : 0;
 }
 
-bool session_cancel(void)
+int scanner_cancel(int timeout_msec)
 {
     info("Cancelling...");
-    if (atomic_load(&self.cancel))
+    if (!scanner_is_running()) return RC_OK;
+
+    if (atomic_load_explicit(&self.cancel, memory_order_consume))
     {
         int rc = uv_cancel((struct uv_req_s *)&self.request);
         if (rc)
         {
             warn("%s", uv_strerror(rc));
-            return false;
+            return RC_EFAIL;
         }
-        return true;
+        return RC_OK;
     }
-    atomic_store(&self.cancel, true);
-    return true;
+    atomic_store_explicit(&self.cancel, true, memory_order_release);
+    if (timeout_msec > 0)
+    {
+        uv_sleep(timeout_msec);
+        if (scanner_is_running())
+        {
+            warn("scanner cancelling timed out");
+            return RC_TIMEDOUT;
+        }
+    }
+    return RC_OK;
 }
 
-char const *session_state_string(void) { return state_string[self.state]; }
+char const *scanner_state_string(void) { return state_string[self.state]; }
 
 static void after_work(struct uv_work_s *req, int status)
 {
     (void)req;
-    if (status == UV_ECANCELED) self.state = CANCEL;
-    atomic_store(&self.cancel, false);
+    if (status == UV_ECANCELED) self.state = STATE_CANCEL;
+    atomic_store_explicit(&self.cancel, false, memory_order_release);
     atomic_store_explicit(&no_monitor, true, memory_order_release);
     monitor_stop();
 }
@@ -157,29 +167,29 @@ static void work(struct uv_work_s *req)
     if (errnum)
     {
         errfmt(errmsg, "%s", scan_errmsg());
-        self.state = FAIL;
+        self.state = STATE_FAIL;
         return;
     }
     atomic_store_explicit(&no_monitor, false, memory_order_release);
 
-    if (atomic_load(&self.cancel))
+    if (atomic_load_explicit(&self.cancel, memory_order_consume))
     {
         info("Cancelled");
-        self.state = CANCEL;
+        self.state = STATE_CANCEL;
         return;
     }
 
     if ((errnum = scan_run()))
     {
         errfmt(errmsg, "%s", scan_errmsg());
-        self.state = FAIL;
+        self.state = STATE_FAIL;
         return;
     }
 
-    if (atomic_load(&self.cancel))
+    if (atomic_load_explicit(&self.cancel, memory_order_consume))
     {
         info("Cancelled");
-        self.state = CANCEL;
+        self.state = STATE_CANCEL;
         return;
     }
 
@@ -187,11 +197,11 @@ static void work(struct uv_work_s *req)
     if (r)
     {
         errnum = eio("%s", errfmt(errmsg, "%s", xfile_strerror(r)));
-        self.state = FAIL;
+        self.state = STATE_FAIL;
         return;
     }
 
-    self.state = DONE;
+    self.state = STATE_DONE;
 }
 
 static void monitor_start(void)
@@ -222,5 +232,5 @@ static void monitor_progress_cb(struct uv_timer_s *req)
 static void monitor_stop(void)
 {
     uv_timer_stop(&monitor_timer);
-    if (self.state == DONE) info("Scanned %d%%", 100);
+    if (self.state == STATE_DONE) info("Scanned %d%%", 100);
 }

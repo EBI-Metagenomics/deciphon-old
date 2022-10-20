@@ -1,16 +1,14 @@
 #include "scanny.h"
 #include "argless.h"
-#include "core/c23.h"
+#include "command.h"
 #include "core/global.h"
 #include "core/logy.h"
+#include "core/msg.h"
 #include "core/pidfile.h"
-#include "msg.h"
-#include "session.h"
-#include <stdlib.h>
+#include "loop/parent.h"
+#include "scanner.h"
 
-struct input input = {0};
-struct output output = {0};
-static struct msg msg = {0};
+struct parent parent = {0};
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
@@ -20,32 +18,26 @@ static struct argl_option const options[] = {
 };
 
 static struct argl argl = {.options = options,
-                           .args_doc = nullptr,
+                           .args_doc = NULL,
                            .doc = "Scanny program.",
                            .version = "1.0.0"};
 
-static void on_eof(void);
-static void on_read_error(void);
 static void on_read(char *line);
-static void on_write_error(void);
 static void on_term(void);
+static void terminate(void) { global_terminate(); }
 
 int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
-    global_init(on_term, argc, argv, argl_get(&argl, "loglevel")[0] - '0');
+    int loglvl = argl_get(&argl, "loglevel")[0] - '0';
+    global_init(on_term, argc, argv, loglvl);
 
-    input_init(&input, STDIN_FILENO);
-    input_setup(&input, &on_eof, &on_read_error, &on_read);
-    input_start(&input);
+    parent_init(&parent, &on_read, &terminate, &terminate);
+    parent_open(&parent);
 
-    output_init(&output, STDOUT_FILENO);
-    output_setup(&output, &on_write_error);
-    output_start(&output);
-
-    session_init();
+    scanner_init();
 
     global_run();
     global_cleanup();
@@ -53,34 +45,19 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
-static void on_eof(void)
-{
-    warn("%s", __FUNCTION__);
-    global_terminate();
-}
-
-static void on_read_error(void)
-{
-    warn("%s", __FUNCTION__);
-    global_terminate();
-}
-
 static void on_read(char *line)
 {
-    if (!msg_parse(&msg, line)) eparse("too many arguments");
-    (*msg_fn(msg.cmd.argv[0]))(&msg);
-}
+    static struct msg msg = {0};
+    if (msg_parse(&msg, line)) return;
 
-static void on_write_error(void)
-{
-    warn("%s", __FUNCTION__);
-    global_terminate();
+    cmd_fn_t *cmd_fn = cmd_get_fn(msg_cmd(&msg));
+    if (!cmd_fn) return;
+
+    (*cmd_fn)(&msg);
 }
 
 static void on_term(void)
 {
-    msg_parse(&msg, "cancel");
-    (*msg_fn(msg.cmd.argv[0]))(&msg);
-    input_close(&input);
-    output_close(&output);
+    scanner_cancel(2500);
+    parent_close(&parent);
 }
