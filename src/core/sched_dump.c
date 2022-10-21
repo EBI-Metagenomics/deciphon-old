@@ -30,6 +30,7 @@ char *sched_dump_db(struct sched_db const *db, char buffer[])
     p += jw_long(p, db->hmm_id);
 
     p += jw_object_close(p);
+    *p = '\0';
 
     return buffer;
 }
@@ -62,6 +63,7 @@ char *sched_dump_hmm(struct sched_hmm const *hmm, char buffer[])
     p += jw_long(p, hmm->job_id);
 
     p += jw_object_close(p);
+    *p = '\0';
 
     return buffer;
 }
@@ -118,6 +120,7 @@ char *sched_dump_job(struct sched_job const *job, char buffer[])
     p += jw_long(p, job->exec_ended);
 
     p += jw_object_close(p);
+    *p = '\0';
 
     return buffer;
 }
@@ -156,6 +159,7 @@ char *sched_dump_scan(struct sched_scan const *scan, char buffer[])
     p += jw_long(p, scan->job_id);
 
     p += jw_object_close(p);
+    *p = '\0';
 
     return buffer;
 }

@@ -389,9 +389,7 @@ enum rc api_prods_file_up(char const *filepath)
 
     if ((rc = parse_json_body())) goto cleanup;
 
-    if (xcurl_http_code() == 201 && is_empty_json_object()) goto cleanup;
-
-    rc = handle_http_exception();
+    if (xcurl_http_code() != 201) rc = handle_http_exception();
 
 cleanup:
     xcurl_mime_cleanup();

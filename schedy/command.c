@@ -261,7 +261,7 @@ static void fn_job_next_pend(struct msg *msg)
 
 static void fn_job_set_state(struct msg *msg)
 {
-    if (msg_argc(msg) == 3 && !msg_check(msg, "sis")) return;
+    if (msg_argc(msg) == 3 && msg_check(msg, "sis")) return;
     if (msg_check(msg, "sis*")) return;
 
     char const *ans = FAIL;
@@ -385,8 +385,10 @@ static void fn_scan_submit(struct msg *msg)
 
 static void fn_prods_file_up(struct msg *msg)
 {
-    UNUSED(msg);
-    debug("not implemented yet");
+    if (msg_check(msg, "ss")) return;
+
+    char const *ans = api_prods_file_up(msg_str(msg, 1)) ? FAIL : OK;
+    parent_send(&parent, msg_ctx(msg, ans));
 }
 
 static enum rc dl_hmm(char const *filepath, void *data)
