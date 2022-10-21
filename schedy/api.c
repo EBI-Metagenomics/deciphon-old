@@ -128,7 +128,7 @@ static enum rc get_hmm_by(struct sched_hmm *hmm, union param p,
     enum rc rc = RC_OK;
     if (type == HMM_ID) rc = get(query("/hmms/%lld", p.i));
     if (type == XXH3) rc = get(query("/hmms/xxh3/%lld", p.i));
-    if (type == JOB_ID) rc = get(query("/jobs/job_id/%lld", p.i));
+    if (type == JOB_ID) rc = get(query("/jobs/%lld/hmm", p.i));
     if (type == FILENAME) rc = get(query("/hmms/filename/%s", p.s));
     if (rc) return rc;
 
@@ -200,7 +200,7 @@ static enum rc get_db_by(struct sched_db *db, union param p,
     if (type == DB_ID) rc = get(query("/dbs/%lld", p.i));
     if (type == XXH3) rc = get(query("/dbs/xxh3/%lld", p.i));
     if (type == JOB_ID) rc = get(query("/jobs/%lld/db", p.i));
-    if (type == HMM_ID) rc = get(query("/jobs/hmm_id/%lld/db", p.i));
+    if (type == HMM_ID) rc = get(query("/hmms/%lld/db", p.i));
     if (type == FILENAME) rc = get(query("/dbs/filename/%s", p.s));
     if (rc) return rc;
 
@@ -246,7 +246,7 @@ enum rc api_job_next_pend(struct sched_job *job)
 {
     api_error_reset();
 
-    enum rc rc = get("/jobs/next_pend");
+    enum rc rc = get("/jobs/next-pend");
     if (rc) return rc;
 
     if ((rc = parse_json_body())) return rc;
