@@ -4,9 +4,9 @@
 #include "core/logy.h"
 #include "core/rc.h"
 #include "db/types.h"
+#include "fs.h"
 #include "imm/imm.h"
 #include "model/model.h"
-#include "xfile.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,8 +74,8 @@ static enum rc pack_header(struct db_writer *db)
         return eio("write root map size");
 
     rewind(lip_file_ptr(&db->tmp.header));
-    int r = xfile_copy(lip_file_ptr(file), lip_file_ptr(&db->tmp.header));
-    if (r) return eio("%s", xfile_strerror(r));
+    int r = fs_copy_fp(lip_file_ptr(file), lip_file_ptr(&db->tmp.header));
+    if (r) return eio("%s", fs_strerror(r));
 
     if (!lip_write_cstr(file, "profile_sizes")) return eio("write key");
     return pack_header_profile_sizes(db);
@@ -90,8 +90,8 @@ static enum rc pack_profiles(struct db_writer *db)
 
     rewind(lip_file_ptr(&db->tmp.profiles));
     int r =
-        xfile_copy(lip_file_ptr(&db->file), lip_file_ptr(&db->tmp.profiles));
-    return r ? eio("%s", xfile_strerror(r)) : RC_OK;
+        fs_copy_fp(lip_file_ptr(&db->file), lip_file_ptr(&db->tmp.profiles));
+    return r ? eio("%s", fs_strerror(r)) : RC_OK;
 }
 
 enum rc db_writer_close(struct db_writer *db, bool successfully)
@@ -158,15 +158,15 @@ enum rc db_writer_pack_profile(struct db_writer *db,
 {
     enum rc rc = RC_OK;
 
-    int64_t start = 0;
-    int r = xfile_tell(lip_file_ptr(&db->tmp.profiles), &start);
-    if (r) return eio("%s", xfile_strerror(r));
+    long start = 0;
+    int r = fs_tell(lip_file_ptr(&db->tmp.profiles), &start);
+    if (r) return eio("%s", fs_strerror(r));
 
     if ((rc = pack_profile(&db->tmp.profiles, arg))) return rc;
 
-    int64_t end = 0;
-    r = xfile_tell(lip_file_ptr(&db->tmp.profiles), &end);
-    if (r) return eio("%s", xfile_strerror(r));
+    long end = 0;
+    r = fs_tell(lip_file_ptr(&db->tmp.profiles), &end);
+    if (r) return eio("%s", fs_strerror(r));
 
     if ((end - start) > UINT_MAX) return efail("profile is too large");
 

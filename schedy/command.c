@@ -7,8 +7,8 @@
 #include "core/msg.h"
 #include "core/sched_dump.h"
 #include "core/strings.h"
+#include "fs.h"
 #include "schedy.h"
-#include "xfile.h"
 #include <string.h>
 
 #define CMD_MAP(X)                                                             \
@@ -301,17 +301,17 @@ static void fn_scan_dl_seqs(struct msg *msg)
 
     if (api_scan_get_by_id(msg_int(msg, 1), &scan)) goto cleanup;
 
-    int rc = xfile_mkstemp(sizeof tmpfpath, tmpfpath);
+    int rc = fs_mkstemp(sizeof tmpfpath, tmpfpath);
     if (rc)
     {
-        eio("%s", xfile_strerror(rc));
+        eio("%s", fs_strerror(rc));
         goto cleanup;
     }
     FILE *fp = fopen(tmpfpath, "wb");
     if (!fp)
     {
         eio("fopen failed");
-        xfile_unlink(tmpfpath);
+        fs_unlink(tmpfpath);
         goto cleanup;
     }
 
@@ -322,10 +322,10 @@ static void fn_scan_dl_seqs(struct msg *msg)
     }
 
     fclose(fp);
-    rc = xfile_move(msg_str(msg, 2), tmpfpath);
+    rc = fs_move(msg_str(msg, 2), tmpfpath);
     if (rc)
     {
-        eio("%s", xfile_strerror(rc));
+        eio("%s", fs_strerror(rc));
         goto cleanup;
     }
     ans = OK;

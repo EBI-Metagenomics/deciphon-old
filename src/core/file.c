@@ -2,7 +2,7 @@
 #include "core/file.h"
 #include "core/compiler.h"
 #include "core/logy.h"
-#include "xfile.h"
+#include "fs.h"
 #include "xxhash.h"
 #include <assert.h>
 
@@ -15,7 +15,7 @@ enum rc file_ensure_local(char const *filename, int64_t xxh3,
 {
     enum rc rc = RC_OK;
 
-    if (xfile_exists(filename))
+    if (fs_exists(filename))
     {
         if (!(rc = ensure_integrity(filename, xxh3))) return rc;
     }

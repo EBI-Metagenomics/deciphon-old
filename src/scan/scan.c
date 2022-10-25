@@ -10,7 +10,6 @@
 #include "scan/seq.h"
 #include "scan/seqlist.h"
 #include "scan/thread.h"
-#include "xfile.h"
 #include "zc.h"
 #include <stdlib.h>
 

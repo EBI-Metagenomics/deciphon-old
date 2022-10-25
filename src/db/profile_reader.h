@@ -10,7 +10,7 @@ struct profile_reader
 {
     unsigned npartitions;
     unsigned partition_size[NUM_THREADS];
-    int64_t partition_offset[NUM_THREADS + 1];
+    long partition_offset[NUM_THREADS + 1];
     struct lip_file file[NUM_THREADS];
     enum profile_typeid profile_typeid;
     union

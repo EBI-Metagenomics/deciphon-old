@@ -3,10 +3,10 @@
 #include "core/errmsg.h"
 #include "core/logy.h"
 #include "core/strings.h"
+#include "fs.h"
 #include "imm/abc.h"
 #include "jx.h"
 #include "scan/seq.h"
-#include "xfile.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -28,11 +28,11 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
     errnum = RC_OK;
     errmsg[0] = '\0';
 
-    int64_t size = 0;
-    int r = xfile_readall(filepath, &size, (unsigned char **)&data);
+    long size = 0;
+    int r = fs_readall(filepath, &size, (unsigned char **)&data);
     if (r)
     {
-        errnum = eio("%s", errfmt(errmsg, "%s", xfile_strerror(r)));
+        errnum = eio("%s", errfmt(errmsg, "%s", fs_strerror(r)));
         goto cleanup;
     }
 

@@ -8,10 +8,10 @@
 #include "core/strings.h"
 #include "db/profile_reader.h"
 #include "db/protein_reader.h"
+#include "fs.h"
 #include "scan/scan.h"
 #include "scan/thread.h"
 #include "uv.h"
-#include "xfile.h"
 #include "zc.h"
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -193,10 +193,10 @@ static void work(struct uv_work_s *req)
         return;
     }
 
-    int r = xfile_move(self.prod, scan_prod_filepath());
+    int r = fs_move(self.prod, scan_prod_filepath());
     if (r)
     {
-        errnum = eio("%s", errfmt(errmsg, "%s", xfile_strerror(r)));
+        errnum = eio("%s", errfmt(errmsg, "%s", fs_strerror(r)));
         self.state = STATE_FAIL;
         return;
     }

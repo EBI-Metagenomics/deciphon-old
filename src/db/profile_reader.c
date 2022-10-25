@@ -2,7 +2,7 @@
 #include "core/logy.h"
 #include "core/xmath.h"
 #include "db/db.h"
-#include "xfile.h"
+#include "fs.h"
 #include "zc.h"
 
 static void cleanup(struct profile_reader *reader)
@@ -16,8 +16,8 @@ static enum rc open_files(struct profile_reader *reader, FILE *fp)
     for (unsigned i = 0; i < reader->npartitions; ++i)
     {
         FILE *f = NULL;
-        int rc = xfile_refopen(fp, "rb", &f);
-        if (rc) return eio("%s", xfile_strerror(rc));
+        int rc = fs_refopen(fp, "rb", &f);
+        if (rc) return eio("%s", fs_strerror(rc));
         lip_file_init(reader->file + i, f);
     }
     return RC_OK;
@@ -42,9 +42,9 @@ static void init_protein_profiles(struct profile_reader *reader,
     }
 }
 
-static void partition_init(struct profile_reader *reader, int64_t offset)
+static void partition_init(struct profile_reader *reader, long offset)
 {
-    int64_t *poffset = reader->partition_offset;
+    long *poffset = reader->partition_offset;
     unsigned *psize = reader->partition_size;
 
     zc_bzero(poffset, NUM_THREADS + 1);
@@ -87,9 +87,9 @@ enum rc profile_reader_setup(struct profile_reader *reader,
     if (!lip_read_array_size(&db->file, &n)) eio("read array size");
     if (n != db->nprofiles) return einval("invalid nprofiles");
 
-    int64_t profiles_offset = 0;
-    int r = xfile_tell(db->file.fp, &profiles_offset);
-    if (r) return eio("%s", xfile_strerror(r));
+    long profiles_offset = 0;
+    int r = fs_tell(db->file.fp, &profiles_offset);
+    if (r) return eio("%s", fs_strerror(r));
 
     enum rc rc = RC_OK;
     reader->profile_typeid = db->profile_typeid;
@@ -134,7 +134,7 @@ enum rc profile_reader_rewind_all(struct profile_reader *reader)
     for (unsigned i = 0; i < reader->npartitions; ++i)
     {
         FILE *fp = lip_file_ptr(reader->file + i);
-        if (xfile_seek(fp, reader->partition_offset[i], SEEK_SET))
+        if (fs_seek(fp, reader->partition_offset[i], SEEK_SET))
             return eio("failed to fseek");
     }
     return RC_OK;
@@ -143,15 +143,15 @@ enum rc profile_reader_rewind_all(struct profile_reader *reader)
 enum rc profile_reader_rewind(struct profile_reader *reader, unsigned partition)
 {
     FILE *fp = lip_file_ptr(reader->file + partition);
-    if (xfile_seek(fp, reader->partition_offset[partition], SEEK_SET))
+    if (fs_seek(fp, reader->partition_offset[partition], SEEK_SET))
         return eio("failed to fseek");
     return RC_OK;
 }
 
 static enum rc reached_end(struct profile_reader *reader, unsigned partition)
 {
-    int64_t offset = 0;
-    if (xfile_tell(lip_file_ptr(reader->file + partition), &offset))
+    long offset = 0;
+    if (fs_tell(lip_file_ptr(reader->file + partition), &offset))
         return eio("failed to ftello");
     if (offset == reader->partition_offset[partition + 1]) return RC_END;
     return RC_OK;

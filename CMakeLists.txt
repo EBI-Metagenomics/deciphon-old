@@ -48,9 +48,9 @@ add_library(
   deciphon
   libs/argless.c
   libs/dotenv.c
+  libs/fs.c
   libs/jx.c
   libs/lazylog.c
-  libs/xfile.c
   libs/zc.c
   src/core/as.c
   src/core/buff.c

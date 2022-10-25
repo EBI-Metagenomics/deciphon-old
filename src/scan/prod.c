@@ -2,9 +2,9 @@
 #include "core/limits.h"
 #include "core/logy.h"
 #include "core/version.h"
+#include "fs.h"
 #include "imm/imm.h"
 #include "scan/match.h"
-#include "xfile.h"
 #include <inttypes.h>
 
 static int num_threads = 0;
@@ -128,10 +128,10 @@ enum rc prod_fclose(void)
             goto cleanup;
         }
         rewind(prod_file[i]);
-        int r = xfile_copy(final.file, prod_file[i]);
+        int r = fs_copy_fp(final.file, prod_file[i]);
         if (r)
         {
-            rc = eio("%s", xfile_strerror(r));
+            rc = eio("%s", fs_strerror(r));
             goto cleanup;
         }
     }
@@ -183,8 +183,7 @@ enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
 static enum rc prod_final_fopen(void)
 {
     final.file = NULL;
-    if (xfile_mkstemp(PATH_SIZE, final.path))
-        return eio("fail to finish product");
+    if (fs_mkstemp(PATH_SIZE, final.path)) return eio("fail to finish product");
 
     final.file = fopen(final.path, "wb");
     return final.file ? RC_OK : eio("fail to finish product");
