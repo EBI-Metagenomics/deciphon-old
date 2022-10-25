@@ -33,32 +33,24 @@ ensure_prods_file_20221017_tsv() {
     daemon_spawn scanny
     download minifam.dcp 40d96b5a62ff669e19571c392ab711c7188dd5490744edf6c66051ecb4f2243d
     download consensus.json af483ed5aa42010e8f6c950c42d81bac69f995876bf78a5965f319e83dc3923e
+    download prods_file_20221017.tsv 5cfdaf4283ae0801709ce42efd61c1ee06873c20647154140aafd09db9a366a7
 
-    # ensure_minifam_dcp
-    # assert_file_exists "minifam.dcp"
-    #
-    # ensure_consensus_json
-    # assert_file_exists "consensus.json"
-    #
     # ensure_prods_file_20221017_tsv
     # assert_file_exists "prods_file_20221017.tsv"
     #
-    # echo "state | {1} {2}" >stdin
-    # run peek stdout
-    # assert_output "ok IDLE"
-    #
-    # echo "scan consensus.json minifam.dcp prods_file.tsv 1 0 | {1}" >stdin
-    # run peek stdout
-    # assert_output "ok"
-    #
-    # sleep 2
-    # echo "state | {1} {2}" >stdin
-    # run peek stdout
-    # assert_output "ok DONE"
-    #
-    # run sort -o prods_file.tsv prods_file.tsv
-    # run diff prods_file.tsv prods_file_20221017.tsv
-    # assert_output ""
+    run send "state | {1} {2}"
+    assert_output "ok idle"
+
+    run send "scan consensus.json minifam.dcp prods_file.tsv 1 0 | {1}"
+    assert_output "ok"
+
+    sleep 2
+    run send "state | {1} {2}"
+    assert_output "ok done"
+
+    sort -o prods_file.tsv prods_file.tsv
+    run diff prods_file.tsv prods_file_20221017.tsv
+    assert_output ""
 
     daemon_kill
 }
