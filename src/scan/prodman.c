@@ -1,4 +1,5 @@
 #include "scan/prodman.h"
+#include "core/logy.h"
 #include "core/thrfiles.h"
 #include "fs.h"
 
@@ -6,34 +7,28 @@ static struct thrfiles thrfiles = {0};
 
 void prodman_init(void) { thrfiles_init(&thrfiles); }
 
-bool prodman_setup(int nthreads) { return thrfiles_setup(&thrfiles, nthreads); }
+int prodman_setup(int nthreads) { return thrfiles_setup(&thrfiles, nthreads); }
+
+FILE *prodman_file(int idx) { return thrfiles.files[idx]; }
 
 static FILE *create_header(void);
+static int join_header(FILE *hdr, char const *filepath);
 
-char const *prodman_finishup(void)
+int prodman_finishup(char const **path)
 {
-    char const *path = thrfiles_finishup(&thrfiles);
-    if (!path) return NULL;
-    if (fs_sort(path)) return NULL;
+    *path = NULL;
+    int rc = thrfiles_finishup(&thrfiles, path);
+    if (rc) return rc;
+    if (fs_sort(*path)) return eio("failed to sort");
 
     FILE *hdr = create_header();
-    if (!hdr) return NULL;
-
-    FILE *fp = fopen(path, "rb+");
-    if (!fp) goto cleanup;
-    if (fs_rjoin(hdr, fp)) goto cleanup;
-
-    fclose(fp);
+    if (!hdr) return eio("failed to create header file");
+    rc = join_header(hdr, *path);
     fclose(hdr);
-    return path;
-
-cleanup:
-    if (fp) fclose(fp);
-    fclose(hdr);
-    return NULL;
+    return rc;
 }
 
-void prodman_cleanup(void);
+void prodman_cleanup(void) { thrfiles_cleanup(&thrfiles); }
 
 static FILE *create_header(void)
 {
@@ -51,4 +46,17 @@ static FILE *create_header(void)
 cleanup:
     fclose(hdr);
     return NULL;
+}
+
+static int join_header(FILE *hdr, char const *filepath)
+{
+    FILE *fp = fopen(filepath, "rb+");
+    if (!fp) return eio("failed to fopen");
+    if (fs_rjoin(hdr, fp))
+    {
+        fclose(fp);
+        return eio("failed to join files");
+    }
+    fclose(fp);
+    return RC_OK;
 }

@@ -1,5 +1,4 @@
 #include "scan/scan.h"
-#include "core/c23.h"
 #include "core/errmsg.h"
 #include "core/logy.h"
 #include "core/progress.h"
@@ -7,6 +6,7 @@
 #include "db/protein_reader.h"
 #include "jx.h"
 #include "scan/prod.h"
+#include "scan/prodman.h"
 #include "scan/seq.h"
 #include "scan/seqlist.h"
 #include "scan/thread.h"
@@ -17,7 +17,7 @@ static struct scan_cfg scan_cfg = {0};
 
 static struct thread thread[NUM_THREADS] = {0};
 
-static FILE *db_file = nullptr;
+static FILE *db_file = NULL;
 static struct protein_db_reader pro_db_reader = {0};
 static struct db_reader *db_reader = (struct db_reader *)&pro_db_reader;
 
@@ -31,8 +31,6 @@ static char errmsg[ERROR_SIZE] = {0};
 static struct progress progress = {0};
 
 static enum rc prepare_readers(char const *db);
-static void scan_cleanup(void);
-static void work_finishup(bool succesfully);
 
 void scan_init(struct scan_cfg cfg)
 {
@@ -40,11 +38,12 @@ void scan_init(struct scan_cfg cfg)
     errnum = RC_OK;
     errmsg[0] = '\0';
     progress_init(&progress, 0);
+    prodman_init();
 }
 
-enum rc scan_setup(char const *db, char const *seqs)
+int scan_setup(char const *db, char const *seqs)
 {
-    if ((errnum = prod_fopen(scan_cfg.nthreads)))
+    if ((errnum = prodman_setup(scan_cfg.nthreads)))
     {
         errfmt(errmsg, "failed to open product files");
         scan_cleanup();
@@ -55,7 +54,6 @@ enum rc scan_setup(char const *db, char const *seqs)
     if ((errnum = prepare_readers(db)))
     {
         scan_cleanup();
-        prod_fcleanup();
         return errnum;
     }
 
@@ -64,7 +62,6 @@ enum rc scan_setup(char const *db, char const *seqs)
     {
         errfmt(errmsg, "%s", seqlist_errmsg());
         scan_cleanup();
-        prod_fcleanup();
         return errnum;
     }
 
@@ -77,7 +74,7 @@ enum rc scan_setup(char const *db, char const *seqs)
         struct profile_reader *reader = &profreader;
         prod_fwrite_match_fn_t *cb = &protein_match_write;
 
-        thread_init(t, i, reader, scan_cfg, cb);
+        thread_init(t, prodman_file(i), i, reader, scan_cfg, cb);
 
         enum imm_abc_typeid abc_typeid = abc->vtable.typeid;
         enum profile_typeid prof_typeid = reader->profile_typeid;
@@ -93,9 +90,9 @@ enum rc scan_setup(char const *db, char const *seqs)
     return errnum;
 }
 
-enum rc scan_run(void)
+int scan_run(void)
 {
-    struct seq const *seq = nullptr;
+    struct seq const *seq = NULL;
     enum rc rc[NUM_THREADS] = {0};
     unsigned last_tid = UINT_MAX;
     seqlist_rewind();
@@ -107,20 +104,6 @@ enum rc scan_run(void)
         for (unsigned i = 0; i < nparts; ++i)
             thread_setup_seq(thread + i, iseq, seq->id);
 
-        //        _Pragma ("omp parallel for firstprivate(job_id)
-        //        schedule(static, 1)")
-        //            for (unsigned i = 0; i < nparts; ++i)
-        //            {
-        //                int tid = xomp_thread_num();
-        //                enum rc rc = thread_run(&scan.thread[i], tid);
-        //                if (local_rc)
-        //                {
-        //                    _Pragma ("omp atomic write")
-        //                        errnum = local_rc;
-        //                    _Pragma ("omp cancel for")
-        //                }
-        //            }
-        //
         _Pragma ("omp parallel for schedule(static, 1)")
             for (unsigned i = 0; i < nparts; ++i)
             {
@@ -138,8 +121,6 @@ enum rc scan_run(void)
             break;
         }
     }
-
-    work_finishup(!errnum);
 
     return errnum;
 }
@@ -161,12 +142,17 @@ struct progress const *scan_progress(void) { return &progress; }
 
 char const *scan_errmsg(void) { return errmsg; }
 
-char const *scan_prod_filepath(void) { return prod_final_path(); }
+int scan_finishup(char const **filepath) { return prodman_finishup(filepath); }
 
-static void work_finishup(bool succesfully)
+void scan_cleanup(void)
 {
-    if (!succesfully) prod_fcleanup();
-    if ((errnum = prod_fclose())) errfmt(errmsg, "failed to finish up work");
+    seqlist_cleanup();
+    if (db_file)
+    {
+        fclose(db_file);
+        db_file = NULL;
+    }
+    prodman_cleanup();
 }
 
 static enum rc prepare_readers(char const *db)
@@ -190,14 +176,4 @@ static enum rc prepare_readers(char const *db)
 
 cleanup:
     return rc;
-}
-
-static void scan_cleanup(void)
-{
-    seqlist_cleanup();
-    if (db_file)
-    {
-        fclose(db_file);
-        db_file = nullptr;
-    }
 }

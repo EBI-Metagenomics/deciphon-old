@@ -168,6 +168,7 @@ static void work(struct uv_work_s *req)
     {
         errfmt(errmsg, "%s", scan_errmsg());
         self.state = STATE_FAIL;
+        scan_cleanup();
         return;
     }
     atomic_store_explicit(&no_monitor, false, memory_order_release);
@@ -176,6 +177,7 @@ static void work(struct uv_work_s *req)
     {
         info("Cancelled");
         self.state = STATE_CANCEL;
+        scan_cleanup();
         return;
     }
 
@@ -183,6 +185,7 @@ static void work(struct uv_work_s *req)
     {
         errfmt(errmsg, "%s", scan_errmsg());
         self.state = STATE_FAIL;
+        scan_cleanup();
         return;
     }
 
@@ -190,18 +193,30 @@ static void work(struct uv_work_s *req)
     {
         info("Cancelled");
         self.state = STATE_CANCEL;
+        scan_cleanup();
         return;
     }
 
-    int r = fs_move(self.prod, scan_prod_filepath());
+    char const *filepath = NULL;
+    if ((errnum = scan_finishup(&filepath)))
+    {
+        errfmt(errmsg, "%s", scan_errmsg());
+        self.state = STATE_FAIL;
+        scan_cleanup();
+        return;
+    }
+
+    int r = fs_move(self.prod, filepath);
     if (r)
     {
         errnum = eio("%s", errfmt(errmsg, "%s", fs_strerror(r)));
         self.state = STATE_FAIL;
+        scan_cleanup();
         return;
     }
 
     self.state = STATE_DONE;
+    scan_cleanup();
 }
 
 static void monitor_start(void)

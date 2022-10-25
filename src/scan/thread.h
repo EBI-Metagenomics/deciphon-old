@@ -6,9 +6,11 @@
 #include "scan/hypothesis.h"
 #include "scan/prod.h"
 #include "scan/protein_match.h"
+#include <stdio.h>
 
 struct thread
 {
+    FILE *prodfile;
     int idx;
 
     struct imm_seq const *seq;
@@ -35,8 +37,9 @@ struct thread
 enum imm_abc_typeid;
 enum profile_typeid;
 
-void thread_init(struct thread *, int idx, struct profile_reader *,
-                 struct scan_cfg, prod_fwrite_match_fn_t *);
+void thread_init(struct thread *, FILE *prodfile, int idx,
+                 struct profile_reader *, struct scan_cfg,
+                 prod_fwrite_match_fn_t *);
 void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
                       int64_t scan_id, long ntasks);
 void thread_setup_seq(struct thread *, struct imm_seq const *, int64_t seq_id);

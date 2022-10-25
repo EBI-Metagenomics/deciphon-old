@@ -2,7 +2,6 @@
 #define CORE_THRFILES_H
 
 #include "core/limits.h"
-#include <stdbool.h>
 #include <stdio.h>
 
 struct thrfiles_final
@@ -19,8 +18,8 @@ struct thrfiles
 };
 
 void thrfiles_init(struct thrfiles *);
-bool thrfiles_setup(struct thrfiles *, int nthreads);
-char const *thrfiles_finishup(struct thrfiles *);
+int thrfiles_setup(struct thrfiles *, int nthreads);
+int thrfiles_finishup(struct thrfiles *, char const **);
 void thrfiles_cleanup(struct thrfiles *);
 
 #endif

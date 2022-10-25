@@ -10,7 +10,6 @@ struct imm_path;
 struct imm_seq;
 struct match;
 
-enum imm_abc_typeid;
 enum profile_typeid;
 
 struct prod
@@ -34,17 +33,12 @@ struct prod
 
 typedef enum rc prod_fwrite_match_fn_t(FILE *fp, void const *match);
 
-enum rc prod_fwrite(struct prod const *prod, struct imm_seq const *seq,
-                    struct imm_path const *path, unsigned thread_num,
-                    prod_fwrite_match_fn_t *, struct match *match);
-
-enum rc prod_fopen(int nthreads);
 void prod_setup_job(struct prod *prod, char const *abc_name,
                     char const *prof_typeid, int64_t scan_id);
 void prod_setup_seq(struct prod *prod, int64_t seq_id);
-void prod_fcleanup(void);
-enum rc prod_fclose(void);
 
-char const *prod_final_path(void);
+int prod_write(struct prod const *prod, struct imm_seq const *seq,
+               struct imm_path const *path, prod_fwrite_match_fn_t *,
+               struct match *match, FILE *);
 
 #endif

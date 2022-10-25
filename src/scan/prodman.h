@@ -1,11 +1,12 @@
 #ifndef SCAN_PRODMAN_H
 #define SCAN_PRODMAN_H
 
-#include <stdbool.h>
+#include <stdio.h>
 
 void prodman_init(void);
-bool prodman_setup(int nthreads);
-char const *prodman_finishup(void);
+int prodman_setup(int nthreads);
+FILE *prodman_file(int idx);
+int prodman_finishup(char const **filepath);
 void prodman_cleanup(void);
 
 #endif

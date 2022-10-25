@@ -1,5 +1,4 @@
 #include "scan/thread.h"
-#include "core/c23.h"
 #include "core/errmsg.h"
 #include "core/logy.h"
 #include "core/progress.h"
@@ -7,11 +6,13 @@
 #include "db/profile_reader.h"
 #include "scan/cfg.h"
 
-void thread_init(struct thread *t, int idx, struct profile_reader *reader,
-                 struct scan_cfg cfg, prod_fwrite_match_fn_t *write_match_cb)
+void thread_init(struct thread *t, FILE *prodfile, int idx,
+                 struct profile_reader *reader, struct scan_cfg cfg,
+                 prod_fwrite_match_fn_t *write_match_cb)
 {
+    t->prodfile = prodfile;
     t->idx = idx;
-    t->seq = nullptr;
+    t->seq = NULL;
     t->reader = reader;
     t->cfg = cfg;
     t->write_match_cb = write_match_cb;
@@ -159,5 +160,5 @@ static enum rc write_product(struct thread const *t,
 {
     struct match *match = (struct match *)&t->match;
     prod_fwrite_match_fn_t *fn = t->write_match_cb;
-    return prod_fwrite(&t->prod, t->seq, path, t->idx, fn, match);
+    return prod_write(&t->prod, t->seq, path, fn, match, t->prodfile);
 }
