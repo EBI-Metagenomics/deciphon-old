@@ -70,6 +70,7 @@ add_library(
   src/core/sched.c
   src/core/sched_dump.c
   src/core/sharg.c
+  src/core/thrfiles.c
   src/core/to.c
   src/core/url.c
   src/core/xmem.c
@@ -99,6 +100,7 @@ add_library(
   src/model/standard_profile.c
   src/model/standard_state.c
   src/scan/prod.c
+  src/scan/prodman.c
   src/scan/protein_match.c
   src/scan/scan.c
   src/scan/seq.c

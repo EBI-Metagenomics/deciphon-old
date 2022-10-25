@@ -31,6 +31,7 @@
     X(ERMDIR, "rmdir failed")                                                  \
     X(ESENDFILE, "sendfile failed")                                            \
     X(ESTAT, "stat failed")                                                    \
+    X(ETMPFILE, "tmpfile failed")                                              \
     X(ETRUNCPATH, "truncated path")                                            \
     X(EUNLINK, "unlink failed")
 
@@ -93,6 +94,9 @@ int fs_join(FILE *a, FILE *b, FILE *out);
 int fs_split(FILE *in, long cut, FILE *a, FILE *b);
 int fs_readlines(char const *filepath, long *cnt, char **lines[]);
 int fs_writelines(char const *filepath, long cnt, char *lines[]);
+
+int fs_ljoin(FILE *left, FILE *right);
+int fs_rjoin(FILE *left, FILE *right);
 
 int fs_sort(char const *filepath);
 int fs_cksum(char const *filepath, int algo, long *chk);
