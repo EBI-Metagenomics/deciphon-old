@@ -7,35 +7,37 @@ setup() {
     load helper
     PATH="$BATS_TEST_DIRNAME/..:$PATH"
     helper_init
-}
-
-teardown() {
-    helper_teardown
-}
-
-@test "scanny help" {
-    scanny --help
-}
-
-@test "scanny daemon" {
     daemon_spawn scanny
     download minifam.dcp
     download consensus.json
-    download prods_file_20221017.tsv
+    download prods_file_20221021.tsv
+}
 
-    run send "state | {1} {2}"
-    assert_output "ok idle"
-
-    run send "scan consensus.json minifam.dcp prods_file.tsv 1 0 | {1}"
-    assert_output "ok"
-
-    sleep 2
-    run send "state | {1} {2}"
-    assert_output "ok done"
-
-    sort -o prods_file.tsv prods_file.tsv
-    run diff prods_file.tsv prods_file_20221017.tsv
-    assert_output ""
-
+teardown() {
     daemon_kill
+    helper_teardown
+}
+
+@test "idle state" {
+    run sendo "state | {1} {2}"
+    assert_output "ok idle"
+}
+
+@test "submit" {
+    run sendo "scan consensus.json minifam.dcp prods_file.tsv 1 0 | {1}"
+    assert_output "ok"
+}
+
+@test "done state" {
+    send "scan consensus.json minifam.dcp prods_file.tsv 1 0"
+    sleep 2
+    run sendo "state | {1} {2}"
+    assert_output "ok done"
+}
+
+@test "check product file" {
+    send "scan consensus.json minifam.dcp prods_file.tsv 1 0"
+    sleep 2
+    run diff prods_file.tsv prods_file_20221021.tsv
+    assert_success
 }

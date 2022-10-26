@@ -96,6 +96,10 @@ recv() {
 
 send() {
     echo "$1" >stdin
+}
+
+sendo() {
+    echo "$1" >stdin
     recv stdout
 }
 
