@@ -1,7 +1,7 @@
 #!/bin/bash
 
 helper_init() {
-    pipx install pooch-cli
+    pipx install pooch-cli >/dev/null
     cd "$BATS_TEST_TMPDIR" || exit 1
     touch pidfile
 }
