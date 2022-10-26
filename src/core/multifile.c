@@ -1,4 +1,4 @@
-#include "core/thrfiles.h"
+#include "core/multifile.h"
 #include "core/limits.h"
 #include "core/logy.h"
 #include "core/pp.h"
@@ -6,44 +6,44 @@
 #include <stdio.h>
 #include <string.h>
 
-void thrfiles_init(struct thrfiles *tf) { thrfiles_cleanup(tf); }
+void multifile_init(struct multifile *tf) { multifile_cleanup(tf); }
 
-int thrfiles_setup(struct thrfiles *tf, int nthreads)
+int multifile_setup(struct multifile *tf, int size)
 {
-    for (tf->size = 0; tf->size < nthreads; ++tf->size)
+    for (tf->size = 0; tf->size < size; ++tf->size)
     {
         if (!(tf->files[tf->size] = tmpfile()))
         {
-            thrfiles_cleanup(tf);
+            multifile_cleanup(tf);
             return eio("failed to create temporary files");
         }
     }
     return RC_OK;
 }
 
-static void cleanup_thread_files(struct thrfiles *);
-static int setup_final_open(struct thrfiles *);
-static void cleanup_final_file(struct thrfiles *);
-static int join_thread_files(struct thrfiles *);
+static void cleanup_files(struct multifile *);
+static int setup_final_file(struct multifile *);
+static void cleanup_final_file(struct multifile *);
+static int join_files(struct multifile *);
 
-int thrfiles_finishup(struct thrfiles *tf, char const **path)
+int multifile_finishup(struct multifile *tf, char const **path)
 {
-    int rc = setup_final_open(tf);
+    int rc = setup_final_file(tf);
     if (rc) return rc;
-    rc = join_thread_files(tf);
+    rc = join_files(tf);
     if (rc) return rc;
-    cleanup_thread_files(tf);
+    cleanup_files(tf);
     *path = tf->final.path;
     return RC_OK;
 }
 
-void thrfiles_cleanup(struct thrfiles *tf)
+void multifile_cleanup(struct multifile *tf)
 {
-    cleanup_thread_files(tf);
+    cleanup_files(tf);
     cleanup_final_file(tf);
 }
 
-static int join_thread_files(struct thrfiles *tf)
+static int join_files(struct multifile *tf)
 {
     for (int i = 0; i < tf->size; ++i)
     {
@@ -57,7 +57,7 @@ static int join_thread_files(struct thrfiles *tf)
     return RC_OK;
 }
 
-static void cleanup_thread_files(struct thrfiles *tf)
+static void cleanup_files(struct multifile *tf)
 {
     for (int i = 0; i < tf->size; ++i)
     {
@@ -67,9 +67,9 @@ static void cleanup_thread_files(struct thrfiles *tf)
     tf->size = 0;
 }
 
-static int setup_final_open(struct thrfiles *tf)
+static int setup_final_file(struct multifile *tf)
 {
-    size_t size = sizeof_field(struct thrfiles_final, path);
+    size_t size = sizeof_field(struct multifile_final, path);
     tf->final.file = NULL;
     if (fs_mkstemp(size, tf->final.path)) return eio("fail to finish product");
 
@@ -77,7 +77,7 @@ static int setup_final_open(struct thrfiles *tf)
     return tf->final.file ? RC_OK : eio("fail to finish product");
 }
 
-static void cleanup_final_file(struct thrfiles *tf)
+static void cleanup_final_file(struct multifile *tf)
 {
     if (tf->final.file)
     {
@@ -87,5 +87,5 @@ static void cleanup_final_file(struct thrfiles *tf)
 
     if (*tf->final.path && fs_exists(tf->final.path)) fs_unlink(tf->final.path);
 
-    memset(tf->final.path, '\0', sizeof_field(struct thrfiles_final, path));
+    memset(tf->final.path, '\0', sizeof_field(struct multifile_final, path));
 }

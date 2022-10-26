@@ -1,15 +1,18 @@
 #include "scan/prodman.h"
 #include "core/logy.h"
-#include "core/thrfiles.h"
+#include "core/multifile.h"
 #include "fs.h"
 
-static struct thrfiles thrfiles = {0};
+static struct multifile multifile = {0};
 
-void prodman_init(void) { thrfiles_init(&thrfiles); }
+void prodman_init(void) { multifile_init(&multifile); }
 
-int prodman_setup(int nthreads) { return thrfiles_setup(&thrfiles, nthreads); }
+int prodman_setup(int nthreads)
+{
+    return multifile_setup(&multifile, nthreads);
+}
 
-FILE *prodman_file(int idx) { return thrfiles.files[idx]; }
+FILE *prodman_file(int idx) { return multifile.files[idx]; }
 
 static FILE *create_header(void);
 static int join_header(FILE *hdr, char const *filepath);
@@ -17,7 +20,7 @@ static int join_header(FILE *hdr, char const *filepath);
 int prodman_finishup(char const **path)
 {
     *path = NULL;
-    int rc = thrfiles_finishup(&thrfiles, path);
+    int rc = multifile_finishup(&multifile, path);
     if (rc) return rc;
     if (fs_sort(*path)) return eio("failed to sort");
 
@@ -28,7 +31,7 @@ int prodman_finishup(char const **path)
     return rc;
 }
 
-void prodman_cleanup(void) { thrfiles_cleanup(&thrfiles); }
+void prodman_cleanup(void) { multifile_cleanup(&multifile); }
 
 static FILE *create_header(void)
 {

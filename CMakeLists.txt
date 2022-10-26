@@ -64,13 +64,13 @@ add_library(
   src/core/machine.c
   src/core/mempool.c
   src/core/msg.c
+  src/core/multifile.c
   src/core/pidfile.c
   src/core/progress.c
   src/core/rc.c
   src/core/sched.c
   src/core/sched_dump.c
   src/core/sharg.c
-  src/core/thrfiles.c
   src/core/to.c
   src/core/url.c
   src/core/xmem.c
