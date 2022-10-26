@@ -28,11 +28,11 @@ static struct
     struct progress progress;
 } self;
 
-static char const *state_string[] = {[IDLE] = "IDLE",
-                                     [RUN] = "RUN",
-                                     [DONE] = "DONE",
-                                     [FAIL] = "FAIL",
-                                     [CANCEL] = "CANCEL"};
+static char const *state_string[] = {[IDLE] = "idle",
+                                     [RUN] = "run",
+                                     [DONE] = "done",
+                                     [FAIL] = "fail",
+                                     [CANCEL] = "cancel"};
 
 static void after_work(struct uv_work_s *, int status);
 static void work(struct uv_work_s *);
