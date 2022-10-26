@@ -13,18 +13,18 @@ teardown() {
     helper_teardown
 }
 
-@test "pressy help" {
+@test "help" {
     pressy --help
 }
 
-@test "pressy echo" {
+@test "echo" {
     daemon_spawn pressy
     run send "echo hello world"
     assert_output "echo hello world"
     daemon_kill
 }
 
-@test "pressy press" {
+@test "press" {
     daemon_spawn pressy
     download PF02545.hmm
 
@@ -35,7 +35,7 @@ teardown() {
     daemon_kill
 }
 
-@test "pressy cancel" {
+@test "cancel" {
     daemon_spawn pressy
     download Pfam-A.100.hmm
 
@@ -48,7 +48,7 @@ teardown() {
     daemon_kill
 }
 
-@test "pressy state" {
+@test "state" {
     daemon_spawn pressy
     download PF02545.hmm
 
@@ -65,7 +65,7 @@ teardown() {
     daemon_kill
 }
 
-@test "pressy cancel & state" {
+@test "cancel & state" {
     daemon_spawn pressy
     download PF02545.hmm
     download Pfam-A.100.hmm
