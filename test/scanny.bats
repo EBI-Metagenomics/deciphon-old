@@ -19,13 +19,10 @@ teardown() {
 
 @test "scanny daemon" {
     daemon_spawn scanny
-    download minifam.dcp 40d96b5a62ff669e19571c392ab711c7188dd5490744edf6c66051ecb4f2243d
-    download consensus.json af483ed5aa42010e8f6c950c42d81bac69f995876bf78a5965f319e83dc3923e
-    download prods_file_20221017.tsv 5cfdaf4283ae0801709ce42efd61c1ee06873c20647154140aafd09db9a366a7
+    download minifam.dcp
+    download consensus.json
+    download prods_file_20221017.tsv
 
-    # ensure_prods_file_20221017_tsv
-    # assert_file_exists "prods_file_20221017.tsv"
-    #
     run send "state | {1} {2}"
     assert_output "ok idle"
 

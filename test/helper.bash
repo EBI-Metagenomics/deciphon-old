@@ -57,9 +57,27 @@ checksum() {
     $cmd "$file" | cut -d' ' -f1
 }
 
+fetch_hash() {
+    local -r file=$1
+    local hash
+    local f
+
+    while read -r line; do
+        hash=$(echo "$line" | cut -f1 -d' ')
+        f=$(echo "$line" | cut -f2 -d' ')
+        if [ "$file" = "$f" ]; then
+            echo "$hash"
+            return 0
+        fi
+    done <"$BATS_TEST_DIRNAME/manifest"
+
+    echo "Filename <$file> is not in the manifest file." >&2
+    return 1
+}
+
 download() {
     local -r file=$1
-    local -r hash=$2
+    local -r hash=$(fetch_hash "$file")
     pooch https://pub.danilohorta.me/deciphon/"$file" --hash "$hash"
 }
 

@@ -26,7 +26,7 @@ teardown() {
 
 @test "pressy press" {
     daemon_spawn pressy
-    download PF02545.hmm ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
+    download PF02545.hmm
 
     run send "press PF02545.hmm | {1} PF02545.hmm"
     assert_output "ok PF02545.hmm"

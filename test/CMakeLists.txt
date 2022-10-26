@@ -20,6 +20,7 @@ file(CREATE_LINK "${SRC}/schedy.bats" "${DST}/schedy.bats" COPY_ON_ERROR)
 file(CREATE_LINK "${SRC}/pressy.bats" "${DST}/pressy.bats" COPY_ON_ERROR)
 file(CREATE_LINK "${SRC}/scanny.bats" "${DST}/scanny.bats" COPY_ON_ERROR)
 file(CREATE_LINK "${SRC}/helper.bash" "${DST}/helper.bash" COPY_ON_ERROR)
+file(CREATE_LINK "${SRC}/manifest" "${DST}/manifest" COPY_ON_ERROR)
 
 find_program(BATS_PROGRAM bats REQUIRED)
 

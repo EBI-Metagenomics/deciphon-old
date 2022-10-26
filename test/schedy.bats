@@ -19,8 +19,8 @@ teardown() {
 
 @test "schedy hmm" {
     daemon_spawn schedy -u http://127.0.0.1:49329 -k change-me
-    download PF02545.hmm ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
-    download PF02545.dcp 62f3961caa6580baf68126947031af16cff90ae7f6ec0a0ec0f7b2d7950da8e1
+    download PF02545.hmm
+    download PF02545.dcp
 
     run send "online | {1}"
     assert_output "yes"
@@ -69,10 +69,10 @@ teardown() {
 
 @test "schedy job" {
     daemon_spawn schedy -u http://127.0.0.1:49329 -k change-me
-    download PF02545.hmm ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
-    download PF02545.dcp 62f3961caa6580baf68126947031af16cff90ae7f6ec0a0ec0f7b2d7950da8e1
-    download consensus.faa dd8fc237e249f550890ec58e64bc4aa31fd708e341f1cb14a6800bee27fd8962
-    download prods_file_20221021.tsv 3593d7adbecc480e0a515996c6bf94ea44707ff86ffe17b9365ee5b6be29914f
+    download PF02545.hmm
+    download PF02545.dcp
+    download consensus.faa
+    download prods_file_20221021.tsv
 
     run send "online | {1}"
     assert_output "yes"
