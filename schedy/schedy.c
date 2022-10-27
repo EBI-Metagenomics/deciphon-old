@@ -39,10 +39,10 @@ int main(int argc, char *argv[])
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
     int loglvl = argl_get(&argl, "loglevel")[0] - '0';
-    global_init(on_term, argc, argv, loglvl);
-
     char const *url = argl_get(&argl, "url");
     char const *key = argl_get(&argl, "key");
+
+    global_init(on_term, argv[0], loglvl);
     if (api_init(url, key)) return EXIT_FAILURE;
 
     parent_init(&parent, &on_read, &terminate, &terminate);

@@ -17,6 +17,7 @@ char *msg_unparse(struct msg *);
 int msg_check(struct msg const *, char const *fmt);
 int msg_argc(struct msg const *);
 char **msg_argv(struct msg *);
+void msg_shift(struct msg *);
 char const *msg_cmd(struct msg const *);
 char const *msg_str(struct msg const *, int idx);
 int64_t msg_int(struct msg const *, int idx);

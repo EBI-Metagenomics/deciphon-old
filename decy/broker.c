@@ -5,61 +5,26 @@
 #include "core/msg.h"
 #include "core/rc.h"
 #include "core/sched.h"
-#include "core/service_strings.h"
 #include "core/strings.h"
 #include "decy.h"
 #include "jx.h"
-#include "loop/child.h"
-#include "msg.h"
+#include "loop/proc.h"
 #include <stdatomic.h>
 #include <string.h>
 
-static void on_pressy_exit(void) { global_terminate(); }
-static void on_pressy_eof(void) {}
-static void on_pressy_read_error(void) {}
-static void on_pressy_write_error(void) {}
+static enum proc_type proc_type[] = {[PARENT_ID] = PROC_PARENT,
+                                     [PRESSY_ID] = PROC_CHILD,
+                                     [SCANNY_ID] = PROC_CHILD,
+                                     [SCHEDY_ID] = PROC_CHILD};
 
-static void on_schedy_exit(void) { global_terminate(); }
-static void on_schedy_eof(void) {}
-static void on_schedy_read_error(void) {}
-static void on_schedy_write_error(void) {}
-
-static void on_scanny_exit(void) { global_terminate(); }
-static void on_scanny_eof(void) {}
-static void on_scanny_read_error(void) {}
-static void on_scanny_write_error(void) {}
-
-static void on_read(char *line)
-{
-    if (!msg_parse(&msg, line)) eparse("too many arguments");
-    (*msg_fn(msg.cmd.argv[0]))(&msg);
-}
-
-static struct child proc[3] = {
-    [PRESSY_ID] = {0}, [SCANNY_ID] = {0}, [SCHEDY_ID] = {0}};
+static struct proc proc[] = {
+    [PARENT_ID] = {0}, [PRESSY_ID] = {0}, [SCANNY_ID] = {0}, [SCHEDY_ID] = {0}};
 
 static char *proc_args[][16] = {
+    [PARENT_ID] = {NULL},
     [PRESSY_ID] = {"./pressy", "--pid", "pressy.pid", NULL},
     [SCANNY_ID] = {"./scanny", "--pid", "scanny.pid", NULL},
     [SCHEDY_ID] = {"./schedy", "--pid", "schedy.pid", NULL},
-};
-
-static struct child_cb child_callbacks[] = {
-    [PRESSY_ID] = {&on_pressy_exit, NULL},
-    [SCANNY_ID] = {&on_scanny_exit, NULL},
-    [SCHEDY_ID] = {&on_schedy_exit, NULL},
-};
-
-static struct input_cb input_callbacks[] = {
-    [PRESSY_ID] = {&on_pressy_eof, &on_pressy_read_error, &on_read},
-    [SCANNY_ID] = {&on_scanny_eof, &on_scanny_read_error, &on_read},
-    [SCHEDY_ID] = {&on_schedy_eof, &on_schedy_read_error, &on_read},
-};
-
-static struct output_cb output_callbacks[] = {
-    [PRESSY_ID] = {&on_pressy_write_error},
-    [SCANNY_ID] = {&on_scanny_write_error},
-    [SCHEDY_ID] = {&on_schedy_write_error},
 };
 
 static JR_DECLARE(json_parser, 128);
@@ -72,20 +37,17 @@ static void next_pend_job(struct uv_timer_s *req);
 
 void broker_init(int64_t repeat)
 {
+    JR_INIT(json_parser);
     polling = (uint64_t)repeat;
 
-    JR_INIT(json_parser);
     for (int i = 0; i <= SCHEDY_ID; ++i)
     {
-        child_init(&proc[i]);
-        child_cb(&proc[i])->on_exit = child_callbacks[i].on_exit;
-        child_cb(&proc[i])->arg = child_callbacks[i].arg;
-        child_input_cb(&proc[i])->on_eof = input_callbacks[i].on_eof;
-        child_input_cb(&proc[i])->on_error = input_callbacks[i].on_error;
-        child_input_cb(&proc[i])->on_read = input_callbacks[i].on_read;
-        child_output_cb(&proc[i])->on_error = output_callbacks[i].on_error;
-        child_spawn(&proc[i], proc_args[i]);
+        proc_init(&proc[i], proc_type[i]);
+        proc_setup(&proc[i], &on_read, &terminate, &terminate, &terminate);
     }
+    for (int i = 0; i <= SCHEDY_ID; ++i)
+        proc_start(&proc[i], proc_args[i]);
+
     atomic_store_explicit(&no_job_next_pend, false, memory_order_release);
 
     if (uv_timer_init(global_loop(), &next_pend_job_timer))
@@ -103,13 +65,10 @@ static void next_pend_job(struct uv_timer_s *req)
     (void)req;
     if (atomic_load_explicit(&no_job_next_pend, memory_order_consume)) return;
     debug("Asking for pending job");
-    child_send(&proc[SCHEDY_ID], "job_next_pend | exec_pend_job {1} {2}");
+    proc_send(&proc[SCHEDY_ID], "job_next_pend | exec_pend_job {1} {2}");
 }
 
-void broker_send(enum proc_id proc_id, char const *msg)
-{
-    child_send(&proc[proc_id], msg);
-}
+void broker_send(enum pid pid, char const *msg) { proc_send(&proc[pid], msg); }
 
 void broker_terminate(void)
 {

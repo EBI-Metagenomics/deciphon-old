@@ -1,5 +1,5 @@
-#ifndef CORE_LOOP_PARENT_H
-#define CORE_LOOP_PARENT_H
+#ifndef LOOP_PARENT_H
+#define LOOP_PARENT_H
 
 #include "loop/callbacks.h"
 #include "loop/input.h"

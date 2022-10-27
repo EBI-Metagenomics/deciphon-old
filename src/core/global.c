@@ -11,21 +11,19 @@ static struct uv_signal_s sigterm = {0};
 static struct uv_signal_s sigint = {0};
 static int terminated = 3;
 static on_term_fn_t *on_term_fn = NULL;
-static char process_title[128] = {0};
+static char title[128] = {0};
 
 static void async_cb(struct uv_async_s *handle);
 static void sigterm_cb(struct uv_signal_s *handle, int signum);
 static void sigint_cb(struct uv_signal_s *handle, int signum);
 static void logprinter(char const *string, void *arg);
 
-void global_init(on_term_fn_t *on_term, int argc, char *argv[], int log_level)
+void global_init(on_term_fn_t *on_term, char *const arg0, int log_level)
 {
     zlog_setup(logprinter, stderr, log_level);
-    uv_setup_args(argc, argv);
-    uv_get_process_title(process_title, sizeof process_title);
-    char *title = zc_basename(process_title);
-    memmove(process_title, title, strlen(title) + 1);
-    uv_set_process_title(process_title);
+    zc_strlcpy(title, arg0, sizeof title);
+    char *t = zc_basename(title);
+    memmove(title, t, strlen(t) + 1);
     if (uv_async_init(global_loop(), &async, async_cb)) exit(1);
     if (uv_signal_init(global_loop(), &sigterm)) exit(1);
     if (uv_signal_init(global_loop(), &sigint)) exit(1);
@@ -36,7 +34,7 @@ void global_init(on_term_fn_t *on_term, int argc, char *argv[], int log_level)
     info("starting");
 }
 
-char const *global_title(void) { return process_title; }
+char const *global_title(void) { return title; }
 
 struct uv_loop_s *global_loop(void) { return uv_default_loop(); }
 

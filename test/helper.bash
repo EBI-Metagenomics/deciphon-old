@@ -107,3 +107,36 @@ sendw() {
     echo "$2" >stdin
     sleep "$1"
 }
+
+wait_file_exists() {
+    local -r file=$1
+    local cnt=50
+    while [ $cnt -gt 0 ]; do
+        sleep 0.1
+        if test -e "$file"; then
+            break
+        fi
+        cnt=$((cnt - 1))
+    done
+}
+
+wait_file_stabilize() {
+    local -r file=$1
+    local timestamp=
+    timestamp=$(date -r "$file" +%s)
+
+    local cnt=5
+    while [ $cnt -gt 0 ]; do
+        sleep 1.1
+        now=$(date -r "$file" +%s)
+        if [ "$timestamp" = "$now" ]; then
+            break
+        fi
+        now=$timestamp
+        cnt=$((cnt - 1))
+    done
+}
+
+wait_file() {
+    wait_file_exists "$1" && wait_file_stabilize "$1"
+}

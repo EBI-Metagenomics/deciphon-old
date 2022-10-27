@@ -4,18 +4,18 @@
 #include "sched_structs.h"
 #include <stdbool.h>
 
-struct jr;
 struct msg;
 
-enum proc_id
+enum pid
 {
-    PRESSY_ID = 0,
-    SCANNY_ID = 1,
-    SCHEDY_ID = 2,
+    PARENT_ID,
+    PRESSY_ID,
+    SCANNY_ID,
+    SCHEDY_ID,
 };
 
 void broker_init(int64_t repeat);
-void broker_send(enum proc_id proc_id, char const *msg);
+void broker_send(enum pid pid, char const *msg);
 void broker_terminate(void);
 
 bool broker_parse_db(struct sched_db *, char *json);

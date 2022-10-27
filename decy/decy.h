@@ -1,11 +1,11 @@
 #ifndef DECY_DECY_H
 #define DECY_DECY_H
 
-#include "loop/input.h"
-#include "loop/output.h"
+#include "loop/parent.h"
 
-extern struct input input;
-extern struct output output;
-extern struct msg msg;
+extern struct parent parent;
+
+extern void on_read(char *line);
+extern void terminate(void);
 
 #endif

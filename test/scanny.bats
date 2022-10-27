@@ -37,7 +37,7 @@ teardown() {
 
 @test "check product file" {
     send "scan consensus.json minifam.dcp prods_file.tsv 1 0"
-    sleep 2
+    wait_file prods_file.tsv
     run diff prods_file.tsv prods_file_20221021.tsv
     assert_success
 }

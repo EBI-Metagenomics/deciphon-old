@@ -2,10 +2,17 @@
 #include "core/global.h"
 #include "core/logy.h"
 
-void child_init(struct child *child)
+void child_init(struct child *child, on_read2_fn_t *on_read,
+                on_eof2_fn_t *on_eof, on_error2_fn_t *on_error,
+                on_exit_fn_t *on_exit)
 {
     input_init(&child->input, -1);
     output_init(&child->output, -1);
+    child->input.cb.on_read = on_read;
+    child->input.cb.on_eof = on_eof;
+    child->input.cb.on_error = on_error;
+    child->output.cb.on_error = on_error;
+    child->on_exit = on_exit;
     child->proc.data = child;
 
     child->stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
@@ -18,18 +25,6 @@ void child_init(struct child *child)
     child->stdio[2].data.fd = STDERR_FILENO;
 
     child->alive = false;
-}
-
-struct child_cb *child_cb(struct child *child) { return &child->cb; }
-
-struct input_cb *child_input_cb(struct child *child)
-{
-    return &child->input.cb;
-}
-
-struct output_cb *child_output_cb(struct child *child)
-{
-    return &child->output.cb;
 }
 
 static void on_exit_fwd(uv_process_t *proc, int64_t exit_status, int sig);
@@ -54,8 +49,6 @@ void child_send(struct child *child, char const *string)
     if (string) writer_put(&child->output.writer, string);
 }
 
-void child_stop_reading(struct child *child) { input_stop(&child->input); }
-
 void child_kill(struct child *child)
 {
     if (!child->alive) return;
@@ -76,5 +69,5 @@ static void on_exit_fwd(uv_process_t *proc, int64_t exit_status, int sig)
     input_close(&child->input);
     output_close(&child->output);
     uv_close((uv_handle_t *)proc, NULL);
-    (*child->cb.on_exit)();
+    (*child->on_exit)();
 }

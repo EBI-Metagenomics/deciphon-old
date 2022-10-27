@@ -84,6 +84,7 @@ add_library(
   src/loop/input.c
   src/loop/output.c
   src/loop/parent.c
+  src/loop/proc.c
   src/loop/reader.c
   src/loop/stdpipe.c
   src/loop/writer.c
@@ -130,8 +131,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-add_executable(schedy schedy/api.c schedy/command.c schedy/http.c schedy/schedy.c
-                      schedy/xcurl.c schedy/xcurl_debug.c)
+add_executable(schedy schedy/api.c schedy/command.c schedy/http.c
+                      schedy/schedy.c schedy/xcurl.c schedy/xcurl_debug.c)
 target_link_libraries(schedy PRIVATE deciphon)
 
 add_executable(pressy pressy/pressy.c pressy/command.c pressy/presser.c)
@@ -140,8 +141,8 @@ target_link_libraries(pressy PRIVATE deciphon)
 add_executable(scanny scanny/scanny.c scanny/command.c scanny/scanner.c)
 target_link_libraries(scanny PRIVATE deciphon)
 
-# add_executable(decy decy/decy.c decy/msg.c decy/cfg.c decy/broker.c)
-# target_link_libraries(decy PRIVATE deciphon)
+add_executable(decy decy/decy.c decy/command.c decy/cfg.c decy/broker.c)
+target_link_libraries(decy PRIVATE deciphon)
 
 enable_testing()
 add_subdirectory(test)

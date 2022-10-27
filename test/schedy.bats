@@ -7,7 +7,10 @@ setup() {
     load helper
     PATH="$BATS_TEST_DIRNAME/..:$PATH"
     helper_init
-    daemon_spawn schedy -u http://127.0.0.1:49329 -k change-me
+    if [ -z ${API_HOST+x} ]; then
+        API_HOST=127.0.0.1
+    fi
+    daemon_spawn schedy -u http://"$API_HOST":49329 -k change-me
     download PF02545.hmm
     download PF02545.dcp
     download consensus.faa
@@ -49,8 +52,8 @@ teardown() {
 @test "download hmm" {
     send "wipe"
     send "hmm_up PF02545.hmm"
-    run sendw 0.5 "hmm_dl -7843725841264658444 output.hmm"
-    assert_file_exists output.hmm
+    send "hmm_dl -7843725841264658444 output.hmm"
+    wait_file output.hmm
     run checksum output.hmm
     assert_output ce7760d930dd17efaac841177f33f507e0e3d7e8c0d59f0cb4c058b6659bbd68
 }
@@ -93,10 +96,10 @@ teardown() {
 
 @test "download db" {
     send "wipe"
-    send "hmm_up PF02545.hmm | {1}"
-    send "db_up PF02545.dcp | {1}"
-    run sendw 0.5 "db_dl 2407434389743836934 output.hmm"
-    assert_file_exists output.hmm
+    send "hmm_up PF02545.hmm"
+    send "db_up PF02545.dcp"
+    send "db_dl 2407434389743836934 output.hmm"
+    wait_file output.hmm
     run checksum output.hmm
     assert_output 62f3961caa6580baf68126947031af16cff90ae7f6ec0a0ec0f7b2d7950da8e1
 }
@@ -208,7 +211,7 @@ teardown() {
     send "scan_get_by_job_id 2"
     run sendo "scan_dl_seqs 1 seqs.json | {1}"
     assert_output 'ok'
-    assert_file_exists seqs.json
+    wait_file seqs.json
     run checksum seqs.json
     assert_output 12ac6942c48d95d34544e07262d30c62d838e7caa93dc4f3fe4e9dd2a2935c0d
 }
