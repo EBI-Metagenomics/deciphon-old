@@ -8,7 +8,6 @@
 #include "core/sched.h"
 #include "core/sched_dump.h"
 #include "core/strings.h"
-#include "decy.h"
 #include "fs.h"
 #include <string.h>
 
@@ -28,7 +27,10 @@
 #include "core/command_template.h"
 #undef COMMAND_TEMPLATE_DEF
 
-static void fn_echo(struct msg *msg) { parent_send(&parent, msg_unparse(msg)); }
+static void fn_echo(struct msg *msg)
+{
+    broker_send(PARENT_ID, msg_unparse(msg));
+}
 
 static void fn_help(struct msg *msg)
 {
@@ -39,7 +41,7 @@ static void fn_help(struct msg *msg)
     CMD_MAP(X);
 #undef X
 
-    parent_send(&parent, command_help_table());
+    broker_send(PARENT_ID, command_help_table());
 }
 
 static void fn_fwd(struct msg *msg)
@@ -47,10 +49,11 @@ static void fn_fwd(struct msg *msg)
     if (msg_check(msg, "sss*")) return;
     msg_shift(msg);
 
-    int id = -1;
-    if (!strcmp(msg_argv(msg)[0], "parent"))
+    int id = broker_resolve_procname(msg_argv(msg)[0]);
+    if (id < 0) return;
 
-        broker_send(PRESSY_ID, msg_unparse(msg));
+    msg_shift(msg);
+    broker_send(id, msg_unparse(msg));
 }
 
 #if 0

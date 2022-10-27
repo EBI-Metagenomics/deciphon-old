@@ -14,8 +14,9 @@ enum pid
     SCHEDY_ID,
 };
 
-void broker_init(int64_t repeat);
+void broker_init(long polling, char const *uri, char const *key);
 void broker_send(enum pid pid, char const *msg);
+int broker_resolve_procname(char const *name);
 void broker_terminate(void);
 
 bool broker_parse_db(struct sched_db *, char *json);

@@ -9,7 +9,7 @@ void proc_setup(struct proc *p, on_read2_fn_t *onrd, on_eof2_fn_t *oneof,
     if (p->type == PROC_CHILD) child_init(&p->child, onrd, oneof, onerr, onexi);
 }
 
-void proc_start(struct proc *proc, char *args[])
+void proc_start(struct proc *proc, char const *args[])
 {
     if (proc->type == PROC_PARENT) parent_open(&proc->parent);
     if (proc->type == PROC_CHILD) child_spawn(&proc->child, args);

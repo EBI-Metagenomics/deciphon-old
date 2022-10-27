@@ -87,6 +87,7 @@ add_library(
   src/loop/proc.c
   src/loop/reader.c
   src/loop/stdpipe.c
+  src/loop/timer.c
   src/loop/writer.c
   src/loop/writer_req.c
   src/loop/writer_req_pool.c

@@ -1,4 +1,3 @@
-#include "decy.h"
 #include "argless.h"
 #include "broker.h"
 #include "cfg.h"
@@ -7,10 +6,7 @@
 #include "core/global.h"
 #include "core/is.h"
 #include "core/logy.h"
-#include "core/msg.h"
 #include "core/pidfile.h"
-
-struct parent parent = {0};
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
@@ -37,18 +33,14 @@ int main(int argc, char *argv[])
 
     char const *polling = argl_get(&argl, "polling");
     if (!is_int64(polling) || as_int64(polling) < 0) argl_usage(&argl);
-    int64_t repeat = as_int64(polling) > 0
-                         ? 1000 / as_int64(polling) + 1000 % as_int64(polling)
-                         : 0;
+    long repeat = as_int64(polling) > 0
+                      ? 1000 / as_int64(polling) + 1000 % as_int64(polling)
+                      : 0;
 
     global_init(on_term, argv[0], loglvl);
 
     cfg_init();
-
-    parent_init(&parent, &on_read, &terminate, &terminate);
-    parent_open(&parent);
-
-    broker_init(repeat);
+    broker_init(repeat, cfg_uri(), cfg_key());
 
     global_run();
     global_cleanup();
@@ -56,22 +48,4 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
-void on_read(char *line)
-{
-    static struct msg msg = {0};
-    if (msg_parse(&msg, line)) return;
-
-    cmd_fn_t *cmd_fn = cmd_get_fn(msg_cmd(&msg));
-    if (!cmd_fn) return;
-
-    (*cmd_fn)(&msg);
-}
-
-void terminate(void) { global_terminate(); }
-
-static void on_term(void)
-{
-    // presser_cancel(2500);
-    parent_close(&parent);
-    broker_terminate();
-}
+static void on_term(void) { broker_terminate(); }

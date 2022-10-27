@@ -29,13 +29,13 @@ void child_init(struct child *child, on_read2_fn_t *on_read,
 
 static void on_exit_fwd(uv_process_t *proc, int64_t exit_status, int sig);
 
-void child_spawn(struct child *child, char *args[])
+void child_spawn(struct child *child, char const *args[])
 {
     child->opts.stdio = child->stdio;
     child->opts.stdio_count = 3;
     child->opts.exit_cb = on_exit_fwd;
     child->opts.file = args[0];
-    child->opts.args = args;
+    child->opts.args = (char **)args;
 
     if (uv_spawn(global_loop(), &child->proc, &child->opts)) fatal("uv_spawn");
     child->alive = true;
