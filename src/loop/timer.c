@@ -30,7 +30,7 @@ void timer_init(struct timer *timer, long polling, timer_fn_t *fn)
     if (uv_timer_init(global_loop(), &timer->uvtimer)) efail("uv_timer_init");
     timer->uvtimer.data = timer;
 
-    if (is_disabled(timer))
+    if (!is_disabled(timer))
     {
         if (uv_timer_start(&timer->uvtimer, &fwd_callback, 1000, polling))
             efail("uv_timer_start");
