@@ -23,12 +23,18 @@ static enum proc_type proc_type[] = {[PARENT_ID] = PROC_PARENT,
 
 static char const *proc_name[] = {"parent", "pressy", "scanny", "schedy"};
 
+static char proc_file[4][FILENAME_MAX] = {
+    [PARENT_ID] = "",
+    [PRESSY_ID] = "",
+    [SCANNY_ID] = "",
+    [SCHEDY_ID] = "",
+};
+
 static char const *proc_args[][32] = {
     [PARENT_ID] = {NULL},
-    [PRESSY_ID] = {"./pressy", "-p", "pressy.pid", NULL},
-    [SCANNY_ID] = {"./scanny", "-p", "scanny.pid", NULL},
-    [SCHEDY_ID] = {"./schedy", "-p", "schedy.pid", "-u", NULL, "-k", NULL,
-                   NULL},
+    [PRESSY_ID] = {"pressy", "-p", "pressy.pid", NULL},
+    [SCANNY_ID] = {"scanny", "-p", "scanny.pid", NULL},
+    [SCHEDY_ID] = {"schedy", "-p", "schedy.pid", "-u", NULL, "-k", NULL, NULL},
 };
 
 static JR_DECLARE(json_parser, 128);
@@ -49,6 +55,11 @@ void broker_init(long polling, char const *uri, char const *key)
 
     for (int i = 0; i <= SCHEDY_ID; ++i)
     {
+        strcat(proc_file[i], global_exedir());
+        strcat(proc_file[i], "/");
+        strcat(proc_file[i], proc_name[i]);
+        debug("%s", proc_file[i]);
+        proc_args[i][0] = proc_file[i];
         proc_init(&proc[i], proc_type[i]);
         proc_setup(&proc[i], &on_read, &terminate, &terminate, &terminate);
         proc_start(&proc[i], proc_args[i]);

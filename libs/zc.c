@@ -230,14 +230,19 @@ char *zc_basename(char const *path)
     return p ? p + 1 : (char *)path;
 }
 
-char *zc_dirname(char const *path)
+char *zc_dirname(char *path)
 {
-    char *p = strrchr(path, ZC_PATH_SEP);
-    while (p > path)
-    {
-        *p-- = 0;
-    }
-    return (char *)path;
+    size_t i;
+    if (!path || !*path) return ".";
+    i = strlen(path) - 1;
+    for (; path[i] == '/'; i--)
+        if (!i) return "/";
+    for (; path[i] != '/'; i--)
+        if (!i) return ".";
+    for (; path[i] == '/'; i--)
+        if (!i) return "/";
+    path[i + 1] = 0;
+    return path;
 }
 
 char *zc_strdup(char const *str)

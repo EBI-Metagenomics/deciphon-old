@@ -12,6 +12,8 @@ static struct uv_signal_s sigint = {0};
 static int terminated = 3;
 static on_term_fn_t *on_term_fn = NULL;
 static char title[128] = {0};
+static char exepath[FILENAME_MAX] = {0};
+static char exedir[FILENAME_MAX] = {0};
 
 static void async_cb(struct uv_async_s *handle);
 static void sigterm_cb(struct uv_signal_s *handle, int signum);
@@ -31,10 +33,22 @@ void global_init(on_term_fn_t *on_term, char *const arg0, int log_level)
     if (uv_signal_start(&sigint, sigint_cb, SIGINT)) exit(1);
     terminated = 3;
     on_term_fn = on_term;
+
+    size_t sz = sizeof exepath;
+    uv_exepath(exepath, &sz);
+
+    sz = sizeof exedir;
+    uv_exepath(exedir, &sz);
+    zc_dirname(exedir);
+
     info("starting");
 }
 
 char const *global_title(void) { return title; }
+
+char const *global_exepath(void) { return exepath; }
+
+char const *global_exedir(void) { return exedir; }
 
 struct uv_loop_s *global_loop(void) { return uv_default_loop(); }
 
