@@ -16,6 +16,7 @@
     X(CANCEL, cancel, "")                                                      \
     X(STATE, state, "")                                                        \
     X(PROGRESS, progress, "")                                                  \
+    X(INC_PROGRESS, inc_progress, "")                                          \
     X(FILENAME, filename, "")                                                  \
     X(RESET, reset, "")
 
@@ -91,6 +92,16 @@ static void fn_progress(struct msg *msg)
     char perc[] = "100%";
     fmt_percent(perc, scanner_progress());
     parent_send(&parent, msg_ctx(msg, ans, perc));
+}
+
+static void fn_inc_progress(struct msg *msg)
+{
+    if (msg_check(msg, "s")) return;
+
+    char const *ans = scanner_is_done() || scanner_is_running() ? OK : FAIL;
+    char inc[] = "100";
+    fmt_percent(inc, scanner_inc_progress());
+    parent_send(&parent, msg_ctx(msg, ans, inc));
 }
 
 static void fn_filename(struct msg *msg)

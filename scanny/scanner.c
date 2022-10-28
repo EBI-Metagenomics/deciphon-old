@@ -39,6 +39,7 @@ static struct
     enum state state;
     struct uv_work_s request;
     struct progress progress;
+    int last_progress;
 } self;
 
 struct uv_timer_s monitor_timer = {0};
@@ -121,6 +122,7 @@ bool scanner_start(char const *seqs, char const *db, char const *prod,
 
     monitor_start();
     uv_queue_work(global_loop(), &self.request, work, after_work);
+    self.last_progress = 0;
 
     return true;
 }
@@ -129,6 +131,17 @@ int scanner_progress(void)
 {
     struct progress const *p = monitor_progress();
     return p ? progress_percent(p) : 0;
+}
+
+int scanner_inc_progress(void)
+{
+    if (!(scanner_is_running() || scanner_is_done())) return 0;
+    struct progress const *p = monitor_progress();
+    return p ? progress_percent(p) : 0;
+    int progress = progress_percent(&self.progress);
+    int inc = progress - self.last_progress;
+    self.last_progress = progress;
+    return inc;
 }
 
 int scanner_cancel(int timeout_msec)
