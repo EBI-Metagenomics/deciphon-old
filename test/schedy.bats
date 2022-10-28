@@ -13,7 +13,7 @@ setup() {
     daemon_spawn schedy -u http://"$API_HOST":49329 -k change-me
     download PF02545.hmm
     download PF02545.dcp
-    download consensus.faa
+    download consensus.fna
     download prods_file_20221021.tsv
 }
 
@@ -164,7 +164,7 @@ teardown() {
     send "hmm_up PF02545.hmm"
     send "db_up PF02545.dcp"
     send "job_set_state 1 done"
-    run sendo "scan_submit 1 1 0 consensus.faa | {1} {2}"
+    run sendo "scan_submit 1 1 0 consensus.fna | {1} {2}"
     assert_output -e 'ok \{"id":2,"type":0,"state":"pend","progress":0,"error":"","submission":[0-9]+,"exec_started":0,"exec_ended":0\}'
 }
 
@@ -173,7 +173,7 @@ teardown() {
     send "hmm_up PF02545.hmm"
     send "db_up PF02545.dcp"
     send "job_set_state 1 done"
-    send "scan_submit 1 1 0 consensus.faa"
+    send "scan_submit 1 1 0 consensus.fna"
     run sendo "job_next_pend | {1} {2}"
     assert_output -e 'ok \{"id":2,"type":0,"state":"pend","progress":0,"error":"","submission":[0-9]+,"exec_started":0,"exec_ended":0\}'
 }
@@ -183,7 +183,7 @@ teardown() {
     send "hmm_up PF02545.hmm"
     send "db_up PF02545.dcp"
     send "job_set_state 1 done"
-    send "scan_submit 1 1 0 consensus.faa"
+    send "scan_submit 1 1 0 consensus.fna"
     send "job_next_pend"
     run sendo "scan_get_by_job_id 2 | {1} {2}"
     assert_output 'ok {"id":1,"db_id":1,"multi_hits":true,"hmmer3_compat":false,"job_id":2}'
@@ -194,7 +194,7 @@ teardown() {
     send "hmm_up PF02545.hmm"
     send "db_up PF02545.dcp"
     send "job_set_state 1 done"
-    send "scan_submit 1 1 0 consensus.faa"
+    send "scan_submit 1 1 0 consensus.fna"
     send "job_next_pend"
     send "scan_get_by_job_id 2"
     run sendo "scan_seq_count 1 | {1} {2}"
@@ -206,7 +206,7 @@ teardown() {
     send "hmm_up PF02545.hmm"
     send "db_up PF02545.dcp"
     send "job_set_state 1 done"
-    send "scan_submit 1 1 0 consensus.faa"
+    send "scan_submit 1 1 0 consensus.fna"
     send "job_next_pend"
     send "scan_get_by_job_id 2"
     run sendo "scan_dl_seqs 1 seqs.json | {1}"
@@ -221,7 +221,7 @@ teardown() {
     send "hmm_up PF02545.hmm"
     send "db_up PF02545.dcp"
     send "job_set_state 1 done"
-    send "scan_submit 1 1 0 consensus.faa"
+    send "scan_submit 1 1 0 consensus.fna"
     send "job_next_pend"
     send "scan_get_by_job_id 2"
     send "scan_dl_seqs 1 seqs.json"
