@@ -116,10 +116,12 @@ bool broker_parse_seq(struct sched_seq *seq, char *json)
 static void polling_callback(void)
 {
     static int cnt = 0;
-    if (cnt % 2 == 0)
+    if (cnt % 3 == 0)
         proc_send(&proc[SCHEDY_ID], "job_next_pend | schedy_polling {1} {2}");
-    if (cnt % 2 == 1)
+    if (cnt % 3 == 1)
         proc_send(&proc[PRESSY_ID], "state | pressy_polling {1} {2}");
+    if (cnt % 3 == 2)
+        proc_send(&proc[SCANNY_ID], "state | scanny_polling {1} {2}");
     ++cnt;
 }
 
