@@ -37,6 +37,7 @@
     X(JOB_INC_PROGRESS, job_inc_progress, "JOB_ID PROGRESS")                   \
                                                                                \
     X(SCAN_DL_SEQS, scan_dl_seqs, "SCAN_ID FILE")                              \
+    X(SCAN_GET_BY_ID, scan_get_by_id, "SCAN_ID")                               \
     X(SCAN_GET_BY_JOB_ID, scan_get_by_job_id, "JOB_ID")                        \
     X(SCAN_SEQ_COUNT, scan_seq_count, "SCAN_ID")                               \
     X(SCAN_SUBMIT, scan_submit, "DB_ID MULTI_HITS HMMER3_COMPAT FASTA_FILE")   \
@@ -332,6 +333,20 @@ static void fn_scan_dl_seqs(struct msg *msg)
 
 cleanup:
     parent_send(&parent, msg_ctx(msg, ans, filepath));
+}
+
+static void fn_scan_get_by_id(struct msg *msg)
+{
+    if (msg_check(msg, "si")) return;
+
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!api_scan_get_by_id(msg_int(msg, 1), &scan))
+    {
+        ans = OK;
+        json = sched_dump_scan(&scan, (char *)buffer);
+    }
+    parent_send(&parent, msg_ctx(msg, ans, json));
 }
 
 static void fn_scan_get_by_job_id(struct msg *msg)

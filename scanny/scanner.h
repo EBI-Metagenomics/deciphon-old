@@ -5,6 +5,8 @@
 #include <stdbool.h>
 
 void scanner_init(void);
+void scanner_reset(void);
+char const *scanner_filename(void);
 void scanner_set_nthreads(int nthreads);
 bool scanner_is_running(void);
 bool scanner_is_done(void);

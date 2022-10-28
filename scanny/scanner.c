@@ -71,6 +71,18 @@ void scanner_init(void)
     progress_init(&self.progress, 0);
 }
 
+void scanner_reset(void)
+{
+    if (scanner_is_running()) return;
+    self.cancel = false;
+    self.state = STATE_IDLE;
+    errnum = RC_OK;
+    errmsg[0] = '\0';
+    progress_init(&self.progress, 0);
+}
+
+char const *scanner_filename(void) { return self.prod; }
+
 void scanner_set_nthreads(int num_threads) { self.nthreads = num_threads; }
 
 bool scanner_is_running(void) { return self.state == STATE_RUN; }

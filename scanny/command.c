@@ -15,7 +15,9 @@
     X(SCAN, scan, "SEQS_FILE DB_FILE PROD_FILE MULTI_HITS HMMER3_COMPAT")      \
     X(CANCEL, cancel, "")                                                      \
     X(STATE, state, "")                                                        \
-    X(PROGRESS, progress, "")
+    X(PROGRESS, progress, "")                                                  \
+    X(FILENAME, filename, "")                                                  \
+    X(RESET, reset, "")
 
 #define COMMAND_TEMPLATE_DEF
 #include "core/command_template.h"
@@ -89,4 +91,22 @@ static void fn_progress(struct msg *msg)
     char perc[] = "100%";
     fmt_percent(perc, scanner_progress());
     parent_send(&parent, msg_ctx(msg, ans, perc));
+}
+
+static void fn_filename(struct msg *msg)
+{
+    if (msg_check(msg, "s")) return;
+
+    char const *ans = scanner_is_done() || scanner_is_running() ? OK : FAIL;
+    char const *filename = scanner_filename();
+    parent_send(&parent, msg_ctx(msg, ans, filename));
+}
+
+static void fn_reset(struct msg *msg)
+{
+    if (msg_check(msg, "s")) return;
+
+    char const *ans = scanner_is_running() ? FAIL : OK;
+    scanner_reset();
+    parent_send(&parent, msg_ctx(msg, ans));
 }
