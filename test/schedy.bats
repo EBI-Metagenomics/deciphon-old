@@ -15,6 +15,7 @@ setup() {
     download PF02545.dcp
     download consensus.fna
     download prods_file_20221021.tsv
+    download prods_cmp_20221028.json
 }
 
 teardown() {
@@ -227,4 +228,21 @@ teardown() {
     send "scan_dl_seqs 1 seqs.json"
     run sendo "prods_file_up prods_file_20221021.tsv | {1}"
     assert_output 'ok'
+}
+
+@test "download scan job product" {
+    send "wipe"
+    send "hmm_up PF02545.hmm"
+    send "db_up PF02545.dcp"
+    send "job_set_state 1 done"
+    send "scan_submit 1 1 0 consensus.fna"
+    send "job_next_pend"
+    send "scan_get_by_job_id 2"
+    send "scan_dl_seqs 1 seqs.json"
+    send "prods_file_up prods_file_20221021.tsv | {1}"
+    send "prods_file_dl 1 prods.json | {1}"
+    wait_file prods.json
+    sed 's/-547.877[0-9]*/-547.877/' prods.json | sed 's/-802.65[0-9]*/-802.65/' | sed 's/-489.9[0-9]*/-489.9/' | sed 's/-690.8[0-9]*/-690.8/' | sed 's/-974.475[0-9]*/-974.475/' | sed 's/-667.29[0-9]*/-667.29/' >prods_cmp.json
+    run diff prods_cmp.json prods_cmp_20221028.json
+    assert_success
 }

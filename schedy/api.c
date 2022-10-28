@@ -396,6 +396,16 @@ cleanup:
     return rc;
 }
 
+enum rc api_prods_file_dl(int64_t id, FILE *fp)
+{
+    api_error_reset();
+
+    enum rc rc = download(query("/scans/%lld/prods/download", id), fp);
+    if (rc) return rc;
+
+    return xcurl_http_code() != 200 ? handle_http_exception() : RC_OK;
+}
+
 static enum rc api_error_parse(void)
 {
     struct api_error *e = &api_err;

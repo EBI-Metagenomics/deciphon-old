@@ -43,7 +43,8 @@
     X(SCAN_SEQ_COUNT, scan_seq_count, "SCAN_ID")                               \
     X(SCAN_SUBMIT, scan_submit, "DB_ID MULTI_HITS HMMER3_COMPAT FASTA_FILE")   \
                                                                                \
-    X(PRODS_FILE_UP, prods_file_up, "PRODS_FILE")
+    X(PRODS_FILE_UP, prods_file_up, "PRODS_FILE")                              \
+    X(PRODS_FILE_DL, prods_file_dl, "SCAN_ID FILE")
 
 #define COMMAND_TEMPLATE_DEF
 #include "core/command_template.h"
@@ -419,6 +420,47 @@ static void fn_prods_file_up(struct msg *msg)
 
     char const *ans = api_prods_file_up(msg_str(msg, 1)) ? FAIL : OK;
     parent_send(&parent, msg_ctx(msg, ans));
+}
+
+static void fn_prods_file_dl(struct msg *msg)
+{
+    if (msg_check(msg, "sis")) return;
+
+    char const *ans = FAIL;
+    char const *filepath = msg_str(msg, 2);
+    static char tmpfpath[PATH_SIZE] = {0};
+
+    int rc = fs_mkstemp(sizeof tmpfpath, tmpfpath);
+    if (rc)
+    {
+        eio("%s", fs_strerror(rc));
+        goto cleanup;
+    }
+    FILE *fp = fopen(tmpfpath, "wb");
+    if (!fp)
+    {
+        eio("fopen failed");
+        fs_unlink(tmpfpath);
+        goto cleanup;
+    }
+
+    if (api_prods_file_dl(msg_int(msg, 1), fp))
+    {
+        fclose(fp);
+        goto cleanup;
+    }
+
+    fclose(fp);
+    rc = fs_move(msg_str(msg, 2), tmpfpath);
+    if (rc)
+    {
+        eio("%s", fs_strerror(rc));
+        goto cleanup;
+    }
+    ans = OK;
+
+cleanup:
+    parent_send(&parent, msg_ctx(msg, ans, filepath));
 }
 
 static enum rc dl_hmm(char const *filepath, void *data)

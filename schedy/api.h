@@ -50,5 +50,6 @@ enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
                         char const *filepath, struct sched_job *);
 
 enum rc api_prods_file_up(char const *filepath);
+enum rc api_prods_file_dl(int64_t scan_id, FILE *fp);
 
 #endif
