@@ -26,6 +26,7 @@ static struct
     struct db_press db_press;
     struct uv_work_s request;
     struct progress progress;
+    int last_progress;
 } self;
 
 static char const *state_string[] = {[IDLE] = "idle",
@@ -36,12 +37,19 @@ static char const *state_string[] = {[IDLE] = "idle",
 
 static void after_work(struct uv_work_s *, int status);
 static void work(struct uv_work_s *);
-
-void presser_init(void)
+static void reset(void)
 {
     self.cancel = false;
     self.state = IDLE;
     progress_init(&self.progress, 0);
+}
+
+void presser_init(void) { reset(); }
+
+void presser_reset(void)
+{
+    if (presser_is_running()) return;
+    reset();
 }
 
 bool presser_is_running(void) { return self.state == RUN; }
@@ -65,13 +73,25 @@ bool presser_start(char const *hmm)
 
     atomic_store_explicit(&self.cancel, false, memory_order_release);
     uv_queue_work(global_loop(), &self.request, work, after_work);
+    self.last_progress = 0;
 
     return true;
 }
 
+char const *presser_filename(void) { return self.hmm; }
+
 int presser_progress(void)
 {
     return presser_is_done() ? 100 : progress_percent(&self.progress);
+}
+
+int presser_inc_progress(void)
+{
+    if (!(presser_is_running() || presser_is_done())) return 0;
+    int progress = progress_percent(&self.progress);
+    int inc = progress - self.last_progress;
+    self.last_progress = progress;
+    return inc;
 }
 
 int presser_cancel(int timeout_msec)
@@ -134,8 +154,10 @@ static void work(struct uv_work_s *req)
             return;
         }
 
-        if (progress_consume(&self.progress, 1))
-            info("Pressed %d%% of profiles", progress_percent(&self.progress));
+        progress_consume(&self.progress, 1);
+        // if (progress_consume(&self.progress, 1))
+        //     info("Pressed %d%% of profiles",
+        //     progress_percent(&self.progress));
     }
 
     if (rc != RC_END)

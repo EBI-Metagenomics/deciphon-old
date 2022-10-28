@@ -13,6 +13,9 @@
     X(HELP, help, "")                                                          \
     X(PRESS, press, "HMM_FILE")                                                \
     X(PROGRESS, progress, "")                                                  \
+    X(INC_PROGRESS, inc_progress, "")                                          \
+    X(FILENAME, filename, "")                                                  \
+    X(RESET, reset, "")                                                        \
     X(STATE, state, "")
 
 #define COMMAND_TEMPLATE_DEF
@@ -62,18 +65,44 @@ static void fn_progress(struct msg *msg)
 
     char const *ans = presser_is_done() || presser_is_running() ? OK : FAIL;
     char perc[] = "100%";
-    fmt_percent(perc, presser_progress());
+    char *p = fmt_percent(perc, presser_progress());
+    p[0] = '%';
+    p[1] = '\0';
     parent_send(&parent, msg_ctx(msg, ans, perc));
+}
+
+static void fn_inc_progress(struct msg *msg)
+{
+    if (msg_check(msg, "s")) return;
+
+    char const *ans = presser_is_done() || presser_is_running() ? OK : FAIL;
+    char inc[] = "100";
+    fmt_percent(inc, presser_inc_progress());
+    parent_send(&parent, msg_ctx(msg, ans, inc));
+}
+
+static void fn_filename(struct msg *msg)
+{
+    if (msg_check(msg, "s")) return;
+
+    char const *ans = presser_is_done() || presser_is_running() ? OK : FAIL;
+    char const *filename = presser_filename();
+    parent_send(&parent, msg_ctx(msg, ans, filename));
+}
+
+static void fn_reset(struct msg *msg)
+{
+    if (msg_check(msg, "s")) return;
+
+    char const *ans = presser_is_running() ? FAIL : OK;
+    presser_reset();
+    parent_send(&parent, msg_ctx(msg, ans));
 }
 
 static void fn_state(struct msg *msg)
 {
     if (msg_check(msg, "s")) return;
-
-    char const *ans = FAIL;
-    char const *state = "";
-    ans = OK;
-    state = presser_state_string();
-
-    parent_send(&parent, msg_ctx(msg, ans, state));
+    char const *ans = OK;
+    char const *state = presser_state_string();
+    parent_send(&parent, msg_ctx(msg, ans, state, presser_filename()));
 }

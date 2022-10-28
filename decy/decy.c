@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
 
     char const *polling = argl_get(&argl, "polling");
     if (!is_int64(polling) || as_int64(polling) < 0) argl_usage(&argl);
-    long repeat = as_int64(polling) > 0
-                      ? 1000 / as_int64(polling) + 1000 % as_int64(polling)
-                      : 0;
+    long repeat = as_int64(polling) > 1000 ? 1000 : as_int64(polling);
+    repeat = repeat < 0 ? 0 : repeat;
+    repeat = 1000 / repeat + 1000 % repeat;
 
     global_init(on_term, argv[0], loglvl);
 

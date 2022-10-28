@@ -2,6 +2,6 @@
 #define CORE_FMT_H
 
 char const *fmt(char const *format, ...) __attribute__((format(printf, 1, 2)));
-void fmt_percent(char *str, int perc);
+char *fmt_percent(char *str, int perc);
 
 #endif

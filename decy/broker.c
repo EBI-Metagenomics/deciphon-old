@@ -34,16 +34,16 @@ static char const *proc_args[][32] = {
 static JR_DECLARE(json_parser, 128);
 static char errmsg[ERROR_SIZE] = {0};
 
-static void next_pend_job(void);
+static void polling_callback(void);
 static void on_read(char *line);
 static void terminate(void) { global_terminate(); }
 
-static struct timer pending = {0};
+static struct timer polling_timer = {0};
 
 void broker_init(long polling, char const *uri, char const *key)
 {
     JR_INIT(json_parser);
-    timer_init(&pending, polling, &next_pend_job);
+    timer_init(&polling_timer, polling, &polling_callback);
     proc_args[SCHEDY_ID][4] = uri;
     proc_args[SCHEDY_ID][6] = key;
 
@@ -55,7 +55,11 @@ void broker_init(long polling, char const *uri, char const *key)
     }
 }
 
-void broker_send(enum pid pid, char const *msg) { proc_send(&proc[pid], msg); }
+void broker_send(enum pid pid, char const *msg)
+{
+    debug("%s --> %s", msg, proc_name[pid]);
+    proc_send(&proc[pid], msg);
+}
 
 int broker_resolve_procname(char const *name)
 {
@@ -69,7 +73,7 @@ int broker_resolve_procname(char const *name)
 
 void broker_terminate(void)
 {
-    timer_cleanup(&pending);
+    timer_cleanup(&polling_timer);
     for (int i = 0; i <= SCHEDY_ID; ++i)
         proc_stop(&proc[i]);
 }
@@ -109,10 +113,14 @@ bool broker_parse_seq(struct sched_seq *seq, char *json)
     return !sched_seq_parse(seq, json_parser);
 }
 
-static void next_pend_job(void)
+static void polling_callback(void)
 {
-    debug("asking pend job");
-    proc_send(&proc[SCHEDY_ID], "job_next_pend | exec_pend_job {1} {2}");
+    static int cnt = 0;
+    if (cnt % 2 == 0)
+        proc_send(&proc[SCHEDY_ID], "job_next_pend | schedy_polling {1} {2}");
+    if (cnt % 2 == 1)
+        proc_send(&proc[PRESSY_ID], "state | pressy_polling {1} {2}");
+    ++cnt;
 }
 
 static void on_read(char *line)

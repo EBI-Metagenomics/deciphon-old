@@ -56,6 +56,9 @@ enum rc sched_job_parse(struct sched_job *j, struct jr *jr)
     j->exec_started = jr_long_of(jr, "exec_started");
     j->exec_ended = jr_long_of(jr, "exec_ended");
 
+    if (j->type != SCHED_SCAN && j->type != SCHED_HMM)
+        return einval("unrecognized job type");
+
     return jr_error() ? einval("%s", jr->cursor.json) : RC_OK;
 }
 
