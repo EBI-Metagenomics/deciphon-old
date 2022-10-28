@@ -35,6 +35,7 @@
     X(JOB_NEXT_PEND, job_next_pend, "")                                        \
     X(JOB_SET_STATE, job_set_state, "JOB_ID STATE [MSG]")                      \
     X(JOB_INC_PROGRESS, job_inc_progress, "JOB_ID PROGRESS")                   \
+    X(JOB_GET_BY_ID, job_get_by_id, "JOB_ID")                                  \
                                                                                \
     X(SCAN_DL_SEQS, scan_dl_seqs, "SCAN_ID FILE")                              \
     X(SCAN_GET_BY_ID, scan_get_by_id, "SCAN_ID")                               \
@@ -290,6 +291,20 @@ static void fn_job_inc_progress(struct msg *msg)
     char const *ans = api_job_inc_progress(job_id, increment) ? FAIL : OK;
 
     parent_send(&parent, msg_ctx(msg, ans));
+}
+
+static void fn_job_get_by_id(struct msg *msg)
+{
+    if (msg_check(msg, "si")) return;
+
+    char const *ans = FAIL;
+    char const *json = "";
+    if (!api_job_get_by_id(msg_int(msg, 1), &job))
+    {
+        ans = OK;
+        json = sched_dump_job(&job, (char *)buffer);
+    }
+    parent_send(&parent, msg_ctx(msg, ans, json));
 }
 
 static void fn_scan_dl_seqs(struct msg *msg)
