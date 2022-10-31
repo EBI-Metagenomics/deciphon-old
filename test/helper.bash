@@ -79,6 +79,13 @@ fetch_hash() {
 download() {
     local -r file=$1
     local -r hash=$(fetch_hash "$file")
+    if test -e "$file"; then
+        now=$(checksum "$file")
+        if [ "$now" = "$hash" ]; then
+            return
+        fi
+        rm -f "$file"
+    fi
     pooch https://pub.danilohorta.me/deciphon/"$file" --hash "$hash"
 }
 
@@ -128,7 +135,7 @@ wait_file_stabilize() {
 
     local cnt=30
     while [ $cnt -gt 0 ]; do
-        sleep 3
+        sleep 5
         now=$(date -r "$file" +%s)
         if [ "$timestamp" = "$now" ]; then
             break

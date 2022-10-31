@@ -14,7 +14,7 @@ setup() {
     download PF02545.hmm
     download Pfam-A.5.hmm
     download Pfam-A.10.hmm
-    download consensus.fna
+    download query1.fna
     download prods_file_20221021.tsv
 }
 
@@ -56,17 +56,17 @@ teardown() {
 @test "submit scan" {
     send "fwd schedy wipe"
     send "fwd schedy hmm_up PF02545.hmm"
-    sleep 2
-    run sendo "fwd schedy scan_submit 1 1 0 consensus.fna | echo {1} {2}"
+    wait_file PF02545.dcp
+    run sendo "fwd schedy scan_submit 1 1 0 query1.fna | echo {1} {2}"
     assert_output -e 'echo ok \{"id":2,"type":0,"state":"pend","progress":0,"error":"","submission":[0-9]+,"exec_started":0,"exec_ended":0\}'
 }
 
 @test "scan" {
     send "fwd schedy wipe"
     send "fwd schedy hmm_up PF02545.hmm"
-    sleep 2
-    send "fwd schedy scan_submit 1 1 0 consensus.fna"
-    sleep 4
+    wait_file PF02545.dcp
+    send "fwd schedy scan_submit 1 1 0 query1.fna"
+    sleep 5
     run sendo "fwd schedy job_get_by_id 2 | echo {1} {2}"
     assert_output -e 'echo ok \{"id":2,"type":0,"state":"done","progress":100,"error":"","submission":[0-9]+,"exec_started":[0-9]+,"exec_ended":[0-9]+\}'
 }
