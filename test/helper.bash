@@ -126,16 +126,20 @@ wait_file_stabilize() {
     local timestamp=
     timestamp=$(date -r "$file" +%s)
 
-    local cnt=5
+    local cnt=30
     while [ $cnt -gt 0 ]; do
-        sleep 1.1
+        sleep 3
         now=$(date -r "$file" +%s)
         if [ "$timestamp" = "$now" ]; then
             break
         fi
-        now=$timestamp
+        timestamp=$now
         cnt=$((cnt - 1))
     done
+
+    if [ $cnt -eq 0 ]; then
+        fail "<$file> has not stabilized."
+    fi
 }
 
 wait_file() {
