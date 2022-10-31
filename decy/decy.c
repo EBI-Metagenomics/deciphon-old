@@ -32,8 +32,8 @@ int main(int argc, char *argv[])
     int loglvl = argl_get(&argl, "loglevel")[0] - '0';
 
     char const *polling = argl_get(&argl, "polling");
-    if (!is_int64(polling) || as_int64(polling) < 0) argl_usage(&argl);
-    long repeat = as_int64(polling) > 1000 ? 1000 : as_int64(polling);
+    if (!is_long(polling) || as_long(polling) < 0) argl_usage(&argl);
+    long repeat = as_long(polling) > 1000 ? 1000 : as_long(polling);
     repeat = repeat < 0 ? 0 : repeat;
     repeat = 1000 / repeat + 1000 % repeat;
 

@@ -42,7 +42,7 @@ static void fn_set_nthreads(struct msg *msg)
 {
     if (msg_check(msg, "si")) return;
 
-    scanner_set_nthreads(as_int64(msg->cmd.argv[1]));
+    scanner_set_nthreads(as_int(msg->cmd.argv[1]));
     parent_send(&parent, msg_ctx(msg, "ok"));
 }
 
@@ -60,8 +60,8 @@ static void fn_scan(struct msg *msg)
     char const *seqs = msg->cmd.argv[1];
     char const *db = msg->cmd.argv[2];
     char const *prod = msg->cmd.argv[3];
-    bool multi_hits = !!as_int64(msg->cmd.argv[4]);
-    bool hmmer3_compat = !!as_int64(msg->cmd.argv[5]);
+    bool multi_hits = !!as_long(msg->cmd.argv[4]);
+    bool hmmer3_compat = !!as_long(msg->cmd.argv[5]);
     if (scanner_start(seqs, db, prod, multi_hits, hmmer3_compat)) ans = OK;
 
 cleanup:

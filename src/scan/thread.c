@@ -22,7 +22,7 @@ void thread_init(struct thread *t, FILE *prodfile, int idx,
 }
 
 void thread_setup_job(struct thread *t, enum imm_abc_typeid abc_typeid,
-                      enum profile_typeid profile_typeid, int64_t scan_id,
+                      enum profile_typeid profile_typeid, long scan_id,
                       long ntasks)
 {
     char const *abc = imm_abc_typeid_name(abc_typeid);
@@ -31,8 +31,7 @@ void thread_setup_job(struct thread *t, enum imm_abc_typeid abc_typeid,
     progress_init(&t->progress, ntasks);
 }
 
-void thread_setup_seq(struct thread *t, struct imm_seq const *seq,
-                      int64_t seq_id)
+void thread_setup_seq(struct thread *t, struct imm_seq const *seq, long seq_id)
 {
     t->seq = seq;
     prod_setup_seq(&t->prod, seq_id);

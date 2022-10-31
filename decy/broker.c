@@ -58,7 +58,6 @@ void broker_init(long polling, char const *uri, char const *key)
         strcat(proc_file[i], global_exedir());
         strcat(proc_file[i], "/");
         strcat(proc_file[i], proc_name[i]);
-        debug("%s", proc_file[i]);
         proc_args[i][0] = proc_file[i];
         proc_init(&proc[i], proc_type[i]);
         proc_setup(&proc[i], &on_read, &terminate, &terminate, &terminate);
@@ -66,11 +65,7 @@ void broker_init(long polling, char const *uri, char const *key)
     }
 }
 
-void broker_send(enum pid pid, char const *msg)
-{
-    debug("%s --> %s", msg, proc_name[pid]);
-    proc_send(&proc[pid], msg);
-}
+void broker_send(enum pid pid, char const *msg) { proc_send(&proc[pid], msg); }
 
 int broker_resolve_procname(char const *name)
 {

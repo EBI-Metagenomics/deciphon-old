@@ -8,9 +8,9 @@
 
 #define BUFFSIZE (8 * 1024)
 
-static enum rc ensure_integrity(char const *filename, int64_t xxh3);
+static enum rc ensure_integrity(char const *filename, long xxh3);
 
-enum rc file_ensure_local(char const *filename, int64_t xxh3,
+enum rc file_ensure_local(char const *filename, long xxh3,
                           file_download_fn_t *download_cb, void *data)
 {
     enum rc rc = RC_OK;
@@ -25,15 +25,15 @@ enum rc file_ensure_local(char const *filename, int64_t xxh3,
     return ensure_integrity(filename, xxh3);
 }
 
-static enum rc ensure_integrity(char const *filename, int64_t xxh3)
+static enum rc ensure_integrity(char const *filename, long xxh3)
 {
-    int64_t hash = 0;
+    long hash = 0;
     enum rc rc = file_hash(filename, &hash);
     if (rc) return rc;
     return xxh3 == hash ? RC_OK : einval("invalid hash");
 }
 
-enum rc file_hash(char const *filepath, int64_t *hash)
+enum rc file_hash(char const *filepath, long *hash)
 {
     FILE *fp = fopen(filepath, "rb");
     if (!fp) return eio("fopen");
@@ -43,9 +43,10 @@ enum rc file_hash(char const *filepath, int64_t *hash)
     return rc;
 }
 
-static_assert(SAME_TYPE(XXH64_hash_t, uint64_t), "XXH64_hash_t is uint64_t");
+static_assert(__builtin_types_compatible_p(typeof(XXH64_hash_t),
+                                           typeof(uint64_t)));
 
-enum rc file_phash(FILE *fp, int64_t *hash)
+enum rc file_phash(FILE *fp, long *hash)
 {
     enum rc rc = RC_EFAIL;
     XXH3_state_t *state = XXH3_createState();

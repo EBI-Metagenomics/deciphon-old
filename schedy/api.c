@@ -20,7 +20,7 @@ static enum rc get(char const *query);
 static enum rc handle_http_exception(void);
 static bool is_empty_json_object(void);
 static char const *inc_progress_json(int increment);
-static char const *job_state_json(int64_t, enum sched_job_state, char const *);
+static char const *job_state_json(long, enum sched_job_state, char const *);
 static bool known_http_code(long http_code);
 static enum rc parse_json_body(void);
 static enum rc patch(char const *query, char const *request);
@@ -73,11 +73,11 @@ cleanup:
     return rc;
 }
 
-enum rc api_hmm_dl(int64_t id, FILE *fp)
+enum rc api_hmm_dl(long id, FILE *fp)
 {
     api_error_reset();
 
-    enum rc rc = download(query("/hmms/%lld/download", id), fp);
+    enum rc rc = download(query("/hmms/%ld/download", id), fp);
     if (rc) return rc;
 
     return xcurl_http_code() != 200 ? handle_http_exception() : RC_OK;
@@ -85,7 +85,7 @@ enum rc api_hmm_dl(int64_t id, FILE *fp)
 
 union param
 {
-    int64_t i;
+    long i;
     char const *s;
 };
 
@@ -100,17 +100,17 @@ enum param_type
 
 static enum rc get_hmm_by(struct sched_hmm *, union param, enum param_type);
 
-enum rc api_hmm_get_by_id(int64_t id, struct sched_hmm *hmm)
+enum rc api_hmm_get_by_id(long id, struct sched_hmm *hmm)
 {
     return get_hmm_by(hmm, (union param){.i = id}, HMM_ID);
 }
 
-enum rc api_hmm_get_by_xxh3(int64_t xxh3, struct sched_hmm *hmm)
+enum rc api_hmm_get_by_xxh3(long xxh3, struct sched_hmm *hmm)
 {
     return get_hmm_by(hmm, (union param){.i = xxh3}, XXH3);
 }
 
-enum rc api_hmm_get_by_job_id(int64_t job_id, struct sched_hmm *hmm)
+enum rc api_hmm_get_by_job_id(long job_id, struct sched_hmm *hmm)
 {
     return get_hmm_by(hmm, (union param){.i = job_id}, JOB_ID);
 }
@@ -126,9 +126,9 @@ static enum rc get_hmm_by(struct sched_hmm *hmm, union param p,
     api_error_reset();
 
     enum rc rc = RC_OK;
-    if (type == HMM_ID) rc = get(query("/hmms/%lld", p.i));
-    if (type == XXH3) rc = get(query("/hmms/xxh3/%lld", p.i));
-    if (type == JOB_ID) rc = get(query("/jobs/%lld/hmm", p.i));
+    if (type == HMM_ID) rc = get(query("/hmms/%ld", p.i));
+    if (type == XXH3) rc = get(query("/hmms/xxh3/%ld", p.i));
+    if (type == JOB_ID) rc = get(query("/jobs/%ld/hmm", p.i));
     if (type == FILENAME) rc = get(query("/hmms/filename/%s", p.s));
     if (rc) return rc;
 
@@ -160,9 +160,9 @@ cleanup:
     return rc;
 }
 
-enum rc api_db_dl(int64_t id, FILE *fp)
+enum rc api_db_dl(long id, FILE *fp)
 {
-    enum rc rc = download(query("/dbs/%lld/download", id), fp);
+    enum rc rc = download(query("/dbs/%ld/download", id), fp);
     if (rc) return rc;
 
     return xcurl_http_code() == 200 ? RC_OK : handle_http_exception();
@@ -171,17 +171,17 @@ enum rc api_db_dl(int64_t id, FILE *fp)
 static enum rc get_db_by(struct sched_db *db, union param p,
                          enum param_type type);
 
-enum rc api_db_get_by_id(int64_t id, struct sched_db *db)
+enum rc api_db_get_by_id(long id, struct sched_db *db)
 {
     return get_db_by(db, (union param){.i = id}, DB_ID);
 }
 
-enum rc api_db_get_by_xxh3(int64_t xxh3, struct sched_db *db)
+enum rc api_db_get_by_xxh3(long xxh3, struct sched_db *db)
 {
     return get_db_by(db, (union param){.i = xxh3}, XXH3);
 }
 
-enum rc api_db_get_by_hmm_id(int64_t hmm_id, struct sched_db *db)
+enum rc api_db_get_by_hmm_id(long hmm_id, struct sched_db *db)
 {
     return get_db_by(db, (union param){.i = hmm_id}, HMM_ID);
 }
@@ -197,10 +197,10 @@ static enum rc get_db_by(struct sched_db *db, union param p,
     api_error_reset();
 
     enum rc rc = RC_OK;
-    if (type == DB_ID) rc = get(query("/dbs/%lld", p.i));
-    if (type == XXH3) rc = get(query("/dbs/xxh3/%lld", p.i));
-    if (type == JOB_ID) rc = get(query("/jobs/%lld/db", p.i));
-    if (type == HMM_ID) rc = get(query("/hmms/%lld/db", p.i));
+    if (type == DB_ID) rc = get(query("/dbs/%ld", p.i));
+    if (type == XXH3) rc = get(query("/dbs/xxh3/%ld", p.i));
+    if (type == JOB_ID) rc = get(query("/jobs/%ld/db", p.i));
+    if (type == HMM_ID) rc = get(query("/hmms/%ld/db", p.i));
     if (type == FILENAME) rc = get(query("/dbs/filename/%s", p.s));
     if (rc) return rc;
 
@@ -211,11 +211,11 @@ static enum rc get_db_by(struct sched_db *db, union param p,
     return handle_http_exception();
 }
 
-enum rc api_job_get_by_id(int64_t job_id, struct sched_job *job)
+enum rc api_job_get_by_id(long job_id, struct sched_job *job)
 {
     api_error_reset();
 
-    enum rc rc = get(query("/jobs/%lld", job_id));
+    enum rc rc = get(query("/jobs/%ld", job_id));
     if (rc) return rc;
 
     if ((rc = parse_json_body())) return rc;
@@ -227,11 +227,11 @@ enum rc api_job_get_by_id(int64_t job_id, struct sched_job *job)
     return handle_http_exception();
 }
 
-enum rc api_job_inc_progress(int64_t job_id, int increment)
+enum rc api_job_inc_progress(long job_id, int increment)
 {
     api_error_reset();
 
-    enum rc rc = patch(query("/jobs/%lld/progress", job_id),
+    enum rc rc = patch(query("/jobs/%ld/progress", job_id),
                        inc_progress_json(increment));
     if (rc) return rc;
 
@@ -258,12 +258,12 @@ enum rc api_job_next_pend(struct sched_job *job)
     return handle_http_exception();
 }
 
-enum rc api_job_set_state(int64_t job_id, enum sched_job_state state,
+enum rc api_job_set_state(long job_id, enum sched_job_state state,
                           char const *msg)
 {
     api_error_reset();
 
-    enum rc rc = patch(query("/jobs/%lld/state", job_id),
+    enum rc rc = patch(query("/jobs/%ld/state", job_id),
                        job_state_json(job_id, state, msg));
     if (rc) return rc;
 
@@ -274,11 +274,11 @@ enum rc api_job_set_state(int64_t job_id, enum sched_job_state state,
     return handle_http_exception();
 }
 
-enum rc api_scan_seq_count(int64_t scan_id, unsigned *count)
+enum rc api_scan_seq_count(long scan_id, unsigned *count)
 {
     api_error_reset();
 
-    enum rc rc = get(query("/scans/%lld/seqs/count", scan_id));
+    enum rc rc = get(query("/scans/%ld/seqs/count", scan_id));
     if (rc) return rc;
 
     if ((rc = parse_json_body())) return rc;
@@ -293,14 +293,14 @@ enum rc api_scan_seq_count(int64_t scan_id, unsigned *count)
     return handle_http_exception();
 }
 
-enum rc api_scan_submit(int64_t db_id, bool multi_hits, bool hmmer3_compat,
+enum rc api_scan_submit(long db_id, bool multi_hits, bool hmmer3_compat,
                         char const *filepath, struct sched_job *job)
 {
     api_error_reset();
 
     xcurl_mime_init();
     static char db_id_str[18] = {0};
-    sprintf(db_id_str, "%lld", db_id);
+    sprintf(db_id_str, "%ld", db_id);
     xcurl_mime_addpart("db_id", db_id_str);
     xcurl_mime_addpart("multi_hits", multi_hits ? "true" : "false");
     xcurl_mime_addpart("hmmer3_compat", hmmer3_compat ? "true" : "false");
@@ -323,12 +323,11 @@ cleanup:
     return rc;
 }
 
-enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
-                          struct sched_seq *seq)
+enum rc api_scan_next_seq(long scan_id, long seq_id, struct sched_seq *seq)
 {
     api_error_reset();
 
-    enum rc rc = get(query("/scans/%lld/seqs/next/%lld", scan_id, seq_id));
+    enum rc rc = get(query("/scans/%ld/seqs/next/%ld", scan_id, seq_id));
     if (rc) return rc;
 
     if ((rc = parse_json_body())) return rc;
@@ -340,21 +339,21 @@ enum rc api_scan_next_seq(int64_t scan_id, int64_t seq_id,
     return handle_http_exception();
 }
 
-enum rc api_scan_dl_seqs(int64_t id, FILE *fp)
+enum rc api_scan_dl_seqs(long id, FILE *fp)
 {
     api_error_reset();
 
-    enum rc rc = download(query("/scans/%lld/seqs/download", id), fp);
+    enum rc rc = download(query("/scans/%ld/seqs/download", id), fp);
     if (rc) return rc;
 
     return xcurl_http_code() != 200 ? handle_http_exception() : RC_OK;
 }
 
-enum rc api_scan_get_by_id(int64_t id, struct sched_scan *scan)
+enum rc api_scan_get_by_id(long id, struct sched_scan *scan)
 {
     api_error_reset();
 
-    enum rc rc = get(query("/scans/%lld", id));
+    enum rc rc = get(query("/scans/%ld", id));
     if (rc) return rc;
 
     if ((rc = parse_json_body())) return rc;
@@ -364,11 +363,11 @@ enum rc api_scan_get_by_id(int64_t id, struct sched_scan *scan)
     return handle_http_exception();
 }
 
-enum rc api_scan_get_by_job_id(int64_t job_id, struct sched_scan *scan)
+enum rc api_scan_get_by_job_id(long job_id, struct sched_scan *scan)
 {
     api_error_reset();
 
-    enum rc rc = get(query("/jobs/%lld/scan", job_id));
+    enum rc rc = get(query("/jobs/%ld/scan", job_id));
     if (rc) return rc;
 
     if ((rc = parse_json_body())) return rc;
@@ -396,11 +395,11 @@ cleanup:
     return rc;
 }
 
-enum rc api_prods_file_dl(int64_t id, FILE *fp)
+enum rc api_prods_file_dl(long id, FILE *fp)
 {
     api_error_reset();
 
-    enum rc rc = download(query("/scans/%lld/prods/download", id), fp);
+    enum rc rc = download(query("/scans/%ld/prods/download", id), fp);
     if (rc) return rc;
 
     return xcurl_http_code() != 200 ? handle_http_exception() : RC_OK;
@@ -466,7 +465,7 @@ static char const *inc_progress_json(int increment)
     return request;
 }
 
-static char const *job_state_json(int64_t job_id, enum sched_job_state state,
+static char const *job_state_json(long job_id, enum sched_job_state state,
                                   char const *error)
 {
     static char const job_states[][5] = {[SCHED_PEND] = "pend",

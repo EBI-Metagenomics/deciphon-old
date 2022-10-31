@@ -65,10 +65,10 @@ char const *msg_str(struct msg const *msg, int idx)
     return sharg_argv(sharg)[idx];
 }
 
-int64_t msg_int(struct msg const *msg, int idx)
+long msg_int(struct msg const *msg, int idx)
 {
     struct sharg *sharg = (struct sharg *)&msg->cmd;
-    return as_int64(sharg_argv(sharg)[idx]);
+    return as_long(sharg_argv(sharg)[idx]);
 }
 
 static void ctx_set(struct msg *msg, char const *tag, char const *value)

@@ -41,8 +41,8 @@ void thread_init(struct thread *, FILE *prodfile, int idx,
                  struct profile_reader *, struct scan_cfg,
                  prod_fwrite_match_fn_t *);
 void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
-                      int64_t scan_id, long ntasks);
-void thread_setup_seq(struct thread *, struct imm_seq const *, int64_t seq_id);
+                      long scan_id, long ntasks);
+void thread_setup_seq(struct thread *, struct imm_seq const *, long seq_id);
 enum rc thread_run(struct thread *);
 struct progress const *thread_progress(struct thread const *);
 char const *thread_errmsg(struct thread const *);

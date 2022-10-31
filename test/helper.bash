@@ -90,10 +90,10 @@ download() {
 }
 
 recv() {
-    local cnt=50
+    local cnt=25
     local output=
     while [ $cnt -gt 0 ]; do
-        output=$(timeout -t 100 cat "$1")
+        output=$(timeout -t 200 cat "$1")
         if [ -n "$output" ]; then
             break
         fi

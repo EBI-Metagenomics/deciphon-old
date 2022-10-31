@@ -17,7 +17,7 @@ static int num_seqs = 0;
 static struct seq curr = {0};
 static enum rc errnum = RC_OK;
 static char errmsg[ERROR_SIZE] = {0};
-static int64_t scan_id = 0;
+static long scan_id = 0;
 
 enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
 {
@@ -72,7 +72,7 @@ cleanup:
     return errnum;
 }
 
-int64_t seqlist_scan_id(void) { return scan_id; }
+long seqlist_scan_id(void) { return scan_id; }
 
 void seqlist_rewind(void)
 {

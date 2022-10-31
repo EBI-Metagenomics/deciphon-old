@@ -109,7 +109,7 @@ static void fn_hmm_dl(struct msg *msg)
 {
     if (msg_check(msg, "sis")) return;
 
-    int64_t xxh3 = msg_int(msg, 1);
+    long xxh3 = msg_int(msg, 1);
     char const *name = msg_str(msg, 2);
     char const *ans = file_ensure_local(name, xxh3, &dl_hmm, &xxh3) ? FAIL : OK;
     parent_send(&parent, msg_ctx(msg, ans));
@@ -184,7 +184,7 @@ static void fn_db_dl(struct msg *msg)
     if (msg_check(msg, "sis")) return;
 
     char const *ans = FAIL;
-    int64_t xxh3 = msg_int(msg, 1);
+    long xxh3 = msg_int(msg, 1);
     char const *name = msg_str(msg, 2);
     if (!file_ensure_local(name, xxh3, &dl_db, &xxh3)) ans = OK;
 
@@ -272,7 +272,7 @@ static void fn_job_set_state(struct msg *msg)
 
     if (!encode_job_state(msg_str(msg, 2), &state)) goto cleanup;
 
-    int64_t job_id = msg_int(msg, 1);
+    long job_id = msg_int(msg, 1);
     char const *error = msg_argc(msg) == 3 ? "" : msg_str(msg, 3);
     if (api_job_set_state(job_id, state, error)) goto cleanup;
     if (api_job_get_by_id(job_id, &job)) goto cleanup;
@@ -287,8 +287,8 @@ static void fn_job_inc_progress(struct msg *msg)
 {
     if (msg_check(msg, "sii")) return;
 
-    int64_t job_id = msg_int(msg, 1);
-    int64_t increment = msg_int(msg, 2);
+    long job_id = msg_int(msg, 1);
+    long increment = msg_int(msg, 2);
     char const *ans = api_job_inc_progress(job_id, increment) ? FAIL : OK;
 
     parent_send(&parent, msg_ctx(msg, ans));
@@ -402,9 +402,9 @@ static void fn_scan_submit(struct msg *msg)
     char const *ans = FAIL;
     char const *json = "";
 
-    int64_t db_id = msg_int(msg, 1);
-    int64_t multi_hits = msg_int(msg, 2);
-    int64_t hmmer3_compat = msg_int(msg, 3);
+    long db_id = msg_int(msg, 1);
+    long multi_hits = msg_int(msg, 2);
+    long hmmer3_compat = msg_int(msg, 3);
     char const *path = msg_str(msg, 4);
     if (!api_scan_submit(db_id, multi_hits, hmmer3_compat, path, &job))
     {
@@ -465,7 +465,7 @@ cleanup:
 
 static enum rc dl_hmm(char const *filepath, void *data)
 {
-    int64_t xxh3 = *((int64_t *)data);
+    long xxh3 = *((long *)data);
     enum rc rc = api_hmm_get_by_xxh3(xxh3, &hmm);
     if (rc) return rc;
 
@@ -481,7 +481,7 @@ static enum rc dl_hmm(char const *filepath, void *data)
 
 static enum rc dl_db(char const *filepath, void *data)
 {
-    int64_t xxh3 = *((int64_t *)data);
+    long xxh3 = *((long *)data);
     enum rc rc = api_db_get_by_xxh3(xxh3, &db);
     if (rc) return rc;
 

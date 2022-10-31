@@ -108,7 +108,7 @@ bool sharg_check(struct sharg const *sharg, char const *fmt)
     {
         if (fmt[i] == 's') continue;
 
-        if (fmt[i] == 'i' && !is_int64(sharg->argv[i])) return false;
+        if (fmt[i] == 'i' && !is_long(sharg->argv[i])) return false;
     }
 
     return true;

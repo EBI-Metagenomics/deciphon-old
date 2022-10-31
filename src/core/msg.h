@@ -3,7 +3,6 @@
 
 #include "core/pp.h"
 #include "core/sharg.h"
-#include <stdint.h>
 
 struct msg
 {
@@ -20,7 +19,7 @@ char **msg_argv(struct msg *);
 void msg_shift(struct msg *);
 char const *msg_cmd(struct msg const *);
 char const *msg_str(struct msg const *, int idx);
-int64_t msg_int(struct msg const *, int idx);
+long msg_int(struct msg const *, int idx);
 char *_msg_ctx(struct msg *, int nargs, ...);
 #define msg_ctx(msg, ...) _msg_ctx(msg, PP_NARG(__VA_ARGS__), __VA_ARGS__)
 

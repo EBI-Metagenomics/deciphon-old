@@ -98,3 +98,22 @@ teardown() {
     run file_size Pfam-A.5.dcp
     assert_output 12397034
 }
+
+
+@test "multiple scan jobs" {
+    send "fwd schedy wipe"
+    send "fwd schedy hmm_up PF02545.hmm"
+    send "fwd schedy hmm_up Pfam-A.10.hmm"
+    send "fwd schedy hmm_up Pfam-A.5.hmm"
+
+    wait_file PF02545.dcp
+    wait_file Pfam-A.10.dcp
+    wait_file Pfam-A.5.dcp
+
+    send "fwd schedy scan_submit 1 1 0 query1.fna"
+    send "fwd schedy scan_submit 2 1 0 query1.fna"
+    send "fwd schedy scan_submit 3 1 0 query1.fna"
+    # sleep 5
+    # run sendo "fwd schedy job_get_by_id 2 | echo {1} {2}"
+    # assert_output -e 'echo ok \{"id":2,"type":0,"state":"done","progress":100,"error":"","submission":[0-9]+,"exec_started":[0-9]+,"exec_ended":[0-9]+\}'
+}

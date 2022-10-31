@@ -8,14 +8,14 @@ void seq_init(struct seq *seq, struct imm_abc const *abc)
     seq->iseq = imm_seq(imm_str(""), abc);
 }
 
-void seq_set(struct seq *seq, int64_t id, char const *name, char const *data)
+void seq_set(struct seq *seq, long id, char const *name, char const *data)
 {
     seq->id = id;
     seq->name = name;
     seq->iseq = imm_seq(imm_str(data), imm_seq_abc(&seq->iseq));
 }
 
-int64_t seq_id(struct seq const *seq) { return seq->id; }
+long seq_id(struct seq const *seq) { return seq->id; }
 
 char const *seq_name(struct seq const *seq) { return seq->name; }
 

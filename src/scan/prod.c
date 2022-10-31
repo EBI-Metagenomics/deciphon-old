@@ -4,10 +4,9 @@
 #include "fs.h"
 #include "imm/imm.h"
 #include "scan/match.h"
-#include <inttypes.h>
 
 void prod_setup_job(struct prod *prod, char const *abc_name,
-                    char const *prof_typeid, int64_t scan_id)
+                    char const *prof_typeid, long scan_id)
 {
     strcpy(prod->abc_name, abc_name);
     strcpy(prod->profile_typeid, prof_typeid);
@@ -15,10 +14,7 @@ void prod_setup_job(struct prod *prod, char const *abc_name,
     prod->scan_id = scan_id;
 }
 
-void prod_setup_seq(struct prod *prod, int64_t seq_id)
-{
-    prod->seq_id = seq_id;
-}
+void prod_setup_seq(struct prod *prod, long seq_id) { prod->seq_id = seq_id; }
 
 /* Output example
  *             ___________________________
@@ -74,12 +70,12 @@ static int write_begin(struct prod const *prod, FILE *fp)
 {
 #define TAB "\t"
 #define echo(fmt, var) fprintf(fp, fmt, prod->var) < 0
-#define Fd64 "%" PRId64 TAB
+#define Fi "%ld" TAB
 #define Fs "%s" TAB
 #define Fg "%.17g" TAB
 
-    if (echo(Fd64, scan_id)) efail("write prod");
-    if (echo(Fd64, seq_id)) efail("write prod");
+    if (echo(Fi, scan_id)) efail("write prod");
+    if (echo(Fi, seq_id)) efail("write prod");
 
     if (echo(Fs, profile_name)) efail("write prod");
     if (echo(Fs, abc_name)) efail("write prod");
@@ -95,7 +91,7 @@ static int write_begin(struct prod const *prod, FILE *fp)
 
 #undef Fg
 #undef Fs
-#undef Fd64
+#undef Fi
 #undef echo
 #undef TAB
 }

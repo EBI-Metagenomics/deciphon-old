@@ -28,18 +28,4 @@
     (sizeof(x) == 1 ? 8U : BUILD_BUG_ON_ZERO(0))))))))))
 /* clang-format on */
 
-/*
- * Evaluates to `ONE` in case of `EXPR` being `true`; `TWO` otherwise.
- *
- * Acknowledgement: Jens Gustedt.
- */
-#define BUILD_SWITCH(EXPR, ONE, TWO)                                           \
-    _Generic((1 ? (struct p00_nullptr_test *)0 : (void *)!(EXPR)),             \
-             struct p00_nullptr_test *                                         \
-             : ONE, default                                                    \
-             : TWO)
-
-/* Are two types/vars the same type (ignoring qualifiers)? */
-#define SAME_TYPE(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
-
 #endif
