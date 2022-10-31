@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 
 project(
   deciphon
@@ -30,7 +30,7 @@ find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD 23)
 
 option(DEBUG_HTTP_REQUESTS "Debug HTTP requests" OFF)
 if(DEBUG_HTTP_REQUESTS)
