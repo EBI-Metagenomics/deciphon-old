@@ -141,3 +141,7 @@ wait_file_stabilize() {
 wait_file() {
     wait_file_exists "$1" && wait_file_stabilize "$1"
 }
+
+file_size() {
+    wc -c <"$1" | xargs
+}

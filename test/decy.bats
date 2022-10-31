@@ -12,6 +12,8 @@ setup() {
     fi
     daemon_spawn decy
     download PF02545.hmm
+    download Pfam-A.5.hmm
+    download Pfam-A.10.hmm
     download consensus.fna
     download prods_file_20221021.tsv
 }
@@ -67,4 +69,32 @@ teardown() {
     sleep 4
     run sendo "fwd schedy job_get_by_id 2 | echo {1} {2}"
     assert_output -e 'echo ok \{"id":2,"type":0,"state":"done","progress":100,"error":"","submission":[0-9]+,"exec_started":[0-9]+,"exec_ended":[0-9]+\}'
+}
+
+@test "multiple press jobs" {
+    send "fwd schedy wipe"
+    send "fwd schedy hmm_up PF02545.hmm"
+    send "fwd schedy hmm_up Pfam-A.10.hmm"
+    send "fwd schedy hmm_up Pfam-A.5.hmm"
+
+    wait_file PF02545.dcp
+    run sendo "fwd schedy job_get_by_id 1 | echo {1} {2}"
+    assert_output -e 'echo ok \{"id":1,"type":1,"state":"done","progress":100,"error":"","submission":[0-9]+,"exec_started":[0-9]+,"exec_ended":[0-9]+\}'
+
+    wait_file Pfam-A.10.dcp
+    run sendo "fwd schedy job_get_by_id 2 | echo {1} {2}"
+    assert_output -e 'echo ok \{"id":2,"type":1,"state":"done","progress":100,"error":"","submission":[0-9]+,"exec_started":[0-9]+,"exec_ended":[0-9]+\}'
+
+    wait_file Pfam-A.5.dcp
+    run sendo "fwd schedy job_get_by_id 3 | echo {1} {2}"
+    assert_output -e 'echo ok \{"id":3,"type":1,"state":"done","progress":100,"error":"","submission":[0-9]+,"exec_started":[0-9]+,"exec_ended":[0-9]+\}'
+
+    run file_size PF02545.dcp
+    assert_output 1937824
+
+    run file_size Pfam-A.10.dcp
+    assert_output 21876575
+
+    run file_size Pfam-A.5.dcp
+    assert_output 12397034
 }
