@@ -37,7 +37,8 @@ daemon_spawn() {
     # Keep fifos open
     exec 7<>stdin
     exec 8<stdout
-    exec 9<stderr
+    tail -F stderr >stderr.log &
+    pidfile_store $!
 }
 
 daemon_kill() {
