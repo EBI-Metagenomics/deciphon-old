@@ -73,6 +73,7 @@ add_library(
   src/core/sharg.c
   src/core/to.c
   src/core/url.c
+  src/core/xmath.c
   src/core/xmem.c
   src/db/press.c
   src/db/profile_reader.c

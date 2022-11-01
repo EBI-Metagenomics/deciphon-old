@@ -54,21 +54,21 @@ static void partition_init(struct profile_reader *reader, long offset)
 
 static void partition_it(struct profile_reader *reader, struct db_reader *db)
 {
-    unsigned i = 0;
-    unsigned size = 0;
-    unsigned nprofs = db->nprofiles;
-    for (unsigned j = 0; j < nprofs; ++j)
+    unsigned n = db->nprofiles;
+    unsigned k = reader->npartitions;
+    unsigned part = 0;
+    for (unsigned i = 0; i < k; ++i)
     {
-        reader->partition_offset[i + 1] += db->profile_sizes[j];
+        long sz = xmath_partition_size(n, k, i);
+        assert(sz >= 0);
+        assert(sz <= UINT_MAX);
+        unsigned size = (unsigned)sz;
 
-        unsigned nparts = reader->npartitions;
-        if (++size >= xmath_partition_size(nprofs, nparts, i))
-        {
-            reader->partition_size[i] = size;
-            reader->partition_offset[i + 1] += reader->partition_offset[i];
-            ++i;
-            size = 0;
-        }
+        reader->partition_size[i] = size;
+        for (unsigned j = 0; j < size; ++j)
+            reader->partition_offset[i + 1] += db->profile_sizes[part++];
+
+        reader->partition_offset[i + 1] += reader->partition_offset[i];
     }
 }
 

@@ -79,6 +79,7 @@ int scan_setup(char const *db, char const *seqs)
         enum imm_abc_typeid abc_typeid = abc->vtable.typeid;
         enum profile_typeid prof_typeid = reader->profile_typeid;
         ntasks = profile_reader_partition_size(&profreader, i) * seqlist_size();
+        assert(ntasks > 0);
         thread_setup_job(t, abc_typeid, prof_typeid, seqlist_scan_id(), ntasks);
 
         ntasks_total += ntasks;
