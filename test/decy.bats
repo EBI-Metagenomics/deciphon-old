@@ -14,8 +14,9 @@ setup() {
     download PF02545.hmm
     download Pfam-A.5.hmm
     download Pfam-A.10.hmm
+    download Pfam-A.100.hmm
     download query1.fna
-    download prods_file_20221021.tsv
+    download prods_file_20221101.tsv
 }
 
 teardown() {
@@ -105,15 +106,25 @@ teardown() {
     send "fwd schedy hmm_up PF02545.hmm"
     send "fwd schedy hmm_up Pfam-A.10.hmm"
     send "fwd schedy hmm_up Pfam-A.5.hmm"
+    send "fwd schedy hmm_up Pfam-A.100.hmm"
 
+    sleep 30
     wait_file PF02545.dcp
     wait_file Pfam-A.10.dcp
     wait_file Pfam-A.5.dcp
+    wait_file Pfam-A.100.dcp
 
+    # no result
     send "fwd schedy scan_submit 1 1 0 query1.fna"
     send "fwd schedy scan_submit 2 1 0 query1.fna"
     send "fwd schedy scan_submit 3 1 0 query1.fna"
-    # sleep 5
-    # run sendo "fwd schedy job_get_by_id 2 | echo {1} {2}"
-    # assert_output -e 'echo ok \{"id":2,"type":0,"state":"done","progress":100,"error":"","submission":[0-9]+,"exec_started":[0-9]+,"exec_ended":[0-9]+\}'
+
+    # result
+    send "fwd schedy scan_submit 4 1 0 query1.fna"
+    sleep 15
+    wait_file 8_prods.tsv
+    sed 's/-489.20529174804688/-489./' prods_file_20221101.tsv | sed 's/-667.29437255859375/-667./' >prods_desired.tsv
+    sed 's/-489.20529174804688/-489./' 8_prods.tsv | sed 's/-667.29437255859375/-667./' >prods_actual.tsv
+    run diff prods_desired.tsv prods_actual.tsv
+    assert_success
 }

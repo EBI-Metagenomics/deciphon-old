@@ -118,9 +118,9 @@ sendw() {
 
 wait_file_exists() {
     local -r file=$1
-    local cnt=50
+    local cnt=30
     while [ $cnt -gt 0 ]; do
-        sleep 0.1
+        sleep 1
         if test -e "$file"; then
             break
         fi
