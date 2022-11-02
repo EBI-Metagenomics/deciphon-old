@@ -143,6 +143,9 @@ target_link_libraries(pressy PRIVATE deciphon)
 add_executable(scanny scanny/scanny.c scanny/command.c scanny/scanner.c)
 target_link_libraries(scanny PRIVATE deciphon)
 
+add_executable(hmmy hmmy/hmmy.c hmmy/command.c hmmy/hmmer.c)
+target_link_libraries(hmmy PRIVATE deciphon)
+
 add_executable(decy decy/decy.c decy/command.c decy/cfg.c decy/broker.c)
 target_link_libraries(decy PRIVATE deciphon)
 
