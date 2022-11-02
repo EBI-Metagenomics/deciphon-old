@@ -33,8 +33,10 @@
     X(EXEC_SCAN_JOB_6, exec_scan_job_6, "TODO")                                \
     X(UPDATE_SCAN_STATE_1, update_scan_state_1, "TODO")                        \
     X(UPDATE_SCAN_STATE_2, update_scan_state_2, "TODO")                        \
+    X(UPDATE_SCAN_STATE_3, update_scan_state_3, "TODO")                        \
     X(UPDATE_SCAN_PROGRESS_1, update_scan_progress_1, "TODO")                  \
     X(UPDATE_SCAN_PROGRESS_2, update_scan_progress_2, "TODO")                  \
+    X(UPDATE_SCAN_PROGRESS_3, update_scan_progress_3, "TODO")                  \
     X(EXEC_PRESS_JOB_1, exec_press_job_1, "TODO")                              \
     X(EXEC_PRESS_JOB_2, exec_press_job_2, "TODO")                              \
     X(EXEC_PRESS_JOB_3, exec_press_job_3, "TODO")                              \
@@ -143,7 +145,21 @@ static void fn_update_scan_state_2(struct msg *msg)
     if (msg_check(msg, "ssss")) return;
     char *filename = msg_argv(msg)[2];
     char const *state = msg_argv(msg)[3];
-    long job_id = filename_id(filename);
+    long scan_id = filename_id(filename);
+    broker_send(SCHEDY_ID,
+                fmt("scan_get_by_id %ld | update_scan_state_3 {1} {2} %s %s",
+                    scan_id, filename, state));
+}
+
+static void fn_update_scan_state_3(struct msg *msg)
+{
+    if (msg_check(msg, "sssss")) return;
+    if (strcmp(msg_argv(msg)[1], "ok")) return;
+    char *json = msg_argv(msg)[2];
+    if (!broker_parse_scan(&scan, json)) return;
+    long job_id = scan.job_id;
+    char *filename = msg_argv(msg)[3];
+    char const *state = msg_argv(msg)[4];
 
     if (!strcmp(state, "done"))
     {
@@ -229,8 +245,21 @@ static void fn_update_scan_progress_2(struct msg *msg)
     if (msg_check(msg, "sssi")) return;
     char *filename = msg_argv(msg)[2];
     int inc = (int)msg_int(msg, 3);
-    long job_id = (long)filename_id(filename);
-    broker_send(SCHEDY_ID, fmt("job_inc_progress %ld %d", job_id, inc));
+    long scan_id = filename_id(filename);
+    broker_send(SCHEDY_ID,
+                fmt("scan_get_by_id %ld | update_scan_progress_3 {1} {2} %d",
+                    scan_id, inc));
+}
+
+static void fn_update_scan_progress_3(struct msg *msg)
+{
+    if (msg_check(msg, "ss*")) return;
+    if (strcmp(msg_argv(msg)[1], "ok")) return;
+    if (msg_check(msg, "sssi")) return;
+    char *json = msg_argv(msg)[2];
+    if (!broker_parse_scan(&scan, json)) return;
+    int inc = (int)msg_int(msg, 3);
+    broker_send(SCHEDY_ID, fmt("job_inc_progress %ld %d", scan.job_id, inc));
 }
 
 static void fn_update_press_progress_1(struct msg *msg)
@@ -339,7 +368,7 @@ static void fn_exec_scan_job_6(struct msg *msg)
     char *db_file = msg_argv(msg)[4];
     broker_send(SCANNY_ID,
                 fmt("scan %s %s %ld_prods.tsv %d %d", seqs_file, db_file,
-                    scan.job_id, scan.multi_hits, scan.hmmer3_compat));
+                    scan.id, scan.multi_hits, scan.hmmer3_compat));
 }
 
 static void fn_exec_press_job_1(struct msg *msg)

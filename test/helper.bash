@@ -10,6 +10,20 @@ helper_teardown() {
     pidfile_kill
 }
 
+assure_api_online() {
+    local -r host=$1
+    local -r port=$2
+
+    if ! status="$(curl -s -D - -o /dev/null "http://$host:$port" | head -1)"; then
+        fail "API <$host:$port> not responding."
+        return
+    fi
+    IFS=', ' read -r -a validate <<<"$status"
+    if [ "${validate[-2]}" != "200" ]; then
+        fail "API <$host:$port> not responding."
+    fi
+}
+
 pidfile_kill() {
     while read -r pid; do
         kill -s SIGTERM "$pid" 2>/dev/null
@@ -117,25 +131,31 @@ sendw() {
 }
 
 wait_file_exists() {
-    local -r file=$1
+    local -r polling=$1
+    local -r file=$2
     local cnt=30
     while [ $cnt -gt 0 ]; do
-        sleep 1
+        sleep "$polling"
         if test -e "$file"; then
             break
         fi
         cnt=$((cnt - 1))
     done
+
+    if [ $cnt -eq 0 ]; then
+        fail "<$file> does not exist."
+    fi
 }
 
 wait_file_stabilize() {
-    local -r file=$1
+    local -r polling=$1
+    local -r file=$2
     local timestamp=
     timestamp=$(date -r "$file" +%s)
 
     local cnt=30
     while [ $cnt -gt 0 ]; do
-        sleep 5
+        sleep "$polling"
         now=$(date -r "$file" +%s)
         if [ "$timestamp" = "$now" ]; then
             break
@@ -150,7 +170,32 @@ wait_file_stabilize() {
 }
 
 wait_file() {
-    wait_file_exists "$1" && wait_file_stabilize "$1"
+    local polling
+    local positional_args
+
+    polling=5
+    positional_args=()
+
+    for i in "$@"; do
+        case $1 in
+            -p=*)
+                polling="${i#*=}"
+                shift
+                ;;
+            -*)
+                fail "Unknown option $1"
+                return 1
+                ;;
+            *)
+                positional_args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    set -- "${positional_args[@]}"
+
+    wait_file_exists "$polling" "$1" && wait_file_stabilize "$polling" "$1"
 }
 
 file_size() {

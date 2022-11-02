@@ -7,9 +7,13 @@ setup() {
     load helper
     PATH="$BATS_TEST_DIRNAME/..:$PATH"
     helper_init
-    if [ -z ${API_HOST+x} ]; then
-        API_HOST=127.0.0.1
+    if [ -z ${DCP_API_HOST+x} ]; then
+        DCP_API_HOST=127.0.0.1
     fi
+    if [ -z ${DCP_API_PORT+x} ]; then
+        DCP_API_PORT=49329
+    fi
+    assure_api_online $DCP_API_HOST $DCP_API_PORT
     daemon_spawn schedy -u http://"$API_HOST":49329 -k change-me
     download PF02545.hmm
     download PF02545.dcp
