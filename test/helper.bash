@@ -14,13 +14,14 @@ assure_api_online() {
     local -r host=$1
     local -r port=$2
 
-    if ! status="$(curl -s -D - -o /dev/null "http://$host:$port" | head -1)"; then
+    if ! status="$(curl -s -D - -o /dev/null "http://$host:$port")"; then
         fail "API <$host:$port> not responding."
-        return
-    fi
-    IFS=', ' read -r -a validate <<<"$status"
-    if [ "${validate[-2]}" != "200" ]; then
-        fail "API <$host:$port> not responding."
+    else
+        status="$(echo "$status" | head -1)"
+        IFS=', ' read -r -a validate <<<"$status"
+        if [ "${validate[-2]}" != "200" ]; then
+            fail "API <$host:$port> not responding."
+        fi
     fi
 }
 

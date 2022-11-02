@@ -57,7 +57,7 @@ char **msg_argv(struct msg *msg) { return sharg_argv(&msg->cmd); }
 
 void msg_shift(struct msg *msg) { sharg_shift(&msg->cmd); }
 
-char const *msg_cmd(struct msg const *msg) { return msg->cmd.argv[0]; }
+char const *msg_cmd(struct msg const *msg) { return msg_str(msg, 0); }
 
 char const *msg_str(struct msg const *msg, int idx)
 {
