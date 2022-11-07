@@ -11,8 +11,9 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
+cpmaddpackage("gh:EBI-Metagenomics/h3client@0.3.2")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.1.4")
-cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.7")
+cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.8")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.3.1")
 cpmaddpackage(
   NAME
@@ -111,6 +112,7 @@ add_library(
   src/scan/thread.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
+target_link_libraries(deciphon PUBLIC H3C::h3c)
 target_link_libraries(deciphon PUBLIC CURL::libcurl)
 target_link_libraries(deciphon PUBLIC HMR::hmr)
 target_link_libraries(deciphon PUBLIC IMM::imm)
