@@ -47,5 +47,5 @@ static void fn_start(struct msg *msg)
 static void fn_stop(struct msg *msg)
 {
     if (msg_check(msg, "ss")) return;
-    hmmer_stop(msg_str(msg, 1));
+    hmmer_stop();
 }

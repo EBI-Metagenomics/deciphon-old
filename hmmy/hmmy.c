@@ -39,7 +39,6 @@ int main(int argc, char *argv[])
     parent_open(&parent);
 
     hmmer_init();
-
     global_run();
     global_cleanup();
 
