@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-enum : long
+enum
 {
     TIMEOUT = 5000,
 };
