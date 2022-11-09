@@ -12,7 +12,7 @@ void parent_init(struct parent *parent, on_read2_fn_t *on_read,
     parent->output.cb.on_error = on_error;
 }
 
-void parent_open(struct parent *parent)
+void parent_start(struct parent *parent)
 {
     input_start(&parent->input);
     output_start(&parent->output);
@@ -23,7 +23,7 @@ void parent_send(struct parent *parent, char const *string)
     if (string) writer_put(&parent->output.writer, string);
 }
 
-void parent_close(struct parent *parent)
+void parent_stop(struct parent *parent)
 {
     input_stop(&parent->input);
     input_close(&parent->input);

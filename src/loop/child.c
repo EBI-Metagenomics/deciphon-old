@@ -31,7 +31,7 @@ void child_init(struct child *child, on_read2_fn_t *on_read,
 
 static void on_exit_fwd(uv_process_t *proc, int64_t exit_status, int sig);
 
-void child_spawn(struct child *child, char const *args[])
+void child_start(struct child *child, char const *args[])
 {
     child->opts.stdio = child->stdio;
     child->opts.stdio_count = 3;
@@ -51,7 +51,7 @@ void child_send(struct child *child, char const *string)
     if (string) writer_put(&child->output.writer, string);
 }
 
-void child_kill(struct child *child)
+void child_stop(struct child *child)
 {
     if (!child->alive) return;
     uv_pid_t pid = uv_process_get_pid(&child->proc);

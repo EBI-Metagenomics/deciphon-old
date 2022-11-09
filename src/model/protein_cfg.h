@@ -20,6 +20,9 @@ static inline struct protein_cfg protein_cfg(enum entry_dist entry_dist,
 }
 
 #define PROTEIN_CFG_DEFAULT                                                    \
-    (struct protein_cfg) { ENTRY_DIST_OCCUPANCY, DEFAULT_EPSILON }
+    (struct protein_cfg)                                                       \
+    {                                                                          \
+        ENTRY_DIST_OCCUPANCY, DEFAULT_EPSILON                                  \
+    }
 
 #endif

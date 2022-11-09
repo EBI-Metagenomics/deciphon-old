@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
     if (api_init(url, key)) global_die();
     parent_init(&parent, &on_read, &terminate, &terminate);
-    parent_open(&parent);
+    parent_start(&parent);
 
     return global_run();
 }
@@ -62,4 +62,4 @@ static void on_read(char *line)
     (*cmd_fn)(&msg);
 }
 
-static void on_term(void) { parent_close(&parent); }
+static void on_term(void) { parent_stop(&parent); }

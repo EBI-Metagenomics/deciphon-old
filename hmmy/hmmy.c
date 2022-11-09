@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     }
 
     parent_init(&parent, &on_read, &terminate, &terminate);
-    parent_open(&parent);
+    parent_start(&parent);
     hmmer_init(podman);
     return global_run();
 }
@@ -67,7 +67,7 @@ static void on_term(void)
 {
     debug("aqui");
     hmmer_stop();
-    parent_close(&parent);
+    parent_stop(&parent);
 }
 
 static char const *find_podman(void)

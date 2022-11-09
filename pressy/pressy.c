@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
     parent_init(&parent, &on_read, &terminate, &terminate);
-    parent_open(&parent);
+    parent_start(&parent);
     presser_init();
 
     return global_run();
@@ -56,5 +56,5 @@ static void on_read(char *line)
 static void on_term(void)
 {
     presser_cancel(2500);
-    parent_close(&parent);
+    parent_stop(&parent);
 }

@@ -6,7 +6,10 @@
 typedef atomic_flag spinlock_t;
 
 #define SPINLOCK_INIT                                                          \
-    (spinlock_t) { 0 }
+    (spinlock_t)                                                               \
+    {                                                                          \
+        0                                                                      \
+    }
 
 static inline void spinlock_lock(spinlock_t *lock)
 {
