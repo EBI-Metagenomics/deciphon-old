@@ -41,9 +41,7 @@ int main(int argc, char *argv[])
     presser_init();
 
     global_run();
-    global_cleanup();
-
-    return EXIT_SUCCESS;
+    return global_cleanup();
 }
 
 static void on_read(char *line)

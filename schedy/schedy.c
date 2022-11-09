@@ -49,10 +49,7 @@ int main(int argc, char *argv[])
     parent_open(&parent);
 
     global_run();
-    global_cleanup();
-    api_cleanup();
-
-    return EXIT_SUCCESS;
+    return global_cleanup();
 }
 
 static void on_read(char *line)

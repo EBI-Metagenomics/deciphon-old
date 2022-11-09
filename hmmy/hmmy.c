@@ -5,6 +5,7 @@
 #include "core/logy.h"
 #include "core/msg.h"
 #include "core/pidfile.h"
+#include "fs.h"
 #include "hmmer.h"
 #include "loop/parent.h"
 
@@ -13,6 +14,7 @@ struct parent parent = {0};
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
     {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
+    {"podman", 'P', ARGL_TEXT("PODMAN", ARGL_NULL), "Podman executable file."},
     ARGL_DEFAULT,
     ARGL_END,
 };
@@ -25,6 +27,7 @@ static struct argl argl = {.options = options,
 static void on_read(char *line);
 static void on_term(void);
 static void terminate(void) { global_terminate(); }
+static char const *find_podman(void);
 
 int main(int argc, char *argv[])
 {
@@ -32,17 +35,22 @@ int main(int argc, char *argv[])
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
     int loglvl = argl_get(&argl, "loglevel")[0] - '0';
+    char const *podman =
+        argl_has(&argl, "podman") ? argl_get(&argl, "podman") : find_podman();
 
     global_init(on_term, argv[0], loglvl);
+    if (!podman)
+    {
+        error("Please, provide a valid executable path to podman.");
+        return EXIT_FAILURE;
+    }
 
     parent_init(&parent, &on_read, &terminate, &terminate);
     parent_open(&parent);
 
-    hmmer_init();
+    hmmer_init(podman);
     global_run();
-    global_cleanup();
-
-    return EXIT_SUCCESS;
+    return global_cleanup();
 }
 
 static void on_read(char *line)
@@ -58,6 +66,20 @@ static void on_read(char *line)
 
 static void on_term(void)
 {
-    hmmer_cancel(2500);
+    debug("aqui");
+    hmmer_stop();
     parent_close(&parent);
+}
+
+static char const *find_podman(void)
+{
+    static char const *paths[] = {"/usr/bin/podman", "/opt/homebrew/bin/podman",
+                                  NULL};
+    char const **p = &paths[0];
+    while (p)
+    {
+        if (fs_exists(*p)) return *p;
+        ++p;
+    }
+    return NULL;
 }

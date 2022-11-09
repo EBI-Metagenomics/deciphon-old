@@ -3,14 +3,21 @@
 
 #include <stdbool.h>
 
-void hmmer_init(void);
+enum hmmer_state
+{
+    HMMER_OFF,
+    HMMER_BOOT,
+    HMMER_READY,
+    HMMER_RUN,
+    HMMER_DONE,
+    HMMER_FAIL,
+};
+
+void hmmer_init(char const *podman);
 void hmmer_start(char const *hmm_file);
 void hmmer_stop(void);
-void hmmer_reset(void);
-bool hmmer_is_running(void);
-bool hmmer_is_done(void);
-char const *hmmer_filename(void);
-int hmmer_cancel(int timeout_msec);
-char const *hmmer_state_string(void);
+enum hmmer_state hmmer_state(void);
+char const *hmmer_hmmfile(void);
+void hmmer_cleanup(void);
 
 #endif

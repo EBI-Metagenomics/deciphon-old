@@ -1,33 +1,43 @@
 #include "hmmer.h"
+#include "boot.h"
 #include "client.h"
-#include "core/fmt.h"
-#include "core/global.h"
-#include "core/limits.h"
-#include "core/logy.h"
-#include "loop/proc.h"
 #include "server.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
 
-void hmmer_init(void)
+static enum hmmer_state state = HMMER_OFF;
+
+void hmmer_init(char const *podman)
 {
-    server_init("/opt/homebrew/bin/podman");
-    client_init(global_exedir());
+    state = HMMER_OFF;
+    server_init(podman);
+    client_init();
+    boot_init();
 }
 
-void hmmer_start(char const *hmm_file) {}
+static void boot_end(bool succeed)
+{
+    state = succeed ? HMMER_READY : HMMER_FAIL;
+}
 
-void hmmer_stop(void) {}
+void hmmer_start(char const *hmm_file)
+{
+    boot_start(hmm_file, &boot_end);
+    state = HMMER_BOOT;
+}
 
-void hmmer_reset(void) {}
+void hmmer_stop(void)
+{
+    boot_stop();
+    client_stop();
+    server_stop();
+}
 
-bool hmmer_is_running(void) { return false; }
+enum hmmer_state hmmer_state(void) { return state; }
 
-bool hmmer_is_done(void) { return false; }
+char const *hmmer_hmmfile(void) { return server_hmmfile(); }
 
-char const *hmmer_filename(void) { return ""; }
-
-int hmmer_cancel(int timeout_msec) { return 0; }
-
-char const *hmmer_state_string(void) {}
+void hmmer_cleanup(void)
+{
+    server_cleanup();
+    client_cleanup();
+    boot_cleanup();
+}

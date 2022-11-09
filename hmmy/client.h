@@ -1,16 +1,12 @@
 #ifndef HMMY_CLIENT_H
 #define HMMY_CLIENT_H
 
-enum
-{
-    CLIENT_OFF,
-    CLIENT_ON,
-    CLIENT_FAIL,
-};
+#include "state.h"
 
-void client_init(char const *exedir);
+void client_init(void);
 void client_start(void);
-int client_state(void);
 void client_stop(void);
+enum state client_state(void);
+void client_cleanup(void);
 
 #endif

@@ -43,9 +43,7 @@ int main(int argc, char *argv[])
     broker_init(repeat, cfg_uri(), cfg_key());
 
     global_run();
-    global_cleanup();
-
-    return EXIT_SUCCESS;
+    return global_cleanup();
 }
 
 static void on_term(void) { broker_terminate(); }

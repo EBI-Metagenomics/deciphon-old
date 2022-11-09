@@ -6,23 +6,16 @@
 #include "hmmy.h"
 
 #define CMD_MAP(X)                                                             \
-    X(CANCEL, cancel, "")                                                      \
     X(ECHO, echo, "[...]")                                                     \
     X(HELP, help, "")                                                          \
     X(START, start, "HMM_FILE")                                                \
-    X(STOP, stop, "HMM_FILE")
+    X(STOP, stop, "")                                                          \
+    X(STATE, state, "")                                                        \
+    X(SCAN, scan, "")
 
 #define COMMAND_TEMPLATE_DEF
 #include "core/command_template.h"
 #undef COMMAND_TEMPLATE_DEF
-
-static void fn_cancel(struct msg *msg)
-{
-    if (msg_check(msg, "s")) return;
-
-    char const *ans = hmmer_cancel(0) ? FAIL : OK;
-    parent_send(&parent, msg_ctx(msg, ans));
-}
 
 static void fn_echo(struct msg *msg) { parent_send(&parent, msg_unparse(msg)); }
 
@@ -46,6 +39,22 @@ static void fn_start(struct msg *msg)
 
 static void fn_stop(struct msg *msg)
 {
-    if (msg_check(msg, "ss")) return;
+    if (msg_check(msg, "s")) return;
     hmmer_stop();
+}
+
+static void fn_state(struct msg *msg)
+{
+    if (msg_check(msg, "s")) return;
+    if (hmmer_state() == HMMER_OFF) parent_send(&parent, "OFF");
+    if (hmmer_state() == HMMER_BOOT) parent_send(&parent, "BOOT");
+    if (hmmer_state() == HMMER_READY) parent_send(&parent, "READY");
+    if (hmmer_state() == HMMER_RUN) parent_send(&parent, "RUN");
+    if (hmmer_state() == HMMER_DONE) parent_send(&parent, "DONE");
+    if (hmmer_state() == HMMER_FAIL) parent_send(&parent, "FAIL");
+}
+
+static void fn_scan(struct msg *msg)
+{
+    if (msg_check(msg, "ss")) return;
 }

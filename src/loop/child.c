@@ -25,6 +25,7 @@ void child_init(struct child *child, on_read2_fn_t *on_read,
     child->stdio[2].data.fd = STDERR_FILENO;
 
     child->alive = false;
+    child->exit_status = 0;
 }
 
 static void on_exit_fwd(uv_process_t *proc, int64_t exit_status, int sig);
@@ -61,6 +62,8 @@ void child_kill(struct child *child)
     child->alive = false;
 }
 
+int child_exit_status(struct child const *child) { return child->exit_status; }
+
 static void on_exit_fwd(uv_process_t *proc, int64_t exit_status, int sig)
 {
     int rc = (int)exit_status;
@@ -69,5 +72,6 @@ static void on_exit_fwd(uv_process_t *proc, int64_t exit_status, int sig)
     input_close(&child->input);
     output_close(&child->output);
     uv_close((uv_handle_t *)proc, NULL);
+    child->exit_status = rc;
     (*child->on_exit)();
 }

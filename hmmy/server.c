@@ -1,14 +1,23 @@
 #include "server.h"
+#include "core/global.h"
 #include "core/logy.h"
 #include "loop/child.h"
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
+enum : long
+{
+    TIMEOUT = 5000,
+};
+
 static struct child child = {0};
+static enum state state = OFF;
+static long time_of_start = 0;
 
 static void on_read(char *line);
-static void on_eof(void);
-static void on_error(void);
+static void on_eof(void) {}
+static void on_error(void) { child_kill(&child); }
 static void on_exit(void);
 
 static char exepath[FILENAME_MAX] = "";
@@ -34,11 +43,19 @@ static char const *argv[] = {exepath,
                              hmmfile,
                              NULL};
 
-void server_init(char const *podman_file) { strcpy(exepath, podman_file); }
+void server_init(char const *podman_file)
+{
+    strcpy(exepath, podman_file);
+    state = OFF;
+}
 
 void server_start(char const *hmm_file)
 {
-    strcpy(volume, "/Users/horta/code/hmmy/");
+    if (state != OFF && state != FAIL) server_stop();
+    time_of_start = global_now();
+
+    strcpy(volume, global_exedir());
+    strcat(volume, "/");
     strcat(volume, hmm_file);
     strcat(volume, ":/app/data/");
     strcat(volume, hmm_file);
@@ -46,16 +63,39 @@ void server_start(char const *hmm_file)
 
     child_init(&child, &on_read, &on_eof, &on_error, &on_exit);
     child_spawn(&child, argv);
+    state = BOOT;
 }
 
-int server_state(void) { return SERVER_OFF; }
+void server_stop(void) { child_kill(&child); }
+
+enum state server_state(void)
+{
+    if (state == BOOT && global_now() - time_of_start >= TIMEOUT)
+    {
+        state = FAIL;
+        server_stop();
+    }
+    return state;
+}
+
+char const *server_hmmfile(void) { return hmmfile; }
 
 void server_cleanup(void) { child_kill(&child); }
 
-static void on_read(char *line) { debug("%s: %s", __FUNCTION__, line); }
+static void on_read(char *line)
+{
+    static char const ready[] = "Handling worker 127.0.0.1";
+    if (!strncmp(ready, line, sizeof ready - 1))
+    {
+        info("h3daemon is online");
+        state = ON;
+    }
+}
 
-static void on_eof(void) { debug("%s", __FUNCTION__); }
-
-static void on_error(void) { debug("%s", __FUNCTION__); }
-
-static void on_exit(void) { debug("%s", __FUNCTION__); }
+static void on_exit(void)
+{
+    if (child_exit_status(&child))
+        state = FAIL;
+    else
+        state = OFF;
+}

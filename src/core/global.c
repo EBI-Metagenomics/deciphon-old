@@ -50,22 +50,21 @@ char const *global_exepath(void) { return exepath; }
 
 char const *global_exedir(void) { return exedir; }
 
+long global_now(void) { return (long)uv_now(global_loop()); }
+
 struct uv_loop_s *global_loop(void) { return uv_default_loop(); }
 
 void global_terminate(void)
 {
-    if (uv_async_send(&async)) exit(1);
+    if (uv_async_send(&async)) exit(EXIT_FAILURE);
 }
 
 void global_run(void)
 {
-    if (uv_run(global_loop(), UV_RUN_DEFAULT)) exit(1);
+    if (uv_run(global_loop(), UV_RUN_DEFAULT)) exit(EXIT_FAILURE);
 }
 
-void global_cleanup(void)
-{
-    if (uv_loop_close(global_loop())) exit(1);
-}
+int global_cleanup(void) { return uv_loop_close(global_loop()); }
 
 static void terminate(struct uv_handle_s *handle)
 {
@@ -85,14 +84,14 @@ static void sigterm_cb(struct uv_signal_s *handle, int signum)
 {
     UNUSED(handle, signum);
     uv_signal_stop(&sigterm);
-    if (uv_async_send(&async)) exit(1);
+    if (uv_async_send(&async)) exit(EXIT_FAILURE);
 }
 
 static void sigint_cb(struct uv_signal_s *handle, int signum)
 {
     UNUSED(handle, signum);
     uv_signal_stop(&sigint);
-    if (uv_async_send(&async)) exit(1);
+    if (uv_async_send(&async)) exit(EXIT_FAILURE);
 }
 
 static void logprinter(char const *string, void *arg)

@@ -16,6 +16,7 @@ struct child
 
     on_exit_fn_t *on_exit;
     bool alive;
+    int exit_status;
 };
 
 void child_init(struct child *, on_read2_fn_t *, on_eof2_fn_t *,
@@ -23,5 +24,6 @@ void child_init(struct child *, on_read2_fn_t *, on_eof2_fn_t *,
 void child_spawn(struct child *, char const *args[]);
 void child_send(struct child *, char const *string);
 void child_kill(struct child *);
+int child_exit_status(struct child const *);
 
 #endif
