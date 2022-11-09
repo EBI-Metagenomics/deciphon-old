@@ -31,26 +31,25 @@ static char const *find_podman(void);
 
 int main(int argc, char *argv[])
 {
+    global_init(on_term, argv[0]);
+
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
-    int loglvl = argl_get(&argl, "loglevel")[0] - '0';
+
+    global_setlog(argl_get(&argl, "loglevel")[0] - '0');
     char const *podman =
         argl_has(&argl, "podman") ? argl_get(&argl, "podman") : find_podman();
-
-    global_init(on_term, argv[0], loglvl);
     if (!podman)
     {
         error("Please, provide a valid executable path to podman.");
-        return EXIT_FAILURE;
+        global_die();
     }
 
     parent_init(&parent, &on_read, &terminate, &terminate);
     parent_open(&parent);
-
     hmmer_init(podman);
-    global_run();
-    return global_cleanup();
+    return global_run();
 }
 
 static void on_read(char *line)

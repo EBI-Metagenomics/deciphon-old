@@ -35,21 +35,20 @@ static void terminate(void) { global_terminate(); }
 
 int main(int argc, char *argv[])
 {
+    global_init(on_term, argv[0]);
+
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
-    int loglvl = argl_get(&argl, "loglevel")[0] - '0';
     char const *url = argl_get(&argl, "url");
     char const *key = argl_get(&argl, "key");
 
-    global_init(on_term, argv[0], loglvl);
-    if (api_init(url, key)) return EXIT_FAILURE;
-
+    global_setlog(argl_get(&argl, "loglevel")[0] - '0');
+    if (api_init(url, key)) global_die();
     parent_init(&parent, &on_read, &terminate, &terminate);
     parent_open(&parent);
 
-    global_run();
-    return global_cleanup();
+    return global_run();
 }
 
 static void on_read(char *line)

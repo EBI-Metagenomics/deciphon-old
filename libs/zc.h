@@ -133,7 +133,7 @@ void *zc_mempool_new_object(struct mempool *);
 void zc_mempool_del_object(struct mempool *, void *object);
 
 char *zc_basename(char const *path);
-char *zc_dirname(char *path);
+char *zc_dirname(char const *path);
 
 char *zc_strdup(const char *s);
 size_t zc_strlcat(char *dst, char const *src, size_t dsize);

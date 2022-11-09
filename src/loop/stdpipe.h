@@ -2,8 +2,6 @@
 #define LOOP_STDPIPE_H
 
 #include "uv.h"
-#include <stdbool.h>
-#include <unistd.h>
 
 struct uv_loop_s;
 

@@ -1,6 +1,7 @@
 #include "loop/child.h"
 #include "core/global.h"
 #include "core/logy.h"
+#include <unistd.h>
 
 void child_init(struct child *child, on_read2_fn_t *on_read,
                 on_eof2_fn_t *on_eof, on_error2_fn_t *on_error,

@@ -1,4 +1,5 @@
 #include "loop/parent.h"
+#include <unistd.h>
 
 void parent_init(struct parent *parent, on_read2_fn_t *on_read,
                  on_eof2_fn_t *on_eof, on_error2_fn_t *on_error)

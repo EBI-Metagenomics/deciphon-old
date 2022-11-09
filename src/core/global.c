@@ -20,9 +20,9 @@ static void sigterm_cb(struct uv_signal_s *handle, int signum);
 static void sigint_cb(struct uv_signal_s *handle, int signum);
 static void logprinter(char const *string, void *arg);
 
-void global_init(on_term_fn_t *on_term, char *const arg0, int log_level)
+void global_init(on_term_fn_t *on_term, char *const arg0)
 {
-    zlog_setup(logprinter, stderr, log_level);
+    global_setlog(ZLOG_NOTSET);
     zc_strlcpy(title, arg0, sizeof title);
     char *t = zc_basename(title);
     memmove(title, t, strlen(t) + 1);
@@ -44,6 +44,8 @@ void global_init(on_term_fn_t *on_term, char *const arg0, int log_level)
     info("starting");
 }
 
+void global_setlog(int log_level) { zlog_setup(logprinter, stderr, log_level); }
+
 char const *global_title(void) { return title; }
 
 char const *global_exepath(void) { return exepath; }
@@ -59,12 +61,17 @@ void global_terminate(void)
     if (uv_async_send(&async)) exit(EXIT_FAILURE);
 }
 
-void global_run(void)
+_Noreturn void global_die(void)
 {
-    if (uv_run(global_loop(), UV_RUN_DEFAULT)) exit(EXIT_FAILURE);
+    uv_loop_close(global_loop());
+    exit(EXIT_FAILURE);
 }
 
-int global_cleanup(void) { return uv_loop_close(global_loop()); }
+int global_run(void)
+{
+    if (uv_run(global_loop(), UV_RUN_DEFAULT)) exit(EXIT_FAILURE);
+    return uv_loop_close(global_loop());
+}
 
 static void terminate(struct uv_handle_s *handle)
 {

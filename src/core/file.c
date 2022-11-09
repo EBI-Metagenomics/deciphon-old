@@ -43,9 +43,6 @@ enum rc file_hash(char const *filepath, long *hash)
     return rc;
 }
 
-static_assert(__builtin_types_compatible_p(typeof(XXH64_hash_t),
-                                           typeof(uint64_t)));
-
 enum rc file_phash(FILE *fp, long *hash)
 {
     enum rc rc = RC_EFAIL;

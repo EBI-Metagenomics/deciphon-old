@@ -2,7 +2,6 @@
 #include "core/global.h"
 #include "core/logy.h"
 #include "loop/child.h"
-#include <stdio.h>
 #include <string.h>
 
 enum

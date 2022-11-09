@@ -26,10 +26,11 @@ static void on_term(void);
 
 int main(int argc, char *argv[])
 {
+    global_init(on_term, argv[0]);
+
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
-    int loglvl = argl_get(&argl, "loglevel")[0] - '0';
 
     char const *polling = argl_get(&argl, "polling");
     if (!is_long(polling) || as_long(polling) < 0) argl_usage(&argl);
@@ -37,13 +38,10 @@ int main(int argc, char *argv[])
     repeat = repeat < 0 ? 0 : repeat;
     repeat = 1000 / repeat + 1000 % repeat;
 
-    global_init(on_term, argv[0], loglvl);
-
+    global_setlog(argl_get(&argl, "loglevel")[0] - '0');
     cfg_init();
     broker_init(repeat, cfg_uri(), cfg_key());
-
-    global_run();
-    return global_cleanup();
+    return global_run();
 }
 
 static void on_term(void) { broker_terminate(); }

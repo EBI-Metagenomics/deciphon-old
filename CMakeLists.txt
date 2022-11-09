@@ -11,10 +11,10 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-cpmaddpackage("gh:EBI-Metagenomics/h3client@0.3.5")
-cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.1.4")
-cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.8")
-cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.3.1")
+cpmaddpackage("gh:EBI-Metagenomics/h3client@0.4.0")
+cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.2.1")
+cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.10")
+cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.0")
 cpmaddpackage(
   NAME
   libuv
@@ -32,6 +32,7 @@ find_package(Threads REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_EXTENSIONS OFF)
 
 option(DEBUG_HTTP_REQUESTS "Debug HTTP requests" OFF)
 if(DEBUG_HTTP_REQUESTS)

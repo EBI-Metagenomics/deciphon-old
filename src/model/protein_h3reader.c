@@ -17,8 +17,8 @@ void protein_h3reader_init(struct protein_h3reader *reader,
 
 enum rc protein_h3reader_next(struct protein_h3reader *reader)
 {
-    enum hmr_rc hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
-    if (hmr_rc == HMR_ENDFILE) return RC_END;
+    int hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
+    if (hmr_rc == HMR_EOF) return RC_END;
 
     if (hmr_rc) return RC_EFAIL;
 
@@ -27,7 +27,7 @@ enum rc protein_h3reader_next(struct protein_h3reader *reader)
     if ((rc = protein_model_setup(&reader->model, core_size))) return rc;
 
     hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);
-    assert(hmr_rc != HMR_ENDFILE);
+    assert(hmr_rc != HMR_EOF);
 
     struct protein_trans t = {
         .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
@@ -66,7 +66,7 @@ enum rc protein_h3reader_next(struct protein_h3reader *reader)
         ++node_idx;
     }
     assert(node_idx == core_size);
-    assert(hmr_rc == HMR_ENDNODE);
+    assert(hmr_rc == HMR_END);
 
     return RC_OK;
 }
