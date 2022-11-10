@@ -15,20 +15,11 @@ cpmaddpackage("gh:EBI-Metagenomics/h3client@0.4.0")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.2.1")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.10")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.0")
-cpmaddpackage(
-  NAME
-  libuv
-  VERSION
-  1.44.2
-  GITHUB_REPOSITORY
-  libuv/libuv
-  OPTIONS
-  "LIBUV_BUILD_TESTS OFF"
-  "LIBUV_BUILD_BENCH OFF")
 
 find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
+find_package(LibUV REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 23)
@@ -113,13 +104,13 @@ add_library(
   src/scan/thread.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
-target_link_libraries(deciphon PUBLIC H3C::h3c)
-target_link_libraries(deciphon PUBLIC CURL::libcurl)
+target_link_libraries(deciphon PRIVATE H3C::h3c)
+target_link_libraries(deciphon PRIVATE CURL::libcurl)
 target_link_libraries(deciphon PUBLIC HMR::hmr)
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)
-target_link_libraries(deciphon PUBLIC OpenMP::OpenMP_C)
-target_link_libraries(deciphon PUBLIC uv_a)
+target_link_libraries(deciphon PRIVATE OpenMP::OpenMP_C)
+target_link_libraries(deciphon PRIVATE ${LIBUV_LIBRARIES})
 
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
 
@@ -127,7 +118,7 @@ target_include_directories(
   deciphon
   PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
          $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>
-         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src> ${LIBUV_INCLUDE_DIRS}
   PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
