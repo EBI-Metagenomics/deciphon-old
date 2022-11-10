@@ -174,6 +174,8 @@ int scanner_cancel(int timeout_msec)
 
 char const *scanner_state_string(void) { return state_string[self.state]; }
 
+void scanner_cleanup(void) {}
+
 static void after_work(struct uv_work_s *req, int status)
 {
     (void)req;

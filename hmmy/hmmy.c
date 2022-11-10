@@ -26,9 +26,11 @@ static struct argl argl = {.options = options,
 
 static void on_read(char *line);
 static void on_term(void);
-static bool on_linger(void) { return false; }
-static void on_exit(void) {}
+static bool on_linger(void) { return !parent_exitted(&parent); }
+static void on_exit(void);
 static char const *find_podman(void);
+
+static void terminate(void) { global_terminate(); }
 
 int main(int argc, char *argv[])
 {
@@ -47,7 +49,7 @@ int main(int argc, char *argv[])
         global_die();
     }
 
-    parent_init(&parent, &on_read, &global_terminate, &global_terminate);
+    parent_init(&parent, &on_read, &terminate, &terminate, &terminate);
     parent_start(&parent);
     hmmer_init(podman);
 
@@ -69,6 +71,12 @@ static void on_term(void)
 {
     hmmer_stop();
     parent_stop(&parent);
+}
+
+static void on_exit(void)
+{
+    hmmer_cleanup();
+    parent_cleanup(&parent);
 }
 
 static char const *find_podman(void)

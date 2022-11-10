@@ -20,5 +20,6 @@ struct writer
 void writer_init(struct writer *, struct uv_pipe_s *, on_error2_fn_t *);
 void writer_try_put(struct writer *, char const *string);
 void writer_put(struct writer *, char const *string);
+void writer_cleanup(struct writer *);
 
 #endif

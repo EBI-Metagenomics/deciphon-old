@@ -5,40 +5,62 @@
 #include <stdlib.h>
 #include <string.h>
 
-void reader_init(struct reader *reader, struct uv_pipe_s *pipe,
+void reader_init(struct reader *rdr, struct uv_pipe_s *pipe,
                  on_eof_fn_t *on_eof, on_error_fn_t *on_error,
                  on_read_fn_t *on_read, void *arg)
 {
-    reader->pipe = pipe;
-    reader->pipe->data = reader;
+    rdr->pipe = pipe;
+    rdr->pipe->data = rdr;
 
-    reader->cb.on_eof = on_eof;
-    reader->cb.on_error = on_error;
-    reader->cb.on_read = on_read;
-    reader->cb.arg = arg;
+    rdr->no_start = false;
+    rdr->no_stop = true;
 
-    reader->pos = reader->buff;
-    reader->end = reader->pos;
+    rdr->cb.on_eof = on_eof;
+    rdr->cb.on_error = on_error;
+    rdr->cb.on_read = on_read;
+    rdr->cb.arg = arg;
+
+    rdr->pos = rdr->buff;
+    rdr->end = rdr->pos;
 }
 
-static void start_reading(struct reader *);
-static void stop_reading(struct reader *);
+static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
+                       uv_buf_t *buf);
+static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 
-void reader_start(struct reader *reader) { start_reading(reader); }
-
-void reader_stop(struct reader *reader) { stop_reading(reader); }
-
-static void process_error(struct reader *reader)
+void reader_start(struct reader *rdr)
 {
-    stop_reading(reader);
-    (*reader->cb.on_error)(reader->cb.arg);
+    if (rdr->no_start) return;
+    rdr->no_start = true;
+    rdr->no_stop = false;
+
+    rdr->pos = rdr->buff;
+    rdr->end = rdr->pos;
+    int rc = uv_read_start((uv_stream_t *)rdr->pipe, &alloc_buff, &read_pipe);
+    if (rc) fatal("uv_read_start: %s", uv_strerror(rc));
 }
 
-static void process_newlines(struct reader *reader)
+void reader_stop(struct reader *rdr)
 {
-    stop_reading(reader);
-    reader->end = reader->pos;
-    reader->pos = reader->buff;
+    if (rdr->no_stop) return;
+    rdr->no_stop = true;
+    rdr->no_start = false;
+
+    int rc = uv_read_stop((uv_stream_t *)rdr->pipe);
+    if (rc) fatal("uv_read_stop: %s", uv_strerror(rc));
+}
+
+static void process_error(struct reader *rdr)
+{
+    reader_stop(rdr);
+    (*rdr->cb.on_error)(rdr->cb.arg);
+}
+
+static void process_newlines(struct reader *rdr)
+{
+    reader_stop(rdr);
+    rdr->end = rdr->pos;
+    rdr->pos = rdr->buff;
 
     char *z = 0;
 
@@ -46,50 +68,50 @@ static void process_newlines(struct reader *reader)
     while (z)
     {
         *z = 0;
-        (*reader->cb.on_read)(reader->pos, reader->cb.arg);
-        reader->pos = z + 1;
+        (*rdr->cb.on_read)(rdr->pos, rdr->cb.arg);
+        rdr->pos = z + 1;
     enter:
-        z = memchr(reader->pos, '\n', (unsigned)(reader->end - reader->pos));
+        z = memchr(rdr->pos, '\n', (unsigned)(rdr->end - rdr->pos));
     }
-    if (reader->pos < reader->end)
+    if (rdr->pos < rdr->end)
     {
-        size_t n = reader->end - reader->pos;
-        memmove(reader->buff, reader->pos, n);
-        reader->pos = reader->buff + n;
+        size_t n = rdr->end - rdr->pos;
+        memmove(rdr->buff, rdr->pos, n);
+        rdr->pos = rdr->buff + n;
     }
-    start_reading(reader);
+    reader_start(rdr);
 }
 
 static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
-    struct reader *reader = stream->data;
+    struct reader *rdr = stream->data;
     if (nread < 0)
     {
         if (nread == UV_EOF)
-            (*reader->cb.on_eof)(reader->cb.arg);
+            (*rdr->cb.on_eof)(rdr->cb.arg);
         else
         {
             error("failed to read: %s", uv_strerror(nread));
-            process_error(reader);
+            process_error(rdr);
         }
     }
     else if (nread > 0)
     {
         assert(nread <= READER_LINE_SIZE);
         unsigned count = (unsigned)nread;
-        size_t avail = READER_BUFF_SIZE - (reader->pos - reader->buff);
+        size_t avail = READER_BUFF_SIZE - (rdr->pos - rdr->buff);
         if (avail < count)
         {
             error("not-enough-memory to read");
-            process_error(reader);
+            process_error(rdr);
             return;
         }
 
-        memcpy(reader->pos, buf->base, count);
-        reader->pos += count;
+        memcpy(rdr->pos, buf->base, count);
+        rdr->pos += count;
         if (memchr(buf->base, '\n', count))
         {
-            process_newlines(reader);
+            process_newlines(rdr);
         }
     }
 }
@@ -98,20 +120,13 @@ static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
                        uv_buf_t *buf)
 {
     (void)suggested_size;
-    struct reader *reader = handle->data;
-    *buf = uv_buf_init(reader->mem, READER_LINE_SIZE);
+    struct reader *rdr = handle->data;
+    *buf = uv_buf_init(rdr->mem, READER_LINE_SIZE);
 }
 
-static void start_reading(struct reader *rdr)
+void reader_cleanup(struct reader *rdr)
 {
-    rdr->pos = rdr->buff;
-    rdr->end = rdr->pos;
-    int rc = uv_read_start((uv_stream_t *)rdr->pipe, &alloc_buff, &read_pipe);
-    if (rc) fatal("uv_read_start: %s", uv_strerror(rc));
-}
-
-static void stop_reading(struct reader *reader)
-{
-    int rc = uv_read_stop((uv_stream_t *)reader->pipe);
-    if (rc) fatal("uv_read_stop: %s", uv_strerror(rc));
+    reader_stop(rdr);
+    rdr->no_start = true;
+    rdr->no_stop = true;
 }

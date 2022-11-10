@@ -55,7 +55,7 @@ void broker_init(long polling, char const *uri, char const *key)
 
     for (int i = 0; i <= SCHEDY_ID; ++i)
     {
-        strcat(proc_file[i], global_exedir());
+        strcpy(proc_file[i], global_exedir());
         strcat(proc_file[i], "/");
         strcat(proc_file[i], proc_name[i]);
         proc_args[i][0] = proc_file[i];

@@ -25,7 +25,9 @@ static struct argl argl = {.options = options,
 static void on_read(char *line);
 static void on_term(void);
 static bool on_linger(void) { return false; }
-static void on_exit(void) {}
+static void on_exit(void);
+
+static void terminate(void) { global_terminate(); }
 
 int main(int argc, char *argv[])
 {
@@ -36,7 +38,7 @@ int main(int argc, char *argv[])
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
 
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
-    parent_init(&parent, &on_read, &global_terminate, &global_terminate);
+    parent_init(&parent, &on_read, &terminate, &terminate, &terminate);
     parent_start(&parent);
     scanner_init();
 
@@ -58,4 +60,10 @@ static void on_term(void)
 {
     scanner_cancel(2500);
     parent_stop(&parent);
+}
+
+static void on_exit(void)
+{
+    scanner_cleanup();
+    parent_cleanup(&parent);
 }

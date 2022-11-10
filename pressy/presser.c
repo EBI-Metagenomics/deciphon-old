@@ -125,6 +125,8 @@ int presser_cancel(int timeout_msec)
 
 char const *presser_state_string(void) { return state_string[self.state]; }
 
+void presser_cleanup(void) {}
+
 static void after_work(struct uv_work_s *req, int status)
 {
     (void)req;

@@ -1,38 +1,36 @@
 #include "loop/input.h"
 #include "core/global.h"
-#include "core/logy.h"
 #include <ctype.h>
 
-void input_init(struct input *i, int fd)
+void input_init(struct input *i, int fd, on_exit2_fn_t *on_exit, void *arg)
 {
-    stdpipe_init(&i->pipe, global_loop());
+    stdpipe_init(&i->pipe, global_loop(), on_exit, arg);
     if (fd >= 0) stdpipe_open(&i->pipe, fd);
-    i->cb.on_eof = NULL;
-    i->cb.on_error = NULL;
-    i->cb.on_read = NULL;
+    i->on_eof = NULL;
+    i->on_error = NULL;
+    i->on_read = NULL;
 }
 
 void input_setup(struct input *i, on_eof2_fn_t *on_eof,
                  on_error2_fn_t *on_error, on_read2_fn_t *on_read)
 {
-    i->cb.on_eof = on_eof;
-    i->cb.on_error = on_error;
-    i->cb.on_read = on_read;
+    i->on_eof = on_eof;
+    i->on_error = on_error;
+    i->on_read = on_read;
 }
 
 static void fwd_eof(void *arg)
 {
-    debug("input end-of-file");
     struct input *i = arg;
     reader_stop(&i->reader);
-    if (i->cb.on_eof) (*i->cb.on_eof)();
+    if (i->on_eof) (*i->on_eof)();
 }
 
 static void fwd_error(void *arg)
 {
     struct input *i = arg;
     reader_stop(&i->reader);
-    if (i->cb.on_error) (*i->cb.on_error)();
+    if (i->on_error) (*i->on_error)();
 }
 
 static bool only_spaces(char const *string);
@@ -41,7 +39,7 @@ static void fwd_read(char *line, void *arg)
 {
     if (only_spaces(line)) return;
     struct input *i = arg;
-    if (i->cb.on_read) (*i->cb.on_read)(line);
+    if (i->on_read) (*i->on_read)(line);
 }
 
 void input_start(struct input *i)
@@ -52,7 +50,11 @@ void input_start(struct input *i)
 
 void input_stop(struct input *i) { reader_stop(&i->reader); }
 
-void input_close(struct input *i) { stdpipe_close(&i->pipe); }
+void input_cleanup(struct input *i)
+{
+    reader_cleanup(&i->reader);
+    stdpipe_close(&i->pipe);
+}
 
 static bool only_spaces(char const *string)
 {

@@ -16,5 +16,6 @@ int scanner_progress(void);
 int scanner_inc_progress(void);
 int scanner_cancel(int timeout_msec);
 char const *scanner_state_string(void);
+void scanner_cleanup(void);
 
 #endif

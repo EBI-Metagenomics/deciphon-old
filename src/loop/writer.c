@@ -41,6 +41,12 @@ void writer_put(struct writer *writer, char const *string)
     }
 }
 
+void writer_cleanup(struct writer *writer)
+{
+    /* TODO: finish it */
+    (void)writer;
+}
+
 static void write_fwd(struct uv_write_s *write, int rc)
 {
     struct writer_req *req = write->data;

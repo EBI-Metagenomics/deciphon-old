@@ -11,6 +11,7 @@ typedef void on_read_fn_t(char *line, void *arg);
 typedef void on_term_fn_t(void);
 typedef bool on_linger_fn_t(void);
 typedef void on_exit_fn_t(void);
+typedef void on_exit2_fn_t(void *arg);
 
 typedef void on_eof2_fn_t(void);
 typedef void on_error2_fn_t(void);
