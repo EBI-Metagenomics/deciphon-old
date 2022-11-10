@@ -37,6 +37,8 @@ if(OpenMP_FOUND)
   add_compile_definitions(DECIPHON_OPENM=1)
 endif()
 
+add_compile_definitions(_POSIX_C_SOURCE=200809L)
+
 add_library(
   deciphon
   libs/argless.c

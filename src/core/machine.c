@@ -1,3 +1,3 @@
-#include <unistd.h>
+#include "uv.h"
 
-int machine_ncpus(void) { return (int)sysconf(_SC_NPROCESSORS_ONLN); }
+int machine_ncpus(void) { return (int)uv_available_parallelism(); }
