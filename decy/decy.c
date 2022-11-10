@@ -22,11 +22,13 @@ static struct argl argl = {.options = options,
                            .doc = "Decy program.",
                            .version = "1.0.0"};
 
-static void on_term(void);
+static void on_term(void) { broker_terminate(); }
+static bool on_linger(void) { return false; }
+static void on_exit(void) {}
 
 int main(int argc, char *argv[])
 {
-    global_init(on_term, argv[0]);
+    global_init(&on_term, &on_linger, &on_exit, argv[0]);
 
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
@@ -41,7 +43,6 @@ int main(int argc, char *argv[])
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
     cfg_init();
     broker_init(repeat, cfg_uri(), cfg_key());
+
     return global_run();
 }
-
-static void on_term(void) { broker_terminate(); }

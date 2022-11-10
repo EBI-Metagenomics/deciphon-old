@@ -24,18 +24,19 @@ static struct argl argl = {.options = options,
 
 static void on_read(char *line);
 static void on_term(void);
-static void terminate(void) { global_terminate(); }
+static bool on_linger(void) { return false; }
+static void on_exit(void) {}
 
 int main(int argc, char *argv[])
 {
-    global_init(on_term, argv[0]);
+    global_init(&on_term, &on_linger, &on_exit, argv[0]);
 
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
 
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
-    parent_init(&parent, &on_read, &terminate, &terminate);
+    parent_init(&parent, &on_read, &global_terminate, &global_terminate);
     parent_start(&parent);
     scanner_init();
 

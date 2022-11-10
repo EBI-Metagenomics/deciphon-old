@@ -72,7 +72,7 @@ bool presser_start(char const *hmm)
     self.db[strlen(self.db) - 1] = 'p';
 
     atomic_store_explicit(&self.cancel, false, memory_order_release);
-    uv_queue_work(global_loop(), &self.request, work, after_work);
+    uv_queue_work(global_loop(), &self.request, &work, &after_work);
     self.last_progress = 0;
 
     return true;
@@ -96,7 +96,7 @@ int presser_inc_progress(void)
 
 int presser_cancel(int timeout_msec)
 {
-    info("Cancelling...");
+    info("cancelling...");
     if (!presser_is_running()) return RC_OK;
 
     if (atomic_load_explicit(&self.cancel, memory_order_consume))
@@ -143,12 +143,12 @@ static void work(struct uv_work_s *req)
     }
 
     progress_init(&self.progress, (long)db_press_nsteps(&self.db_press));
-    info("Found %u profiles. Pressing...", db_press_nsteps(&self.db_press));
+    info("found %u profiles. Pressing...", db_press_nsteps(&self.db_press));
     while (!(rc = db_press_step(&self.db_press)))
     {
         if (atomic_load_explicit(&self.cancel, memory_order_consume))
         {
-            info("Cancelled");
+            info("cancelled");
             self.state = CANCEL;
             db_press_cleanup(&self.db_press, false);
             return;
@@ -173,5 +173,5 @@ static void work(struct uv_work_s *req)
         return;
     }
     self.state = DONE;
-    info("Pressing has finished");
+    info("pressing has finished");
 }

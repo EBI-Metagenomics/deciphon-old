@@ -30,12 +30,13 @@ static struct argl argl = {.options = options,
                            .version = "1.0.0"};
 
 static void on_read(char *line);
-static void on_term(void);
-static void terminate(void) { global_terminate(); }
+static void on_term(void) { parent_stop(&parent); }
+static bool on_linger(void) { return false; }
+static void on_exit(void) {}
 
 int main(int argc, char *argv[])
 {
-    global_init(on_term, argv[0]);
+    global_init(&on_term, &on_linger, &on_exit, argv[0]);
 
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
@@ -45,7 +46,7 @@ int main(int argc, char *argv[])
 
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
     if (api_init(url, key)) global_die();
-    parent_init(&parent, &on_read, &terminate, &terminate);
+    parent_init(&parent, &on_read, &global_terminate, &global_terminate);
     parent_start(&parent);
 
     return global_run();
@@ -61,5 +62,3 @@ static void on_read(char *line)
 
     (*cmd_fn)(&msg);
 }
-
-static void on_term(void) { parent_stop(&parent); }

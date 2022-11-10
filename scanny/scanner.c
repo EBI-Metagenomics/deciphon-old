@@ -146,7 +146,7 @@ int scanner_inc_progress(void)
 
 int scanner_cancel(int timeout_msec)
 {
-    info("Cancelling...");
+    info("cancelling...");
     if (!scanner_is_running()) return RC_OK;
 
     if (atomic_load_explicit(&self.cancel, memory_order_consume))
@@ -200,7 +200,7 @@ static void work(struct uv_work_s *req)
 
     if (atomic_load_explicit(&self.cancel, memory_order_consume))
     {
-        info("Cancelled");
+        info("cancelled");
         self.state = STATE_CANCEL;
         scan_cleanup();
         return;
@@ -216,7 +216,7 @@ static void work(struct uv_work_s *req)
 
     if (atomic_load_explicit(&self.cancel, memory_order_consume))
     {
-        info("Cancelled");
+        info("cancelled");
         self.state = STATE_CANCEL;
         scan_cleanup();
         return;

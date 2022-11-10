@@ -5,7 +5,7 @@
 
 struct uv_loop_s;
 
-void global_init(on_term_fn_t *, char *const arg0);
+void global_init(on_term_fn_t *, on_linger_fn_t *, on_exit_fn_t *, char *const);
 void global_setlog(int log_level);
 char const *global_title(void);
 char const *global_exepath(void);
