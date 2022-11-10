@@ -1,5 +1,4 @@
 #include "cfg.h"
-#include "core/c23.h"
 #include "core/fmt.h"
 #include "core/logy.h"
 #include "dotenv.h"
@@ -17,7 +16,7 @@ static char uri[2048] = "http://127.0.0.1:49329";
 void cfg_init(void)
 {
     if (dotenv_load(".", true)) info("config file not found");
-    char const *str = nullptr;
+    char const *str = NULL;
 
     if ((str = getenv("DCP_NTHREADS")))
     {

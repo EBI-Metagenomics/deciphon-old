@@ -1,5 +1,4 @@
 #include "db/press.h"
-#include "core/c23.h"
 #include "core/logy.h"
 #include "core/pp.h"
 #include "zc.h"
@@ -13,8 +12,8 @@ static enum rc profile_write(struct db_press *p);
 
 enum rc db_press_init(struct db_press *p, char const *hmm, char const *db)
 {
-    p->writer.fp = nullptr;
-    p->reader.fp = nullptr;
+    p->writer.fp = NULL;
+    p->reader.fp = NULL;
 
     enum rc rc = RC_OK;
     if (!(p->reader.fp = fopen(hmm, "rb")))
@@ -43,8 +42,8 @@ enum rc db_press_init(struct db_press *p, char const *hmm, char const *db)
 cleanup:
     if (p->writer.fp) fclose(p->writer.fp);
     if (p->reader.fp) fclose(p->reader.fp);
-    p->writer.fp = nullptr;
-    p->reader.fp = nullptr;
+    p->writer.fp = NULL;
+    p->reader.fp = NULL;
     return rc;
 }
 

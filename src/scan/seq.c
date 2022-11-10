@@ -1,10 +1,9 @@
 #include "scan/seq.h"
-#include "core/c23.h"
 
 void seq_init(struct seq *seq, struct imm_abc const *abc)
 {
     seq->id = 0;
-    seq->name = nullptr;
+    seq->name = NULL;
     seq->iseq = imm_seq(imm_str(""), abc);
 }
 

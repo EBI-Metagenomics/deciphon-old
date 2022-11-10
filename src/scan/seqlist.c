@@ -1,5 +1,4 @@
 #include "scan/seqlist.h"
-#include "core/c23.h"
 #include "core/errmsg.h"
 #include "core/logy.h"
 #include "core/strings.h"
@@ -12,7 +11,7 @@
 #include <stdlib.h>
 
 static JR_DECLARE(parser, 128);
-static char *data = nullptr;
+static char *data = NULL;
 static int num_seqs = 0;
 static struct seq curr = {0};
 static enum rc errnum = RC_OK;
@@ -23,7 +22,7 @@ enum rc seqlist_init(char const *filepath, struct imm_abc const *abc)
 {
     JR_INIT(parser);
     seq_init(&curr, abc);
-    data = nullptr;
+    data = NULL;
     num_seqs = 0;
     errnum = RC_OK;
     errmsg[0] = '\0';
@@ -82,7 +81,7 @@ void seqlist_rewind(void)
 
 struct seq const *seqlist_next(void)
 {
-    if (jr_type(parser) == JR_SENTINEL) return nullptr;
+    if (jr_type(parser) == JR_SENTINEL) return NULL;
 
     struct imm_abc const *abc = imm_seq_abc(&curr.iseq);
     curr.id = jr_long_of(parser, "id");
@@ -94,7 +93,7 @@ struct seq const *seqlist_next(void)
     {
         int rc = jr_error();
         errnum = efail("%s", errfmt(errmsg, "parser: %s", jr_strerror(rc)));
-        return nullptr;
+        return NULL;
     }
 
     return &curr;
@@ -109,6 +108,6 @@ void seqlist_cleanup(void)
     if (data)
     {
         free(data);
-        data = nullptr;
+        data = NULL;
     }
 }
