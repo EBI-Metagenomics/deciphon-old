@@ -35,7 +35,7 @@
 #define PASTE(x, y) PASTE_(x, y)
 #define PASTE_(x, y) x##y
 
-#define UNUSED(...) UNUSED_n(PP_NARG(__VA_ARGS__), __VA_ARGS__)
+#define unused(...) UNUSED_n(PP_NARG(__VA_ARGS__), __VA_ARGS__)
 #define UNUSED_n(N, ...) PASTE(UNUSED_, N)(__VA_ARGS__)
 #define UNUSED_1(a) (void)(a)
 #define UNUSED_2(a, b)                                                         \

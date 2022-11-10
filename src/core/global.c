@@ -87,13 +87,13 @@ int global_run(void)
 
 static void call_exit(struct uv_handle_s *handle)
 {
-    UNUSED(handle);
+    unused(handle);
     (*on_exit_fn)();
 }
 
 static void linger_fwd(struct uv_timer_s *timer)
 {
-    UNUSED(timer);
+    unused(timer);
     if (global_now() - linger_start > LINGER_TIMEOUT || !(*on_linger_fn)())
     {
         if (uv_timer_stop(&linger_timer)) die();
@@ -104,7 +104,7 @@ static void linger_fwd(struct uv_timer_s *timer)
 
 static void terminate(struct uv_handle_s *handle)
 {
-    UNUSED(handle);
+    unused(handle);
     if (!--remain_handlers)
     {
         (*on_term_fn)();
@@ -116,7 +116,7 @@ static void terminate(struct uv_handle_s *handle)
 
 static void async_cb(struct uv_async_s *handle)
 {
-    UNUSED(handle);
+    unused(handle);
     uv_close((struct uv_handle_s *)&async, &terminate);
     uv_close((struct uv_handle_s *)&sigterm, &terminate);
     uv_close((struct uv_handle_s *)&sigint, &terminate);
@@ -124,14 +124,14 @@ static void async_cb(struct uv_async_s *handle)
 
 static void sigterm_cb(struct uv_signal_s *handle, int signum)
 {
-    UNUSED(handle, signum);
+    unused(handle, signum);
     if (uv_signal_stop(&sigterm)) die();
     if (uv_async_send(&async)) die();
 }
 
 static void sigint_cb(struct uv_signal_s *handle, int signum)
 {
-    UNUSED(handle, signum);
+    unused(handle, signum);
     if (uv_signal_stop(&sigint)) die();
     if (uv_async_send(&async)) die();
 }

@@ -69,7 +69,7 @@ static void fn_echo(struct msg *msg)
 
 static void fn_help(struct msg *msg)
 {
-    UNUSED(msg);
+    unused(msg);
     command_help_init();
 
 #define X(_, A, B) command_help_add(STRINGIFY(A), B);
