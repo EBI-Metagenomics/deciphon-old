@@ -46,12 +46,12 @@ static void fn_stop(struct msg *msg)
 static void fn_state(struct msg *msg)
 {
     if (msg_check(msg, "s")) return;
-    if (hmmer_state() == HMMER_OFF) parent_send(&parent, "OFF");
-    if (hmmer_state() == HMMER_BOOT) parent_send(&parent, "BOOT");
-    if (hmmer_state() == HMMER_READY) parent_send(&parent, "READY");
-    if (hmmer_state() == HMMER_RUN) parent_send(&parent, "RUN");
-    if (hmmer_state() == HMMER_DONE) parent_send(&parent, "DONE");
-    if (hmmer_state() == HMMER_FAIL) parent_send(&parent, "FAIL");
+    if (hmmer_state() == HMMER_OFF) parent_send(&parent, "off");
+    if (hmmer_state() == HMMER_BOOT) parent_send(&parent, "boot");
+    if (hmmer_state() == HMMER_READY) parent_send(&parent, "ready");
+    if (hmmer_state() == HMMER_RUN) parent_send(&parent, "run");
+    if (hmmer_state() == HMMER_DONE) parent_send(&parent, "done");
+    if (hmmer_state() == HMMER_FAIL) parent_send(&parent, "fail");
 }
 
 static void fn_scan(struct msg *msg)

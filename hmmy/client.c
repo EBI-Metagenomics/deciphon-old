@@ -26,6 +26,7 @@ void client_init(void)
 {
     strcpy(exepath, global_exedir());
     strcat(exepath, "/h3client");
+    child_init(&child, &on_read, &on_eof, &on_error, &on_exit);
 }
 
 void client_start(void)
@@ -33,7 +34,6 @@ void client_start(void)
     if (state != OFF && state != FAIL) client_stop();
     time_of_start = global_now();
 
-    child_init(&child, &on_read, &on_eof, &on_error, &on_exit);
     child_start(&child, argv);
     state = BOOT;
 }

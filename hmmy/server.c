@@ -47,6 +47,7 @@ void server_init(char const *podman_file)
 {
     strcpy(exepath, podman_file);
     state = OFF;
+    child_init(&child, &on_read, &on_eof, &on_error, &on_exit);
 }
 
 void server_start(char const *hmm_file)
@@ -61,7 +62,6 @@ void server_start(char const *hmm_file)
     strcat(volume, hmm_file);
     strcpy(hmmfile, hmm_file);
 
-    child_init(&child, &on_read, &on_eof, &on_error, &on_exit);
     child_start(&child, argv);
     state = BOOT;
 }
