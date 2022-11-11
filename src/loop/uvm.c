@@ -1,15 +1,15 @@
 #include "uvm.h"
 #include "core/pp.h"
 #include "zc.h"
+#include <assert.h>
 #include <stdlib.h>
 
-enum
-{
-    WIDTH = (int)sizeof_field(struct uvm_req, msg_size),
-};
+#define WIDTH (int)sizeof_field(struct uvm_req, msg_size)
 
 int uvm_init(uv_loop_t *loop, struct uvm *uvm, int stream_type)
 {
+    assert(stream_type == UV_TCP || stream_type == UV_NAMED_PIPE);
+
     int rc = 0;
 
     switch (stream_type)
@@ -26,14 +26,13 @@ int uvm_init(uv_loop_t *loop, struct uvm *uvm, int stream_type)
 
     if (rc) return rc;
 
+    uvm->data = NULL;
     uvm->buf = NULL;
     uvm->alloc_size = 0;
     uvm->filled = 0;
     uvm->alloc_cb = NULL;
     uvm->free_cb = NULL;
     uvm->read_cb = NULL;
-    /* initialize the public member */
-    uvm->data = NULL;
 
     return 0;
 }
@@ -43,6 +42,7 @@ int uvm_send(struct uvm_req *req, struct uvm *uvm, void *msg, int size,
 {
     uv_stream_t *stream = (uv_stream_t *)uvm;
 
+    assert(!(!req || !stream || !msg || size <= 0));
     if (!req || !stream || !msg || size <= 0) return UV_EINVAL;
 
     req->msg_size = zc_htonl((uint32_t)size);
@@ -60,7 +60,6 @@ static void msg_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 int uvm_read_start(struct uvm *uvm, uv_alloc_cb alloc_cb, uvm_read_cb read_cb,
                    uvm_free_cb free_cb)
 {
-
     uvm->read_cb = read_cb;
     uvm->alloc_cb = alloc_cb;
     uvm->free_cb = free_cb;
@@ -174,10 +173,7 @@ static void msg_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
         if (uvm->filled >= entire_msg)
         {
             uvm->read_cb((struct uvm *)stream, ptr + WIDTH, msg_size);
-            if (uvm->filled > entire_msg)
-            {
-                ptr += entire_msg;
-            }
+            if (uvm->filled > entire_msg) ptr += entire_msg;
             uvm->filled -= entire_msg;
         }
         else
