@@ -28,15 +28,15 @@ void proc_stop(struct proc *proc)
     if (proc->type == PROC_CHILD) child_stop(&proc->child);
 }
 
+bool proc_offline(struct proc const *proc)
+{
+    if (proc->type == PROC_PARENT) return parent_offline(&proc->parent);
+    if (proc->type == PROC_CHILD) return child_offline(&proc->child);
+    __builtin_unreachable();
+}
+
 void proc_cleanup(struct proc *proc)
 {
     if (proc->type == PROC_PARENT) parent_cleanup(&proc->parent);
     if (proc->type == PROC_CHILD) child_cleanup(&proc->child);
-}
-
-bool proc_exitted(struct proc const *proc)
-{
-    if (proc->type == PROC_PARENT) return parent_exitted(&proc->parent);
-    if (proc->type == PROC_CHILD) return child_exitted(&proc->child);
-    __builtin_unreachable();
 }

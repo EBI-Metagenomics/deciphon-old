@@ -16,6 +16,7 @@ enum hmmer_state
 void hmmer_init(char const *podman);
 void hmmer_start(char const *hmm_file);
 void hmmer_stop(void);
+bool hmmer_offline(void);
 enum hmmer_state hmmer_state(void);
 char const *hmmer_hmmfile(void);
 void hmmer_cleanup(void);

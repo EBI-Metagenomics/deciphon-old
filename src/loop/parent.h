@@ -20,6 +20,6 @@ void parent_start(struct parent *);
 void parent_send(struct parent *, char const *string);
 void parent_stop(struct parent *);
 void parent_cleanup(struct parent *);
-bool parent_exitted(struct parent const *);
+bool parent_offline(struct parent const *);
 
 #endif

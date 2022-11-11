@@ -40,6 +40,8 @@ void client_start(void)
 
 void client_stop(void) { child_stop(&child); }
 
+bool client_offline(void) { return child_offline(&child); }
+
 enum state client_state(void)
 {
     if (state == BOOT && global_now() - time_of_start >= TIMEOUT)

@@ -24,7 +24,7 @@ static struct argl argl = {.options = options,
 
 static void on_read(char *line);
 static void on_term(void);
-static bool on_linger(void) { return !parent_exitted(&parent); }
+static bool on_linger(void) { return !parent_offline(&parent); }
 static void on_exit(void);
 
 static void terminate(void) { global_terminate(); }

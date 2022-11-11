@@ -69,7 +69,7 @@ void child_stop(struct child *child)
         fatal("uv_kill %d: %s", rc, uv_strerror(rc));
 }
 
-bool child_exitted(struct child const *child)
+bool child_offline(struct child const *child)
 {
     return !child->remain_handlers;
 }

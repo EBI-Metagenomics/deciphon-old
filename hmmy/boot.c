@@ -6,7 +6,7 @@
 
 enum boot_state
 {
-    BOOT_OFF,
+    BOOT_INIT,
     BOOT_SERVER,
     BOOT_CLIENT,
     BOOT_DONE,
@@ -15,7 +15,7 @@ enum boot_state
 
 static boot_end_fn_t *boot_end = NULL;
 static uv_timer_t timer = {0};
-static enum boot_state state = BOOT_OFF;
+static enum boot_state state = BOOT_INIT;
 
 void boot_init(void) { uv_timer_init(global_loop(), &timer); }
 
@@ -23,7 +23,7 @@ static void callback(struct uv_timer_s *req);
 
 void boot_start(char const *hmm_file, boot_end_fn_t *boot_end_fn)
 {
-    if (state != BOOT_OFF && state != BOOT_FAIL) boot_stop();
+    if (state != BOOT_INIT && state != BOOT_FAIL) boot_stop();
     boot_end = boot_end_fn;
     uv_timer_start(&timer, &callback, 1000, 100);
     state = BOOT_SERVER;
@@ -37,10 +37,13 @@ void boot_stop(void)
     if (state == BOOT_CLIENT) client_stop();
 }
 
+bool boot_offline(void) { return state == BOOT_INIT || state == BOOT_FAIL; }
+
 void boot_cleanup(void)
 {
     uv_timer_stop(&timer);
     uv_close((struct uv_handle_s *)&timer, NULL);
+    state = BOOT_INIT;
 }
 
 static void callback(struct uv_timer_s *req)

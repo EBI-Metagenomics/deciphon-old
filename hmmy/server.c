@@ -68,6 +68,8 @@ void server_start(char const *hmm_file)
 
 void server_stop(void) { child_stop(&child); }
 
+bool server_offline(void) { return child_offline(&child); }
+
 enum state server_state(void)
 {
     if (state == BOOT && global_now() - time_of_start >= TIMEOUT)

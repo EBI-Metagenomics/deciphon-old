@@ -43,7 +43,7 @@ void parent_cleanup(struct parent *parent)
     output_cleanup(&parent->output);
 }
 
-bool parent_exitted(struct parent const *parent)
+bool parent_offline(struct parent const *parent)
 {
     return !parent->remain_handlers;
 }

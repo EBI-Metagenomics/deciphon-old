@@ -26,7 +26,7 @@ static struct argl argl = {.options = options,
 
 static void on_read(char *line);
 static void on_term(void);
-static bool on_linger(void) { return !parent_exitted(&parent); }
+static bool on_linger(void);
 static void on_exit(void);
 static char const *find_podman(void);
 
@@ -65,6 +65,11 @@ static void on_read(char *line)
     if (!cmd_fn) return;
 
     (*cmd_fn)(&msg);
+}
+
+static bool on_linger(void)
+{
+    return !parent_offline(&parent) || !hmmer_offline();
 }
 
 static void on_term(void)

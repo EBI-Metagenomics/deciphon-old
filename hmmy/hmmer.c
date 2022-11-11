@@ -31,13 +31,18 @@ void hmmer_stop(void)
     server_stop();
 }
 
+bool hmmer_offline(void)
+{
+    return boot_offline() && server_offline() && client_offline();
+}
+
 enum hmmer_state hmmer_state(void) { return state; }
 
 char const *hmmer_hmmfile(void) { return server_hmmfile(); }
 
 void hmmer_cleanup(void)
 {
-    server_cleanup();
-    client_cleanup();
     boot_cleanup();
+    client_cleanup();
+    server_cleanup();
 }
