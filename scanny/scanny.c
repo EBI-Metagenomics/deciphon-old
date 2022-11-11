@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
     parent_init(&parent, &on_read, &terminate, &terminate, &terminate);
-    parent_start(&parent);
+    parent_open(&parent);
     scanner_init();
 
     return global_run();
@@ -59,7 +59,7 @@ static void on_read(char *line)
 static void on_term(void)
 {
     scanner_cancel(2500);
-    parent_stop(&parent);
+    parent_close(&parent);
 }
 
 static void on_exit(void)

@@ -4,19 +4,14 @@
 #include <assert.h>
 #include <unistd.h>
 
-static void on_io_exit(void *arg);
 static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig);
 
 void child_init(struct child *child, on_read2_fn_t *on_read,
                 on_eof2_fn_t *on_eof, on_error2_fn_t *on_error,
                 on_exit_fn_t *on_exit)
 {
-    input_init(&child->input, -1, on_io_exit, child);
-    output_init(&child->output, -1, on_io_exit, child);
-    child->input.on_read = on_read;
-    child->input.on_eof = on_eof;
-    child->input.on_error = on_error;
-    child->output.on_error = on_error;
+    input_init(&child->input, -1, on_read, on_eof, on_error, NULL, child);
+    output_init(&child->output, -1, on_error, NULL, child);
     child->on_exit = on_exit;
     child->proc.data = child;
 
@@ -30,25 +25,23 @@ void child_init(struct child *child, on_read2_fn_t *on_read,
     child->stdio[2].data.fd = STDERR_FILENO;
 
     child->no_kill_process = true;
-    child->no_close_process = true;
     child->exit_status = 0;
-    child->remain_handlers = 3;
+    child->offline = true;
 }
 
-void child_start(struct child *child, char const *args[])
+void child_spawn(struct child *child, char const *args[])
 {
     child->opts.stdio = child->stdio;
     child->opts.stdio_count = 3;
-    child->opts.exit_cb = on_proc_exit;
+    child->opts.exit_cb = &on_proc_exit;
     child->opts.file = args[0];
     child->opts.args = (char **)args;
 
     if (uv_spawn(global_loop(), &child->proc, &child->opts)) fatal("uv_spawn");
     child->no_kill_process = false;
-    child->no_close_process = false;
+    child->offline = false;
 
     input_start(&child->input);
-    output_start(&child->output);
 }
 
 void child_send(struct child *child, char const *string)
@@ -56,7 +49,7 @@ void child_send(struct child *child, char const *string)
     if (string) writer_put(&child->output.writer, string);
 }
 
-void child_stop(struct child *child)
+void child_kill(struct child *child)
 {
     if (child->no_kill_process) return;
     child->no_kill_process = true;
@@ -69,32 +62,17 @@ void child_stop(struct child *child)
         fatal("uv_kill %d: %s", rc, uv_strerror(rc));
 }
 
-bool child_offline(struct child const *child)
-{
-    return !child->remain_handlers;
-}
-
-static void close_safely(struct child *child)
-{
-    if (child->no_close_process) return;
-    child->no_close_process = true;
-    uv_close((uv_handle_t *)&child->proc, NULL);
-}
+bool child_offline(struct child const *child) { return child->offline; }
 
 void child_cleanup(struct child *child)
 {
+    child->no_kill_process = true;
+    child->offline = true;
     input_cleanup(&child->input);
-    output_cleanup(&child->output);
-    close_safely(child);
+    output_close(&child->output);
 }
 
 int child_exit_status(struct child const *child) { return child->exit_status; }
-
-static void on_io_exit(void *arg)
-{
-    struct child *child = arg;
-    if (!--child->remain_handlers) (*child->on_exit)();
-}
 
 static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig)
 {
@@ -102,11 +80,13 @@ static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig)
     debug("Process exited with status %d, signal %d", rc, sig);
 
     struct child *child = proc->data;
-    input_cleanup(&child->input);
-    output_cleanup(&child->output);
+    child->no_kill_process = true;
+    child->offline = true;
 
-    close_safely(child);
+    input_close(&child->input);
+    output_close(&child->output);
 
     child->exit_status = rc;
-    if (!--child->remain_handlers) (*child->on_exit)();
+    uv_close((uv_handle_t *)&child->proc, NULL);
+    if (child->on_exit) (*child->on_exit)();
 }

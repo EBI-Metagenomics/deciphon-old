@@ -36,6 +36,6 @@ void reader_init(struct reader *, struct uv_pipe_s *, on_eof_fn_t *,
                  on_error_fn_t *, on_read_fn_t *, void *);
 void reader_start(struct reader *);
 void reader_stop(struct reader *);
-void reader_cleanup(struct reader *);
+void reader_close(struct reader *);
 
 #endif

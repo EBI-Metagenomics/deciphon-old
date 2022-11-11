@@ -61,7 +61,7 @@ void broker_init(long polling, char const *uri, char const *key)
         proc_args[i][0] = proc_file[i];
         proc_init(&proc[i], proc_type[i]);
         proc_setup(&proc[i], &on_read, &terminate, &terminate, &terminate);
-        proc_start(&proc[i], proc_args[i]);
+        proc_open(&proc[i], proc_args[i]);
     }
 }
 
@@ -81,7 +81,7 @@ void broker_terminate(void)
 {
     timer_cleanup(&polling_timer);
     for (int i = 0; i <= SCHEDY_ID; ++i)
-        proc_stop(&proc[i]);
+        proc_close(&proc[i]);
 }
 
 bool broker_parse_db(struct sched_db *db, char *json)

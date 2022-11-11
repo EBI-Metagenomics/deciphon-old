@@ -10,10 +10,10 @@ void proc_setup(struct proc *p, on_read2_fn_t *onrd, on_eof2_fn_t *oneof,
     if (p->type == PROC_CHILD) child_init(&p->child, onrd, oneof, onerr, onexi);
 }
 
-void proc_start(struct proc *proc, char const *args[])
+void proc_open(struct proc *proc, char const *args[])
 {
-    if (proc->type == PROC_PARENT) parent_start(&proc->parent);
-    if (proc->type == PROC_CHILD) child_start(&proc->child, args);
+    if (proc->type == PROC_PARENT) parent_open(&proc->parent);
+    if (proc->type == PROC_CHILD) child_spawn(&proc->child, args);
 }
 
 void proc_send(struct proc *proc, char const *string)
@@ -22,10 +22,10 @@ void proc_send(struct proc *proc, char const *string)
     if (proc->type == PROC_CHILD) child_send(&proc->child, string);
 }
 
-void proc_stop(struct proc *proc)
+void proc_close(struct proc *proc)
 {
-    if (proc->type == PROC_PARENT) parent_stop(&proc->parent);
-    if (proc->type == PROC_CHILD) child_stop(&proc->child);
+    if (proc->type == PROC_PARENT) parent_close(&proc->parent);
+    if (proc->type == PROC_CHILD) child_kill(&proc->child);
 }
 
 bool proc_offline(struct proc const *proc)

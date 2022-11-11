@@ -11,21 +11,25 @@ void writer_init(struct writer *writer, struct uv_pipe_s *pipe,
 {
     writer->pipe = pipe;
     writer->pipe->data = writer;
-    writer->cb.on_error = on_error;
+    writer->on_error = on_error;
+    writer->closed = false;
 }
 
 static void write_fwd(struct uv_write_s *write, int status);
 
 void writer_try_put(struct writer *writer, char const *string)
 {
-    uv_buf_t buf = uv_buf_init((char *)string, strlen(string));
+    if (writer->closed) return;
 
+    uv_buf_t buf = uv_buf_init((char *)string, strlen(string));
     struct uv_stream_s *stream = (struct uv_stream_s *)writer->pipe;
     uv_try_write(stream, &buf, 1);
 }
 
 void writer_put(struct writer *writer, char const *string)
 {
+    if (writer->closed) return;
+
     struct writer_req *req = writer_req_pool_pop(writer);
     writer_req_set_string(req, string);
     static char newline[] = "\n";
@@ -37,24 +41,25 @@ void writer_put(struct writer *writer, char const *string)
     if (rc)
     {
         error("failed to write: %s", uv_strerror(rc));
-        (*writer->cb.on_error)();
+        (*writer->on_error)();
     }
 }
 
-void writer_cleanup(struct writer *writer)
+void writer_close(struct writer *writer)
 {
     /* TODO: finish it */
-    (void)writer;
+    writer->closed = true;
 }
 
 static void write_fwd(struct uv_write_s *write, int rc)
 {
     struct writer_req *req = write->data;
     struct writer *writer = req->writer;
+    if (writer->closed) return;
     if (rc)
     {
         error("failed to write: %s", uv_strerror(rc));
-        (*writer->cb.on_error)();
+        (*writer->on_error)();
     }
     writer_req_pool_put(req);
 }

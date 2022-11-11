@@ -30,7 +30,7 @@ static struct argl argl = {.options = options,
                            .version = "1.0.0"};
 
 static void on_read(char *line);
-static void on_term(void) { parent_stop(&parent); }
+static void on_term(void) { parent_close(&parent); }
 static bool on_linger(void) { return !parent_offline(&parent); }
 static void on_exit(void);
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
     if (api_init(url, key)) global_die();
     parent_init(&parent, &on_read, &terminate, &terminate, &terminate);
-    parent_start(&parent);
+    parent_open(&parent);
 
     return global_run();
 }

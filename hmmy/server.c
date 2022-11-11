@@ -17,7 +17,7 @@ static long time_of_start = 0;
 
 static void on_read(char *line);
 static void on_eof(void) {}
-static void on_error(void) { child_stop(&child); }
+static void on_error(void) { child_kill(&child); }
 static void on_exit(void);
 
 static char exepath[FILENAME_MAX] = "";
@@ -62,11 +62,11 @@ void server_start(char const *hmm_file)
     strcat(volume, hmm_file);
     strcpy(hmmfile, hmm_file);
 
-    child_start(&child, argv);
+    child_spawn(&child, argv);
     state = BOOT;
 }
 
-void server_stop(void) { child_stop(&child); }
+void server_stop(void) { child_kill(&child); }
 
 bool server_offline(void) { return child_offline(&child); }
 
@@ -82,7 +82,7 @@ enum state server_state(void)
 
 char const *server_hmmfile(void) { return hmmfile; }
 
-void server_cleanup(void) { child_stop(&child); }
+void server_cleanup(void) { child_kill(&child); }
 
 static void on_read(char *line)
 {

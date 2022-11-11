@@ -11,6 +11,7 @@ struct writer_req *writer_req_pool_pop(struct writer *writer)
 {
     if (in_use) return writer_req_new(writer);
     in_use = true;
+    request.writer = writer;
     return &request;
 }
 

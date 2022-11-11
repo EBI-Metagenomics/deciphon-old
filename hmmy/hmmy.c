@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     }
 
     parent_init(&parent, &on_read, &terminate, &terminate, &terminate);
-    parent_start(&parent);
+    parent_open(&parent);
     hmmer_init(podman);
 
     return global_run();
@@ -75,7 +75,7 @@ static bool on_linger(void)
 static void on_term(void)
 {
     hmmer_stop();
-    parent_stop(&parent);
+    parent_close(&parent);
 }
 
 static void on_exit(void)

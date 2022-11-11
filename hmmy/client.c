@@ -15,7 +15,7 @@ static long time_of_start = 0;
 
 static void on_read(char *line);
 static void on_eof(void) {}
-static void on_error(void) { child_stop(&child); }
+static void on_error(void) { child_kill(&child); }
 static void on_exit(void);
 
 static char exepath[FILENAME_MAX] = "";
@@ -34,11 +34,11 @@ void client_start(void)
     if (state != OFF && state != FAIL) client_stop();
     time_of_start = global_now();
 
-    child_start(&child, argv);
+    child_spawn(&child, argv);
     state = BOOT;
 }
 
-void client_stop(void) { child_stop(&child); }
+void client_stop(void) { child_kill(&child); }
 
 bool client_offline(void) { return child_offline(&child); }
 
@@ -52,7 +52,7 @@ enum state client_state(void)
     return state;
 }
 
-void client_cleanup(void) { child_stop(&child); }
+void client_cleanup(void) { child_kill(&child); }
 
 static void on_read(char *line)
 {

@@ -3,7 +3,7 @@
 
 #include "loop/callbacks.h"
 #include "loop/reader.h"
-#include "stdpipe.h"
+#include "loop/stdpipe.h"
 
 struct input
 {
@@ -14,11 +14,11 @@ struct input
     on_read2_fn_t *on_read;
 };
 
-void input_init(struct input *, int fd, on_exit2_fn_t *, void *);
-void input_setup(struct input *, on_eof2_fn_t *, on_error2_fn_t *,
-                 on_read2_fn_t *);
+void input_init(struct input *i, int fd, on_read2_fn_t *, on_eof2_fn_t *,
+                on_error2_fn_t *, on_exit2_fn_t *, void *arg);
 void input_start(struct input *);
 void input_stop(struct input *);
+void input_close(struct input *);
 void input_cleanup(struct input *);
 
 #endif

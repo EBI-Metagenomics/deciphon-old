@@ -124,7 +124,7 @@ static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
     *buf = uv_buf_init(rdr->mem, READER_LINE_SIZE);
 }
 
-void reader_cleanup(struct reader *rdr)
+void reader_close(struct reader *rdr)
 {
     reader_stop(rdr);
     rdr->no_start = true;

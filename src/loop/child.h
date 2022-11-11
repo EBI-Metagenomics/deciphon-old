@@ -16,16 +16,15 @@ struct child
 
     on_exit_fn_t *on_exit;
     bool no_kill_process;
-    bool no_close_process;
     int exit_status;
-    int remain_handlers;
+    bool offline;
 };
 
 void child_init(struct child *, on_read2_fn_t *, on_eof2_fn_t *,
                 on_error2_fn_t *, on_exit_fn_t *);
-void child_start(struct child *, char const *args[]);
+void child_spawn(struct child *, char const *args[]);
 void child_send(struct child *, char const *string);
-void child_stop(struct child *);
+void child_kill(struct child *);
 bool child_offline(struct child const *);
 void child_cleanup(struct child *);
 int child_exit_status(struct child const *);
