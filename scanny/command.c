@@ -1,6 +1,6 @@
 #include "command.h"
 #include "core/as.h"
-#include "core/command_help.h"
+#include "core/cmd.h"
 #include "core/fmt.h"
 #include "core/logy.h"
 #include "core/msg.h"
@@ -29,13 +29,13 @@ static void fn_echo(struct msg *msg) { parent_send(&parent, msg_unparse(msg)); }
 static void fn_help(struct msg *msg)
 {
     unused(msg);
-    command_help_init();
+    cmd_help_init();
 
-#define X(_, A, B) command_help_add(STRINGIFY(A), B);
+#define X(_, A, B) cmd_help_add(stringify(A), B);
     CMD_MAP(X);
 #undef X
 
-    parent_send(&parent, command_help_table());
+    parent_send(&parent, cmd_help_table());
 }
 
 static void fn_set_nthreads(struct msg *msg)
@@ -90,7 +90,7 @@ static void fn_progress(struct msg *msg)
 
     char const *ans = scanner_is_done() || scanner_is_running() ? OK : FAIL;
     char perc[] = "100%";
-    fmt_percent(perc, scanner_progress());
+    fmt_perc(perc, scanner_progress());
     parent_send(&parent, msg_ctx(msg, ans, perc));
 }
 
@@ -100,7 +100,7 @@ static void fn_inc_progress(struct msg *msg)
 
     char const *ans = scanner_is_done() || scanner_is_running() ? OK : FAIL;
     char inc[] = "100";
-    fmt_percent(inc, scanner_inc_progress());
+    fmt_perc(inc, scanner_inc_progress());
     parent_send(&parent, msg_ctx(msg, ans, inc));
 }
 

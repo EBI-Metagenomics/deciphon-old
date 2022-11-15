@@ -1,7 +1,7 @@
 #include "command.h"
 #include "broker.h"
 #include "core/as.h"
-#include "core/command_help.h"
+#include "core/cmd.h"
 #include "core/file.h"
 #include "core/fmt.h"
 #include "core/logy.h"
@@ -70,13 +70,13 @@ static void fn_echo(struct msg *msg)
 static void fn_help(struct msg *msg)
 {
     unused(msg);
-    command_help_init();
+    cmd_help_init();
 
-#define X(_, A, B) command_help_add(STRINGIFY(A), B);
+#define X(_, A, B) cmd_help_add(stringify(A), B);
     CMD_MAP(X);
 #undef X
 
-    broker_send(PARENT_ID, command_help_table());
+    broker_send(PARENT_ID, cmd_help_table());
 }
 
 static void fn_fwd(struct msg *msg)

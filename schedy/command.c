@@ -1,7 +1,7 @@
 #include "command.h"
 #include "api.h"
 #include "core/as.h"
-#include "core/command_help.h"
+#include "core/cmd.h"
 #include "core/file.h"
 #include "core/logy.h"
 #include "core/msg.h"
@@ -66,13 +66,13 @@ static void fn_echo(struct msg *msg) { parent_send(&parent, msg_unparse(msg)); }
 static void fn_help(struct msg *msg)
 {
     unused(msg);
-    command_help_init();
+    cmd_help_init();
 
-#define X(_, A, B) command_help_add(STRINGIFY(A), B);
+#define X(_, A, B) cmd_help_add(stringify(A), B);
     CMD_MAP(X);
 #undef X
 
-    parent_send(&parent, command_help_table());
+    parent_send(&parent, cmd_help_table());
 }
 
 static void fn_online(struct msg *msg)

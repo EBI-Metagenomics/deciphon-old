@@ -1,57 +1,74 @@
 #include "command.h"
-#include "core/command_help.h"
+#include "core/cmd.h"
 #include "core/fmt.h"
 #include "core/logy.h"
 #include "core/msg.h"
+#include "core/pp.h"
 #include "core/strings.h"
 #include "presser.h"
 #include "pressy.h"
 
 #define CMD_MAP(X)                                                             \
-    X(CANCEL, cancel, "")                                                      \
-    X(ECHO, echo, "[...]")                                                     \
-    X(HELP, help, "")                                                          \
-    X(PRESS, press, "HMM_FILE")                                                \
-    X(PROGRESS, progress, "")                                                  \
-    X(INC_PROGRESS, inc_progress, "")                                          \
-    X(FILENAME, filename, "")                                                  \
-    X(RESET, reset, "")                                                        \
-    X(STATE, state, "")
+    X(cancel, "")                                                              \
+    X(echo, "[...]")                                                           \
+    X(help, "")                                                                \
+    X(press, "HMM_FILE")                                                       \
+    X(progress, "")                                                            \
+    X(inc_progress, "")                                                        \
+    X(filename, "")                                                            \
+    X(reset, "")                                                               \
+    X(state, "")
 
-#define COMMAND_TEMPLATE_DEF
-#include "core/command_template.h"
-#undef COMMAND_TEMPLATE_DEF
+#define X(A, _) static void A(struct msg *);
+CMD_MAP(X)
+#undef X
 
-static void fn_cancel(struct msg *msg)
+static struct cmd_entry entries[] = {
+#define X(A, B) {&A, stringify(A), B},
+    CMD_MAP(X)
+#undef X
+};
+
+void command_call(struct msg *msg)
 {
-    if (msg_check(msg, "s")) return;
+    struct cmd_entry *e = cmd_find(array_size(entries), entries, msg_cmd(msg));
+    if (!e)
+    {
+        einval("unrecognized command: %s", msg_cmd(msg));
+        return;
+    }
 
+    msg_shift(msg);
+    (*e->func)(msg);
+}
+
+static void cancel(struct msg *msg)
+{
     char const *ans = presser_cancel(0) ? FAIL : OK;
     parent_send(&parent, msg_ctx(msg, ans));
 }
 
-static void fn_echo(struct msg *msg) { parent_send(&parent, msg_unparse(msg)); }
+static void echo(struct msg *msg) { parent_send(&parent, msg_unparse(msg)); }
 
-static void fn_help(struct msg *msg)
+static void help(struct msg *msg)
 {
     unused(msg);
-    command_help_init();
+    cmd_help_init();
 
-#define X(_, A, B) command_help_add(STRINGIFY(A), B);
-    CMD_MAP(X);
-#undef X
+    for (size_t i = 0; i < array_size(entries); ++i)
+        cmd_help_add(entries[i].name, entries[i].doc);
 
-    parent_send(&parent, command_help_table());
+    parent_send(&parent, cmd_help_table());
 }
 
-static void fn_press(struct msg *msg)
+static void press(struct msg *msg)
 {
-    if (msg_check(msg, "ss")) return;
+    if (msg_check(msg, "s")) return;
 
     char const *ans = FAIL;
     if (presser_is_running())
         ans = BUSY;
-    else if (presser_start(msg->cmd.argv[1]))
+    else if (presser_start(msg_str(msg, 0)))
         ans = OK;
     else
         ans = FAIL;
@@ -59,49 +76,40 @@ static void fn_press(struct msg *msg)
     parent_send(&parent, msg_ctx(msg, ans));
 }
 
-static void fn_progress(struct msg *msg)
+static void progress(struct msg *msg)
 {
-    if (msg_check(msg, "s")) return;
-
     char const *ans = presser_is_done() || presser_is_running() ? OK : FAIL;
     char perc[] = "100%";
-    char *p = fmt_percent(perc, presser_progress());
+    char *p = fmt_perc(perc, presser_progress());
     p[0] = '%';
     p[1] = '\0';
     parent_send(&parent, msg_ctx(msg, ans, perc));
 }
 
-static void fn_inc_progress(struct msg *msg)
+static void inc_progress(struct msg *msg)
 {
-    if (msg_check(msg, "s")) return;
-
     char const *ans = presser_is_done() || presser_is_running() ? OK : FAIL;
     char inc[] = "100";
-    fmt_percent(inc, presser_inc_progress());
+    fmt_perc(inc, presser_inc_progress());
     parent_send(&parent, msg_ctx(msg, ans, inc));
 }
 
-static void fn_filename(struct msg *msg)
+static void filename(struct msg *msg)
 {
-    if (msg_check(msg, "s")) return;
-
     char const *ans = presser_is_done() || presser_is_running() ? OK : FAIL;
-    char const *filename = presser_filename();
-    parent_send(&parent, msg_ctx(msg, ans, filename));
+    char const *name = presser_filename();
+    parent_send(&parent, msg_ctx(msg, ans, name));
 }
 
-static void fn_reset(struct msg *msg)
+static void reset(struct msg *msg)
 {
-    if (msg_check(msg, "s")) return;
-
     char const *ans = presser_is_running() ? FAIL : OK;
     presser_reset();
     parent_send(&parent, msg_ctx(msg, ans));
 }
 
-static void fn_state(struct msg *msg)
+static void state(struct msg *msg)
 {
-    if (msg_check(msg, "s")) return;
     char const *ans = OK;
     char const *state = presser_state_string();
     parent_send(&parent, msg_ctx(msg, ans, state, presser_filename()));

@@ -24,9 +24,8 @@ static struct argl argl = {.options = options,
 
 static void on_read(char *line);
 static void on_term(void);
-static bool on_linger(void) { return !parent_offline(&parent); }
+static bool on_linger(void);
 static void on_exit(void);
-
 static void terminate(void) { global_terminate(); }
 
 int main(int argc, char *argv[])
@@ -49,11 +48,7 @@ static void on_read(char *line)
 {
     static struct msg msg = {0};
     if (msg_parse(&msg, line)) return;
-
-    cmd_fn_t *cmd_fn = cmd_get_fn(msg_cmd(&msg));
-    if (!cmd_fn) return;
-
-    (*cmd_fn)(&msg);
+    command_call(&msg);
 }
 
 static void on_term(void)
@@ -61,6 +56,8 @@ static void on_term(void)
     presser_cancel(2500);
     parent_close(&parent);
 }
+
+static bool on_linger(void) { return !parent_offline(&parent); }
 
 static void on_exit(void)
 {

@@ -28,7 +28,7 @@ static cmd_fn_t *cmd_fns[] = {
 static int cmd_fn_idx(char const *cmd_string)
 {
 #define X(A, B, _)                                                             \
-    if (!strcmp(cmd_string, STRINGIFY(B))) return FN_##A;
+    if (!strcmp(cmd_string, stringify(B))) return FN_##A;
     CMD_MAP(X)
 #undef X
     return -1;

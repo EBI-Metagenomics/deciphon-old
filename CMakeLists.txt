@@ -49,7 +49,6 @@ add_library(
   libs/zc.c
   src/core/as.c
   src/core/buff.c
-  src/core/command_help.c
   src/core/errmsg.c
   src/core/expect.c
   src/core/file.c
@@ -68,6 +67,7 @@ add_library(
   src/core/sharg.c
   src/core/to.c
   src/core/url.c
+  src/core/cmd.c
   src/core/xmath.c
   src/core/xmem.c
   src/db/press.c

@@ -16,7 +16,7 @@ char const *fmt(char const *format, ...)
 
 /* Null-terminated sequence of characters with percentage
  * from 0 to 100. String needs to have room for 4 characters. */
-char *fmt_percent(char *str, int perc)
+char *fmt_perc(char *str, int perc)
 {
     assert(perc >= 0);
     assert(perc <= 100);
