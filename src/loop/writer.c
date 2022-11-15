@@ -9,14 +9,20 @@ void writer_init(struct writer *writer, struct uv_pipe_s *pipe,
     writer->pipe = pipe;
     writer->pipe->data = writer;
     writer->on_error = on_error;
-    writer->closed = 0;
+    writer->open = 0;
 }
 
 static void write_fwd(struct uv_write_s *write, int status);
 
+void writer_open(struct writer *writer)
+{
+    if (writer->open) return;
+    writer->open = 1;
+}
+
 void writer_put(struct writer *writer, char const *string)
 {
-    if (writer->closed) return;
+    if (!writer->open) return;
 
     struct wreq *req = wreq_pop(writer);
     wreq_setstr(req, string);
@@ -36,15 +42,15 @@ void writer_put(struct writer *writer, char const *string)
 
 void writer_close(struct writer *writer)
 {
-    if (writer->closed) return;
-    writer->closed = 1;
+    if (!writer->open) return;
+    writer->open = 0;
 }
 
 static void write_fwd(struct uv_write_s *write, int rc)
 {
     struct wreq *req = write->data;
     struct writer *writer = wreq_writer(req);
-    if (writer->closed) return;
+    if (!writer->open) return;
     if (rc)
     {
         error("failed to write: %s", uv_strerror(rc));

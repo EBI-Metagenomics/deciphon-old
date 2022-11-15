@@ -1,22 +1,15 @@
 #ifndef LOOP_READER_H
 #define LOOP_READER_H
 
+#include "core/pp.h"
 #include "loop/callbacks.h"
-#include <stdbool.h>
 
 struct uv_pipe_s;
-
-enum
-{
-    READER_LINE_SIZE = 1024,
-    READER_BUFF_SIZE = 2048
-};
 
 struct reader
 {
     struct uv_pipe_s *pipe;
-    bool no_start;
-    bool no_stop;
+    int open;
 
     struct
     {
@@ -28,14 +21,13 @@ struct reader
 
     char *pos;
     char *end;
-    char buff[READER_BUFF_SIZE];
-    char mem[READER_LINE_SIZE];
+    char buf[1024];
+    char mem[2048];
 };
 
 void reader_init(struct reader *, struct uv_pipe_s *, on_eof_fn_t *,
                  on_error_fn_t *, on_read_fn_t *, void *);
-void reader_start(struct reader *);
-void reader_stop(struct reader *);
+void reader_open(struct reader *);
 void reader_close(struct reader *);
 
 #endif

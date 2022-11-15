@@ -37,6 +37,6 @@ bool proc_offline(struct proc const *proc)
 
 void proc_cleanup(struct proc *proc)
 {
-    if (proc->type == PROC_PARENT) parent_cleanup(&proc->parent);
+    if (proc->type == PROC_PARENT) parent_close(&proc->parent);
     if (proc->type == PROC_CHILD) child_cleanup(&proc->child);
 }

@@ -6,8 +6,7 @@
 
 void server_init(char const *podman_file);
 void server_start(char const *hmm_file);
-void server_stop(void);
-bool server_offline(void);
+void server_cancel(void);
 enum state server_state(void);
 char const *server_hmmfile(void);
 void server_cleanup(void);

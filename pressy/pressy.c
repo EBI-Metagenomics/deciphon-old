@@ -65,5 +65,5 @@ static void on_term(void)
 static void on_exit(void)
 {
     presser_cleanup();
-    parent_cleanup(&parent);
+    parent_close(&parent);
 }

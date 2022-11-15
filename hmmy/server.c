@@ -6,14 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 
-enum
-{
-    TIMEOUT = 5000,
-};
-
 static struct child child = {0};
 static enum state state = OFF;
-static long time_of_start = 0;
+static long deadline = 0;
 
 static void on_read(char *line);
 static void on_eof(void) {}
@@ -52,8 +47,7 @@ void server_init(char const *podman_file)
 
 void server_start(char const *hmm_file)
 {
-    if (state != OFF && state != FAIL) server_stop();
-    time_of_start = global_now();
+    if (!(state == OFF || state == FAIL)) fatal("must be offline to start it");
 
     strcpy(volume, global_exedir());
     strcat(volume, "/");
@@ -62,20 +56,32 @@ void server_start(char const *hmm_file)
     strcat(volume, hmm_file);
     strcpy(hmmfile, hmm_file);
 
-    child_spawn(&child, argv);
     state = BOOT;
+    deadline = global_now() + 5000;
+    child_spawn(&child, argv);
 }
 
-void server_stop(void) { child_kill(&child); }
+void server_cancel(void)
+{
+    if (state == OFF || state == CANCEL || state == FAIL) return;
+    state = CANCEL;
+    deadline = global_now() + 3000;
+    child_kill(&child);
+}
 
-bool server_offline(void) { return child_offline(&child); }
+// bool server_offline(void) { return child_offline(&child); }
 
 enum state server_state(void)
 {
-    if (state == BOOT && global_now() - time_of_start >= TIMEOUT)
+    if (state == BOOT && global_now() > deadline)
     {
         state = FAIL;
-        server_stop();
+        server_cancel();
+    }
+    else if (state == CANCEL && global_now() > deadline)
+    {
+        state = FAIL;
+        server_cancel();
     }
     return state;
 }
@@ -86,6 +92,8 @@ void server_cleanup(void) { child_cleanup(&child); }
 
 static void on_read(char *line)
 {
+    if (state == CANCEL) return;
+
     static char const ready[] = "Handling worker 127.0.0.1";
     if (!strncmp(ready, line, sizeof ready - 1))
     {
@@ -96,8 +104,12 @@ static void on_read(char *line)
 
 static void on_exit(void)
 {
-    if (child_exit_status(&child))
-        state = FAIL;
-    else
-        state = OFF;
+    assert(state != OFF && state != BOOT);
+    if (state == ON || state == CANCEL)
+    {
+        if (child_exit_status(&child))
+            state = FAIL;
+        else
+            state = OFF;
+    }
 }

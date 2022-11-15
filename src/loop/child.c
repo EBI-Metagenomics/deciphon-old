@@ -24,7 +24,7 @@ void child_init(struct child *child, on_read2_fn_t *on_read,
     child->stdio[2].flags = UV_INHERIT_FD;
     child->stdio[2].data.fd = STDERR_FILENO;
 
-    child->no_kill_process = true;
+    child->no_kill = true;
     child->exit_status = 0;
     child->offline = true;
 }
@@ -38,7 +38,8 @@ void child_spawn(struct child *child, char const *args[])
     child->opts.args = (char **)args;
 
     if (uv_spawn(global_loop(), &child->proc, &child->opts)) fatal("uv_spawn");
-    child->no_kill_process = false;
+
+    child->no_kill = false;
     child->offline = false;
 
     input_start(&child->input);
@@ -51,8 +52,8 @@ void child_send(struct child *child, char const *string)
 
 void child_kill(struct child *child)
 {
-    if (child->no_kill_process) return;
-    child->no_kill_process = true;
+    if (child->no_kill) return;
+    child->no_kill = true;
 
     uv_pid_t pid = uv_process_get_pid(&child->proc);
     int rc = uv_kill(pid, SIGINT);
@@ -66,9 +67,9 @@ bool child_offline(struct child const *child) { return child->offline; }
 
 void child_cleanup(struct child *child)
 {
-    child->no_kill_process = true;
+    child->no_kill = true;
     child->offline = true;
-    input_cleanup(&child->input);
+    input_close(&child->input);
     output_close(&child->output);
 }
 
@@ -80,7 +81,7 @@ static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig)
     debug("Process exited with status %d, signal %d", rc, sig);
 
     struct child *child = proc->data;
-    child->no_kill_process = true;
+    child->no_kill = true;
     child->offline = true;
 
     input_close(&child->input);

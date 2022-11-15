@@ -15,7 +15,7 @@ struct child
     struct uv_stdio_container_s stdio[3];
 
     on_exit_fn_t *on_exit;
-    bool no_kill_process;
+    bool no_kill;
     int exit_status;
     bool offline;
 };

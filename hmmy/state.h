@@ -7,6 +7,7 @@ enum state
     BOOT,
     ON,
     FAIL,
+    CANCEL,
 };
 
 #endif

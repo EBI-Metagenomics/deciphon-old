@@ -4,14 +4,9 @@
 #include "loop/child.h"
 #include <string.h>
 
-enum
-{
-    TIMEOUT = 2000,
-};
-
 static struct child child = {0};
 static enum state state = {0};
-static long time_of_start = 0;
+static long deadline = 0;
 
 static void on_read(char *line);
 static void on_eof(void) {}
@@ -32,7 +27,7 @@ void client_init(void)
 void client_start(void)
 {
     if (state != OFF && state != FAIL) client_stop();
-    time_of_start = global_now();
+    deadline = global_now() + 2000;
 
     child_spawn(&child, argv);
     state = BOOT;
@@ -44,7 +39,7 @@ bool client_offline(void) { return child_offline(&child); }
 
 enum state client_state(void)
 {
-    if (state == BOOT && global_now() - time_of_start >= TIMEOUT)
+    if (state == BOOT && global_now() >= deadline)
     {
         state = FAIL;
         client_stop();

@@ -12,21 +12,26 @@ enum boot_state
     BOOT_CLIENT,
     BOOT_DONE,
     BOOT_FAIL,
+    BOOT_CANCEL,
 };
 
 static boot_end_fn_t *boot_end = NULL;
 static uv_timer_t timer = {0};
 static enum boot_state state = BOOT_INIT;
 
-void boot_init(void) { uv_timer_init(global_loop(), &timer); }
+void boot_init(void)
+{
+    if (uv_timer_init(global_loop(), &timer)) fatal("failed to init timer");
+}
 
-static void callback(struct uv_timer_s *req);
+static void boot_cycle(struct uv_timer_s *req);
 
 void boot_start(char const *hmm_file, boot_end_fn_t *boot_end_fn)
 {
     if (state != BOOT_INIT && state != BOOT_FAIL) boot_stop();
     boot_end = boot_end_fn;
-    uv_timer_start(&timer, &callback, 1000, 100);
+    if (uv_timer_start(&timer, &boot_cycle, 1000, 100))
+        fatal("failed to start timer");
     state = BOOT_SERVER;
     server_start(hmm_file);
 }
@@ -34,7 +39,7 @@ void boot_start(char const *hmm_file, boot_end_fn_t *boot_end_fn)
 void boot_stop(void)
 {
     if (uv_timer_stop(&timer)) error("failed to stop timer");
-    if (state == BOOT_SERVER) server_stop();
+    if (state == BOOT_SERVER) server_cancel();
     if (state == BOOT_CLIENT) client_stop();
 }
 
@@ -47,7 +52,7 @@ void boot_cleanup(void)
     state = BOOT_INIT;
 }
 
-static void callback(struct uv_timer_s *req)
+static void boot_cycle(struct uv_timer_s *req)
 {
     (void)req;
 
@@ -70,7 +75,7 @@ static void callback(struct uv_timer_s *req)
     else if (state == BOOT_CLIENT && client_state() == FAIL)
     {
         state = BOOT_FAIL;
-        server_stop();
+        server_cancel();
         boot_stop();
         (*boot_end)(false);
     }

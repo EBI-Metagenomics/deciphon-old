@@ -68,5 +68,5 @@ static void on_read(char *line)
 static void on_exit(void)
 {
     api_cleanup();
-    parent_cleanup(&parent);
+    parent_close(&parent);
 }

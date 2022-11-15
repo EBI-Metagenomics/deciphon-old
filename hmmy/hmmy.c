@@ -78,7 +78,7 @@ static void on_term(void) { hmmer_stop(); }
 static void on_exit(void)
 {
     hmmer_cleanup();
-    parent_cleanup(&parent);
+    parent_close(&parent);
 }
 
 static char const *find_podman(void)

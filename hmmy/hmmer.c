@@ -28,7 +28,7 @@ void hmmer_stop(void)
 {
     boot_stop();
     client_stop();
-    server_stop();
+    server_cancel();
 }
 
 bool hmmer_offline(void)

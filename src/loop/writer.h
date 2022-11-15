@@ -10,10 +10,11 @@ struct writer
 {
     struct uv_pipe_s *pipe;
     on_error2_fn_t *on_error;
-    int closed;
+    int open;
 };
 
 void writer_init(struct writer *, struct uv_pipe_s *, on_error2_fn_t *);
+void writer_open(struct writer *);
 void writer_put(struct writer *, char const *string);
 void writer_close(struct writer *);
 
