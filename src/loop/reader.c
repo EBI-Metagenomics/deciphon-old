@@ -2,7 +2,6 @@
 #include "core/logy.h"
 #include "uv.h"
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 void reader_init(struct reader *rdr, struct uv_pipe_s *pipe,

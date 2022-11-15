@@ -11,7 +11,7 @@ void stdpipe_init(struct stdpipe *pipe, struct uv_loop_s *loop,
     pipe->fd = -1;
     pipe->on_exit = on_exit;
     pipe->arg = arg;
-    pipe->no_close = true;
+    pipe->no_close = false;
 }
 
 void stdpipe_open(struct stdpipe *pipe, int fd)
