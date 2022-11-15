@@ -86,8 +86,7 @@ add_library(
   src/loop/timer.c
   src/loop/uvm.c
   src/loop/writer.c
-  src/loop/writer_req.c
-  src/loop/writer_req_pool.c
+  src/loop/wreq.c
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c
