@@ -69,14 +69,11 @@ static void on_read(char *line)
 
 static bool on_linger(void)
 {
+    if (hmmer_offline()) parent_close(&parent);
     return !parent_offline(&parent) || !hmmer_offline();
 }
 
-static void on_term(void)
-{
-    hmmer_stop();
-    parent_close(&parent);
-}
+static void on_term(void) { hmmer_stop(); }
 
 static void on_exit(void)
 {

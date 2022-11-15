@@ -52,7 +52,7 @@ enum state client_state(void)
     return state;
 }
 
-void client_cleanup(void) { child_kill(&child); }
+void client_cleanup(void) { child_cleanup(&child); }
 
 static void on_read(char *line)
 {

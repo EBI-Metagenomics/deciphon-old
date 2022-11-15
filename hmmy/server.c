@@ -82,7 +82,7 @@ enum state server_state(void)
 
 char const *server_hmmfile(void) { return hmmfile; }
 
-void server_cleanup(void) { child_kill(&child); }
+void server_cleanup(void) { child_cleanup(&child); }
 
 static void on_read(char *line)
 {

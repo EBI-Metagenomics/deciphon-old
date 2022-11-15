@@ -1,5 +1,6 @@
 #include "command.h"
 #include "core/command_help.h"
+#include "core/global.h"
 #include "core/msg.h"
 #include "core/strings.h"
 #include "hmmer.h"
@@ -11,7 +12,8 @@
     X(START, start, "HMM_FILE")                                                \
     X(STOP, stop, "")                                                          \
     X(STATE, state, "")                                                        \
-    X(SCAN, scan, "")
+    X(SCAN, scan, "")                                                          \
+    X(QUIT, quit, "")
 
 #define COMMAND_TEMPLATE_DEF
 #include "core/command_template.h"
@@ -57,4 +59,11 @@ static void fn_state(struct msg *msg)
 static void fn_scan(struct msg *msg)
 {
     if (msg_check(msg, "ss")) return;
+}
+
+static void fn_quit(struct msg *msg)
+{
+    if (msg_check(msg, "s")) return;
+    hmmer_stop();
+    global_terminate();
 }

@@ -1,6 +1,7 @@
 #include "boot.h"
 #include "client.h"
 #include "core/global.h"
+#include "core/logy.h"
 #include "server.h"
 #include "uv.h"
 
@@ -32,7 +33,7 @@ void boot_start(char const *hmm_file, boot_end_fn_t *boot_end_fn)
 
 void boot_stop(void)
 {
-    uv_timer_stop(&timer);
+    if (uv_timer_stop(&timer)) error("failed to stop timer");
     if (state == BOOT_SERVER) server_stop();
     if (state == BOOT_CLIENT) client_stop();
 }
@@ -41,7 +42,7 @@ bool boot_offline(void) { return state == BOOT_INIT || state == BOOT_FAIL; }
 
 void boot_cleanup(void)
 {
-    uv_timer_stop(&timer);
+    if (uv_timer_stop(&timer)) error("failed to stop timer");
     uv_close((struct uv_handle_s *)&timer, NULL);
     state = BOOT_INIT;
 }
