@@ -1,7 +1,6 @@
 #ifndef LOOP_PROC_H
 #define LOOP_PROC_H
 
-#include "loop/child.h"
 #include "loop/parent.h"
 
 enum proc_type
@@ -16,13 +15,13 @@ struct proc
     union
     {
         struct parent parent;
-        struct child child;
+        struct child *child;
     };
 };
 
 void proc_init(struct proc *, enum proc_type);
 void proc_setup(struct proc *, on_read2_fn_t *, on_eof2_fn_t *,
-                on_error2_fn_t *, on_exit_fn_t *);
+                on_error2_fn_t *, on_exit3_fn_t *);
 void proc_open(struct proc *, char const *args[]);
 void proc_send(struct proc *, char const *string);
 void proc_close(struct proc *);

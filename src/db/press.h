@@ -26,7 +26,7 @@ struct db_press
 };
 
 enum rc db_press_init(struct db_press *, char const *hmm, char const *db);
-unsigned db_press_nsteps(struct db_press const *);
+long db_press_nsteps(struct db_press const *);
 enum rc db_press_step(struct db_press *);
 enum rc db_press_cleanup(struct db_press *, bool succesfully);
 

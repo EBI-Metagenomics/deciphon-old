@@ -1,32 +1,68 @@
 #include "loop/child.h"
+#include "core/die.h"
 #include "core/global.h"
 #include "core/logy.h"
+#include "loop/reader.h"
+#include "loop/writer.h"
 #include <assert.h>
 #include <unistd.h>
+#include <uv.h>
+
+struct child
+{
+    struct
+    {
+        struct reader rdr;
+        struct uv_pipe_s pipe;
+    } in;
+
+    struct
+    {
+        struct writer wrt;
+        struct uv_pipe_s pipe;
+    } out;
+
+    struct uv_process_s proc;
+    struct uv_process_options_s opts;
+    struct uv_stdio_container_s stdio[3];
+
+    void *userdata;
+    on_exit4_fn_t *on_exit;
+    bool no_kill;
+    bool closed;
+};
 
 static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig);
 
-void child_init(struct child *child, on_read2_fn_t *on_read,
-                on_eof2_fn_t *on_eof, on_error2_fn_t *on_error,
-                on_exit_fn_t *on_exit)
+struct child *child_new(on_read2_fn_t *on_read, on_eof2_fn_t *on_eof,
+                        on_error2_fn_t *on_error, on_exit4_fn_t *on_exit,
+                        void *userdata)
 {
-    input_init(&child->input, -1, on_read, on_eof, on_error, NULL, child);
-    output_init(&child->output, -1, on_error, NULL, child);
+    struct child *child = malloc(sizeof(*child));
+    if (!child) die();
+
+    if (uv_pipe_init(global_loop(), &child->in.pipe, 0)) die();
+    if (uv_pipe_init(global_loop(), &child->out.pipe, 0)) die();
+
+    reader_init(&child->in.rdr, &child->in.pipe, on_read, on_eof, on_error);
+    writer_init(&child->out.wrt, &child->out.pipe, on_error);
+
     child->on_exit = on_exit;
+    child->userdata = userdata;
     child->proc.data = child;
 
     child->stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
-    child->stdio[0].data.stream = (uv_stream_t *)&child->output.pipe;
+    child->stdio[0].data.stream = (uv_stream_t *)&child->out.pipe;
 
     child->stdio[1].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
-    child->stdio[1].data.stream = (uv_stream_t *)&child->input.pipe;
+    child->stdio[1].data.stream = (uv_stream_t *)&child->in.pipe;
 
     child->stdio[2].flags = UV_INHERIT_FD;
     child->stdio[2].data.fd = STDERR_FILENO;
 
     child->no_kill = true;
-    child->exit_status = 0;
-    child->offline = true;
+    child->closed = true;
+    return child;
 }
 
 void child_spawn(struct child *child, char const *args[])
@@ -40,14 +76,14 @@ void child_spawn(struct child *child, char const *args[])
     if (uv_spawn(global_loop(), &child->proc, &child->opts)) fatal("uv_spawn");
 
     child->no_kill = false;
-    child->offline = false;
+    child->closed = false;
 
-    input_start(&child->input);
+    reader_open(&child->in.rdr);
 }
 
 void child_send(struct child *child, char const *string)
 {
-    if (string) writer_put(&child->output.writer, string);
+    if (string) writer_put(&child->out.wrt, string);
 }
 
 void child_kill(struct child *child)
@@ -63,17 +99,19 @@ void child_kill(struct child *child)
         fatal("uv_kill %d: %s", rc, uv_strerror(rc));
 }
 
-bool child_offline(struct child const *child) { return child->offline; }
+bool child_closed(struct child const *child) { return child->closed; }
 
-void child_cleanup(struct child *child)
+void child_close(struct child *child)
 {
+    if (child->closed) return;
     child->no_kill = true;
-    child->offline = true;
-    input_close(&child->input);
-    output_close(&child->output);
+    child->closed = true;
+    reader_close(&child->in.rdr);
+    writer_close(&child->out.wrt);
+    uv_close((uv_handle_t *)&child->proc, NULL);
 }
 
-int child_exit_status(struct child const *child) { return child->exit_status; }
+void child_del(struct child *child) { free(child); }
 
 static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig)
 {
@@ -81,13 +119,7 @@ static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig)
     debug("Process exited with status %d, signal %d", rc, sig);
 
     struct child *child = proc->data;
-    child->no_kill = true;
-    child->offline = true;
+    child_close(child);
 
-    input_close(&child->input);
-    output_close(&child->output);
-
-    child->exit_status = rc;
-    uv_close((uv_handle_t *)&child->proc, NULL);
-    if (child->on_exit) (*child->on_exit)();
+    if (child->on_exit) (*child->on_exit)(rc, child->userdata);
 }

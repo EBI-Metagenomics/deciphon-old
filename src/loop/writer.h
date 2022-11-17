@@ -2,7 +2,6 @@
 #define LOOP_WRITER_H
 
 #include "loop/callbacks.h"
-#include "uv.h"
 
 struct uv_pipe_s;
 

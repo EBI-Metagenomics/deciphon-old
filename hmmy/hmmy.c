@@ -30,7 +30,7 @@ static bool on_linger(void);
 static void on_exit(void);
 static char const *find_podman(void);
 
-static void terminate(void) { global_terminate(); }
+static void terminate(void) { global_shutdown(); }
 
 int main(int argc, char *argv[])
 {
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         global_die();
     }
 
-    parent_init(&parent, &on_read, &terminate, &terminate, &terminate);
+    parent_init(&parent, &on_read, &terminate, &terminate, NULL);
     parent_open(&parent);
     hmmer_init(podman);
 
@@ -70,7 +70,7 @@ static void on_read(char *line)
 static bool on_linger(void)
 {
     if (hmmer_offline()) parent_close(&parent);
-    return !parent_offline(&parent) || !hmmer_offline();
+    return !parent_closed(&parent) || !hmmer_offline();
 }
 
 static void on_term(void) { hmmer_stop(); }

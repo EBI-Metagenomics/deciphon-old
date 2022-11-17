@@ -1,19 +1,15 @@
 #ifndef CORE_GLOBAL_H
 #define CORE_GLOBAL_H
 
-#include "loop/callbacks.h"
+#include <stdbool.h>
 
 struct uv_loop_s;
+typedef bool on_linger_fn_t(void);
+typedef void on_cleanup_fn_t(void);
 
-void global_init(on_term_fn_t *, on_linger_fn_t *, on_exit_fn_t *, char *const);
-void global_setlog(int log_level);
-char const *global_title(void);
-char const *global_exepath(void);
-char const *global_exedir(void);
-long global_now(void);
+void global_init(char *const, int loglvl, on_linger_fn_t *, on_cleanup_fn_t *);
 struct uv_loop_s *global_loop(void);
-void global_terminate(void);
-_Noreturn void global_die(void);
+void global_shutdown(void);
 int global_run(void);
 
 #endif

@@ -37,7 +37,7 @@ if(OpenMP_FOUND)
   add_compile_definitions(DECIPHON_OPENM=1)
 endif()
 
-add_compile_definitions(_POSIX_C_SOURCE=200809L)
+# add_compile_definitions(_POSIX_C_SOURCE=200809L)
 
 add_library(
   deciphon
@@ -56,6 +56,7 @@ add_library(
   src/core/global.c
   src/core/is.c
   src/core/machine.c
+  src/core/strlcpy.c
   src/core/mempool.c
   src/core/msg.c
   src/core/multifile.c
@@ -66,9 +67,12 @@ add_library(
   src/core/sched_dump.c
   src/core/sharg.c
   src/core/to.c
+  src/core/die.c
+  src/core/exe.c
   src/core/url.c
   src/core/cmd.c
   src/core/xmath.c
+  src/core/filename.c
   src/core/xmem.c
   src/db/press.c
   src/db/profile_reader.c
@@ -77,12 +81,13 @@ add_library(
   src/db/reader.c
   src/db/writer.c
   src/loop/child.c
-  src/loop/input.c
-  src/loop/output.c
+  src/loop/now.c
+  src/loop/halt_signal.c
+  src/loop/linger.c
   src/loop/parent.c
-  src/loop/proc.c
+  # src/loop/proc.c
   src/loop/reader.c
-  src/loop/stdpipe.c
+  src/loop/stdpipes.c
   src/loop/timer.c
   src/loop/uvm.c
   src/loop/writer.c
@@ -129,28 +134,24 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-add_executable(schedy schedy/api.c schedy/command.c schedy/http.c
-                      schedy/schedy.c schedy/xcurl.c schedy/xcurl_debug.c)
-target_link_libraries(schedy PRIVATE deciphon)
-
-add_executable(pressy pressy/pressy.c pressy/command.c pressy/presser.c)
+# add_executable(schedy schedy/api.c schedy/command.c schedy/http.c
+# schedy/schedy.c schedy/xcurl.c schedy/xcurl_debug.c)
+# target_link_libraries(schedy PRIVATE deciphon)
+#
+add_executable(pressy pressy/pressy.c pressy/work.c pressy/state.c)
 target_link_libraries(pressy PRIVATE deciphon)
-
-add_executable(scanny scanny/scanny.c scanny/command.c scanny/scanner.c)
-target_link_libraries(scanny PRIVATE deciphon)
-
-add_executable(hmmy hmmy/hmmy.c hmmy/command.c hmmy/hmmer.c hmmy/client.c
-                    hmmy/server.c hmmy/boot.c)
-target_link_libraries(hmmy PRIVATE deciphon)
-add_dependencies(hmmy H3C::h3client)
-add_custom_command(
-  TARGET hmmy
-  POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:H3C::h3client>
-          $<TARGET_FILE_DIR:hmmy>)
-
-add_executable(decy decy/decy.c decy/command.c decy/cfg.c decy/broker.c)
-target_link_libraries(decy PRIVATE deciphon)
+#
+# add_executable(scanny scanny/scanny.c scanny/command.c scanny/scanner.c)
+# target_link_libraries(scanny PRIVATE deciphon)
+#
+# add_executable(hmmy hmmy/hmmy.c hmmy/command.c hmmy/hmmer.c hmmy/client.c
+# hmmy/server.c hmmy/boot.c) target_link_libraries(hmmy PRIVATE deciphon)
+# add_dependencies(hmmy H3C::h3client) add_custom_command( TARGET hmmy
+# POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:H3C::h3client>
+# $<TARGET_FILE_DIR:hmmy>)
+#
+# add_executable(decy decy/decy.c decy/command.c decy/cfg.c decy/broker.c)
+# target_link_libraries(decy PRIVATE deciphon)
 
 enable_testing()
 add_subdirectory(test)

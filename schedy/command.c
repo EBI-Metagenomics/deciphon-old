@@ -314,7 +314,7 @@ static void fn_scan_dl_seqs(struct msg *msg)
 
     char const *ans = FAIL;
     char const *filepath = msg_str(msg, 2);
-    static char tmpfpath[PATH_SIZE] = {0};
+    static char tmpfpath[FILENAME_SIZE] = {0};
 
     if (api_scan_get_by_id(msg_int(msg, 1), &scan)) goto cleanup;
 
@@ -428,7 +428,7 @@ static void fn_prods_file_dl(struct msg *msg)
 
     char const *ans = FAIL;
     char const *filepath = msg_str(msg, 2);
-    static char tmpfpath[PATH_SIZE] = {0};
+    static char tmpfpath[FILENAME_SIZE] = {0};
 
     int rc = fs_mkstemp(sizeof tmpfpath, tmpfpath);
     if (rc)

@@ -1,9 +1,9 @@
 #ifndef LOOP_TIMER_H
 #define LOOP_TIMER_H
 
-#include "uv.h"
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <uv.h>
 
 typedef void timer_fn_t(void);
 

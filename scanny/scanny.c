@@ -27,7 +27,7 @@ static void on_term(void);
 static bool on_linger(void) { return false; }
 static void on_exit(void);
 
-static void terminate(void) { global_terminate(); }
+static void terminate(void) { global_shutdown(); }
 
 int main(int argc, char *argv[])
 {
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
 
     global_setlog(argl_get(&argl, "loglevel")[0] - '0');
-    parent_init(&parent, &on_read, &terminate, &terminate, &terminate);
+    parent_init(&parent, &on_read, &terminate, &terminate, NULL);
     parent_open(&parent);
     scanner_init();
 

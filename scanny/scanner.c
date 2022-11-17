@@ -28,9 +28,9 @@ enum state
 
 static struct
 {
-    char seqs[PATH_SIZE];
-    char db[PATH_SIZE];
-    char prod[PATH_SIZE];
+    char seqs[FILENAME_SIZE];
+    char db[FILENAME_SIZE];
+    char prod[FILENAME_SIZE];
 
     int nthreads;
     double lrt_threshold;
@@ -99,19 +99,19 @@ bool scanner_start(char const *seqs, char const *db, char const *prod,
     atomic_store_explicit(&self.cancel, false, memory_order_release);
     self.state = STATE_RUN;
 
-    if (zc_strlcpy(self.seqs, seqs, PATH_SIZE) >= PATH_SIZE)
+    if (zc_strlcpy(self.seqs, seqs, FILENAME_SIZE) >= FILENAME_SIZE)
     {
         self.state = STATE_FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
-    if (zc_strlcpy(self.db, db, PATH_SIZE) >= PATH_SIZE)
+    if (zc_strlcpy(self.db, db, FILENAME_SIZE) >= FILENAME_SIZE)
     {
         self.state = STATE_FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));
     }
 
-    if (zc_strlcpy(self.prod, prod, PATH_SIZE) >= PATH_SIZE)
+    if (zc_strlcpy(self.prod, prod, FILENAME_SIZE) >= FILENAME_SIZE)
     {
         self.state = STATE_FAIL;
         return !(errnum = enomem("%s", errfmt(errmsg, FILE_PATH_LONG)));

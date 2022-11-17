@@ -19,7 +19,7 @@ teardown() {
 
 @test "echo" {
     run sendo "echo hello world"
-    assert_output "echo hello world"
+    assert_output "hello world"
 }
 
 @test "press" {
@@ -34,16 +34,16 @@ teardown() {
     assert_output "ok"
 }
 
-@test "idle state" {
+@test "init state" {
     run sendo "state | {1} {2}"
-    assert_output "ok idle"
+    assert_output "ok init"
 }
 
 @test "run state" {
     send "press PF02545.hmm"
     sleep 0.2
-    run sendo "state | {1} {2}"
-    assert_output "ok run"
+    run sendo "state | {1} {2} {3} {4}"
+    assert_output -e "ok run [0-9]+% PF02545.hmm"
 }
 
 @test "cancel & state" {

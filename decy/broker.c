@@ -42,7 +42,7 @@ static char errmsg[ERROR_SIZE] = {0};
 
 static void polling_callback(void);
 static void on_read(char *line);
-static void terminate(void) { global_terminate(); }
+static void terminate(void) { global_shutdown(); }
 
 static struct timer polling_timer = {0};
 

@@ -49,7 +49,7 @@ cleanup:
 
 #define HMMER3 "HMMER3/f"
 
-unsigned db_press_nsteps(struct db_press const *p) { return p->profile_count; }
+long db_press_nsteps(struct db_press const *p) { return p->profile_count; }
 
 static enum rc count_profiles(struct db_press *p)
 {

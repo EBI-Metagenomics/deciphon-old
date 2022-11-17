@@ -1,12 +1,14 @@
 #include "loop/writer.h"
 #include "core/logy.h"
 #include "loop/wreq.h"
-#include "uv.h"
+#include <assert.h>
+#include <uv.h>
 
 void writer_init(struct writer *writer, struct uv_pipe_s *pipe,
                  on_error2_fn_t *on_error)
 {
     writer->pipe = pipe;
+    assert(!writer->pipe->data);
     writer->pipe->data = writer;
     writer->on_error = on_error;
     writer->open = 0;
@@ -35,8 +37,8 @@ void writer_put(struct writer *writer, char const *string)
     if (rc)
     {
         error("failed to write: %s", uv_strerror(rc));
-        wreq_put(req);
         (*writer->on_error)();
+        wreq_put(req);
     }
 }
 

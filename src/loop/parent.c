@@ -1,45 +1,39 @@
 #include "loop/parent.h"
-#include "core/logy.h"
-#include <assert.h>
+#include "loop/reader.h"
+#include "loop/stdpipes.h"
+#include "loop/writer.h"
+#include <stddef.h>
 #include <unistd.h>
 
-static void on_exit_fwd(void *arg);
+static struct reader in = {0};
+static struct writer out = {0};
+static bool closed = true;
 
-void parent_init(struct parent *parent, on_read2_fn_t *on_read,
-                 on_eof2_fn_t *on_eof, on_error2_fn_t *on_error,
-                 on_exit_fn_t *on_exit)
+static void on_exit_fwd(void);
+
+void parent_init(on_read2_fn_t *on_read, on_eof2_fn_t *on_eof,
+                 on_error2_fn_t *on_error)
 {
-    input_init(&parent->in, STDIN_FILENO, on_read, on_eof, on_error,
-               &on_exit_fwd, parent);
-    output_init(&parent->out, STDOUT_FILENO, on_error, &on_exit_fwd, parent);
-    parent->on_exit = on_exit;
-    parent->remain_handlers = 2;
+    stdpipes_init(&on_exit_fwd);
+    reader_init(&in, stdpipes_uv(STDIN_FILENO), on_read, on_eof, on_error);
+    writer_init(&out, stdpipes_uv(STDOUT_FILENO), on_error);
+    closed = false;
+    reader_open(&in);
+    writer_open(&out);
 }
 
-void parent_open(struct parent *parent)
+void parent_send(char const *string)
 {
-    input_start(&parent->in);
-    output_open(&parent->out);
+    if (string) writer_put(&out, string);
 }
 
-void parent_send(struct parent *parent, char const *string)
+void parent_close(void)
 {
-    if (string) writer_put(&parent->out.writer, string);
+    reader_close(&in);
+    writer_close(&out);
+    stdpipes_close();
 }
 
-void parent_close(struct parent *parent)
-{
-    input_close(&parent->in);
-    output_close(&parent->out);
-}
+bool parent_closed(void) { return closed; }
 
-bool parent_offline(struct parent const *parent)
-{
-    return !parent->remain_handlers;
-}
-
-static void on_exit_fwd(void *arg)
-{
-    struct parent *parent = arg;
-    if (!--parent->remain_handlers && parent->on_exit) (*parent->on_exit)();
-}
+static void on_exit_fwd(void) { closed = true; }

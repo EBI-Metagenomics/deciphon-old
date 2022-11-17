@@ -65,5 +65,5 @@ static void fn_quit(struct msg *msg)
 {
     if (msg_check(msg, "s")) return;
     hmmer_stop();
-    global_terminate();
+    global_shutdown();
 }
