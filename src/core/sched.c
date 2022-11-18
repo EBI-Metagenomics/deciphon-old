@@ -1,7 +1,7 @@
 #include "core/sched.h"
-#include "core/logy.h"
-#include "core/rc.h"
 #include "jx.h"
+#include "logy.h"
+#include "rc.h"
 #include <string.h>
 
 enum sched_job_type sched_job_type(struct sched_job const *job)

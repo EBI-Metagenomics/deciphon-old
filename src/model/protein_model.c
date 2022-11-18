@@ -1,5 +1,5 @@
 #include "model/protein_model.h"
-#include "core/logy.h"
+#include "logy.h"
 #include "model/entry_dist.h"
 #include "model/nuclt_dist.h"
 #include "model/protein_model.h"

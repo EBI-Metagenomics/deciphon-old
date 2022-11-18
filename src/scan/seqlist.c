@@ -1,10 +1,10 @@
 #include "scan/seqlist.h"
 #include "core/errmsg.h"
-#include "core/logy.h"
 #include "core/strings.h"
 #include "fs.h"
 #include "imm/abc.h"
 #include "jx.h"
+#include "logy.h"
 #include "scan/seq.h"
 #include <assert.h>
 #include <limits.h>

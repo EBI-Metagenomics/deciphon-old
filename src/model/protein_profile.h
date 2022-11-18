@@ -2,11 +2,11 @@
 #define DECIPHON_MODEL_PROTEIN_PROFILE_H
 
 #include "core/limits.h"
-#include "core/rc.h"
 #include "imm/imm.h"
 #include "model/profile.h"
 #include "model/protein_cfg.h"
 #include "model/protein_model.h"
+#include "rc.h"
 #include <stdio.h>
 
 struct protein_profile

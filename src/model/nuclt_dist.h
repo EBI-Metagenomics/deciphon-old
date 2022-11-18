@@ -1,8 +1,8 @@
 #ifndef DECIPHON_MODEL_NUCLT_DIST_H
 #define DECIPHON_MODEL_NUCLT_DIST_H
 
-#include "core/rc.h"
 #include "imm/imm.h"
+#include "rc.h"
 
 struct nuclt_dist
 {

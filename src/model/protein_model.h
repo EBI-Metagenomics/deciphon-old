@@ -2,7 +2,6 @@
 #define DECIPHON_MODEL_PROTEIN_MODEL_H
 
 #include "core/limits.h"
-#include "core/rc.h"
 #include "imm/imm.h"
 #include "model/entry_dist.h"
 #include "model/nuclt_dist.h"
@@ -12,6 +11,7 @@
 #include "model/protein_trans.h"
 #include "model/protein_xnode.h"
 #include "model/protein_xtrans.h"
+#include "rc.h"
 
 struct protein_model
 {

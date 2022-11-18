@@ -1,5 +1,5 @@
 #include "state.h"
-#include "core/pp.h"
+#include "array_size.h"
 #include <assert.h>
 
 static char const *strings[] = {[INIT] = "init",

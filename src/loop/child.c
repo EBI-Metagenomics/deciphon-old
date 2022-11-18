@@ -1,10 +1,9 @@
 #include "loop/child.h"
-#include "core/die.h"
-#include "core/global.h"
-#include "core/logy.h"
+#include "die.h"
+#include "logy.h"
+#include "loop/global.h"
 #include "loop/reader.h"
 #include "loop/writer.h"
-#include <assert.h>
 #include <unistd.h>
 #include <uv.h>
 

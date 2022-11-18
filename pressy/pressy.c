@@ -1,14 +1,15 @@
 #include "argless.h"
+#include "array_size.h"
 #include "core/cmd.h"
 #include "core/filename.h"
-#include "core/fmt.h"
-#include "core/global.h"
 #include "core/limits.h"
-#include "core/logy.h"
-#include "core/msg.h"
-#include "core/pidfile.h"
-#include "core/strlcpy.h"
+#include "fmt.h"
+#include "logy.h"
+#include "loop/global.h"
 #include "loop/parent.h"
+#include "msg.h"
+#include "pidfile.h"
+#include "strlcpy.h"
 #include "work.h"
 #include <string.h>
 
@@ -28,7 +29,6 @@ static bool linger(void);
 static void cleanup(void);
 
 static void on_read(char *line);
-static void on_work_end(enum work_end_reason, char const *hmm);
 
 int main(int argc, char *argv[])
 {
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 
     global_init(argv[0], loglvl, &linger, &cleanup);
     parent_init(&on_read, &global_shutdown, &global_shutdown);
-    work_init(&on_work_end);
+    work_init();
     return global_run();
 }
 
@@ -87,8 +87,6 @@ static void cleanup(void)
     work_cancel();
     parent_close();
 }
-
-static void on_work_end(enum work_end_reason, char const *hmm) { (void)hmm; }
 
 static void quit(struct msg *msg)
 {

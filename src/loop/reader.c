@@ -1,7 +1,7 @@
 #include "loop/reader.h"
-#include "core/die.h"
-#include "core/logy.h"
-#include "core/pp.h"
+#include "die.h"
+#include "logy.h"
+#include "sizeof_field.h"
 #include "uv.h"
 #include <assert.h>
 #include <ctype.h>

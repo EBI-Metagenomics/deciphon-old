@@ -22,16 +22,7 @@
 #define __MEMBER_REF(var, member) ((__typeof__(var) *)0)->member
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#define array_size(arr) (sizeof(arr) / sizeof((arr)[0]))
 #define ARRAY_SIZE_OF(var, member) ARRAY_SIZE(__MEMBER_REF((var), member))
-
-/**
- * sizeof_field() - Report the size of a struct field in bytes
- *
- * @TYPE: The structure containing the field of interest
- * @MEMBER: The field to return the size of
- */
-#define sizeof_field(TYPE, MEMBER) sizeof((((TYPE *)0)->MEMBER))
 
 #define PASTE(x, y) PASTE_(x, y)
 #define PASTE_(x, y) x##y

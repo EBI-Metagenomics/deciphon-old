@@ -1,7 +1,7 @@
 #include "loop/stdpipes.h"
-#include "core/die.h"
-#include "core/global.h"
-#include "core/unused.h"
+#include "die.h"
+#include "loop/global.h"
+#include "unused.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <unistd.h>

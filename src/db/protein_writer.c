@@ -1,8 +1,8 @@
 #include "db/protein_writer.h"
-#include "core/logy.h"
-#include "core/rc.h"
 #include "db/types.h"
+#include "logy.h"
 #include "model/model.h"
+#include "rc.h"
 
 static enum rc pack_entry_dist(struct lip_file *file,
                                enum entry_dist const *edist)

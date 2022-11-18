@@ -1,8 +1,8 @@
 #include "db/protein_reader.h"
 #include "core/expect.h"
-#include "core/logy.h"
 #include "db/reader.h"
 #include "imm/imm.h"
+#include "logy.h"
 #include "model/model.h"
 
 static enum rc unpack_entry_dist(struct lip_file *file, enum entry_dist *edist)

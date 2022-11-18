@@ -2,9 +2,9 @@
 #include "core/compiler.h"
 #include "core/expect.h"
 #include "core/limits.h"
-#include "core/logy.h"
 #include "db/types.h"
 #include "imm/imm.h"
+#include "logy.h"
 #include "model/model.h"
 #include <stdlib.h>
 

@@ -1,10 +1,10 @@
 #ifndef PROTEIN_DB_WRITER_H
 #define PROTEIN_DB_WRITER_H
 
-#include "core/rc.h"
 #include "model/entry_dist.h"
 #include "model/protein_cfg.h"
 #include "model/protein_profile.h"
+#include "rc.h"
 #include "writer.h"
 #include <stdio.h>
 

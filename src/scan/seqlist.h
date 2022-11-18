@@ -1,7 +1,7 @@
 #ifndef SCAN_SEQLIST_H
 #define SCAN_SEQLIST_H
 
-#include "core/rc.h"
+#include "rc.h"
 
 struct imm_abc;
 

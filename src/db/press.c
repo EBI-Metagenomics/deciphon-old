@@ -1,6 +1,6 @@
 #include "db/press.h"
-#include "core/logy.h"
-#include "core/pp.h"
+#include "logy.h"
+#include "sizeof_field.h"
 #include "zc.h"
 
 static enum rc count_profiles(struct db_press *p);
@@ -55,7 +55,8 @@ static enum rc count_profiles(struct db_press *p)
 {
     unsigned count = 0;
 
-    while (fgets(p->buffer, ARRAY_SIZE_OF(*p, buffer), p->reader.fp) != NULL)
+    while (fgets(p->buffer, sizeof_field(struct db_press, buffer),
+                 p->reader.fp) != NULL)
     {
         if (!strncmp(p->buffer, HMMER3, strlen(HMMER3))) ++count;
     }

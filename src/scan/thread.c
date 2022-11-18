@@ -1,9 +1,9 @@
 #include "scan/thread.h"
 #include "core/errmsg.h"
-#include "core/logy.h"
 #include "core/progress.h"
 #include "core/xmath.h"
 #include "db/profile_reader.h"
+#include "logy.h"
 #include "scan/cfg.h"
 
 void thread_init(struct thread *t, FILE *prodfile, int idx,

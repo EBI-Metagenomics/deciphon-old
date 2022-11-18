@@ -1,5 +1,5 @@
 #include "loop/wreq.h"
-#include "core/logy.h"
+#include "logy.h"
 #include "uv.h"
 #include <string.h>
 

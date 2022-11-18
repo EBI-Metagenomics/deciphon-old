@@ -47,33 +47,34 @@ add_library(
   libs/jx.c
   libs/lazylog.c
   libs/zc.c
-  src/core/as.c
+  src/as.c
   src/core/buff.c
   src/core/errmsg.c
   src/core/expect.c
-  src/core/file.c
-  src/core/fmt.c
-  src/core/global.c
-  src/core/is.c
+  src/file.c
+  src/fmt.c
+  src/loop/global.c
+  src/basename.c
+  src/is.c
   src/core/machine.c
-  src/core/strlcpy.c
+  src/strlcpy.c
   src/core/mempool.c
-  src/core/msg.c
-  src/core/multifile.c
-  src/core/pidfile.c
+  src/msg.c
+  src/multifile.c
+  src/pidfile.c
   src/core/progress.c
-  src/core/rc.c
+  src/rc.c
   src/core/sched.c
   src/core/sched_dump.c
-  src/core/sharg.c
+  src/sharg.c
   src/core/to.c
-  src/core/die.c
-  src/core/exe.c
+  src/die.c
+  src/exe.c
   src/core/url.c
   src/core/cmd.c
   src/core/xmath.c
   src/core/filename.c
-  src/core/xmem.c
+  src/xmem.c
   src/db/press.c
   src/db/profile_reader.c
   src/db/protein_reader.c

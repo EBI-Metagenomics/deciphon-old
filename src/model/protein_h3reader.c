@@ -1,6 +1,6 @@
 #include "model/protein_h3reader.h"
 #include "core/compiler.h"
-#include "core/rc.h"
+#include "rc.h"
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 

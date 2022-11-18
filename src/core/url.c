@@ -1,12 +1,12 @@
 #include "core/url.h"
-#include "core/pp.h"
+#include "array_size.h"
 #include "zc.h"
 #include <assert.h>
 
 bool url_init(struct url *url, char const *stem)
 {
     url->stem = url->full;
-    unsigned n = (unsigned)zc_strlcpy(url->stem, stem, ARRAY_SIZE(url->full));
+    unsigned n = (unsigned)zc_strlcpy(url->stem, stem, array_size(url->full));
     if (n >= URL_STEM_SIZE) return false;
 
     url->query = url->full + n;
@@ -15,7 +15,7 @@ bool url_init(struct url *url, char const *stem)
 
 static inline unsigned __url_size_left(struct url const *url)
 {
-    return (unsigned)(&url->full[ARRAY_SIZE(url->full)] - url->query);
+    return (unsigned)(&url->full[array_size(url->full)] - url->query);
 }
 
 void url_set_query(struct url *url, char const *query)

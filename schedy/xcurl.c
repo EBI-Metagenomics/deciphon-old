@@ -1,4 +1,5 @@
 #include "xcurl.h"
+#include "array_size.h"
 #include "core/buff.h"
 #include "core/compiler.h"
 #include "core/limits.h"
@@ -232,7 +233,7 @@ enum rc xcurl_upload(char const *query)
 static struct curl_slist const *http_header_cnt(unsigned cnt, ...)
 {
     static struct curl_slist items[8] = {0};
-    assert(cnt < ARRAY_SIZE(items));
+    assert(cnt < array_size(items));
 
     va_list valist;
     va_start(valist, cnt);

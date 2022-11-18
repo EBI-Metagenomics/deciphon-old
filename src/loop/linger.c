@@ -1,9 +1,9 @@
 #include "loop/linger.h"
-#include "core/die.h"
-#include "core/global.h"
-#include "core/run_once.h"
-#include "core/unused.h"
+#include "die.h"
+#include "loop/global.h"
 #include "loop/now.h"
+#include "run_once.h"
+#include "unused.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <uv.h>

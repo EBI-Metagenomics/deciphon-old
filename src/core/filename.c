@@ -1,6 +1,6 @@
 #include "core/filename.h"
 #include "core/limits.h"
-#include "core/logy.h"
+#include "logy.h"
 #include <string.h>
 
 #define INVAL_SIZE "file extension must be 3 characters long"

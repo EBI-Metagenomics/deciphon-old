@@ -1,18 +1,18 @@
 #include "loop/timer.h"
-#include "core/global.h"
-#include "core/logy.h"
-#include "uv.h"
-#include <stdatomic.h>
+#include "atomic.h"
+#include "logy.h"
+#include "loop/global.h"
 #include <stdbool.h>
+#include <uv.h>
 
 inline static void set_disabled(struct timer *t, bool v)
 {
-    atomic_store_explicit(&t->disabled, v, memory_order_release);
+    atomic_release(&t->disabled, v);
 }
 
 inline static bool is_disabled(struct timer *t)
 {
-    return atomic_load_explicit(&t->disabled, memory_order_consume);
+    return atomic_consume(&t->disabled);
 }
 
 static void fwd_callback(struct uv_timer_s *req)

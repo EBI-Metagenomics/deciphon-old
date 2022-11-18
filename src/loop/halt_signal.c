@@ -1,6 +1,6 @@
 #include "loop/halt_signal.h"
-#include "core/die.h"
-#include "core/unused.h"
+#include "die.h"
+#include "unused.h"
 #include <stdbool.h>
 #include <uv.h>
 

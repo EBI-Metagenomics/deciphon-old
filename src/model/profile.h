@@ -2,8 +2,8 @@
 #define DECIPHON_MODEL_PROFILE_H
 
 #include "core/limits.h"
-#include "core/rc.h"
 #include "imm/imm.h"
+#include "rc.h"
 
 struct lip_file;
 struct profile;

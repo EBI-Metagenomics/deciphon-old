@@ -1,7 +1,7 @@
 #ifndef SCAN_SCAN_H
 #define SCAN_SCAN_H
 
-#include "core/rc.h"
+#include "rc.h"
 #include "scan/cfg.h"
 #include <stdbool.h>
 

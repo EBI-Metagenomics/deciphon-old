@@ -1,12 +1,12 @@
 #include "db/writer.h"
 #include "core/compiler.h"
 #include "core/limits.h"
-#include "core/logy.h"
-#include "core/rc.h"
 #include "db/types.h"
 #include "fs.h"
 #include "imm/imm.h"
+#include "logy.h"
 #include "model/model.h"
+#include "rc.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

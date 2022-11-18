@@ -1,7 +1,7 @@
 #include "scan/prodman.h"
-#include "core/logy.h"
-#include "core/multifile.h"
 #include "fs.h"
+#include "logy.h"
+#include "multifile.h"
 
 static struct multifile multifile = {0};
 

@@ -1,8 +1,8 @@
 #include "scan/prod.h"
-#include "core/logy.h"
 #include "core/version.h"
 #include "fs.h"
 #include "imm/imm.h"
+#include "logy.h"
 #include "scan/match.h"
 
 void prod_setup_job(struct prod *prod, char const *abc_name,

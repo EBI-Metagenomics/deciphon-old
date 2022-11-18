@@ -1,14 +1,13 @@
 #include "work.h"
-#include "core/atomic.h"
-#include "core/global.h"
-#include "core/logy.h"
+#include "atomic.h"
 #include "core/progress.h"
-#include "core/strlcpy.h"
 #include "db/press.h"
+#include "logy.h"
+#include "loop/global.h"
+#include "strlcpy.h"
 #include <assert.h>
 #include <uv.h>
 
-static work_end_fn_t *on_end = NULL;
 static enum state state = INIT;
 static atomic_bool cancel = false;
 static struct uv_work_s work_request = {0};
@@ -19,9 +18,8 @@ static struct db_press db_press = {0};
 
 static struct progress progress = {0};
 
-void work_init(work_end_fn_t *on_end_fn)
+void work_init(void)
 {
-    on_end = on_end_fn;
     state = INIT;
     cancel = false;
     progress_init(&progress, 0);
@@ -110,11 +108,4 @@ static void end(struct uv_work_s *w, int status)
     if (status == UV_ECANCELED && state == RUN) state = CANCEL;
     atomic_release(&cancel, false);
     assert(state == CANCEL || state == DONE || state == FAIL);
-
-    enum work_end_reason reason = 0;
-    if (state == CANCEL) reason = CANCELLED;
-    if (state == DONE) reason = SUCCESS;
-    if (state == FAIL) reason = FAILURE;
-
-    if (on_end) (*on_end)(reason, hmm);
 }

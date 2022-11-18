@@ -1,5 +1,5 @@
 #include "scan/protein_match.h"
-#include "core/logy.h"
+#include "logy.h"
 #include "model/protein_profile.h"
 
 /* Match example

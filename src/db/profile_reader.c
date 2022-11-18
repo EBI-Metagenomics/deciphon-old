@@ -1,8 +1,8 @@
 #include "core/expect.h"
-#include "core/logy.h"
 #include "core/xmath.h"
 #include "db/db.h"
 #include "fs.h"
+#include "logy.h"
 #include "zc.h"
 
 static void cleanup(struct profile_reader *reader)

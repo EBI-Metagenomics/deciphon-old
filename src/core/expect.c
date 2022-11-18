@@ -1,5 +1,5 @@
 #include "core/expect.h"
-#include "core/pp.h"
+#include "array_size.h"
 #include <string.h>
 
 bool expect_map_size(struct lip_file *file, unsigned size)
@@ -15,7 +15,7 @@ bool expect_map_key(struct lip_file *file, char const key[])
     char buf[16] = {0};
 
     lip_read_str_size(file, &size);
-    if (size > ARRAY_SIZE(buf)) file->error = true;
+    if (size > array_size(buf)) file->error = true;
 
     lip_read_str_data(file, size, buf);
     if (size != (unsigned)strlen(key)) file->error = true;

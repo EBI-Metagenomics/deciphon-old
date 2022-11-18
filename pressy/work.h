@@ -12,7 +12,7 @@ enum work_end_reason
 
 typedef void work_end_fn_t(enum work_end_reason, char const *hmm);
 
-void work_init(work_end_fn_t *);
+void work_init(void);
 enum state work_state(void);
 int work_progress(void);
 int work_run(char const *hmm, char const *db);
