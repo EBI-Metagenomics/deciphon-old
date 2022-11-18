@@ -140,10 +140,10 @@ target_link_libraries(schedy PRIVATE deciphon)
 
 add_executable(pressy pressy/pressy.c pressy/work.c pressy/state.c)
 target_link_libraries(pressy PRIVATE deciphon)
-#
-# add_executable(scanny scanny/scanny.c scanny/command.c scanny/scanner.c)
-# target_link_libraries(scanny PRIVATE deciphon)
-#
+
+add_executable(scanny scanny/scanny.c scanny/work.c scanny/state.c)
+target_link_libraries(scanny PRIVATE deciphon)
+
 # add_executable(hmmy hmmy/hmmy.c hmmy/command.c hmmy/hmmer.c hmmy/client.c
 # hmmy/server.c hmmy/boot.c) target_link_libraries(hmmy PRIVATE deciphon)
 # add_dependencies(hmmy H3C::h3client) add_custom_command( TARGET hmmy

@@ -11,12 +11,11 @@
 static enum state state = INIT;
 static atomic_bool cancel = false;
 static struct uv_work_s work_request = {0};
+static struct progress progress = {0};
 
 static char hmm[FILENAME_SIZE] = {0};
 static char db[FILENAME_SIZE] = {0};
 static struct db_press db_press = {0};
-
-static struct progress progress = {0};
 
 void work_init(void)
 {
@@ -52,6 +51,8 @@ int work_run(char const *hmmfile, char const *dbfile)
 }
 
 char const *work_hmmfile(void) { return hmm; }
+
+char const *work_dbfile(void) { return db; }
 
 void work_cancel(void)
 {

@@ -18,9 +18,9 @@ teardown() {
     helper_teardown
 }
 
-@test "idle state" {
-    run sendo "state | {1} {2}"
-    assert_output "ok idle"
+@test "init state" {
+    run sendo "state | {1} {2} {3}"
+    assert_output "ok init 0%"
 }
 
 @test "submit" {

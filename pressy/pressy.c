@@ -160,6 +160,6 @@ static void state(struct msg *msg)
     char perc[] = "100%";
     fmt_perc(perc, work_progress());
     strcat(perc, "%");
-    parent_send(
-        msg_ctx(msg, "ok", state_string(work_state()), perc, work_hmmfile()));
+    parent_send(msg_ctx(msg, "ok", state_string(work_state()), perc,
+                        work_hmmfile(), work_dbfile()));
 }
