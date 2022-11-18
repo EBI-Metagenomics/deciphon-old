@@ -29,7 +29,7 @@ teardown() {
 
 @test "echo" {
     run sendo "echo hello world"
-    assert_output "echo hello world"
+    assert_output "hello world"
 }
 
 @test "online" {

@@ -1,8 +1,8 @@
 #ifndef SCHEDY_API_H
 #define SCHEDY_API_H
 
-#include "core/limits.h"
-#include "core/rc.h"
+#include "deciphon_limits.h"
+#include "rc.h"
 #include "sched_structs.h"
 #include <stdbool.h>
 #include <stdint.h>
