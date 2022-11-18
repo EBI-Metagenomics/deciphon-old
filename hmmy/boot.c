@@ -1,9 +1,9 @@
 #include "boot.h"
 #include "client.h"
-#include "core/global.h"
-#include "core/logy.h"
+#include "logy.h"
+#include "loop/global.h"
 #include "server.h"
-#include "uv.h"
+#include <uv.h>
 
 enum boot_state
 {

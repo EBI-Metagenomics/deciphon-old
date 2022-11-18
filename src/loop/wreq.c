@@ -1,7 +1,7 @@
 #include "loop/wreq.h"
 #include "logy.h"
-#include "uv.h"
 #include <string.h>
+#include <uv.h>
 
 enum
 {

@@ -2,10 +2,10 @@
 #include "die.h"
 #include "logy.h"
 #include "sizeof_field.h"
-#include "uv.h"
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
+#include <uv.h>
 
 static bool only_spaces(char const *string)
 {

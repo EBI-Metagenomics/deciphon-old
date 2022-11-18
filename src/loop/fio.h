@@ -1,8 +1,8 @@
 #ifndef LOOP_FIO_H
 #define LOOP_FIO_H
 
-#include "uv.h"
 #include <stdbool.h>
+#include <uv.h>
 
 typedef void fio_onopen_fn_t(bool ok, void *arg);
 typedef void fio_onclose_fn_t(void *arg);

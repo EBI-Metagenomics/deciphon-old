@@ -11,11 +11,11 @@
 #include "fs.h"
 #include "scan/scan.h"
 #include "scan/thread.h"
-#include "uv.h"
 #include "zc.h"
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <uv.h>
 
 enum state
 {

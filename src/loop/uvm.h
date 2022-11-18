@@ -3,8 +3,8 @@
 
 // ACK: https://github.com/litesync/libuv_message_framing
 
-#include "uv.h"
 #include <stdint.h>
+#include <uv.h>
 
 struct uvm;
 struct uvm_req;

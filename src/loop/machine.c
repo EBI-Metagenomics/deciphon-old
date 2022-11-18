@@ -5,16 +5,16 @@
 #endif
 
 #if defined(HAS_AVAILABLE_PARALLELISM)
-#include "uv.h"
+#include <uv.h>
 #else
 #if !defined(_GNU_SOURCE)
 #define _GNU_SOURCE 1
 #endif
-#include "uv.h"
 #include <sched.h>
 #include <string.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <uv.h>
 #endif
 
 int machine_ncpus(void)
