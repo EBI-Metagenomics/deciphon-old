@@ -4,6 +4,7 @@
 #include "imm/imm.h"
 #include "logy.h"
 #include "scan/match.h"
+#include <string.h>
 
 void prod_setup_job(struct prod *prod, char const *abc_name,
                     char const *prof_typeid, long scan_id)

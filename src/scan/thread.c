@@ -5,6 +5,7 @@
 #include "db/profile_reader.h"
 #include "logy.h"
 #include "scan/cfg.h"
+#include <string.h>
 
 void thread_init(struct thread *t, FILE *prodfile, int idx,
                  struct profile_reader *reader, struct scan_cfg cfg,

@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define LOGN2 (imm_float)(-1.3862943611198906) /* log(1./4.) */
 #define LOG1 IMM_LPROB_ONE

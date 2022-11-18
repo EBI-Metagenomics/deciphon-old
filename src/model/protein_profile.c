@@ -10,6 +10,7 @@
 #include "model/protein_profile.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void del(struct profile *prof)
 {

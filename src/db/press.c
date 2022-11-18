@@ -2,6 +2,7 @@
 #include "logy.h"
 #include "sizeof_field.h"
 #include "zc.h"
+#include <string.h>
 
 static enum rc count_profiles(struct db_press *p);
 static enum rc prepare_writer(struct db_press *p);
