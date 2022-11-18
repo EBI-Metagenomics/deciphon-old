@@ -41,6 +41,7 @@ endif()
 
 add_library(
   deciphon
+  # src/loop/proc.c
   libs/argless.c
   libs/dotenv.c
   libs/fs.c
@@ -48,51 +49,38 @@ add_library(
   libs/lazylog.c
   libs/zc.c
   src/as.c
-  src/core/buff.c
-  src/core/errmsg.c
-  src/core/expect.c
-  src/file.c
-  src/fmt.c
-  src/loop/global.c
   src/basename.c
-  src/is.c
-  src/core/machine.c
-  src/strlcpy.c
-  src/core/mempool.c
-  src/msg.c
-  src/multifile.c
-  src/pidfile.c
-  src/core/progress.c
-  src/rc.c
+  src/buff.c
+  src/cmd.c
   src/core/sched.c
   src/core/sched_dump.c
-  src/sharg.c
-  src/core/to.c
-  src/die.c
-  src/exe.c
-  src/core/url.c
-  src/core/cmd.c
-  src/core/xmath.c
-  src/core/filename.c
-  src/xmem.c
   src/db/press.c
   src/db/profile_reader.c
   src/db/protein_reader.c
   src/db/protein_writer.c
   src/db/reader.c
   src/db/writer.c
+  src/die.c
+  src/errmsg.c
+  src/exe.c
+  src/expect.c
+  src/file.c
+  src/filename.c
+  src/fmt.c
+  src/is.c
   src/loop/child.c
-  src/loop/now.c
+  src/loop/global.c
   src/loop/halt_signal.c
   src/loop/linger.c
+  src/loop/machine.c
+  src/loop/now.c
   src/loop/parent.c
-  # src/loop/proc.c
   src/loop/reader.c
   src/loop/stdpipes.c
   src/loop/timer.c
   src/loop/uvm.c
-  src/loop/writer.c
   src/loop/wreq.c
+  src/loop/writer.c
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c
@@ -103,13 +91,24 @@ add_library(
   src/model/protein_state.c
   src/model/standard_profile.c
   src/model/standard_state.c
+  src/msg.c
+  src/multifile.c
+  src/pidfile.c
+  src/progress.c
+  src/rc.c
   src/scan/prod.c
   src/scan/prodman.c
   src/scan/protein_match.c
   src/scan/scan.c
   src/scan/seq.c
   src/scan/seqlist.c
-  src/scan/thread.c)
+  src/scan/thread.c
+  src/sharg.c
+  src/strlcpy.c
+  src/to.c
+  src/url.c
+  src/xmath.c
+  src/xmem.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
 
 target_link_libraries(deciphon PRIVATE H3C::h3c)

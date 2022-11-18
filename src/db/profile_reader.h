@@ -1,8 +1,8 @@
 #ifndef PROFILE_READER_H
 #define PROFILE_READER_H
 
-#include "core/limits.h"
 #include "core/lite_pack.h"
+#include "deciphon_limits.h"
 #include "model/model.h"
 #include <stdint.h>
 

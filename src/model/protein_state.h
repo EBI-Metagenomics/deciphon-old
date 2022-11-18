@@ -1,7 +1,7 @@
 #ifndef DECIPHON_MODEL_PROTEIN_STATE_H
 #define DECIPHON_MODEL_PROTEIN_STATE_H
 
-#include "core/limits.h"
+#include "deciphon_limits.h"
 #include "imm/imm.h"
 
 enum protein_state_id

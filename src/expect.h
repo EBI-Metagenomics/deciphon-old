@@ -1,5 +1,5 @@
-#ifndef CORE_EXPECT_H
-#define CORE_EXPECT_H
+#ifndef EXPECT_H
+#define EXPECT_H
 
 #include "core/compiler.h"
 #include "core/lite_pack.h"

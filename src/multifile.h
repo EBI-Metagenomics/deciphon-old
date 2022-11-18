@@ -1,7 +1,7 @@
 #ifndef MULTIFILE_H
 #define MULTIFILE_H
 
-#include "core/limits.h"
+#include "deciphon_limits.h"
 #include <stdio.h>
 
 struct multifile_final

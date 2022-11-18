@@ -1,6 +1,6 @@
 #include "scan/seqlist.h"
-#include "core/errmsg.h"
 #include "core/strings.h"
+#include "errmsg.h"
 #include "fs.h"
 #include "imm/abc.h"
 #include "jx.h"

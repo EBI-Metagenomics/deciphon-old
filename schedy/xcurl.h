@@ -1,7 +1,7 @@
 #ifndef SCHEDY_XCURL_H
 #define SCHEDY_XCURL_H
 
-#include "core/rc.h"
+#include "rc.h"
 #include <stdio.h>
 
 struct mime_file;

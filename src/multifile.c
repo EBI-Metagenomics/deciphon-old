@@ -1,5 +1,5 @@
 #include "multifile.h"
-#include "core/limits.h"
+#include "deciphon_limits.h"
 #include "fs.h"
 #include "logy.h"
 #include "sizeof_field.h"

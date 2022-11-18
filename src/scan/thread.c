@@ -1,10 +1,10 @@
 #include "scan/thread.h"
-#include "core/errmsg.h"
-#include "core/progress.h"
-#include "core/xmath.h"
 #include "db/profile_reader.h"
+#include "errmsg.h"
 #include "logy.h"
+#include "progress.h"
 #include "scan/cfg.h"
+#include "xmath.h"
 #include <string.h>
 
 void thread_init(struct thread *t, FILE *prodfile, int idx,

@@ -1,7 +1,7 @@
 #ifndef SCHEDY_XCURL_ERROR_H
 #define SCHEDY_XCURL_ERROR_H
 
-#include "core/logy.h"
+#include "logy.h"
 #include <curl/curl.h>
 
 /* clang-format off */

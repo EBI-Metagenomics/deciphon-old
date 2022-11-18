@@ -1,6 +1,6 @@
 #include "db/protein_reader.h"
-#include "core/expect.h"
 #include "db/reader.h"
+#include "expect.h"
 #include "imm/imm.h"
 #include "logy.h"
 #include "model/model.h"

@@ -1,5 +1,5 @@
-#include "core/filename.h"
-#include "core/limits.h"
+#include "filename.h"
+#include "deciphon_limits.h"
 #include "logy.h"
 #include <string.h>
 

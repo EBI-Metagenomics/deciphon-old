@@ -1,7 +1,7 @@
 #ifndef SCAN_PROD_H
 #define SCAN_PROD_H
 
-#include "core/limits.h"
+#include "deciphon_limits.h"
 #include "sched_structs.h"
 #include <stdio.h>
 

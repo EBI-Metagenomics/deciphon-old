@@ -1,9 +1,9 @@
 #include "work.h"
 #include "atomic.h"
-#include "core/progress.h"
 #include "db/press.h"
 #include "logy.h"
 #include "loop/global.h"
+#include "progress.h"
 #include "strlcpy.h"
 #include <assert.h>
 #include <uv.h>

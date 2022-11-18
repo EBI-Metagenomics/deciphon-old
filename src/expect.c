@@ -1,4 +1,4 @@
-#include "core/expect.h"
+#include "expect.h"
 #include "array_size.h"
 #include <string.h>
 

@@ -1,5 +1,5 @@
 #include "model/standard_state.h"
-#include "core/to.h"
+#include "to.h"
 #include <assert.h>
 
 unsigned standard_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])

@@ -1,7 +1,7 @@
 #ifndef DECIPHON_MODEL_PROTEIN_MODEL_H
 #define DECIPHON_MODEL_PROTEIN_MODEL_H
 
-#include "core/limits.h"
+#include "deciphon_limits.h"
 #include "imm/imm.h"
 #include "model/entry_dist.h"
 #include "model/nuclt_dist.h"

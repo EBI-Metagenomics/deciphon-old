@@ -1,5 +1,5 @@
-#ifndef CORE_TO_H
-#define CORE_TO_H
+#ifndef TO_H
+#define TO_H
 
 #include <stdbool.h>
 #include <stdint.h>

@@ -1,7 +1,7 @@
 #ifndef SCAN_THREAD_H
 #define SCAN_THREAD_H
 
-#include "core/progress.h"
+#include "progress.h"
 #include "scan/cfg.h"
 #include "scan/hypothesis.h"
 #include "scan/prod.h"

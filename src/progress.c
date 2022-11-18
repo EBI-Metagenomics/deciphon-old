@@ -1,4 +1,4 @@
-#include "core/progress.h"
+#include "progress.h"
 #include "core/compiler.h"
 
 static int percent(long total, long consumed);

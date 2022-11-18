@@ -1,4 +1,4 @@
-#include "core/buff.h"
+#include "buff.h"
 #include <assert.h>
 #include <stdlib.h>
 

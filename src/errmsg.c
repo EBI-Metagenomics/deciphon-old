@@ -1,4 +1,4 @@
-#include "core/errmsg.h"
+#include "errmsg.h"
 #include <stdarg.h>
 #include <stdio.h>
 

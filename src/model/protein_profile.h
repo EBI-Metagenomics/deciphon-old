@@ -1,7 +1,7 @@
 #ifndef DECIPHON_MODEL_PROTEIN_PROFILE_H
 #define DECIPHON_MODEL_PROTEIN_PROFILE_H
 
-#include "core/limits.h"
+#include "deciphon_limits.h"
 #include "imm/imm.h"
 #include "model/profile.h"
 #include "model/protein_cfg.h"

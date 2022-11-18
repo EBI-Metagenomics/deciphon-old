@@ -1,7 +1,7 @@
-#ifndef CORE_ERRMSG_H
-#define CORE_ERRMSG_H
+#ifndef ERRMSG_H
+#define ERRMSG_H
 
-#include "core/limits.h"
+#include "deciphon_limits.h"
 
 #define ERRMSG_DECLARE(name) char name[ERROR_SIZE];
 
