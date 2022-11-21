@@ -11,10 +11,10 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-cpmaddpackage("gh:EBI-Metagenomics/h3client@0.4.0")
+cpmaddpackage("gh:EBI-Metagenomics/h3client@0.5.2")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.2.1")
-cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.11")
-cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.0")
+cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.13")
+cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.1")
 
 find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
@@ -36,8 +36,6 @@ endif()
 if(OpenMP_FOUND)
   add_compile_definitions(DECIPHON_OPENM=1)
 endif()
-
-# add_compile_definitions(_POSIX_C_SOURCE=200809L)
 
 add_library(
   deciphon
@@ -62,13 +60,13 @@ add_library(
   src/db/writer.c
   src/die.c
   src/errmsg.c
-  src/exe.c
   src/expect.c
   src/file.c
   src/filename.c
   src/fmt.c
   src/is.c
   src/loop/child.c
+  src/loop/exe.c
   src/loop/global.c
   src/loop/halt_signal.c
   src/loop/linger.c
@@ -77,8 +75,6 @@ add_library(
   src/loop/parent.c
   src/loop/reader.c
   src/loop/stdpipes.c
-  src/loop/timer.c
-  src/loop/uvm.c
   src/loop/wreq.c
   src/loop/writer.c
   src/model/nuclt_dist.c

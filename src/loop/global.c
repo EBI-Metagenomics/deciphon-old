@@ -1,14 +1,16 @@
+#define _POSIX_C_SOURCE 200809L
 #include "loop/global.h"
 #include "basename.h"
 #include "die.h"
-#include "exe.h"
 #include "lazylog.h"
+#include "loop/exe.h"
 #include "loop/halt_signal.h"
 #include "loop/linger.h"
 #include "run_once.h"
 #include "strlcpy.h"
 #include "unused.h"
 #include <stdio.h>
+#include <string.h>
 #include <uv.h>
 
 static char title[128] = {0};

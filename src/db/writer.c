@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "db/writer.h"
 #include "core/compiler.h"
 #include "db/types.h"

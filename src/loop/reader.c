@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "loop/reader.h"
 #include "die.h"
 #include "logy.h"
