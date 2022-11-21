@@ -2,14 +2,18 @@
 #include "db/profile_reader.h"
 #include "db/protein_reader.h"
 #include "errmsg.h"
+#include "filename.h"
+#include "hmmer/daemon.h"
 #include "jx.h"
 #include "logy.h"
+#include "loop/now.h"
 #include "progress.h"
 #include "scan/prod.h"
 #include "scan/prodman.h"
 #include "scan/seq.h"
 #include "scan/seqlist.h"
 #include "scan/thread.h"
+#include "strlcpy.h"
 #include "zc.h"
 #include <stdlib.h>
 
@@ -32,21 +36,41 @@ static struct progress progress = {0};
 
 static enum rc prepare_readers(char const *db);
 
-void scan_init(struct scan_cfg cfg)
+int scan_init(struct scan_cfg cfg)
 {
     scan_cfg = cfg;
     errnum = RC_OK;
     errmsg[0] = '\0';
     progress_init(&progress, 0);
     prodman_init();
+    return hmmerd_init();
 }
 
 int scan_setup(char const *db, char const *seqs)
 {
+    debug("SCAN_SETUP 0: %s", db);
+    char hmm[PATH_SIZE] = {0};
+    strlcpy(hmm, db, sizeof(hmm));
+    filename_setext(hmm, "hmm");
+    debug("SCAN_SETUP 1");
+    hmmerd_start(hmm);
+    debug("SCAN_SETUP 2");
+    hmmerd_wait(now() + 15000);
+    debug("SCAN_SETUP OFF: %d", hmmerd_off());
+    debug("SCAN_SETUP ON: %d", hmmerd_on());
+
+    if (!hmmerd_on())
+    {
+        errnum = efail("failed to start hmmer daemon");
+        hmmerd_close();
+        return errnum;
+    }
+
     if ((errnum = prodman_setup(scan_cfg.nthreads)))
     {
         errfmt(errmsg, "failed to open product files");
         scan_cleanup();
+        hmmerd_close();
         return errnum;
     }
 
@@ -54,6 +78,7 @@ int scan_setup(char const *db, char const *seqs)
     if ((errnum = prepare_readers(db)))
     {
         scan_cleanup();
+        hmmerd_close();
         return errnum;
     }
 
@@ -62,6 +87,7 @@ int scan_setup(char const *db, char const *seqs)
     {
         errfmt(errmsg, "%s", seqlist_errmsg());
         scan_cleanup();
+        hmmerd_close();
         return errnum;
     }
 
@@ -88,6 +114,8 @@ int scan_setup(char const *db, char const *seqs)
     progress_init(&progress, ntasks_total);
     info("%ld tasks to run", ntasks_total);
 
+    hmmerd_stop();
+    hmmerd_close();
     return errnum;
 }
 

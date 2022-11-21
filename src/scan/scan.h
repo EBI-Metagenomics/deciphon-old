@@ -7,7 +7,7 @@
 
 struct progress;
 
-void scan_init(struct scan_cfg cfg);
+int scan_init(struct scan_cfg cfg);
 int scan_setup(char const *db, char const *seqs);
 int scan_run(void);
 int scan_progress_update(void);

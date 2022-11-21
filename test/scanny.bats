@@ -9,6 +9,7 @@ setup() {
     helper_init
     daemon_spawn scanny
     download minifam.dcp
+    download minifam.hmm
     download consensus.json
     download prods_file_20221021.tsv
 }

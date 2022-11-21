@@ -11,7 +11,7 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-cpmaddpackage("gh:EBI-Metagenomics/h3client@0.5.2")
+cpmaddpackage("gh:EBI-Metagenomics/h3client@0.5.3")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.2.1")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.13")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.1")
@@ -64,6 +64,7 @@ add_library(
   src/file.c
   src/filename.c
   src/fmt.c
+  src/hmmer/daemon.c
   src/is.c
   src/loop/child.c
   src/loop/exe.c
@@ -74,6 +75,7 @@ add_library(
   src/loop/now.c
   src/loop/parent.c
   src/loop/reader.c
+  src/loop/sleep.c
   src/loop/stdpipes.c
   src/loop/wreq.c
   src/loop/writer.c
@@ -140,12 +142,6 @@ target_link_libraries(pressy PRIVATE deciphon)
 add_executable(scanny scanny/scanny.c scanny/work.c scanny/state.c)
 target_link_libraries(scanny PRIVATE deciphon)
 
-# add_executable(hmmy hmmy/hmmy.c hmmy/command.c hmmy/hmmer.c hmmy/client.c
-# hmmy/server.c hmmy/boot.c) target_link_libraries(hmmy PRIVATE deciphon)
-# add_dependencies(hmmy H3C::h3client) add_custom_command( TARGET hmmy
-# POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:H3C::h3client>
-# $<TARGET_FILE_DIR:hmmy>)
-#
 # add_executable(decy decy/decy.c decy/command.c decy/cfg.c decy/broker.c)
 # target_link_libraries(decy PRIVATE deciphon)
 

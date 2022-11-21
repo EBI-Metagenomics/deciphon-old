@@ -7,6 +7,7 @@
 
 static char path[FILENAME_MAX] = {0};
 static char dir[FILENAME_MAX] = {0};
+static char cwd[FILENAME_MAX] = {0};
 
 void exe_init(void)
 {
@@ -16,7 +17,13 @@ void exe_init(void)
     sz = sizeof dir;
     if (uv_exepath(dir, &sz)) die();
     dirname(dir);
+
+    sz = sizeof cwd;
+    if (uv_cwd(cwd, &sz)) die();
 }
 
 char const *exe_path(void) { return path; }
+
 char const *exe_dir(void) { return dir; }
+
+char const *exe_cwd(void) { return cwd; }
