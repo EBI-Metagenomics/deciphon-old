@@ -1,3 +1,4 @@
+#include "scan/scan.h"
 #include "fs.h"
 #include "hope.h"
 #include "logy.h"
@@ -9,21 +10,28 @@
 
 int main(int argc, char *argv[])
 {
-    return hope_status();
     unused(argc);
     global_init(argv[0], ZLOG_DEBUG);
-    COND(!global_run_once());
 
-    work_init();
-    COND(!work_run("consensus.json", "minifam.dcp", "prods.tsv", true, false));
+    struct scan_cfg cfg = {1, 10., true, false};
+    scan_init(cfg);
 
-    global_run_once();
-    enum state state = work_state();
-    fprintf(stderr, "State: %d\n", state);
+    EQ(global_run_once(), 0);
+    EQ(scan_setup("minifam.dcp", "consensus.json"), 0);
+    EQ(global_run_once(), 0);
+    EQ(global_run_once(), 0);
+    EQ(global_run_once(), 0);
 
-    global_run_once();
-    state = work_state();
-    fprintf(stderr, "State: %d\n", state);
+    // work_init();
+    // COND(!work_run("consensus.json", "minifam.dcp", "prods.tsv", true,
+    // false));
+
+    // enum state state = work_state();
+    // fprintf(stderr, "State: %d\n", state);
+
+    // global_run_once();
+    // state = work_state();
+    // fprintf(stderr, "State: %d\n", state);
 
     return hope_status();
 }

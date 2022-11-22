@@ -3,8 +3,6 @@
 #include "db/protein_reader.h"
 #include "errmsg.h"
 #include "filename.h"
-#include "hmmer/daemon.h"
-#include "hmmer/state.h"
 #include "jx.h"
 #include "logy.h"
 #include "loop/now.h"
@@ -37,35 +35,21 @@ static struct progress progress = {0};
 
 static enum rc prepare_readers(char const *db);
 
-int scan_init(struct scan_cfg cfg)
+void scan_init(struct scan_cfg cfg)
 {
     scan_cfg = cfg;
     errnum = RC_OK;
     errmsg[0] = '\0';
     progress_init(&progress, 0);
     prodman_init();
-    return hmmerd_init();
 }
 
 int scan_setup(char const *db, char const *seqs)
 {
-    char hmm[PATH_SIZE] = {0};
-    strlcpy(hmm, db, sizeof(hmm));
-    filename_setext(hmm, "hmm");
-    hmmerd_start(hmm);
-
-    if (hmmerd_state() != HMMERD_ON)
-    {
-        errnum = efail("failed to start hmmer daemon");
-        hmmerd_close();
-        return errnum;
-    }
-
     if ((errnum = prodman_setup(scan_cfg.nthreads)))
     {
         errfmt(errmsg, "failed to open product files");
         scan_cleanup();
-        hmmerd_close();
         return errnum;
     }
 
@@ -73,7 +57,6 @@ int scan_setup(char const *db, char const *seqs)
     if ((errnum = prepare_readers(db)))
     {
         scan_cleanup();
-        hmmerd_close();
         return errnum;
     }
 
@@ -82,7 +65,6 @@ int scan_setup(char const *db, char const *seqs)
     {
         errfmt(errmsg, "%s", seqlist_errmsg());
         scan_cleanup();
-        hmmerd_close();
         return errnum;
     }
 
@@ -109,8 +91,6 @@ int scan_setup(char const *db, char const *seqs)
     progress_init(&progress, ntasks_total);
     info("%ld tasks to run", ntasks_total);
 
-    hmmerd_stop();
-    hmmerd_close();
     return errnum;
 }
 

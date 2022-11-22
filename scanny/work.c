@@ -57,8 +57,7 @@ int work_run(char const *seqs, char const *db, char const *prod,
         return enomem("file name is too long");
 
     struct scan_cfg cfg = {nthreads, 10., multi_hits, hmmer3_compat};
-    int rc = scan_init(cfg);
-    if (rc) return rc;
+    scan_init(cfg);
 
     if (uv_queue_work(global_loop(), &work_request, &run, &end))
         return efail("failed to queue work");

@@ -1,4 +1,5 @@
 #include "hmmer/daemon.h"
+#include "die.h"
 #include "fs.h"
 #include "hmmer/state.h"
 #include "logy.h"
@@ -10,6 +11,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+
+static bool no_init = false;
 
 static enum hmmerd_state state = HMMERD_OFF;
 
@@ -48,16 +51,22 @@ static char const *find_podman(void);
 
 int hmmerd_init(void)
 {
+    if (no_init) return RC_OK;
+
     char const *podman = find_podman();
     if (!podman) return efail("failed to find podman");
 
     strcpy(exepath, podman);
     state = HMMERD_OFF;
+
+    no_init = true;
     return RC_OK;
 }
 
 int hmmerd_start(char const *hmm)
 {
+    if (hmmerd_init()) die();
+
     if (state != HMMERD_OFF) fatal("daemon must be off to start it");
 
     strcpy(volume, exe_cwd());
@@ -80,12 +89,16 @@ int hmmerd_start(char const *hmm)
 
 void hmmerd_stop(void)
 {
+    if (hmmerd_init()) die();
+
     if (state == HMMERD_OFF) return;
     deadline = now() + 3000;
     child_kill(child);
 }
 
 int hmmerd_state(void) { return state; }
+
+char const *hmmerd_hmmfile(void) { return hmmfile; }
 
 void hmmerd_close(void)
 {
