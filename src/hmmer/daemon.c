@@ -40,6 +40,7 @@ static struct child *child = NULL;
 static long deadline = 0;
 
 static void on_read(char *line);
+static void on_eof(void);
 static void on_error(void);
 static void on_exit(int, void *);
 
@@ -68,7 +69,7 @@ int hmmerd_start(char const *hmm)
 
     deadline = now() + 5000;
 
-    child = child_new(&on_read, NULL, &on_error, &on_exit, NULL);
+    child = child_new(&on_read, &on_eof, &on_error, &on_exit, NULL);
     if (!child) return efail("failed to alloc/init child");
 
     state = HMMERD_BOOT;
@@ -98,6 +99,7 @@ void hmmerd_close(void)
 
 static void on_read(char *line)
 {
+    if (state == HMMERD_ON) return;
     static char const ready[] = "Handling worker 127.0.0.1";
     if (!strncmp(ready, line, sizeof ready - 1))
     {
@@ -105,6 +107,8 @@ static void on_read(char *line)
         state = HMMERD_ON;
     }
 }
+
+static void on_eof(void) {}
 
 static void on_error(void) { child_kill(child); }
 
