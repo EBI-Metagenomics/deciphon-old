@@ -5,6 +5,11 @@
 #include "unused.h"
 #include "work.h"
 
+// download minifam.dcp
+// download minifam.hmm
+// download consensus.json
+// download prods_file_20221021.tsv
+
 int main(int argc, char *argv[])
 {
     unused(argc);
