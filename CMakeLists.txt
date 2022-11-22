@@ -39,7 +39,6 @@ endif()
 
 add_library(
   deciphon
-  # src/loop/proc.c
   libs/argless.c
   libs/dotenv.c
   libs/fs.c
@@ -123,8 +122,7 @@ target_include_directories(
   deciphon
   PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
          $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>
-         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src> ${LIBUV_INCLUDE_DIRS}
-  PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>)
+         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src> ${LIBUV_INCLUDE_DIRS})
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   include(CheckIPOSupported)
@@ -139,8 +137,14 @@ target_link_libraries(schedy PRIVATE deciphon)
 add_executable(pressy pressy/pressy.c pressy/work.c pressy/state.c)
 target_link_libraries(pressy PRIVATE deciphon)
 
-add_executable(scanny scanny/scanny.c scanny/work.c scanny/state.c)
-target_link_libraries(scanny PRIVATE deciphon)
+add_library(scanny_static scanny/work.c scanny/state.c)
+add_library(DECIPHON::scanny_static ALIAS scanny_static)
+target_include_directories(scanny_static
+                           PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/scanny>)
+target_link_libraries(scanny_static PUBLIC deciphon)
+
+add_executable(scanny scanny/scanny.c)
+target_link_libraries(scanny PRIVATE scanny_static)
 
 # add_executable(decy decy/decy.c decy/command.c decy/cfg.c decy/broker.c)
 # target_link_libraries(decy PRIVATE deciphon)
