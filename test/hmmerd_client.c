@@ -10,10 +10,23 @@
 static long run_now(void);
 static void run_sleep(long);
 
+static void startup_hmmerd(void);
+static void cleanup_hmmerd(void);
+
 int main(int argc, char *argv[])
 {
     unused(argc);
     global_init(argv[0], ZLOG_DEBUG);
+
+    startup_hmmerd();
+
+    cleanup_hmmerd();
+
+    return hope_status();
+}
+
+static void startup_hmmerd(void)
+{
     COND(!hmmerd_init());
 
     EQ(hmmerd_state(), HMMERD_OFF);
@@ -27,9 +40,14 @@ int main(int argc, char *argv[])
     }
 
     EQ(hmmerd_state(), HMMERD_ON);
+    if (hope_status()) exit(hope_status());
+}
+
+static void cleanup_hmmerd(void)
+{
     hmmerd_stop();
 
-    deadline = run_now() + 5000;
+    long deadline = run_now() + 5000;
     while (run_now() < deadline && hmmerd_state() == HMMERD_ON)
     {
         run_sleep(100);
@@ -40,8 +58,7 @@ int main(int argc, char *argv[])
 
     hmmerd_close();
     COND(!global_run_once());
-
-    return hope_status();
+    if (hope_status()) exit(hope_status());
 }
 
 static long run_now(void)
