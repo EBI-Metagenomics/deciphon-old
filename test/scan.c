@@ -5,9 +5,6 @@
 #include "unused.h"
 #include "work.h"
 
-// download minifam.dcp
-// download minifam.hmm
-// download consensus.json
 // download prods_file_20221021.tsv
 
 int main(int argc, char *argv[])
@@ -17,7 +14,15 @@ int main(int argc, char *argv[])
     COND(!global_run_once());
 
     work_init();
-    // int rc = work_run(seqs, db, prod, true, false);
+    COND(!work_run("consensus.json", "minifam.dcp", "prods.tsv", true, false));
+
+    global_run_once();
+    enum state state = work_state();
+    fprintf(stderr, "State: %d\n", state);
+
+    global_run_once();
+    state = work_state();
+    fprintf(stderr, "State: %d\n", state);
 
     return hope_status();
 }

@@ -48,16 +48,11 @@ int scan_init(struct scan_cfg cfg)
 
 int scan_setup(char const *db, char const *seqs)
 {
-    debug("SCAN_SETUP 0: %s", db);
     char hmm[PATH_SIZE] = {0};
     strlcpy(hmm, db, sizeof(hmm));
     filename_setext(hmm, "hmm");
-    debug("SCAN_SETUP 1");
     hmmerd_start(hmm);
-    debug("SCAN_SETUP 2");
     hmmerd_wait(now() + 15000);
-    debug("SCAN_SETUP OFF: %d", hmmerd_off());
-    debug("SCAN_SETUP ON: %d", hmmerd_on());
 
     if (!hmmerd_on())
     {

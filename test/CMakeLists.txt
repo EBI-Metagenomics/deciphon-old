@@ -1,15 +1,24 @@
 include(helper.cmake)
 
-deciphon_download(minifam.hmm)
-
 set(tmpdir "${CMAKE_CURRENT_BINARY_DIR}/tmp")
+set(assets "${CMAKE_CURRENT_BINARY_DIR}/assets")
 file(MAKE_DIRECTORY "${tmpdir}")
+file(MAKE_DIRECTORY "${assets}")
 
-deciphon_add_test(standard_profile ${tmpdir} DECIPHON::deciphon)
-deciphon_add_test(protein_model ${tmpdir} DECIPHON::deciphon)
-deciphon_add_test(protein_profile ${tmpdir} DECIPHON::deciphon)
-deciphon_add_test(protein_db ${tmpdir} DECIPHON::deciphon)
-deciphon_add_test(scan ${tmpdir} DECIPHON::deciphon DECIPHON::scanny_static)
+add_compile_definitions(TMPDIR="${tmpdir}")
+add_compile_definitions(ASSETS="${assets}")
+
+deciphon_download(minifam.hmm)
+deciphon_download(minifam.dcp)
+deciphon_download(minifam.hmm)
+deciphon_download(consensus.json)
+deciphon_download(prods_file_20221021.tsv)
+
+deciphon_add_test(standard_profile DECIPHON::deciphon)
+deciphon_add_test(protein_model DECIPHON::deciphon)
+deciphon_add_test(protein_profile DECIPHON::deciphon)
+deciphon_add_test(protein_db DECIPHON::deciphon)
+deciphon_add_test(scan DECIPHON::deciphon DECIPHON::scanny_static)
 
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR})
 set(DST ${CMAKE_CURRENT_BINARY_DIR})

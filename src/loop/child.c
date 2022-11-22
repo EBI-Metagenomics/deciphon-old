@@ -116,7 +116,7 @@ void child_del(struct child *child) { free(child); }
 static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig)
 {
     int rc = (int)exit_status;
-    debug("Process exited with status %d, signal %d", rc, sig);
+    debug("process exited with status %d, signal %d", rc, sig);
 
     struct child *child = proc->data;
     child_close(child);

@@ -1,8 +1,7 @@
-function(deciphon_add_test name tmpdir )
+function(deciphon_add_test name)
   add_executable(${name} ${name}.c)
   target_link_libraries(${name} PRIVATE DECIPHON::deciphon)
   target_link_libraries(${name} PRIVATE ${ARGN})
-  target_compile_definitions(${name} PRIVATE TMPDIR="${tmpdir}")
   add_test(NAME test_${name} COMMAND ${name})
 endfunction()
 
@@ -16,15 +15,14 @@ function(deciphon_file_hash file ret)
       set(${ret}
           "${hash}"
           PARENT_SCOPE)
-      break()
+      return()
     endif()
   endwhile()
+  message(FATAL "${file} not in manifest")
 endfunction()
 
 function(deciphon_download file)
   deciphon_file_hash(${file} hash)
-  message(STATUS "FOUND: ${hash}")
   set(url "https://pub.danilohorta.me/deciphon")
-  message(STATUS "${url}/${file} EXPECTED_HASH SHA256=${hash}")
   file(DOWNLOAD ${url}/${file} ${file} EXPECTED_HASH SHA256=${hash})
 endfunction()
