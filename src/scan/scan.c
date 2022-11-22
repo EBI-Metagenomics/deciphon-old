@@ -4,6 +4,7 @@
 #include "errmsg.h"
 #include "filename.h"
 #include "hmmer/daemon.h"
+#include "hmmer/state.h"
 #include "jx.h"
 #include "logy.h"
 #include "loop/now.h"
@@ -52,9 +53,8 @@ int scan_setup(char const *db, char const *seqs)
     strlcpy(hmm, db, sizeof(hmm));
     filename_setext(hmm, "hmm");
     hmmerd_start(hmm);
-    hmmerd_wait(now() + 15000);
 
-    if (!hmmerd_on())
+    if (hmmerd_state() != HMMERD_ON)
     {
         errnum = efail("failed to start hmmer daemon");
         hmmerd_close();

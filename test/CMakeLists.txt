@@ -18,6 +18,7 @@ deciphon_add_test(standard_profile DECIPHON::deciphon)
 deciphon_add_test(protein_model DECIPHON::deciphon)
 deciphon_add_test(protein_profile DECIPHON::deciphon)
 deciphon_add_test(protein_db DECIPHON::deciphon)
+deciphon_add_test(hmmerd DECIPHON::deciphon)
 deciphon_add_test(scan DECIPHON::deciphon DECIPHON::scanny_static)
 
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR})

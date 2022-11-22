@@ -1,11 +1,11 @@
 #ifndef HMMER_STATE_H
 #define HMMER_STATE_H
 
-enum hmmer_state
+enum hmmerd_state
 {
-    HMMER_OFF,
-    HMMER_BOOT,
-    HMMER_ON,
+    HMMERD_OFF,
+    HMMERD_BOOT,
+    HMMERD_ON,
 };
 
 #endif

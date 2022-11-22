@@ -9,6 +9,7 @@
 
 int main(int argc, char *argv[])
 {
+    return hope_status();
     unused(argc);
     global_init(argv[0], ZLOG_DEBUG);
     COND(!global_run_once());
