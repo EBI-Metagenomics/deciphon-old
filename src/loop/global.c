@@ -25,19 +25,22 @@ static void on_cleanup_fwd(void)
     if (on_cleanup) (*on_cleanup)();
 }
 
-void global_init(char *const arg0, int loglvl, on_linger_fn_t *linger,
-                 on_cleanup_fn_t *cleanup)
+void global_init(char *const arg0, int loglvl)
 {
     zlog_setup(logger, stderr, loglvl);
-
-    on_cleanup = cleanup;
-    linger_init(global_loop(), linger, &on_cleanup_fwd);
-    halt_signal_open(global_loop(), &halt);
     exe_init();
 
     strlcpy(title, arg0, sizeof title);
     char *t = basename(title);
     memmove(title, t, strlen(t) + 1);
+}
+
+void global_linger_setup(on_linger_fn_t *linger, on_cleanup_fn_t *cleanup)
+{
+    if (!linger || !cleanup) die();
+    on_cleanup = cleanup;
+    linger_init(global_loop(), linger, &on_cleanup_fwd);
+    halt_signal_open(global_loop(), &halt);
 }
 
 struct uv_loop_s *global_loop(void) { return uv_default_loop(); }
@@ -53,6 +56,8 @@ int global_run(void)
     if (uv_run(global_loop(), UV_RUN_DEFAULT)) die();
     return uv_loop_close(global_loop());
 }
+
+int global_run_once(void) { return uv_run(global_loop(), UV_RUN_ONCE); }
 
 static void halt(void)
 {

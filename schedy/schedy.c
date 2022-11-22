@@ -46,7 +46,8 @@ int main(int argc, char *argv[])
     char const *url = argl_get(&argl, "url");
     char const *key = argl_get(&argl, "key");
 
-    global_init(argv[0], loglvl, &linger, &cleanup);
+    global_init(argv[0], loglvl);
+    global_linger_setup(&linger, &cleanup);
     parent_init(&on_read, &global_shutdown, &global_shutdown);
     if (api_init(url, key)) die();
     return global_run();

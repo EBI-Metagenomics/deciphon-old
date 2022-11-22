@@ -37,7 +37,8 @@ int main(int argc, char *argv[])
     if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
     int loglvl = argl_get(&argl, "loglevel")[0] - '0';
 
-    global_init(argv[0], loglvl, &linger, &cleanup);
+    global_init(argv[0], loglvl);
+    global_linger_setup(&linger, &cleanup);
     parent_init(&on_read, &global_shutdown, &global_shutdown);
     work_init();
     return global_run();
