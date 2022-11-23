@@ -58,6 +58,12 @@ int hmmerc_pop(int id, double *ln_evalue)
     if (c == H3C_ETIMEDOUT)
     {
         h3c_result_del(result);
+        return etimeout("hmmer client pop");
+    }
+
+    if (c)
+    {
+        h3c_result_del(result);
         return efail("hmmer client pop: %s", h3c_decode(c));
     }
 

@@ -1,9 +1,10 @@
 #define _POSIX_C_SOURCE 200809L
 #include "loop/global.h"
 #include "basename.h"
+#include "chdir.h"
 #include "die.h"
+#include "exe.h"
 #include "lazylog.h"
-#include "loop/exe.h"
 #include "loop/halt_signal.h"
 #include "loop/linger.h"
 #include "run_once.h"
@@ -13,6 +14,7 @@
 #include <string.h>
 #include <uv.h>
 
+static enum run_mode mode = RUN_MODE_DEFAULT;
 static char title[128] = {0};
 static on_cleanup_fn_t *on_cleanup = NULL;
 
@@ -28,12 +30,16 @@ static void on_cleanup_fwd(void)
 void global_init(char *const arg0, int loglvl)
 {
     zlog_setup(logger, stderr, loglvl);
-    exe_init();
+    chdir(exe_dir());
 
     strlcpy(title, arg0, sizeof title);
     char *t = basename(title);
     memmove(title, t, strlen(t) + 1);
 }
+
+void global_set_mode(enum run_mode m) { mode = m; }
+
+enum run_mode global_mode(void) { return mode; }
 
 void global_linger_setup(on_linger_fn_t *linger, on_cleanup_fn_t *cleanup)
 {
@@ -53,11 +59,21 @@ void global_shutdown(void)
 
 int global_run(void)
 {
-    if (uv_run(global_loop(), UV_RUN_DEFAULT)) die();
-    return uv_loop_close(global_loop());
+    if (global_mode() == RUN_MODE_DEFAULT)
+    {
+        if (uv_run(global_loop(), UV_RUN_DEFAULT)) die();
+        return uv_loop_close(global_loop());
+    }
+    if (global_mode() == RUN_MODE_ONCE)
+    {
+        return uv_run(global_loop(), UV_RUN_ONCE);
+    }
+    if (global_mode() == RUN_MODE_NOWAIT)
+    {
+        return uv_run(global_loop(), UV_RUN_NOWAIT);
+    }
+    die();
 }
-
-int global_run_once(void) { return uv_run(global_loop(), UV_RUN_ONCE); }
 
 static void halt(void)
 {

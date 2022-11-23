@@ -16,9 +16,6 @@
         28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12,    \
         11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
-#define stringify(s) __STRINGIFY(s)
-#define __STRINGIFY(s) #s
-
 #define __MEMBER_REF(var, member) ((__typeof__(var) *)0)->member
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))

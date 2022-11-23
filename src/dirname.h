@@ -1,6 +1,6 @@
 #ifndef DIRNAME_H
 #define DIRNAME_H
 
-char *dirname(char *path);
+char *dirname_musl(char *path);
 
 #endif

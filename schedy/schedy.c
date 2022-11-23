@@ -12,6 +12,7 @@
 #include "loop/parent.h"
 #include "msg.h"
 #include "pidfile.h"
+#include "stringify.h"
 #include <stdlib.h>
 #include <string.h>
 

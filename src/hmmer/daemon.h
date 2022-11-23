@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-void hmmerd_start(char const *hmm);
+int hmmerd_start(char const *hmm);
 void hmmerd_stop(void);
 int hmmerd_state(void);
 char const *hmmerd_hmmfile(void);

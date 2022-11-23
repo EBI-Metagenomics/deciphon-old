@@ -1,19 +1,22 @@
 #include "hmmer/daemon.h"
+#include "cwd.h"
 #include "die.h"
 #include "fs.h"
 #include "hmmer/name.h"
+#include "hmmer/port.h"
 #include "hmmer/state.h"
 #include "logy.h"
 #include "loop/child.h"
-#include "loop/exe.h"
 #include "loop/global.h"
 #include "loop/now.h"
 #include "loop/sleep.h"
 #include "podman.h"
+#include "stringify.h"
 #include "unused.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <uv.h>
 
 static enum hmmerd_state state = HMMERD_OFF;
 
@@ -25,14 +28,10 @@ static char const *argv[] = {exepath,
                              "run",
                              "-t",
                              "-p",
-                             "51371:51371",
+                             stringify(HMMER_PORT) ":" stringify(HMMER_PORT),
                              "--arch=amd64",
                              "-v",
                              volume,
-                             "--health-cmd=/app/bin/check-health",
-                             "--health-interval=10s",
-                             "--health-start-period=3s",
-                             "--health-timeout=2s",
                              "--name",
                              CONTAINER_NAME,
                              "--rm",
@@ -59,7 +58,7 @@ static void start_container(void)
 {
     strcpy(exepath, podman_exe());
 
-    strcpy(volume, exe_cwd());
+    strcpy(volume, cwd());
     strcat(volume, "/");
     strcat(volume, hmmfile);
     strcat(volume, ":/app/data/");
@@ -69,11 +68,12 @@ static void start_container(void)
     if (!child)
     {
         enomem("could not alloc child");
+        fprintf(stderr, "start_container: 1\n");
         state = HMMERD_OFF;
         return;
     }
 
-    child_enable_stdin(child, &on_error);
+    // child_enable_stdin(child, &on_error);
     child_enable_stdout(child, &on_read, &on_eof, &on_error);
     child_enable_stderr(child);
     child_set_on_exit(child, &on_exit);
@@ -83,6 +83,7 @@ static void start_container(void)
     if (!child_spawn(child, argv))
     {
         efail("could not spawn child");
+        fprintf(stderr, "start_container: 2\n");
         state = HMMERD_OFF;
     }
 }
@@ -100,13 +101,16 @@ static void boot(int status, void *arg)
         start_container();
 }
 
-void hmmerd_start(char const *hmm)
+int hmmerd_start(char const *hmm)
 {
     if (state != HMMERD_OFF) fatal("daemon must be off to start it");
     state = HMMERD_BOOT;
 
+    if (!fs_exists(hmm)) return eio("%s file not found", hmm);
+
     strcpy(hmmfile, hmm);
     boot(0, (void *)(intptr_t)STOP_CONTAINER);
+    return RC_OK;
 }
 
 void hmmerd_stop(void)
@@ -130,19 +134,15 @@ void hmmerd_close(void)
         child_close(child);
     }
     child = NULL;
+    fprintf(stderr, "close\n");
     state = HMMERD_OFF;
 }
 
 static void on_read(char *line)
 {
     if (state == HMMERD_ON) return;
-    static char const ready[] = "Handling worker 127.0.0.1";
-    info("%s", line);
-    if (!strncmp(ready, line, sizeof ready - 1))
-    {
-        info("h3daemon is online");
-        state = HMMERD_ON;
-    }
+    static char const ready[] = "Pending worker 127.0.0.1";
+    if (!strncmp(ready, line, sizeof ready - 1)) state = HMMERD_ON;
 }
 
 static void on_eof(void) {}
@@ -153,5 +153,6 @@ static void on_exit(int exit_status, void *arg)
 {
     (void)exit_status;
     (void)arg;
+    fprintf(stderr, "on_exit\n");
     state = HMMERD_OFF;
 }

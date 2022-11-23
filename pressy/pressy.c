@@ -9,6 +9,7 @@
 #include "loop/parent.h"
 #include "msg.h"
 #include "pidfile.h"
+#include "stringify.h"
 #include "strlcpy.h"
 #include "work.h"
 #include <string.h>

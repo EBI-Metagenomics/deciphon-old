@@ -11,7 +11,7 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-cpmaddpackage("gh:EBI-Metagenomics/h3client@0.6.0")
+cpmaddpackage("gh:EBI-Metagenomics/h3client@0.6.1")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.2.1")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.13")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.1")
@@ -46,6 +46,8 @@ add_library(
   libs/lazylog.c
   libs/zc.c
   src/as.c
+  src/cwd.c
+  src/chdir.c
   src/basename.c
   src/buff.c
   src/cmd.c
@@ -58,6 +60,7 @@ add_library(
   src/db/reader.c
   src/db/writer.c
   src/die.c
+  src/dirname.c
   src/errmsg.c
   src/expect.c
   src/file.c
@@ -68,7 +71,7 @@ add_library(
   src/is.c
   src/itoa.c
   src/loop/child.c
-  src/loop/exe.c
+  src/exe.c
   src/loop/global.c
   src/loop/halt_signal.c
   src/loop/linger.c

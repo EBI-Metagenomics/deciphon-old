@@ -16,11 +16,11 @@ int main(int argc, char *argv[])
     struct scan_cfg cfg = {1, 10., true, false};
     scan_init(cfg);
 
-    EQ(global_run_once(), 0);
+    EQ(global_run(), 0);
     EQ(scan_setup("minifam.dcp", "consensus.json"), 0);
-    EQ(global_run_once(), 0);
-    EQ(global_run_once(), 0);
-    EQ(global_run_once(), 0);
+    EQ(global_run(), 0);
+    EQ(global_run(), 0);
+    EQ(global_run(), 0);
 
     // work_init();
     // COND(!work_run("consensus.json", "minifam.dcp", "prods.tsv", true,
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     // enum state state = work_state();
     // fprintf(stderr, "State: %d\n", state);
 
-    // global_run_once();
+    // global_run();
     // state = work_state();
     // fprintf(stderr, "State: %d\n", state);
 

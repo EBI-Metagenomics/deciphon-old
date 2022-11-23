@@ -16,6 +16,12 @@
         exit(1);                                                               \
     } while (0)
 
+#define etimeout(...)                                                          \
+    ({                                                                         \
+        error(__VA_ARGS__);                                                    \
+        RC_TIMEDOUT;                                                           \
+    })
+
 #define efail(...)                                                             \
     ({                                                                         \
         error(__VA_ARGS__);                                                    \

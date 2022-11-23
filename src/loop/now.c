@@ -3,10 +3,12 @@
 #include "loop/global.h"
 #include <uv.h>
 
-long now(void) { return (long)uv_now(global_loop()); }
-
-long now_sync(void)
+long now(void)
 {
-    global_run_once();
-    return now();
+    if (global_mode() == RUN_MODE_DEFAULT)
+    {
+        return (long)uv_now(global_loop());
+    }
+    global_run();
+    return (long)uv_now(global_loop());
 }

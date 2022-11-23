@@ -3,7 +3,7 @@
 #include <string.h>
 
 // Acknowledgment: musl
-char *dirname(char *path)
+char *dirname_musl(char *path)
 {
     size_t i = 0;
     if (!path || !*path) return ".";

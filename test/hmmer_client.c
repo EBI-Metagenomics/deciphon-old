@@ -1,5 +1,5 @@
 #include "fs.h"
-#include "h3c/h3c.h"
+#include "helper.h"
 #include "hmmer/client.h"
 #include "hmmer/daemon.h"
 #include "hmmer/state.h"
@@ -8,115 +8,65 @@
 #include "loop/global.h"
 #include "loop/now.h"
 #include "loop/sleep.h"
+#include "loop_while.h"
 #include "unused.h"
 
-static long run_now(void);
-static void run_sleep(long);
-
-static void startup_hmmerd(void);
-static void cleanup_hmmerd(void);
-
-char *append_char(size_t n, char *dst, char c);
+static char const *seq_new(void);
+static void test_connection(void);
+static void test_put_pop(void);
 
 int main(int argc, char *argv[])
 {
     unused(argc);
     global_init(argv[0], ZLOG_DEBUG);
-    fprintf(stderr, "Ponto 0\n");
-    global_run_once();
-    global_run_once();
-    startup_hmmerd();
-    fprintf(stderr, "Ponto 1\n");
-    global_run_once();
-    global_run_once();
+    global_set_mode(RUN_MODE_NOWAIT);
 
-    long size = 0;
-    unsigned char *data = NULL;
-    EQ(fs_readall("ross.fna", &size, &data), 0);
-    char const *seq = append_char(size, (char *)data, '\0');
-    fprintf(stderr, "Ponto 2\n");
-    global_run_once();
-    global_run_once();
-
-    EQ(hmmerc_start(1, run_now() + 5000), 0);
-    fprintf(stderr, "Ponto 3\n");
-    global_run_once();
-    global_run_once();
-    EQ(hmmerc_put(0, seq, run_now() + 15000), 0);
-    fprintf(stderr, "Ponto 4\n");
-    global_run_once();
-    global_run_once();
-    double ln_evalue = 0;
-    EQ(hmmerc_pop(0, &ln_evalue), 0);
-    fprintf(stderr, "Ponto 5\n");
-    global_run_once();
-    global_run_once();
-    hmmerc_stop();
-    fprintf(stderr, "Ponto 6\n");
-    global_run_once();
-    global_run_once();
-
-    free((void *)seq);
-
-    cleanup_hmmerd();
-    return hope_status();
-}
-
-static void startup_hmmerd(void)
-{
-    fprintf(stderr, "Startup daemon 0\n");
-    COND(!hmmerd_init());
-
-    fprintf(stderr, "Startup daemon 1\n");
-    EQ(hmmerd_state(), HMMERD_OFF);
-    COND(!hmmerd_start("ross.5.hmm"));
-    fprintf(stderr, "Startup daemon 2\n");
-
-    long deadline = run_now() + 15000;
-    while (run_now() < deadline && hmmerd_state() == HMMERD_BOOT)
-    {
-        fprintf(stderr, "Startup daemon 3\n");
-        run_sleep(500);
-    }
-
-    fprintf(stderr, "Startup daemon 4\n");
+    EQ(hmmerd_start("ross.5.hmm"), 0);
+    loop_while(15000, hmmerd_state() == HMMERD_BOOT);
     EQ(hmmerd_state(), HMMERD_ON);
-    if (hope_status()) exit(hope_status());
-}
 
-static void cleanup_hmmerd(void)
-{
+    test_connection();
+    test_put_pop();
+
     hmmerd_stop();
-
-    long deadline = run_now() + 5000;
-    while (run_now() < deadline && hmmerd_state() == HMMERD_ON)
-    {
-        run_sleep(500);
-    }
-
+    loop_while(15000, hmmerd_state() == HMMERD_ON);
     EQ(hmmerd_state(), HMMERD_OFF);
 
     hmmerd_close();
-    COND(!global_run_once());
-    if (hope_status()) exit(hope_status());
+    return hope_status();
 }
 
-static long run_now(void)
+static void test_connection(void)
 {
-    global_run_once();
-    return now();
+    EQ(hmmerc_start(1, now() + 5000), 0);
+    loop_while(1000, true);
+    hmmerc_stop();
+    loop_while(1000, true);
 }
 
-static void run_sleep(long msec)
+static void test_put_pop(void)
 {
-    sleep(msec);
-    global_run_once();
+    char const *seq = seq_new();
+    EQ(hmmerc_start(1, now() + 50000), 0);
+    loop_while(1000, true);
+
+    EQ(hmmerc_put(0, seq, now() + 10000), 0);
+    loop_while(1000, true);
+
+    double ln_evalue = 0;
+    EQ(hmmerc_pop(0, &ln_evalue), 0);
+    CLOSE(-53.808984215028, ln_evalue);
+    loop_while(1000, true);
+
+    hmmerc_stop();
+    loop_while(1000, true);
+    free((void *)seq);
 }
 
-char *append_char(size_t n, char *dst, char c)
+static char const *seq_new(void)
 {
-    char *t = realloc(dst, n + 1);
-    if (!t) exit(EXIT_FAILURE);
-    t[n] = c;
-    return t;
+    long size = 0;
+    unsigned char *data = NULL;
+    EQ(fs_readall("ross.fna", &size, &data), 0);
+    return append_char(size, (char *)data, '\0');
 }
