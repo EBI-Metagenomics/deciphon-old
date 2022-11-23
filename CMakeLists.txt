@@ -13,7 +13,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 cpmaddpackage("gh:EBI-Metagenomics/h3client@0.6.1")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.2.1")
-cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.13")
+cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.14")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.1")
 
 find_package(CURL REQUIRED)

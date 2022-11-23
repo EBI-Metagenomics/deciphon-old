@@ -1,37 +1,68 @@
 #include "scan/scan.h"
 #include "fs.h"
+#include "hmmer/client.h"
+#include "hmmer/daemon.h"
+#include "hmmer/state.h"
 #include "hope.h"
 #include "logy.h"
 #include "loop/global.h"
+#include "loop_while.h"
 #include "unused.h"
-#include "work.h"
 
 // download prods_file_20221021.tsv
+
+static void startup_hmmerd(void);
+static void cleanup_hmmerd(void);
+
+static void startup_hmmerc(int nstreams);
+static void cleanup_hmmerc(void);
 
 int main(int argc, char *argv[])
 {
     unused(argc);
     global_init(argv[0], ZLOG_DEBUG);
+    global_set_mode(RUN_MODE_NOWAIT);
+    startup_hmmerd();
+    startup_hmmerc(1);
 
     struct scan_cfg cfg = {1, 10., true, false};
     scan_init(cfg);
-
-    EQ(global_run(), 0);
     EQ(scan_setup("minifam.dcp", "consensus.json"), 0);
-    EQ(global_run(), 0);
-    EQ(global_run(), 0);
-    EQ(global_run(), 0);
+    EQ(scan_run(), 0);
+    char const *filepath = NULL;
+    EQ(scan_finishup(&filepath), 0);
+    EQ(fs_move("prod.tsv", filepath), 0);
+    scan_cleanup();
 
-    // work_init();
-    // COND(!work_run("consensus.json", "minifam.dcp", "prods.tsv", true,
-    // false));
-
-    // enum state state = work_state();
-    // fprintf(stderr, "State: %d\n", state);
-
-    // global_run();
-    // state = work_state();
-    // fprintf(stderr, "State: %d\n", state);
-
+    cleanup_hmmerc();
+    cleanup_hmmerd();
     return hope_status();
+}
+
+static void startup_hmmerd(void)
+{
+    EQ(hmmerd_start("ross.5.hmm"), 0);
+    loop_while(20000, hmmerd_state() == HMMERD_BOOT);
+    EQ(hmmerd_state(), HMMERD_ON);
+}
+
+static void cleanup_hmmerd(void)
+{
+    hmmerd_stop();
+    loop_while(15000, hmmerd_state() == HMMERD_ON);
+    EQ(hmmerd_state(), HMMERD_OFF);
+
+    hmmerd_close();
+}
+
+static void startup_hmmerc(int nstreams)
+{
+    EQ(hmmerc_start(nstreams, now() + 5000), 0);
+    loop_while(500, true);
+}
+
+static void cleanup_hmmerc(void)
+{
+    hmmerc_stop();
+    loop_while(500, true);
 }

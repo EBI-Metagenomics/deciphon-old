@@ -68,7 +68,6 @@ static void start_container(void)
     if (!child)
     {
         enomem("could not alloc child");
-        fprintf(stderr, "start_container: 1\n");
         state = HMMERD_OFF;
         return;
     }
@@ -83,7 +82,6 @@ static void start_container(void)
     if (!child_spawn(child, argv))
     {
         efail("could not spawn child");
-        fprintf(stderr, "start_container: 2\n");
         state = HMMERD_OFF;
     }
 }
@@ -103,10 +101,10 @@ static void boot(int status, void *arg)
 
 int hmmerd_start(char const *hmm)
 {
+    if (!fs_exists(hmm)) return eio("%s file not found", hmm);
+
     if (state != HMMERD_OFF) fatal("daemon must be off to start it");
     state = HMMERD_BOOT;
-
-    if (!fs_exists(hmm)) return eio("%s file not found", hmm);
 
     strcpy(hmmfile, hmm);
     boot(0, (void *)(intptr_t)STOP_CONTAINER);
@@ -134,7 +132,6 @@ void hmmerd_close(void)
         child_close(child);
     }
     child = NULL;
-    fprintf(stderr, "close\n");
     state = HMMERD_OFF;
 }
 
@@ -153,6 +150,5 @@ static void on_exit(int exit_status, void *arg)
 {
     (void)exit_status;
     (void)arg;
-    fprintf(stderr, "on_exit\n");
     state = HMMERD_OFF;
 }
