@@ -14,33 +14,18 @@ int main(int argc, char *argv[])
 {
     unused(argc);
     global_init(argv[0], ZLOG_DEBUG);
-    COND(!hmmerd_init());
+    hmmerd_start("minifam.hmm");
 
-    EQ(hmmerd_state(), HMMERD_OFF);
-    COND(!hmmerd_start("minifam.hmm"));
-
-    long deadline = run_now() + 3000;
+    long deadline = run_now() + 15000;
     while (run_now() < deadline && hmmerd_state() == HMMERD_BOOT)
-    {
-        run_sleep(100);
-        global_run_once();
-    }
+        run_sleep(500);
 
-    EQ(hmmerd_state(), HMMERD_ON);
     hmmerd_stop();
-
-    deadline = run_now() + 5000;
+    deadline = run_now() + 15000;
     while (run_now() < deadline && hmmerd_state() == HMMERD_ON)
-    {
-        run_sleep(100);
-        global_run_once();
-    }
-
-    EQ(hmmerd_state(), HMMERD_OFF);
+        run_sleep(500);
 
     hmmerd_close();
-    COND(!global_run_once());
-
     return hope_status();
 }
 

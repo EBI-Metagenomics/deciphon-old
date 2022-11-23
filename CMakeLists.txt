@@ -11,7 +11,7 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-cpmaddpackage("gh:EBI-Metagenomics/h3client@0.5.3")
+cpmaddpackage("gh:EBI-Metagenomics/h3client@0.6.0")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.2.1")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.13")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.1")
@@ -63,8 +63,10 @@ add_library(
   src/file.c
   src/filename.c
   src/fmt.c
+  src/hmmer/client.c
   src/hmmer/daemon.c
   src/is.c
+  src/itoa.c
   src/loop/child.c
   src/loop/exe.c
   src/loop/global.c
@@ -80,6 +82,7 @@ add_library(
   src/loop/writer.c
   src/model/nuclt_dist.c
   src/model/profile.c
+  src/podman.c
   src/model/profile_types.c
   src/model/protein_codec.c
   src/model/protein_h3reader.c

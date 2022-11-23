@@ -1,6 +1,7 @@
 #include "hmmer/daemon.h"
 #include "die.h"
 #include "fs.h"
+#include "hmmer/name.h"
 #include "hmmer/state.h"
 #include "logy.h"
 #include "loop/child.h"
@@ -8,11 +9,11 @@
 #include "loop/global.h"
 #include "loop/now.h"
 #include "loop/sleep.h"
+#include "podman.h"
+#include "unused.h"
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
-
-static bool no_init = false;
 
 static enum hmmerd_state state = HMMERD_OFF;
 
@@ -33,66 +34,84 @@ static char const *argv[] = {exepath,
                              "--health-start-period=3s",
                              "--health-timeout=2s",
                              "--name",
-                             "h3daemon",
+                             CONTAINER_NAME,
                              "--rm",
                              "quay.io/microbiome-informatics/h3daemon",
                              hmmfile,
                              NULL};
 
 static struct child *child = NULL;
-static long deadline = 0;
 
 static void on_read(char *line);
 static void on_eof(void);
 static void on_error(void);
 static void on_exit(int, void *);
 
-static char const *find_podman(void);
-
-int hmmerd_init(void)
+enum boot_state
 {
-    if (no_init) return RC_OK;
+    INIT,
+    STOP_CONTAINER,
+    RM_CONTAINER,
+    START_CONTAINER,
+};
 
-    char const *podman = find_podman();
-    if (!podman) return efail("failed to find podman");
-
-    strcpy(exepath, podman);
-    state = HMMERD_OFF;
-
-    no_init = true;
-    return RC_OK;
-}
-
-int hmmerd_start(char const *hmm)
+static void start_container(void)
 {
-    if (hmmerd_init()) die();
-
-    if (state != HMMERD_OFF) fatal("daemon must be off to start it");
+    strcpy(exepath, podman_exe());
 
     strcpy(volume, exe_cwd());
     strcat(volume, "/");
-    strcat(volume, hmm);
+    strcat(volume, hmmfile);
     strcat(volume, ":/app/data/");
-    strcat(volume, hmm);
-    strcpy(hmmfile, hmm);
+    strcat(volume, hmmfile);
 
-    deadline = now() + 5000;
+    child = child_new();
+    if (!child)
+    {
+        enomem("could not alloc child");
+        state = HMMERD_OFF;
+        return;
+    }
 
-    child = child_new(&on_read, &on_eof, &on_error, &on_exit, NULL);
-    if (!child) return efail("failed to alloc/init child");
+    child_enable_stdin(child, &on_error);
+    child_enable_stdout(child, &on_read, &on_eof, &on_error);
+    child_enable_stderr(child);
+    child_set_on_exit(child, &on_exit);
+    child_set_callb_arg(child, NULL);
+    child_set_auto_delete(child, false);
 
+    if (!child_spawn(child, argv))
+    {
+        efail("could not spawn child");
+        state = HMMERD_OFF;
+    }
+}
+
+static void boot(int status, void *arg)
+{
+    unused(status);
+    enum boot_state boot_state = (int)(intptr_t)arg;
+
+    if (boot_state == STOP_CONTAINER)
+        podman_stop(CONTAINER_NAME, 3, &boot, (void *)(intptr_t)RM_CONTAINER);
+    else if (boot_state == RM_CONTAINER)
+        podman_rm(CONTAINER_NAME, &boot, (void *)(intptr_t)START_CONTAINER);
+    else if (boot_state == START_CONTAINER)
+        start_container();
+}
+
+void hmmerd_start(char const *hmm)
+{
+    if (state != HMMERD_OFF) fatal("daemon must be off to start it");
     state = HMMERD_BOOT;
-    child_spawn(child, argv);
 
-    return RC_OK;
+    strcpy(hmmfile, hmm);
+    boot(0, (void *)(intptr_t)STOP_CONTAINER);
 }
 
 void hmmerd_stop(void)
 {
-    if (hmmerd_init()) die();
-
     if (state == HMMERD_OFF) return;
-    deadline = now() + 3000;
     child_kill(child);
 }
 
@@ -103,10 +122,14 @@ char const *hmmerd_hmmfile(void) { return hmmfile; }
 void hmmerd_close(void)
 {
     if (state == HMMERD_OFF) return;
-    child_close(child);
-    child_del(child);
+    if (child_closed(child))
+        child_del(child);
+    else
+    {
+        child_set_auto_delete(child, true);
+        child_close(child);
+    }
     child = NULL;
-    deadline = 0;
     state = HMMERD_OFF;
 }
 
@@ -114,6 +137,7 @@ static void on_read(char *line)
 {
     if (state == HMMERD_ON) return;
     static char const ready[] = "Handling worker 127.0.0.1";
+    info("%s", line);
     if (!strncmp(ready, line, sizeof ready - 1))
     {
         info("h3daemon is online");
@@ -130,18 +154,4 @@ static void on_exit(int exit_status, void *arg)
     (void)exit_status;
     (void)arg;
     state = HMMERD_OFF;
-}
-
-static char const *find_podman(void)
-{
-    static char const *paths[] = {"/usr/bin/podman", "/opt/homebrew/bin/podman",
-                                  NULL};
-    char const **p = &paths[0];
-    while (p)
-    {
-        if (fs_exists(*p)) return *p;
-        ++p;
-    }
-
-    return NULL;
 }
