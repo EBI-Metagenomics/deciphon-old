@@ -4,3 +4,9 @@
 #include <uv.h>
 
 long now(void) { return (long)uv_now(global_loop()); }
+
+long now_sync(void)
+{
+    global_run_once();
+    return now();
+}
