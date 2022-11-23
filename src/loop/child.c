@@ -26,46 +26,95 @@ struct child
     struct uv_process_options_s opts;
     struct uv_stdio_container_s stdio[3];
 
-    void *userdata;
-    on_exit4_fn_t *on_exit;
+    void (*on_exit)(int, void *);
+    void *callb_arg;
+
+    bool no_reader;
+    bool no_writer;
+
     bool no_kill;
+    bool no_close;
+
+    bool auto_delete;
+
     bool closed;
 };
 
 static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig);
 
-struct child *child_new(on_read2_fn_t *on_read, on_eof2_fn_t *on_eof,
-                        on_error2_fn_t *on_error, on_exit4_fn_t *on_exit,
-                        void *userdata)
+struct child *child_new(void)
 {
-    struct child *child = malloc(sizeof(*child));
-    if (!child) die();
+    struct child *child = calloc(1, sizeof(*child));
+    if (!child) NULL;
 
-    if (uv_pipe_init(global_loop(), &child->in.pipe, 0)) die();
-    if (uv_pipe_init(global_loop(), &child->out.pipe, 0)) die();
-
-    reader_init(&child->in.rdr, &child->in.pipe, on_read, on_eof, on_error);
-    writer_init(&child->out.wrt, &child->out.pipe, on_error);
-
-    child->on_exit = on_exit;
-    child->userdata = userdata;
     child->proc.data = child;
+
+    child->stdio[0].flags = UV_IGNORE;
+    child->stdio[1].flags = UV_IGNORE;
+    child->stdio[2].flags = UV_IGNORE;
+
+    child->no_reader = true;
+    child->no_writer = true;
+
+    child->no_kill = true;
+    child->no_close = false;
+
+    child->auto_delete = false;
+
+    child->closed = true;
+
+    return child;
+}
+
+void child_enable_stdin(struct child *child, void (*error)())
+{
+    if (uv_pipe_init(global_loop(), &child->out.pipe, 0)) die();
+    child->out.pipe.data = NULL;
+
+    writer_init(&child->out.wrt, &child->out.pipe, error);
 
     child->stdio[0].flags = UV_CREATE_PIPE | UV_READABLE_PIPE;
     child->stdio[0].data.stream = (uv_stream_t *)&child->out.pipe;
 
+    child->no_writer = false;
+}
+
+void child_enable_stdout(struct child *child, void (*read)(char *),
+                         void (*eof)(), void (*error)())
+{
+    if (uv_pipe_init(global_loop(), &child->in.pipe, 0)) die();
+    child->in.pipe.data = NULL;
+
+    reader_init(&child->in.rdr, &child->in.pipe, read, eof, error);
+
     child->stdio[1].flags = UV_CREATE_PIPE | UV_WRITABLE_PIPE;
     child->stdio[1].data.stream = (uv_stream_t *)&child->in.pipe;
 
-    child->stdio[2].flags = UV_INHERIT_FD;
-    child->stdio[2].data.fd = STDERR_FILENO;
-
-    child->no_kill = true;
-    child->closed = true;
-    return child;
+    child->no_reader = false;
 }
 
-void child_spawn(struct child *child, char const *args[])
+void child_enable_stderr(struct child *child)
+{
+    child->stdio[2].flags = UV_INHERIT_FD;
+    child->stdio[2].data.fd = STDERR_FILENO;
+}
+
+void child_set_on_exit(struct child *child, void (*on_exit)(int, void *))
+{
+    child->on_exit = on_exit;
+}
+
+void child_set_callb_arg(struct child *child, void *arg)
+{
+    child->callb_arg = arg;
+}
+
+void child_set_auto_delete(struct child *child, bool auto_delete)
+{
+    child->auto_delete = auto_delete;
+}
+
+bool child_spawn(struct child *child, char const *args[])
 {
     child->opts.stdio = child->stdio;
     child->opts.stdio_count = 3;
@@ -73,17 +122,20 @@ void child_spawn(struct child *child, char const *args[])
     child->opts.file = args[0];
     child->opts.args = (char **)args;
 
-    if (uv_spawn(global_loop(), &child->proc, &child->opts)) fatal("uv_spawn");
+    int rc = uv_spawn(global_loop(), &child->proc, &child->opts);
+    if (rc) fatal("child_spawn %d: %s", rc, uv_strerror(rc));
 
     child->no_kill = false;
+    child->no_close = false;
     child->closed = false;
 
-    reader_open(&child->in.rdr);
+    if (!child->no_reader) return reader_open(&child->in.rdr);
+    return true;
 }
 
 void child_send(struct child *child, char const *string)
 {
-    if (string) writer_put(&child->out.wrt, string);
+    if (string && !child->no_writer) writer_put(&child->out.wrt, string);
 }
 
 void child_kill(struct child *child)
@@ -101,14 +153,16 @@ void child_kill(struct child *child)
 
 bool child_closed(struct child const *child) { return child->closed; }
 
+static void on_close(struct uv_handle_s *);
+
 void child_close(struct child *child)
 {
-    if (child->closed) return;
+    if (child->no_close) return;
+    child->no_close = true;
     child->no_kill = true;
-    child->closed = true;
-    reader_close(&child->in.rdr);
-    writer_close(&child->out.wrt);
-    uv_close((uv_handle_t *)&child->proc, NULL);
+    if (!child->no_reader) reader_close(&child->in.rdr);
+    if (!child->no_writer) writer_close(&child->out.wrt);
+    uv_close((uv_handle_t *)&child->proc, &on_close);
 }
 
 void child_del(struct child *child) { free(child); }
@@ -121,5 +175,14 @@ static void on_proc_exit(uv_process_t *proc, int64_t exit_status, int sig)
     struct child *child = proc->data;
     child_close(child);
 
-    if (child->on_exit) (*child->on_exit)(rc, child->userdata);
+    if (child->on_exit) (*child->on_exit)(rc, child->callb_arg);
+}
+
+static void on_close(struct uv_handle_s *h)
+{
+    struct child *child = h->data;
+    if (child->auto_delete)
+        child_del(child);
+    else
+        child->closed = true;
 }

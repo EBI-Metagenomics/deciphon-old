@@ -49,22 +49,22 @@ static void alloc_buff(uv_handle_t *handle, size_t suggested_size,
                        uv_buf_t *buf);
 static void read_pipe(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 
-void reader_open(struct reader *rdr)
+bool reader_open(struct reader *rdr)
 {
-    if (rdr->open) return;
+    if (rdr->open) return false;
     rdr->open = 1;
 
     rdr->pos = rdr->buf;
     rdr->end = rdr->pos;
-    if (uv_read_start((uv_stream_t *)rdr->pipe, &alloc_buff, &read_pipe)) die();
+    return !uv_read_start((uv_stream_t *)rdr->pipe, &alloc_buff, &read_pipe);
 }
 
-void reader_close(struct reader *rdr)
+bool reader_close(struct reader *rdr)
 {
-    if (!rdr->open) return;
+    if (!rdr->open) return false;
     rdr->open = 0;
 
-    if (uv_read_stop((uv_stream_t *)rdr->pipe)) die();
+    return !uv_read_stop((uv_stream_t *)rdr->pipe);
 }
 
 static void process_error(struct reader *rdr)
