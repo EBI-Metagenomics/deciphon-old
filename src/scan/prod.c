@@ -3,6 +3,7 @@
 #include "fs.h"
 #include "imm/imm.h"
 #include "logy.h"
+#include "repr_size.h"
 #include "scan/match.h"
 #include <string.h>
 
@@ -73,7 +74,7 @@ static int write_begin(struct prod const *prod, FILE *fp)
 #define echo(fmt, var) fprintf(fp, fmt, prod->var) < 0
 #define Fi "%ld" TAB
 #define Fs "%s" TAB
-#define Fg "%.17g" TAB
+#define Fg "%" repr_size_dbl_fmt TAB
 
     if (echo(Fi, scan_id)) efail("write prod");
     if (echo(Fi, seq_id)) efail("write prod");
@@ -81,7 +82,6 @@ static int write_begin(struct prod const *prod, FILE *fp)
     if (echo(Fs, profile_name)) efail("write prod");
     if (echo(Fs, abc_name)) efail("write prod");
 
-    /* Reference: https://stackoverflow.com/a/21162120 */
     if (echo(Fg, alt_loglik)) efail("write prod");
     if (echo(Fg, null_loglik)) efail("write prod");
 
