@@ -14,23 +14,32 @@ static void reverse(signed char buf[], int size)
     }
 }
 
+static int ltoa_rev(char *buf, long i);
+
+int itoa(char *buf, int i)
+{
+    int n = ltoa_rev(buf, i);
+    reverse((signed char *)buf, n);
+    return n;
+}
+
+int ltoa(char *buf, long i)
+{
+    int n = ltoa_rev(buf, i);
+    reverse((signed char *)buf, n);
+    return n;
+}
+
 // ACK: nanoprintf
-int itoa_rev(char *buf, int i)
+static int ltoa_rev(char *buf, long i)
 {
     int n = 0;
-    const int sign = (i >= 0) ? 1 : -1;
+    long const sign = (i >= 0) ? 1 : -1;
     do
     {
         *buf++ = (char)('0' + (sign * (i % 10)));
         i /= 10;
         ++n;
     } while (i);
-    return n;
-}
-
-int itoa(char *buf, int i)
-{
-    int n = itoa_rev(buf, i);
-    reverse((signed char *)buf, n);
     return n;
 }
