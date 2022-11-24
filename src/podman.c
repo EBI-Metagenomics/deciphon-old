@@ -2,6 +2,7 @@
 #include "itoa.h"
 #include "logy.h"
 #include "loop/child.h"
+#include "repr_size.h"
 #include "unused.h"
 #include <assert.h>
 #include <stddef.h>
@@ -43,7 +44,7 @@ int podman_stop(char const *name, int secs, void (*callb)(int, void *),
 {
     podman_init();
 
-    char asecs[ITOA_SIZE] = {0};
+    char asecs[repr_size(int) + 1] = {0};
     itoa(asecs, secs);
 
     char const *argv[] = {podman, "container", "stop", "-t", asecs, name, NULL};
