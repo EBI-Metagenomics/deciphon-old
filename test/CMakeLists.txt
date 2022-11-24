@@ -1,8 +1,10 @@
 include(helper.cmake)
 
+set(testdir "${CMAKE_CURRENT_BINARY_DIR}")
 set(tmpdir "${CMAKE_CURRENT_BINARY_DIR}/tmp")
 file(MAKE_DIRECTORY "${tmpdir}")
 
+add_compile_definitions(TESTDIR="${testdir}")
 add_compile_definitions(TMPDIR="${tmpdir}")
 
 deciphon_download(minifam.hmm)
@@ -24,6 +26,7 @@ deciphon_add_test(protein_db DECIPHON::deciphon)
 deciphon_add_test(hmmer_daemon DECIPHON::deciphon)
 deciphon_add_test(hmmer_client DECIPHON::deciphon)
 deciphon_add_test(scan DECIPHON::deciphon)
+deciphon_add_test(prodfile_reader DECIPHON::deciphon)
 
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR})
 set(DST ${CMAKE_CURRENT_BINARY_DIR})
