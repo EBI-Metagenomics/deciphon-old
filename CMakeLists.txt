@@ -46,13 +46,13 @@ add_library(
   libs/lazylog.c
   libs/zc.c
   src/as.c
-  src/cwd.c
-  src/chdir.c
   src/basename.c
   src/buff.c
+  src/chdir.c
   src/cmd.c
   src/core/sched.c
   src/core/sched_dump.c
+  src/cwd.c
   src/db/press.c
   src/db/profile_reader.c
   src/db/protein_reader.c
@@ -62,6 +62,7 @@ add_library(
   src/die.c
   src/dirname.c
   src/errmsg.c
+  src/exe.c
   src/expect.c
   src/file.c
   src/filename.c
@@ -71,7 +72,6 @@ add_library(
   src/is.c
   src/itoa.c
   src/loop/child.c
-  src/exe.c
   src/loop/global.c
   src/loop/halt_signal.c
   src/loop/linger.c
@@ -85,7 +85,6 @@ add_library(
   src/loop/writer.c
   src/model/nuclt_dist.c
   src/model/profile.c
-  src/podman.c
   src/model/profile_types.c
   src/model/protein_codec.c
   src/model/protein_h3reader.c
@@ -97,9 +96,11 @@ add_library(
   src/msg.c
   src/multifile.c
   src/pidfile.c
+  src/podman.c
   src/progress.c
   src/rc.c
   src/scan/prod.c
+  src/scan/prodfile_reader.c
   src/scan/prodman.c
   src/scan/protein_match.c
   src/scan/scan.c
@@ -107,6 +108,7 @@ add_library(
   src/scan/seqlist.c
   src/scan/thread.c
   src/sharg.c
+  src/strhash.c
   src/strlcpy.c
   src/to.c
   src/url.c
