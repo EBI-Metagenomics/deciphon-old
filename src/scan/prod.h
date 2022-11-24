@@ -30,7 +30,7 @@ struct prod
     char match[SCHED_MATCH_SIZE];
 };
 
-typedef enum rc prod_fwrite_match_fn_t(FILE *fp, void const *match);
+typedef enum rc prod_fwrite_match_fn_t(FILE *, struct match const *);
 
 void prod_setup_job(struct prod *prod, char const *abc_name,
                     char const *prof_typeid, long scan_id);
