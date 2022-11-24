@@ -1,10 +1,10 @@
-#ifndef DECIPHON_MODEL_PROTEIN_NODE_H
-#define DECIPHON_MODEL_PROTEIN_NODE_H
+#ifndef MODEL_PROT_NODE_H
+#define MODEL_PROT_NODE_H
 
 #include "imm/imm.h"
 #include "model/nuclt_dist.h"
 
-struct protein_node
+struct prot_node
 {
     union
     {

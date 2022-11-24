@@ -1,9 +1,9 @@
-#include "model/protein_model.h"
+#include "model/prot_model.h"
 #include "logy.h"
 #include "model/entry_dist.h"
 #include "model/nuclt_dist.h"
-#include "model/protein_model.h"
-#include "model/protein_node.h"
+#include "model/prot_model.h"
+#include "model/prot_node.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -18,21 +18,21 @@ static imm_float const uniform_lprobs[IMM_NUCLT_SIZE] = {LOGN2, LOGN2, LOGN2,
 /* Compute log(1 - p) given log(p). */
 static inline imm_float log1_p(imm_float logp) { return log1p(-exp(logp)); }
 
-enum rc add_xnodes(struct protein_model *);
-void init_xnodes(struct protein_model *);
+enum rc add_xnodes(struct prot_model *);
+void init_xnodes(struct prot_model *);
 
-void calculate_occupancy(struct protein_model *);
+void calculate_occupancy(struct prot_model *);
 
-bool have_called_setup(struct protein_model *);
-bool have_finished_add(struct protein_model const *);
+bool have_called_setup(struct prot_model *);
+bool have_finished_add(struct prot_model const *);
 
-void init_delete(struct imm_mute_state *, struct protein_model *);
-void init_insert(struct imm_frame_state *, struct protein_model *);
-void init_match(struct imm_frame_state *, struct protein_model *,
+void init_delete(struct imm_mute_state *, struct prot_model *);
+void init_insert(struct imm_frame_state *, struct prot_model *);
+void init_match(struct imm_frame_state *, struct prot_model *,
                 struct nuclt_dist *);
 
-enum rc init_null_xtrans(struct imm_hmm *, struct protein_xnode_null *);
-enum rc init_alt_xtrans(struct imm_hmm *, struct protein_xnode_alt *);
+enum rc init_null_xtrans(struct imm_hmm *, struct prot_xnode_null *);
+enum rc init_alt_xtrans(struct imm_hmm *, struct prot_xnode_alt *);
 
 struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *);
 struct imm_codon_lprob codon_lprob(struct imm_amino const *,
@@ -43,16 +43,15 @@ void setup_nuclt_dist(struct nuclt_dist *, struct imm_amino const *,
                       struct imm_nuclt const *,
                       imm_float const[IMM_AMINO_SIZE]);
 
-enum rc setup_entry_trans(struct protein_model *);
-enum rc setup_exit_trans(struct protein_model *);
-enum rc setup_transitions(struct protein_model *);
+enum rc setup_entry_trans(struct prot_model *);
+enum rc setup_exit_trans(struct prot_model *);
+enum rc setup_transitions(struct prot_model *);
 
-enum rc protein_model_add_node(struct protein_model *m,
-                               imm_float const lprobs[IMM_AMINO_SIZE],
-                               char consensus)
+enum rc prot_model_add_node(struct prot_model *m,
+                            imm_float const lprobs[IMM_AMINO_SIZE],
+                            char consensus)
 {
-    if (!have_called_setup(m))
-        return efail("must call protein_model_setup first");
+    if (!have_called_setup(m)) return efail("must call prot_model_setup first");
 
     if (m->alt.node_idx == m->core_size) return efail("reached limit of nodes");
 
@@ -62,7 +61,7 @@ enum rc protein_model_add_node(struct protein_model *m,
     for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
         lodds[i] = lprobs[i] - m->null.lprobs[i];
 
-    struct protein_node *n = m->alt.nodes + m->alt.node_idx;
+    struct prot_node *n = m->alt.nodes + m->alt.node_idx;
 
     setup_nuclt_dist(&n->match.nucltd, m->amino, m->code->nuclt, lodds);
 
@@ -82,11 +81,9 @@ enum rc protein_model_add_node(struct protein_model *m,
     return RC_OK;
 }
 
-enum rc protein_model_add_trans(struct protein_model *m,
-                                struct protein_trans trans)
+enum rc prot_model_add_trans(struct prot_model *m, struct prot_trans trans)
 {
-    if (!have_called_setup(m))
-        return efail("must call protein_model_setup first");
+    if (!have_called_setup(m)) return efail("must call prot_model_setup first");
 
     if (m->alt.trans_idx == m->core_size + 1)
         return efail("reached limit of transitions");
@@ -96,17 +93,16 @@ enum rc protein_model_add_trans(struct protein_model *m,
     return RC_OK;
 }
 
-void protein_model_del(struct protein_model const *model)
+void prot_model_del(struct prot_model const *model)
 {
     free(model->alt.nodes);
     free(model->alt.locc);
     free(model->alt.trans);
 }
 
-void protein_model_init(struct protein_model *m, struct imm_amino const *amino,
-                        struct imm_nuclt_code const *code,
-                        struct protein_cfg cfg,
-                        imm_float const null_lprobs[IMM_AMINO_SIZE])
+void prot_model_init(struct prot_model *m, struct imm_amino const *amino,
+                     struct imm_nuclt_code const *code, struct prot_cfg cfg,
+                     imm_float const null_lprobs[IMM_AMINO_SIZE])
 
 {
     m->amino = amino;
@@ -134,10 +130,10 @@ void protein_model_init(struct protein_model *m, struct imm_amino const *amino,
     m->alt.locc = NULL;
     m->alt.trans_idx = UINT_MAX;
     m->alt.trans = NULL;
-    protein_xtrans_init(&m->xtrans);
+    prot_xtrans_init(&m->xtrans);
 }
 
-static void model_reset(struct protein_model *model)
+static void model_reset(struct prot_model *model)
 {
     imm_hmm_reset(&model->null.hmm);
     imm_hmm_reset(&model->alt.hmm);
@@ -153,7 +149,7 @@ static void model_reset(struct protein_model *model)
     imm_state_detach(&model->xnode.alt.T.super);
 }
 
-enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
+enum rc prot_model_setup(struct prot_model *m, unsigned core_size)
 {
     if (core_size == 0) return einval("`core_size` cannot be zero");
 
@@ -184,26 +180,25 @@ enum rc protein_model_setup(struct protein_model *m, unsigned core_size)
     return add_xnodes(m);
 }
 
-void protein_model_write_dot(struct protein_model const *m, FILE *fp)
+void prot_model_write_dot(struct prot_model const *m, FILE *fp)
 {
-    imm_hmm_write_dot(&m->alt.hmm, fp, protein_state_name);
+    imm_hmm_write_dot(&m->alt.hmm, fp, prot_state_name);
 }
 
-struct imm_amino const *protein_model_amino(struct protein_model const *m)
+struct imm_amino const *prot_model_amino(struct prot_model const *m)
 {
     return m->amino;
 }
 
-struct imm_nuclt const *protein_model_nuclt(struct protein_model const *m)
+struct imm_nuclt const *prot_model_nuclt(struct prot_model const *m)
 {
     return m->code->nuclt;
 }
 
-struct protein_model_summary
-protein_model_summary(struct protein_model const *m)
+struct prot_model_summary prot_model_summary(struct prot_model const *m)
 {
     assert(have_finished_add(m));
-    return (struct protein_model_summary){
+    return (struct prot_model_summary){
         .null = {.hmm = &m->null.hmm, .R = &m->xnode.null.R},
         .alt = {
             .hmm = &m->alt.hmm,
@@ -217,9 +212,9 @@ protein_model_summary(struct protein_model const *m)
         }};
 }
 
-enum rc add_xnodes(struct protein_model *m)
+enum rc add_xnodes(struct prot_model *m)
 {
-    struct protein_xnode *n = &m->xnode;
+    struct prot_xnode *n = &m->xnode;
 
     if (imm_hmm_add_state(&m->null.hmm, &n->null.R.super)) return RC_EFAIL;
     if (imm_hmm_set_start(&m->null.hmm, &n->null.R.super, LOG1))
@@ -237,12 +232,12 @@ enum rc add_xnodes(struct protein_model *m)
     return RC_OK;
 }
 
-void init_xnodes(struct protein_model *m)
+void init_xnodes(struct prot_model *m)
 {
     imm_float e = m->cfg.epsilon;
     struct imm_nuclt_lprob const *nucltp = &m->null.nucltd.nucltp;
     struct imm_codon_marg const *codonm = &m->null.nucltd.codonm;
-    struct protein_xnode *n = &m->xnode;
+    struct prot_xnode *n = &m->xnode;
     struct imm_nuclt const *nuclt = m->code->nuclt;
 
     imm_frame_state_init(&n->null.R, PROTEIN_R_STATE, nucltp, codonm, e);
@@ -256,9 +251,9 @@ void init_xnodes(struct protein_model *m)
     imm_mute_state_init(&n->alt.T, PROTEIN_T_STATE, &nuclt->super);
 }
 
-void calculate_occupancy(struct protein_model *m)
+void calculate_occupancy(struct prot_model *m)
 {
-    struct protein_trans *trans = m->alt.trans;
+    struct prot_trans *trans = m->alt.trans;
     m->alt.locc[0] = imm_lprob_add(trans->MI, trans->MM);
     for (unsigned i = 1; i < m->core_size; ++i)
     {
@@ -283,21 +278,21 @@ void calculate_occupancy(struct protein_model *m)
     assert(!imm_lprob_is_nan(logZ));
 }
 
-bool have_called_setup(struct protein_model *m) { return m->core_size > 0; }
+bool have_called_setup(struct prot_model *m) { return m->core_size > 0; }
 
-bool have_finished_add(struct protein_model const *m)
+bool have_finished_add(struct prot_model const *m)
 {
     unsigned core_size = m->core_size;
     return m->alt.node_idx == core_size && m->alt.trans_idx == (core_size + 1);
 }
 
-void init_delete(struct imm_mute_state *state, struct protein_model *m)
+void init_delete(struct imm_mute_state *state, struct prot_model *m)
 {
     unsigned id = PROTEIN_DELETE_STATE | (m->alt.node_idx + 1);
     imm_mute_state_init(state, id, &m->code->nuclt->super);
 }
 
-void init_insert(struct imm_frame_state *state, struct protein_model *m)
+void init_insert(struct imm_frame_state *state, struct prot_model *m)
 {
     imm_float e = m->cfg.epsilon;
     unsigned id = PROTEIN_INSERT_STATE | (m->alt.node_idx + 1);
@@ -306,7 +301,7 @@ void init_insert(struct imm_frame_state *state, struct protein_model *m)
     imm_frame_state_init(state, id, nucltp, codonm, e);
 }
 
-void init_match(struct imm_frame_state *state, struct protein_model *m,
+void init_match(struct imm_frame_state *state, struct prot_model *m,
                 struct nuclt_dist *d)
 {
     imm_float e = m->cfg.epsilon;
@@ -314,13 +309,13 @@ void init_match(struct imm_frame_state *state, struct protein_model *m,
     imm_frame_state_init(state, id, &d->nucltp, &d->codonm, e);
 }
 
-enum rc init_null_xtrans(struct imm_hmm *hmm, struct protein_xnode_null *n)
+enum rc init_null_xtrans(struct imm_hmm *hmm, struct prot_xnode_null *n)
 {
     if (imm_hmm_set_trans(hmm, &n->R.super, &n->R.super, LOG1)) return RC_EFAIL;
     return RC_OK;
 }
 
-enum rc init_alt_xtrans(struct imm_hmm *hmm, struct protein_xnode_alt *n)
+enum rc init_alt_xtrans(struct imm_hmm *hmm, struct prot_xnode_alt *n)
 {
     if (imm_hmm_set_trans(hmm, &n->S.super, &n->B.super, LOG1)) return RC_EFAIL;
     if (imm_hmm_set_trans(hmm, &n->S.super, &n->N.super, LOG1)) return RC_EFAIL;
@@ -408,7 +403,7 @@ void setup_nuclt_dist(struct nuclt_dist *dist, struct imm_amino const *amino,
     dist->codonm = imm_codon_marg(&codonp);
 }
 
-enum rc setup_entry_trans(struct protein_model *m)
+enum rc setup_entry_trans(struct prot_model *m)
 {
     if (m->cfg.entry_dist == ENTRY_DIST_UNIFORM)
     {
@@ -418,7 +413,7 @@ enum rc setup_entry_trans(struct protein_model *m)
         struct imm_state *B = &m->xnode.alt.B.super;
         for (unsigned i = 0; i < m->core_size; ++i)
         {
-            struct protein_node *node = m->alt.nodes + i;
+            struct prot_node *node = m->alt.nodes + i;
             if (imm_hmm_set_trans(&m->alt.hmm, B, &node->M.super, cost))
                 return RC_EFAIL;
         }
@@ -430,7 +425,7 @@ enum rc setup_entry_trans(struct protein_model *m)
         struct imm_state *B = &m->xnode.alt.B.super;
         for (unsigned i = 0; i < m->core_size; ++i)
         {
-            struct protein_node *node = m->alt.nodes + i;
+            struct prot_node *node = m->alt.nodes + i;
             if (imm_hmm_set_trans(&m->alt.hmm, B, &node->M.super,
                                   m->alt.locc[i]))
                 return RC_EFAIL;
@@ -439,29 +434,29 @@ enum rc setup_entry_trans(struct protein_model *m)
     return RC_OK;
 }
 
-enum rc setup_exit_trans(struct protein_model *m)
+enum rc setup_exit_trans(struct prot_model *m)
 {
     struct imm_state *E = &m->xnode.alt.E.super;
 
     for (unsigned i = 0; i < m->core_size; ++i)
     {
-        struct protein_node *node = m->alt.nodes + i;
+        struct prot_node *node = m->alt.nodes + i;
         if (imm_hmm_set_trans(&m->alt.hmm, &node->M.super, E, imm_log(1)))
             return RC_EFAIL;
     }
     for (unsigned i = 1; i < m->core_size; ++i)
     {
-        struct protein_node *node = m->alt.nodes + i;
+        struct prot_node *node = m->alt.nodes + i;
         if (imm_hmm_set_trans(&m->alt.hmm, &node->D.super, E, imm_log(1)))
             return RC_EFAIL;
     }
     return RC_OK;
 }
 
-enum rc setup_transitions(struct protein_model *m)
+enum rc setup_transitions(struct prot_model *m)
 {
     struct imm_hmm *h = &m->alt.hmm;
-    struct protein_trans *trans = m->alt.trans;
+    struct prot_trans *trans = m->alt.trans;
 
     struct imm_state *B = &m->xnode.alt.B.super;
     struct imm_state *M1 = &m->alt.nodes[0].M.super;
@@ -469,10 +464,10 @@ enum rc setup_transitions(struct protein_model *m)
 
     for (unsigned i = 0; i + 1 < m->core_size; ++i)
     {
-        struct protein_node *pr = m->alt.nodes + i;
-        struct protein_node *nx = m->alt.nodes + i + 1;
+        struct prot_node *pr = m->alt.nodes + i;
+        struct prot_node *nx = m->alt.nodes + i + 1;
         unsigned j = i + 1;
-        struct protein_trans t = trans[j];
+        struct prot_trans t = trans[j];
         if (imm_hmm_set_trans(h, &pr->M.super, &pr->I.super, t.MI))
             return RC_EFAIL;
         if (imm_hmm_set_trans(h, &pr->I.super, &pr->I.super, t.II))

@@ -34,9 +34,9 @@ enum rc db_press_init(struct db_press *p, char const *hmm, char const *db)
     if ((rc = prepare_writer(p))) goto cleanup;
     prepare_reader(p);
 
-    protein_profile_init(&p->profile, p->reader.h3.prof.meta.acc,
-                         &p->writer.db.amino, &p->writer.db.code,
-                         p->writer.db.cfg);
+    prot_profile_init(&p->profile, p->reader.h3.prof.meta.acc,
+                      &p->writer.db.amino, &p->writer.db.code,
+                      p->writer.db.cfg);
 
     return rc;
 
@@ -71,7 +71,7 @@ static enum rc count_profiles(struct db_press *p)
 
 enum rc db_press_step(struct db_press *p)
 {
-    enum rc rc = protein_h3reader_next(&p->reader.h3);
+    enum rc rc = prot_h3reader_next(&p->reader.h3);
     return rc ? rc : profile_write(p);
 }
 
@@ -86,9 +86,9 @@ static enum rc prepare_writer(struct db_press *p)
 {
     struct imm_amino const *a = &imm_amino_iupac;
     struct imm_nuclt const *n = &imm_dna_iupac.super;
-    struct protein_cfg cfg = PROTEIN_CFG_DEFAULT;
+    struct prot_cfg cfg = PROTEIN_CFG_DEFAULT;
 
-    return protein_db_writer_open(&p->writer.db, p->writer.fp, a, n, cfg);
+    return prot_db_writer_open(&p->writer.db, p->writer.fp, a, n, cfg);
 }
 
 static enum rc finish_writer(struct db_press *p, bool succesfully)
@@ -113,9 +113,9 @@ static void prepare_reader(struct db_press *p)
 {
     struct imm_amino const *amino = &p->writer.db.amino;
     struct imm_nuclt_code const *code = &p->writer.db.code;
-    struct protein_cfg cfg = p->writer.db.cfg;
+    struct prot_cfg cfg = p->writer.db.cfg;
 
-    protein_h3reader_init(&p->reader.h3, amino, code, cfg, p->reader.fp);
+    prot_h3reader_init(&p->reader.h3, amino, code, cfg, p->reader.fp);
 }
 
 static enum rc finish_reader(struct db_press *p)
@@ -125,11 +125,11 @@ static enum rc finish_reader(struct db_press *p)
 
 static enum rc profile_write(struct db_press *p)
 {
-    enum rc rc = protein_profile_absorb(&p->profile, &p->reader.h3.model);
+    enum rc rc = prot_profile_absorb(&p->profile, &p->reader.h3.model);
     if (rc) return rc;
 
     zc_strlcpy(p->profile.super.accession, p->reader.h3.prof.meta.acc,
                PROFILE_ACC_SIZE);
 
-    return protein_db_writer_pack_profile(&p->writer.db, &p->profile);
+    return prot_db_writer_pack_profile(&p->writer.db, &p->profile);
 }

@@ -1,4 +1,4 @@
-#include "model/protein_profile.h"
+#include "model/prot_profile.h"
 #include "expect.h"
 #include "imm/imm.h"
 #include "lite_pack/file/file.h"
@@ -6,8 +6,8 @@
 #include "logy.h"
 #include "model/profile.h"
 #include "model/profile_typeid.h"
-#include "model/protein_model.h"
-#include "model/protein_profile.h"
+#include "model/prot_model.h"
+#include "model/prot_profile.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,14 +16,14 @@ static void del(struct profile *prof)
 {
     if (prof)
     {
-        struct protein_profile *p = (struct protein_profile *)prof;
+        struct prot_profile *p = (struct prot_profile *)prof;
         free(p->alt.match_ndists);
         imm_del(&p->null.dp);
         imm_del(&p->alt.dp);
     }
 }
 
-static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
+static enum rc alloc_match_nuclt_dists(struct prot_profile *prof)
 {
     size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
     void *ptr = realloc(prof->alt.match_ndists, size);
@@ -38,7 +38,7 @@ static enum rc alloc_match_nuclt_dists(struct protein_profile *prof)
 
 static enum rc unpack(struct profile *prof, struct lip_file *file)
 {
-    struct protein_profile *p = (struct protein_profile *)prof;
+    struct prot_profile *p = (struct prot_profile *)prof;
     unsigned size = 0;
     if (!lip_read_map_size(file, &size)) eio("read profile map size");
     assert(size == 16);
@@ -119,27 +119,25 @@ static enum rc unpack(struct profile *prof, struct lip_file *file)
 
 static struct imm_dp const *null_dp(struct profile const *prof)
 {
-    struct protein_profile *p = (struct protein_profile *)prof;
+    struct prot_profile *p = (struct prot_profile *)prof;
     return &p->null.dp;
 }
 
 static struct imm_dp const *alt_dp(struct profile const *prof)
 {
-    struct protein_profile *p = (struct protein_profile *)prof;
+    struct prot_profile *p = (struct prot_profile *)prof;
     return &p->alt.dp;
 }
 
 static struct profile_vtable vtable = {PROFILE_PROTEIN, del, unpack, null_dp,
                                        alt_dp};
 
-void protein_profile_init(struct protein_profile *p, char const *accession,
-                          struct imm_amino const *amino,
-                          struct imm_nuclt_code const *code,
-                          struct protein_cfg cfg)
+void prot_profile_init(struct prot_profile *p, char const *accession,
+                       struct imm_amino const *amino,
+                       struct imm_nuclt_code const *code, struct prot_cfg cfg)
 {
     struct imm_nuclt const *nuclt = code->nuclt;
-    profile_init(&p->super, accession, &code->super, vtable,
-                 protein_state_name);
+    profile_init(&p->super, accession, &code->super, vtable, prot_state_name);
     p->code = code;
     p->amino = amino;
     p->cfg = cfg;
@@ -153,8 +151,8 @@ void protein_profile_init(struct protein_profile *p, char const *accession,
     p->alt.match_ndists = NULL;
 }
 
-enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
-                              bool multi_hits, bool hmmer3_compat)
+enum rc prot_profile_setup(struct prot_profile *prof, unsigned seq_size,
+                           bool multi_hits, bool hmmer3_compat)
 {
     if (seq_size == 0) return einval("sequence cannot be empty");
 
@@ -173,7 +171,7 @@ enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
     imm_float l1p = imm_log(2 + q / (1 - q)) - imm_log(L + 2 + q / (1 - q));
     imm_float lr = imm_log(L) - imm_log(L + 1);
 
-    struct protein_xtrans t;
+    struct prot_xtrans t;
 
     t.NN = t.CC = t.JJ = lp;
     t.NB = t.CT = t.JB = l1p;
@@ -216,16 +214,15 @@ enum rc protein_profile_setup(struct protein_profile *prof, unsigned seq_size,
     return RC_OK;
 }
 
-enum rc protein_profile_absorb(struct protein_profile *p,
-                               struct protein_model const *m)
+enum rc prot_profile_absorb(struct prot_profile *p, struct prot_model const *m)
 {
-    if (p->code->nuclt != protein_model_nuclt(m))
+    if (p->code->nuclt != prot_model_nuclt(m))
         return einval("Different nucleotide alphabets.");
 
-    if (p->amino != protein_model_amino(m))
+    if (p->amino != prot_model_amino(m))
         return einval("Different amino alphabets.");
 
-    struct protein_model_summary s = protein_model_summary(m);
+    struct prot_model_summary s = prot_model_summary(m);
 
     if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
         return efail("failed to hmm_reset");
@@ -257,8 +254,8 @@ enum rc protein_profile_absorb(struct protein_profile *p,
     return RC_OK;
 }
 
-enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,
-                               unsigned core_size)
+enum rc prot_profile_sample(struct prot_profile *p, unsigned seed,
+                            unsigned core_size)
 {
     assert(core_size >= 2);
     p->core_size = core_size;
@@ -269,23 +266,23 @@ enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
 
-    struct protein_model model;
-    protein_model_init(&model, p->amino, p->code, p->cfg, lprobs);
+    struct prot_model model;
+    prot_model_init(&model, p->amino, p->code, p->cfg, lprobs);
 
     enum rc rc = RC_OK;
 
-    if ((rc = protein_model_setup(&model, core_size))) goto cleanup;
+    if ((rc = prot_model_setup(&model, core_size))) goto cleanup;
 
     for (unsigned i = 0; i < core_size; ++i)
     {
         imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
         imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
-        if ((rc = protein_model_add_node(&model, lprobs, '-'))) goto cleanup;
+        if ((rc = prot_model_add_node(&model, lprobs, '-'))) goto cleanup;
     }
 
     for (unsigned i = 0; i < core_size + 1; ++i)
     {
-        struct protein_trans t;
+        struct prot_trans t;
         imm_lprob_sample(&rnd, PROTEIN_TRANS_SIZE, t.data);
         if (i == 0) t.DD = IMM_LPROB_ZERO;
         if (i == core_size)
@@ -294,30 +291,30 @@ enum rc protein_profile_sample(struct protein_profile *p, unsigned seed,
             t.DD = IMM_LPROB_ZERO;
         }
         imm_lprob_normalize(PROTEIN_TRANS_SIZE, t.data);
-        if ((rc = protein_model_add_trans(&model, t))) goto cleanup;
+        if ((rc = prot_model_add_trans(&model, t))) goto cleanup;
     }
 
-    rc = protein_profile_absorb(p, &model);
+    rc = prot_profile_absorb(p, &model);
 
 cleanup:
-    protein_model_del(&model);
+    prot_model_del(&model);
     return rc;
 }
 
-enum rc protein_profile_decode(struct protein_profile const *prof,
-                               struct imm_seq const *seq, unsigned state_id,
-                               struct imm_codon *codon)
+enum rc prot_profile_decode(struct prot_profile const *prof,
+                            struct imm_seq const *seq, unsigned state_id,
+                            struct imm_codon *codon)
 {
-    assert(!protein_state_is_mute(state_id));
+    assert(!prot_state_is_mute(state_id));
 
     struct nuclt_dist const *nucltd = NULL;
-    if (protein_state_is_insert(state_id))
+    if (prot_state_is_insert(state_id))
     {
         nucltd = &prof->alt.insert_ndist;
     }
-    else if (protein_state_is_match(state_id))
+    else if (prot_state_is_match(state_id))
     {
-        unsigned idx = protein_state_idx(state_id);
+        unsigned idx = prot_state_idx(state_id);
         nucltd = prof->alt.match_ndists + idx;
     }
     else
@@ -331,13 +328,13 @@ enum rc protein_profile_decode(struct protein_profile const *prof,
     return RC_OK;
 }
 
-void protein_profile_write_dot(struct protein_profile const *p, FILE *fp)
+void prot_profile_write_dot(struct prot_profile const *p, FILE *fp)
 {
-    imm_dp_write_dot(&p->alt.dp, fp, protein_state_name);
+    imm_dp_write_dot(&p->alt.dp, fp, prot_state_name);
 }
 
-enum rc protein_profile_pack(struct protein_profile const *prof,
-                             struct lip_file *file)
+enum rc prot_profile_pack(struct prot_profile const *prof,
+                          struct lip_file *file)
 {
     if (!lip_write_map_size(file, 16)) return eio("write profile map size");
 

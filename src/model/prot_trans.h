@@ -1,11 +1,11 @@
-#ifndef DECIPHON_MODEL_PROTEIN_TRANS_H
-#define DECIPHON_MODEL_PROTEIN_TRANS_H
+#ifndef MODEL_PROT_TRANS_H
+#define MODEL_PROT_TRANS_H
 
 #include "imm/imm.h"
 
 #define PROTEIN_TRANS_SIZE 7
 
-struct protein_trans
+struct prot_trans
 {
     union
     {

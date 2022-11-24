@@ -1,9 +1,9 @@
-#ifndef DECIPHON_MODEL_PROTEIN_XTRANS_H
-#define DECIPHON_MODEL_PROTEIN_XTRANS_H
+#ifndef MODEL_PROT_XTRANS_H
+#define MODEL_PROT_XTRANS_H
 
 #include "imm/imm.h"
 
-struct protein_xtrans
+struct prot_xtrans
 {
     imm_float NN;
     imm_float CC;
@@ -16,7 +16,7 @@ struct protein_xtrans
     imm_float EC;
 };
 
-static inline void protein_xtrans_init(struct protein_xtrans *t)
+static inline void prot_xtrans_init(struct prot_xtrans *t)
 {
     t->NN = IMM_LPROB_ONE;
     t->NB = IMM_LPROB_ONE;

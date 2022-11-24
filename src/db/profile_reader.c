@@ -32,13 +32,13 @@ static void init_standard_profiles(struct profile_reader *reader,
 }
 #endif
 
-static void init_protein_profiles(struct profile_reader *reader,
-                                  struct protein_db_reader *db)
+static void init_prot_profiles(struct profile_reader *reader,
+                               struct prot_db_reader *db)
 {
     for (unsigned i = 0; i < reader->npartitions; ++i)
     {
-        struct protein_profile *pro = &reader->profiles[i].pro;
-        protein_profile_init(pro, "", &db->amino, &db->code, db->cfg);
+        struct prot_profile *pro = &reader->profiles[i].pro;
+        prot_profile_init(pro, "", &db->amino, &db->code, db->cfg);
     }
 }
 
@@ -96,7 +96,7 @@ enum rc profile_reader_setup(struct profile_reader *reader,
     if ((rc = open_files(reader, lip_file_ptr(&db->file)))) goto cleanup;
 
     if (reader->profile_typeid == PROFILE_PROTEIN)
-        init_protein_profiles(reader, (struct protein_db_reader *)db);
+        init_prot_profiles(reader, (struct prot_db_reader *)db);
     else
         assert(false);
 

@@ -4,6 +4,7 @@
 #include "logy.h"
 #include "progress.h"
 #include "scan/cfg.h"
+#include "scan/prot_match_iter.h"
 #include "xmath.h"
 #include <string.h>
 
@@ -46,7 +47,7 @@ static enum rc setup_hypothesis(struct thread *t, struct hypothesis *hyp,
 static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
                        struct imm_task *task, struct imm_prod *prod,
                        double *loglik);
-static enum rc write_product(struct thread *t, struct imm_path const *path);
+static enum rc write_product(struct prod *, FILE *, struct prot_result *);
 
 enum rc thread_run(struct thread *t)
 {
@@ -65,7 +66,7 @@ enum rc thread_run(struct thread *t)
     {
         struct imm_dp const *null_dp = profile_null_dp(prof);
         struct imm_dp const *alt_dp = profile_alt_dp(prof);
-        struct protein_profile *pp = (struct protein_profile *)prof;
+        struct prot_profile *pp = (struct prot_profile *)prof;
         unsigned size = imm_seq_size(seq);
 
         rc = setup_hypothesis(t, null, profile_null_dp(prof), seq);
@@ -74,8 +75,8 @@ enum rc thread_run(struct thread *t)
         rc = setup_hypothesis(t, alt, profile_alt_dp(prof), seq);
         if (rc) goto cleanup;
 
-        rc = protein_profile_setup(pp, size, t->cfg.multi_hits,
-                                   t->cfg.hmmer3_compat);
+        rc = prot_profile_setup(pp, size, t->cfg.multi_hits,
+                                t->cfg.hmmer3_compat);
         if (rc) goto cleanup;
 
         rc = viterbi(t, null_dp, null->task, &null->prod, &t->prod.null_loglik);
@@ -91,10 +92,9 @@ enum rc thread_run(struct thread *t)
 
         strcpy(t->prod.profile_name, prof->accession);
 
-        struct protein_profile const *pro =
-            (struct protein_profile const *)prof;
-        protein_match_init(&t->match.pro, pro);
-        rc = write_product(t, &alt->prod.path);
+        struct prot_profile const *pro = (struct prot_profile const *)prof;
+        prot_result_init(&t->result, pro, t->seq, &alt->prod.path);
+        rc = write_product(&t->prod, t->prodfile, &t->result);
         if (rc) goto cleanup;
     }
     if (rc == RC_END) rc = RC_OK;
@@ -154,31 +154,23 @@ static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
     return RC_OK;
 }
 
-static enum rc write_product(struct thread *t, struct imm_path const *path)
+static enum rc write_product(struct prod *prod, FILE *fp, struct prot_result *r)
 {
-    if (prod_write_begin(&t->prod, t->prodfile))
-        return eio("failed to write prod");
+    if (prod_write_begin(prod, fp)) return eio("failed to write prod");
 
-    unsigned start = 0;
-    for (unsigned idx = 0; idx < imm_path_nsteps(path); idx++)
+    struct prot_match_iter iter = {0};
+    prot_match_iter(&iter, r);
+
+    struct prot_match const *match = prot_match_iter_next(&iter);
+    if (prot_match_write(match, fp)) return eio("write prod");
+
+    while ((match = prot_match_iter_next(&iter)))
     {
-        struct imm_step *step = imm_path_step(path, idx);
-        struct imm_seq frag = imm_subseq(t->seq, start, step->seqlen);
-        int rc = protein_match_setup(&t->match.pro, step, &frag);
-        if (rc) return rc;
-
-        if (idx > 0 && idx + 1 <= imm_path_nsteps(path))
-        {
-            if (prod_write_sep(t->prodfile)) return eio("failed to write prod");
-        }
-
-        if (protein_match_write(&t->match.pro, t->prodfile))
-            return eio("write prod");
-
-        start += step->seqlen;
+        if (prod_write_sep(fp)) return eio("failed to write prod");
+        if (prot_match_write(match, fp)) return eio("write prod");
     }
 
-    if (prod_write_end(t->prodfile)) return eio("failed to write prod");
+    if (prod_write_end(fp)) return eio("failed to write prod");
 
     return 0;
 }

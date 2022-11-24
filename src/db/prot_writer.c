@@ -1,4 +1,4 @@
-#include "db/protein_writer.h"
+#include "db/prot_writer.h"
 #include "db/types.h"
 #include "logy.h"
 #include "model/model.h"
@@ -53,10 +53,9 @@ static enum rc pack_amino_cb(struct lip_file *file, void const *arg)
     return pack_amino(file, arg);
 }
 
-enum rc protein_db_writer_open(struct protein_db_writer *db, FILE *fp,
-                               struct imm_amino const *amino,
-                               struct imm_nuclt const *nuclt,
-                               struct protein_cfg cfg)
+enum rc prot_db_writer_open(struct prot_db_writer *db, FILE *fp,
+                            struct imm_amino const *amino,
+                            struct imm_nuclt const *nuclt, struct prot_cfg cfg)
 {
     enum rc rc = db_writer_open(&db->super, fp);
     if (rc) return rc;
@@ -97,11 +96,11 @@ cleanup:
 
 static enum rc pack_profile(struct lip_file *file, void const *prof)
 {
-    return protein_profile_pack(prof, file);
+    return prot_profile_pack(prof, file);
 }
 
-enum rc protein_db_writer_pack_profile(struct protein_db_writer *db,
-                                       struct protein_profile const *profile)
+enum rc prot_db_writer_pack_profile(struct prot_db_writer *db,
+                                    struct prot_profile const *profile)
 {
     return db_writer_pack_profile(&db->super, pack_profile, profile);
 }

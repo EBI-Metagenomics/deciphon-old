@@ -1,4 +1,4 @@
-#include "db/protein_reader.h"
+#include "db/prot_reader.h"
 #include "db/reader.h"
 #include "expect.h"
 #include "imm/imm.h"
@@ -37,7 +37,7 @@ static enum rc unpack_amino(struct lip_file *file, struct imm_amino *amino)
     return RC_OK;
 }
 
-enum rc protein_db_reader_open(struct protein_db_reader *db, FILE *fp)
+enum rc prot_db_reader_open(struct prot_db_reader *db, FILE *fp)
 {
     enum rc rc = db_reader_open(&db->super, fp);
     if (rc) return rc;

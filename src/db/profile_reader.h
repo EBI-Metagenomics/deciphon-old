@@ -16,7 +16,7 @@ struct profile_reader
     union
     {
         // struct standard_profile std;
-        struct protein_profile pro;
+        struct prot_profile pro;
     } profiles[NUM_THREADS];
 };
 

@@ -1,6 +1,6 @@
 #include "scan/scan.h"
 #include "db/profile_reader.h"
-#include "db/protein_reader.h"
+#include "db/prot_reader.h"
 #include "errmsg.h"
 #include "filename.h"
 #include "jx.h"
@@ -21,7 +21,7 @@ static struct scan_cfg scan_cfg = {0};
 static struct thread thread[NUM_THREADS] = {0};
 
 static FILE *db_file = NULL;
-static struct protein_db_reader pro_db_reader = {0};
+static struct prot_db_reader pro_db_reader = {0};
 static struct db_reader *db_reader = (struct db_reader *)&pro_db_reader;
 
 static struct profile_reader profreader = {0};
@@ -163,7 +163,7 @@ static enum rc prepare_readers(char const *db)
     db_file = fopen(db, "rb");
     if (!db_file) return eio("%s", errfmt(errmsg, "failed to open database"));
 
-    enum rc rc = protein_db_reader_open(&pro_db_reader, db_file);
+    enum rc rc = prot_db_reader_open(&pro_db_reader, db_file);
     if (rc)
     {
         errfmt(errmsg, "failed to setup database reader");

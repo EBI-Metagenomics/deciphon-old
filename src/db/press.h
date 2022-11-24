@@ -1,8 +1,8 @@
 #ifndef DB_PRESS_H
 #define DB_PRESS_H
 
-#include "db/protein_writer.h"
-#include "model/protein_h3reader.h"
+#include "db/prot_writer.h"
+#include "model/prot_h3reader.h"
 #include <stdio.h>
 
 struct db_press
@@ -10,17 +10,17 @@ struct db_press
     struct
     {
         FILE *fp;
-        struct protein_db_writer db;
+        struct prot_db_writer db;
     } writer;
 
     struct
     {
         FILE *fp;
-        struct protein_h3reader h3;
+        struct prot_h3reader h3;
     } reader;
 
     unsigned profile_count;
-    struct protein_profile profile;
+    struct prot_profile profile;
 
     char buffer[4 * 1024];
 };

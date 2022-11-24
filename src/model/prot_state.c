@@ -1,10 +1,10 @@
-#include "model/protein_state.h"
-#include "model/protein_model.h"
+#include "model/prot_state.h"
+#include "model/prot_model.h"
 #include "to.h"
 
-unsigned protein_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
+unsigned prot_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
-    unsigned msb = protein_state_id_msb(id);
+    unsigned msb = prot_state_id_msb(id);
     if (msb == PROTEIN_EXT_STATE)
     {
         if (id == PROTEIN_R_STATE)
@@ -34,6 +34,6 @@ unsigned protein_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
             name[0] = 'I';
         else if (msb == PROTEIN_DELETE_STATE)
             name[0] = 'D';
-        return to_str(name + 1, (uint16_t)(protein_state_idx(id) + 1)) + 1;
+        return to_str(name + 1, (uint16_t)(prot_state_idx(id) + 1)) + 1;
     }
 }

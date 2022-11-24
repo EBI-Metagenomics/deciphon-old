@@ -68,6 +68,7 @@ int prod_write_sep(FILE *fp)
     return fputc(';', fp) == EOF ? eio("fputc") : RC_OK;
 }
 
+#if 0
 int prod_write(struct prod const *prod, struct imm_seq const *seq,
                struct imm_path const *path,
                prod_fwrite_match_fn_t *fwrite_match, struct match *match,
@@ -97,6 +98,7 @@ int prod_write(struct prod const *prod, struct imm_seq const *seq,
 
     return rc;
 }
+#endif
 
 int prod_write_end(FILE *fp)
 {

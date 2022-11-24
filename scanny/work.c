@@ -1,7 +1,7 @@
 #include "work.h"
 #include "atomic.h"
 #include "db/profile_reader.h"
-#include "db/protein_reader.h"
+#include "db/prot_reader.h"
 #include "deciphon_limits.h"
 #include "fs.h"
 #include "logy.h"

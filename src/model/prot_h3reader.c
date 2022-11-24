@@ -1,21 +1,21 @@
-#include "model/protein_h3reader.h"
+#include "model/prot_h3reader.h"
 #include "core/compiler.h"
 #include "rc.h"
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 
-void protein_h3reader_init(struct protein_h3reader *reader,
-                           struct imm_amino const *amino,
-                           struct imm_nuclt_code const *code,
-                           struct protein_cfg cfg, FILE *fp)
+void prot_h3reader_init(struct prot_h3reader *reader,
+                        struct imm_amino const *amino,
+                        struct imm_nuclt_code const *code, struct prot_cfg cfg,
+                        FILE *fp)
 {
     hmr_init(&reader->hmr, fp);
     hmr_prof_init(&reader->prof, &reader->hmr);
     init_null_lprobs(reader->null_lprobs);
-    protein_model_init(&reader->model, amino, code, cfg, reader->null_lprobs);
+    prot_model_init(&reader->model, amino, code, cfg, reader->null_lprobs);
 }
 
-enum rc protein_h3reader_next(struct protein_h3reader *reader)
+enum rc prot_h3reader_next(struct prot_h3reader *reader)
 {
     int hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
     if (hmr_rc == HMR_EOF) return RC_END;
@@ -24,12 +24,12 @@ enum rc protein_h3reader_next(struct protein_h3reader *reader)
 
     unsigned core_size = hmr_prof_length(&reader->prof);
     enum rc rc = RC_OK;
-    if ((rc = protein_model_setup(&reader->model, core_size))) return rc;
+    if ((rc = prot_model_setup(&reader->model, core_size))) return rc;
 
     hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);
     assert(hmr_rc != HMR_EOF);
 
-    struct protein_trans t = {
+    struct prot_trans t = {
         .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
         .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
         .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
@@ -38,7 +38,7 @@ enum rc protein_h3reader_next(struct protein_h3reader *reader)
         .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
         .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
     };
-    rc = protein_model_add_trans(&reader->model, t);
+    rc = prot_model_add_trans(&reader->model, t);
     assert(!rc);
 
     unsigned node_idx = 0;
@@ -49,10 +49,10 @@ enum rc protein_h3reader_next(struct protein_h3reader *reader)
             match_lprobs[i] = (imm_float)reader->prof.node.match[i];
 
         char consensus = reader->prof.node.excess.cons;
-        rc = protein_model_add_node(&reader->model, match_lprobs, consensus);
+        rc = prot_model_add_node(&reader->model, match_lprobs, consensus);
         assert(!rc);
 
-        struct protein_trans t2 = {
+        struct prot_trans t2 = {
             .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
             .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
             .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
@@ -61,7 +61,7 @@ enum rc protein_h3reader_next(struct protein_h3reader *reader)
             .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
             .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
         };
-        rc = protein_model_add_trans(&reader->model, t2);
+        rc = prot_model_add_trans(&reader->model, t2);
         assert(!rc);
         ++node_idx;
     }
@@ -71,9 +71,9 @@ enum rc protein_h3reader_next(struct protein_h3reader *reader)
     return RC_OK;
 }
 
-void protein_h3reader_del(struct protein_h3reader const *reader)
+void prot_h3reader_del(struct prot_h3reader const *reader)
 {
-    protein_model_del(&reader->model);
+    prot_model_del(&reader->model);
 }
 
 static void init_null_lprobs(imm_float lprobs[IMM_AMINO_SIZE])

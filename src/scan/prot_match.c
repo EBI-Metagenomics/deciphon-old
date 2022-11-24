@@ -1,10 +1,9 @@
-#include "scan/protein_match.h"
+#include "scan/prot_match.h"
 #include "logy.h"
-#include "model/protein_profile.h"
+#include "model/prot_profile.h"
 #include <string.h>
 
-void protein_match_init(struct protein_match *pm,
-                        struct protein_profile const *prof)
+void prot_match_init(struct prot_match *pm, struct prot_profile const *prof)
 {
     match_init(&pm->match, (struct profile const *)prof);
     pm->mute = false;
@@ -12,19 +11,18 @@ void protein_match_init(struct protein_match *pm,
     pm->amino = '\0';
 }
 
-enum rc protein_match_setup(struct protein_match *pm,
-                            struct imm_step const *step,
-                            struct imm_seq const *frag)
+enum rc prot_match_setup(struct prot_match *pm, struct imm_step step,
+                         struct imm_seq frag)
 {
     match_setup(&pm->match, step, frag);
-    pm->mute = protein_state_is_mute(step->state_id);
+    pm->mute = prot_state_is_mute(step.state_id);
     if (!pm->mute)
     {
-        struct protein_profile const *prof =
-            (struct protein_profile const *)pm->match.profile;
+        struct prot_profile const *prof =
+            (struct prot_profile const *)pm->match.profile;
 
         pm->codon = imm_codon_any(prof->code->nuclt);
-        if (protein_profile_decode(prof, frag, step->state_id, &pm->codon))
+        if (prot_profile_decode(prof, &frag, step.state_id, &pm->codon))
             return einval("could not decode into codon");
 
         pm->amino = imm_gc_decode(1, pm->codon);
@@ -48,23 +46,22 @@ enum rc protein_match_setup(struct protein_match *pm,
  *                      ---------------
  */
 
-static void as_string(struct protein_match const *pm, char *buf);
+static void as_string(struct prot_match const *pm, char *buf);
 
-enum rc protein_match_write(struct protein_match const *pm, FILE *fp)
+enum rc prot_match_write(struct prot_match const *pm, FILE *fp)
 {
     char buf[IMM_STATE_NAME_SIZE + 20] = {0};
     as_string(pm, buf);
     return fprintf(fp, "%s", buf) < 0 ? eio("failed to write match") : 0;
 }
 
-static void as_string(struct protein_match const *pm, char *buf)
+static void as_string(struct prot_match const *pm, char *buf)
 {
-    memcpy(buf, pm->match.frag->str, pm->match.frag->size);
-    buf += pm->match.frag->size;
+    memcpy(buf, pm->match.frag.str, pm->match.frag.size);
+    buf += pm->match.frag.size;
     *buf++ = ',';
 
-    struct imm_step const *step = pm->match.step;
-    pm->match.profile->state_name(step->state_id, buf);
+    pm->match.profile->state_name(pm->match.step.state_id, buf);
     buf += strlen(buf);
     *buf++ = ',';
 

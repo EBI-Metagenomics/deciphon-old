@@ -55,8 +55,8 @@ add_library(
   src/cwd.c
   src/db/press.c
   src/db/profile_reader.c
-  src/db/protein_reader.c
-  src/db/protein_writer.c
+  src/db/prot_reader.c
+  src/db/prot_writer.c
   src/db/reader.c
   src/db/writer.c
   src/die.c
@@ -86,11 +86,11 @@ add_library(
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c
-  src/model/protein_codec.c
-  src/model/protein_h3reader.c
-  src/model/protein_model.c
-  src/model/protein_profile.c
-  src/model/protein_state.c
+  src/model/prot_codec.c
+  src/model/prot_h3reader.c
+  src/model/prot_model.c
+  src/model/prot_profile.c
+  src/model/prot_state.c
   src/model/standard_profile.c
   src/model/standard_state.c
   src/msg.c
@@ -102,7 +102,9 @@ add_library(
   src/scan/prod.c
   src/scan/prodfile_reader.c
   src/scan/prodman.c
-  src/scan/protein_match.c
+  src/scan/prot_match.c
+  src/scan/prot_match_iter.c
+  src/scan/prot_result.c
   src/scan/scan.c
   src/scan/seq.c
   src/scan/seqlist.c

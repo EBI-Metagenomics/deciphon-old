@@ -5,7 +5,7 @@
 #include "scan/cfg.h"
 #include "scan/hypothesis.h"
 #include "scan/prod.h"
-#include "scan/protein_match.h"
+#include "scan/prot_result.h"
 #include <stdio.h>
 
 struct thread
@@ -21,13 +21,8 @@ struct thread
     struct prod prod;
     struct hypothesis null;
     struct hypothesis alt;
-    union
-    {
-        // struct standard_match std;
-        struct protein_match pro;
-    } match;
+    struct prot_result result;
 
-    prod_fwrite_match_fn_t *write_match_cb;
     struct progress progress;
 
     enum rc errnum;

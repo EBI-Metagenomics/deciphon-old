@@ -24,19 +24,19 @@ void test_protein_db_writer(void)
     FILE *fp = fopen(TMPDIR "/db.dcp", "wb");
     notnull(fp);
 
-    struct protein_cfg cfg = protein_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
-    struct protein_db_writer db = {0};
-    eq(protein_db_writer_open(&db, fp, amino, nuclt, cfg), RC_OK);
+    struct prot_cfg cfg = prot_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
+    struct prot_db_writer db = {0};
+    eq(prot_db_writer_open(&db, fp, amino, nuclt, cfg), RC_OK);
 
-    struct protein_profile prof = {0};
-    protein_profile_init(&prof, "accession0", amino, &code, cfg);
+    struct prot_profile prof = {0};
+    prot_profile_init(&prof, "accession0", amino, &code, cfg);
 
     unsigned core_size = 2;
-    protein_profile_sample(&prof, 1, core_size);
-    eq(protein_db_writer_pack_profile(&db, &prof), RC_OK);
+    prot_profile_sample(&prof, 1, core_size);
+    eq(prot_db_writer_pack_profile(&db, &prof), RC_OK);
 
-    protein_profile_sample(&prof, 2, core_size);
-    eq(protein_db_writer_pack_profile(&db, &prof), RC_OK);
+    prot_profile_sample(&prof, 2, core_size);
+    eq(prot_db_writer_pack_profile(&db, &prof), RC_OK);
 
     profile_del((struct profile *)&prof);
     eq(db_writer_close((struct db_writer *)&db, true), RC_OK);
@@ -47,8 +47,8 @@ void test_protein_db_reader(void)
 {
     FILE *fp = fopen(TMPDIR "/db.dcp", "rb");
     notnull(fp);
-    struct protein_db_reader db = {0};
-    eq(protein_db_reader_open(&db, fp), RC_OK);
+    struct prot_db_reader db = {0};
+    eq(prot_db_reader_open(&db, fp), RC_OK);
 
     eq(db.super.nprofiles, 2);
     eq(db.super.profile_typeid, PROFILE_PROTEIN);
