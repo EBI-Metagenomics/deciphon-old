@@ -38,8 +38,7 @@ enum imm_abc_typeid;
 enum profile_typeid;
 
 void thread_init(struct thread *, FILE *prodfile, int idx,
-                 struct profile_reader *, struct scan_cfg,
-                 prod_fwrite_match_fn_t *);
+                 struct profile_reader *, struct scan_cfg);
 void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
                       long scan_id, long ntasks);
 void thread_setup_seq(struct thread *, struct imm_seq const *, long seq_id);

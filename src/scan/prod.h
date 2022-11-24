@@ -36,8 +36,11 @@ void prod_setup_job(struct prod *prod, char const *abc_name,
                     char const *prof_typeid, long scan_id);
 void prod_setup_seq(struct prod *prod, long seq_id);
 
+int prod_write_begin(struct prod const *prod, FILE *fp);
 int prod_write(struct prod const *prod, struct imm_seq const *seq,
                struct imm_path const *path, prod_fwrite_match_fn_t *,
                struct match *match, FILE *);
+int prod_write_sep(FILE *fp);
+int prod_write_end(FILE *fp);
 
 #endif

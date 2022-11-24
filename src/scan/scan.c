@@ -75,9 +75,8 @@ int scan_setup(char const *db, char const *seqs)
     {
         struct thread *t = thread + i;
         struct profile_reader *reader = &profreader;
-        prod_fwrite_match_fn_t *cb = &protein_match_write;
 
-        thread_init(t, prodman_file(i), i, reader, scan_cfg, cb);
+        thread_init(t, prodman_file(i), i, reader, scan_cfg);
 
         enum imm_abc_typeid abc_typeid = abc->vtable.typeid;
         enum profile_typeid prof_typeid = reader->profile_typeid;

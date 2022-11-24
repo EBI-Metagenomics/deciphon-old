@@ -8,15 +8,13 @@
 #include <string.h>
 
 void thread_init(struct thread *t, FILE *prodfile, int idx,
-                 struct profile_reader *reader, struct scan_cfg cfg,
-                 prod_fwrite_match_fn_t *write_match_cb)
+                 struct profile_reader *reader, struct scan_cfg cfg)
 {
     t->prodfile = prodfile;
     t->idx = idx;
     t->seq = NULL;
     t->reader = reader;
     t->cfg = cfg;
-    t->write_match_cb = write_match_cb;
     progress_init(&t->progress, 0);
     t->errnum = RC_OK;
     t->errmsg[0] = '\0';
@@ -48,8 +46,7 @@ static enum rc setup_hypothesis(struct thread *t, struct hypothesis *hyp,
 static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
                        struct imm_task *task, struct imm_prod *prod,
                        double *loglik);
-static enum rc write_product(struct thread const *t,
-                             struct imm_path const *path);
+static enum rc write_product(struct thread *t, struct imm_path const *path);
 
 enum rc thread_run(struct thread *t)
 {
@@ -94,7 +91,9 @@ enum rc thread_run(struct thread *t)
 
         strcpy(t->prod.profile_name, prof->accession);
 
-        match_setup((struct match *)&t->match, prof);
+        struct protein_profile const *pro =
+            (struct protein_profile const *)prof;
+        protein_match_init(&t->match.pro, pro);
         rc = write_product(t, &alt->prod.path);
         if (rc) goto cleanup;
     }
@@ -155,10 +154,31 @@ static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
     return RC_OK;
 }
 
-static enum rc write_product(struct thread const *t,
-                             struct imm_path const *path)
+static enum rc write_product(struct thread *t, struct imm_path const *path)
 {
-    struct match *match = (struct match *)&t->match;
-    prod_fwrite_match_fn_t *fn = t->write_match_cb;
-    return prod_write(&t->prod, t->seq, path, fn, match, t->prodfile);
+    if (prod_write_begin(&t->prod, t->prodfile))
+        return eio("failed to write prod");
+
+    unsigned start = 0;
+    for (unsigned idx = 0; idx < imm_path_nsteps(path); idx++)
+    {
+        struct imm_step *step = imm_path_step(path, idx);
+        struct imm_seq frag = imm_subseq(t->seq, start, step->seqlen);
+        int rc = protein_match_setup(&t->match.pro, step, &frag);
+        if (rc) return rc;
+
+        if (idx > 0 && idx + 1 <= imm_path_nsteps(path))
+        {
+            if (prod_write_sep(t->prodfile)) return eio("failed to write prod");
+        }
+
+        if (protein_match_write(&t->match.pro, t->prodfile))
+            return eio("write prod");
+
+        start += step->seqlen;
+    }
+
+    if (prod_write_end(t->prodfile)) return eio("failed to write prod");
+
+    return 0;
 }

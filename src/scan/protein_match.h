@@ -17,9 +17,10 @@ struct protein_match
 
 struct protein_profile;
 
-enum rc protein_match_init(struct protein_match *,
-                           struct protein_profile const *,
-                           struct match const *);
-enum rc protein_match_write(FILE *fp, struct match const *);
+void protein_match_init(struct protein_match *, struct protein_profile const *);
+enum rc protein_match_setup(struct protein_match *pm,
+                            struct imm_step const *step,
+                            struct imm_seq const *frag);
+enum rc protein_match_write(struct protein_match const *, FILE *);
 
 #endif
