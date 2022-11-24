@@ -17,6 +17,13 @@ bool to_int(char const *str, int *val)
     return (v <= INT_MAX || !(v == 0 && !(str[0] == '0' && str[1] == '\0')));
 }
 
+bool to_long(char const *str, long *val)
+{
+    long long v = strtoll(str, NULL, 10);
+    *val = (long)v;
+    return (v <= LONG_MAX || !(v == 0 && !(str[0] == '0' && str[1] == '\0')));
+}
+
 bool to_int32(char const *str, int32_t *val)
 {
     long long v = strtoll(str, NULL, 10);
@@ -37,6 +44,16 @@ bool to_intl(unsigned len, char const *str, int *val)
     char c = str[len];
     s[len] = '\0';
     bool ret = to_int(str, val);
+    s[len] = c;
+    return ret;
+}
+
+bool to_longl(unsigned len, char const *str, long *val)
+{
+    char *s = (char *)str;
+    char c = str[len];
+    s[len] = '\0';
+    bool ret = to_long(str, val);
     s[len] = c;
     return ret;
 }
