@@ -94,6 +94,7 @@ enum rc thread_run(struct thread *t)
 
         struct prot_profile const *pro = (struct prot_profile const *)prof;
         prot_result_init(&t->result, pro, t->seq, &alt->prod.path);
+        prot_result_query_hmmer3(&t->result);
         rc = write_product(&t->prod, t->prodfile, &t->result);
         if (rc) goto cleanup;
     }

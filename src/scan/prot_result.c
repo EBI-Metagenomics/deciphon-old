@@ -1,11 +1,12 @@
 #include "scan/prot_result.h"
+#include "die.h"
+#include "hmmer/client.h"
 #include "logy.h"
+#include "loop/now.h"
 #include "scan/prot_match.h"
 #include "scan/prot_match_iter.h"
 #include "sched_structs.h"
 #include <stddef.h>
-
-static int infer_amino_sequence(struct prot_result *r);
 
 void prot_result_init(struct prot_result *r, struct prot_profile const *prof,
                       struct imm_seq const *seq, struct imm_path const *path)
@@ -28,32 +29,13 @@ void prot_result_init(struct prot_result *r, struct prot_profile const *prof,
     }
 
     *aseq = '\0';
-
-    if (infer_amino_sequence(r)) einval("bug in the match setup");
 }
 
-int prot_result_ask(struct prot_result *r)
+void prot_result_query_hmmer3(struct prot_result *r)
 {
-    int rc = infer_amino_sequence(r);
-    if (rc) return rc;
-    return rc;
-}
-
-static int infer_amino_sequence(struct prot_result *r)
-{
-    char *aseq = r->amino_seq;
-    unsigned start = 0;
-    for (unsigned idx = 0; idx < imm_path_nsteps(r->path); idx++)
-    {
-        struct imm_step const *step = imm_path_step(r->path, idx);
-        struct imm_seq frag = imm_subseq(r->seq, start, step->seqlen);
-        int rc = prot_match_setup(&r->match, *step, frag);
-        if (rc) return rc;
-
-        *aseq++ = r->match.amino;
-
-        start += step->seqlen;
-    }
-    *aseq = '\0';
-    return 0;
+    int rc = hmmerc_put(0, "name", r->amino_seq, now() + 5000);
+    if (rc) die();
+    double ln_evalue = 0;
+    rc = hmmerc_pop(0, &ln_evalue);
+    if (rc) die();
 }

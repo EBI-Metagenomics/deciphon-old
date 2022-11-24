@@ -40,10 +40,11 @@ cleanup:
     return rc;
 }
 
-int hmmerc_put(int id, char const *seq, long deadline)
+int hmmerc_put(int id, char const *name, char const *seq, long deadline)
 {
     static char const cmd[] = "--hmmdb 1 --acc --cut_ga";
-    int rc = h3c_stream_put(streams[id], cmd, seq, convert_deadline(deadline));
+    int rc =
+        h3c_stream_put(streams[id], cmd, name, seq, convert_deadline(deadline));
     if (rc) return efail("hmmer client put failure");
     return rc;
 }

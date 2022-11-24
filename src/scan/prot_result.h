@@ -18,6 +18,6 @@ struct prot_profile;
 
 void prot_result_init(struct prot_result *, struct prot_profile const *,
                       struct imm_seq const *, struct imm_path const *);
-int prot_result_ask(struct prot_result *);
+void prot_result_query_hmmer3(struct prot_result *);
 
 #endif

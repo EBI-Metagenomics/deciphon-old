@@ -20,7 +20,6 @@ struct prot_match const *prot_match_iter_next(struct prot_match_iter *iter)
     struct imm_step const *step = imm_path_step(path, iter->idx);
     struct imm_seq frag = imm_subseq(seq, iter->offset, step->seqlen);
 
-    iter->match.mute = prot_state_is_mute(step->state_id);
     if (prot_match_setup(&iter->match, *step, frag))
     {
         einval("bug in the match setup");

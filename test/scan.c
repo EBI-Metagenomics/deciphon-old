@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
 static void startup_hmmerd(void)
 {
-    eq(hmmerd_start("ross.5.hmm"), 0);
+    eq(hmmerd_start("minifam.hmm"), 0);
     loop_while(20000, hmmerd_state() == HMMERD_BOOT);
     eq(hmmerd_state(), HMMERD_ON);
 }
