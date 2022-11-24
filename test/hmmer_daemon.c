@@ -15,13 +15,13 @@ int main(int argc, char *argv[])
     global_init(argv[0], ZLOG_DEBUG);
     global_set_mode(RUN_MODE_NOWAIT);
 
-    EQ(hmmerd_start("minifam.hmm"), 0);
+    eq(hmmerd_start("minifam.hmm"), 0);
     loop_while(15000, hmmerd_state() == HMMERD_BOOT);
-    EQ(hmmerd_state(), HMMERD_ON);
+    eq(hmmerd_state(), HMMERD_ON);
 
     hmmerd_stop();
     loop_while(15000, hmmerd_state() == HMMERD_ON);
-    EQ(hmmerd_state(), HMMERD_OFF);
+    eq(hmmerd_state(), HMMERD_OFF);
 
     hmmerd_close();
     return hope_status();

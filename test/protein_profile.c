@@ -23,58 +23,58 @@ void test_protein_profile_uniform(void)
 
     struct protein_profile prof;
     protein_profile_init(&prof, "accession", amino, &code, cfg);
-    EQ(protein_profile_sample(&prof, 1, 2), RC_OK);
+    eq(protein_profile_sample(&prof, 1, 2), RC_OK);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(IMM_STR(str), prof.super.code->abc);
 
-    EQ(protein_profile_setup(&prof, 0, true, false), RC_EINVAL);
-    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), RC_OK);
+    eq(protein_profile_setup(&prof, 0, true, false), RC_EINVAL);
+    eq(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), RC_OK);
 
     struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.null.dp;
     struct imm_task *task = imm_task_new(dp);
-    NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_OK);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
+    notnull(task);
+    eq(imm_task_setup(task, &seq), IMM_OK);
+    eq(imm_dp_viterbi(dp, task, &prod), IMM_OK);
 
-    CLOSE(prod.loglik, -48.9272687711);
+    close(prod.loglik, -48.9272687711);
 
-    EQ(imm_path_nsteps(&prod.path), 11);
+    eq(imm_path_nsteps(&prod.path), 11);
     char name[IMM_STATE_NAME_SIZE];
 
-    EQ(imm_path_step(&prod.path, 0)->seqlen, 3);
-    EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_R_STATE);
+    eq(imm_path_step(&prod.path, 0)->seqlen, 3);
+    eq(imm_path_step(&prod.path, 0)->state_id, PROTEIN_R_STATE);
     protein_state_name(imm_path_step(&prod.path, 0)->state_id, name);
-    EQ(name, "R");
+    eq(name, "R");
 
-    EQ(imm_path_step(&prod.path, 10)->seqlen, 2);
-    EQ(imm_path_step(&prod.path, 10)->state_id, PROTEIN_R_STATE);
+    eq(imm_path_step(&prod.path, 10)->seqlen, 2);
+    eq(imm_path_step(&prod.path, 10)->state_id, PROTEIN_R_STATE);
     protein_state_name(imm_path_step(&prod.path, 10)->state_id, name);
-    EQ(name, "R");
+    eq(name, "R");
 
     imm_prod_reset(&prod);
     imm_del(task);
 
     dp = &prof.alt.dp;
     task = imm_task_new(dp);
-    NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_OK);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
+    notnull(task);
+    eq(imm_task_setup(task, &seq), IMM_OK);
+    eq(imm_dp_viterbi(dp, task, &prod), IMM_OK);
 
-    CLOSE(prod.loglik, -55.59428153448);
+    close(prod.loglik, -55.59428153448);
 
-    EQ(imm_path_nsteps(&prod.path), 14);
+    eq(imm_path_nsteps(&prod.path), 14);
 
-    EQ(imm_path_step(&prod.path, 0)->seqlen, 0);
-    EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_S_STATE);
+    eq(imm_path_step(&prod.path, 0)->seqlen, 0);
+    eq(imm_path_step(&prod.path, 0)->state_id, PROTEIN_S_STATE);
     protein_state_name(imm_path_step(&prod.path, 0)->state_id, name);
-    EQ(name, "S");
+    eq(name, "S");
 
-    EQ(imm_path_step(&prod.path, 13)->seqlen, 0);
-    EQ(imm_path_step(&prod.path, 13)->state_id, PROTEIN_T_STATE);
+    eq(imm_path_step(&prod.path, 13)->seqlen, 0);
+    eq(imm_path_step(&prod.path, 13)->state_id, PROTEIN_T_STATE);
     protein_state_name(imm_path_step(&prod.path, 13)->state_id, name);
-    EQ(name, "T");
+    eq(name, "T");
 
     struct protein_codec codec = protein_codec_init(&prof, &prod.path);
     enum rc rc = RC_OK;
@@ -93,13 +93,13 @@ void test_protein_profile_uniform(void)
     unsigned i = 0;
     while (!(rc = protein_codec_next(&codec, &seq, &codon)))
     {
-        EQ(codons[i].a, codon.a);
-        EQ(codons[i].b, codon.b);
-        EQ(codons[i].c, codon.c);
+        eq(codons[i].a, codon.a);
+        eq(codons[i].b, codon.b);
+        eq(codons[i].c, codon.c);
         ++i;
     }
-    EQ(rc, RC_END);
-    EQ(i, 10);
+    eq(rc, RC_END);
+    eq(i, 10);
 
     profile_del((struct profile *)&prof);
     imm_del(&prod);
@@ -116,57 +116,57 @@ void test_protein_profile_occupancy(void)
 
     struct protein_profile prof;
     protein_profile_init(&prof, "accession", amino, &code, cfg);
-    EQ(protein_profile_sample(&prof, 1, 2), RC_OK);
+    eq(protein_profile_sample(&prof, 1, 2), RC_OK);
 
     char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
     struct imm_seq seq = imm_seq(imm_str(str), prof.super.code->abc);
 
-    EQ(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), RC_OK);
+    eq(protein_profile_setup(&prof, imm_seq_size(&seq), true, false), RC_OK);
 
     struct imm_prod prod = imm_prod();
     struct imm_dp *dp = &prof.null.dp;
     struct imm_task *task = imm_task_new(dp);
-    NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_OK);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
+    notnull(task);
+    eq(imm_task_setup(task, &seq), IMM_OK);
+    eq(imm_dp_viterbi(dp, task, &prod), IMM_OK);
 
-    CLOSE(prod.loglik, -48.9272687711);
+    close(prod.loglik, -48.9272687711);
 
-    EQ(imm_path_nsteps(&prod.path), 11);
+    eq(imm_path_nsteps(&prod.path), 11);
     char name[IMM_STATE_NAME_SIZE];
 
-    EQ(imm_path_step(&prod.path, 0)->seqlen, 3);
-    EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_R_STATE);
+    eq(imm_path_step(&prod.path, 0)->seqlen, 3);
+    eq(imm_path_step(&prod.path, 0)->state_id, PROTEIN_R_STATE);
     protein_state_name(imm_path_step(&prod.path, 0)->state_id, name);
-    EQ(name, "R");
+    eq(name, "R");
 
-    EQ(imm_path_step(&prod.path, 10)->seqlen, 2);
-    EQ(imm_path_step(&prod.path, 10)->state_id, PROTEIN_R_STATE);
+    eq(imm_path_step(&prod.path, 10)->seqlen, 2);
+    eq(imm_path_step(&prod.path, 10)->state_id, PROTEIN_R_STATE);
     protein_state_name(imm_path_step(&prod.path, 10)->state_id, name);
-    EQ(name, "R");
+    eq(name, "R");
 
     imm_prod_reset(&prod);
     imm_del(task);
 
     dp = &prof.alt.dp;
     task = imm_task_new(dp);
-    NOTNULL(task);
-    EQ(imm_task_setup(task, &seq), IMM_OK);
-    EQ(imm_dp_viterbi(dp, task, &prod), IMM_OK);
+    notnull(task);
+    eq(imm_task_setup(task, &seq), IMM_OK);
+    eq(imm_dp_viterbi(dp, task, &prod), IMM_OK);
 
-    CLOSE(prod.loglik, -54.35543421312);
+    close(prod.loglik, -54.35543421312);
 
-    EQ(imm_path_nsteps(&prod.path), 14);
+    eq(imm_path_nsteps(&prod.path), 14);
 
-    EQ(imm_path_step(&prod.path, 0)->seqlen, 0);
-    EQ(imm_path_step(&prod.path, 0)->state_id, PROTEIN_S_STATE);
+    eq(imm_path_step(&prod.path, 0)->seqlen, 0);
+    eq(imm_path_step(&prod.path, 0)->state_id, PROTEIN_S_STATE);
     protein_state_name(imm_path_step(&prod.path, 0)->state_id, name);
-    EQ(name, "S");
+    eq(name, "S");
 
-    EQ(imm_path_step(&prod.path, 13)->seqlen, 0);
-    EQ(imm_path_step(&prod.path, 13)->state_id, PROTEIN_T_STATE);
+    eq(imm_path_step(&prod.path, 13)->seqlen, 0);
+    eq(imm_path_step(&prod.path, 13)->state_id, PROTEIN_T_STATE);
     protein_state_name(imm_path_step(&prod.path, 13)->state_id, name);
-    EQ(name, "T");
+    eq(name, "T");
 
     struct protein_codec codec = protein_codec_init(&prof, &prod.path);
     enum rc rc = RC_OK;
@@ -185,13 +185,13 @@ void test_protein_profile_occupancy(void)
     unsigned i = 0;
     while (!(rc = protein_codec_next(&codec, &seq, &codon)))
     {
-        EQ(codons[i].a, codon.a);
-        EQ(codons[i].b, codon.b);
-        EQ(codons[i].c, codon.c);
+        eq(codons[i].a, codon.a);
+        eq(codons[i].b, codon.b);
+        eq(codons[i].c, codon.c);
         ++i;
     }
-    EQ(rc, RC_END);
-    EQ(i, 10);
+    eq(rc, RC_END);
+    eq(i, 10);
 
     profile_del((struct profile *)&prof);
     imm_del(&prod);

@@ -27,11 +27,11 @@ int main(int argc, char *argv[])
 
     struct scan_cfg cfg = {1, 10., true, false};
     scan_init(cfg);
-    EQ(scan_setup("minifam.dcp", "consensus.json"), 0);
-    EQ(scan_run(), 0);
+    eq(scan_setup("minifam.dcp", "consensus.json"), 0);
+    eq(scan_run(), 0);
     char const *filepath = NULL;
-    EQ(scan_finishup(&filepath), 0);
-    EQ(fs_move("prod.tsv", filepath), 0);
+    eq(scan_finishup(&filepath), 0);
+    eq(fs_move("prod.tsv", filepath), 0);
     scan_cleanup();
 
     cleanup_hmmerc();
@@ -41,23 +41,23 @@ int main(int argc, char *argv[])
 
 static void startup_hmmerd(void)
 {
-    EQ(hmmerd_start("ross.5.hmm"), 0);
+    eq(hmmerd_start("ross.5.hmm"), 0);
     loop_while(20000, hmmerd_state() == HMMERD_BOOT);
-    EQ(hmmerd_state(), HMMERD_ON);
+    eq(hmmerd_state(), HMMERD_ON);
 }
 
 static void cleanup_hmmerd(void)
 {
     hmmerd_stop();
     loop_while(15000, hmmerd_state() == HMMERD_ON);
-    EQ(hmmerd_state(), HMMERD_OFF);
+    eq(hmmerd_state(), HMMERD_OFF);
 
     hmmerd_close();
 }
 
 static void startup_hmmerc(int nstreams)
 {
-    EQ(hmmerc_start(nstreams, now() + 5000), 0);
+    eq(hmmerc_start(nstreams, now() + 5000), 0);
     loop_while(500, true);
 }
 
