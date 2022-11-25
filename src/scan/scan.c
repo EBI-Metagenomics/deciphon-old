@@ -71,12 +71,13 @@ int scan_setup(char const *db, char const *seqs)
     long ntasks = 0;
     long ntasks_total = 0;
     unsigned nparts = profile_reader_npartitions(&profreader);
+    int prof_start = 0;
     for (unsigned i = 0; i < nparts; ++i)
     {
         struct thread *t = thread + i;
         struct profile_reader *reader = &profreader;
 
-        thread_init(t, prodman_file(i), i, reader, scan_cfg);
+        thread_init(t, prodman_file(i), i, prof_start, reader, scan_cfg);
 
         enum imm_abc_typeid abc_typeid = abc->vtable.typeid;
         enum profile_typeid prof_typeid = reader->profile_typeid;
@@ -85,6 +86,7 @@ int scan_setup(char const *db, char const *seqs)
         thread_setup_job(t, abc_typeid, prof_typeid, seqlist_scan_id(), ntasks);
 
         ntasks_total += ntasks;
+        prof_start += profile_reader_partition_size(&profreader, i);
     }
 
     progress_init(&progress, ntasks_total);

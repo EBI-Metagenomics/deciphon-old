@@ -31,9 +31,9 @@ void prot_result_init(struct prot_result *r, struct prot_profile const *prof,
     *aseq = '\0';
 }
 
-void prot_result_query_hmmer3(struct prot_result *r)
+void prot_result_query_hmmer3(struct prot_result *r, int prof_idx)
 {
-    int rc = hmmerc_put(0, "name", r->amino_seq, now() + 5000);
+    int rc = hmmerc_put(0, prof_idx, r->amino_seq, now() + 5000);
     if (rc) die();
     double ln_evalue = 0;
     rc = hmmerc_pop(0, &ln_evalue);

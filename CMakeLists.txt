@@ -11,7 +11,7 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-cpmaddpackage("gh:EBI-Metagenomics/h3client@0.7.0")
+cpmaddpackage("gh:EBI-Metagenomics/h3client@0.8.0")
 cpmaddpackage("gh:EBI-Metagenomics/hmmer-reader@0.2.1")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.0.14")
 cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.1")

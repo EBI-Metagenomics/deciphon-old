@@ -5,6 +5,7 @@
 #include "logy.h"
 #include "loop/now.h"
 #include "rc.h"
+#include <string.h>
 
 static int nstreams = 0;
 static struct h3c_stream *streams[NUM_THREADS] = {0};
@@ -40,11 +41,15 @@ cleanup:
     return rc;
 }
 
-int hmmerc_put(int id, char const *name, char const *seq, long deadline)
+#define CMD_SIZE 128
+static void cmd_set(char cmd[CMD_SIZE], int hmm_idx);
+
+int hmmerc_put(int id, int hmm_idx, char const *seq, long deadline)
 {
-    static char const cmd[] = "--hmmdb 1 --acc --cut_ga";
-    int rc =
-        h3c_stream_put(streams[id], cmd, name, seq, convert_deadline(deadline));
+    char cmd[128] = {0};
+    cmd_set(cmd, hmm_idx);
+    int rc = h3c_stream_put(streams[id], cmd, "none", seq,
+                            convert_deadline(deadline));
     if (rc) return efail("hmmer client put failure");
     return rc;
 }
@@ -71,10 +76,13 @@ int hmmerc_pop(int id, double *ln_evalue)
     if (h3c_result_nhits(result) == 0)
     {
         h3c_result_del(result);
-        return efail("hmmer request has no hit");
+        warn("hmmer request has no hit");
+        *ln_evalue = 0;
     }
-
-    *ln_evalue = h3c_result_hit_evalue_ln(result, 0);
+    else
+    {
+        *ln_evalue = h3c_result_hit_evalue_ln(result, 0);
+    }
 
     return H3C_OK;
 }
@@ -87,4 +95,10 @@ void hmmerc_stop(void)
         streams[i] = NULL;
     }
     nstreams = 0;
+}
+
+static void cmd_set(char cmd[CMD_SIZE], int hmm_idx)
+{
+    sprintf(cmd, "--hmmdb 1 --hmmdb_range %d..%d", hmm_idx, hmm_idx);
+    strcat(cmd, " --acc --cut_ga");
 }

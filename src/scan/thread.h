@@ -12,6 +12,7 @@ struct thread
 {
     FILE *prodfile;
     int idx;
+    int prof_start;
 
     struct imm_seq const *seq;
     struct profile_reader *reader;
@@ -32,7 +33,7 @@ struct thread
 enum imm_abc_typeid;
 enum profile_typeid;
 
-void thread_init(struct thread *, FILE *prodfile, int idx,
+void thread_init(struct thread *, FILE *prodfile, int idx, int prof_start,
                  struct profile_reader *, struct scan_cfg);
 void thread_setup_job(struct thread *, enum imm_abc_typeid, enum profile_typeid,
                       long scan_id, long ntasks);

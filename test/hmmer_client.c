@@ -50,7 +50,7 @@ static void test_put_pop(void)
     eq(hmmerc_start(1, now() + 50000), 0);
     loop_while(1000, true);
 
-    eq(hmmerc_put(0, "name", seq, now() + 10000), 0);
+    eq(hmmerc_put(0, 0, seq, now() + 10000), 0);
     loop_while(1000, true);
 
     double ln_evalue = 0;

@@ -8,11 +8,12 @@
 #include "xmath.h"
 #include <string.h>
 
-void thread_init(struct thread *t, FILE *prodfile, int idx,
+void thread_init(struct thread *t, FILE *prodfile, int idx, int prof_start,
                  struct profile_reader *reader, struct scan_cfg cfg)
 {
     t->prodfile = prodfile;
     t->idx = idx;
+    t->prof_start = prof_start;
     t->seq = NULL;
     t->reader = reader;
     t->cfg = cfg;
@@ -62,6 +63,7 @@ enum rc thread_run(struct thread *t)
     rc = profile_reader_rewind(reader, t->idx);
     if (rc) goto cleanup;
 
+    int prof_idx = t->prof_start;
     while ((rc = profile_reader_next(reader, t->idx, &prof)) == RC_OK)
     {
         struct imm_dp const *null_dp = profile_null_dp(prof);
@@ -88,15 +90,21 @@ enum rc thread_run(struct thread *t)
         progress_consume(&t->progress, 1);
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
 
-        if (!imm_lprob_is_finite(lrt) || lrt < t->cfg.lrt_threshold) continue;
+        if (!imm_lprob_is_finite(lrt) || lrt < t->cfg.lrt_threshold)
+        {
+            prof_idx += 1;
+            continue;
+        }
 
         strcpy(t->prod.profile_name, prof->accession);
 
         struct prot_profile const *pro = (struct prot_profile const *)prof;
         prot_result_init(&t->result, pro, t->seq, &alt->prod.path);
-        prot_result_query_hmmer3(&t->result);
+        prot_result_query_hmmer3(&t->result, prof_idx);
         rc = write_product(&t->prod, t->prodfile, &t->result);
         if (rc) goto cleanup;
+
+        prof_idx += 1;
     }
     if (rc == RC_END) rc = RC_OK;
 
