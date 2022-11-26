@@ -24,9 +24,10 @@ enum zlog_lvl
 #define zlog_fatal(...)                                                        \
     zlog_print(ZLOG_FATAL, __func__, __FILE__, __LINE__, __VA_ARGS__)
 
-typedef void zlog_print_fn_t(char const *string, void *);
+typedef void zlog_print_fn_t(char const *, void *);
 
-void zlog_setup(zlog_print_fn_t *, void *arg, enum zlog_lvl);
+void zlog_setup(enum zlog_lvl, zlog_print_fn_t *print_callb, void *print_arg);
+void zlog_setroot(char const *root);
 void zlog_print(enum zlog_lvl, char const *func, char const *file, int line,
                 char const *fmt, ...) __attribute__((format(printf, 5, 6)));
 
