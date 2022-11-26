@@ -1,5 +1,5 @@
-#ifndef CORE_FILE_H
-#define CORE_FILE_H
+#ifndef FILE_H
+#define FILE_H
 
 #include "rc.h"
 #include <stdint.h>

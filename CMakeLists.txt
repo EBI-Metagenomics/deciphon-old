@@ -67,6 +67,7 @@ add_library(
   src/file.c
   src/filename.c
   src/fmt.c
+  src/hashfile.c
   src/hmmer/client.c
   src/hmmer/daemon.c
   src/is.c
