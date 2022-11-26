@@ -12,7 +12,7 @@ int prodman_setup(int nthreads)
     return multifile_setup(&multifile, nthreads);
 }
 
-FILE *prodman_file(int idx) { return multifile.files[idx]; }
+FILE *prodman_file(int idx) { return multifile_file(&multifile, idx); }
 
 static FILE *create_header(void);
 static int join_header(FILE *hdr, char const *filepath);

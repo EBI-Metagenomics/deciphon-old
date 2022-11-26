@@ -6,86 +6,88 @@
 #include <stdio.h>
 #include <string.h>
 
-void multifile_init(struct multifile *tf) { multifile_cleanup(tf); }
+void multifile_init(struct multifile *mf) { multifile_cleanup(mf); }
 
-int multifile_setup(struct multifile *tf, int size)
+int multifile_setup(struct multifile *mf, int size)
 {
-    for (tf->size = 0; tf->size < size; ++tf->size)
+    for (mf->size = 0; mf->size < size; ++mf->size)
     {
-        if (!(tf->files[tf->size] = tmpfile()))
+        if (!(mf->files[mf->size] = tmpfile()))
         {
-            multifile_cleanup(tf);
+            multifile_cleanup(mf);
             return eio("failed to create temporary files");
         }
     }
     return RC_OK;
 }
 
+FILE *multifile_file(struct multifile *mf, int idx) { return mf->files[idx]; }
+
 static void cleanup_files(struct multifile *);
 static int setup_final_file(struct multifile *);
 static void cleanup_final_file(struct multifile *);
 static int join_files(struct multifile *);
 
-int multifile_finishup(struct multifile *tf, char const **path)
+int multifile_finishup(struct multifile *mf, char const **path)
 {
-    int rc = setup_final_file(tf);
+    int rc = setup_final_file(mf);
     if (rc) return rc;
-    rc = join_files(tf);
+    rc = join_files(mf);
     if (rc) return rc;
-    cleanup_files(tf);
-    *path = tf->final.path;
+    cleanup_files(mf);
+    *path = mf->final.path;
     return RC_OK;
 }
 
-void multifile_cleanup(struct multifile *tf)
+void multifile_cleanup(struct multifile *mf)
 {
-    cleanup_files(tf);
-    cleanup_final_file(tf);
+    cleanup_files(mf);
+    cleanup_final_file(mf);
 }
 
-static int join_files(struct multifile *tf)
+static int join_files(struct multifile *mf)
 {
-    for (int i = 0; i < tf->size; ++i)
+    for (int i = 0; i < mf->size; ++i)
     {
-        if (fflush(tf->files[i])) return eio("failed to flush");
-        rewind(tf->files[i]);
-        int r = fs_copy_fp(tf->final.file, tf->files[i]);
+        if (fflush(mf->files[i])) return eio("failed to flush");
+        rewind(mf->files[i]);
+        int r = fs_copy_fp(mf->final.file, mf->files[i]);
         if (r) return eio("%s", fs_strerror(r));
     }
-    if (fflush(tf->final.file)) return eio("failed to flush");
+    if (fflush(mf->final.file)) return eio("failed to flush");
 
     return RC_OK;
 }
 
-static void cleanup_files(struct multifile *tf)
+static void cleanup_files(struct multifile *mf)
 {
-    for (int i = 0; i < tf->size; ++i)
+    for (int i = 0; i < mf->size; ++i)
     {
-        fclose(tf->files[i]);
-        tf->files[i] = NULL;
+        fclose(mf->files[i]);
+        mf->files[i] = NULL;
     }
-    tf->size = 0;
+    mf->size = 0;
 }
 
-static int setup_final_file(struct multifile *tf)
+static int setup_final_file(struct multifile *mf)
 {
     size_t size = sizeof_field(struct multifile_final, path);
-    tf->final.file = NULL;
-    if (fs_mkstemp(size, tf->final.path)) return eio("fail to finish product");
+    mf->final.file = NULL;
+    if (fs_mkstemp(size, mf->final.path)) return eio("fail to finish product");
 
-    tf->final.file = fopen(tf->final.path, "wb");
-    return tf->final.file ? RC_OK : eio("fail to finish product");
+    mf->final.file = fopen(mf->final.path, "wb");
+    return mf->final.file ? RC_OK : eio("fail to finish product");
 }
 
-static void cleanup_final_file(struct multifile *tf)
+static void cleanup_final_file(struct multifile *mf)
 {
-    if (tf->final.file)
+    if (mf->final.file)
     {
-        fclose(tf->final.file);
-        tf->final.file = NULL;
+        fclose(mf->final.file);
+        mf->final.file = NULL;
     }
 
-    if (*tf->final.path && fs_exists(tf->final.path)) fs_unlink(tf->final.path);
+    if (*mf->final.path && fs_exists(mf->final.path)) fs_unlink(mf->final.path);
 
-    memset(tf->final.path, '\0', sizeof_field(struct multifile_final, path));
+    memset(mf->final.path, '\0', sizeof_field(struct multifile_final, path));
 }

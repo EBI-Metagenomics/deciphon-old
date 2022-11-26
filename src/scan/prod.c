@@ -68,38 +68,6 @@ int prod_write_sep(FILE *fp)
     return fputc(';', fp) == EOF ? eio("fputc") : RC_OK;
 }
 
-#if 0
-int prod_write(struct prod const *prod, struct imm_seq const *seq,
-               struct imm_path const *path,
-               prod_fwrite_match_fn_t *fwrite_match, struct match *match,
-               FILE *fp)
-{
-    enum rc rc = RC_OK;
-
-    if (prod_write_begin(prod, fp)) return eio("failed to write prod");
-
-    unsigned start = 0;
-    for (unsigned idx = 0; idx < imm_path_nsteps(path); idx++)
-    {
-        match->step = imm_path_step(path, idx);
-        struct imm_seq frag = imm_subseq(seq, start, match->step->seqlen);
-        match->frag = &frag;
-
-        if (idx > 0 && idx + 1 <= imm_path_nsteps(path))
-        {
-            if (prod_write_sep(fp)) return eio("failed to write prod");
-        }
-
-        if ((*fwrite_match)(fp, match)) return eio("write prod");
-
-        start += match->step->seqlen;
-    }
-    if (prod_write_end(fp)) return eio("failed to write prod");
-
-    return rc;
-}
-#endif
-
 int prod_write_end(FILE *fp)
 {
     return fputc('\n', fp) == EOF ? eio("fputc") : RC_OK;

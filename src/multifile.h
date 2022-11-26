@@ -19,6 +19,7 @@ struct multifile
 
 void multifile_init(struct multifile *);
 int multifile_setup(struct multifile *, int nthreads);
+FILE *multifile_file(struct multifile *, int idx);
 int multifile_finishup(struct multifile *, char const **);
 void multifile_cleanup(struct multifile *);
 
