@@ -83,6 +83,7 @@ int fs_fileno(FILE *fp, int *fd);
 int fs_getpath(FILE *fp, unsigned size, char *filepath);
 
 bool fs_exists(char const *filepath);
+bool fs_isdir(char const *path);
 int fs_touch(char const *filepath);
 
 int fs_readall(char const *filepath, long *size, unsigned char **data);

@@ -290,6 +290,12 @@ int fs_getpath(FILE *fp, unsigned size, char *filepath)
 
 bool fs_exists(char const *filepath) { return access(filepath, F_OK) == 0; }
 
+bool fs_isdir(char const *path)
+{
+    struct stat sb = {0};
+    return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
+}
+
 int fs_touch(char const *filepath)
 {
     if (fs_exists(filepath)) return FS_OK;
