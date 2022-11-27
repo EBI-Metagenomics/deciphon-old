@@ -50,6 +50,7 @@ int prod_write_begin(struct prod const *prod, FILE *fp)
 
     if (echo(Fg, alt_loglik)) efail("write prod");
     if (echo(Fg, null_loglik)) efail("write prod");
+    if (echo(Fg, evalue_log)) efail("write prod");
 
     if (echo(Fs, profile_typeid)) efail("write prod");
     if (echo(Fs, version)) efail("write prod");

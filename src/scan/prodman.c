@@ -40,7 +40,8 @@ static FILE *create_header(void)
 
     if (fputs("scan_id\tseq_id\tprofile_name\t", hdr) < 0) goto cleanup;
     if (fputs("abc_name\talt_loglik\t", hdr) < 0) goto cleanup;
-    if (fputs("null_loglik\tprofile_typeid\t", hdr) < 0) goto cleanup;
+    if (fputs("null_loglik\tevalue_log\tprofile_typeid\t", hdr) < 0)
+        goto cleanup;
     if (fputs("version\tmatch\n", hdr) < 0) goto cleanup;
 
     rewind(hdr);

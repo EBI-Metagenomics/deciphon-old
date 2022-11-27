@@ -107,7 +107,6 @@ add_library(
   src/scan/prodman.c
   src/scan/prot_match.c
   src/scan/prot_match_iter.c
-  src/scan/prot_result.c
   src/scan/scan.c
   src/scan/seq.c
   src/scan/seqlist.c

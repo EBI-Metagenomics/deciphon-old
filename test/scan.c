@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     eq(fs_move("prod.tsv", filepath), 0);
     long chk = 0;
     eq(fs_cksum("prod.tsv", FS_FLETCHER16, &chk), 0);
-    eq(chk, 24884);
+    eq(chk, 21919);
     scan_cleanup();
 
     cleanup_hmmerc();
