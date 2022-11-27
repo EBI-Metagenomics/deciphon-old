@@ -78,6 +78,8 @@ char const *prod_hmmer_filename(char *filename, long scan_id, long seq_id,
     p += strlen(strcpy(p, "_"));
     p += strlen(strcpy(p, profile_name));
 
+    p += strlen(strcat(p, ".h3r"));
     *p = '\0';
+
     return filename;
 }

@@ -56,7 +56,8 @@ static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
                        double *loglik);
 static int query_hmmer(struct thread *t, int prof_idx,
                        struct prot_profile const *prof);
-static enum rc write_product(struct thread *t, struct prot_profile const *prof);
+static int write_product(struct thread *t, struct prot_profile const *prof);
+static int write_hmmer(struct thread *t);
 
 enum rc thread_run(struct thread *t)
 {
@@ -109,6 +110,7 @@ enum rc thread_run(struct thread *t)
         struct prot_profile const *pro = (struct prot_profile const *)prof;
         if ((rc = query_hmmer(t, prof_idx, pro))) break;
         if ((rc = write_product(t, pro))) break;
+        if ((rc = write_hmmer(t))) break;
 
         prof_idx += 1;
     }
@@ -200,7 +202,7 @@ static int query_hmmer(struct thread *t, int prof_idx,
     return 0;
 }
 
-static enum rc write_product(struct thread *t, struct prot_profile const *prof)
+static int write_product(struct thread *t, struct prot_profile const *prof)
 {
     if (prod_write_begin(&t->prod, t->prodfile))
         return eio("failed to write prod");
@@ -215,5 +217,26 @@ static enum rc write_product(struct thread *t, struct prot_profile const *prof)
         if (prot_match_write(match, t->prodfile)) return eio("write prod");
     }
     if (prod_write_end(t->prodfile)) return eio("failed to write prod");
+    return 0;
+}
+
+static int write_hmmer(struct thread *t)
+{
+    char filename[FILENAME_SIZE] = {0};
+    struct prod const *prod = &t->prod;
+    prod_hmmer_filename(filename, prod->scan_id, prod->seq_id,
+                        prod->profile_name);
+
+    FILE *fp = fopen(filename, "wb");
+    if (!fp) return eio("could not open file %s", filename);
+
+    if (hmmer_result_write(t->hmmer_result, fp))
+    {
+        fclose(fp);
+        return eio("could not write hmmer results");
+    }
+
+    return fclose(fp) ? eio("could not close file") : 0;
+
     return 0;
 }
