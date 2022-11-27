@@ -1,7 +1,7 @@
 #include "scan/scan.h"
 #include "fs.h"
 #include "hmmer/client.h"
-#include "hmmer/daemon.h"
+#include "hmmer/server.h"
 #include "hmmer/state.h"
 #include "hope.h"
 #include "logy.h"
@@ -44,28 +44,28 @@ int main(int argc, char *argv[])
 
 static void startup_hmmerd(void)
 {
-    eq(hmmerd_start("minifam.hmm"), 0);
-    loop_while(20000, hmmerd_state() == HMMERD_BOOT);
-    eq(hmmerd_state(), HMMERD_ON);
+    eq(hmmer_server_start("minifam.hmm"), 0);
+    loop_while(20000, hmmer_server_state() == HMMERD_BOOT);
+    eq(hmmer_server_state(), HMMERD_ON);
 }
 
 static void cleanup_hmmerd(void)
 {
-    hmmerd_stop();
-    loop_while(15000, hmmerd_state() == HMMERD_ON);
-    eq(hmmerd_state(), HMMERD_OFF);
+    hmmer_server_stop();
+    loop_while(15000, hmmer_server_state() == HMMERD_ON);
+    eq(hmmer_server_state(), HMMERD_OFF);
 
-    hmmerd_close();
+    hmmer_server_close();
 }
 
 static void startup_hmmerc(int nstreams)
 {
-    eq(hmmerc_start(nstreams, now() + 5000), 0);
+    eq(hmmer_client_start(nstreams, now() + 5000), 0);
     loop_while(500, true);
 }
 
 static void cleanup_hmmerc(void)
 {
-    hmmerc_stop();
+    hmmer_client_stop();
     loop_while(500, true);
 }

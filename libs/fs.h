@@ -1,6 +1,10 @@
 #ifndef FS_H
 #define FS_H
 
+#if defined(_ANSI_SOURCE)
+#undef _ANSI_SOURCE
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>

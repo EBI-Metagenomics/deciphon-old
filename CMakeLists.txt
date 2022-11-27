@@ -69,7 +69,8 @@ add_library(
   src/fmt.c
   src/hashfile.c
   src/hmmer/client.c
-  src/hmmer/daemon.c
+  src/hmmer/result.c
+  src/hmmer/server.c
   src/is.c
   src/itoa.c
   src/loop/child.c
@@ -101,6 +102,7 @@ add_library(
   src/progress.c
   src/rc.c
   src/scan/prod.c
+  src/scan/prod_hmmer.c
   src/scan/prodfile_reader.c
   src/scan/prodman.c
   src/scan/prot_match.c
@@ -113,6 +115,7 @@ add_library(
   src/sharg.c
   src/strhash.c
   src/strlcpy.c
+  src/strtok_r.c
   src/to.c
   src/url.c
   src/xmath.c
@@ -128,6 +131,8 @@ target_link_libraries(deciphon PRIVATE OpenMP::OpenMP_C)
 target_link_libraries(deciphon PRIVATE ${LIBUV_LIBRARIES})
 
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
+target_compile_definitions(deciphon PUBLIC $<$<BOOL:${APPLE}>:_C99_SOURCE=1>)
+target_compile_definitions(deciphon PUBLIC _ANSI_SOURCE=1)
 
 target_include_directories(
   deciphon

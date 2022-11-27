@@ -1,4 +1,4 @@
-#include "hmmer/daemon.h"
+#include "hmmer/server.h"
 #include "hmmer/state.h"
 #include "hope.h"
 #include "logy.h"
@@ -15,14 +15,14 @@ int main(int argc, char *argv[])
     global_init(argv[0], ZLOG_DEBUG);
     global_set_mode(RUN_MODE_NOWAIT);
 
-    eq(hmmerd_start("minifam.hmm"), 0);
-    loop_while(15000, hmmerd_state() == HMMERD_BOOT);
-    eq(hmmerd_state(), HMMERD_ON);
+    eq(hmmer_server_start("minifam.hmm"), 0);
+    loop_while(15000, hmmer_server_state() == HMMERD_BOOT);
+    eq(hmmer_server_state(), HMMERD_ON);
 
-    hmmerd_stop();
-    loop_while(15000, hmmerd_state() == HMMERD_ON);
-    eq(hmmerd_state(), HMMERD_OFF);
+    hmmer_server_stop();
+    loop_while(15000, hmmer_server_state() == HMMERD_ON);
+    eq(hmmer_server_state(), HMMERD_OFF);
 
-    hmmerd_close();
+    hmmer_server_close();
     return hope_status();
 }

@@ -1,5 +1,4 @@
 #include "scan/prodfile_reader.h"
-#include "bzero.h"
 #include "itoa.h"
 #include "logy.h"
 #include "rc.h"
@@ -7,10 +6,13 @@
 #include "scan/prod.h"
 #include "scan/prodfile_header.h"
 #include "sizeof_field.h"
+#include "strlcpy.h"
+#include "strtok_r.h"
 #include "to.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define PREMATCH_NFIELDS 8
 
@@ -39,7 +41,7 @@ int prodfile_reader_new(struct prodfile_reader **ptr)
     if (!*ptr) return enomem("could not allocate for prodfile_reader");
 
     (*ptr)->fp = NULL;
-    bzero((*ptr)->header, sizeof_field(struct prodfile_reader, header));
+    memset((*ptr)->header, 0, sizeof_field(struct prodfile_reader, header));
 
     return 0;
 }

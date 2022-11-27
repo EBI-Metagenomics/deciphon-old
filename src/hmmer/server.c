@@ -1,4 +1,4 @@
-#include "hmmer/daemon.h"
+#include "hmmer/server.h"
 #include "cwd.h"
 #include "die.h"
 #include "fs.h"
@@ -99,7 +99,7 @@ static void boot(int status, void *arg)
         start_container();
 }
 
-int hmmerd_start(char const *hmm)
+int hmmer_server_start(char const *hmm)
 {
     if (!fs_exists(hmm)) return eio("%s file not found", hmm);
 
@@ -111,17 +111,17 @@ int hmmerd_start(char const *hmm)
     return RC_OK;
 }
 
-void hmmerd_stop(void)
+void hmmer_server_stop(void)
 {
     if (state == HMMERD_OFF) return;
     child_kill(child);
 }
 
-int hmmerd_state(void) { return state; }
+int hmmer_server_state(void) { return state; }
 
-char const *hmmerd_hmmfile(void) { return hmmfile; }
+char const *hmmer_server_hmmfile(void) { return hmmfile; }
 
-void hmmerd_close(void)
+void hmmer_server_close(void)
 {
     if (state == HMMERD_OFF) return;
     if (child_closed(child))

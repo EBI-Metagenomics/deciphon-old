@@ -3,6 +3,11 @@
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200112L
 #endif
+
+#if defined(_ANSI_SOURCE)
+#undef _ANSI_SOURCE
+#endif
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

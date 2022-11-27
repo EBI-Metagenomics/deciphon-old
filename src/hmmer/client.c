@@ -2,6 +2,7 @@
 #include "deciphon_limits.h"
 #include "h3c/h3c.h"
 #include "hmmer/port.h"
+#include "hmmer/result.h"
 #include "logy.h"
 #include "loop/now.h"
 #include "rc.h"
@@ -15,7 +16,7 @@ static inline long convert_deadline(long deadline)
     return h3c_deadline(deadline - now());
 }
 
-int hmmerc_start(int num_streams, long deadline)
+int hmmer_client_start(int num_streams, long deadline)
 {
     int rc = H3C_OK;
 
@@ -36,7 +37,7 @@ int hmmerc_start(int num_streams, long deadline)
     return rc;
 
 cleanup:
-    hmmerc_stop();
+    hmmer_client_stop();
     h3c_dialer_del(dialer);
     return rc;
 }
@@ -44,7 +45,7 @@ cleanup:
 #define CMD_SIZE 128
 static void cmd_set(char cmd[CMD_SIZE], int hmm_idx);
 
-int hmmerc_put(int id, int hmm_idx, char const *seq, long deadline)
+int hmmer_client_put(int id, int hmm_idx, char const *seq, long deadline)
 {
     char cmd[128] = {0};
     cmd_set(cmd, hmm_idx);
@@ -54,40 +55,15 @@ int hmmerc_put(int id, int hmm_idx, char const *seq, long deadline)
     return rc;
 }
 
-int hmmerc_pop(int id, double *ln_evalue)
+int hmmer_client_pop(int id, struct hmmer_result *r)
 {
-    struct h3c_result *result = h3c_result_new();
-    if (!result) return enomem("could not allocate for h3c results");
-
     h3c_stream_wait(streams[id]);
-    int c = h3c_stream_pop(streams[id], result);
-    if (c == H3C_ETIMEDOUT)
-    {
-        h3c_result_del(result);
-        return etimeout("hmmer client pop");
-    }
-
-    if (c)
-    {
-        h3c_result_del(result);
-        return efail("hmmer client pop: %s", h3c_decode(c));
-    }
-
-    if (h3c_result_nhits(result) == 0)
-    {
-        h3c_result_del(result);
-        warn("hmmer request has no hit");
-        *ln_evalue = 0;
-    }
-    else
-    {
-        *ln_evalue = h3c_result_hit_evalue_ln(result, 0);
-    }
-
-    return H3C_OK;
+    int c = h3c_stream_pop(streams[id], hmmer_result_handle(r));
+    if (c == H3C_ETIMEDOUT) return etimeout("hmmer client pop");
+    return c ? efail("hmmer client pop: %s", h3c_decode(c)) : 0;
 }
 
-void hmmerc_stop(void)
+void hmmer_client_stop(void)
 {
     for (int i = 0; i < nstreams; ++i)
     {
