@@ -1,7 +1,12 @@
 #include "scan/thread.h"
 #include "db/profile_reader.h"
+#include "die.h"
 #include "errmsg.h"
+#include "h3c/h3c.h"
+#include "hmmer/client.h"
+#include "hmmer/result.h"
 #include "logy.h"
+#include "loop/now.h"
 #include "progress.h"
 #include "scan/cfg.h"
 #include "scan/prot_match_iter.h"
@@ -18,6 +23,7 @@ void thread_init(struct thread *t, FILE *prodfile, int idx, int prof_start,
     t->reader = reader;
     t->cfg = cfg;
     progress_init(&t->progress, 0);
+    hmmer_result_new(&t->hmmer_result);
     t->errnum = RC_OK;
     t->errmsg[0] = '\0';
 }
@@ -48,7 +54,9 @@ static enum rc setup_hypothesis(struct thread *t, struct hypothesis *hyp,
 static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
                        struct imm_task *task, struct imm_prod *prod,
                        double *loglik);
-static enum rc write_product(struct prod *, FILE *, struct prot_result *);
+static int query_hmmer(struct thread *t, int prof_idx,
+                       struct prot_profile const *prof);
+static enum rc write_product(struct thread *t, struct prot_profile const *prof);
 
 enum rc thread_run(struct thread *t)
 {
@@ -99,10 +107,8 @@ enum rc thread_run(struct thread *t)
         strcpy(t->prod.profile_name, prof->accession);
 
         struct prot_profile const *pro = (struct prot_profile const *)prof;
-        prot_result_init(&t->result, pro, t->seq, &alt->prod.path);
-        prot_result_query_hmmer3(&t->result, prof_idx);
-        rc = write_product(&t->prod, t->prodfile, &t->result);
-        if (rc) goto cleanup;
+        if ((rc = query_hmmer(t, prof_idx, pro))) break;
+        if ((rc = write_product(t, pro))) break;
 
         prof_idx += 1;
     }
@@ -118,6 +124,8 @@ struct progress const *thread_progress(struct thread const *t)
 }
 
 char const *thread_errmsg(struct thread const *t) { return t->errmsg; }
+
+void thread_cleanup(struct thread *t) { hmmer_result_del(t->hmmer_result); }
 
 static enum rc reset_task(struct thread *t, struct imm_task **task,
                           struct imm_dp const *dp)
@@ -163,23 +171,49 @@ static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
     return RC_OK;
 }
 
-static enum rc write_product(struct prod *prod, FILE *fp, struct prot_result *r)
+static int query_hmmer(struct thread *t, int prof_idx,
+                       struct prot_profile const *prof)
 {
-    if (prod_write_begin(prod, fp)) return eio("failed to write prod");
-
     struct prot_match_iter iter = {0};
-    prot_match_iter(&iter, r);
+    struct prot_match const *match = NULL;
 
-    struct prot_match const *match = prot_match_iter_next(&iter);
-    if (prot_match_write(match, fp)) return eio("write prod");
+    prot_match_iter(&iter, prof, t->seq, &t->alt.prod.path);
+    match = prot_match_iter_next(&iter);
 
     while ((match = prot_match_iter_next(&iter)))
     {
-        if (prod_write_sep(fp)) return eio("failed to write prod");
-        if (prot_match_write(match, fp)) return eio("write prod");
+        char *y = t->amino_sequence;
+        while ((match = prot_match_iter_next(&iter)))
+        {
+            if (!match->mute) *y++ = match->amino;
+        }
+        *y = '\0';
     }
 
-    if (prod_write_end(fp)) return eio("failed to write prod");
+    int rc = hmmer_client_put(0, prof_idx, t->amino_sequence, now() + 5000);
+    if (rc) efail("hmmerc_put failure: %d", rc);
 
+    rc = hmmer_client_pop(0, t->hmmer_result);
+    if (rc) efail("hmmerc_pop failure: %d", rc);
+
+    t->prod.evalue_log = hmmer_result_evalue_ln(t->hmmer_result);
+    return 0;
+}
+
+static enum rc write_product(struct thread *t, struct prot_profile const *prof)
+{
+    if (prod_write_begin(&t->prod, t->prodfile))
+        return eio("failed to write prod");
+
+    struct prot_match_iter iter = {0};
+    prot_match_iter(&iter, prof, t->seq, &t->alt.prod.path);
+    struct prot_match const *match = prot_match_iter_next(&iter);
+    if (prot_match_write(match, t->prodfile)) return eio("write prod");
+    while ((match = prot_match_iter_next(&iter)))
+    {
+        if (prod_write_sep(t->prodfile)) return eio("failed to write prod");
+        if (prot_match_write(match, t->prodfile)) return eio("write prod");
+    }
+    if (prod_write_end(t->prodfile)) return eio("failed to write prod");
     return 0;
 }

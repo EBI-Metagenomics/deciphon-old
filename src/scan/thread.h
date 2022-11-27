@@ -2,10 +2,11 @@
 #define SCAN_THREAD_H
 
 #include "progress.h"
+#include "rc.h"
 #include "scan/cfg.h"
 #include "scan/hypothesis.h"
 #include "scan/prod.h"
-#include "scan/prot_result.h"
+#include "scan/prod_hmmer.h"
 #include <stdio.h>
 
 struct thread
@@ -22,7 +23,8 @@ struct thread
     struct prod prod;
     struct hypothesis null;
     struct hypothesis alt;
-    struct prot_result result;
+    struct hmmer_result *hmmer_result;
+    char amino_sequence[SCHED_SEQ_SIZE];
 
     struct progress progress;
 
@@ -41,5 +43,6 @@ void thread_setup_seq(struct thread *, struct imm_seq const *, long seq_id);
 enum rc thread_run(struct thread *);
 struct progress const *thread_progress(struct thread const *);
 char const *thread_errmsg(struct thread const *);
+void thread_cleanup(struct thread *);
 
 #endif
