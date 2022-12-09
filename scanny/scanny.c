@@ -115,7 +115,7 @@ static void cancel(struct msg *msg)
 
 static void scan(struct msg *msg)
 {
-    if (msg_check(msg, "sssii"))
+    if (msg_check(msg, "ssii"))
     {
         parent_send(msg_ctx(msg, "fail"));
         return;
@@ -128,11 +128,10 @@ static void scan(struct msg *msg)
 
     char const *seqs = msg_str(msg, 0);
     char const *db = msg_str(msg, 1);
-    char const *prod = msg_str(msg, 2);
     bool multi_hits = !!msg_int(msg, 3);
     bool hmmer3_compat = !!msg_int(msg, 4);
 
-    if (work_run(seqs, db, prod, multi_hits, hmmer3_compat))
+    if (work_run(seqs, db, multi_hits, hmmer3_compat))
     {
         parent_send(msg_ctx(msg, "fail"));
         return;
@@ -145,6 +144,6 @@ static void state(struct msg *msg)
     char perc[] = "100%";
     fmt_perc(perc, work_progress());
     strcat(perc, "%");
-    parent_send(msg_ctx(msg, "ok", state_string(work_state()), perc,
-                        work_seqsfile(), work_prodfile()));
+    parent_send(
+        msg_ctx(msg, "ok", state_string(work_state()), perc, work_seqsfile()));
 }

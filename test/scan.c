@@ -9,8 +9,6 @@
 #include "loop_while.h"
 #include "unused.h"
 
-// download prods_file_20221021.tsv
-
 static void startup_hmmerd(void);
 static void cleanup_hmmerd(void);
 
@@ -29,11 +27,9 @@ int main(int argc, char *argv[])
     scan_init(cfg);
     eq(scan_setup("minifam.dcp", "consensus.json"), 0);
     eq(scan_run(), 0);
-    char const *filepath = NULL;
-    eq(scan_finishup(&filepath), 0);
-    eq(fs_move("prod.tsv", filepath), 0);
+    eq(scan_finishup(), 0);
     long chk = 0;
-    eq(fs_cksum("prod.tsv", FS_FLETCHER16, &chk), 0);
+    eq(fs_cksum("prod/match.tsv", FS_FLETCHER16, &chk), 0);
     eq(chk, 21919);
     scan_cleanup();
 

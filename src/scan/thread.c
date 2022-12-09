@@ -2,6 +2,7 @@
 #include "db/profile_reader.h"
 #include "die.h"
 #include "errmsg.h"
+#include "fs.h"
 #include "h3c/h3c.h"
 #include "hmmer/client.h"
 #include "hmmer/result.h"
@@ -224,8 +225,13 @@ static int write_hmmer(struct thread *t)
 {
     char filename[FILENAME_SIZE] = {0};
     struct prod const *prod = &t->prod;
-    prod_hmmer_filename(filename, prod->scan_id, prod->seq_id,
-                        prod->profile_name);
+
+    if (fs_mkdir("prod", true)) return eio("could not create dir");
+    if (fs_mkdir("prod/hmmer", true)) return eio("could not create dir");
+    sprintf(filename, "prod/hmmer/%ld", prod->seq_id);
+    if (fs_mkdir(filename, true)) return eio("could not create dir");
+
+    prod_hmmer_filename(filename, prod->seq_id, prod->profile_name);
 
     FILE *fp = fopen(filename, "wb");
     if (!fp) return eio("could not open file %s", filename);

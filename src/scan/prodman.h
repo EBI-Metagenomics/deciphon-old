@@ -6,7 +6,7 @@
 void prodman_init(void);
 int prodman_setup(int nthreads);
 FILE *prodman_file(int idx);
-int prodman_finishup(char const **filepath);
+int prodman_finishup(void);
 void prodman_cleanup(void);
 
 #endif

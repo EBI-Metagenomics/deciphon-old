@@ -147,7 +147,7 @@ struct progress const *scan_progress(void) { return &progress; }
 
 char const *scan_errmsg(void) { return errmsg; }
 
-int scan_finishup(char const **filepath) { return prodman_finishup(filepath); }
+int scan_finishup(void) { return prodman_finishup(); }
 
 void scan_cleanup(void)
 {

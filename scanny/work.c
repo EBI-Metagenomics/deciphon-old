@@ -24,7 +24,6 @@ static struct progress progress = {0};
 static int nthreads = 0;
 static char seqsfile[FILENAME_SIZE] = {0};
 static char dbfile[FILENAME_SIZE] = {0};
-static char prodfile[FILENAME_SIZE] = {0};
 
 void work_init(void)
 {
@@ -41,8 +40,8 @@ int work_progress(void) { return progress_percent(&progress); }
 static void run(struct uv_work_s *);
 static void end(struct uv_work_s *, int status);
 
-int work_run(char const *seqs, char const *db, char const *prod,
-             bool multi_hits, bool hmmer3_compat)
+int work_run(char const *seqs, char const *db, bool multi_hits,
+             bool hmmer3_compat)
 {
     if (state == RUN) return einval("work thread is busy");
     assert(!cancel);
@@ -51,9 +50,6 @@ int work_run(char const *seqs, char const *db, char const *prod,
         return enomem("file name is too long");
 
     if (strlcpy(dbfile, db, sizeof(dbfile)) >= sizeof(dbfile))
-        return enomem("file name is too long");
-
-    if (strlcpy(prodfile, prod, sizeof(prodfile)) >= sizeof(prodfile))
         return enomem("file name is too long");
 
     struct scan_cfg cfg = {nthreads, 10., multi_hits, hmmer3_compat};
@@ -68,8 +64,6 @@ int work_run(char const *seqs, char const *db, char const *prod,
 }
 
 char const *work_seqsfile(void) { return seqsfile; }
-
-char const *work_prodfile(void) { return prodfile; }
 
 void work_cancel(void)
 {
@@ -104,18 +98,9 @@ static void run(struct uv_work_s *w)
         goto cleanup;
     }
 
-    char const *filepath = NULL;
-    if ((rc = scan_finishup(&filepath)))
+    if ((rc = scan_finishup()))
     {
         efail("%s", scan_errmsg());
-        state = FAIL;
-        goto cleanup;
-    }
-
-    int r = fs_move(prodfile, filepath);
-    if (r)
-    {
-        eio("%s", fs_strerror(r));
         state = FAIL;
         goto cleanup;
     }

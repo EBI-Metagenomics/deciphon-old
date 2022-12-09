@@ -13,7 +13,7 @@ int scan_run(void);
 int scan_progress_update(void);
 struct progress const *scan_progress(void);
 char const *scan_errmsg(void);
-int scan_finishup(char const **filepath);
+int scan_finishup(void);
 void scan_cleanup(void);
 
 #endif

@@ -23,7 +23,7 @@ int prod_hmmer_write(struct prod_hmmer *, struct h3c_result *);
 int prod_hmmer_read(struct prod_hmmer *, struct h3c_result *);
 #endif
 
-char const *prod_hmmer_filename(char *filename, long scan_id, long seq_id,
+char const *prod_hmmer_filename(char *filename, long seq_id,
                                 char const *profile_name);
 
 #endif

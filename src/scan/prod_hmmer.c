@@ -62,24 +62,15 @@ int prod_hmmer_read(struct prod_hmmer *x, struct h3c_result *r)
 }
 #endif
 
-char const *prod_hmmer_filename(char *filename, long scan_id, long seq_id,
+char const *prod_hmmer_filename(char *filename, long seq_id,
                                 char const *profile_name)
 {
     char *p = filename;
-
-    p += strlen(strcpy(p, "hmmer"));
-
-    p += strlen(strcpy(p, "_"));
-    p += ltoa(p, scan_id);
-
-    p += strlen(strcpy(p, "_"));
+    p += strlen(strcpy(p, "prod/hmmer/"));
     p += ltoa(p, seq_id);
-
-    p += strlen(strcpy(p, "_"));
+    p += strlen(strcpy(p, "/"));
     p += strlen(strcpy(p, profile_name));
-
     p += strlen(strcat(p, ".h3r"));
     *p = '\0';
-
     return filename;
 }

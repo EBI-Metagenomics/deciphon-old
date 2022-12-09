@@ -31,7 +31,7 @@ void global_init(char *const arg0, int loglvl)
 {
     zlog_setup(loglvl, logger, stderr);
     zlog_setroot("deciphon");
-    chdir(exe_dir());
+    // chdir(exe_dir());
 
     strlcpy(title, arg0, sizeof title);
     char *t = basename(title);

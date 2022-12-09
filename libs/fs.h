@@ -10,7 +10,6 @@
 #include <stdio.h>
 
 #define FS_MAP(X)                                                              \
-    X(OK, "not an error")                                                      \
     X(ECHMOD, "chmod failed")                                                  \
     X(ECLOSE, "close failed")                                                  \
     X(ECREAT, "creat failed")                                                  \
@@ -29,6 +28,7 @@
     X(EFWRITE, "fwrite failed")                                                \
     X(EINVAL, "invalid value")                                                 \
     X(EMKSTEMP, "mkstemp failed")                                              \
+    X(EMKDIR, "mkdir failed")                                                  \
     X(ENOMEM, "not enough memory")                                             \
     X(EOPEN, "open failed")                                                    \
     X(EREADLINK, "readlink failed")                                            \
@@ -80,6 +80,7 @@ int fs_copy_fp(FILE *restrict dst, FILE *restrict src);
 int fs_unlink(char const *filepath);
 int fs_rmdir(char const *dirpath);
 int fs_mkstemp(unsigned size, char *filepath);
+int fs_mkdir(char *dirpath, bool exist_ok);
 int fs_move(char const *restrict dst, char const *restrict src);
 
 int fs_refopen(FILE *fp, char const *mode, FILE **out);

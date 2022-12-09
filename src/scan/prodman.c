@@ -17,17 +17,19 @@ FILE *prodman_file(int idx) { return multifile_file(&multifile, idx); }
 static FILE *create_header(void);
 static int join_header(FILE *hdr, char const *filepath);
 
-int prodman_finishup(char const **path)
+int prodman_finishup(void)
 {
-    *path = NULL;
-    int rc = multifile_finishup(&multifile, path);
+    char const *path = NULL;
+    int rc = multifile_finishup(&multifile, &path);
     if (rc) return rc;
-    if (fs_sort(*path)) return eio("failed to sort");
+    if (fs_sort(path)) return eio("failed to sort");
 
     FILE *hdr = create_header();
     if (!hdr) return eio("failed to create header file");
-    rc = join_header(hdr, *path);
+    rc = join_header(hdr, path);
     fclose(hdr);
+    if (fs_mkdir("prod", true)) return eio("could not create dir");
+    if (fs_move("prod/match.tsv", path)) return eio("could not move file");
     return rc;
 }
 

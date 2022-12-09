@@ -46,9 +46,9 @@ static char *error_strings[] = {
 int fs_size(char const *filepath, long *size)
 {
     struct stat st = {0};
-    if (stat(filepath, &st) == 1) return FS_ESTAT;
+    if (stat(filepath, &st)) return FS_ESTAT;
     *size = (long)st.st_size;
-    return FS_OK;
+    return 0;
 }
 
 int fs_size_fp(FILE *fp, long *size)
@@ -63,7 +63,7 @@ int fs_size_fp(FILE *fp, long *size)
 
     if (fseeko(fp, old, SEEK_SET) < 0) return FS_EFSEEK;
 
-    return FS_OK;
+    return 0;
 }
 
 int fs_size_fd(int fd, long *size)
@@ -72,7 +72,7 @@ int fs_size_fd(int fd, long *size)
     if (fsync(fd) < 0) return FS_EFSYNC;
     if (fstat(fd, &st) < 0) return FS_EFSTAT;
     *size = st.st_size;
-    return FS_OK;
+    return 0;
 }
 
 int fs_getperm(char const *path, int who, int perm, bool *value)
@@ -128,17 +128,17 @@ int fs_setperm(char const *path, int who, int perm, bool value)
     else
         return FS_EINVAL;
 
-    return chmod(path, st.st_mode) ? FS_ECHMOD : FS_OK;
+    return chmod(path, st.st_mode) ? FS_ECHMOD : 0;
 }
 
 int fs_tell(FILE *restrict fp, long *offset)
 {
-    return (*offset = ftello(fp)) < 0 ? FS_EFTELL : FS_OK;
+    return (*offset = ftello(fp)) < 0 ? FS_EFTELL : 0;
 }
 
 int fs_seek(FILE *restrict fp, long offset, int whence)
 {
-    return fseeko(fp, (off_t)offset, whence) < 0 ? FS_EFSEEK : FS_OK;
+    return fseeko(fp, (off_t)offset, whence) < 0 ? FS_EFSEEK : 0;
 }
 
 int fs_copy(char const *dst, char const *src)
@@ -191,7 +191,7 @@ int fs_copy(char const *dst, char const *src)
         close(output);
         return FS_ECLOSE;
     }
-    return close(output) ? FS_ECLOSE : FS_OK;
+    return close(output) ? FS_ECLOSE : 0;
 }
 
 int fs_copy_fp(FILE *restrict dst, FILE *restrict src)
@@ -206,18 +206,15 @@ int fs_copy_fp(FILE *restrict dst, FILE *restrict src)
     }
     if (ferror(src)) return FS_EFREAD;
 
-    return FS_OK;
+    return 0;
 }
 
 int fs_unlink(char const *filepath)
 {
-    return unlink(filepath) < 0 ? FS_EUNLINK : FS_OK;
+    return unlink(filepath) < 0 ? FS_EUNLINK : 0;
 }
 
-int fs_rmdir(char const *dirpath)
-{
-    return rmdir(dirpath) < 0 ? FS_ERMDIR : FS_OK;
-}
+int fs_rmdir(char const *dirpath) { return rmdir(dirpath) < 0 ? FS_ERMDIR : 0; }
 
 static int concat_path_file(unsigned size, char *dst, const char *path,
                             const char *filename);
@@ -230,12 +227,19 @@ int fs_mkstemp(unsigned size, char *filepath)
     if (!tmpdir || tmpdir[0] == '\0') tmpdir = "/tmp";
     int rc = concat_path_file(size, filepath, tmpdir, template);
     if (rc) return rc;
-    return mkstemp(filepath) < 0 ? FS_EMKSTEMP : FS_OK;
+    return mkstemp(filepath) < 0 ? FS_EMKSTEMP : 0;
+}
+
+int fs_mkdir(char *dirpath, bool exist_ok)
+{
+    if (mkdir(dirpath, 0755) && !(errno == EEXIST && exist_ok))
+        return FS_EMKDIR;
+    return 0;
 }
 
 int fs_move(char const *restrict dst, char const *restrict src)
 {
-    if (rename(src, dst) == 0) return FS_OK;
+    if (rename(src, dst) == 0) return 0;
     FILE *fdst = fopen(dst, "wb");
     if (!fdst) return FS_EFOPEN;
 
@@ -256,12 +260,12 @@ int fs_refopen(FILE *fp, char const *mode, FILE **out)
     char filepath[FILENAME_MAX] = {0};
     int rc = fs_getpath(fp, sizeof filepath, filepath);
     if (rc) return rc;
-    return (*out = fopen(filepath, mode)) ? FS_OK : FS_EFOPEN;
+    return (*out = fopen(filepath, mode)) ? 0 : FS_EFOPEN;
 }
 
 int fs_fileno(FILE *fp, int *fd)
 {
-    return (*fd = fileno(fp)) < 0 ? FS_EFILENO : FS_OK;
+    return (*fd = fileno(fp)) < 0 ? FS_EFILENO : 0;
 }
 
 int fs_getpath(FILE *fp, unsigned size, char *filepath)
@@ -285,7 +289,7 @@ int fs_getpath(FILE *fp, unsigned size, char *filepath)
     filepath[n] = '\0';
 #endif
 
-    return FS_OK;
+    return 0;
 }
 
 bool fs_exists(char const *filepath) { return access(filepath, F_OK) == 0; }
@@ -293,15 +297,15 @@ bool fs_exists(char const *filepath) { return access(filepath, F_OK) == 0; }
 bool fs_isdir(char const *path)
 {
     struct stat sb = {0};
-    return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
+    return !stat(path, &sb) && S_ISDIR(sb.st_mode);
 }
 
 int fs_touch(char const *filepath)
 {
-    if (fs_exists(filepath)) return FS_OK;
+    if (fs_exists(filepath)) return 0;
     FILE *fp = fopen(filepath, "wb");
     if (!fp) return FS_EFOPEN;
-    return fclose(fp) ? FS_EFCLOSE : FS_OK;
+    return fclose(fp) ? FS_EFCLOSE : 0;
 }
 
 int fs_readall(char const *filepath, long *size, unsigned char **data)
@@ -326,10 +330,11 @@ int fs_readall(char const *filepath, long *size, unsigned char **data)
     {
         fclose(fp);
         free(*data);
+        *data = NULL;
         return FS_EFREAD;
     }
 
-    return fclose(fp) ? FS_EFCLOSE : FS_OK;
+    return fclose(fp) ? FS_EFCLOSE : 0;
 }
 
 int fs_writeall(char const *filepath, long size, unsigned char *data)
@@ -337,7 +342,7 @@ int fs_writeall(char const *filepath, long size, unsigned char *data)
     FILE *fp = fopen(filepath, "wb");
     if (!fp) return FS_EFOPEN;
 
-    if (size <= 0) return fclose(fp) ? FS_EFCLOSE : FS_OK;
+    if (size <= 0) return fclose(fp) ? FS_EFCLOSE : 0;
 
     if (fwrite(data, size, 1, fp) < 1)
     {
@@ -345,7 +350,7 @@ int fs_writeall(char const *filepath, long size, unsigned char *data)
         return FS_EFWRITE;
     }
 
-    return fclose(fp) ? FS_EFCLOSE : FS_OK;
+    return fclose(fp) ? FS_EFCLOSE : 0;
 }
 
 char const *fs_strerror(int rc)
@@ -372,7 +377,7 @@ int fs_join(FILE *a, FILE *b, FILE *out)
         if (fwrite(line, sizeof(*line), strlen(line), out) < 1)
             return FS_EFWRITE;
     }
-    return ferror(b) ? FS_EFGETS : FS_OK;
+    return ferror(b) ? FS_EFGETS : 0;
 }
 
 int fs_split(FILE *in, long cut, FILE *a, FILE *b)
@@ -392,7 +397,7 @@ int fs_split(FILE *in, long cut, FILE *a, FILE *b)
             return FS_EFWRITE;
         ++i;
     }
-    return ferror(in) ? FS_EFGETS : FS_OK;
+    return ferror(in) ? FS_EFGETS : 0;
 }
 
 static char *_fs_strdup(char const *str);
@@ -443,7 +448,7 @@ int fs_readlines(char const *filepath, long *cnt, char **lines[])
         (*lines)[*cnt] = str;
         *cnt += 1;
     }
-    return ferror(fp) ? FS_EFGETS : FS_OK;
+    return ferror(fp) ? FS_EFGETS : 0;
 }
 
 int fs_writelines(char const *filepath, long cnt, char *lines[])
@@ -451,7 +456,7 @@ int fs_writelines(char const *filepath, long cnt, char *lines[])
     FILE *fp = fopen(filepath, "w");
     if (!fp) return FS_EFOPEN;
 
-    if (cnt <= 0) return fclose(fp) ? FS_EFCLOSE : FS_OK;
+    if (cnt <= 0) return fclose(fp) ? FS_EFCLOSE : 0;
 
     for (long i = 0; i < cnt; ++i)
     {
@@ -471,7 +476,7 @@ int fs_writelines(char const *filepath, long cnt, char *lines[])
         }
     }
 
-    return fclose(fp) ? FS_EFCLOSE : FS_OK;
+    return fclose(fp) ? FS_EFCLOSE : 0;
 }
 
 int fs_ljoin(FILE *left, FILE *right)
@@ -521,7 +526,7 @@ int fs_sort(char const *filepath)
 {
     long cnt = 0;
     char **lines = NULL;
-    int rc = FS_OK;
+    int rc = 0;
 
     if ((rc = fs_readlines(filepath, &cnt, &lines))) return rc;
     qsort(lines, cnt, sizeof(*lines), &compare);
@@ -548,7 +553,7 @@ static int _fs_fletcher16(FILE *fp, uint8_t *buf, size_t bufsize, long *chk)
     if (ferror(fp)) return FS_EFREAD;
 
     *chk = (sum2 << 8) | sum1;
-    return FS_OK;
+    return 0;
 }
 
 int fs_cksum(char const *filepath, int algo, long *chk)
@@ -591,7 +596,7 @@ static int concat_path_file(unsigned size, char *dst, const char *path,
 
     dst[0] = '\0';
     strcat(strcat(strcat(dst, path), sep), filename);
-    return FS_OK;
+    return 0;
 }
 
 static char *_fs_strdup(char const *str)
