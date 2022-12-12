@@ -7,7 +7,6 @@
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
-    {"hmmfile", 'f', ARGL_TEXT("HMMFILE", ARGL_NULL), "HMM file."},
     ARGL_DEFAULT,
     ARGL_END,
 };
@@ -27,13 +26,13 @@ static void logger(char const *string, void *arg)
 int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
-    if (argl_nargs(&argl)) argl_usage(&argl);
+    if (argl_nargs(&argl) != 1) argl_usage(&argl);
     int loglvl = argl_get(&argl, "loglevel")[0] - '0';
 
     zlog_setup(loglvl, logger, stderr);
-    zlog_setroot("deciphon");
+    zlog_setroot("pressy");
 
-    char const *hmm = argl_get(&argl, "hmmfile");
+    char const *hmm = argl_args(&argl)[0];
     if (filename_validate(hmm, "hmm")) goto fail;
 
     static char db[FILENAME_SIZE] = {0};

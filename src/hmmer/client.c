@@ -4,7 +4,7 @@
 #include "hmmer/port.h"
 #include "hmmer/result.h"
 #include "logy.h"
-#include "loop/now.h"
+// #include "loop/now.h"
 #include "rc.h"
 #include <string.h>
 
@@ -13,8 +13,11 @@ static struct h3c_stream *streams[NUM_THREADS] = {0};
 
 static inline long convert_deadline(long deadline)
 {
-    return h3c_deadline(deadline - now());
+    return deadline;
+    // return h3c_deadline(deadline - now());
 }
+
+int hmmer_client_deadline(long timeout) { return h3c_deadline(timeout); }
 
 int hmmer_client_start(int num_streams, long deadline)
 {

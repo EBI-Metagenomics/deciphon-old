@@ -1,20 +1,16 @@
 #include "argless.h"
-#include "array_size.h"
-#include "as.h"
-#include "cmd.h"
-#include "fmt.h"
+#include "deciphon_limits.h"
+#include "filename.h"
+#include "hmmer/client.h"
 #include "logy.h"
-#include "loop/global.h"
-#include "loop/parent.h"
-#include "msg.h"
-#include "pidfile.h"
-#include "stringify.h"
-#include "work.h"
+#include "scan/scan.h"
+#include <stdio.h>
 #include <string.h>
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
-    {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
+    {"disable-multi-hits", 'M', ARGL_FLAG(), "Disable multi-hits."},
+    {"enable-hmmer3-compat", 'H', ARGL_FLAG(), "Enable hmmer3 compatibility."},
     ARGL_DEFAULT,
     ARGL_END,
 };
@@ -24,126 +20,75 @@ static struct argl argl = {.options = options,
                            .doc = "Scanny program.",
                            .version = "1.0.0"};
 
-static bool linger(void);
-static void cleanup(void);
-
-static void on_read(char *line);
+static void logger(char const *string, void *arg)
+{
+    FILE *fp = arg;
+    fprintf(fp, "[%6s] ", "pressy");
+    fputs(string, fp);
+}
 
 int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
-    if (argl_nargs(&argl)) argl_usage(&argl);
-    if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
+    if (argl_nargs(&argl) != 2) argl_usage(&argl);
     int loglvl = argl_get(&argl, "loglevel")[0] - '0';
 
-    global_init(argv[0], loglvl);
-    global_linger_setup(&linger, &cleanup);
-    parent_init(&on_read, &global_shutdown, &global_shutdown);
-    work_init();
-    return global_run();
-}
+    zlog_setup(loglvl, logger, stderr);
+    zlog_setroot("scanny");
 
-#define CMD_MAP(X)                                                             \
-    X(quit, "")                                                                \
-    X(echo, "[...]")                                                           \
-    X(help, "")                                                                \
-    X(cancel, "")                                                              \
-    X(scan, "SEQS_FILE DB_FILE PROD_FILE MULTI_HITS HMMER3_COMPAT")            \
-    X(state, "")
+    char const *db = argl_args(&argl)[1];
+    if (filename_validate(db, "dcp")) goto fail;
 
-#define X(A, _) static void A(struct msg *);
-CMD_MAP(X)
-#undef X
+    char const *seqs = argl_args(&argl)[0];
 
-static struct cmd_entry entries[] = {
-#define X(A, B) {&A, stringify(A), B},
-    CMD_MAP(X)
-#undef X
-};
+    static char hmm[FILENAME_SIZE] = {0};
+    strcpy(hmm, db);
+    filename_setext(hmm, "hmm");
 
-static void on_read(char *line)
-{
-    static struct msg msg = {0};
-    if (msg_parse(&msg, line)) return;
-    struct cmd_entry *e = cmd_find(array_size(entries), entries, msg_cmd(&msg));
-    if (!e)
+    int multi_hits = !argl_has(&argl, "disable-multi-hits");
+    int hmmer3_compat = argl_has(&argl, "enable-hmmer3-compat");
+
+    printf("%s %s %d %d\n", seqs, db, multi_hits, hmmer3_compat);
+    printf("%s\n", hmm);
+
+    int nthreads = 1;
+    struct scan_cfg cfg = {nthreads, 10., multi_hits, hmmer3_compat};
+    scan_init(cfg);
+
+    info("hmm_file: %s", hmm);
+    info("db_file: %s", db);
+
+    int rc = hmmer_client_start(nthreads, hmmer_client_deadline(5000));
+    info("hmmer_client_start: %d", rc);
+
+    rc = scan_setup(db, seqs);
+    if (rc)
     {
-        einval("unrecognized command: %s", msg_cmd(&msg));
-        return;
+        efail("%s", scan_errmsg());
+        goto fail;
     }
 
-    msg_shift(&msg);
-    (*e->func)(&msg);
-}
-
-static bool linger(void)
-{
-    if (work_state() != RUN) parent_close();
-    return parent_closed() && work_state() != RUN;
-}
-
-static void cleanup(void)
-{
-    work_cancel();
-    parent_close();
-}
-
-static void quit(struct msg *msg)
-{
-    unused(msg);
-    global_shutdown();
-}
-
-static void echo(struct msg *msg) { parent_send(msg_unparse(msg)); }
-
-static void help(struct msg *msg)
-{
-    unused(msg);
-    cmd_help_init();
-
-    for (size_t i = 0; i < array_size(entries); ++i)
-        cmd_help_add(entries[i].name, entries[i].doc);
-
-    parent_send(cmd_help_table());
-}
-
-static void cancel(struct msg *msg)
-{
-    work_cancel();
-    parent_send(msg_ctx(msg, "ok"));
-}
-
-static void scan(struct msg *msg)
-{
-    if (msg_check(msg, "ssii"))
+    if ((rc = scan_run()))
     {
-        parent_send(msg_ctx(msg, "fail"));
-        return;
-    }
-    if (work_state() == RUN)
-    {
-        parent_send(msg_ctx(msg, "busy"));
-        return;
+        efail("%s", scan_errmsg());
+        goto fail;
     }
 
-    char const *seqs = msg_str(msg, 0);
-    char const *db = msg_str(msg, 1);
-    bool multi_hits = !!msg_int(msg, 2);
-    bool hmmer3_compat = !!msg_int(msg, 3);
-
-    if (work_run(seqs, db, multi_hits, hmmer3_compat))
+    if ((rc = scan_finishup()))
     {
-        parent_send(msg_ctx(msg, "fail"));
-        return;
+        efail("%s", scan_errmsg());
+        goto fail;
     }
-    parent_send(msg_ctx(msg, "ok"));
-}
 
-static void state(struct msg *msg)
-{
-    char perc[] = "100%";
-    fmt_perc(perc, work_progress());
-    strcat(perc, "%");
-    parent_send(
-        msg_ctx(msg, "ok", state_string(work_state()), perc, work_seqsfile()));
+    info("scan has finished");
+    scan_cleanup();
+    hmmer_client_stop();
+
+    return EXIT_SUCCESS;
+
+fail:
+    scan_cleanup();
+    hmmer_client_stop();
+    printf("fail\n");
+    return EXIT_FAILURE;
 }

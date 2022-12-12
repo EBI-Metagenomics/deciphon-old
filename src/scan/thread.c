@@ -194,13 +194,15 @@ static int query_hmmer(struct thread *t, int prof_idx,
         *y = '\0';
     }
 
-    int rc = hmmer_client_put(0, prof_idx, t->amino_sequence, now() + 5000);
+    int rc = hmmer_client_put(0, prof_idx, t->amino_sequence,
+                              hmmer_client_deadline(5000));
     if (rc) efail("hmmerc_put failure: %d", rc);
 
     rc = hmmer_client_pop(0, t->hmmer_result);
     if (rc) efail("hmmerc_pop failure: %d", rc);
 
     t->prod.evalue_log = hmmer_result_evalue_ln(t->hmmer_result);
+    info("log(e-value): %f", t->prod.evalue_log);
     return 0;
 }
 
