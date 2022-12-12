@@ -99,12 +99,13 @@ enum rc thread_run(struct thread *t)
 
         progress_consume(&t->progress, 1);
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
+        info("LRT: %f", lrt);
 
-        if (!imm_lprob_is_finite(lrt) || lrt < t->cfg.lrt_threshold)
-        {
-            prof_idx += 1;
-            continue;
-        }
+        // if (!imm_lprob_is_finite(lrt) || lrt < t->cfg.lrt_threshold)
+        // {
+        //     prof_idx += 1;
+        //     continue;
+        // }
 
         strcpy(t->prod.profile_name, prof->accession);
 

@@ -3,10 +3,16 @@
 #include "db/profile_reader.h"
 #include "db/prot_reader.h"
 #include "deciphon_limits.h"
+#include "filename.h"
 #include "fs.h"
+#include "hmmer/client.h"
+#include "hmmer/server.h"
+#include "hmmer/state.h"
 #include "logy.h"
 #include "loop/global.h"
 #include "loop/machine.h"
+#include "loop/now.h"
+#include "loop_while.h"
 #include "progress.h"
 #include "scan/scan.h"
 #include "state.h"
@@ -24,6 +30,7 @@ static struct progress progress = {0};
 static int nthreads = 0;
 static char seqsfile[FILENAME_SIZE] = {0};
 static char dbfile[FILENAME_SIZE] = {0};
+static char hmmfile[FILENAME_SIZE] = {0};
 
 void work_init(void)
 {
@@ -55,6 +62,11 @@ int work_run(char const *seqs, char const *db, bool multi_hits,
     struct scan_cfg cfg = {nthreads, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 
+    strcpy(hmmfile, dbfile);
+    filename_setext(hmmfile, "hmm");
+    info("hmmfile: %s", hmmfile);
+    info("dbfile: %s", dbfile);
+
     if (uv_queue_work(global_loop(), &work_request, &run, &end))
         return efail("failed to queue work");
 
@@ -76,6 +88,11 @@ static void run(struct uv_work_s *w)
 {
     (void)w;
     info("starting scan with %d threads", nthreads);
+    info("hmmer_server_start: %d", hmmer_server_start(hmmfile));
+    loop_while(40000, hmmer_server_state() == HMMERD_BOOT);
+    info("hmmer_server_state: %d", hmmer_server_state());
+    info("hmmer_client_start: %d", hmmer_client_start(nthreads, now() + 5000));
+
     int rc = scan_setup(dbfile, seqsfile);
     if (rc)
     {
@@ -109,7 +126,16 @@ static void run(struct uv_work_s *w)
     info("scan has finished");
 
 cleanup:
+    info("end 1");
     scan_cleanup();
+    info("end 2");
+    hmmer_client_stop();
+    info("end 3");
+    hmmer_server_stop();
+    info("end 4");
+    loop_while(15000, hmmer_server_state() == HMMERD_ON);
+    info("end 5");
+    hmmer_server_close();
 }
 
 static void end(struct uv_work_s *w, int status)

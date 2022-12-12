@@ -29,7 +29,7 @@ enum rc db_press_init(struct db_press *p, char const *hmm, char const *db)
         goto cleanup;
     }
 
-    info("Counting number of profiles...");
+    info("counting number of profiles...");
     if ((rc = count_profiles(p))) goto cleanup;
     if ((rc = prepare_writer(p))) goto cleanup;
     prepare_reader(p);

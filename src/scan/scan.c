@@ -165,6 +165,7 @@ static enum rc prepare_readers(char const *db)
     db_file = fopen(db, "rb");
     if (!db_file) return eio("%s", errfmt(errmsg, "failed to open database"));
 
+    info("dbfile: %s", db);
     enum rc rc = prot_db_reader_open(&pro_db_reader, db_file);
     if (rc)
     {

@@ -1,7 +1,8 @@
 #include "argless.h"
 #include "array_size.h"
-#include "as.h"
 #include "cmd.h"
+#include "deciphon_limits.h"
+#include "filename.h"
 #include "fmt.h"
 #include "logy.h"
 #include "loop/global.h"
@@ -9,6 +10,7 @@
 #include "msg.h"
 #include "pidfile.h"
 #include "stringify.h"
+#include "strlcpy.h"
 #include "work.h"
 #include <string.h>
 
@@ -21,7 +23,7 @@ static struct argl_option const options[] = {
 
 static struct argl argl = {.options = options,
                            .args_doc = NULL,
-                           .doc = "Scanny program.",
+                           .doc = "Pressy program.",
                            .version = "1.0.0"};
 
 static bool linger(void);
@@ -48,7 +50,7 @@ int main(int argc, char *argv[])
     X(echo, "[...]")                                                           \
     X(help, "")                                                                \
     X(cancel, "")                                                              \
-    X(scan, "SEQS_FILE DB_FILE PROD_FILE MULTI_HITS HMMER3_COMPAT")            \
+    X(press, "HMM_FILE")                                                       \
     X(state, "")
 
 #define X(A, _) static void A(struct msg *);
@@ -113,9 +115,9 @@ static void cancel(struct msg *msg)
     parent_send(msg_ctx(msg, "ok"));
 }
 
-static void scan(struct msg *msg)
+static void press(struct msg *msg)
 {
-    if (msg_check(msg, "ssii"))
+    if (msg_check(msg, "s"))
     {
         parent_send(msg_ctx(msg, "fail"));
         return;
@@ -126,12 +128,28 @@ static void scan(struct msg *msg)
         return;
     }
 
-    char const *seqs = msg_str(msg, 0);
-    char const *db = msg_str(msg, 1);
-    bool multi_hits = !!msg_int(msg, 2);
-    bool hmmer3_compat = !!msg_int(msg, 3);
+    char const *hmm = msg_str(msg, 0);
+    if (filename_validate(hmm, "hmm"))
+    {
+        parent_send(msg_ctx(msg, "fail"));
+        return;
+    }
 
-    if (work_run(seqs, db, multi_hits, hmmer3_compat))
+    char db[FILENAME_SIZE] = {0};
+    if (strlcpy(db, hmm, sizeof(db)) >= sizeof(db))
+    {
+        enomem("file name is too long");
+        parent_send(msg_ctx(msg, "fail"));
+        return;
+    }
+
+    if (filename_setext(db, "dcp"))
+    {
+        parent_send(msg_ctx(msg, "fail"));
+        return;
+    }
+
+    if (work_run(hmm, db))
     {
         parent_send(msg_ctx(msg, "fail"));
         return;
@@ -144,6 +162,6 @@ static void state(struct msg *msg)
     char perc[] = "100%";
     fmt_perc(perc, work_progress());
     strcat(perc, "%");
-    parent_send(
-        msg_ctx(msg, "ok", state_string(work_state()), perc, work_seqsfile()));
+    parent_send(msg_ctx(msg, "ok", state_string(work_state()), perc,
+                        work_hmmfile(), work_dbfile()));
 }

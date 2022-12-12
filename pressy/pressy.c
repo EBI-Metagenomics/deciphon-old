@@ -1,22 +1,13 @@
 #include "argless.h"
-#include "array_size.h"
-#include "cmd.h"
-#include "deciphon_limits.h"
+#include "db/press.h"
 #include "filename.h"
-#include "fmt.h"
 #include "logy.h"
-#include "loop/global.h"
-#include "loop/parent.h"
-#include "msg.h"
-#include "pidfile.h"
-#include "stringify.h"
-#include "strlcpy.h"
-#include "work.h"
+#include "progress.h"
 #include <string.h>
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
-    {"pid", 'p', ARGL_TEXT("PIDFILE", ARGL_NULL), "PID file."},
+    {"hmmfile", 'f', ARGL_TEXT("HMMFILE", ARGL_NULL), "HMM file."},
     ARGL_DEFAULT,
     ARGL_END,
 };
@@ -26,142 +17,64 @@ static struct argl argl = {.options = options,
                            .doc = "Pressy program.",
                            .version = "1.0.0"};
 
-static bool linger(void);
-static void cleanup(void);
-
-static void on_read(char *line);
+static void logger(char const *string, void *arg)
+{
+    FILE *fp = arg;
+    fprintf(fp, "[%6s] ", "pressy");
+    fputs(string, fp);
+}
 
 int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl)) argl_usage(&argl);
-    if (argl_has(&argl, "pid")) pidfile_save(argl_get(&argl, "pid"));
     int loglvl = argl_get(&argl, "loglevel")[0] - '0';
 
-    global_init(argv[0], loglvl);
-    global_linger_setup(&linger, &cleanup);
-    parent_init(&on_read, &global_shutdown, &global_shutdown);
-    work_init();
-    return global_run();
-}
+    zlog_setup(loglvl, logger, stderr);
+    zlog_setroot("deciphon");
 
-#define CMD_MAP(X)                                                             \
-    X(quit, "")                                                                \
-    X(echo, "[...]")                                                           \
-    X(help, "")                                                                \
-    X(cancel, "")                                                              \
-    X(press, "HMM_FILE")                                                       \
-    X(state, "")
+    char const *hmm = argl_get(&argl, "hmmfile");
+    if (filename_validate(hmm, "hmm")) goto fail;
 
-#define X(A, _) static void A(struct msg *);
-CMD_MAP(X)
-#undef X
+    static char db[FILENAME_SIZE] = {0};
+    strcpy(db, hmm);
+    filename_setext(db, "dcp");
 
-static struct cmd_entry entries[] = {
-#define X(A, B) {&A, stringify(A), B},
-    CMD_MAP(X)
-#undef X
-};
+    static struct db_press db_press = {0};
+    if (db_press_init(&db_press, hmm, db)) goto fail;
 
-static void on_read(char *line)
-{
-    static struct msg msg = {0};
-    if (msg_parse(&msg, line)) return;
-    struct cmd_entry *e = cmd_find(array_size(entries), entries, msg_cmd(&msg));
-    if (!e)
+    static struct progress progress = {0};
+    progress_init(&progress, db_press_nsteps(&db_press));
+    info("found %ld profiles. Pressing...", db_press_nsteps(&db_press));
+
+    int rc = 0;
+    int last_progress = 0;
+    while (!(rc = db_press_step(&db_press)))
     {
-        einval("unrecognized command: %s", msg_cmd(&msg));
-        return;
+        progress_consume(&progress, 1);
+
+        int current_progress = progress_percent(&progress);
+        if (current_progress != last_progress)
+        {
+            printf("%d%%\n", current_progress);
+            last_progress = current_progress;
+        }
     }
 
-    msg_shift(&msg);
-    (*e->func)(&msg);
-}
-
-static bool linger(void)
-{
-    if (work_state() != RUN) parent_close();
-    return parent_closed() && work_state() != RUN;
-}
-
-static void cleanup(void)
-{
-    work_cancel();
-    parent_close();
-}
-
-static void quit(struct msg *msg)
-{
-    unused(msg);
-    global_shutdown();
-}
-
-static void echo(struct msg *msg) { parent_send(msg_unparse(msg)); }
-
-static void help(struct msg *msg)
-{
-    unused(msg);
-    cmd_help_init();
-
-    for (size_t i = 0; i < array_size(entries); ++i)
-        cmd_help_add(entries[i].name, entries[i].doc);
-
-    parent_send(cmd_help_table());
-}
-
-static void cancel(struct msg *msg)
-{
-    work_cancel();
-    parent_send(msg_ctx(msg, "ok"));
-}
-
-static void press(struct msg *msg)
-{
-    if (msg_check(msg, "s"))
+    if (rc != RC_END)
     {
-        parent_send(msg_ctx(msg, "fail"));
-        return;
-    }
-    if (work_state() == RUN)
-    {
-        parent_send(msg_ctx(msg, "busy"));
-        return;
+        db_press_cleanup(&db_press, false);
+        goto fail;
     }
 
-    char const *hmm = msg_str(msg, 0);
-    if (filename_validate(hmm, "hmm"))
-    {
-        parent_send(msg_ctx(msg, "fail"));
-        return;
-    }
+    if ((rc = db_press_cleanup(&db_press, true))) goto fail;
 
-    char db[FILENAME_SIZE] = {0};
-    if (strlcpy(db, hmm, sizeof(db)) >= sizeof(db))
-    {
-        enomem("file name is too long");
-        parent_send(msg_ctx(msg, "fail"));
-        return;
-    }
+    info("pressing has finished");
+    printf("done\n");
 
-    if (filename_setext(db, "dcp"))
-    {
-        parent_send(msg_ctx(msg, "fail"));
-        return;
-    }
+    return EXIT_SUCCESS;
 
-    if (work_run(hmm, db))
-    {
-        parent_send(msg_ctx(msg, "fail"));
-        return;
-    }
-    parent_send(msg_ctx(msg, "ok"));
-}
-
-static void state(struct msg *msg)
-{
-    char perc[] = "100%";
-    fmt_perc(perc, work_progress());
-    strcat(perc, "%");
-    parent_send(msg_ctx(msg, "ok", state_string(work_state()), perc,
-                        work_hmmfile(), work_dbfile()));
+fail:
+    printf("fail\n");
+    return EXIT_FAILURE;
 }

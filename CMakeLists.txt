@@ -149,7 +149,10 @@ add_executable(schedy schedy/api.c schedy/http.c schedy/schedy.c schedy/xcurl.c
                       schedy/xcurl_debug.c)
 target_link_libraries(schedy PRIVATE deciphon)
 
-add_executable(pressy pressy/pressy.c pressy/work.c pressy/state.c)
+# add_executable(pressy pressy/pressy.c pressy/work.c pressy/state.c)
+# target_link_libraries(pressy PRIVATE deciphon)
+
+add_executable(pressy pressy/pressy.c)
 target_link_libraries(pressy PRIVATE deciphon)
 
 add_library(scanny_static scanny/work.c scanny/state.c)
@@ -160,6 +163,9 @@ target_link_libraries(scanny_static PUBLIC deciphon)
 
 add_executable(scanny scanny/scanny.c)
 target_link_libraries(scanny PRIVATE scanny_static)
+
+add_executable(scanny2 scanny/scanny2.c)
+target_link_libraries(scanny2 PRIVATE scanny_static)
 
 # add_executable(decy decy/decy.c decy/command.c decy/cfg.c decy/broker.c)
 # target_link_libraries(decy PRIVATE deciphon)
