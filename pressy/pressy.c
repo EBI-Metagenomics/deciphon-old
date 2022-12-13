@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
         if (current_progress != last_progress)
         {
             printf("%d%%\n", current_progress);
+            fflush(stdout);
             last_progress = current_progress;
         }
     }
