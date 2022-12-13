@@ -163,6 +163,7 @@ target_link_libraries(scanny_static PUBLIC deciphon)
 
 add_executable(scanny scanny/scanny.c)
 target_link_libraries(scanny PRIVATE scanny_static)
+target_link_libraries(scanny PUBLIC Threads::Threads)
 
 add_executable(scanny2 scanny/scanny2.c)
 target_link_libraries(scanny2 PRIVATE scanny_static)

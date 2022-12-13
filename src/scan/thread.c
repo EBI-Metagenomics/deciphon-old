@@ -99,13 +99,12 @@ enum rc thread_run(struct thread *t)
 
         progress_consume(&t->progress, 1);
         imm_float lrt = xmath_lrt(null->prod.loglik, alt->prod.loglik);
-        info("LRT: %f", lrt);
 
-        // if (!imm_lprob_is_finite(lrt) || lrt < t->cfg.lrt_threshold)
-        // {
-        //     prof_idx += 1;
-        //     continue;
-        // }
+        if (!imm_lprob_is_finite(lrt) || lrt < t->cfg.lrt_threshold)
+        {
+            prof_idx += 1;
+            continue;
+        }
 
         strcpy(t->prod.profile_name, prof->accession);
 
@@ -178,6 +177,7 @@ static enum rc viterbi(struct thread *t, struct imm_dp const *dp,
 static int query_hmmer(struct thread *t, int prof_idx,
                        struct prot_profile const *prof)
 {
+    info("querying hmmer on profidx: %d", prof_idx);
     struct prot_match_iter iter = {0};
     struct prot_match const *match = NULL;
 

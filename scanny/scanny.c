@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "argless.h"
 #include "deciphon_limits.h"
 #include "filename.h"
@@ -6,6 +7,10 @@
 #include "scan/scan.h"
 #include <stdio.h>
 #include <string.h>
+
+#include <pthread.h>
+#include <stdatomic.h>
+#include <unistd.h>
 
 static struct argl_option const options[] = {
     {"loglevel", 'L', ARGL_TEXT("LOGLEVEL", "0"), "Logging level."},
@@ -25,6 +30,34 @@ static void logger(char const *string, void *arg)
     FILE *fp = arg;
     fprintf(fp, "[%6s] ", "pressy");
     fputs(string, fp);
+}
+
+static atomic_bool stop_monitor = false;
+
+void *progress_monitor(void *arg)
+{
+    (void)arg;
+    unsigned int msecs = 250;
+    int progress = 0;
+    while (!stop_monitor)
+    {
+        sleep(msecs);
+        int inc = scan_progress_update();
+        if (inc)
+        {
+            progress += inc;
+            printf("%d%%\n", progress);
+            fflush(stdout);
+            msecs -= 50;
+        }
+        else
+        {
+            msecs += 250;
+        }
+        if (msecs < 200) msecs = 200;
+        if (msecs > 5000) msecs = 5000;
+    }
+    return NULL;
 }
 
 int main(int argc, char *argv[])
@@ -48,8 +81,8 @@ int main(int argc, char *argv[])
     int multi_hits = !argl_has(&argl, "disable-multi-hits");
     int hmmer3_compat = argl_has(&argl, "enable-hmmer3-compat");
 
-    printf("%s %s %d %d\n", seqs, db, multi_hits, hmmer3_compat);
-    printf("%s\n", hmm);
+    // printf("%s %s %d %d\n", seqs, db, multi_hits, hmmer3_compat);
+    // printf("%s\n", hmm);
 
     int nthreads = 1;
     struct scan_cfg cfg = {nthreads, 10., multi_hits, hmmer3_compat};
@@ -68,11 +101,18 @@ int main(int argc, char *argv[])
         goto fail;
     }
 
+    pthread_t thrid = 0;
+    int err = pthread_create(&thrid, NULL, &progress_monitor, NULL);
+    if (err) efail("could not create thread: %s", strerror(err));
     if ((rc = scan_run()))
     {
         efail("%s", scan_errmsg());
+        atomic_store(&stop_monitor, true);
+        pthread_cancel(thrid);
+        pthread_join(thrid, NULL);
         goto fail;
     }
+    // scan_progress_update
 
     if ((rc = scan_finishup()))
     {
@@ -80,9 +120,14 @@ int main(int argc, char *argv[])
         goto fail;
     }
 
+    atomic_store(&stop_monitor, true);
+    pthread_cancel(thrid);
+    pthread_join(thrid, NULL);
     info("scan has finished");
     scan_cleanup();
     hmmer_client_stop();
+    printf("done\n");
+    fflush(stdout);
 
     return EXIT_SUCCESS;
 
@@ -90,5 +135,6 @@ fail:
     scan_cleanup();
     hmmer_client_stop();
     printf("fail\n");
+    fflush(stdout);
     return EXIT_FAILURE;
 }
