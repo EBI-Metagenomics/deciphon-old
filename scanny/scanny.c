@@ -41,7 +41,8 @@ void *progress_monitor(void *arg)
     int progress = 0;
     while (!stop_monitor)
     {
-        sleep(msecs);
+        sleep(1);
+        // sleep(msecs);
         int inc = scan_progress_update();
         if (inc)
         {
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
     // printf("%s %s %d %d\n", seqs, db, multi_hits, hmmer3_compat);
     // printf("%s\n", hmm);
 
-    int nthreads = 1;
+    int nthreads = 16;
     struct scan_cfg cfg = {nthreads, 10., multi_hits, hmmer3_compat};
     scan_init(cfg);
 

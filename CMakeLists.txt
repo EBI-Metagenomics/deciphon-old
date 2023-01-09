@@ -19,7 +19,6 @@ cpmaddpackage("gh:EBI-Metagenomics/lite-pack@0.4.1")
 find_package(CURL REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Threads REQUIRED)
-find_package(LibUV REQUIRED)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 23)
@@ -48,11 +47,11 @@ add_library(
   src/as.c
   src/basename.c
   src/buff.c
-  src/chdir.c
+  # src/chdir.c
   src/cmd.c
   src/core/sched.c
   src/core/sched_dump.c
-  src/cwd.c
+  # src/cwd.c
   src/db/press.c
   src/db/profile_reader.c
   src/db/prot_reader.c
@@ -62,7 +61,7 @@ add_library(
   src/die.c
   src/dirname.c
   src/errmsg.c
-  src/exe.c
+  # src/exe.c
   src/expect.c
   src/file.c
   src/filename.c
@@ -70,21 +69,21 @@ add_library(
   src/hashfile.c
   src/hmmer/client.c
   src/hmmer/result.c
-  src/hmmer/server.c
+  # src/hmmer/server.c
   src/is.c
   src/itoa.c
-  src/loop/child.c
-  src/loop/global.c
-  src/loop/halt_signal.c
-  src/loop/linger.c
-  src/loop/machine.c
-  src/loop/now.c
-  src/loop/parent.c
-  src/loop/reader.c
-  src/loop/sleep.c
-  src/loop/stdpipes.c
-  src/loop/wreq.c
-  src/loop/writer.c
+  # src/loop/child.c
+  # src/loop/global.c
+  # src/loop/halt_signal.c
+  # src/loop/linger.c
+  # src/loop/machine.c
+  # src/loop/now.c
+  # src/loop/parent.c
+  # src/loop/reader.c
+  # src/loop/sleep.c
+  # src/loop/stdpipes.c
+  # src/loop/wreq.c
+  # src/loop/writer.c
   src/model/nuclt_dist.c
   src/model/profile.c
   src/model/profile_types.c
@@ -127,7 +126,6 @@ target_link_libraries(deciphon PUBLIC HMR::hmr)
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC LITE_PACK::lite_pack)
 target_link_libraries(deciphon PRIVATE OpenMP::OpenMP_C)
-target_link_libraries(deciphon PRIVATE ${LIBUV_LIBRARIES})
 
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
 target_compile_definitions(deciphon PUBLIC $<$<BOOL:${APPLE}>:_C99_SOURCE=1>)
@@ -137,7 +135,7 @@ target_include_directories(
   deciphon
   PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>
          $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/libs>
-         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src> ${LIBUV_INCLUDE_DIRS})
+         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   include(CheckIPOSupported)
@@ -145,28 +143,29 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-add_executable(schedy schedy/api.c schedy/http.c schedy/schedy.c schedy/xcurl.c
-                      schedy/xcurl_debug.c)
-target_link_libraries(schedy PRIVATE deciphon)
-
+# add_executable(schedy schedy/api.c schedy/http.c schedy/schedy.c schedy/xcurl.c
+#                       schedy/xcurl_debug.c)
+# target_link_libraries(schedy PRIVATE deciphon)
+#
 # add_executable(pressy pressy/pressy.c pressy/work.c pressy/state.c)
 # target_link_libraries(pressy PRIVATE deciphon)
 
 add_executable(pressy pressy/pressy.c)
 target_link_libraries(pressy PRIVATE deciphon)
 
-add_library(scanny_static scanny/work.c scanny/state.c)
-add_library(DECIPHON::scanny_static ALIAS scanny_static)
-target_include_directories(scanny_static
-                           PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/scanny>)
-target_link_libraries(scanny_static PUBLIC deciphon)
+# add_library(scanny_static scanny/work.c scanny/state.c)
+# add_library(DECIPHON::scanny_static ALIAS scanny_static)
+# target_include_directories(scanny_static
+#                            PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/scanny>)
+# target_link_libraries(scanny_static PUBLIC deciphon)
 
 add_executable(scanny scanny/scanny.c)
-target_link_libraries(scanny PRIVATE scanny_static)
+target_link_libraries(scanny PRIVATE deciphon)
+# target_link_libraries(scanny PRIVATE scanny_static)
 target_link_libraries(scanny PUBLIC Threads::Threads)
 
-add_executable(scanny2 scanny/scanny2.c)
-target_link_libraries(scanny2 PRIVATE scanny_static)
+# add_executable(scanny2 scanny/scanny2.c)
+# target_link_libraries(scanny2 PRIVATE scanny_static)
 
 # add_executable(decy decy/decy.c decy/command.c decy/cfg.c decy/broker.c)
 # target_link_libraries(decy PRIVATE deciphon)
