@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$#" -ne "2" ]; then
+    echo "Usage: generate-assets MANIFEST_FILE OUTPUT_DIR" >&2
+    exit 1
+fi
+
+manifest_file=$1
+output_dir=$2
+
+while read r; do
+  hash=$(echo "$r" | cut -d' ' -f1)
+  file=$(echo "$r" | cut -d' ' -f2)
+  pipx run blx get --no-progress "$hash" "$output_dir/$file"
+done <"$manifest_file"
