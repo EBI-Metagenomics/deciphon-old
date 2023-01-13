@@ -1,0 +1,2 @@
+- Export interface
+- Build dynamic library instead of static

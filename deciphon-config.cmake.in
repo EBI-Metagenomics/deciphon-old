@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(hmmer_reader)
+find_dependency(lite_pack)
+find_dependency(imm)
+include("${CMAKE_CURRENT_LIST_DIR}/deciphon-targets.cmake")
+check_required_components(imm)
+check_required_components(lite_pack)
+check_required_components(hmmer_reader)
