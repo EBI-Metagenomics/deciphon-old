@@ -56,18 +56,18 @@ static int pack_amino_cb(struct lip_file *file, void const *arg)
 static void destroy_tempfiles(struct db_writer *db)
 {
   if (db->tmp.header.fp) fclose(db->tmp.header.fp);
-  if (db->tmp.prof_sizes.fp) fclose(db->tmp.prof_sizes.fp);
-  if (db->tmp.profiles.fp) fclose(db->tmp.profiles.fp);
+  if (db->tmp.prot_sizes.fp) fclose(db->tmp.prot_sizes.fp);
+  if (db->tmp.proteins.fp) fclose(db->tmp.proteins.fp);
 }
 
 static int create_tempfiles(struct db_writer *db)
 {
   lip_file_init(&db->tmp.header, tmpfile());
-  lip_file_init(&db->tmp.prof_sizes, tmpfile());
-  lip_file_init(&db->tmp.profiles, tmpfile());
+  lip_file_init(&db->tmp.prot_sizes, tmpfile());
+  lip_file_init(&db->tmp.proteins, tmpfile());
 
   int rc = 0;
-  if (!db->tmp.header.fp || !db->tmp.prof_sizes.fp || !db->tmp.profiles.fp)
+  if (!db->tmp.header.fp || !db->tmp.prot_sizes.fp || !db->tmp.proteins.fp)
     defer_return(EOPENTMP);
 
   return rc;
@@ -77,7 +77,7 @@ defer:
   return rc;
 }
 
-typedef int (*pack_prof_func_t)(struct lip_file *file, void const *arg);
+typedef int (*pack_prot_func_t)(struct lip_file *file, void const *arg);
 typedef int (*pack_header_item_func_t)(struct lip_file *file, void const *arg);
 
 static int db_writer_pack_magic_number(struct db_writer *db)
@@ -103,24 +103,24 @@ static int db_writer_pack_float_size(struct db_writer *db)
 }
 
 static int db_writer_pack_prof(struct db_writer *db,
-                               pack_prof_func_t pack_profile, void const *arg)
+                               pack_prot_func_t pack_protein, void const *arg)
 {
   int rc = 0;
 
   long start = 0;
-  if ((rc = fs_tell(lip_file_ptr(&db->tmp.profiles), &start))) return rc;
+  if ((rc = fs_tell(lip_file_ptr(&db->tmp.proteins), &start))) return rc;
 
-  if ((rc = pack_profile(&db->tmp.profiles, arg))) return rc;
+  if ((rc = pack_protein(&db->tmp.proteins, arg))) return rc;
 
   long end = 0;
-  if ((rc = fs_tell(lip_file_ptr(&db->tmp.profiles), &end))) return rc;
+  if ((rc = fs_tell(lip_file_ptr(&db->tmp.proteins), &end))) return rc;
 
   if ((end - start) > UINT_MAX) return ELARGEPROFILE;
 
-  unsigned prof_size = (unsigned)(end - start);
-  if (!lip_write_int(&db->tmp.prof_sizes, prof_size)) return EFWRITE;
+  unsigned prot_size = (unsigned)(end - start);
+  if (!lip_write_int(&db->tmp.prot_sizes, prot_size)) return EFWRITE;
 
-  db->nprofiles++;
+  db->nproteins++;
   return rc;
 }
 
@@ -132,20 +132,20 @@ static int db_writer_pack_header(struct db_writer *db,
   return pack_header_item(&db->tmp.header, arg);
 }
 
-static int pack_header_prof_sizes(struct db_writer *db)
+static int pack_header_prot_sizes(struct db_writer *db)
 {
   enum lip_1darray_type type = LIP_1DARRAY_UINT32;
 
-  if (!lip_write_1darray_size_type(&db->file, db->nprofiles, type))
+  if (!lip_write_1darray_size_type(&db->file, db->nproteins, type))
     return EFWRITE;
 
-  rewind(lip_file_ptr(&db->tmp.prof_sizes));
+  rewind(lip_file_ptr(&db->tmp.prot_sizes));
 
   unsigned size = 0;
-  while (lip_read_int(&db->tmp.prof_sizes, &size))
+  while (lip_read_int(&db->tmp.prot_sizes, &size))
     lip_write_1darray_u32_item(&db->file, size);
 
-  if (!feof(lip_file_ptr(&db->tmp.prof_sizes))) return EFWRITE;
+  if (!feof(lip_file_ptr(&db->tmp.prot_sizes))) return EFWRITE;
 
   return 0;
 }
@@ -161,18 +161,18 @@ static int pack_header(struct db_writer *db)
   int rc = fs_copy(lip_file_ptr(file), lip_file_ptr(&db->tmp.header));
   if (rc) return rc;
 
-  if (!lip_write_cstr(file, "profile_sizes")) return EFWRITE;
-  return pack_header_prof_sizes(db);
+  if (!lip_write_cstr(file, "protein_sizes")) return EFWRITE;
+  return pack_header_prot_sizes(db);
 }
 
-static int pack_profiles(struct db_writer *db)
+static int pack_proteins(struct db_writer *db)
 {
-  if (!lip_write_cstr(&db->file, "profiles")) return EFWRITE;
+  if (!lip_write_cstr(&db->file, "proteins")) return EFWRITE;
 
-  if (!lip_write_array_size(&db->file, db->nprofiles)) return EFWRITE;
+  if (!lip_write_array_size(&db->file, db->nproteins)) return EFWRITE;
 
-  rewind(lip_file_ptr(&db->tmp.profiles));
-  return fs_copy(lip_file_ptr(&db->file), lip_file_ptr(&db->tmp.profiles));
+  rewind(lip_file_ptr(&db->tmp.proteins));
+  return fs_copy(lip_file_ptr(&db->file), lip_file_ptr(&db->tmp.proteins));
 }
 
 int db_writer_close(struct db_writer *db, bool successfully)
@@ -188,7 +188,7 @@ int db_writer_close(struct db_writer *db, bool successfully)
 
   if ((rc = pack_header(db))) defer_return(rc);
 
-  if ((rc = pack_profiles(db))) defer_return(rc);
+  if ((rc = pack_proteins(db))) defer_return(rc);
 
   return rc;
 
@@ -203,7 +203,7 @@ int db_writer_open(struct db_writer *db, FILE *fp,
 {
   int rc = 0;
 
-  db->nprofiles = 0;
+  db->nproteins = 0;
   db->header_size = 0;
   lip_file_init(&db->file, fp);
   if ((rc = create_tempfiles(db))) return rc;
@@ -232,12 +232,12 @@ defer:
   return rc;
 }
 
-static int pack_profile(struct lip_file *file, void const *prof)
+static int pack_protein(struct lip_file *file, void const *protein)
 {
-  return protein_pack(prof, file);
+  return protein_pack(protein, file);
 }
 
-int db_writer_pack(struct db_writer *db, struct protein const *profile)
+int db_writer_pack(struct db_writer *db, struct protein const *protein)
 {
-  return db_writer_pack_prof(db, pack_profile, profile);
+  return db_writer_pack_prof(db, pack_protein, protein);
 }

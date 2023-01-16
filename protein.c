@@ -10,32 +10,32 @@
 #include <stdlib.h>
 #include <string.h>
 
-void protein_del(struct protein *prof)
+void protein_del(struct protein *protein)
 {
-  if (prof)
+  if (protein)
   {
-    free(prof->alt.match_ndists);
-    imm_del(&prof->null.dp);
-    imm_del(&prof->alt.dp);
+    free(protein->alt.match_ndists);
+    imm_del(&protein->null.dp);
+    imm_del(&protein->alt.dp);
   }
 }
 
-static int alloc_match_nuclt_dists(struct protein *prof)
+static int alloc_match_nuclt_dists(struct protein *protein)
 {
-  size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
-  void *ptr = realloc(prof->alt.match_ndists, size);
+  size_t size = protein->core_size * sizeof *protein->alt.match_ndists;
+  void *ptr = realloc(protein->alt.match_ndists, size);
   if (!ptr && size > 0)
   {
-    free(prof->alt.match_ndists);
+    free(protein->alt.match_ndists);
     return ENOMEM;
   }
-  prof->alt.match_ndists = ptr;
+  protein->alt.match_ndists = ptr;
   return 0;
 }
 
-int protein_unpack(struct protein *prof, struct lip_file *file)
+int protein_unpack(struct protein *protein, struct lip_file *file)
 {
-  struct protein *p = (struct protein *)prof;
+  struct protein *p = (struct protein *)protein;
   unsigned size = 0;
   if (!lip_read_map_size(file, &size)) return EFREAD;
   assert(size == 16);
@@ -43,7 +43,7 @@ int protein_unpack(struct protein *prof, struct lip_file *file)
   int rc = 0;
 
   if ((rc = expect_map_key(file, "accession"))) return rc;
-  if (!lip_read_cstr(file, PROF_ACC_SIZE, prof->acc)) return EFREAD;
+  if (!lip_read_cstr(file, ACCESSION_SIZE, protein->accession)) return EFREAD;
 
   if ((rc = expect_map_key(file, "null"))) return rc;
   if (imm_dp_unpack(&p->null.dp, file)) return EDPUNPACK;
@@ -53,13 +53,12 @@ int protein_unpack(struct protein *prof, struct lip_file *file)
 
   if ((rc = expect_map_key(file, "core_size"))) return rc;
   if (!lip_read_int(file, &size)) return EFREAD;
-  if (size > PROT_MODEL_CORE_SIZE_MAX) return ELARGEPROFILE;
+  if (size > MODEL_MAX) return ELARGEPROFILE;
   p->core_size = size;
 
   if ((rc = expect_map_key(file, "consensus"))) return rc;
   size = p->core_size;
-  if (!lip_read_cstr(file, PROT_MODEL_CORE_SIZE_MAX, p->consensus))
-    return EFREAD;
+  if (!lip_read_cstr(file, MODEL_MAX, p->consensus)) return EFREAD;
 
   unsigned s = 0;
 
@@ -115,14 +114,14 @@ int protein_unpack(struct protein *prof, struct lip_file *file)
   return 0;
 }
 
-struct imm_dp const *protein_null_dp(struct protein const *prof)
+struct imm_dp const *protein_null_dp(struct protein const *protein)
 {
-  return &prof->null.dp;
+  return &protein->null.dp;
 }
 
-struct imm_dp const *protein_alt_dp(struct protein const *prof)
+struct imm_dp const *protein_alt_dp(struct protein const *protein)
 {
-  return &prof->alt.dp;
+  return &protein->alt.dp;
 }
 
 void protein_init(struct protein *p, char const *accession,
@@ -130,7 +129,7 @@ void protein_init(struct protein *p, char const *accession,
                   struct imm_nuclt_code const *code, struct cfg cfg)
 {
   struct imm_nuclt const *nuclt = code->nuclt;
-  strlcpy(p->acc, accession, PROF_ACC_SIZE);
+  strlcpy(p->accession, accession, ACCESSION_SIZE);
   p->state_name = state_name;
   p->imm_code = &code->super;
   p->nuclt_code = code;
@@ -146,7 +145,7 @@ void protein_init(struct protein *p, char const *accession,
   p->alt.match_ndists = NULL;
 }
 
-int protein_setup(struct protein *prof, unsigned seq_size, bool multi_hits,
+int protein_setup(struct protein *protein, unsigned seq_size, bool multi_hits,
                   bool hmmer3_compat)
 {
   if (seq_size == 0) return EINVAL;
@@ -179,18 +178,18 @@ int protein_setup(struct protein *prof, unsigned seq_size, bool multi_hits,
     t.NN = t.CC = t.JJ = imm_log(1);
   }
 
-  struct imm_dp *dp = &prof->null.dp;
-  unsigned R = prof->null.R;
+  struct imm_dp *dp = &protein->null.dp;
+  unsigned R = protein->null.R;
   imm_dp_change_trans(dp, imm_dp_trans_idx(dp, R, R), t.RR);
 
-  dp = &prof->alt.dp;
-  unsigned S = prof->alt.S;
-  unsigned N = prof->alt.N;
-  unsigned B = prof->alt.B;
-  unsigned E = prof->alt.E;
-  unsigned J = prof->alt.J;
-  unsigned C = prof->alt.C;
-  unsigned T = prof->alt.T;
+  dp = &protein->alt.dp;
+  unsigned S = protein->alt.S;
+  unsigned N = protein->alt.N;
+  unsigned B = protein->alt.B;
+  unsigned E = protein->alt.E;
+  unsigned J = protein->alt.J;
+  unsigned C = protein->alt.C;
+  unsigned T = protein->alt.T;
 
   imm_dp_change_trans(dp, imm_dp_trans_idx(dp, S, B), t.NB);
   imm_dp_change_trans(dp, imm_dp_trans_idx(dp, S, N), t.NN);
@@ -293,7 +292,7 @@ cleanup:
   return rc;
 }
 
-int protein_decode(struct protein const *prof, struct imm_seq const *seq,
+int protein_decode(struct protein const *protein, struct imm_seq const *seq,
                    unsigned state_id, struct imm_codon *codon)
 {
   assert(!state_is_mute(state_id));
@@ -301,17 +300,17 @@ int protein_decode(struct protein const *prof, struct imm_seq const *seq,
   struct nuclt_dist const *nucltd = NULL;
   if (state_is_insert(state_id))
   {
-    nucltd = &prof->alt.insert_ndist;
+    nucltd = &protein->alt.insert_ndist;
   }
   else if (state_is_match(state_id))
   {
     unsigned idx = state_idx(state_id);
-    nucltd = prof->alt.match_ndists + idx;
+    nucltd = protein->alt.match_ndists + idx;
   }
   else
-    nucltd = &prof->null.ndist;
+    nucltd = &protein->null.ndist;
 
-  struct imm_frame_cond cond = {prof->eps, &nucltd->nucltp, &nucltd->codonm};
+  struct imm_frame_cond cond = {protein->eps, &nucltd->nucltp, &nucltd->codonm};
 
   if (imm_lprob_is_nan(imm_frame_cond_decode(&cond, seq, codon))) return EINVAL;
 
@@ -323,61 +322,61 @@ void protein_write_dot(struct protein const *p, FILE *fp)
   imm_dp_write_dot(&p->alt.dp, fp, state_name);
 }
 
-int protein_pack(struct protein const *prof, struct lip_file *file)
+int protein_pack(struct protein const *protein, struct lip_file *file)
 {
   if (!lip_write_map_size(file, 16)) return EFWRITE;
 
   if (!lip_write_cstr(file, "accession")) return EFWRITE;
-  if (!lip_write_cstr(file, prof->acc)) return EFWRITE;
+  if (!lip_write_cstr(file, protein->accession)) return EFWRITE;
 
   if (!lip_write_cstr(file, "null")) return EFWRITE;
-  if (imm_dp_pack(&prof->null.dp, file)) return EDPPACK;
+  if (imm_dp_pack(&protein->null.dp, file)) return EDPPACK;
 
   if (!lip_write_cstr(file, "alt")) return EFWRITE;
-  if (imm_dp_pack(&prof->alt.dp, file)) return EDPPACK;
+  if (imm_dp_pack(&protein->alt.dp, file)) return EDPPACK;
 
   if (!lip_write_cstr(file, "core_size")) return EFWRITE;
-  if (!lip_write_int(file, prof->core_size)) return EFWRITE;
+  if (!lip_write_int(file, protein->core_size)) return EFWRITE;
 
   if (!lip_write_cstr(file, "consensus")) return EFWRITE;
-  if (!lip_write_cstr(file, prof->consensus)) return EFWRITE;
+  if (!lip_write_cstr(file, protein->consensus)) return EFWRITE;
 
   if (!lip_write_cstr(file, "R")) return EFWRITE;
-  if (!lip_write_int(file, prof->null.R)) return EFWRITE;
+  if (!lip_write_int(file, protein->null.R)) return EFWRITE;
 
   if (!lip_write_cstr(file, "S")) return EFWRITE;
-  if (!lip_write_int(file, prof->alt.S)) return EFWRITE;
+  if (!lip_write_int(file, protein->alt.S)) return EFWRITE;
 
   if (!lip_write_cstr(file, "N")) return EFWRITE;
-  if (!lip_write_int(file, prof->alt.N)) return EFWRITE;
+  if (!lip_write_int(file, protein->alt.N)) return EFWRITE;
 
   if (!lip_write_cstr(file, "B")) return EFWRITE;
-  if (!lip_write_int(file, prof->alt.B)) return EFWRITE;
+  if (!lip_write_int(file, protein->alt.B)) return EFWRITE;
 
   if (!lip_write_cstr(file, "E")) return EFWRITE;
-  if (!lip_write_int(file, prof->alt.E)) return EFWRITE;
+  if (!lip_write_int(file, protein->alt.E)) return EFWRITE;
 
   if (!lip_write_cstr(file, "J")) return EFWRITE;
-  if (!lip_write_int(file, prof->alt.J)) return EFWRITE;
+  if (!lip_write_int(file, protein->alt.J)) return EFWRITE;
 
   if (!lip_write_cstr(file, "C")) return EFWRITE;
-  if (!lip_write_int(file, prof->alt.C)) return EFWRITE;
+  if (!lip_write_int(file, protein->alt.C)) return EFWRITE;
 
   if (!lip_write_cstr(file, "T")) return EFWRITE;
-  if (!lip_write_int(file, prof->alt.T)) return EFWRITE;
+  if (!lip_write_int(file, protein->alt.T)) return EFWRITE;
 
   if (!lip_write_cstr(file, "null_ndist")) return EFWRITE;
-  int rc = nuclt_dist_pack(&prof->null.ndist, file);
+  int rc = nuclt_dist_pack(&protein->null.ndist, file);
   if (rc) return rc;
 
   if (!lip_write_cstr(file, "alt_insert_ndist")) return EFWRITE;
-  if ((rc = nuclt_dist_pack(&prof->alt.insert_ndist, file))) return rc;
+  if ((rc = nuclt_dist_pack(&protein->alt.insert_ndist, file))) return rc;
 
   if (!lip_write_cstr(file, "alt_match_ndist")) return EFWRITE;
-  if (!lip_write_array_size(file, prof->core_size)) return EFWRITE;
-  for (unsigned i = 0; i < prof->core_size; ++i)
+  if (!lip_write_array_size(file, protein->core_size)) return EFWRITE;
+  for (unsigned i = 0; i < protein->core_size; ++i)
   {
-    if ((rc = nuclt_dist_pack(prof->alt.match_ndists + i, file))) return rc;
+    if ((rc = nuclt_dist_pack(protein->alt.match_ndists + i, file))) return rc;
   }
   return 0;
 }

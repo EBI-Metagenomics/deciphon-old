@@ -52,7 +52,7 @@ void test_protein_db_reader(void)
   struct db_reader db = {0};
   eq(db_reader_open(&db, fp), 0);
 
-  eq(db.nprofiles, 2);
+  eq(db.nproteins, 2);
 
   struct imm_abc const *abc = imm_super(&db.nuclt);
   eq(imm_abc_typeid(abc), IMM_DNA);

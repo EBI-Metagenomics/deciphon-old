@@ -150,7 +150,7 @@ int model_setup(struct model *m, unsigned core_size)
 {
   if (core_size == 0) return EINVAL;
 
-  if (core_size > PROT_MODEL_CORE_SIZE_MAX) return ELARGEMODEL;
+  if (core_size > MODEL_MAX) return ELARGEMODEL;
 
   m->core_size = core_size;
   m->consensus[core_size] = '\0';

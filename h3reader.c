@@ -14,56 +14,56 @@ void h3reader_init(struct h3reader *reader, struct imm_amino const *amino,
   reader->end = false;
 }
 
-int h3reader_next(struct h3reader *reader)
+int h3reader_next(struct h3reader *h3r)
 {
-  int hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
+  int hmr_rc = hmr_next_prof(&h3r->hmr, &h3r->prof);
   if (hmr_rc == HMR_EOF)
   {
-    reader->end = true;
+    h3r->end = true;
     return 0;
   }
 
   if (hmr_rc) return EREADHMMER3;
 
-  unsigned core_size = hmr_prof_length(&reader->prof);
+  unsigned core_size = hmr_prof_length(&h3r->prof);
   int rc = 0;
-  if ((rc = model_setup(&reader->model, core_size))) return rc;
+  if ((rc = model_setup(&h3r->model, core_size))) return rc;
 
-  hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);
+  hmr_rc = hmr_next_node(&h3r->hmr, &h3r->prof);
   assert(hmr_rc != HMR_EOF);
 
   struct trans t = {
-      .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
-      .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
-      .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
-      .IM = (imm_float)reader->prof.node.trans[HMR_TRANS_IM],
-      .II = (imm_float)reader->prof.node.trans[HMR_TRANS_II],
-      .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
-      .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
+      .MM = (imm_float)h3r->prof.node.trans[HMR_TRANS_MM],
+      .MI = (imm_float)h3r->prof.node.trans[HMR_TRANS_MI],
+      .MD = (imm_float)h3r->prof.node.trans[HMR_TRANS_MD],
+      .IM = (imm_float)h3r->prof.node.trans[HMR_TRANS_IM],
+      .II = (imm_float)h3r->prof.node.trans[HMR_TRANS_II],
+      .DM = (imm_float)h3r->prof.node.trans[HMR_TRANS_DM],
+      .DD = (imm_float)h3r->prof.node.trans[HMR_TRANS_DD],
   };
-  rc = model_add_trans(&reader->model, t);
+  rc = model_add_trans(&h3r->model, t);
   assert(!rc);
 
-  while (!(hmr_rc = hmr_next_node(&reader->hmr, &reader->prof)))
+  while (!(hmr_rc = hmr_next_node(&h3r->hmr, &h3r->prof)))
   {
     imm_float match_lprobs[IMM_AMINO_SIZE];
     for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
-      match_lprobs[i] = (imm_float)reader->prof.node.match[i];
+      match_lprobs[i] = (imm_float)h3r->prof.node.match[i];
 
-    char consensus = reader->prof.node.excess.cons;
-    rc = model_add_node(&reader->model, match_lprobs, consensus);
+    char consensus = h3r->prof.node.excess.cons;
+    rc = model_add_node(&h3r->model, match_lprobs, consensus);
     assert(!rc);
 
     struct trans t2 = {
-        .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
-        .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
-        .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
-        .IM = (imm_float)reader->prof.node.trans[HMR_TRANS_IM],
-        .II = (imm_float)reader->prof.node.trans[HMR_TRANS_II],
-        .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
-        .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
+        .MM = (imm_float)h3r->prof.node.trans[HMR_TRANS_MM],
+        .MI = (imm_float)h3r->prof.node.trans[HMR_TRANS_MI],
+        .MD = (imm_float)h3r->prof.node.trans[HMR_TRANS_MD],
+        .IM = (imm_float)h3r->prof.node.trans[HMR_TRANS_IM],
+        .II = (imm_float)h3r->prof.node.trans[HMR_TRANS_II],
+        .DM = (imm_float)h3r->prof.node.trans[HMR_TRANS_DM],
+        .DD = (imm_float)h3r->prof.node.trans[HMR_TRANS_DD],
     };
-    rc = model_add_trans(&reader->model, t2);
+    rc = model_add_trans(&h3r->model, t2);
     assert(!rc);
   }
   assert(hmr_rc == HMR_END);

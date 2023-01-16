@@ -1,6 +1,11 @@
 #include "nuclt_dist.h"
-#include "lite_pack/file/file.h"
 #include "lite_pack/lite_pack.h"
+
+void nuclt_dist_init(struct nuclt_dist *nucltd, struct imm_nuclt const *nuclt)
+{
+  nucltd->nucltp.nuclt = nuclt;
+  nucltd->codonm.nuclt = nuclt;
+}
 
 int nuclt_dist_pack(struct nuclt_dist const *ndist, struct lip_file *file)
 {

@@ -13,16 +13,12 @@ struct codec
 {
   unsigned idx;
   unsigned start;
-  struct protein const *prof;
+  struct protein const *protein;
   struct imm_path const *path;
 };
 
-struct codec codec_init(struct protein const *prof,
-                        struct imm_path const *path);
-
-int codec_next(struct codec *codec, struct imm_seq const *seq,
-               struct imm_codon *codon);
-
+struct codec codec_init(struct protein const *, struct imm_path const *);
+int codec_next(struct codec *, struct imm_seq const *, struct imm_codon *);
 bool codec_end(struct codec const *);
 
 #endif

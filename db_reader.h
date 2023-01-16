@@ -8,8 +8,8 @@
 
 struct db_reader
 {
-  unsigned nprofiles;
-  uint32_t *profile_sizes;
+  unsigned nproteins;
+  uint32_t *protein_sizes;
   struct lip_file file;
 
   struct imm_amino amino;
@@ -23,6 +23,6 @@ void db_reader_close(struct db_reader *db);
 
 int db_reader_unpack_magic_number(struct db_reader *);
 int db_reader_unpack_float_size(struct db_reader *);
-int db_reader_unpack_prof_sizes(struct db_reader *db);
+int db_reader_unpack_prot_sizes(struct db_reader *db);
 
 #endif

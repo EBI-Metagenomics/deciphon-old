@@ -25,11 +25,11 @@ static int open_files(struct protein_reader *reader, FILE *fp)
   return 0;
 }
 
-static void init_profiles(struct protein_reader *reader, struct db_reader *db)
+static void init_proteins(struct protein_reader *reader, struct db_reader *db)
 {
   for (unsigned i = 0; i < reader->npartitions; ++i)
   {
-    struct protein *pro = &reader->profiles[i];
+    struct protein *pro = &reader->proteins[i];
     protein_init(pro, "", &db->amino, &db->code, db->cfg);
   }
 }
@@ -46,7 +46,7 @@ static void partition_init(struct protein_reader *reader, long offset)
 
 static void partition_it(struct protein_reader *reader, struct db_reader *db)
 {
-  unsigned n = db->nprofiles;
+  unsigned n = db->nproteins;
   unsigned k = reader->npartitions;
   unsigned part = 0;
   for (unsigned i = 0; i < k; ++i)
@@ -58,13 +58,15 @@ static void partition_it(struct protein_reader *reader, struct db_reader *db)
 
     reader->partition_size[i] = size;
     for (unsigned j = 0; j < size; ++j)
-      reader->partition_offset[i + 1] += db->profile_sizes[part++];
+      reader->partition_offset[i + 1] += db->protein_sizes[part++];
 
     reader->partition_offset[i + 1] += reader->partition_offset[i];
   }
 }
 
 static inline long min(long a, long b) { return a < b ? a : b; }
+
+static int rewind_all(struct protein_reader *);
 
 int protein_reader_setup(struct protein_reader *reader, struct db_reader *db,
                          unsigned npartitions)
@@ -78,25 +80,25 @@ int protein_reader_setup(struct protein_reader *reader, struct db_reader *db,
 
   if (npartitions > PARTITIONS_MAX) return EMANYPARTS;
 
-  reader->npartitions = min(npartitions, db->nprofiles);
+  reader->npartitions = min(npartitions, db->nproteins);
 
-  if ((rc = expect_map_key(&db->file, "profiles"))) return rc;
+  if ((rc = expect_map_key(&db->file, "proteins"))) return rc;
 
   unsigned n = 0;
   if (!lip_read_array_size(&db->file, &n)) return EFREAD;
 
-  if (n != db->nprofiles) return EFDATA;
+  if (n != db->nproteins) return EFDATA;
 
   long profiles_offset = 0;
   if ((rc = fs_tell(db->file.fp, &profiles_offset))) return rc;
 
   if ((rc = open_files(reader, lip_file_ptr(&db->file)))) defer_return(rc);
 
-  init_profiles(reader, (struct db_reader *)db);
+  init_proteins(reader, (struct db_reader *)db);
 
   partition_init(reader, profiles_offset);
   partition_it(reader, db);
-  if ((rc = protein_reader_rewind_all(reader))) defer_return(rc);
+  if ((rc = rewind_all(reader))) defer_return(rc);
 
   return rc;
 
@@ -124,7 +126,7 @@ unsigned protein_reader_nprofiles(struct protein_reader const *reader)
   return n;
 }
 
-int protein_reader_rewind_all(struct protein_reader *reader)
+static int rewind_all(struct protein_reader *reader)
 {
   for (unsigned i = 0; i < reader->npartitions; ++i)
   {
@@ -135,22 +137,24 @@ int protein_reader_rewind_all(struct protein_reader *reader)
   return 0;
 }
 
-int protein_reader_rewindb(struct protein_reader *reader, unsigned partition)
+#if 0
+int protein_reader_rewind(struct protein_reader *reader, unsigned partition)
 {
   FILE *fp = lip_file_ptr(reader->file + partition);
   return fs_seek(fp, reader->partition_offset[partition], SEEK_SET);
 }
+#endif
 
 int protein_reader_next(struct protein_reader *reader, unsigned partition,
-                        struct protein **profile)
+                        struct protein **protein)
 {
   FILE *fp = lip_file_ptr(reader->file + partition);
   int rc = fs_tell(fp, &reader->curr_offset[partition]);
   if (rc) return rc;
   if (protein_reader_end(reader, partition)) return 0;
 
-  *profile = &reader->profiles[partition];
-  return protein_unpack(*profile, &reader->file[partition]);
+  *protein = &reader->proteins[partition];
+  return protein_unpack(*protein, &reader->file[partition]);
 }
 
 bool protein_reader_end(struct protein_reader const *reader, unsigned partition)
@@ -162,5 +166,5 @@ bool protein_reader_end(struct protein_reader const *reader, unsigned partition)
 void protein_reader_del(struct protein_reader *reader)
 {
   for (unsigned i = 0; i < reader->npartitions; ++i)
-    protein_del(&reader->profiles[i]);
+    protein_del(&reader->proteins[i]);
 }

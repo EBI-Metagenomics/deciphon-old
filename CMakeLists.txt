@@ -26,20 +26,21 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_library(
   deciphon
-  protein_reader.c
+  codec.c
   db_reader.c
   db_writer.c
   expect.c
   fs.c
-  nuclt_dist.c
-  codec.c
   h3reader.c
   model.c
-  protein.c
-  state.c
+  nuclt_dist.c
   partition_size.c
+  protein.c
+  protein_reader.c
+  state.c
   strlcpy.c
   u16toa.c
+  xtrans.c
 )
 add_library(DECIPHON::deciphon ALIAS deciphon)
 target_code_coverage(deciphon)

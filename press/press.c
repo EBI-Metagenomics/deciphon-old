@@ -118,7 +118,7 @@ static int prof_write(struct db_press *p)
   int rc = protein_absorb(&p->prof, &p->reader.h3.model);
   if (rc) return rc;
 
-  strlcpy(p->prof.acc, p->reader.h3.prof.meta.acc, PROF_ACC_SIZE);
+  strlcpy(p->prof.accession, p->reader.h3.prof.meta.acc, ACCESSION_SIZE);
 
   return db_writer_pack(&p->writer.db, &p->prof);
 }

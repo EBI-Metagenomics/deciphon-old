@@ -2,7 +2,6 @@
 #define MODEL_H
 
 #include "cfg.h"
-#include "deciphon_limits.h"
 #include "entry_dist.h"
 #include "imm/imm.h"
 #include "model_summary.h"
@@ -14,6 +13,11 @@
 #include "xnode.h"
 #include "xtrans.h"
 
+enum
+{
+  MODEL_MAX = 4096,
+};
+
 struct model
 {
   struct imm_amino const *amino;
@@ -22,7 +26,7 @@ struct model
   unsigned core_size;
   struct xnode xnode;
   struct xtrans xtrans;
-  char consensus[PROT_MODEL_CORE_SIZE_MAX + 1];
+  char consensus[MODEL_MAX + 1];
 
   struct
   {
@@ -50,20 +54,20 @@ struct model
 int model_add_node(struct model *, imm_float const lp[IMM_AMINO_SIZE],
                    char consensus);
 
-int model_add_trans(struct model *, struct trans trans);
+int model_add_trans(struct model *, struct trans);
 
 void model_del(struct model const *);
 
-void model_init(struct model *, struct imm_amino const *amino,
-                struct imm_nuclt_code const *code, struct cfg cfg,
+void model_init(struct model *, struct imm_amino const *,
+                struct imm_nuclt_code const *, struct cfg,
                 imm_float const null_lprobs[IMM_AMINO_SIZE]);
 
 int model_setup(struct model *, unsigned core_size);
 
-void model_write_dot(struct model const *, FILE *fp);
+void model_write_dot(struct model const *, FILE *);
 
-struct imm_amino const *model_amino(struct model const *m);
-struct imm_nuclt const *model_nuclt(struct model const *m);
-struct model_summary model_summary(struct model const *m);
+struct imm_amino const *model_amino(struct model const *);
+struct imm_nuclt const *model_nuclt(struct model const *);
+struct model_summary model_summary(struct model const *);
 
 #endif

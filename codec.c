@@ -3,9 +3,10 @@
 #include "protein.h"
 #include "state.h"
 
-struct codec codec_init(struct protein const *prof, struct imm_path const *path)
+struct codec codec_init(struct protein const *protein,
+                        struct imm_path const *path)
 {
-  return (struct codec){0, 0, prof, path};
+  return (struct codec){0, 0, protein, path};
 }
 
 int codec_next(struct codec *codec, struct imm_seq const *seq,
@@ -25,7 +26,7 @@ int codec_next(struct codec *codec, struct imm_seq const *seq,
   struct imm_seq frag = imm_subseq(seq, codec->start, size);
   codec->start += size;
   codec->idx++;
-  return protein_decode(codec->prof, &frag, step->state_id, codon);
+  return protein_decode(codec->protein, &frag, step->state_id, codon);
 }
 
 bool codec_end(struct codec const *codec)
