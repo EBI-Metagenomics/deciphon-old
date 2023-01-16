@@ -1,17 +1,17 @@
 #ifndef MODEL_PROT_MODEL_H
 #define MODEL_PROT_MODEL_H
 
+#include "cfg.h"
 #include "deciphon_limits.h"
 #include "entry_dist.h"
 #include "imm/imm.h"
+#include "node.h"
 #include "nuclt_dist.h"
-#include "prot_cfg.h"
-#include "prot_node.h"
-#include "prot_state.h"
-#include "prot_trans.h"
-#include "prot_xnode.h"
-#include "prot_xtrans.h"
 #include "rc.h"
+#include "state.h"
+#include "trans.h"
+#include "xnode.h"
+#include "xtrans.h"
 
 struct prot_model
 {

@@ -1,10 +1,10 @@
 #ifndef MODEL_PROT_H3READER_H
 #define MODEL_PROT_H3READER_H
 
+#include "cfg.h"
 #include "hmr/hmr.h"
 #include "imm/imm.h"
-#include "prot_cfg.h"
-#include "prot_model.h"
+#include "model.h"
 #include "rc.h"
 #include <stdio.h>
 

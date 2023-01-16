@@ -1,7 +1,7 @@
-#include "prot_model.h"
 #include "hope.h"
 #include "imm/imm.h"
-#include "prot_prof.h"
+#include "model.h"
+#include "protein.h"
 
 int main(void)
 {

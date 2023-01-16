@@ -2,7 +2,7 @@
 #define PRESS_H
 
 #include "db_prot_writer.h"
-#include "prot_h3reader.h"
+#include "h3reader.h"
 #include <stdio.h>
 
 struct db_press

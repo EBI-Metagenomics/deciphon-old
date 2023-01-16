@@ -34,11 +34,11 @@ add_library(
   expect.c
   fs.c
   nuclt_dist.c
-  prot_codec.c
-  prot_h3reader.c
-  prot_model.c
-  prot_prof.c
-  prot_state.c
+  codec.c
+  h3reader.c
+  model.c
+  protein.c
+  state.c
   partition_size.c
   strlcpy.c
   u16toa.c

@@ -1,10 +1,10 @@
 #ifndef DB_PROT_WRITER_H
 #define DB_PROT_WRITER_H
 
+#include "cfg.h"
 #include "db_writer.h"
 #include "entry_dist.h"
-#include "prot_cfg.h"
-#include "prot_prof.h"
+#include "protein.h"
 #include "rc.h"
 #include <stdio.h>
 

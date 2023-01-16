@@ -3,7 +3,7 @@
 
 #include "deciphon_limits.h"
 #include "lite_pack/lite_pack.h"
-#include "prot_prof.h"
+#include "protein.h"
 #include <stdint.h>
 
 struct prof_reader

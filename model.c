@@ -1,8 +1,8 @@
-#include "prot_model.h"
+#include "model.h"
 #include "entry_dist.h"
+#include "model.h"
+#include "node.h"
 #include "nuclt_dist.h"
-#include "prot_model.h"
-#include "prot_node.h"
 #include "rc.h"
 #include <assert.h>
 #include <limits.h>
