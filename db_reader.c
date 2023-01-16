@@ -5,6 +5,7 @@
 #include "expect.h"
 #include "imm/imm.h"
 #include "lite_pack/1darray/1darray.h"
+#include "rc.h"
 #include <stdlib.h>
 
 int db_reader_open(struct db_reader *db, FILE *fp)

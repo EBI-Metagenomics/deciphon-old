@@ -3,7 +3,6 @@
 #include "imm/imm.h"
 #include "lite_pack/file/file.h"
 #include "lite_pack/lite_pack.h"
-#include "prof.h"
 #include "prof_typeid.h"
 #include "prot_model.h"
 #include "prot_prof.h"
@@ -12,14 +11,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void del(struct prof *prof)
+void prot_prof_del(struct prot_prof *prof)
 {
   if (prof)
   {
-    struct prot_prof *p = (struct prot_prof *)prof;
-    free(p->alt.match_ndists);
-    imm_del(&p->null.dp);
-    imm_del(&p->alt.dp);
+    free(prof->alt.match_ndists);
+    imm_del(&prof->null.dp);
+    imm_del(&prof->alt.dp);
   }
 }
 
@@ -36,7 +34,7 @@ static int alloc_match_nuclt_dists(struct prot_prof *prof)
   return 0;
 }
 
-static int unpack(struct prof *prof, struct lip_file *file)
+int prot_prof_unpack(struct prot_prof *prof, struct lip_file *file)
 {
   struct prot_prof *p = (struct prot_prof *)prof;
   unsigned size = 0;
@@ -113,32 +111,30 @@ static int unpack(struct prof *prof, struct lip_file *file)
   for (unsigned i = 0; i < p->core_size; ++i)
   {
     if ((rc = nuclt_dist_unpack(p->alt.match_ndists + i, file))) return rc;
-    nuclt_dist_init(p->alt.match_ndists + i, p->code->nuclt);
+    nuclt_dist_init(p->alt.match_ndists + i, p->nuclt_code->nuclt);
   }
   return 0;
 }
 
-static struct imm_dp const *null_dp(struct prof const *prof)
+struct imm_dp const *prot_prof_null_dp(struct prot_prof const *prof)
 {
-  struct prot_prof *p = (struct prot_prof *)prof;
-  return &p->null.dp;
+  return &prof->null.dp;
 }
 
-static struct imm_dp const *alt_dp(struct prof const *prof)
+struct imm_dp const *prot_prof_alt_dp(struct prot_prof const *prof)
 {
-  struct prot_prof *p = (struct prot_prof *)prof;
-  return &p->alt.dp;
+  return &prof->alt.dp;
 }
-
-static struct prof_vtable vtable = {PROF_PROT, del, unpack, null_dp, alt_dp};
 
 void prot_prof_init(struct prot_prof *p, char const *accession,
                     struct imm_amino const *amino,
                     struct imm_nuclt_code const *code, struct prot_cfg cfg)
 {
   struct imm_nuclt const *nuclt = code->nuclt;
-  prof_init(&p->super, accession, &code->super, vtable, prot_state_name);
-  p->code = code;
+  strlcpy(p->acc, accession, PROF_ACC_SIZE);
+  p->state_name = prot_state_name;
+  p->imm_code = &code->super;
+  p->nuclt_code = code;
   p->amino = amino;
   p->cfg = cfg;
   p->eps = imm_frame_epsilon(cfg.eps);
@@ -216,7 +212,7 @@ int prot_prof_setup(struct prot_prof *prof, unsigned seq_size, bool multi_hits,
 
 int prot_prof_absorb(struct prot_prof *p, struct prot_model const *m)
 {
-  if (p->code->nuclt != prot_model_nuclt(m)) return EDIFFABC;
+  if (p->nuclt_code->nuclt != prot_model_nuclt(m)) return EDIFFABC;
 
   if (p->amino != prot_model_amino(m)) return EDIFFABC;
 
@@ -264,7 +260,7 @@ int prot_prof_sample(struct prot_prof *p, unsigned seed, unsigned core_size)
   imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
 
   struct prot_model model;
-  prot_model_init(&model, p->amino, p->code, p->cfg, lprobs);
+  prot_model_init(&model, p->amino, p->nuclt_code, p->cfg, lprobs);
 
   int rc = 0;
 
@@ -333,7 +329,7 @@ int prot_prof_pack(struct prot_prof const *prof, struct lip_file *file)
   if (!lip_write_map_size(file, 16)) return EFWRITE;
 
   if (!lip_write_cstr(file, "accession")) return EFWRITE;
-  if (!lip_write_cstr(file, prof->super.acc)) return EFWRITE;
+  if (!lip_write_cstr(file, prof->acc)) return EFWRITE;
 
   if (!lip_write_cstr(file, "null")) return EFWRITE;
   if (imm_dp_pack(&prof->null.dp, file)) return EDPPACK;

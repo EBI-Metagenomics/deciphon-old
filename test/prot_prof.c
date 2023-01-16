@@ -26,7 +26,7 @@ void test_protein_profile_uniform(void)
   eq(prot_prof_sample(&prof, 1, 2), 0);
 
   char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-  struct imm_seq seq = imm_seq(IMM_STR(str), prof.super.code->abc);
+  struct imm_seq seq = imm_seq(IMM_STR(str), prof.imm_code->abc);
 
   eq(prot_prof_setup(&prof, 0, true, false), EINVAL);
   eq(prot_prof_setup(&prof, imm_seq_size(&seq), true, false), 0);
@@ -79,7 +79,7 @@ void test_protein_profile_uniform(void)
   struct prot_codec codec = prot_codec_init(&prof, &prod.path);
   int rc = 0;
 
-  nuclt = prof.code->nuclt;
+  nuclt = prof.nuclt_code->nuclt;
   struct imm_codon codons[10] = {
       IMM_CODON(nuclt, "ATG"), IMM_CODON(nuclt, "AAA"), IMM_CODON(nuclt, "CGC"),
       IMM_CODON(nuclt, "ATA"), IMM_CODON(nuclt, "GCA"), IMM_CODON(nuclt, "CCA"),
@@ -101,7 +101,7 @@ void test_protein_profile_uniform(void)
   eq(rc, 0);
   eq(i, 10);
 
-  prof_del((struct prof *)&prof);
+  prot_prof_del(&prof);
   imm_del(&prod);
   imm_del(task);
 }
@@ -119,7 +119,7 @@ void test_protein_profile_occupancy(void)
   eq(prot_prof_sample(&prof, 1, 2), 0);
 
   char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-  struct imm_seq seq = imm_seq(imm_str(str), prof.super.code->abc);
+  struct imm_seq seq = imm_seq(imm_str(str), prof.imm_code->abc);
 
   eq(prot_prof_setup(&prof, imm_seq_size(&seq), true, false), 0);
 
@@ -171,7 +171,7 @@ void test_protein_profile_occupancy(void)
   struct prot_codec codec = prot_codec_init(&prof, &prod.path);
   int rc = 0;
 
-  nuclt = prof.code->nuclt;
+  nuclt = prof.nuclt_code->nuclt;
   struct imm_codon codons[10] = {
       IMM_CODON(nuclt, "ATG"), IMM_CODON(nuclt, "AAA"), IMM_CODON(nuclt, "CGC"),
       IMM_CODON(nuclt, "ATA"), IMM_CODON(nuclt, "GCA"), IMM_CODON(nuclt, "CCA"),
@@ -193,7 +193,7 @@ void test_protein_profile_occupancy(void)
   eq(rc, 0);
   eq(i, 10);
 
-  prof_del((struct prof *)&prof);
+  prot_prof_del(&prof);
   imm_del(&prod);
   imm_del(task);
 }

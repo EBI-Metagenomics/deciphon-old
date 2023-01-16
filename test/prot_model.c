@@ -50,7 +50,7 @@ int main(void)
 
   eq(prot_prof_absorb(&prof, &model), 0);
 
-  prof_del((struct prof *)&prof);
+  prot_prof_del(&prof);
   prot_model_del(&model);
   return hope_status();
 }

@@ -34,15 +34,12 @@ add_library(
   expect.c
   fs.c
   nuclt_dist.c
-  prof.c
   prof_types.c
   prot_codec.c
   prot_h3reader.c
   prot_model.c
   prot_prof.c
   prot_state.c
-  std_prof.c
-  std_state.c
   partition_size.c
   strlcpy.c
   u16toa.c

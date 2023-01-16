@@ -2,7 +2,6 @@
 #define DB_READER_H
 
 #include "lite_pack/lite_pack.h"
-#include "prof.h"
 #include "prof_typeid.h"
 
 struct db_reader

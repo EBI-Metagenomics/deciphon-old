@@ -2,7 +2,6 @@
 #define DB_WRITER_H
 
 #include "lite_pack/lite_pack.h"
-#include "prof.h"
 
 typedef int (*pack_prof_func_t)(struct lip_file *file, void const *arg);
 typedef int (*pack_header_item_func_t)(struct lip_file *file, void const *arg);

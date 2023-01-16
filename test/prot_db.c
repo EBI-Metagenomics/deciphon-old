@@ -40,7 +40,7 @@ void test_protein_db_writer(void)
   prot_prof_sample(&prof, 2, core_size);
   eq(prot_db_writer_pack_profile(&db, &prof), 0);
 
-  prof_del((struct prof *)&prof);
+  prot_prof_del(&prof);
   eq(db_writer_close((struct db_writer *)&db, true), 0);
   fclose(fp);
 }
@@ -65,15 +65,14 @@ void test_protein_db_reader(void)
   int rc = 0;
   struct prof_reader reader = {0};
   eq(prof_reader_setup(&reader, (struct db_reader *)&db, 1), 0);
-  struct prof *prof = 0;
+  struct prot_prof *prof = 0;
   while (!(rc = prof_reader_next(&reader, 0, &prof)))
   {
     if (prof_reader_end(&reader, 0)) break;
-    eq(prof_typeid(prof), PROF_PROT);
-    struct imm_task *task = imm_task_new(prof_alt_dp(prof));
+    struct imm_task *task = imm_task_new(prot_prof_alt_dp(prof));
     struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
     eq(imm_task_setup(task, &seq), IMM_OK);
-    eq(imm_dp_viterbi(prof_alt_dp(prof), task, &prod), IMM_OK);
+    eq(imm_dp_viterbi(prot_prof_alt_dp(prof), task, &prod), IMM_OK);
     close(prod.loglik, logliks[nprofs]);
     imm_del(task);
     ++nprofs;

@@ -30,7 +30,7 @@ static void init_prot_profiles(struct prof_reader *reader,
 {
   for (unsigned i = 0; i < reader->npartitions; ++i)
   {
-    struct prot_prof *pro = &reader->profiles[i].pro;
+    struct prot_prof *pro = &reader->profiles[i];
     prot_prof_init(pro, "", &db->amino, &db->code, db->cfg);
   }
 }
@@ -147,15 +147,15 @@ int prof_reader_rewind(struct prof_reader *reader, unsigned partition)
 }
 
 int prof_reader_next(struct prof_reader *reader, unsigned partition,
-                     struct prof **profile)
+                     struct prot_prof **profile)
 {
   FILE *fp = lip_file_ptr(reader->file + partition);
   int rc = fs_tell(fp, &reader->curr_offset[partition]);
   if (rc) return rc;
   if (prof_reader_end(reader, partition)) return 0;
 
-  *profile = (struct prof *)&reader->profiles[partition];
-  return prof_unpack(*profile, &reader->file[partition]);
+  *profile = &reader->profiles[partition];
+  return prot_prof_unpack(*profile, &reader->file[partition]);
 }
 
 bool prof_reader_end(struct prof_reader const *reader, unsigned partition)
@@ -167,5 +167,5 @@ bool prof_reader_end(struct prof_reader const *reader, unsigned partition)
 void prof_reader_del(struct prof_reader *reader)
 {
   for (unsigned i = 0; i < reader->npartitions; ++i)
-    prof_del((struct prof *)&reader->profiles[i]);
+    prot_prof_del(&reader->profiles[i]);
 }

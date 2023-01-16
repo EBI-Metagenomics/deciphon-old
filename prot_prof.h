@@ -3,7 +3,6 @@
 
 #include "deciphon_limits.h"
 #include "imm/imm.h"
-#include "prof.h"
 #include "prot_cfg.h"
 #include "prot_model.h"
 #include "rc.h"
@@ -11,10 +10,12 @@
 
 struct prot_prof
 {
-  struct prof super;
+  char acc[PROF_ACC_SIZE];
+  imm_state_name *state_name;
+  struct imm_code const *imm_code;
 
   struct imm_amino const *amino;
-  struct imm_nuclt_code const *code;
+  struct imm_nuclt_code const *nuclt_code;
   struct prot_cfg cfg;
   struct imm_frame_epsilon eps;
   unsigned core_size;
@@ -62,5 +63,10 @@ struct lip_file;
 
 int prot_prof_unpack(struct prot_prof *prof, struct lip_file *file);
 int prot_prof_pack(struct prot_prof const *prof, struct lip_file *file);
+
+void prot_prof_del(struct prot_prof *prof);
+int prot_prof_unpack(struct prot_prof *prof, struct lip_file *file);
+struct imm_dp const *prot_prof_null_dp(struct prot_prof const *prof);
+struct imm_dp const *prot_prof_alt_dp(struct prot_prof const *prof);
 
 #endif

@@ -14,7 +14,6 @@ file(MAKE_DIRECTORY "${tmpdir}")
 add_compile_definitions(TESTDIR="${testdir}")
 add_compile_definitions(TMPDIR="${tmpdir}")
 
-deciphon_add_test(std_prof)
 deciphon_add_test(prot_model)
 deciphon_add_test(prot_prof)
 deciphon_add_test(prot_db)
