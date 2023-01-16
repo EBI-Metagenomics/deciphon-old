@@ -5,6 +5,7 @@
 #include "deciphon_limits.h"
 #include "entry_dist.h"
 #include "imm/imm.h"
+#include "model_summary.h"
 #include "node.h"
 #include "nuclt_dist.h"
 #include "rc.h"
@@ -19,8 +20,8 @@ struct model
   struct imm_nuclt_code const *code;
   struct cfg cfg;
   unsigned core_size;
-  struct prot_xnode xnode;
-  struct prot_xtrans xtrans;
+  struct xnode xnode;
+  struct xtrans xtrans;
   char consensus[PROT_MODEL_CORE_SIZE_MAX + 1];
 
   struct
@@ -61,31 +62,8 @@ int model_setup(struct model *, unsigned core_size);
 
 void model_write_dot(struct model const *, FILE *fp);
 
-struct prot_model_summary
-{
-  struct
-  {
-    struct imm_hmm const *hmm;
-    struct imm_frame_state const *R;
-  } null;
-
-  struct
-  {
-    struct imm_hmm const *hmm;
-    struct imm_mute_state const *S;
-    struct imm_frame_state const *N;
-    struct imm_mute_state const *B;
-    struct imm_mute_state const *E;
-    struct imm_frame_state const *J;
-    struct imm_frame_state const *C;
-    struct imm_mute_state const *T;
-  } alt;
-};
-
-struct model;
-
-struct imm_amino const *prot_model_amino(struct model const *m);
-struct imm_nuclt const *prot_model_nuclt(struct model const *m);
-struct prot_model_summary prot_model_summary(struct model const *m);
+struct imm_amino const *model_amino(struct model const *m);
+struct imm_nuclt const *model_nuclt(struct model const *m);
+struct model_summary model_summary(struct model const *m);
 
 #endif

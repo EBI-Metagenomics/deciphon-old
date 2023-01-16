@@ -4,7 +4,7 @@
 #include "deciphon_limits.h"
 #include "imm/imm.h"
 
-enum prot_state_id
+enum state_id
 {
   PROT_MATCH_STATE = (0 << (BITS_PER_PROF_TYPEID - 2)),
   PROT_INSERT_STATE = (1 << (BITS_PER_PROF_TYPEID - 2)),

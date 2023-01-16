@@ -25,8 +25,7 @@ static int open_files(struct protein_reader *reader, FILE *fp)
   return 0;
 }
 
-static void init_prot_profiles(struct protein_reader *reader,
-                               struct db_reader *db)
+static void init_profiles(struct protein_reader *reader, struct db_reader *db)
 {
   for (unsigned i = 0; i < reader->npartitions; ++i)
   {
@@ -93,7 +92,7 @@ int protein_reader_setup(struct protein_reader *reader, struct db_reader *db,
 
   if ((rc = open_files(reader, lip_file_ptr(&db->file)))) defer_return(rc);
 
-  init_prot_profiles(reader, (struct db_reader *)db);
+  init_profiles(reader, (struct db_reader *)db);
 
   partition_init(reader, profiles_offset);
   partition_it(reader, db);

@@ -166,7 +166,7 @@ int protein_setup(struct protein *prof, unsigned seq_size, bool multi_hits,
   imm_float l1p = imm_log(2 + q / (1 - q)) - imm_log(L + 2 + q / (1 - q));
   imm_float lr = imm_log(L) - imm_log(L + 1);
 
-  struct prot_xtrans t;
+  struct xtrans t;
 
   t.NN = t.CC = t.JJ = lp;
   t.NB = t.CT = t.JB = l1p;
@@ -211,11 +211,11 @@ int protein_setup(struct protein *prof, unsigned seq_size, bool multi_hits,
 
 int protein_absorb(struct protein *p, struct model const *m)
 {
-  if (p->nuclt_code->nuclt != prot_model_nuclt(m)) return EDIFFABC;
+  if (p->nuclt_code->nuclt != model_nuclt(m)) return EDIFFABC;
 
-  if (p->amino != prot_model_amino(m)) return EDIFFABC;
+  if (p->amino != model_amino(m)) return EDIFFABC;
 
-  struct prot_model_summary s = prot_model_summary(m);
+  struct model_summary s = model_summary(m);
 
   if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
     return EDPRESET;
@@ -296,7 +296,7 @@ cleanup:
 int protein_decode(struct protein const *prof, struct imm_seq const *seq,
                    unsigned state_id, struct imm_codon *codon)
 {
-  assert(!prot_state_is_mute(state_id));
+  assert(!state_is_mute(state_id));
 
   struct nuclt_dist const *nucltd = NULL;
   if (state_is_insert(state_id))

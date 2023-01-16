@@ -3,12 +3,12 @@
 
 #include "imm/imm.h"
 
-struct prot_xnode_null
+struct xnode_null
 {
   struct imm_frame_state R;
 };
 
-struct prot_xnode_alt
+struct xnode_alt
 {
   struct imm_mute_state S;
   struct imm_frame_state N;
@@ -19,10 +19,10 @@ struct prot_xnode_alt
   struct imm_mute_state T;
 };
 
-struct prot_xnode
+struct xnode
 {
-  struct prot_xnode_null null;
-  struct prot_xnode_alt alt;
+  struct xnode_null null;
+  struct xnode_alt alt;
 };
 
 #endif

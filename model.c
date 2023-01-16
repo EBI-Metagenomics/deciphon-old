@@ -30,8 +30,8 @@ void init_delete(struct imm_mute_state *, struct model *);
 void init_insert(struct imm_frame_state *, struct model *);
 void init_match(struct imm_frame_state *, struct model *, struct nuclt_dist *);
 
-int init_null_xtrans(struct imm_hmm *, struct prot_xnode_null *);
-int init_alt_xtrans(struct imm_hmm *, struct prot_xnode_alt *);
+int init_null_xtrans(struct imm_hmm *, struct xnode_null *);
+int init_alt_xtrans(struct imm_hmm *, struct xnode_alt *);
 
 struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *);
 struct imm_codon_lprob codon_lprob(struct imm_amino const *,
@@ -127,7 +127,7 @@ void model_init(struct model *m, struct imm_amino const *amino,
   m->alt.locc = NULL;
   m->alt.trans_idx = UINT_MAX;
   m->alt.trans = NULL;
-  prot_xtrans_init(&m->xtrans);
+  xtrans_init(&m->xtrans);
 }
 
 static void model_reset(struct model *model)
@@ -181,20 +181,17 @@ void model_write_dot(struct model const *m, FILE *fp)
   imm_hmm_write_dot(&m->alt.hmm, fp, state_name);
 }
 
-struct imm_amino const *prot_model_amino(struct model const *m)
-{
-  return m->amino;
-}
+struct imm_amino const *model_amino(struct model const *m) { return m->amino; }
 
-struct imm_nuclt const *prot_model_nuclt(struct model const *m)
+struct imm_nuclt const *model_nuclt(struct model const *m)
 {
   return m->code->nuclt;
 }
 
-struct prot_model_summary prot_model_summary(struct model const *m)
+struct model_summary model_summary(struct model const *m)
 {
   assert(have_finished_add(m));
-  return (struct prot_model_summary){
+  return (struct model_summary){
       .null = {.hmm = &m->null.hmm, .R = &m->xnode.null.R},
       .alt = {
           .hmm = &m->alt.hmm,
@@ -210,7 +207,7 @@ struct prot_model_summary prot_model_summary(struct model const *m)
 
 int add_xnodes(struct model *m)
 {
-  struct prot_xnode *n = &m->xnode;
+  struct xnode *n = &m->xnode;
 
   if (imm_hmm_add_state(&m->null.hmm, &n->null.R.super)) return EADDSTATE;
   if (imm_hmm_set_start(&m->null.hmm, &n->null.R.super, LOG1)) return ESETTRANS;
@@ -232,7 +229,7 @@ void init_xnodes(struct model *m)
   imm_float e = m->cfg.eps;
   struct imm_nuclt_lprob const *nucltp = &m->null.nucltd.nucltp;
   struct imm_codon_marg const *codonm = &m->null.nucltd.codonm;
-  struct prot_xnode *n = &m->xnode;
+  struct xnode *n = &m->xnode;
   struct imm_nuclt const *nuclt = m->code->nuclt;
 
   struct imm_span w = imm_span(1, 5);
@@ -306,13 +303,13 @@ void init_match(struct imm_frame_state *state, struct model *m,
   imm_frame_state_init(state, id, &d->nucltp, &d->codonm, e, imm_span(1, 5));
 }
 
-int init_null_xtrans(struct imm_hmm *hmm, struct prot_xnode_null *n)
+int init_null_xtrans(struct imm_hmm *hmm, struct xnode_null *n)
 {
   if (imm_hmm_set_trans(hmm, &n->R.super, &n->R.super, LOG1)) return ESETTRANS;
   return 0;
 }
 
-int init_alt_xtrans(struct imm_hmm *hmm, struct prot_xnode_alt *n)
+int init_alt_xtrans(struct imm_hmm *hmm, struct xnode_alt *n)
 {
   if (imm_hmm_set_trans(hmm, &n->S.super, &n->B.super, LOG1)) return ESETTRANS;
   if (imm_hmm_set_trans(hmm, &n->S.super, &n->N.super, LOG1)) return ESETTRANS;

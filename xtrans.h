@@ -3,7 +3,7 @@
 
 #include "imm/imm.h"
 
-struct prot_xtrans
+struct xtrans
 {
   imm_float NN;
   imm_float CC;
@@ -16,7 +16,7 @@ struct prot_xtrans
   imm_float EC;
 };
 
-static inline void prot_xtrans_init(struct prot_xtrans *t)
+static inline void xtrans_init(struct xtrans *t)
 {
   t->NN = IMM_LPROB_ONE;
   t->NB = IMM_LPROB_ONE;
