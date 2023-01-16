@@ -274,14 +274,14 @@ int protein_sample(struct protein *p, unsigned seed, unsigned core_size)
   for (unsigned i = 0; i < core_size + 1; ++i)
   {
     struct trans t;
-    imm_lprob_sample(&rnd, PROT_TRANS_SIZE, t.data);
+    imm_lprob_sample(&rnd, TRANS_SIZE, t.data);
     if (i == 0) t.DD = IMM_LPROB_ZERO;
     if (i == core_size)
     {
       t.MD = IMM_LPROB_ZERO;
       t.DD = IMM_LPROB_ZERO;
     }
-    imm_lprob_normalize(PROT_TRANS_SIZE, t.data);
+    imm_lprob_normalize(TRANS_SIZE, t.data);
     if ((rc = model_add_trans(&model, t))) goto cleanup;
   }
 

@@ -5,7 +5,7 @@
 
 enum
 {
-  PROT_TRANS_SIZE = 7
+  TRANS_SIZE = 7
 };
 
 struct trans
@@ -24,7 +24,7 @@ struct trans
     } __attribute__((packed));
     struct
     {
-      imm_float data[PROT_TRANS_SIZE];
+      imm_float data[TRANS_SIZE];
     };
   };
 };

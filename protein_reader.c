@@ -39,8 +39,8 @@ static void partition_init(struct protein_reader *reader, long offset)
   long *poffset = reader->partition_offset;
   unsigned *psize = reader->partition_size;
 
-  memset(poffset, 0, PARTITIONS_MAX + 1);
-  memset(psize, 0, PARTITIONS_MAX);
+  memset(poffset, 0, NPARTITIONS_MAX + 1);
+  memset(psize, 0, NPARTITIONS_MAX);
   poffset[0] = offset;
 }
 
@@ -78,7 +78,7 @@ int protein_reader_setup(struct protein_reader *reader, struct db_reader *db,
 
   if (npartitions == 0) return EINVAL;
 
-  if (npartitions > PARTITIONS_MAX) return EMANYPARTS;
+  if (npartitions > NPARTITIONS_MAX) return EMANYPARTS;
 
   reader->npartitions = min(npartitions, db->nproteins);
 

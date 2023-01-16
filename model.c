@@ -233,15 +233,15 @@ void init_xnodes(struct model *m)
   struct imm_nuclt const *nuclt = m->code->nuclt;
 
   struct imm_span w = imm_span(1, 5);
-  imm_frame_state_init(&n->null.R, PROT_R_STATE, nucltp, codonm, e, w);
+  imm_frame_state_init(&n->null.R, STATE_R, nucltp, codonm, e, w);
 
-  imm_mute_state_init(&n->alt.S, PROT_S_STATE, &nuclt->super);
-  imm_frame_state_init(&n->alt.N, PROT_N_STATE, nucltp, codonm, e, w);
-  imm_mute_state_init(&n->alt.B, PROT_B_STATE, &nuclt->super);
-  imm_mute_state_init(&n->alt.E, PROT_E_STATE, &nuclt->super);
-  imm_frame_state_init(&n->alt.J, PROT_J_STATE, nucltp, codonm, e, w);
-  imm_frame_state_init(&n->alt.C, PROT_C_STATE, nucltp, codonm, e, w);
-  imm_mute_state_init(&n->alt.T, PROT_T_STATE, &nuclt->super);
+  imm_mute_state_init(&n->alt.S, STATE_S, &nuclt->super);
+  imm_frame_state_init(&n->alt.N, STATE_N, nucltp, codonm, e, w);
+  imm_mute_state_init(&n->alt.B, STATE_B, &nuclt->super);
+  imm_mute_state_init(&n->alt.E, STATE_E, &nuclt->super);
+  imm_frame_state_init(&n->alt.J, STATE_J, nucltp, codonm, e, w);
+  imm_frame_state_init(&n->alt.C, STATE_C, nucltp, codonm, e, w);
+  imm_mute_state_init(&n->alt.T, STATE_T, &nuclt->super);
 }
 
 void calculate_occupancy(struct model *m)
@@ -281,14 +281,14 @@ bool have_finished_add(struct model const *m)
 
 void init_delete(struct imm_mute_state *state, struct model *m)
 {
-  unsigned id = PROT_DELETE_STATE | (m->alt.node_idx + 1);
+  unsigned id = STATE_DELETE | (m->alt.node_idx + 1);
   imm_mute_state_init(state, id, &m->code->nuclt->super);
 }
 
 void init_insert(struct imm_frame_state *state, struct model *m)
 {
   imm_float e = m->cfg.eps;
-  unsigned id = PROT_INSERT_STATE | (m->alt.node_idx + 1);
+  unsigned id = STATE_INSERT | (m->alt.node_idx + 1);
   struct imm_nuclt_lprob *nucltp = &m->alt.insert.nucltd.nucltp;
   struct imm_codon_marg *codonm = &m->alt.insert.nucltd.codonm;
 
@@ -299,7 +299,7 @@ void init_match(struct imm_frame_state *state, struct model *m,
                 struct nuclt_dist *d)
 {
   imm_float e = m->cfg.eps;
-  unsigned id = PROT_MATCH_STATE | (m->alt.node_idx + 1);
+  unsigned id = STATE_MATCH | (m->alt.node_idx + 1);
   imm_frame_state_init(state, id, &d->nucltp, &d->codonm, e, imm_span(1, 5));
 }
 

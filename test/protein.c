@@ -44,12 +44,12 @@ void test_protein_profile_uniform(void)
   char name[IMM_STATE_NAME_SIZE];
 
   eq(imm_path_step(&prod.path, 0)->seqlen, 3);
-  eq(imm_path_step(&prod.path, 0)->state_id, PROT_R_STATE);
+  eq(imm_path_step(&prod.path, 0)->state_id, STATE_R);
   state_name(imm_path_step(&prod.path, 0)->state_id, name);
   eq(name, "R");
 
   eq(imm_path_step(&prod.path, 10)->seqlen, 2);
-  eq(imm_path_step(&prod.path, 10)->state_id, PROT_R_STATE);
+  eq(imm_path_step(&prod.path, 10)->state_id, STATE_R);
   state_name(imm_path_step(&prod.path, 10)->state_id, name);
   eq(name, "R");
 
@@ -67,12 +67,12 @@ void test_protein_profile_uniform(void)
   eq(imm_path_nsteps(&prod.path), 14);
 
   eq(imm_path_step(&prod.path, 0)->seqlen, 0);
-  eq(imm_path_step(&prod.path, 0)->state_id, PROT_S_STATE);
+  eq(imm_path_step(&prod.path, 0)->state_id, STATE_S);
   state_name(imm_path_step(&prod.path, 0)->state_id, name);
   eq(name, "S");
 
   eq(imm_path_step(&prod.path, 13)->seqlen, 0);
-  eq(imm_path_step(&prod.path, 13)->state_id, PROT_T_STATE);
+  eq(imm_path_step(&prod.path, 13)->state_id, STATE_T);
   state_name(imm_path_step(&prod.path, 13)->state_id, name);
   eq(name, "T");
 
@@ -136,12 +136,12 @@ void test_protein_profile_occupancy(void)
   char name[IMM_STATE_NAME_SIZE];
 
   eq(imm_path_step(&prod.path, 0)->seqlen, 3);
-  eq(imm_path_step(&prod.path, 0)->state_id, PROT_R_STATE);
+  eq(imm_path_step(&prod.path, 0)->state_id, STATE_R);
   state_name(imm_path_step(&prod.path, 0)->state_id, name);
   eq(name, "R");
 
   eq(imm_path_step(&prod.path, 10)->seqlen, 2);
-  eq(imm_path_step(&prod.path, 10)->state_id, PROT_R_STATE);
+  eq(imm_path_step(&prod.path, 10)->state_id, STATE_R);
   state_name(imm_path_step(&prod.path, 10)->state_id, name);
   eq(name, "R");
 
@@ -159,12 +159,12 @@ void test_protein_profile_occupancy(void)
   eq(imm_path_nsteps(&prod.path), 14);
 
   eq(imm_path_step(&prod.path, 0)->seqlen, 0);
-  eq(imm_path_step(&prod.path, 0)->state_id, PROT_S_STATE);
+  eq(imm_path_step(&prod.path, 0)->state_id, STATE_S);
   state_name(imm_path_step(&prod.path, 0)->state_id, name);
   eq(name, "S");
 
   eq(imm_path_step(&prod.path, 13)->seqlen, 0);
-  eq(imm_path_step(&prod.path, 13)->state_id, PROT_T_STATE);
+  eq(imm_path_step(&prod.path, 13)->state_id, STATE_T);
   state_name(imm_path_step(&prod.path, 13)->state_id, name);
   eq(name, "T");
 

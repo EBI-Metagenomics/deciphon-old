@@ -27,8 +27,8 @@ int main(void)
 
   for (unsigned i = 0; i < 4; ++i)
   {
-    imm_lprob_sample(&rnd, PROT_TRANS_SIZE, t[i].data);
-    imm_lprob_normalize(PROT_TRANS_SIZE, t[i].data);
+    imm_lprob_sample(&rnd, TRANS_SIZE, t[i].data);
+    imm_lprob_normalize(TRANS_SIZE, t[i].data);
   }
 
   struct model model;

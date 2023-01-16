@@ -2,21 +2,17 @@
 #define PROTEIN_READER_H
 
 #include "lite_pack/lite_pack.h"
+#include "npartitions_max.h"
 #include "protein.h"
-
-enum
-{
-  PARTITIONS_MAX = 64,
-};
 
 struct protein_reader
 {
   unsigned npartitions;
-  unsigned partition_size[PARTITIONS_MAX];
-  long partition_offset[PARTITIONS_MAX + 1];
-  struct lip_file file[PARTITIONS_MAX];
-  long curr_offset[PARTITIONS_MAX];
-  struct protein proteins[PARTITIONS_MAX];
+  unsigned partition_size[NPARTITIONS_MAX];
+  long partition_offset[NPARTITIONS_MAX + 1];
+  struct lip_file file[NPARTITIONS_MAX];
+  long curr_offset[NPARTITIONS_MAX];
+  struct protein proteins[NPARTITIONS_MAX];
 };
 
 struct db_reader;
