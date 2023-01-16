@@ -96,7 +96,7 @@ static int db_writer_pack_prof(struct db_writer *db, void const *arg)
   long end = 0;
   if ((rc = fs_tell(lip_file_ptr(&db->tmp.proteins), &end))) return rc;
 
-  if ((end - start) > UINT_MAX) return ELARGEPROFILE;
+  if ((end - start) > UINT_MAX) return ELARGEPROTEIN;
 
   unsigned prot_size = (unsigned)(end - start);
   if (!lip_write_int(&db->tmp.prot_sizes, prot_size)) return EFWRITE;

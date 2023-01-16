@@ -35,6 +35,7 @@ add_library(
   model.c
   nuclt_dist.c
   partition_size.c
+  press.c
   protein.c
   protein_reader.c
   state.c
@@ -68,8 +69,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   check_ipo_supported()
   set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
-
-add_subdirectory(press)
 
 add_code_coverage_all_targets()
 enable_testing()
