@@ -33,26 +33,6 @@ static int pack_amino(struct lip_file *file, struct imm_amino const *amino)
   return 0;
 }
 
-static int pack_edist_cb(struct lip_file *file, void const *arg)
-{
-  return pack_entry_dist(file, arg);
-}
-
-static int pack_eps_cb(struct lip_file *file, void const *arg)
-{
-  return pack_epsilon(file, arg);
-}
-
-static int pack_nuclt_cb(struct lip_file *file, void const *arg)
-{
-  return pack_nuclt(file, arg);
-}
-
-static int pack_amino_cb(struct lip_file *file, void const *arg)
-{
-  return pack_amino(file, arg);
-}
-
 static void destroy_tempfiles(struct db_writer *db)
 {
   if (db->tmp.header.fp) fclose(db->tmp.header.fp);
@@ -77,9 +57,6 @@ defer:
   return rc;
 }
 
-typedef int (*pack_prot_func_t)(struct lip_file *file, void const *arg);
-typedef int (*pack_header_item_func_t)(struct lip_file *file, void const *arg);
-
 static int db_writer_pack_magic_number(struct db_writer *db)
 {
   if (!lip_write_cstr(&db->tmp.header, "magic_number")) return EFWRITE;
@@ -102,8 +79,12 @@ static int db_writer_pack_float_size(struct db_writer *db)
   return 0;
 }
 
-static int db_writer_pack_prof(struct db_writer *db,
-                               pack_prot_func_t pack_protein, void const *arg)
+static int pack_protein(struct lip_file *file, void const *protein)
+{
+  return protein_pack(protein, file);
+}
+
+static int db_writer_pack_prof(struct db_writer *db, void const *arg)
 {
   int rc = 0;
 
@@ -122,14 +103,6 @@ static int db_writer_pack_prof(struct db_writer *db,
 
   db->nproteins++;
   return rc;
-}
-
-static int db_writer_pack_header(struct db_writer *db,
-                                 pack_header_item_func_t pack_header_item,
-                                 void const *arg)
-{
-  db->header_size++;
-  return pack_header_item(&db->tmp.header, arg);
 }
 
 static int pack_header_prot_sizes(struct db_writer *db)
@@ -220,10 +193,11 @@ int db_writer_open(struct db_writer *db, FILE *fp,
   struct imm_amino const *a = &db->amino;
   if ((rc = db_writer_pack_magic_number(db))) defer_return(rc);
   if ((rc = db_writer_pack_float_size(db))) defer_return(rc);
-  if ((rc = db_writer_pack_header(db, pack_edist_cb, edist))) defer_return(rc);
-  if ((rc = db_writer_pack_header(db, pack_eps_cb, epsilon))) defer_return(rc);
-  if ((rc = db_writer_pack_header(db, pack_nuclt_cb, n))) defer_return(rc);
-  if ((rc = db_writer_pack_header(db, pack_amino_cb, a))) defer_return(rc);
+  if ((rc = pack_entry_dist(&db->tmp.header, edist))) defer_return(rc);
+  if ((rc = pack_epsilon(&db->tmp.header, epsilon))) defer_return(rc);
+  if ((rc = pack_nuclt(&db->tmp.header, n))) defer_return(rc);
+  if ((rc = pack_amino(&db->tmp.header, a))) defer_return(rc);
+  db->header_size += 4;
 
   return rc;
 
@@ -232,12 +206,7 @@ defer:
   return rc;
 }
 
-static int pack_protein(struct lip_file *file, void const *protein)
-{
-  return protein_pack(protein, file);
-}
-
 int db_writer_pack(struct db_writer *db, struct protein const *protein)
 {
-  return db_writer_pack_prof(db, pack_protein, protein);
+  return db_writer_pack_prof(db, protein);
 }
