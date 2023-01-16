@@ -81,7 +81,7 @@ static int prepare_writer(struct db_press *p)
   struct imm_nuclt const *n = &imm_dna_iupac.super;
   struct prot_cfg cfg = PROT_CFG_DEFAULT;
 
-  return prot_db_writer_open(&p->writer.db, p->writer.fp, a, n, cfg);
+  return db_writer_open(&p->writer.db, p->writer.fp, a, n, cfg);
 }
 
 static int finish_writer(struct db_press *p, bool succesfully)
@@ -89,11 +89,11 @@ static int finish_writer(struct db_press *p, bool succesfully)
   if (!p->writer.fp) return 0;
   if (!succesfully)
   {
-    db_writer_close((struct db_writer *)&p->writer.db, false);
+    db_writer_close(&p->writer.db, false);
     fclose(p->writer.fp);
     return 0;
   }
-  int rc = db_writer_close((struct db_writer *)&p->writer.db, true);
+  int rc = db_writer_close(&p->writer.db, true);
   if (rc)
   {
     fclose(p->writer.fp);
@@ -120,5 +120,5 @@ static int prof_write(struct db_press *p)
 
   strlcpy(p->prof.acc, p->reader.h3.prof.meta.acc, PROF_ACC_SIZE);
 
-  return prot_db_writer_pack_profile(&p->writer.db, &p->prof);
+  return db_writer_pack(&p->writer.db, &p->prof);
 }

@@ -28,9 +28,8 @@ add_library(
   deciphon
   db_prof_reader.c
   db_prot_reader.c
-  db_prot_writer.c
-  db_reader.c
   db_writer.c
+  db_reader.c
   expect.c
   fs.c
   nuclt_dist.c

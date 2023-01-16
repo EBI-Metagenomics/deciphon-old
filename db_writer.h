@@ -1,10 +1,12 @@
 #ifndef DB_WRITER_H
 #define DB_WRITER_H
 
+#include "cfg.h"
+#include "entry_dist.h"
 #include "lite_pack/lite_pack.h"
-
-typedef int (*pack_prof_func_t)(struct lip_file *file, void const *arg);
-typedef int (*pack_header_item_func_t)(struct lip_file *file, void const *arg);
+#include "protein.h"
+#include "rc.h"
+#include <stdio.h>
 
 struct db_writer
 {
@@ -17,17 +19,19 @@ struct db_writer
     struct lip_file prof_sizes;
     struct lip_file profiles;
   } tmp;
+
+  struct imm_amino amino;
+  struct imm_nuclt nuclt;
+  struct imm_nuclt_code code;
+  struct prot_cfg cfg;
 };
 
-int db_writer_open(struct db_writer *db, FILE *fp);
-int db_writer_close(struct db_writer *db, bool successfully);
+int db_writer_open(struct db_writer *db, FILE *fp,
+                   struct imm_amino const *amino, struct imm_nuclt const *nuclt,
+                   struct prot_cfg cfg);
 
-int db_writer_pack_magic_number(struct db_writer *);
-int db_writer_pack_float_size(struct db_writer *);
-int db_writer_pack_prof(struct db_writer *db, pack_prof_func_t pack_profile,
-                        void const *arg);
-int db_writer_pack_header(struct db_writer *db,
-                          pack_header_item_func_t pack_header_item,
-                          void const *arg);
+int db_writer_pack(struct db_writer *db, struct prot_prof const *profile);
+
+int db_writer_close(struct db_writer *db, bool successfully);
 
 #endif

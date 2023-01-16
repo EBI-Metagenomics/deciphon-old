@@ -1,6 +1,6 @@
 #include "db_prof_reader.h"
 #include "db_prot_reader.h"
-#include "db_prot_writer.h"
+#include "db_writer.h"
 #include "hope.h"
 #include "imm/imm.h"
 
@@ -27,21 +27,21 @@ void test_protein_db_writer(void)
   notnull(fp);
 
   struct prot_cfg cfg = prot_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
-  struct prot_db_writer db = {0};
-  eq(prot_db_writer_open(&db, fp, amino, nuclt, cfg), 0);
+  struct db_writer db = {0};
+  eq(db_writer_open(&db, fp, amino, nuclt, cfg), 0);
 
   struct prot_prof prof = {0};
   prot_prof_init(&prof, "accession0", amino, &code, cfg);
 
   unsigned core_size = 2;
   prot_prof_sample(&prof, 1, core_size);
-  eq(prot_db_writer_pack_profile(&db, &prof), 0);
+  eq(db_writer_pack(&db, &prof), 0);
 
   prot_prof_sample(&prof, 2, core_size);
-  eq(prot_db_writer_pack_profile(&db, &prof), 0);
+  eq(db_writer_pack(&db, &prof), 0);
 
   prot_prof_del(&prof);
-  eq(db_writer_close((struct db_writer *)&db, true), 0);
+  eq(db_writer_close(&db, true), 0);
   fclose(fp);
 }
 

@@ -1,7 +1,7 @@
 #ifndef PRESS_H
 #define PRESS_H
 
-#include "db_prot_writer.h"
+#include "db_writer.h"
 #include "h3reader.h"
 #include <stdio.h>
 
@@ -10,7 +10,7 @@ struct db_press
   struct
   {
     FILE *fp;
-    struct prot_db_writer db;
+    struct db_writer db;
   } writer;
 
   struct
