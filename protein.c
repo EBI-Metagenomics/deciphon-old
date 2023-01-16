@@ -53,7 +53,7 @@ int protein_unpack(struct protein *protein, struct lip_file *file)
 
   if ((rc = expect_map_key(file, "core_size"))) return rc;
   if (!lip_read_int(file, &size)) return EFREAD;
-  if (size > MODEL_MAX) return ELARGEPROFILE;
+  if (size > MODEL_MAX) return ELARGEPROTEIN;
   p->core_size = size;
 
   if ((rc = expect_map_key(file, "consensus"))) return rc;

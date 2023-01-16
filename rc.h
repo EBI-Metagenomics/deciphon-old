@@ -15,7 +15,7 @@
   X(EGETPATH, "failed to get file path")                                       \
   X(EINVAL, "invalid value")                                                   \
   X(ELARGEMODEL, "model is too large")                                         \
-  X(ELARGEPROFILE, "profile is too large")                                     \
+  X(ELARGEPROTEIN, "protein is too large")                                     \
   X(EREADHMMER3, "failed to read hmmer3 profile")                              \
   X(EMANYPARTS, "too may partitions")                                          \
   X(EMANYTRANS, "too many transitions")                                        \
