@@ -3,7 +3,6 @@
 
 #include "deciphon_limits.h"
 #include "lite_pack/lite_pack.h"
-#include "prof_typeid.h"
 #include "prot_prof.h"
 #include <stdint.h>
 
@@ -13,7 +12,6 @@ struct prof_reader
   unsigned partition_size[PARTITIONS_MAX];
   long partition_offset[PARTITIONS_MAX + 1];
   struct lip_file file[PARTITIONS_MAX];
-  enum prof_typeid prof_typeid;
   long curr_offset[PARTITIONS_MAX];
   struct prot_prof profiles[PARTITIONS_MAX];
 };

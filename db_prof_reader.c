@@ -91,13 +91,9 @@ int prof_reader_setup(struct prof_reader *reader, struct db_reader *db,
   long profiles_offset = 0;
   if ((rc = fs_tell(db->file.fp, &profiles_offset))) return rc;
 
-  reader->prof_typeid = db->prof_typeid;
   if ((rc = open_files(reader, lip_file_ptr(&db->file)))) defer_return(rc);
 
-  if (reader->prof_typeid == PROF_PROT)
-    init_prot_profiles(reader, (struct prot_db_reader *)db);
-  else
-    assert(false && "unknown profile typeid");
+  init_prot_profiles(reader, (struct prot_db_reader *)db);
 
   partition_init(reader, profiles_offset);
   partition_it(reader, db);

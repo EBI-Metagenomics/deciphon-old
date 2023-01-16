@@ -12,7 +12,6 @@ int db_reader_open(struct db_reader *db, FILE *fp)
 {
   db->nprofiles = 0;
   db->profile_sizes = 0;
-  db->prof_typeid = PROF_NULL;
   lip_file_init(&db->file, fp);
   return 0;
 }
@@ -32,19 +31,6 @@ int db_reader_unpack_magic_number(struct db_reader *db)
   if (!lip_read_int(&db->file, &number)) return EFREAD;
 
   return number != MAGIC_NUMBER ? EFDATA : 0;
-}
-
-int db_reader_unpack_prof_typeid(struct db_reader *db, enum prof_typeid typeid)
-{
-  int rc = 0;
-
-  if ((rc = expect_map_key(&db->file, "profile_typeid"))) return rc;
-
-  if (!lip_read_int(&db->file, &db->prof_typeid)) return EFREAD;
-
-  if (db->prof_typeid != typeid) return EFDATA;
-
-  return 0;
 }
 
 int db_reader_unpack_float_size(struct db_reader *db)

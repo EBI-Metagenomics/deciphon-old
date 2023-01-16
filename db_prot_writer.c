@@ -1,6 +1,5 @@
 #include "db_prot_writer.h"
 #include "defer_return.h"
-#include "prof_typeid.h"
 #include "rc.h"
 
 static int pack_entry_dist(struct lip_file *file, enum entry_dist const *edist)
@@ -71,7 +70,6 @@ int prot_db_writer_open(struct prot_db_writer *db, FILE *fp,
   struct imm_nuclt const *n = &db->nuclt;
   struct imm_amino const *a = &db->amino;
   if ((rc = db_writer_pack_magic_number(w))) defer_return(rc);
-  if ((rc = db_writer_pack_prof_typeid(w, PROF_PROT))) defer_return(rc);
   if ((rc = db_writer_pack_float_size(w))) defer_return(rc);
   if ((rc = db_writer_pack_header(w, pack_edist_cb, edist))) defer_return(rc);
   if ((rc = db_writer_pack_header(w, pack_eps_cb, epsilon))) defer_return(rc);

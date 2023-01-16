@@ -118,16 +118,6 @@ int db_writer_pack_magic_number(struct db_writer *db)
   return 0;
 }
 
-int db_writer_pack_prof_typeid(struct db_writer *db, int prof_typeid)
-{
-  if (!lip_write_cstr(&db->tmp.header, "profile_typeid")) return EFWRITE;
-
-  if (!lip_write_int(&db->tmp.header, prof_typeid)) return EFWRITE;
-
-  db->header_size++;
-  return 0;
-}
-
 int db_writer_pack_float_size(struct db_writer *db)
 {
   if (!lip_write_cstr(&db->tmp.header, "float_size")) return EFWRITE;

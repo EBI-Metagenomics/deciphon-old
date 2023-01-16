@@ -23,7 +23,6 @@ int db_writer_open(struct db_writer *db, FILE *fp);
 int db_writer_close(struct db_writer *db, bool successfully);
 
 int db_writer_pack_magic_number(struct db_writer *);
-int db_writer_pack_prof_typeid(struct db_writer *, int prof_typeid);
 int db_writer_pack_float_size(struct db_writer *);
 int db_writer_pack_prof(struct db_writer *db, pack_prof_func_t pack_profile,
                         void const *arg);

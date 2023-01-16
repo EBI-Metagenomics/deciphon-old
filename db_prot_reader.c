@@ -47,9 +47,8 @@ int prot_db_reader_open(struct prot_db_reader *db, FILE *fp)
   struct db_reader *base = &db->super;
   if ((rc = expect_map_size(&base->file, 2))) return rc;
   if ((rc = expect_map_key(&base->file, "header"))) return rc;
-  if ((rc = expect_map_size(&base->file, 8))) return rc;
+  if ((rc = expect_map_size(&base->file, 7))) return rc;
   if ((rc = db_reader_unpack_magic_number(base))) defer_return(rc);
-  if ((rc = db_reader_unpack_prof_typeid(base, PROF_PROT))) defer_return(rc);
   if ((rc = db_reader_unpack_float_size(base))) defer_return(rc);
   if ((rc = unpack_entry_dist(&base->file, &db->cfg.edist))) defer_return(rc);
   if ((rc = unpack_epsilon(&base->file, &db->cfg.eps))) defer_return(rc);
