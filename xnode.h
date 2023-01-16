@@ -1,5 +1,5 @@
-#ifndef MODEL_PROT_XNODE_H
-#define MODEL_PROT_XNODE_H
+#ifndef XNODE_H
+#define XNODE_H
 
 #include "imm/imm.h"
 

@@ -1,8 +1,8 @@
-#include "db_prof_reader.h"
-#include "db_prot_reader.h"
+#include "db_reader.h"
 #include "db_writer.h"
 #include "hope.h"
 #include "imm/imm.h"
+#include "protein_reader.h"
 
 void test_protein_db_writer(void);
 void test_protein_db_reader(void);
@@ -26,21 +26,21 @@ void test_protein_db_writer(void)
   FILE *fp = fopen(TMPDIR "/db.dcp", "wb");
   notnull(fp);
 
-  struct prot_cfg cfg = prot_cfg(ENTRY_DIST_OCCUPANCY, 0.01f);
+  struct cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.01f};
   struct db_writer db = {0};
   eq(db_writer_open(&db, fp, amino, nuclt, cfg), 0);
 
-  struct prot_prof prof = {0};
-  prot_prof_init(&prof, "accession0", amino, &code, cfg);
+  struct protein prof = {0};
+  protein_init(&prof, "accession0", amino, &code, cfg);
 
   unsigned core_size = 2;
-  prot_prof_sample(&prof, 1, core_size);
+  protein_sample(&prof, 1, core_size);
   eq(db_writer_pack(&db, &prof), 0);
 
-  prot_prof_sample(&prof, 2, core_size);
+  protein_sample(&prof, 2, core_size);
   eq(db_writer_pack(&db, &prof), 0);
 
-  prot_prof_del(&prof);
+  protein_del(&prof);
   eq(db_writer_close(&db, true), 0);
   fclose(fp);
 }
@@ -49,10 +49,10 @@ void test_protein_db_reader(void)
 {
   FILE *fp = fopen(TMPDIR "/db.dcp", "rb");
   notnull(fp);
-  struct prot_db_reader db = {0};
-  eq(prot_db_reader_open(&db, fp), 0);
+  struct db_reader db = {0};
+  eq(db_reader_open(&db, fp), 0);
 
-  eq(db.super.nprofiles, 2);
+  eq(db.nprofiles, 2);
 
   struct imm_abc const *abc = imm_super(&db.nuclt);
   eq(imm_abc_typeid(abc), IMM_DNA);
@@ -62,16 +62,16 @@ void test_protein_db_reader(void)
   unsigned nprofs = 0;
   struct imm_prod prod = imm_prod();
   int rc = 0;
-  struct prof_reader reader = {0};
-  eq(prof_reader_setup(&reader, (struct db_reader *)&db, 1), 0);
-  struct prot_prof *prof = 0;
-  while (!(rc = prof_reader_next(&reader, 0, &prof)))
+  struct protein_reader reader = {0};
+  eq(protein_reader_setup(&reader, &db, 1), 0);
+  struct protein *prof = 0;
+  while (!(rc = protein_reader_next(&reader, 0, &prof)))
   {
-    if (prof_reader_end(&reader, 0)) break;
-    struct imm_task *task = imm_task_new(prot_prof_alt_dp(prof));
+    if (protein_reader_end(&reader, 0)) break;
+    struct imm_task *task = imm_task_new(protein_alt_dp(prof));
     struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
     eq(imm_task_setup(task, &seq), IMM_OK);
-    eq(imm_dp_viterbi(prot_prof_alt_dp(prof), task, &prod), IMM_OK);
+    eq(imm_dp_viterbi(protein_alt_dp(prof), task, &prod), IMM_OK);
     close(prod.loglik, logliks[nprofs]);
     imm_del(task);
     ++nprofs;
@@ -80,7 +80,7 @@ void test_protein_db_reader(void)
   eq(nprofs, 2);
 
   imm_del(&prod);
-  prof_reader_del(&reader);
-  db_reader_close((struct db_reader *)&db);
+  protein_reader_del(&reader);
+  db_reader_close(&db);
   fclose(fp);
 }

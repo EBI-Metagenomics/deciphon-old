@@ -1,5 +1,5 @@
-#ifndef TO_H
-#define TO_H
+#ifndef U16TOA_H
+#define U16TOA_H
 
 #include <stdint.h>
 

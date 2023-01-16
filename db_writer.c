@@ -1,8 +1,8 @@
 #include "db_writer.h"
-#include "db_types.h"
 #include "defer_return.h"
 #include "fs.h"
 #include "lite_pack/1darray/1darray.h"
+#include "magic_number.h"
 #include "rc.h"
 
 static int pack_entry_dist(struct lip_file *file, enum entry_dist const *edist)
@@ -199,7 +199,7 @@ defer:
 
 int db_writer_open(struct db_writer *db, FILE *fp,
                    struct imm_amino const *amino, struct imm_nuclt const *nuclt,
-                   struct prot_cfg cfg)
+                   struct cfg cfg)
 {
   int rc = 0;
 
@@ -234,10 +234,10 @@ defer:
 
 static int pack_profile(struct lip_file *file, void const *prof)
 {
-  return prot_prof_pack(prof, file);
+  return protein_pack(prof, file);
 }
 
-int db_writer_pack(struct db_writer *db, struct prot_prof const *profile)
+int db_writer_pack(struct db_writer *db, struct protein const *profile)
 {
   return db_writer_pack_prof(db, pack_profile, profile);
 }

@@ -2,9 +2,9 @@
 #include "model.h"
 #include "u16toa.h"
 
-unsigned prot_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
+unsigned state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
-  unsigned msb = prot_state_id_msb(id);
+  unsigned msb = state_id_msb(id);
   if (msb == PROT_EXT_STATE)
   {
     if (id == PROT_R_STATE)
@@ -34,6 +34,6 @@ unsigned prot_state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
       name[0] = 'I';
     else if (msb == PROT_DELETE_STATE)
       name[0] = 'D';
-    return u16toa(name + 1, (uint16_t)(prot_state_idx(id) + 1)) + 1;
+    return u16toa(name + 1, (uint16_t)(state_idx(id) + 1)) + 1;
   }
 }

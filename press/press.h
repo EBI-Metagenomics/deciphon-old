@@ -16,11 +16,11 @@ struct db_press
   struct
   {
     FILE *fp;
-    struct prot_h3reader h3;
+    struct h3reader h3;
   } reader;
 
   unsigned prof_count;
-  struct prot_prof prof;
+  struct protein prof;
 
   char buffer[4 * 1024];
 };

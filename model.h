@@ -1,5 +1,5 @@
-#ifndef MODEL_PROT_MODEL_H
-#define MODEL_PROT_MODEL_H
+#ifndef MODEL_H
+#define MODEL_H
 
 #include "cfg.h"
 #include "deciphon_limits.h"
@@ -13,11 +13,11 @@
 #include "xnode.h"
 #include "xtrans.h"
 
-struct prot_model
+struct model
 {
   struct imm_amino const *amino;
   struct imm_nuclt_code const *code;
-  struct prot_cfg cfg;
+  struct cfg cfg;
   unsigned core_size;
   struct prot_xnode xnode;
   struct prot_xtrans xtrans;
@@ -33,10 +33,10 @@ struct prot_model
   struct
   {
     unsigned node_idx;
-    struct prot_node *nodes;
+    struct node *nodes;
     imm_float *locc;
     unsigned trans_idx;
-    struct prot_trans *trans;
+    struct trans *trans;
     struct imm_hmm hmm;
 
     struct
@@ -46,20 +46,20 @@ struct prot_model
   } alt;
 };
 
-int prot_model_add_node(struct prot_model *, imm_float const lp[IMM_AMINO_SIZE],
-                        char consensus);
+int model_add_node(struct model *, imm_float const lp[IMM_AMINO_SIZE],
+                   char consensus);
 
-int prot_model_add_trans(struct prot_model *, struct prot_trans trans);
+int model_add_trans(struct model *, struct trans trans);
 
-void prot_model_del(struct prot_model const *);
+void model_del(struct model const *);
 
-void prot_model_init(struct prot_model *, struct imm_amino const *amino,
-                     struct imm_nuclt_code const *code, struct prot_cfg cfg,
-                     imm_float const null_lprobs[IMM_AMINO_SIZE]);
+void model_init(struct model *, struct imm_amino const *amino,
+                struct imm_nuclt_code const *code, struct cfg cfg,
+                imm_float const null_lprobs[IMM_AMINO_SIZE]);
 
-int prot_model_setup(struct prot_model *, unsigned core_size);
+int model_setup(struct model *, unsigned core_size);
 
-void prot_model_write_dot(struct prot_model const *, FILE *fp);
+void model_write_dot(struct model const *, FILE *fp);
 
 struct prot_model_summary
 {
@@ -82,10 +82,10 @@ struct prot_model_summary
   } alt;
 };
 
-struct prot_model;
+struct model;
 
-struct imm_amino const *prot_model_amino(struct prot_model const *m);
-struct imm_nuclt const *prot_model_nuclt(struct prot_model const *m);
-struct prot_model_summary prot_model_summary(struct prot_model const *m);
+struct imm_amino const *prot_model_amino(struct model const *m);
+struct imm_nuclt const *prot_model_nuclt(struct model const *m);
+struct prot_model_summary prot_model_summary(struct model const *m);
 
 #endif

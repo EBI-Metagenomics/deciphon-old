@@ -1,5 +1,5 @@
-#ifndef MODEL_PROT_XTRANS_H
-#define MODEL_PROT_XTRANS_H
+#ifndef XTRANS_H
+#define XTRANS_H
 
 #include "imm/imm.h"
 

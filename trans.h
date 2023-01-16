@@ -1,5 +1,5 @@
-#ifndef MODEL_PROT_TRANS_H
-#define MODEL_PROT_TRANS_H
+#ifndef TRANS_H
+#define TRANS_H
 
 #include "imm/imm.h"
 
@@ -8,7 +8,7 @@ enum
   PROT_TRANS_SIZE = 7
 };
 
-struct prot_trans
+struct trans
 {
   union
   {

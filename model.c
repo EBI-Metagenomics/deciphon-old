@@ -18,18 +18,17 @@ static imm_float const uniform_lprobs[IMM_NUCLT_SIZE] = {LOGN2, LOGN2, LOGN2,
 /* Compute log(1 - p) given log(p). */
 static inline imm_float log1_p(imm_float logp) { return log1p(-exp(logp)); }
 
-int add_xnodes(struct prot_model *);
-void init_xnodes(struct prot_model *);
+int add_xnodes(struct model *);
+void init_xnodes(struct model *);
 
-void calculate_occupancy(struct prot_model *);
+void calculate_occupancy(struct model *);
 
-bool have_called_setup(struct prot_model *);
-bool have_finished_add(struct prot_model const *);
+bool have_called_setup(struct model *);
+bool have_finished_add(struct model const *);
 
-void init_delete(struct imm_mute_state *, struct prot_model *);
-void init_insert(struct imm_frame_state *, struct prot_model *);
-void init_match(struct imm_frame_state *, struct prot_model *,
-                struct nuclt_dist *);
+void init_delete(struct imm_mute_state *, struct model *);
+void init_insert(struct imm_frame_state *, struct model *);
+void init_match(struct imm_frame_state *, struct model *, struct nuclt_dist *);
 
 int init_null_xtrans(struct imm_hmm *, struct prot_xnode_null *);
 int init_alt_xtrans(struct imm_hmm *, struct prot_xnode_alt *);
@@ -43,12 +42,12 @@ void setup_nuclt_dist(struct nuclt_dist *, struct imm_amino const *,
                       struct imm_nuclt const *,
                       imm_float const[IMM_AMINO_SIZE]);
 
-int setup_entry_trans(struct prot_model *);
-int setup_exit_trans(struct prot_model *);
-int setup_transitions(struct prot_model *);
+int setup_entry_trans(struct model *);
+int setup_exit_trans(struct model *);
+int setup_transitions(struct model *);
 
-int prot_model_add_node(struct prot_model *m,
-                        imm_float const lprobs[IMM_AMINO_SIZE], char consensus)
+int model_add_node(struct model *m, imm_float const lprobs[IMM_AMINO_SIZE],
+                   char consensus)
 {
   if (!have_called_setup(m)) return EFUNCUSE;
 
@@ -60,7 +59,7 @@ int prot_model_add_node(struct prot_model *m,
   for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
     lodds[i] = lprobs[i] - m->null.lprobs[i];
 
-  struct prot_node *n = m->alt.nodes + m->alt.node_idx;
+  struct node *n = m->alt.nodes + m->alt.node_idx;
 
   setup_nuclt_dist(&n->match.nucltd, m->amino, m->code->nuclt, lodds);
 
@@ -80,7 +79,7 @@ int prot_model_add_node(struct prot_model *m,
   return 0;
 }
 
-int prot_model_add_trans(struct prot_model *m, struct prot_trans trans)
+int model_add_trans(struct model *m, struct trans trans)
 {
   if (!have_called_setup(m)) return EFUNCUSE;
 
@@ -91,16 +90,16 @@ int prot_model_add_trans(struct prot_model *m, struct prot_trans trans)
   return 0;
 }
 
-void prot_model_del(struct prot_model const *model)
+void model_del(struct model const *model)
 {
   free(model->alt.nodes);
   free(model->alt.locc);
   free(model->alt.trans);
 }
 
-void prot_model_init(struct prot_model *m, struct imm_amino const *amino,
-                     struct imm_nuclt_code const *code, struct prot_cfg cfg,
-                     imm_float const null_lprobs[IMM_AMINO_SIZE])
+void model_init(struct model *m, struct imm_amino const *amino,
+                struct imm_nuclt_code const *code, struct cfg cfg,
+                imm_float const null_lprobs[IMM_AMINO_SIZE])
 
 {
   m->amino = amino;
@@ -131,7 +130,7 @@ void prot_model_init(struct prot_model *m, struct imm_amino const *amino,
   prot_xtrans_init(&m->xtrans);
 }
 
-static void model_reset(struct prot_model *model)
+static void model_reset(struct model *model)
 {
   imm_hmm_reset(&model->null.hmm);
   imm_hmm_reset(&model->alt.hmm);
@@ -147,7 +146,7 @@ static void model_reset(struct prot_model *model)
   imm_state_detach(&model->xnode.alt.T.super);
 }
 
-int prot_model_setup(struct prot_model *m, unsigned core_size)
+int model_setup(struct model *m, unsigned core_size)
 {
   if (core_size == 0) return EINVAL;
 
@@ -177,22 +176,22 @@ int prot_model_setup(struct prot_model *m, unsigned core_size)
   return add_xnodes(m);
 }
 
-void prot_model_write_dot(struct prot_model const *m, FILE *fp)
+void model_write_dot(struct model const *m, FILE *fp)
 {
-  imm_hmm_write_dot(&m->alt.hmm, fp, prot_state_name);
+  imm_hmm_write_dot(&m->alt.hmm, fp, state_name);
 }
 
-struct imm_amino const *prot_model_amino(struct prot_model const *m)
+struct imm_amino const *prot_model_amino(struct model const *m)
 {
   return m->amino;
 }
 
-struct imm_nuclt const *prot_model_nuclt(struct prot_model const *m)
+struct imm_nuclt const *prot_model_nuclt(struct model const *m)
 {
   return m->code->nuclt;
 }
 
-struct prot_model_summary prot_model_summary(struct prot_model const *m)
+struct prot_model_summary prot_model_summary(struct model const *m)
 {
   assert(have_finished_add(m));
   return (struct prot_model_summary){
@@ -209,7 +208,7 @@ struct prot_model_summary prot_model_summary(struct prot_model const *m)
       }};
 }
 
-int add_xnodes(struct prot_model *m)
+int add_xnodes(struct model *m)
 {
   struct prot_xnode *n = &m->xnode;
 
@@ -228,7 +227,7 @@ int add_xnodes(struct prot_model *m)
   return 0;
 }
 
-void init_xnodes(struct prot_model *m)
+void init_xnodes(struct model *m)
 {
   imm_float e = m->cfg.eps;
   struct imm_nuclt_lprob const *nucltp = &m->null.nucltd.nucltp;
@@ -248,9 +247,9 @@ void init_xnodes(struct prot_model *m)
   imm_mute_state_init(&n->alt.T, PROT_T_STATE, &nuclt->super);
 }
 
-void calculate_occupancy(struct prot_model *m)
+void calculate_occupancy(struct model *m)
 {
-  struct prot_trans *trans = m->alt.trans;
+  struct trans *trans = m->alt.trans;
   m->alt.locc[0] = imm_lprob_add(trans->MI, trans->MM);
   for (unsigned i = 1; i < m->core_size; ++i)
   {
@@ -275,21 +274,21 @@ void calculate_occupancy(struct prot_model *m)
   assert(!imm_lprob_is_nan(logZ));
 }
 
-bool have_called_setup(struct prot_model *m) { return m->core_size > 0; }
+bool have_called_setup(struct model *m) { return m->core_size > 0; }
 
-bool have_finished_add(struct prot_model const *m)
+bool have_finished_add(struct model const *m)
 {
   unsigned core_size = m->core_size;
   return m->alt.node_idx == core_size && m->alt.trans_idx == (core_size + 1);
 }
 
-void init_delete(struct imm_mute_state *state, struct prot_model *m)
+void init_delete(struct imm_mute_state *state, struct model *m)
 {
   unsigned id = PROT_DELETE_STATE | (m->alt.node_idx + 1);
   imm_mute_state_init(state, id, &m->code->nuclt->super);
 }
 
-void init_insert(struct imm_frame_state *state, struct prot_model *m)
+void init_insert(struct imm_frame_state *state, struct model *m)
 {
   imm_float e = m->cfg.eps;
   unsigned id = PROT_INSERT_STATE | (m->alt.node_idx + 1);
@@ -299,7 +298,7 @@ void init_insert(struct imm_frame_state *state, struct prot_model *m)
   imm_frame_state_init(state, id, nucltp, codonm, e, imm_span(1, 5));
 }
 
-void init_match(struct imm_frame_state *state, struct prot_model *m,
+void init_match(struct imm_frame_state *state, struct model *m,
                 struct nuclt_dist *d)
 {
   imm_float e = m->cfg.eps;
@@ -401,7 +400,7 @@ void setup_nuclt_dist(struct nuclt_dist *dist, struct imm_amino const *amino,
   dist->codonm = imm_codon_marg(&codonp);
 }
 
-int setup_entry_trans(struct prot_model *m)
+int setup_entry_trans(struct model *m)
 {
   if (m->cfg.edist == ENTRY_DIST_UNIFORM)
   {
@@ -411,7 +410,7 @@ int setup_entry_trans(struct prot_model *m)
     struct imm_state *B = &m->xnode.alt.B.super;
     for (unsigned i = 0; i < m->core_size; ++i)
     {
-      struct prot_node *node = m->alt.nodes + i;
+      struct node *node = m->alt.nodes + i;
       if (imm_hmm_set_trans(&m->alt.hmm, B, &node->M.super, cost))
         return ESETTRANS;
     }
@@ -423,7 +422,7 @@ int setup_entry_trans(struct prot_model *m)
     struct imm_state *B = &m->xnode.alt.B.super;
     for (unsigned i = 0; i < m->core_size; ++i)
     {
-      struct prot_node *node = m->alt.nodes + i;
+      struct node *node = m->alt.nodes + i;
       if (imm_hmm_set_trans(&m->alt.hmm, B, &node->M.super, m->alt.locc[i]))
         return ESETTRANS;
     }
@@ -431,29 +430,29 @@ int setup_entry_trans(struct prot_model *m)
   return 0;
 }
 
-int setup_exit_trans(struct prot_model *m)
+int setup_exit_trans(struct model *m)
 {
   struct imm_state *E = &m->xnode.alt.E.super;
 
   for (unsigned i = 0; i < m->core_size; ++i)
   {
-    struct prot_node *node = m->alt.nodes + i;
+    struct node *node = m->alt.nodes + i;
     if (imm_hmm_set_trans(&m->alt.hmm, &node->M.super, E, imm_log(1)))
       return ESETTRANS;
   }
   for (unsigned i = 1; i < m->core_size; ++i)
   {
-    struct prot_node *node = m->alt.nodes + i;
+    struct node *node = m->alt.nodes + i;
     if (imm_hmm_set_trans(&m->alt.hmm, &node->D.super, E, imm_log(1)))
       return ESETTRANS;
   }
   return 0;
 }
 
-int setup_transitions(struct prot_model *m)
+int setup_transitions(struct model *m)
 {
   struct imm_hmm *h = &m->alt.hmm;
-  struct prot_trans *trans = m->alt.trans;
+  struct trans *trans = m->alt.trans;
 
   struct imm_state *B = &m->xnode.alt.B.super;
   struct imm_state *M1 = &m->alt.nodes[0].M.super;
@@ -461,10 +460,10 @@ int setup_transitions(struct prot_model *m)
 
   for (unsigned i = 0; i + 1 < m->core_size; ++i)
   {
-    struct prot_node *p = m->alt.nodes + i;
-    struct prot_node *n = m->alt.nodes + i + 1;
+    struct node *p = m->alt.nodes + i;
+    struct node *n = m->alt.nodes + i + 1;
     unsigned j = i + 1;
-    struct prot_trans t = trans[j];
+    struct trans t = trans[j];
     if (imm_hmm_set_trans(h, &p->M.super, &p->I.super, t.MI)) return ESETTRANS;
     if (imm_hmm_set_trans(h, &p->I.super, &p->I.super, t.II)) return ESETTRANS;
     if (imm_hmm_set_trans(h, &p->M.super, &n->M.super, t.MM)) return ESETTRANS;

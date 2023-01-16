@@ -4,19 +4,17 @@
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 
-void prot_h3reader_init(struct prot_h3reader *reader,
-                        struct imm_amino const *amino,
-                        struct imm_nuclt_code const *code, struct prot_cfg cfg,
-                        FILE *fp)
+void h3reader_init(struct h3reader *reader, struct imm_amino const *amino,
+                   struct imm_nuclt_code const *code, struct cfg cfg, FILE *fp)
 {
   hmr_init(&reader->hmr, fp);
   hmr_prof_init(&reader->prof, &reader->hmr);
   init_null_lprobs(reader->null_lprobs);
-  prot_model_init(&reader->model, amino, code, cfg, reader->null_lprobs);
+  model_init(&reader->model, amino, code, cfg, reader->null_lprobs);
   reader->end = false;
 }
 
-int prot_h3reader_next(struct prot_h3reader *reader)
+int h3reader_next(struct h3reader *reader)
 {
   int hmr_rc = hmr_next_prof(&reader->hmr, &reader->prof);
   if (hmr_rc == HMR_EOF)
@@ -29,12 +27,12 @@ int prot_h3reader_next(struct prot_h3reader *reader)
 
   unsigned core_size = hmr_prof_length(&reader->prof);
   int rc = 0;
-  if ((rc = prot_model_setup(&reader->model, core_size))) return rc;
+  if ((rc = model_setup(&reader->model, core_size))) return rc;
 
   hmr_rc = hmr_next_node(&reader->hmr, &reader->prof);
   assert(hmr_rc != HMR_EOF);
 
-  struct prot_trans t = {
+  struct trans t = {
       .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
       .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
       .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
@@ -43,7 +41,7 @@ int prot_h3reader_next(struct prot_h3reader *reader)
       .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
       .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
   };
-  rc = prot_model_add_trans(&reader->model, t);
+  rc = model_add_trans(&reader->model, t);
   assert(!rc);
 
   while (!(hmr_rc = hmr_next_node(&reader->hmr, &reader->prof)))
@@ -53,10 +51,10 @@ int prot_h3reader_next(struct prot_h3reader *reader)
       match_lprobs[i] = (imm_float)reader->prof.node.match[i];
 
     char consensus = reader->prof.node.excess.cons;
-    rc = prot_model_add_node(&reader->model, match_lprobs, consensus);
+    rc = model_add_node(&reader->model, match_lprobs, consensus);
     assert(!rc);
 
-    struct prot_trans t2 = {
+    struct trans t2 = {
         .MM = (imm_float)reader->prof.node.trans[HMR_TRANS_MM],
         .MI = (imm_float)reader->prof.node.trans[HMR_TRANS_MI],
         .MD = (imm_float)reader->prof.node.trans[HMR_TRANS_MD],
@@ -65,7 +63,7 @@ int prot_h3reader_next(struct prot_h3reader *reader)
         .DM = (imm_float)reader->prof.node.trans[HMR_TRANS_DM],
         .DD = (imm_float)reader->prof.node.trans[HMR_TRANS_DD],
     };
-    rc = prot_model_add_trans(&reader->model, t2);
+    rc = model_add_trans(&reader->model, t2);
     assert(!rc);
   }
   assert(hmr_rc == HMR_END);
@@ -73,15 +71,9 @@ int prot_h3reader_next(struct prot_h3reader *reader)
   return 0;
 }
 
-bool prot_h3reader_end(struct prot_h3reader const *reader)
-{
-  return reader->end;
-}
+bool h3reader_end(struct h3reader const *reader) { return reader->end; }
 
-void prot_h3reader_del(struct prot_h3reader const *reader)
-{
-  prot_model_del(&reader->model);
-}
+void h3reader_del(struct h3reader const *reader) { model_del(&reader->model); }
 
 static void init_null_lprobs(imm_float lprobs[IMM_AMINO_SIZE])
 {

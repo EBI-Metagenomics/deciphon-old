@@ -23,14 +23,14 @@ struct db_writer
   struct imm_amino amino;
   struct imm_nuclt nuclt;
   struct imm_nuclt_code code;
-  struct prot_cfg cfg;
+  struct cfg cfg;
 };
 
 int db_writer_open(struct db_writer *db, FILE *fp,
                    struct imm_amino const *amino, struct imm_nuclt const *nuclt,
-                   struct prot_cfg cfg);
+                   struct cfg cfg);
 
-int db_writer_pack(struct db_writer *db, struct prot_prof const *profile);
+int db_writer_pack(struct db_writer *db, struct protein const *profile);
 
 int db_writer_close(struct db_writer *db, bool successfully);
 

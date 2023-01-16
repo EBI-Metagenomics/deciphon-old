@@ -28,8 +28,8 @@ int db_press_init(struct db_press *p, char const *hmm, char const *db)
 
   prepare_reader(p);
 
-  prot_prof_init(&p->prof, p->reader.h3.prof.meta.acc, &p->writer.db.amino,
-                 &p->writer.db.code, p->writer.db.cfg);
+  protein_init(&p->prof, p->reader.h3.prof.meta.acc, &p->writer.db.amino,
+               &p->writer.db.code, p->writer.db.cfg);
 
   return rc;
 
@@ -64,7 +64,7 @@ static int count_profiles(struct db_press *p)
 
 int db_press_step(struct db_press *p)
 {
-  int rc = prot_h3reader_next(&p->reader.h3);
+  int rc = h3reader_next(&p->reader.h3);
   return rc ? rc : prof_write(p);
 }
 
@@ -79,7 +79,7 @@ static int prepare_writer(struct db_press *p)
 {
   struct imm_amino const *a = &imm_amino_iupac;
   struct imm_nuclt const *n = &imm_dna_iupac.super;
-  struct prot_cfg cfg = PROT_CFG_DEFAULT;
+  struct cfg cfg = CFG_DEFAULT;
 
   return db_writer_open(&p->writer.db, p->writer.fp, a, n, cfg);
 }
@@ -106,16 +106,16 @@ static void prepare_reader(struct db_press *p)
 {
   struct imm_amino const *amino = &p->writer.db.amino;
   struct imm_nuclt_code const *code = &p->writer.db.code;
-  struct prot_cfg cfg = p->writer.db.cfg;
+  struct cfg cfg = p->writer.db.cfg;
 
-  prot_h3reader_init(&p->reader.h3, amino, code, cfg, p->reader.fp);
+  h3reader_init(&p->reader.h3, amino, code, cfg, p->reader.fp);
 }
 
 static int finish_reader(struct db_press *p) { return fs_close(p->reader.fp); }
 
 static int prof_write(struct db_press *p)
 {
-  int rc = prot_prof_absorb(&p->prof, &p->reader.h3.model);
+  int rc = protein_absorb(&p->prof, &p->reader.h3.model);
   if (rc) return rc;
 
   strlcpy(p->prof.acc, p->reader.h3.prof.meta.acc, PROF_ACC_SIZE);

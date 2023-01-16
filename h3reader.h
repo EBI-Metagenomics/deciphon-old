@@ -1,5 +1,5 @@
-#ifndef MODEL_PROT_H3READER_H
-#define MODEL_PROT_H3READER_H
+#ifndef H3READER_H
+#define H3READER_H
 
 #include "cfg.h"
 #include "hmr/hmr.h"
@@ -8,22 +8,20 @@
 #include "rc.h"
 #include <stdio.h>
 
-struct prot_h3reader
+struct h3reader
 {
   struct hmr hmr;
   struct hmr_prof prof;
   imm_float null_lprobs[IMM_AMINO_SIZE];
-  struct prot_model model;
+  struct model model;
   bool end;
 };
 
-void prot_h3reader_init(struct prot_h3reader *reader,
-                        struct imm_amino const *amino,
-                        struct imm_nuclt_code const *code, struct prot_cfg cfg,
-                        FILE *fp);
+void h3reader_init(struct h3reader *reader, struct imm_amino const *amino,
+                   struct imm_nuclt_code const *code, struct cfg cfg, FILE *fp);
 
-int prot_h3reader_next(struct prot_h3reader *reader);
-bool prot_h3reader_end(struct prot_h3reader const *reader);
-void prot_h3reader_del(struct prot_h3reader const *reader);
+int h3reader_next(struct h3reader *reader);
+bool h3reader_end(struct h3reader const *reader);
+void h3reader_del(struct h3reader const *reader);
 
 #endif

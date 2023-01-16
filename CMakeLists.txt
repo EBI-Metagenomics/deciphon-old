@@ -26,10 +26,9 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_library(
   deciphon
-  db_prof_reader.c
-  db_prot_reader.c
-  db_writer.c
+  protein_reader.c
   db_reader.c
+  db_writer.c
   expect.c
   fs.c
   nuclt_dist.c

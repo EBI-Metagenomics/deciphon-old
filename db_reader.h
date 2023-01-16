@@ -1,13 +1,21 @@
 #ifndef DB_READER_H
 #define DB_READER_H
 
+#include "cfg.h"
+#include "entry_dist.h"
 #include "lite_pack/lite_pack.h"
+#include "protein.h"
 
 struct db_reader
 {
   unsigned nprofiles;
   uint32_t *profile_sizes;
   struct lip_file file;
+
+  struct imm_amino amino;
+  struct imm_nuclt nuclt;
+  struct imm_nuclt_code code;
+  struct cfg cfg;
 };
 
 int db_reader_open(struct db_reader *db, FILE *fp);

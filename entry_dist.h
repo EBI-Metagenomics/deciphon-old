@@ -1,5 +1,5 @@
-#ifndef MODEL_ENTRY_DIST_H
-#define MODEL_ENTRY_DIST_H
+#ifndef ENTRY_DIST_H
+#define ENTRY_DIST_H
 
 enum entry_dist
 {

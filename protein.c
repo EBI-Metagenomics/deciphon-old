@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void prot_prof_del(struct prot_prof *prof)
+void protein_del(struct protein *prof)
 {
   if (prof)
   {
@@ -20,7 +20,7 @@ void prot_prof_del(struct prot_prof *prof)
   }
 }
 
-static int alloc_match_nuclt_dists(struct prot_prof *prof)
+static int alloc_match_nuclt_dists(struct protein *prof)
 {
   size_t size = prof->core_size * sizeof *prof->alt.match_ndists;
   void *ptr = realloc(prof->alt.match_ndists, size);
@@ -33,9 +33,9 @@ static int alloc_match_nuclt_dists(struct prot_prof *prof)
   return 0;
 }
 
-int prot_prof_unpack(struct prot_prof *prof, struct lip_file *file)
+int protein_unpack(struct protein *prof, struct lip_file *file)
 {
-  struct prot_prof *p = (struct prot_prof *)prof;
+  struct protein *p = (struct protein *)prof;
   unsigned size = 0;
   if (!lip_read_map_size(file, &size)) return EFREAD;
   assert(size == 16);
@@ -115,23 +115,23 @@ int prot_prof_unpack(struct prot_prof *prof, struct lip_file *file)
   return 0;
 }
 
-struct imm_dp const *prot_prof_null_dp(struct prot_prof const *prof)
+struct imm_dp const *protein_null_dp(struct protein const *prof)
 {
   return &prof->null.dp;
 }
 
-struct imm_dp const *prot_prof_alt_dp(struct prot_prof const *prof)
+struct imm_dp const *protein_alt_dp(struct protein const *prof)
 {
   return &prof->alt.dp;
 }
 
-void prot_prof_init(struct prot_prof *p, char const *accession,
-                    struct imm_amino const *amino,
-                    struct imm_nuclt_code const *code, struct prot_cfg cfg)
+void protein_init(struct protein *p, char const *accession,
+                  struct imm_amino const *amino,
+                  struct imm_nuclt_code const *code, struct cfg cfg)
 {
   struct imm_nuclt const *nuclt = code->nuclt;
   strlcpy(p->acc, accession, PROF_ACC_SIZE);
-  p->state_name = prot_state_name;
+  p->state_name = state_name;
   p->imm_code = &code->super;
   p->nuclt_code = code;
   p->amino = amino;
@@ -146,8 +146,8 @@ void prot_prof_init(struct prot_prof *p, char const *accession,
   p->alt.match_ndists = NULL;
 }
 
-int prot_prof_setup(struct prot_prof *prof, unsigned seq_size, bool multi_hits,
-                    bool hmmer3_compat)
+int protein_setup(struct protein *prof, unsigned seq_size, bool multi_hits,
+                  bool hmmer3_compat)
 {
   if (seq_size == 0) return EINVAL;
 
@@ -209,7 +209,7 @@ int prot_prof_setup(struct prot_prof *prof, unsigned seq_size, bool multi_hits,
   return 0;
 }
 
-int prot_prof_absorb(struct prot_prof *p, struct prot_model const *m)
+int protein_absorb(struct protein *p, struct model const *m)
 {
   if (p->nuclt_code->nuclt != prot_model_nuclt(m)) return EDIFFABC;
 
@@ -247,7 +247,7 @@ int prot_prof_absorb(struct prot_prof *p, struct prot_model const *m)
   return 0;
 }
 
-int prot_prof_sample(struct prot_prof *p, unsigned seed, unsigned core_size)
+int protein_sample(struct protein *p, unsigned seed, unsigned core_size)
 {
   assert(core_size >= 2);
   p->core_size = core_size;
@@ -258,23 +258,23 @@ int prot_prof_sample(struct prot_prof *p, unsigned seed, unsigned core_size)
   imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
   imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
 
-  struct prot_model model;
-  prot_model_init(&model, p->amino, p->nuclt_code, p->cfg, lprobs);
+  struct model model;
+  model_init(&model, p->amino, p->nuclt_code, p->cfg, lprobs);
 
   int rc = 0;
 
-  if ((rc = prot_model_setup(&model, core_size))) goto cleanup;
+  if ((rc = model_setup(&model, core_size))) goto cleanup;
 
   for (unsigned i = 0; i < core_size; ++i)
   {
     imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
     imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);
-    if ((rc = prot_model_add_node(&model, lprobs, '-'))) goto cleanup;
+    if ((rc = model_add_node(&model, lprobs, '-'))) goto cleanup;
   }
 
   for (unsigned i = 0; i < core_size + 1; ++i)
   {
-    struct prot_trans t;
+    struct trans t;
     imm_lprob_sample(&rnd, PROT_TRANS_SIZE, t.data);
     if (i == 0) t.DD = IMM_LPROB_ZERO;
     if (i == core_size)
@@ -283,29 +283,29 @@ int prot_prof_sample(struct prot_prof *p, unsigned seed, unsigned core_size)
       t.DD = IMM_LPROB_ZERO;
     }
     imm_lprob_normalize(PROT_TRANS_SIZE, t.data);
-    if ((rc = prot_model_add_trans(&model, t))) goto cleanup;
+    if ((rc = model_add_trans(&model, t))) goto cleanup;
   }
 
-  rc = prot_prof_absorb(p, &model);
+  rc = protein_absorb(p, &model);
 
 cleanup:
-  prot_model_del(&model);
+  model_del(&model);
   return rc;
 }
 
-int prot_prof_decode(struct prot_prof const *prof, struct imm_seq const *seq,
-                     unsigned state_id, struct imm_codon *codon)
+int protein_decode(struct protein const *prof, struct imm_seq const *seq,
+                   unsigned state_id, struct imm_codon *codon)
 {
   assert(!prot_state_is_mute(state_id));
 
   struct nuclt_dist const *nucltd = NULL;
-  if (prot_state_is_insert(state_id))
+  if (state_is_insert(state_id))
   {
     nucltd = &prof->alt.insert_ndist;
   }
-  else if (prot_state_is_match(state_id))
+  else if (state_is_match(state_id))
   {
-    unsigned idx = prot_state_idx(state_id);
+    unsigned idx = state_idx(state_id);
     nucltd = prof->alt.match_ndists + idx;
   }
   else
@@ -318,12 +318,12 @@ int prot_prof_decode(struct prot_prof const *prof, struct imm_seq const *seq,
   return 0;
 }
 
-void prot_prof_write_dot(struct prot_prof const *p, FILE *fp)
+void protein_write_dot(struct protein const *p, FILE *fp)
 {
-  imm_dp_write_dot(&p->alt.dp, fp, prot_state_name);
+  imm_dp_write_dot(&p->alt.dp, fp, state_name);
 }
 
-int prot_prof_pack(struct prot_prof const *prof, struct lip_file *file)
+int protein_pack(struct protein const *prof, struct lip_file *file)
 {
   if (!lip_write_map_size(file, 16)) return EFWRITE;
 
