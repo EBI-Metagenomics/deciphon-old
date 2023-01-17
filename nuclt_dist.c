@@ -1,5 +1,5 @@
 #include "nuclt_dist.h"
-#include "lite_pack/lite_pack.h"
+#include "lip/lip.h"
 
 void nuclt_dist_init(struct nuclt_dist *nucltd, struct imm_nuclt const *nuclt)
 {

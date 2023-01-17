@@ -1,6 +1,5 @@
 function(deciphon_add_test name)
   add_executable(${name} ${name}.c)
-  target_code_coverage(${name} AUTO ALL)
   target_link_libraries(${name} PRIVATE DECIPHON::deciphon)
   target_compile_options(${name} PRIVATE ${WARNING_FLAGS})
   target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR})

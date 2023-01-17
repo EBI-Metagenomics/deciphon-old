@@ -3,7 +3,7 @@
 
 #include "cfg.h"
 #include "entry_dist.h"
-#include "lite_pack/lite_pack.h"
+#include "lip/lip.h"
 #include "protein.h"
 #include "rc.h"
 #include <stdio.h>

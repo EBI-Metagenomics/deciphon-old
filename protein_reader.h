@@ -1,7 +1,7 @@
 #ifndef PROTEIN_READER_H
 #define PROTEIN_READER_H
 
-#include "lite_pack/lite_pack.h"
+#include "lip/lip.h"
 #include "npartitions_max.h"
 #include "protein.h"
 

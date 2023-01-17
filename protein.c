@@ -1,11 +1,12 @@
 #include "protein.h"
 #include "expect.h"
 #include "imm/imm.h"
-#include "lite_pack/file/file.h"
-#include "lite_pack/lite_pack.h"
+#include "lip/file/file.h"
+#include "lip/lip.h"
 #include "model.h"
 #include "protein.h"
 #include "rc.h"
+#include "strlcpy.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

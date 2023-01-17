@@ -2,7 +2,7 @@
 #include "defer_return.h"
 #include "expect.h"
 #include "imm/imm.h"
-#include "lite_pack/1darray/1darray.h"
+#include "lip/1darray/1darray.h"
 #include "magic_number.h"
 #include "rc.h"
 #include <stdlib.h>

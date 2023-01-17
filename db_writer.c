@@ -1,7 +1,7 @@
 #include "db_writer.h"
 #include "defer_return.h"
 #include "fs.h"
-#include "lite_pack/1darray/1darray.h"
+#include "lip/1darray/1darray.h"
 #include "magic_number.h"
 #include "rc.h"
 
