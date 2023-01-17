@@ -4,6 +4,10 @@
 #include "imm/imm.h"
 #include "nuclt_dist.h"
 
+#ifdef I
+#undef I
+#endif
+
 struct node
 {
   union
