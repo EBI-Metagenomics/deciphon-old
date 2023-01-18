@@ -1,6 +1,6 @@
 #include "expect.h"
 #include "array_size.h"
-#include "rc.h"
+#include "deciphon/errno.h"
 #include <string.h>
 
 int expect_map_size(struct lip_file *file, unsigned size)

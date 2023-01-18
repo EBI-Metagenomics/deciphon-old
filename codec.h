@@ -1,7 +1,7 @@
 #ifndef CODEC_H
 #define CODEC_H
 
-#include "rc.h"
+#include "deciphon/errno.h"
 #include <stdbool.h>
 
 struct imm_codon;

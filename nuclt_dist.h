@@ -1,8 +1,8 @@
 #ifndef NUCLT_DIST_H
 #define NUCLT_DIST_H
 
+#include "deciphon/errno.h"
 #include "imm/imm.h"
-#include "rc.h"
 
 struct nuclt_dist
 {

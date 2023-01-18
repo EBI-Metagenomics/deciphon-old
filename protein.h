@@ -2,9 +2,9 @@
 #define PROTEIN_H
 
 #include "cfg.h"
+#include "deciphon/errno.h"
 #include "imm/imm.h"
 #include "model.h"
-#include "rc.h"
 #include <stdio.h>
 
 enum

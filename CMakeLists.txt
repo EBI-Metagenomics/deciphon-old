@@ -31,6 +31,7 @@ add_library(
   protein.c
   protein_reader.c
   state.c
+  strerror.c
   strlcpy.c
   u16toa.c
   xtrans.c)

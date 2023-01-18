@@ -2,10 +2,10 @@
 #define DB_WRITER_H
 
 #include "cfg.h"
+#include "deciphon/errno.h"
 #include "entry_dist.h"
 #include "lip/lip.h"
 #include "protein.h"
-#include "rc.h"
 #include <stdio.h>
 
 struct db_writer

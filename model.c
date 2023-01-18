@@ -1,9 +1,9 @@
 #include "model.h"
+#include "deciphon/errno.h"
 #include "entry_dist.h"
 #include "model.h"
 #include "node.h"
 #include "nuclt_dist.h"
-#include "rc.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>

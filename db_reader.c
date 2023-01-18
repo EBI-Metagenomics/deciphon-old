@@ -1,10 +1,10 @@
 #include "db_reader.h"
+#include "deciphon/errno.h"
 #include "defer_return.h"
 #include "expect.h"
 #include "imm/imm.h"
 #include "lip/1darray/1darray.h"
 #include "magic_number.h"
-#include "rc.h"
 #include <stdlib.h>
 
 static int unpack_entry_dist(struct lip_file *file, enum entry_dist *ed)

@@ -1,10 +1,10 @@
 #include "protein_reader.h"
 #include "db_reader.h"
+#include "deciphon/errno.h"
 #include "defer_return.h"
 #include "expect.h"
 #include "fs.h"
 #include "partition_size.h"
-#include "rc.h"
 #include <string.h>
 
 static void cleanup(struct protein_reader *reader)

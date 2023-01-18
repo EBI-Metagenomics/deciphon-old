@@ -1,11 +1,11 @@
 #include "protein.h"
+#include "deciphon/errno.h"
 #include "expect.h"
 #include "imm/imm.h"
 #include "lip/file/file.h"
 #include "lip/lip.h"
 #include "model.h"
 #include "protein.h"
-#include "rc.h"
 #include "strlcpy.h"
 #include <assert.h>
 #include <stdlib.h>

@@ -10,7 +10,7 @@
 
 #include "fs.h"
 #include "array_size.h"
-#include "rc.h"
+#include "deciphon/errno.h"
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>

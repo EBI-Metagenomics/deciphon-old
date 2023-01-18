@@ -1,6 +1,6 @@
 #include "h3reader.h"
 #include "compiler.h"
-#include "rc.h"
+#include "deciphon/errno.h"
 
 static void init_null_lprobs(imm_float[IMM_AMINO_SIZE]);
 

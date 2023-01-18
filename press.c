@@ -1,9 +1,9 @@
 #include "deciphon/press.h"
 #include "db_writer.h"
+#include "deciphon/errno.h"
 #include "defer_return.h"
 #include "fs.h"
 #include "h3reader.h"
-#include "rc.h"
 #include "sizeof_field.h"
 #include "strlcpy.h"
 #include <stdlib.h>

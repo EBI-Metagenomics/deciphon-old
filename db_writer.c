@@ -1,9 +1,9 @@
 #include "db_writer.h"
+#include "deciphon/errno.h"
 #include "defer_return.h"
 #include "fs.h"
 #include "lip/1darray/1darray.h"
 #include "magic_number.h"
-#include "rc.h"
 
 static int pack_entry_dist(struct lip_file *file, enum entry_dist const *edist)
 {
