@@ -23,7 +23,7 @@ int h3reader_next(struct h3reader *h3r)
     return 0;
   }
 
-  if (hmr_rc) return EREADHMMER3;
+  if (hmr_rc) return DCP_EREADHMMER3;
 
   unsigned core_size = hmr_prof_length(&h3r->protein);
   int rc = 0;

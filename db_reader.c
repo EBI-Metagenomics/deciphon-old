@@ -11,8 +11,8 @@ static int unpack_entry_dist(struct lip_file *file, enum entry_dist *ed)
 {
   int rc = 0;
   if ((rc = expect_map_key(file, "entry_dist"))) return rc;
-  if (!lip_read_int(file, ed)) return EFREAD;
-  if (*ed <= ENTRY_DIST_NULL || *ed > ENTRY_DIST_OCCUPANCY) return EFDATA;
+  if (!lip_read_int(file, ed)) return DCP_EFREAD;
+  if (*ed <= ENTRY_DIST_NULL || *ed > ENTRY_DIST_OCCUPANCY) return DCP_EFDATA;
   return 0;
 }
 
@@ -20,16 +20,16 @@ static int unpack_epsilon(struct lip_file *file, imm_float *epsilon)
 {
   int rc = 0;
   if ((rc = expect_map_key(file, "epsilon"))) return rc;
-  if (!lip_read_float(file, epsilon)) return EFREAD;
+  if (!lip_read_float(file, epsilon)) return DCP_EFREAD;
 
-  return (*epsilon < 0 || *epsilon > 1) ? EFDATA : 0;
+  return (*epsilon < 0 || *epsilon > 1) ? DCP_EFDATA : 0;
 }
 
 static int unpack_nuclt(struct lip_file *file, struct imm_nuclt *nuclt)
 {
   int rc = 0;
   if ((rc = expect_map_key(file, "abc"))) return rc;
-  if (imm_abc_unpack(&nuclt->super, file)) return EFREAD;
+  if (imm_abc_unpack(&nuclt->super, file)) return DCP_EFREAD;
   return 0;
 }
 
@@ -37,7 +37,7 @@ static int unpack_amino(struct lip_file *file, struct imm_amino *amino)
 {
   int rc = 0;
   if ((rc = expect_map_key(file, "amino"))) return rc;
-  if (imm_abc_unpack(&amino->super, file)) return EFREAD;
+  if (imm_abc_unpack(&amino->super, file)) return DCP_EFREAD;
   return 0;
 }
 
@@ -80,9 +80,9 @@ int db_reader_unpack_magic_number(struct db_reader *db)
   if ((rc = expect_map_key(&db->file, "magic_number"))) return rc;
 
   unsigned number = 0;
-  if (!lip_read_int(&db->file, &number)) return EFREAD;
+  if (!lip_read_int(&db->file, &number)) return DCP_EFREAD;
 
-  return number != MAGIC_NUMBER ? EFDATA : 0;
+  return number != MAGIC_NUMBER ? DCP_EFDATA : 0;
 }
 
 int db_reader_unpack_float_size(struct db_reader *db)
@@ -91,9 +91,9 @@ int db_reader_unpack_float_size(struct db_reader *db)
   if ((rc = expect_map_key(&db->file, "float_size"))) return rc;
 
   unsigned size = 0;
-  if (!lip_read_int(&db->file, &size)) return EFREAD;
+  if (!lip_read_int(&db->file, &size)) return DCP_EFREAD;
 
-  return size != IMM_FLOAT_BYTES ? EFDATA : 0;
+  return size != IMM_FLOAT_BYTES ? DCP_EFDATA : 0;
 }
 
 static int unpack_header_protein_sizes(struct db_reader *db)
@@ -101,18 +101,18 @@ static int unpack_header_protein_sizes(struct db_reader *db)
   enum lip_1darray_type type = 0;
 
   if (!lip_read_1darray_size_type(&db->file, &db->nproteins, &type))
-    return EFREAD;
+    return DCP_EFREAD;
 
-  if (type != LIP_1DARRAY_UINT32) return EFDATA;
+  if (type != LIP_1DARRAY_UINT32) return DCP_EFDATA;
 
   db->protein_sizes = malloc(sizeof(*db->protein_sizes) * db->nproteins);
-  if (!db->protein_sizes) return ENOMEM;
+  if (!db->protein_sizes) return DCP_ENOMEM;
 
   if (!lip_read_1darray_u32_data(&db->file, db->nproteins, db->protein_sizes))
   {
     free(db->protein_sizes);
     db->protein_sizes = 0;
-    return EFREAD;
+    return DCP_EFREAD;
   }
 
   return 0;

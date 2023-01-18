@@ -38,12 +38,12 @@
 
 int fs_tell(FILE *restrict fp, long *offset)
 {
-  return (*offset = ftello(fp)) < 0 ? EFTELL : 0;
+  return (*offset = ftello(fp)) < 0 ? DCP_EFTELL : 0;
 }
 
 int fs_seek(FILE *restrict fp, long offset, int whence)
 {
-  return fseeko(fp, (off_t)offset, whence) < 0 ? EFSEEK : 0;
+  return fseeko(fp, (off_t)offset, whence) < 0 ? DCP_EFSEEK : 0;
 }
 
 int fs_copy(FILE *restrict dst, FILE *restrict src)
@@ -52,11 +52,11 @@ int fs_copy(FILE *restrict dst, FILE *restrict src)
   size_t n = 0;
   while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, src)) > 0)
   {
-    if (n < BUFFSIZE && ferror(src)) return EFREAD;
+    if (n < BUFFSIZE && ferror(src)) return DCP_EFREAD;
 
-    if (fwrite(buffer, sizeof(*buffer), n, dst) < n) return EFWRITE;
+    if (fwrite(buffer, sizeof(*buffer), n, dst) < n) return DCP_EFWRITE;
   }
-  if (ferror(src)) return EFREAD;
+  if (ferror(src)) return DCP_EFREAD;
 
   return 0;
 }
@@ -66,19 +66,19 @@ int fs_refopen(FILE *fp, char const *mode, FILE **out)
   char filepath[FILENAME_MAX] = {0};
   int rc = fs_getpath(fp, sizeof filepath, filepath);
   if (rc) return rc;
-  return (*out = fopen(filepath, mode)) ? 0 : EFOPEN;
+  return (*out = fopen(filepath, mode)) ? 0 : DCP_EREFOPEN;
 }
 
 int fs_getpath(FILE *fp, unsigned size, char *filepath)
 {
   int fd = fileno(fp);
-  if (fd < 0) return EGETPATH;
+  if (fd < 0) return DCP_EGETPATH;
 
 #ifdef __APPLE__
   (void)size;
   char pathbuf[MAXPATHLEN] = {0};
-  if (fcntl(fd, F_GETPATH, pathbuf) < 0) return EGETPATH;
-  if (strlen(pathbuf) >= size) return ETRUNCPATH;
+  if (fcntl(fd, F_GETPATH, pathbuf) < 0) return DCP_EGETPATH;
+  if (strlen(pathbuf) >= size) return DCP_ETRUNCPATH;
   strcpy(filepath, pathbuf);
 #else
   char pathbuf[FILENAME_MAX] = {0};
@@ -92,4 +92,4 @@ int fs_getpath(FILE *fp, unsigned size, char *filepath)
   return 0;
 }
 
-int fs_close(FILE *fp) { return fclose(fp) ? EFCLOSE : 0; }
+int fs_close(FILE *fp) { return fclose(fp) ? DCP_EFCLOSE : 0; }

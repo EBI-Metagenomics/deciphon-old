@@ -49,9 +49,9 @@ int setup_transitions(struct model *);
 int model_add_node(struct model *m, imm_float const lprobs[IMM_AMINO_SIZE],
                    char consensus)
 {
-  if (!have_called_setup(m)) return EFUNCUSE;
+  if (!have_called_setup(m)) return DCP_EFUNCUSE;
 
-  if (m->alt.node_idx == m->core_size) return ELARGEMODEL;
+  if (m->alt.node_idx == m->core_size) return DCP_ELARGEMODEL;
 
   m->consensus[m->alt.node_idx] = consensus;
 
@@ -64,13 +64,13 @@ int model_add_node(struct model *m, imm_float const lprobs[IMM_AMINO_SIZE],
   setup_nuclt_dist(&n->match.nucltd, m->amino, m->code->nuclt, lodds);
 
   init_match(&n->M, m, &n->match.nucltd);
-  if (imm_hmm_add_state(&m->alt.hmm, &n->M.super)) return EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->M.super)) return DCP_EADDSTATE;
 
   init_insert(&n->I, m);
-  if (imm_hmm_add_state(&m->alt.hmm, &n->I.super)) return EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->I.super)) return DCP_EADDSTATE;
 
   init_delete(&n->D, m);
-  if (imm_hmm_add_state(&m->alt.hmm, &n->D.super)) return EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->D.super)) return DCP_EADDSTATE;
 
   m->alt.node_idx++;
 
@@ -81,9 +81,9 @@ int model_add_node(struct model *m, imm_float const lprobs[IMM_AMINO_SIZE],
 
 int model_add_trans(struct model *m, struct trans trans)
 {
-  if (!have_called_setup(m)) return EFUNCUSE;
+  if (!have_called_setup(m)) return DCP_EFUNCUSE;
 
-  if (m->alt.trans_idx == m->core_size + 1) return EMANYTRANS;
+  if (m->alt.trans_idx == m->core_size + 1) return DCP_EMANYTRANS;
 
   m->alt.trans[m->alt.trans_idx++] = trans;
   if (have_finished_add(m)) setup_transitions(m);
@@ -148,9 +148,9 @@ static void model_reset(struct model *model)
 
 int model_setup(struct model *m, unsigned core_size)
 {
-  if (core_size == 0) return EINVAL;
+  if (core_size == 0) return DCP_EZEROMODEL;
 
-  if (core_size > MODEL_MAX) return ELARGEMODEL;
+  if (core_size > MODEL_MAX) return DCP_ELARGEMODEL;
 
   m->core_size = core_size;
   m->consensus[core_size] = '\0';
@@ -158,18 +158,18 @@ int model_setup(struct model *m, unsigned core_size)
   m->alt.node_idx = 0;
 
   void *ptr = realloc(m->alt.nodes, n * sizeof(*m->alt.nodes));
-  if (!ptr && n > 0) return ENOMEM;
+  if (!ptr && n > 0) return DCP_ENOMEM;
   m->alt.nodes = ptr;
 
   if (m->cfg.edist == ENTRY_DIST_OCCUPANCY)
   {
     ptr = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
-    if (!ptr && n > 0) return ENOMEM;
+    if (!ptr && n > 0) return DCP_ENOMEM;
     m->alt.locc = ptr;
   }
   m->alt.trans_idx = 0;
   ptr = realloc(m->alt.trans, (n + 1) * sizeof(*m->alt.trans));
-  if (!ptr) return ENOMEM;
+  if (!ptr) return DCP_ENOMEM;
   m->alt.trans = ptr;
 
   model_reset(m);
@@ -209,17 +209,19 @@ int add_xnodes(struct model *m)
 {
   struct xnode *n = &m->xnode;
 
-  if (imm_hmm_add_state(&m->null.hmm, &n->null.R.super)) return EADDSTATE;
-  if (imm_hmm_set_start(&m->null.hmm, &n->null.R.super, LOG1)) return ESETTRANS;
+  if (imm_hmm_add_state(&m->null.hmm, &n->null.R.super)) return DCP_EADDSTATE;
+  if (imm_hmm_set_start(&m->null.hmm, &n->null.R.super, LOG1))
+    return DCP_ESETTRANS;
 
-  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.S.super)) return EADDSTATE;
-  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.N.super)) return EADDSTATE;
-  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.B.super)) return EADDSTATE;
-  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.E.super)) return EADDSTATE;
-  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.J.super)) return EADDSTATE;
-  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.C.super)) return EADDSTATE;
-  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.T.super)) return EADDSTATE;
-  if (imm_hmm_set_start(&m->alt.hmm, &n->alt.S.super, LOG1)) return ESETTRANS;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.S.super)) return DCP_EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.N.super)) return DCP_EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.B.super)) return DCP_EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.E.super)) return DCP_EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.J.super)) return DCP_EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.C.super)) return DCP_EADDSTATE;
+  if (imm_hmm_add_state(&m->alt.hmm, &n->alt.T.super)) return DCP_EADDSTATE;
+  if (imm_hmm_set_start(&m->alt.hmm, &n->alt.S.super, LOG1))
+    return DCP_ESETTRANS;
 
   return 0;
 }
@@ -305,26 +307,39 @@ void init_match(struct imm_frame_state *state, struct model *m,
 
 int init_null_xtrans(struct imm_hmm *hmm, struct xnode_null *n)
 {
-  if (imm_hmm_set_trans(hmm, &n->R.super, &n->R.super, LOG1)) return ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->R.super, &n->R.super, LOG1))
+    return DCP_ESETTRANS;
   return 0;
 }
 
 int init_alt_xtrans(struct imm_hmm *hmm, struct xnode_alt *n)
 {
-  if (imm_hmm_set_trans(hmm, &n->S.super, &n->B.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->S.super, &n->N.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->N.super, &n->N.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->N.super, &n->B.super, LOG1)) return ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->S.super, &n->B.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->S.super, &n->N.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->N.super, &n->N.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->N.super, &n->B.super, LOG1))
+    return DCP_ESETTRANS;
 
-  if (imm_hmm_set_trans(hmm, &n->E.super, &n->T.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->E.super, &n->C.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->C.super, &n->C.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->C.super, &n->T.super, LOG1)) return ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->E.super, &n->T.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->E.super, &n->C.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->C.super, &n->C.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->C.super, &n->T.super, LOG1))
+    return DCP_ESETTRANS;
 
-  if (imm_hmm_set_trans(hmm, &n->E.super, &n->B.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->E.super, &n->J.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->J.super, &n->J.super, LOG1)) return ESETTRANS;
-  if (imm_hmm_set_trans(hmm, &n->J.super, &n->B.super, LOG1)) return ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->E.super, &n->B.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->E.super, &n->J.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->J.super, &n->J.super, LOG1))
+    return DCP_ESETTRANS;
+  if (imm_hmm_set_trans(hmm, &n->J.super, &n->B.super, LOG1))
+    return DCP_ESETTRANS;
 
   return 0;
 }
@@ -409,7 +424,7 @@ int setup_entry_trans(struct model *m)
     {
       struct node *node = m->alt.nodes + i;
       if (imm_hmm_set_trans(&m->alt.hmm, B, &node->M.super, cost))
-        return ESETTRANS;
+        return DCP_ESETTRANS;
     }
   }
   else
@@ -421,7 +436,7 @@ int setup_entry_trans(struct model *m)
     {
       struct node *node = m->alt.nodes + i;
       if (imm_hmm_set_trans(&m->alt.hmm, B, &node->M.super, m->alt.locc[i]))
-        return ESETTRANS;
+        return DCP_ESETTRANS;
     }
   }
   return 0;
@@ -435,13 +450,13 @@ int setup_exit_trans(struct model *m)
   {
     struct node *node = m->alt.nodes + i;
     if (imm_hmm_set_trans(&m->alt.hmm, &node->M.super, E, imm_log(1)))
-      return ESETTRANS;
+      return DCP_ESETTRANS;
   }
   for (unsigned i = 1; i < m->core_size; ++i)
   {
     struct node *node = m->alt.nodes + i;
     if (imm_hmm_set_trans(&m->alt.hmm, &node->D.super, E, imm_log(1)))
-      return ESETTRANS;
+      return DCP_ESETTRANS;
   }
   return 0;
 }
@@ -453,7 +468,7 @@ int setup_transitions(struct model *m)
 
   struct imm_state *B = &m->xnode.alt.B.super;
   struct imm_state *M1 = &m->alt.nodes[0].M.super;
-  if (imm_hmm_set_trans(h, B, M1, trans[0].MM)) return ESETTRANS;
+  if (imm_hmm_set_trans(h, B, M1, trans[0].MM)) return DCP_ESETTRANS;
 
   for (unsigned i = 0; i + 1 < m->core_size; ++i)
   {
@@ -461,22 +476,29 @@ int setup_transitions(struct model *m)
     struct node *n = m->alt.nodes + i + 1;
     unsigned j = i + 1;
     struct trans t = trans[j];
-    if (imm_hmm_set_trans(h, &p->M.super, &p->I.super, t.MI)) return ESETTRANS;
-    if (imm_hmm_set_trans(h, &p->I.super, &p->I.super, t.II)) return ESETTRANS;
-    if (imm_hmm_set_trans(h, &p->M.super, &n->M.super, t.MM)) return ESETTRANS;
-    if (imm_hmm_set_trans(h, &p->I.super, &n->M.super, t.IM)) return ESETTRANS;
-    if (imm_hmm_set_trans(h, &p->M.super, &n->D.super, t.MD)) return ESETTRANS;
-    if (imm_hmm_set_trans(h, &p->D.super, &n->D.super, t.DD)) return ESETTRANS;
-    if (imm_hmm_set_trans(h, &p->D.super, &n->M.super, t.DM)) return ESETTRANS;
+    if (imm_hmm_set_trans(h, &p->M.super, &p->I.super, t.MI))
+      return DCP_ESETTRANS;
+    if (imm_hmm_set_trans(h, &p->I.super, &p->I.super, t.II))
+      return DCP_ESETTRANS;
+    if (imm_hmm_set_trans(h, &p->M.super, &n->M.super, t.MM))
+      return DCP_ESETTRANS;
+    if (imm_hmm_set_trans(h, &p->I.super, &n->M.super, t.IM))
+      return DCP_ESETTRANS;
+    if (imm_hmm_set_trans(h, &p->M.super, &n->D.super, t.MD))
+      return DCP_ESETTRANS;
+    if (imm_hmm_set_trans(h, &p->D.super, &n->D.super, t.DD))
+      return DCP_ESETTRANS;
+    if (imm_hmm_set_trans(h, &p->D.super, &n->M.super, t.DM))
+      return DCP_ESETTRANS;
   }
 
   unsigned n = m->core_size;
   struct imm_state *Mm = &m->alt.nodes[n - 1].M.super;
   struct imm_state *E = &m->xnode.alt.E.super;
-  if (imm_hmm_set_trans(h, Mm, E, trans[n].MM)) return ESETTRANS;
+  if (imm_hmm_set_trans(h, Mm, E, trans[n].MM)) return DCP_ESETTRANS;
 
-  if (setup_entry_trans(m)) return ESETTRANS;
-  if (setup_exit_trans(m)) return ESETTRANS;
-  if (init_null_xtrans(&m->null.hmm, &m->xnode.null)) return ESETTRANS;
+  if (setup_entry_trans(m)) return DCP_ESETTRANS;
+  if (setup_exit_trans(m)) return DCP_ESETTRANS;
+  if (init_null_xtrans(&m->null.hmm, &m->xnode.null)) return DCP_ESETTRANS;
   return init_alt_xtrans(&m->alt.hmm, &m->xnode.alt);
 }

@@ -76,18 +76,18 @@ int protein_reader_setup(struct protein_reader *reader, struct db_reader *db,
   for (unsigned i = 0; i < npartitions; ++i)
     reader->curr_offset[i] = -1;
 
-  if (npartitions == 0) return EINVAL;
+  if (npartitions == 0) return DCP_EZEROPART;
 
-  if (npartitions > NPARTITIONS_MAX) return EMANYPARTS;
+  if (npartitions > NPARTITIONS_MAX) return DCP_EMANYPARTS;
 
   reader->npartitions = min(npartitions, db->nproteins);
 
   if ((rc = expect_map_key(&db->file, "proteins"))) return rc;
 
   unsigned n = 0;
-  if (!lip_read_array_size(&db->file, &n)) return EFREAD;
+  if (!lip_read_array_size(&db->file, &n)) return DCP_EFREAD;
 
-  if (n != db->nproteins) return EFDATA;
+  if (n != db->nproteins) return DCP_EFDATA;
 
   long profiles_offset = 0;
   if ((rc = fs_tell(db->file.fp, &profiles_offset))) return rc;

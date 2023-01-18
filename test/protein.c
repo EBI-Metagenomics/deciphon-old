@@ -28,7 +28,7 @@ void test_protein_profile_uniform(void)
   char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
   struct imm_seq seq = imm_seq(IMM_STR(str), prof.imm_code->abc);
 
-  eq(protein_setup(&prof, 0, true, false), EINVAL);
+  eq(protein_setup(&prof, 0, true, false), DCP_EZEROSEQ);
   eq(protein_setup(&prof, imm_seq_size(&seq), true, false), 0);
 
   struct imm_prod prod = imm_prod();

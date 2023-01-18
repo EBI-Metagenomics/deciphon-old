@@ -52,8 +52,8 @@ int dcp_press_open(struct dcp_press *press, char const *hmm, char const *db)
 
   int rc = 0;
 
-  if (!(press->reader.fp = fopen(hmm, "rb"))) defer_return(EOPENHMM);
-  if (!(press->writer.fp = fopen(db, "wb"))) defer_return(EOPENDB);
+  if (!(press->reader.fp = fopen(hmm, "rb"))) defer_return(DCP_EOPENHMM);
+  if (!(press->writer.fp = fopen(db, "wb"))) defer_return(DCP_EOPENDB);
 
   if ((rc = count_proteins(press))) defer_return(rc);
   if ((rc = prepare_writer(press))) defer_return(rc);
@@ -87,7 +87,7 @@ static int count_proteins(struct dcp_press *press)
     if (!strncmp(press->buffer, HMMER3, strlen(HMMER3))) ++count;
   }
 
-  if (!feof(press->reader.fp)) return EEOF;
+  if (!feof(press->reader.fp)) return DCP_EFREAD;
 
   press->count = count;
   rewind(press->reader.fp);
