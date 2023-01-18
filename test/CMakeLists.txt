@@ -7,6 +7,7 @@ file(MAKE_DIRECTORY "${TMPDIR}")
 file(MAKE_DIRECTORY "${ASSETS}")
 
 add_compile_definitions(TMPDIR="${TMPDIR}")
+add_compile_definitions(ASSETS="${ASSETS}")
 dcp_download_assets("${ASSETS}")
 
 dcp_add_test(model)
