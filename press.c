@@ -31,7 +31,7 @@ struct dcp_press
 
 static int count_proteins(struct dcp_press *);
 static int prepare_writer(struct dcp_press *);
-static int finish_writer(struct dcp_press *, bool succesfully);
+static int finish_writer(struct dcp_press *);
 static void prepare_reader(struct dcp_press *);
 static int protein_write(struct dcp_press *);
 
@@ -111,10 +111,10 @@ bool dcp_press_end(struct dcp_press const *press)
   return h3reader_end(&press->reader.h3);
 }
 
-int dcp_press_close(struct dcp_press *press, int succesfully)
+int dcp_press_close(struct dcp_press *press)
 {
   int rc_r = press->reader.fp ? fs_close(press->reader.fp) : 0;
-  int rc_w = finish_writer(press, succesfully);
+  int rc_w = finish_writer(press);
   press->writer.fp = NULL;
   press->reader.fp = NULL;
   return rc_r ? rc_r : (rc_w ? rc_w : 0);
@@ -131,22 +131,18 @@ static int prepare_writer(struct dcp_press *press)
   return db_writer_open(&press->writer.db, press->writer.fp, a, n, cfg);
 }
 
-static int finish_writer(struct dcp_press *press, bool succesfully)
+static int finish_writer(struct dcp_press *press)
 {
   if (!press->writer.fp) return 0;
-  if (!succesfully)
-  {
-    db_writer_close(&press->writer.db, false);
-    fclose(press->writer.fp);
-    return 0;
-  }
-  int rc = db_writer_close(&press->writer.db, true);
-  if (rc)
-  {
-    fclose(press->writer.fp);
-    return rc;
-  }
+
+  int rc = db_writer_close(&press->writer.db);
+  if (rc) defer_return(rc);
+
   return fs_close(press->writer.fp);
+
+defer:
+  fclose(press->writer.fp);
+  return rc;
 }
 
 static void prepare_reader(struct dcp_press *press)

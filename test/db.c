@@ -41,7 +41,7 @@ void test_protein_db_writer(void)
   eq(db_writer_pack(&db, &prof), 0);
 
   protein_del(&prof);
-  eq(db_writer_close(&db, true), 0);
+  eq(db_writer_close(&db), 0);
   fclose(fp);
 }
 

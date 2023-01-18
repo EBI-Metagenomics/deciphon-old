@@ -32,6 +32,6 @@ int db_writer_open(struct db_writer *db, FILE *fp,
 
 int db_writer_pack(struct db_writer *db, struct protein const *);
 
-int db_writer_close(struct db_writer *db, bool successfully);
+int db_writer_close(struct db_writer *db);
 
 #endif

@@ -11,7 +11,7 @@ DCP_API int dcp_press_open(struct dcp_press *, char const *hmm, char const *db);
 DCP_API long dcp_press_nproteins(struct dcp_press const *);
 DCP_API int dcp_press_next(struct dcp_press *);
 DCP_API bool dcp_press_end(struct dcp_press const *);
-DCP_API int dcp_press_close(struct dcp_press *, int succesfully);
+DCP_API int dcp_press_close(struct dcp_press *);
 DCP_API void dcp_press_del(struct dcp_press const *);
 
 #endif

@@ -17,7 +17,7 @@ int main(void)
   }
   eq(rc, 0);
 
-  eq(dcp_press_close(press, true), 0);
+  eq(dcp_press_close(press), 0);
   dcp_press_del(press);
 
   return hope_status();

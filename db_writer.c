@@ -148,14 +148,8 @@ static int pack_proteins(struct db_writer *db)
   return fs_copy(lip_file_ptr(&db->file), lip_file_ptr(&db->tmp.proteins));
 }
 
-int db_writer_close(struct db_writer *db, bool successfully)
+int db_writer_close(struct db_writer *db)
 {
-  if (!successfully)
-  {
-    destroy_tempfiles(db);
-    return 0;
-  }
-
   int rc = 0;
   if (!lip_write_map_size(&db->file, 2)) defer_return(EFWRITE);
 
@@ -202,7 +196,7 @@ int db_writer_open(struct db_writer *db, FILE *fp,
   return rc;
 
 defer:
-  db_writer_close(db, false);
+  db_writer_close(db);
   return rc;
 }
 
