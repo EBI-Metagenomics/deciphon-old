@@ -15,7 +15,8 @@ void protein_del(struct protein *protein)
 {
   if (protein)
   {
-    free(protein->alt.match_ndists);
+    if (protein->alt.match_ndists) free(protein->alt.match_ndists);
+    protein->alt.match_ndists = NULL;
     imm_del(&protein->null.dp);
     imm_del(&protein->alt.dp);
   }

@@ -3,29 +3,16 @@
 #include "deciphon/errno.h"
 #include "defer_return.h"
 #include "fs.h"
-#include "json.h"
 #include <limits.h>
 #include <stdlib.h>
 
-struct seqlist
+void seqlist_init(struct seqlist *x)
 {
-  long scan_id;
-  char *data;
-  bool end;
-  int error;
-  int size;
-  struct json json[128];
-};
-
-struct seqlist *seqlist_new(void)
-{
-  struct seqlist *x = malloc(sizeof(*x));
   json_init(x->json, array_size_field(struct seqlist, json));
   x->data = NULL;
   x->end = false;
   x->error = 0;
   x->size = 0;
-  return x;
 }
 
 static int jerr(int rc);
@@ -100,10 +87,10 @@ int seqlist_error(struct seqlist const *x) { return x->error; }
 
 int seqlist_size(struct seqlist const *x) { return x->size; }
 
-void seqlist_del(struct seqlist const *x)
+void seqlist_close(struct seqlist *x)
 {
   if (x->data) free(x->data);
-  free((void *)x);
+  x->data = NULL;
 }
 
 static int jerr(int rc)

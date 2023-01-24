@@ -68,8 +68,8 @@ static inline long min(long a, long b) { return a < b ? a : b; }
 
 static int rewind_all(struct protein_reader *);
 
-int protein_reader_setup(struct protein_reader *reader, struct db_reader *db,
-                         unsigned npartitions)
+int protein_reader_open(struct protein_reader *reader, struct db_reader *db,
+                        unsigned npartitions)
 {
   int rc = 0;
 
@@ -163,7 +163,7 @@ bool protein_reader_end(struct protein_reader const *reader, unsigned partition)
          reader->partition_offset[partition + 1];
 }
 
-void protein_reader_del(struct protein_reader *reader)
+void protein_reader_close(struct protein_reader *reader)
 {
   for (unsigned i = 0; i < reader->npartitions; ++i)
     protein_del(&reader->proteins[i]);

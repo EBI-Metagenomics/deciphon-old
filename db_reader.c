@@ -46,7 +46,7 @@ int db_reader_open(struct db_reader *db, FILE *fp)
   int rc = 0;
 
   db->nproteins = 0;
-  db->protein_sizes = 0;
+  db->protein_sizes = NULL;
   lip_file_init(&db->file, fp);
 
   if ((rc = expect_map_size(&db->file, 2))) return rc;
@@ -71,6 +71,7 @@ defer:
 void db_reader_close(struct db_reader *db)
 {
   if (db->protein_sizes) free(db->protein_sizes);
+  db->protein_sizes = NULL;
 }
 
 int db_reader_unpack_magic_number(struct db_reader *db)

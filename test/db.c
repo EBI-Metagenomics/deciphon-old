@@ -63,7 +63,7 @@ void test_protein_db_reader(void)
   struct imm_prod prod = imm_prod();
   int rc = 0;
   struct protein_reader reader = {0};
-  eq(protein_reader_setup(&reader, &db, 1), 0);
+  eq(protein_reader_open(&reader, &db, 1), 0);
   struct protein *prof = 0;
   while (!(rc = protein_reader_next(&reader, 0, &prof)))
   {
@@ -80,7 +80,7 @@ void test_protein_db_reader(void)
   eq(nprofs, 2);
 
   imm_del(&prod);
-  protein_reader_del(&reader);
+  protein_reader_close(&reader);
   db_reader_close(&db);
   fclose(fp);
 }
