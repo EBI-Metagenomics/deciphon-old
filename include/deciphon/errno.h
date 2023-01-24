@@ -37,6 +37,12 @@ enum dcp_errno
   DCP_ESETTRANS     = 29,
   DCP_EADDSTATE     = 30,
   DCP_EDPRESET      = 31,
+  DCP_EFSTAT        = 32,
+  DCP_EFOPEN        = 33,
+  DCP_ELARGEFILE    = 34,
+  DCP_EJSONINVAL    = 35,
+  DCP_EJSONRANGE    = 36,
+  DCP_EJSONFOUND    = 37,
 };
 // clang-format on
 
