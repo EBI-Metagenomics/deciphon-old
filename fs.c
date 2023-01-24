@@ -93,3 +93,39 @@ int fs_getpath(FILE *fp, unsigned size, char *filepath)
 }
 
 int fs_close(FILE *fp) { return fclose(fp) ? DCP_EFCLOSE : 0; }
+
+static int fs_size(char const *filepath, long *size)
+{
+  struct stat st = {0};
+  if (stat(filepath, &st) == 1) return DCP_EFSTAT;
+  *size = (long)st.st_size;
+  return 0;
+}
+
+int fs_readall(char const *filepath, long *size, unsigned char **data)
+{
+  *size = 0;
+  *data = NULL;
+  int rc = fs_size(filepath, size);
+  if (rc) return rc;
+
+  if (*size == 0) return 0;
+
+  FILE *fp = fopen(filepath, "rb");
+  if (!fp) return DCP_EFOPEN;
+
+  if (!(*data = malloc(*size)))
+  {
+    fclose(fp);
+    return DCP_ENOMEM;
+  }
+
+  if (fread(*data, *size, 1, fp) < 1)
+  {
+    fclose(fp);
+    free(*data);
+    return DCP_EFREAD;
+  }
+
+  return fclose(fp) ? DCP_EFCLOSE : 0;
+}

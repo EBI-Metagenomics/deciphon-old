@@ -35,6 +35,12 @@ static char const *msg[] = {
     [DCP_ESETTRANS] = "failed to set transition",
     [DCP_EADDSTATE] = "failed to add state",
     [DCP_EDPRESET] = "failed to reset DP",
+    [DCP_EFSTAT] = "failed to get file stat",
+    [DCP_EFOPEN] = "failed to open file",
+    [DCP_ELARGEFILE] = "file is too large",
+    [DCP_EJSONINVAL] = "json invalid value",
+    [DCP_EJSONRANGE] = "json out-of-range",
+    [DCP_EJSONFOUND] = "json object not found",
 };
 
 char const *dcp_strerror(int errno)

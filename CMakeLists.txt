@@ -24,12 +24,14 @@ add_library(
   expect.c
   fs.c
   h3reader.c
+  json.c
   model.c
   nuclt_dist.c
   partition_size.c
   press.c
   protein.c
   protein_reader.c
+  seqlist.c
   state.c
   strerror.c
   strlcpy.c
