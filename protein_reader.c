@@ -146,13 +146,11 @@ static int rewind_all(struct protein_reader *reader)
   return 0;
 }
 
-#if 0
 int protein_reader_rewind(struct protein_reader *reader, unsigned partition)
 {
   FILE *fp = lip_file_ptr(reader->file + partition);
   return fs_seek(fp, reader->partition_offset[partition], SEEK_SET);
 }
-#endif
 
 int protein_reader_next(struct protein_reader *reader, unsigned partition,
                         struct protein **protein)

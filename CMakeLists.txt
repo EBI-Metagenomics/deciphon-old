@@ -30,13 +30,14 @@ add_library(
   nuclt_dist.c
   partition_size.c
   press.c
+  prod.c
   protein.c
   protein_iter.c
   protein_reader.c
   scan.c
   scan_db.c
-  scantask.c
-  scanthr.c
+  scan_task.c
+  scan_thread.c
   seqlist.c
   state.c
   strerror.c

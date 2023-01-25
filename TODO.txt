@@ -1,1 +1,2 @@
 - Convert unsigned to int for partition numbering
+- Use strlcpy instead of strcpy in prod.c

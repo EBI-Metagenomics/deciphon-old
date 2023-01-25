@@ -26,6 +26,7 @@ unsigned protein_reader_npartitions(struct protein_reader const *);
 unsigned protein_reader_partition_size(struct protein_reader const *,
                                        unsigned partition);
 unsigned protein_reader_nprofiles(struct protein_reader const *);
+int protein_reader_rewind(struct protein_reader *, unsigned partition);
 int protein_reader_next(struct protein_reader *, unsigned partition,
                         struct protein **);
 bool protein_reader_end(struct protein_reader const *, unsigned partition);

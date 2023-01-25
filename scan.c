@@ -1,6 +1,5 @@
 #include "deciphon/scan.h"
 #include "array_size_field.h"
-#include "db_reader.h"
 #include "deciphon/errno.h"
 #include "defer_return.h"
 #include "scan_db.h"
@@ -14,7 +13,7 @@ struct dcp_scan
   struct thread *threads;
 
   double lrt_threshold;
-  bool multihits;
+  bool multi_hits;
   bool hmmer3_compat;
 
   char sequences[FILENAME_MAX];
@@ -29,7 +28,7 @@ struct dcp_scan *dcp_scan_new(void)
   x->nthreads = 1;
   // TODO: x->threads
   x->lrt_threshold = 10.;
-  x->multihits = true;
+  x->multi_hits = true;
   x->hmmer3_compat = false;
   x->sequences[0] = 0;
   scan_db_init(&x->db);
@@ -37,35 +36,37 @@ struct dcp_scan *dcp_scan_new(void)
   return x;
 }
 
+void dcp_scan_del(struct dcp_scan const *x) { free((void *)x); }
+
 void dcp_scan_set_nthreads(struct dcp_scan *x, int nthreads)
 {
   x->nthreads = nthreads;
 }
 
-void dcp_scan_set_threshold(struct dcp_scan *x, double lrt)
+void dcp_scan_set_lrt_threshold(struct dcp_scan *x, double lrt)
 {
   x->lrt_threshold = lrt;
 }
 
-void dcp_scan_set_multihits(struct dcp_scan *x, bool multihits)
+void dcp_scan_set_multi_hits(struct dcp_scan *x, bool multihits)
 {
-  x->multihits = multihits;
+  x->multi_hits = multihits;
 }
 
-void dcp_scan_set_hmmer3compat(struct dcp_scan *x, bool h3compat)
+void dcp_scan_set_hmmer3_compat(struct dcp_scan *x, bool h3compat)
 {
   x->hmmer3_compat = h3compat;
 }
 
-int dcp_scan_set_database(struct dcp_scan *x, char const *filename)
+int dcp_scan_set_db_file(struct dcp_scan *x, char const *filename)
 {
   return scan_db_set_filename(&x->db, filename);
 }
 
-int dcp_scan_set_sequences(struct dcp_scan *x, char const *seqs)
+int dcp_scan_set_seq_file(struct dcp_scan *x, char const *filename)
 {
   size_t n = array_size_field(struct dcp_scan, sequences);
-  return strlcpy(x->sequences, seqs, n) < n ? 0 : DCP_ELARGEPATH;
+  return strlcpy(x->sequences, filename, n) < n ? 0 : DCP_ELARGEPATH;
 }
 
 int dcp_scan_run(struct dcp_scan *x)

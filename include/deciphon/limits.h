@@ -5,7 +5,6 @@ enum dcp_limits
 {
   DCP_ABC_NAME_SIZE = 16,
   DCP_PROFILE_NAME_SIZE = 64,
-  DCP_PROFILE_TYPEID_SIZE = 16,
   DCP_VERSION_SIZE = 16,
 };
 
