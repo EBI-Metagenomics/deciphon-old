@@ -25,14 +25,18 @@ add_library(
   fs.c
   h3reader.c
   json.c
+  lrt.c
   model.c
   nuclt_dist.c
   partition_size.c
   press.c
   protein.c
+  protein_iter.c
   protein_reader.c
   scan.c
   scan_db.c
+  scantask.c
+  scanthr.c
   seqlist.c
   state.c
   strerror.c
