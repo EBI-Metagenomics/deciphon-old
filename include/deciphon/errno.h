@@ -43,6 +43,7 @@ enum dcp_errno
   DCP_EJSONINVAL    = 35,
   DCP_EJSONRANGE    = 36,
   DCP_EJSONFOUND    = 37,
+  DCP_ELARGEPATH    = 38,
 };
 // clang-format on
 
