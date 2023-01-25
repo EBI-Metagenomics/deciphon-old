@@ -38,7 +38,7 @@ add_library(
   scan_db.c
   scan_task.c
   scan_thread.c
-  seqlist.c
+  seq_list.c
   state.c
   strerror.c
   strlcpy.c

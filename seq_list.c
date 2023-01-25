@@ -1,14 +1,15 @@
-#include "seqlist.h"
+#include "seq_list.h"
 #include "array_size_field.h"
 #include "deciphon/errno.h"
 #include "defer_return.h"
 #include "fs.h"
+#include "strlcpy.h"
 #include <limits.h>
 #include <stdlib.h>
 
-void seqlist_init(struct seqlist *x)
+void seq_list_init(struct seq_list *x)
 {
-  json_init(x->json, array_size_field(struct seqlist, json));
+  json_init(x->json, array_size_field(struct seq_list, json));
   x->data = NULL;
   x->end = false;
   x->error = 0;
@@ -17,10 +18,10 @@ void seqlist_init(struct seqlist *x)
 
 static int jerr(int rc);
 
-int seqlist_open(struct seqlist *x, char const *filepath)
+int seq_list_open(struct seq_list *x)
 {
   long size = 0;
-  int rc = fs_readall(filepath, &size, (unsigned char **)&x->data);
+  int rc = fs_readall(x->filename, &size, (unsigned char **)&x->data);
   if (rc) return rc;
 
   if (size > INT_MAX) defer_return(DCP_ELARGEFILE);
@@ -50,9 +51,21 @@ defer:
   return 0;
 }
 
-long seqlist_scan_id(struct seqlist const *x) { return x->scan_id; }
+void seq_list_close(struct seq_list *x)
+{
+  if (x->data) free(x->data);
+  x->data = NULL;
+}
 
-void seqlist_rewind(struct seqlist *x)
+int seq_list_set_filename(struct seq_list *x, char const *filename)
+{
+  size_t n = array_size_field(struct seq_list, filename);
+  return strlcpy(x->filename, filename, n) < n ? 0 : DCP_ELARGEPATH;
+}
+
+long seq_list_scan_id(struct seq_list const *x) { return x->scan_id; }
+
+void seq_list_rewind(struct seq_list *x)
 {
   if (x->size == 0) return;
   json_reset(x->json);
@@ -60,7 +73,7 @@ void seqlist_rewind(struct seqlist *x)
   x->end = false;
 }
 
-char const *seqlist_next(struct seqlist *x)
+char const *seq_list_next(struct seq_list *x)
 {
   int rc = 0;
   if (json_type(x->json) == JSON_SENTINEL)
@@ -81,17 +94,11 @@ char const *seqlist_next(struct seqlist *x)
   return data;
 }
 
-bool seqlist_end(struct seqlist const *x) { return x->end; }
+bool seq_list_end(struct seq_list const *x) { return x->end; }
 
-int seqlist_error(struct seqlist const *x) { return x->error; }
+int seq_list_error(struct seq_list const *x) { return x->error; }
 
-int seqlist_size(struct seqlist const *x) { return x->size; }
-
-void seqlist_close(struct seqlist *x)
-{
-  if (x->data) free(x->data);
-  x->data = NULL;
-}
+int seq_list_size(struct seq_list const *x) { return x->size; }
 
 static int jerr(int rc)
 {
