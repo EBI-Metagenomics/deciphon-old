@@ -32,6 +32,7 @@ add_library(
   protein.c
   protein_reader.c
   scan.c
+  scan_db.c
   seqlist.c
   state.c
   strerror.c
