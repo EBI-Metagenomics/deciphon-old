@@ -1,9 +1,11 @@
 #include "deciphon/scan.h"
+#include "array_size_field.h"
 #include "db_reader.h"
 #include "deciphon/errno.h"
 #include "defer_return.h"
-#include "protein_reader.h"
+#include "scan_db.h"
 #include "seqlist.h"
+#include "strlcpy.h"
 #include <stdlib.h>
 
 struct dcp_scan
@@ -15,11 +17,9 @@ struct dcp_scan
   bool multihits;
   bool hmmer3_compat;
 
-  char const *database;
-  char const *sequences;
+  char sequences[FILENAME_MAX];
 
-  struct db_reader db_reader;
-  struct protein_reader proto_reader;
+  struct scan_db db;
   struct seqlist seqlist;
 };
 
@@ -31,29 +31,52 @@ struct dcp_scan *dcp_scan_new(void)
   x->lrt_threshold = 10.;
   x->multihits = true;
   x->hmmer3_compat = false;
-  x->database = NULL;
-  x->sequences = NULL;
+  x->sequences[0] = 0;
+  scan_db_init(&x->db);
   seqlist_init(&x->seqlist);
   return x;
+}
+
+void dcp_scan_set_nthreads(struct dcp_scan *x, int nthreads)
+{
+  x->nthreads = nthreads;
+}
+
+void dcp_scan_set_threshold(struct dcp_scan *x, double lrt)
+{
+  x->lrt_threshold = lrt;
+}
+
+void dcp_scan_set_multihits(struct dcp_scan *x, bool multihits)
+{
+  x->multihits = multihits;
+}
+
+void dcp_scan_set_hmmer3compat(struct dcp_scan *x, bool h3compat)
+{
+  x->hmmer3_compat = h3compat;
+}
+
+int dcp_scan_set_database(struct dcp_scan *x, char const *filename)
+{
+  return scan_db_set_filename(&x->db, filename);
+}
+
+int dcp_scan_set_sequences(struct dcp_scan *x, char const *seqs)
+{
+  size_t n = array_size_field(struct dcp_scan, sequences);
+  return strlcpy(x->sequences, seqs, n) < n ? 0 : DCP_ELARGEPATH;
 }
 
 int dcp_scan_run(struct dcp_scan *x)
 {
   int rc = 0;
 
-  FILE *file = fopen(x->database, "rb");
-  if (!file) return DCP_EOPENDB;
-
-  if ((rc = db_reader_open(&x->db_reader, file))) defer_return(rc);
-
-  if ((rc = protein_reader_open(&x->proto_reader, &x->db_reader, x->nthreads)))
-    defer_return(rc);
-
+  if ((rc = scan_db_open(&x->db, x->nthreads))) return rc;
   if ((rc = seqlist_open(&x->seqlist, x->sequences))) defer_return(rc);
 
 defer:
   seqlist_close(&x->seqlist);
-  protein_reader_close(&x->proto_reader);
-  db_reader_close(&x->db_reader);
+  scan_db_close(&x->db);
   return rc;
 }
