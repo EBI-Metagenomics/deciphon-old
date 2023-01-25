@@ -3,9 +3,10 @@
 #include "protein_reader.h"
 
 void protein_iter_init(struct protein_iter *x, struct protein_reader *reader,
-                       unsigned partition)
+                       int partition, int protein_idx)
 {
   x->partition = partition;
+  x->protein_idx = protein_idx;
   x->reader = reader;
 }
 
