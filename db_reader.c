@@ -107,8 +107,10 @@ static int unpack_header_protein_sizes(struct db_reader *x)
 {
   enum lip_1darray_type type = 0;
 
-  if (!lip_read_1darray_size_type(&x->file, &x->nproteins, &type))
-    return DCP_EFREAD;
+  unsigned n = 0;
+  if (!lip_read_1darray_size_type(&x->file, &n, &type)) return DCP_EFREAD;
+  if (n > INT_MAX) return DCP_EFDATA;
+  x->nproteins = (int)n;
 
   if (type != LIP_1DARRAY_UINT32) return DCP_EFDATA;
 

@@ -1,4 +1,5 @@
 #include "protein_reader.h"
+#include "array_size_field.h"
 #include "db_reader.h"
 #include "deciphon/errno.h"
 #include "defer_return.h"
@@ -7,165 +8,175 @@
 #include "partition_size.h"
 #include <string.h>
 
-static void cleanup(struct protein_reader *reader)
+void protein_reader_init(struct protein_reader *x)
 {
-  for (unsigned i = 0; i < reader->npartitions; ++i)
-    fclose(lip_file_ptr(reader->file + i));
+  x->npartitions = 0;
+  for (int i = 0; i < (int)array_size_field(struct protein_reader, fp); ++i)
+    x->fp[i] = NULL;
 }
 
-static int open_files(struct protein_reader *reader, FILE *fp)
-{
-  for (unsigned i = 0; i < reader->npartitions; ++i)
-  {
-    FILE *f = NULL;
-    int rc = fs_refopen(fp, "rb", &f);
-    if (rc) return rc;
-    lip_file_init(reader->file + i, f);
-  }
-  return 0;
-}
+static int open_files(int size, FILE *fps[], FILE *fp);
+static void close_files(int size, FILE *fps[]);
+static int rewind_files(struct protein_reader *);
 
-static void init_proteins(struct protein_reader *reader, struct db_reader *db)
-{
-  for (unsigned i = 0; i < reader->npartitions; ++i)
-  {
-    struct protein *pro = &reader->proteins[i];
-    protein_init(pro, "", &db->amino, &db->code, db->cfg);
-  }
-}
-
-static void partition_init(struct protein_reader *reader, long offset)
-{
-  long *poffset = reader->partition_offset;
-  unsigned *psize = reader->partition_size;
-
-  memset(poffset, 0, NPARTITIONS_MAX + 1);
-  memset(psize, 0, NPARTITIONS_MAX);
-  poffset[0] = offset;
-}
-
-static void partition_it(struct protein_reader *reader, struct db_reader *db)
-{
-  unsigned n = db->nproteins;
-  unsigned k = reader->npartitions;
-  unsigned part = 0;
-  for (unsigned i = 0; i < k; ++i)
-  {
-    long sz = partition_size(n, k, i);
-    assert(sz >= 0);
-    assert(sz <= UINT_MAX);
-    unsigned size = (unsigned)sz;
-
-    reader->partition_size[i] = size;
-    for (unsigned j = 0; j < size; ++j)
-      reader->partition_offset[i + 1] += db->protein_sizes[part++];
-
-    reader->partition_offset[i + 1] += reader->partition_offset[i];
-  }
-}
+static void partition_init(struct protein_reader *, long offset);
+static void partition_it(struct protein_reader *, struct db_reader *);
 
 static inline long min(long a, long b) { return a < b ? a : b; }
 
-static int rewind_all(struct protein_reader *);
-
-void protein_reader_init(struct protein_reader *x) { x->npartitions = 0; }
-
-int protein_reader_open(struct protein_reader *reader, struct db_reader *db,
-                        unsigned npartitions)
+int protein_reader_open(struct protein_reader *x, struct db_reader *db,
+                        int npartitions)
 {
   int rc = 0;
 
-  for (unsigned i = 0; i < npartitions; ++i)
-    reader->curr_offset[i] = -1;
+  if (npartitions == 0) defer_return(DCP_EZEROPART);
+  if (npartitions > DCP_NPARTITIONS_SIZE) defer_return(DCP_EMANYPARTS);
+  x->npartitions = min(npartitions, db->nproteins);
 
-  if (npartitions == 0) return DCP_EZEROPART;
+  FILE *fp = lip_file_ptr(&db->file);
+  if ((rc = open_files(x->npartitions, x->fp, fp))) defer_return(rc);
 
-  if (npartitions > NPARTITIONS_MAX) return DCP_EMANYPARTS;
+  for (int i = 0; i < x->npartitions; ++i)
+  {
+    protein_init(x->proteins + i, "", &db->amino, &db->code, db->cfg);
+    lip_file_init(x->file + i, x->fp[i]);
+    x->curr_offset[i] = -1;
+  }
 
-  reader->npartitions = min(npartitions, db->nproteins);
-
-  if ((rc = expect_map_key(&db->file, "proteins"))) return rc;
+  if ((rc = expect_map_key(&db->file, "proteins"))) defer_return(rc);
 
   unsigned n = 0;
-  if (!lip_read_array_size(&db->file, &n)) return DCP_EFREAD;
-
-  if (n != db->nproteins) return DCP_EFDATA;
+  if (!lip_read_array_size(&db->file, &n)) defer_return(DCP_EFREAD);
+  if (n > INT_MAX) defer_return(DCP_EFDATA);
+  if ((int)n != db->nproteins) defer_return(DCP_EFDATA);
 
   long profiles_offset = 0;
-  if ((rc = fs_tell(db->file.fp, &profiles_offset))) return rc;
+  if ((rc = fs_tell(db->file.fp, &profiles_offset))) defer_return(rc);
 
-  if ((rc = open_files(reader, lip_file_ptr(&db->file)))) defer_return(rc);
-
-  init_proteins(reader, (struct db_reader *)db);
-
-  partition_init(reader, profiles_offset);
-  partition_it(reader, db);
-  if ((rc = rewind_all(reader))) defer_return(rc);
+  partition_init(x, profiles_offset);
+  partition_it(x, db);
+  if ((rc = rewind_files(x))) defer_return(rc);
 
   return rc;
 
 defer:
-  cleanup(reader);
+  close_files(x->npartitions, x->fp);
   return rc;
 }
 
 void protein_reader_close(struct protein_reader *x)
 {
-  for (unsigned i = 0; i < x->npartitions; ++i)
+  for (int i = 0; i < x->npartitions; ++i)
     protein_del(&x->proteins[i]);
   x->npartitions = 0;
+  close_files(x->npartitions, x->fp);
 }
 
-unsigned protein_reader_npartitions(struct protein_reader const *reader)
+int protein_reader_npartitions(struct protein_reader const *x)
 {
-  return reader->npartitions;
+  return x->npartitions;
 }
 
-unsigned protein_reader_partition_size(struct protein_reader const *reader,
-                                       unsigned partition)
+int protein_reader_partition_size(struct protein_reader const *x, int partition)
 {
-  return reader->partition_size[partition];
+  return x->partition_size[partition];
 }
 
-unsigned protein_reader_nprofiles(struct protein_reader const *reader)
+int protein_reader_size(struct protein_reader const *x)
 {
-  unsigned n = 0;
-  for (unsigned i = 0; i < reader->npartitions; ++i)
-    n += reader->partition_size[i];
+  int n = 0;
+  for (int i = 0; i < x->npartitions; ++i)
+    n += x->partition_size[i];
   return n;
 }
 
-static int rewind_all(struct protein_reader *reader)
+int protein_reader_rewind(struct protein_reader *x, int partition)
 {
-  for (unsigned i = 0; i < reader->npartitions; ++i)
+  return fs_seek(x->fp[partition], x->partition_offset[partition], SEEK_SET);
+}
+
+int protein_reader_next(struct protein_reader *x, int partition,
+                        struct protein **protein)
+{
+  int rc = fs_tell(x->fp[partition], &x->curr_offset[partition]);
+  if (rc) return rc;
+
+  if (protein_reader_end(x, partition)) return 0;
+
+  *protein = &x->proteins[partition];
+  return protein_unpack(*protein, &x->file[partition]);
+}
+
+bool protein_reader_end(struct protein_reader const *x, int partition)
+{
+  return x->curr_offset[partition] == x->partition_offset[partition + 1];
+}
+
+static int open_files(int size, FILE *fps[], FILE *fp)
+{
+  int rc = 0;
+
+  for (int i = 0; i < size; ++i)
   {
-    FILE *fp = lip_file_ptr(reader->file + i);
-    int rc = fs_seek(fp, reader->partition_offset[i], SEEK_SET);
+    fps[i] = NULL;
+    if ((rc = fs_refopen(fp, "rb", fps + i))) defer_return(rc);
+  }
+
+  return rc;
+
+defer:
+  close_files(size, fps);
+  return rc;
+}
+
+static void close_files(int size, FILE *fps[])
+{
+  for (int i = 0; i < size; ++i)
+  {
+    if (fps[i])
+    {
+      fclose(fps[i]);
+      fps[i] = NULL;
+    }
+  }
+}
+
+static int rewind_files(struct protein_reader *x)
+{
+  for (int i = 0; i < x->npartitions; ++i)
+  {
+    int rc = fs_seek(x->fp[i], x->partition_offset[i], SEEK_SET);
     if (rc) return rc;
   }
   return 0;
 }
 
-int protein_reader_rewind(struct protein_reader *reader, unsigned partition)
+static void partition_init(struct protein_reader *x, long offset)
 {
-  FILE *fp = lip_file_ptr(reader->file + partition);
-  return fs_seek(fp, reader->partition_offset[partition], SEEK_SET);
+  long *poffset = x->partition_offset;
+  int *psize = x->partition_size;
+
+  memset(poffset, 0, (DCP_NPARTITIONS_SIZE + 1) * sizeof(*poffset));
+  memset(psize, 0, DCP_NPARTITIONS_SIZE * sizeof(*psize));
+  poffset[0] = offset;
 }
 
-int protein_reader_next(struct protein_reader *reader, unsigned partition,
-                        struct protein **protein)
+static void partition_it(struct protein_reader *x, struct db_reader *db)
 {
-  FILE *fp = lip_file_ptr(reader->file + partition);
-  int rc = fs_tell(fp, &reader->curr_offset[partition]);
-  if (rc) return rc;
-  if (protein_reader_end(reader, partition)) return 0;
+  int n = db->nproteins;
+  int k = x->npartitions;
+  int part = 0;
+  for (int i = 0; i < k; ++i)
+  {
+    long sz = partition_size(n, k, i);
+    assert(sz >= 0);
+    assert(sz <= UINT_MAX);
+    int size = (int)sz;
 
-  *protein = &reader->proteins[partition];
-  return protein_unpack(*protein, &reader->file[partition]);
-}
+    x->partition_size[i] = size;
+    for (int j = 0; j < size; ++j)
+      x->partition_offset[i + 1] += db->protein_sizes[part++];
 
-bool protein_reader_end(struct protein_reader const *reader, unsigned partition)
-{
-  return reader->curr_offset[partition] ==
-         reader->partition_offset[partition + 1];
+    x->partition_offset[i + 1] += x->partition_offset[i];
+  }
 }

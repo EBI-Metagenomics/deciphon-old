@@ -1,8 +1,10 @@
 #include "deciphon/scan.h"
 #include "array_size_field.h"
 #include "deciphon/errno.h"
+#include "deciphon/limits.h"
 #include "defer_return.h"
 #include "scan_db.h"
+#include "scan_thread.h"
 #include "seq_list.h"
 #include "strlcpy.h"
 #include <stdlib.h>
@@ -10,7 +12,7 @@
 struct dcp_scan
 {
   int nthreads;
-  struct thread *threads;
+  struct scan_thread threads[DCP_NTHREADS_SIZE];
 
   double lrt_threshold;
   bool multi_hits;
@@ -36,6 +38,7 @@ void dcp_scan_del(struct dcp_scan const *x) { free((void *)x); }
 
 void dcp_scan_set_nthreads(struct dcp_scan *x, int nthreads)
 {
+  assert(nthreads <= DCP_NTHREADS_SIZE);
   x->nthreads = nthreads;
 }
 
@@ -68,8 +71,30 @@ int dcp_scan_run(struct dcp_scan *x)
 {
   int rc = 0;
 
-  if ((rc = scan_db_open(&x->db, x->nthreads))) return rc;
+  if ((rc = scan_db_open(&x->db, x->nthreads))) defer_return(rc);
   if ((rc = seq_list_open(&x->seqlist))) defer_return(rc);
+
+  long ntasks = 0;
+  long ntasks_total = 0;
+  int nparts = protein_reader_npartitions(&x->db.protein);
+  int prof_start = 0;
+  for (int i = 0; i < nparts; ++i)
+  {
+    struct scan_thread *t = x->threads + i;
+
+#if 0
+    thread_init(t, prodman_file(i), i, prof_start, x->db.protein, scan_cfg);
+
+    enum imm_abc_typeid abc_typeid = abc->vtable.typeid;
+    ntasks = protein_reader_partition_size(&x->db.protein, i) *
+             seq_list_size(&x->seqlist);
+    assert(ntasks > 0);
+    thread_setup_job(t, abc_typeid, prof_typeid, seqlist_scan_id(), ntasks);
+
+    ntasks_total += ntasks;
+    prof_start += protein_reader_partition_size(&x->db.protein, i);
+#endif
+  }
 
 defer:
   seq_list_close(&x->seqlist);

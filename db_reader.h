@@ -9,7 +9,7 @@
 
 struct db_reader
 {
-  unsigned nproteins;
+  int nproteins;
   uint32_t *protein_sizes;
   struct lip_file file;
 
