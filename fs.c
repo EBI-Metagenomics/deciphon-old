@@ -129,3 +129,20 @@ int fs_readall(char const *filepath, long *size, unsigned char **data)
 
   return fclose(fp) ? DCP_EFCLOSE : 0;
 }
+
+int fs_tmpfile(FILE **out) { return (*out = tmpfile()) ? 0 : DCP_ETMPFILE; }
+
+int fs_copyp(FILE *restrict dst, FILE *restrict src)
+{
+  char buffer[8 * 1024];
+  size_t n = 0;
+  while ((n = fread(buffer, sizeof(*buffer), BUFFSIZE, src)) > 0)
+  {
+    if (n < BUFFSIZE && ferror(src)) return DCP_EFREAD;
+
+    if (fwrite(buffer, sizeof(*buffer), n, dst) < n) return DCP_EFWRITE;
+  }
+  if (ferror(src)) return DCP_EFREAD;
+
+  return 0;
+}
