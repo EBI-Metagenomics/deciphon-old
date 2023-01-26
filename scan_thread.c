@@ -4,6 +4,7 @@
 #include "match.h"
 #include "match_iter.h"
 #include "prod.h"
+#include "prod_thread.h"
 #include "protein.h"
 #include "protein_iter.h"
 #include "protein_reader.h"
@@ -16,7 +17,12 @@ void scan_thread_init(struct scan_thread *x, struct protein_reader *reader,
   protein_reader_iter(reader, partition, &x->iter);
 }
 
-int scan_thread_run(struct scan_thread *x, struct imm_seq const *seq)
+static int write_product(struct prod *, struct protein const *,
+                         struct imm_seq const *, struct imm_path const *,
+                         struct prod_thread *);
+
+int scan_thread_run(struct scan_thread *x, struct imm_seq const *seq,
+                    struct prod_thread *p)
 {
   int rc = 0;
 
@@ -57,9 +63,10 @@ int scan_thread_run(struct scan_thread *x, struct imm_seq const *seq)
 
     prod_set_protein(&x->prod, x->protein.accession);
 
-    int idx = protein_iter_idx(it);
-    // if ((rc = query_hmmer(t, prof_idx, pro))) break;
-    // if ((rc = write_product(t, pro, seq, &x->alt.prod.path))) break;
+    // int idx = protein_iter_idx(it);
+    // if ((rc = query_hmmer(t, idx, pro))) break;
+    if ((rc = write_product(&x->prod, &x->protein, seq, &alt.prod.path, p)))
+      break;
     // if ((rc = write_hmmer(t))) break;
   }
 
@@ -69,29 +76,28 @@ cleanup:
 
 void scan_thread_cleanup(struct scan_thread *x) { protein_del(&x->protein); }
 
-#if 0
 static int write_product(struct prod *prod, struct protein const *protein,
                          struct imm_seq const *seq, struct imm_path const *path,
-                         FILE *fp)
+                         struct prod_thread *p)
 {
   int rc = 0;
 
-  if ((rc = prod_write_begin(prod, fp))) return rc;
+  struct match match = {0};
+  match_init(&match, protein);
 
   struct match_iter it = {0};
-  match_iter_init(&it, protein, seq, path);
+  match_iter_init(&it, seq, path);
 
-  if (match_iter_end(&it)) return prod_write_end(fp);
+  if ((rc = prod_thread_write_begin(p, prod))) return rc;
 
-  goto enter;
-  while (!match_iter_end(&it))
+  int i = 0;
+  while (!(rc = match_iter_next(&it, &match)))
   {
-    if ((rc = match_iter_next(&it))) return rc;
-    if ((rc = prod_write_sep(fp))) return rc;
-  enter:
-    if ((rc = match_write(match_iter_get(&it), fp))) return rc;
+    if (match_iter_end(&it)) break;
+    if (!i++ && (rc = prod_thread_write_sep(p))) return rc;
+    if ((rc = prod_thread_write_match(p, &match))) return rc;
   }
+  if (rc) return rc;
 
-  return prod_write_end(fp);
+  return prod_thread_write_end(p);
 }
-#endif

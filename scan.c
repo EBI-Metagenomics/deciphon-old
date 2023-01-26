@@ -3,6 +3,8 @@
 #include "deciphon/errno.h"
 #include "deciphon/limits.h"
 #include "defer_return.h"
+#include "prod_file.h"
+#include "prod_thread.h"
 #include "scan_db.h"
 #include "scan_thread.h"
 #include "seq_list.h"
@@ -13,6 +15,7 @@ struct dcp_scan
 {
   int nthreads;
   struct scan_thread threads[DCP_NTHREADS_MAX];
+  struct prod_file prod_file;
 
   double lrt_threshold;
   bool multi_hits;
@@ -77,9 +80,9 @@ int dcp_scan_run(struct dcp_scan *x)
   int nparts = protein_reader_npartitions(scan_db_reader(&x->db));
   for (int i = 0; i < nparts; ++i)
   {
-    struct scan_thread *t = x->threads + i;
-    scan_thread_init(t, scan_db_reader(&x->db), i);
+    scan_thread_init(x->threads + i, scan_db_reader(&x->db), i);
   }
+  if ((rc = prod_file_setup(&x->prod_file, nparts))) defer_return(rc);
 
   while (!seq_list_end(&x->seqlist))
   {
@@ -92,7 +95,7 @@ int dcp_scan_run(struct dcp_scan *x)
     for (int i = 0; i < nparts; ++i)
     {
       struct scan_thread *t = x->threads + i;
-      scan_thread_run(t, &seq);
+      scan_thread_run(t, &seq, prod_file_thread(&x->prod_file, i));
     }
   }
 
@@ -118,6 +121,7 @@ int dcp_scan_run(struct dcp_scan *x)
 #endif
 
 defer:
+  prod_file_cleanup(&x->prod_file);
   seq_list_close(&x->seqlist);
   scan_db_close(&x->db);
   return rc;

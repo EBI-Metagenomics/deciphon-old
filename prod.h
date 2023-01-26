@@ -32,8 +32,4 @@ void prod_set_alt_loglik(struct prod *, double);
 
 double prod_get_lrt(struct prod const *);
 
-int prod_write_begin(struct prod const *prod, FILE *fp);
-int prod_write_sep(FILE *fp);
-int prod_write_end(FILE *fp);
-
 #endif

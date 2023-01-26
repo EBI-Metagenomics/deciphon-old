@@ -33,6 +33,8 @@ add_library(
   partition_size.c
   press.c
   prod.c
+  prod_file.c
+  prod_thread.c
   protein.c
   protein_iter.c
   protein_reader.c

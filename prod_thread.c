@@ -6,6 +6,23 @@
 #include "state.h"
 #include <string.h>
 
+/* Output example for two matches.
+ *
+ *             ___________________________
+ *             |   match0   |   match1   |
+ *             ---------------------------
+ * Output----->| CG,M1,CGA,K;CG,M4,CGA,K |
+ *             ---|-|---|--|--------------
+ * -----------   /  |   |  \    ---------------
+ * | matched |__/   |   |   \___| most likely |
+ * | letters |      |   |       | amino acid  |
+ * -----------      |   |       ---------------
+ *      -------------   ---------------
+ *      | hmm state |   | most likely |
+ *      -------------   | codon       |
+ *                      ---------------
+ */
+
 void prod_thread_init(struct prod_thread *x, FILE *fp)
 {
   x->fp = fp;
