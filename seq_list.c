@@ -12,7 +12,6 @@ void seq_list_init(struct seq_list *x)
   json_init(x->json, array_size_field(struct seq_list, json));
   x->data = NULL;
   x->end = false;
-  x->error = 0;
   x->size = 0;
 }
 
@@ -73,32 +72,32 @@ void seq_list_rewind(struct seq_list *x)
   x->end = false;
 }
 
-char const *seq_list_next(struct seq_list *x)
+int seq_list_next(struct seq_list *x)
 {
-  int rc = 0;
   if (json_type(x->json) == JSON_SENTINEL)
   {
     x->end = true;
-    return NULL;
+    return 0;
   }
 
-  char const *data = json_string_of(x->json, "data");
+  x->seq_id = json_long_of(x->json, "id");
+  x->seq_name = json_string_of(x->json, "name");
+  x->seq_data = json_string_of(x->json, "data");
 
   json_right(x->json);
-  if ((rc = jerr(json_error(x->json))))
-  {
-    x->error = rc;
-    return NULL;
-  }
 
-  return data;
+  return jerr(json_error(x->json));
 }
 
 bool seq_list_end(struct seq_list const *x) { return x->end; }
 
-int seq_list_error(struct seq_list const *x) { return x->error; }
-
 int seq_list_size(struct seq_list const *x) { return x->size; }
+
+long seq_list_seq_id(struct seq_list const *x) { return x->seq_id; }
+
+char const *seq_list_seq_name(struct seq_list const *x) { return x->seq_name; }
+
+char const *seq_list_seq_data(struct seq_list const *x) { return x->seq_data; }
 
 static int jerr(int rc)
 {

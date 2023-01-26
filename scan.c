@@ -12,7 +12,7 @@
 struct dcp_scan
 {
   int nthreads;
-  struct scan_thread threads[DCP_NTHREADS_SIZE];
+  struct scan_thread threads[DCP_NTHREADS_MAX];
 
   double lrt_threshold;
   bool multi_hits;
@@ -74,15 +74,36 @@ int dcp_scan_run(struct dcp_scan *x)
   if ((rc = scan_db_open(&x->db, x->nthreads))) defer_return(rc);
   if ((rc = seq_list_open(&x->seqlist))) defer_return(rc);
 
+  int nparts = protein_reader_npartitions(scan_db_reader(&x->db));
+  for (int i = 0; i < nparts; ++i)
+  {
+    struct scan_thread *t = x->threads + i;
+    scan_thread_init(t, scan_db_reader(&x->db), i);
+  }
+
+  while (!seq_list_end(&x->seqlist))
+  {
+    if ((rc = seq_list_next(&x->seqlist))) break;
+
+    struct imm_abc const *abc = scan_db_abc(&x->db);
+    struct imm_str str = imm_str(seq_list_seq_data(&x->seqlist));
+    struct imm_seq seq = imm_seq(str, abc);
+
+    for (int i = 0; i < nparts; ++i)
+    {
+      struct scan_thread *t = x->threads + i;
+      scan_thread_run(t, &seq);
+    }
+  }
+
+#if 0
   long ntasks = 0;
   long ntasks_total = 0;
-  int nparts = protein_reader_npartitions(&x->db.protein);
   int prof_start = 0;
   for (int i = 0; i < nparts; ++i)
   {
     struct scan_thread *t = x->threads + i;
 
-#if 0
     thread_init(t, prodman_file(i), i, prof_start, x->db.protein, scan_cfg);
 
     enum imm_abc_typeid abc_typeid = abc->vtable.typeid;
@@ -93,8 +114,8 @@ int dcp_scan_run(struct dcp_scan *x)
 
     ntasks_total += ntasks;
     prof_start += protein_reader_partition_size(&x->db.protein, i);
-#endif
   }
+#endif
 
 defer:
   seq_list_close(&x->seqlist);

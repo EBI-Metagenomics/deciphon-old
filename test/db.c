@@ -2,6 +2,7 @@
 #include "db_writer.h"
 #include "hope.h"
 #include "imm/imm.h"
+#include "protein_iter.h"
 #include "protein_reader.h"
 
 void test_protein_db_writer(void);
@@ -30,17 +31,17 @@ void test_protein_db_writer(void)
   struct db_writer db = {0};
   eq(db_writer_open(&db, fp, amino, nuclt, cfg), 0);
 
-  struct protein prof = {0};
-  protein_init(&prof, "accession0", amino, &code, cfg);
+  struct protein protein = {0};
+  protein_init(&protein, "accession0", amino, &code, cfg);
 
   unsigned core_size = 2;
-  protein_sample(&prof, 1, core_size);
-  eq(db_writer_pack(&db, &prof), 0);
+  protein_sample(&protein, 1, core_size);
+  eq(db_writer_pack(&db, &protein), 0);
 
-  protein_sample(&prof, 2, core_size);
-  eq(db_writer_pack(&db, &prof), 0);
+  protein_sample(&protein, 2, core_size);
+  eq(db_writer_pack(&db, &protein), 0);
 
-  protein_del(&prof);
+  protein_del(&protein);
   eq(db_writer_close(&db), 0);
   fclose(fp);
 }
@@ -59,28 +60,29 @@ void test_protein_db_reader(void)
 
   double logliks[] = {-2720.381428394979, -2854.53237780213};
 
-  unsigned nprofs = 0;
+  unsigned nproteins = 0;
   struct imm_prod prod = imm_prod();
   int rc = 0;
   struct protein_reader reader = {0};
   eq(protein_reader_setup(&reader, &db, 1), 0);
-  struct protein *prof = 0;
-  while (!(rc = protein_reader_next(&reader, 0, &prof)))
+  struct protein_iter it = {0};
+  eq(protein_reader_iter(&reader, 0, &it), 0);
+  while (!protein_iter_end(&it))
   {
-    if (protein_reader_end(&reader, 0)) break;
-    struct imm_task *task = imm_task_new(protein_alt_dp(prof));
+    if ((rc = protein_iter_next(&it))) break;
+    struct protein *protein = protein_iter_get(&it);
+    struct imm_task *task = imm_task_new(protein_alt_dp(protein));
     struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
     eq(imm_task_setup(task, &seq), IMM_OK);
-    eq(imm_dp_viterbi(protein_alt_dp(prof), task, &prod), IMM_OK);
-    close(prod.loglik, logliks[nprofs]);
+    eq(imm_dp_viterbi(protein_alt_dp(protein), task, &prod), IMM_OK);
+    close(prod.loglik, logliks[nproteins]);
     imm_del(task);
-    ++nprofs;
+    ++nproteins;
   }
   eq(rc, 0);
-  eq(nprofs, 2);
+  eq(nproteins, 2);
 
   imm_del(&prod);
-  protein_reader_close(&reader);
   db_reader_close(&db);
   fclose(fp);
 }
