@@ -14,6 +14,7 @@ struct prod_file
   struct prod_thrd prod_threads[DCP_NTHREADS_MAX];
 };
 
+void prod_file_init(struct prod_file *);
 int prod_file_setup(struct prod_file *, int size);
 struct prod_thrd *prod_file_thread(struct prod_file *, int idx);
 int prod_file_finishup(struct prod_file *, FILE *);

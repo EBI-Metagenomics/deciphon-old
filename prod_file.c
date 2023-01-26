@@ -5,6 +5,13 @@
 #include "fs.h"
 #include <string.h>
 
+void prod_file_init(struct prod_file *x)
+{
+  x->size = 0;
+  for (int i = 0; i < (int)array_size_field(struct prod_file, files); ++i)
+    x->files[i] = NULL;
+}
+
 int prod_file_setup(struct prod_file *x, int size)
 {
   if (size > (int)array_size_field(struct prod_file, prod_threads))

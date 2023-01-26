@@ -22,7 +22,7 @@ struct dcp_scan
   bool hmmer3_compat;
 
   struct scan_db db;
-  struct seq_list seqlist;
+  struct seq_list seq_list;
 };
 
 struct dcp_scan *dcp_scan_new(void)
@@ -33,16 +33,18 @@ struct dcp_scan *dcp_scan_new(void)
   x->multi_hits = true;
   x->hmmer3_compat = false;
   scan_db_init(&x->db);
-  seq_list_init(&x->seqlist);
+  seq_list_init(&x->seq_list);
+  prod_file_init(&x->prod_file);
   return x;
 }
 
 void dcp_scan_del(struct dcp_scan const *x) { free((void *)x); }
 
-void dcp_scan_set_nthreads(struct dcp_scan *x, int nthreads)
+int dcp_scan_set_nthreads(struct dcp_scan *x, int nthreads)
 {
-  assert(nthreads <= DCP_NTHREADS_MAX);
+  if (nthreads > DCP_NTHREADS_MAX) return DCP_EMANYTHREADS;
   x->nthreads = nthreads;
+  return 0;
 }
 
 void dcp_scan_set_lrt_threshold(struct dcp_scan *x, double lrt)
@@ -67,62 +69,59 @@ int dcp_scan_set_db_file(struct dcp_scan *x, char const *filename)
 
 int dcp_scan_set_seq_file(struct dcp_scan *x, char const *filename)
 {
-  return seq_list_set_filename(&x->seqlist, filename);
+  return seq_list_set_filename(&x->seq_list, filename);
 }
 
-int dcp_scan_run(struct dcp_scan *x)
+static int save_output(struct prod_file *prod_file, char const *outfile);
+
+int dcp_scan_run(struct dcp_scan *x, char const *outfile)
 {
   int rc = 0;
 
   if ((rc = scan_db_open(&x->db, x->nthreads))) defer_return(rc);
-  if ((rc = seq_list_open(&x->seqlist))) defer_return(rc);
+  if ((rc = seq_list_open(&x->seq_list))) defer_return(rc);
 
-  int nparts = protein_reader_npartitions(scan_db_reader(&x->db));
-  for (int i = 0; i < nparts; ++i)
-  {
+  for (int i = 0; i < x->nthreads; ++i)
     scan_thrd_init(x->threads + i, scan_db_reader(&x->db), i);
-  }
-  if ((rc = prod_file_setup(&x->prod_file, nparts))) defer_return(rc);
 
-  while (!seq_list_end(&x->seqlist))
+  if ((rc = prod_file_setup(&x->prod_file, x->nthreads))) defer_return(rc);
+
+  while (!(rc = seq_list_next(&x->seq_list)))
   {
-    if ((rc = seq_list_next(&x->seqlist))) break;
+    if (seq_list_end(&x->seq_list)) break;
 
     struct imm_abc const *abc = scan_db_abc(&x->db);
-    struct imm_str str = imm_str(seq_list_seq_data(&x->seqlist));
+    struct imm_str str = imm_str(seq_list_seq_data(&x->seq_list));
     struct imm_seq seq = imm_seq(str, abc);
 
-    for (int i = 0; i < nparts; ++i)
+    for (int i = 0; i < x->nthreads; ++i)
     {
       struct scan_thrd *t = x->threads + i;
       scan_thrd_run(t, &seq, prod_file_thread(&x->prod_file, i));
     }
   }
+  if (rc) defer_return(rc);
 
-#if 0
-  long ntasks = 0;
-  long ntasks_total = 0;
-  int prof_start = 0;
-  for (int i = 0; i < nparts; ++i)
-  {
-    struct scan_thread *t = x->threads + i;
-
-    thread_init(t, prodman_file(i), i, prof_start, x->db.protein, scan_cfg);
-
-    enum imm_abc_typeid abc_typeid = abc->vtable.typeid;
-    ntasks = protein_reader_partition_size(&x->db.protein, i) *
-             seq_list_size(&x->seqlist);
-    assert(ntasks > 0);
-    thread_setup_job(t, abc_typeid, prof_typeid, seqlist_scan_id(), ntasks);
-
-    ntasks_total += ntasks;
-    prof_start += protein_reader_partition_size(&x->db.protein, i);
-  }
-#endif
+  rc = save_output(&x->prod_file, outfile);
 
 defer:
   prod_file_cleanup(&x->prod_file);
-  seq_list_close(&x->seqlist);
+  seq_list_close(&x->seq_list);
   scan_db_close(&x->db);
   return rc;
+}
+
+static int save_output(struct prod_file *prod_file, char const *outfile)
+{
+  FILE *fp = fopen(outfile, "wb");
+  if (!fp) return DCP_EFOPEN;
+
+  int rc = 0;
+  if ((rc = prod_file_finishup(prod_file, fp)))
+  {
+    fclose(fp);
+    return rc;
+  }
+
+  return fclose(fp) ? DCP_EFCLOSE : 0;
 }

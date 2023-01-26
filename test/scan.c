@@ -11,6 +11,7 @@ int main(void)
 
 #define DB "/Users/horta/code/deciphon/build/minifam.dcp"
 #define SEQ "/Users/horta/code/deciphon/build/consensus.json"
+#define OUT "/Users/horta/code/deciphon/build/prod.tsv"
 
 void test_scan(void)
 {
@@ -24,7 +25,7 @@ void test_scan(void)
   eq(dcp_scan_set_db_file(scan, DB), 0);
   eq(dcp_scan_set_seq_file(scan, SEQ), 0);
 
-  eq(dcp_scan_run(scan), 0);
+  eq(dcp_scan_run(scan, OUT), 0);
 
   dcp_scan_del(scan);
 }
