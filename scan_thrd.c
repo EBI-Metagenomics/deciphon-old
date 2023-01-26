@@ -17,12 +17,8 @@ void scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
   protein_reader_iter(reader, partition, &x->iter);
 }
 
-static int write_product(struct prod *, struct protein const *,
-                         struct imm_seq const *, struct imm_path const *,
-                         struct prod_thrd *);
-
 int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
-                  struct prod_thrd *p)
+                  struct prod_thrd *y)
 {
   int rc = 0;
 
@@ -65,8 +61,13 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
 
     // int idx = protein_iter_idx(it);
     // if ((rc = query_hmmer(t, idx, pro))) break;
-    if ((rc = write_product(&x->prod, &x->protein, seq, &alt.prod.path, p)))
-      break;
+    struct match match = {0};
+    match_init(&match, &x->protein);
+
+    struct match_iter mit = {0};
+    match_iter_init(&mit, seq, &alt.prod.path);
+
+    if ((rc = prod_thrd_write(y, &x->prod, &match, &mit))) break;
     // if ((rc = write_hmmer(t))) break;
   }
 
@@ -75,29 +76,3 @@ cleanup:
 }
 
 void scan_thrd_cleanup(struct scan_thrd *x) { protein_del(&x->protein); }
-
-static int write_product(struct prod *prod, struct protein const *protein,
-                         struct imm_seq const *seq, struct imm_path const *path,
-                         struct prod_thrd *p)
-{
-  int rc = 0;
-
-  struct match match = {0};
-  match_init(&match, protein);
-
-  struct match_iter it = {0};
-  match_iter_init(&it, seq, path);
-
-  if ((rc = prod_thrd_write_begin(p, prod))) return rc;
-
-  int i = 0;
-  while (!(rc = match_iter_next(&it, &match)))
-  {
-    if (match_iter_end(&it)) break;
-    if (!i++ && (rc = prod_thrd_write_sep(p))) return rc;
-    if ((rc = prod_thrd_write_match(p, &match))) return rc;
-  }
-  if (rc) return rc;
-
-  return prod_thrd_write_end(p);
-}

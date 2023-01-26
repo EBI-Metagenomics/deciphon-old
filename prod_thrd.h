@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 struct match;
+struct match_iter;
 
 struct prod_thrd
 {
@@ -13,9 +14,11 @@ struct prod_thrd
 };
 
 void prod_thrd_init(struct prod_thrd *, FILE *);
-int prod_thrd_write_begin(struct prod_thrd *, struct prod const *);
-int prod_thrd_write_match(struct prod_thrd *, struct match const *);
-int prod_thrd_write_sep(struct prod_thrd *);
-int prod_thrd_write_end(struct prod_thrd *);
+int prod_thrd_write(struct prod_thrd *, struct prod const *, struct match *,
+                    struct match_iter *);
+int write_begin(struct prod_thrd *, struct prod const *);
+int write_match(struct prod_thrd *, struct match const *);
+int write_sep(struct prod_thrd *);
+int write_end(struct prod_thrd *);
 
 #endif

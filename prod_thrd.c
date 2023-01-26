@@ -2,6 +2,8 @@
 #include "dbl_fmt.h"
 #include "deciphon/errno.h"
 #include "match.h"
+#include "match_iter.h"
+#include "prod_thrd.h"
 #include "protein.h"
 #include "state.h"
 #include <string.h>
@@ -29,7 +31,28 @@ void prod_thrd_init(struct prod_thrd *x, FILE *fp)
   prod_init(&x->prod);
 }
 
-int prod_thrd_write_begin(struct prod_thrd *x, struct prod const *y)
+int write_begin(struct prod_thrd *, struct prod const *);
+int write_sep(struct prod_thrd *);
+int write_end(struct prod_thrd *);
+
+int prod_thrd_write(struct prod_thrd *x, struct prod const *prod,
+                    struct match *match, struct match_iter *it)
+{
+  int rc = 0;
+  if ((rc = write_begin(x, prod))) return rc;
+
+  int i = 0;
+  while (!(rc = match_iter_next(it, match)))
+  {
+    if (match_iter_end(it)) break;
+    if (!i++ && (rc = write_sep(x))) return rc;
+    if ((rc = write_match(x, match))) return rc;
+  }
+
+  return write_end(x);
+}
+
+int write_begin(struct prod_thrd *x, struct prod const *y)
 {
   FILE *fp = x->fp;
   if (fprintf(fp, "%ld\t", y->scan_id) < 0) return DCP_EWRITEPROD;
@@ -47,7 +70,7 @@ int prod_thrd_write_begin(struct prod_thrd *x, struct prod const *y)
   return 0;
 }
 
-int prod_thrd_write_match(struct prod_thrd *x, struct match const *m)
+int write_match(struct prod_thrd *x, struct match const *m)
 {
   char buff[IMM_STATE_NAME_SIZE + 20] = {0};
 
@@ -78,12 +101,12 @@ int prod_thrd_write_match(struct prod_thrd *x, struct match const *m)
   return fputs(buff, x->fp) == EOF ? DCP_EFWRITE : 0;
 }
 
-int prod_thrd_write_sep(struct prod_thrd *x)
+int write_sep(struct prod_thrd *x)
 {
   return fputc(';', x->fp) == EOF ? DCP_EWRITEPROD : 0;
 }
 
-int prod_thrd_write_end(struct prod_thrd *x)
+int write_end(struct prod_thrd *x)
 {
   return fputc('\n', x->fp) == EOF ? DCP_EWRITEPROD : 0;
 }
