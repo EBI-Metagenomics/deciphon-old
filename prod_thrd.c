@@ -1,4 +1,4 @@
-#include "prod_thread.h"
+#include "prod_thrd.h"
 #include "dbl_fmt.h"
 #include "deciphon/errno.h"
 #include "match.h"
@@ -23,13 +23,13 @@
  *                      ---------------
  */
 
-void prod_thread_init(struct prod_thread *x, FILE *fp)
+void prod_thrd_init(struct prod_thread *x, FILE *fp)
 {
   x->fp = fp;
   prod_init(&x->prod);
 }
 
-int prod_thread_write_begin(struct prod_thread *x, struct prod const *y)
+int prod_thrd_write_begin(struct prod_thread *x, struct prod const *y)
 {
   FILE *fp = x->fp;
   if (fprintf(fp, "%ld\t", y->scan_id) < 0) return DCP_EWRITEPROD;
@@ -47,7 +47,7 @@ int prod_thread_write_begin(struct prod_thread *x, struct prod const *y)
   return 0;
 }
 
-int prod_thread_write_match(struct prod_thread *x, struct match const *m)
+int prod_thrd_write_match(struct prod_thread *x, struct match const *m)
 {
   char buff[IMM_STATE_NAME_SIZE + 20] = {0};
 
@@ -78,12 +78,12 @@ int prod_thread_write_match(struct prod_thread *x, struct match const *m)
   return fputs(buff, x->fp) == EOF ? DCP_EFWRITE : 0;
 }
 
-int prod_thread_write_sep(struct prod_thread *x)
+int prod_thrd_write_sep(struct prod_thread *x)
 {
   return fputc(';', x->fp) == EOF ? DCP_EWRITEPROD : 0;
 }
 
-int prod_thread_write_end(struct prod_thread *x)
+int prod_thrd_write_end(struct prod_thread *x)
 {
   return fputc('\n', x->fp) == EOF ? DCP_EWRITEPROD : 0;
 }

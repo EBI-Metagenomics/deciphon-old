@@ -1,5 +1,5 @@
-#ifndef SCAN_THREAD_H
-#define SCAN_THREAD_H
+#ifndef SCAN_THRD_H
+#define SCAN_THRD_H
 
 #include "prod.h"
 #include "protein_iter.h"
@@ -25,10 +25,10 @@ struct scan_thread
 struct prod_thread;
 struct protein_reader;
 
-void scan_thread_init(struct scan_thread *, struct protein_reader *,
-                      int partition);
-int scan_thread_run(struct scan_thread *, struct imm_seq const *,
-                    struct prod_thread *);
-void scan_thread_cleanup(struct scan_thread *);
+void scan_thrd_init(struct scan_thread *, struct protein_reader *,
+                    int partition);
+int scan_thrd_run(struct scan_thread *, struct imm_seq const *,
+                  struct prod_thread *);
+void scan_thrd_cleanup(struct scan_thread *);
 
 #endif

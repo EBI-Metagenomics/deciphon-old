@@ -19,7 +19,7 @@ int prod_file_setup(struct prod_file *x, int size)
   for (int i = 0; i < size; ++i)
   {
     if ((rc = fs_tmpfile(x->files + i))) defer_return(rc);
-    prod_thread_init(x->prod_threads + i, x->files[i]);
+    prod_thrd_init(x->prod_threads + i, x->files[i]);
   }
 
   return 0;

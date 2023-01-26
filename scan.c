@@ -4,9 +4,9 @@
 #include "deciphon/limits.h"
 #include "defer_return.h"
 #include "prod_file.h"
-#include "prod_thread.h"
+#include "prod_thrd.h"
 #include "scan_db.h"
-#include "scan_thread.h"
+#include "scan_thrd.h"
 #include "seq_list.h"
 #include "strlcpy.h"
 #include <stdlib.h>
@@ -80,7 +80,7 @@ int dcp_scan_run(struct dcp_scan *x)
   int nparts = protein_reader_npartitions(scan_db_reader(&x->db));
   for (int i = 0; i < nparts; ++i)
   {
-    scan_thread_init(x->threads + i, scan_db_reader(&x->db), i);
+    scan_thrd_init(x->threads + i, scan_db_reader(&x->db), i);
   }
   if ((rc = prod_file_setup(&x->prod_file, nparts))) defer_return(rc);
 
@@ -95,7 +95,7 @@ int dcp_scan_run(struct dcp_scan *x)
     for (int i = 0; i < nparts; ++i)
     {
       struct scan_thread *t = x->threads + i;
-      scan_thread_run(t, &seq, prod_file_thread(&x->prod_file, i));
+      scan_thrd_run(t, &seq, prod_file_thread(&x->prod_file, i));
     }
   }
 

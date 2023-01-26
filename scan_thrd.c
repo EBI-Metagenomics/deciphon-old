@@ -1,16 +1,16 @@
-#include "scan_thread.h"
+#include "scan_thrd.h"
 #include "db_reader.h"
 #include "lrt.h"
 #include "match.h"
 #include "match_iter.h"
 #include "prod.h"
-#include "prod_thread.h"
+#include "prod_thrd.h"
 #include "protein.h"
 #include "protein_iter.h"
 #include "protein_reader.h"
 
-void scan_thread_init(struct scan_thread *x, struct protein_reader *reader,
-                      int partition)
+void scan_thrd_init(struct scan_thread *x, struct protein_reader *reader,
+                    int partition)
 {
   struct db_reader const *db = reader->db;
   protein_init(&x->protein, &db->amino, &db->code, db->cfg);
@@ -21,8 +21,8 @@ static int write_product(struct prod *, struct protein const *,
                          struct imm_seq const *, struct imm_path const *,
                          struct prod_thread *);
 
-int scan_thread_run(struct scan_thread *x, struct imm_seq const *seq,
-                    struct prod_thread *p)
+int scan_thrd_run(struct scan_thread *x, struct imm_seq const *seq,
+                  struct prod_thread *p)
 {
   int rc = 0;
 
@@ -74,7 +74,7 @@ cleanup:
   return rc;
 }
 
-void scan_thread_cleanup(struct scan_thread *x) { protein_del(&x->protein); }
+void scan_thrd_cleanup(struct scan_thread *x) { protein_del(&x->protein); }
 
 static int write_product(struct prod *prod, struct protein const *protein,
                          struct imm_seq const *seq, struct imm_path const *path,
@@ -88,16 +88,16 @@ static int write_product(struct prod *prod, struct protein const *protein,
   struct match_iter it = {0};
   match_iter_init(&it, seq, path);
 
-  if ((rc = prod_thread_write_begin(p, prod))) return rc;
+  if ((rc = prod_thrd_write_begin(p, prod))) return rc;
 
   int i = 0;
   while (!(rc = match_iter_next(&it, &match)))
   {
     if (match_iter_end(&it)) break;
-    if (!i++ && (rc = prod_thread_write_sep(p))) return rc;
-    if ((rc = prod_thread_write_match(p, &match))) return rc;
+    if (!i++ && (rc = prod_thrd_write_sep(p))) return rc;
+    if ((rc = prod_thrd_write_match(p, &match))) return rc;
   }
   if (rc) return rc;
 
-  return prod_thread_write_end(p);
+  return prod_thrd_write_end(p);
 }

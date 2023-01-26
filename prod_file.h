@@ -2,7 +2,7 @@
 #define PROD_FILE_H
 
 #include "deciphon/limits.h"
-#include "prod_thread.h"
+#include "prod_thrd.h"
 #include <stdio.h>
 
 struct match;

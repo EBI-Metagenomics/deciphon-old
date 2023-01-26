@@ -34,14 +34,14 @@ add_library(
   press.c
   prod.c
   prod_file.c
-  prod_thread.c
+  prod_thrd.c
   protein.c
   protein_iter.c
   protein_reader.c
   scan.c
   scan_db.c
   scan_task.c
-  scan_thread.c
+  scan_thrd.c
   seq_list.c
   state.c
   strerror.c
