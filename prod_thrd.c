@@ -79,14 +79,13 @@ int write_match(struct prod_thrd *x, struct match const *m)
   ptr += m->seq.size;
   *ptr++ = ',';
 
-  m->protein->state_name(m->step.state_id, ptr);
+  match_state_name(m, ptr);
   ptr += strlen(ptr);
   *ptr++ = ',';
 
-  bool mute = state_is_mute(m->step.state_id);
-  struct imm_codon codon = imm_codon_any(m->protein->nuclt_code->nuclt);
-  if (!mute)
+  if (!match_state_is_mute(m))
   {
+    struct imm_codon codon = match_codon(m);
     *ptr++ = imm_codon_asym(&codon);
     *ptr++ = imm_codon_bsym(&codon);
     *ptr++ = imm_codon_csym(&codon);
@@ -94,7 +93,7 @@ int write_match(struct prod_thrd *x, struct match const *m)
 
   *ptr++ = ',';
 
-  if (!mute) *ptr++ = imm_gc_decode(1, codon);
+  if (!match_state_is_mute(m)) *ptr++ = match_amino(m);
 
   *ptr = '\0';
 
