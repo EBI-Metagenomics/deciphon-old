@@ -38,7 +38,7 @@ void dcp_scan_del(struct dcp_scan const *x) { free((void *)x); }
 
 void dcp_scan_set_nthreads(struct dcp_scan *x, int nthreads)
 {
-  assert(nthreads <= DCP_NTHREADS_SIZE);
+  assert(nthreads <= DCP_NTHREADS_MAX);
   x->nthreads = nthreads;
 }
 
