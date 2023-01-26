@@ -26,6 +26,21 @@ void scan_thrd_set_seq_id(struct scan_thrd *x, long seq_id)
   prod_set_seq_id(&x->prod, seq_id);
 }
 
+void scan_thrd_set_lrt_threshold(struct scan_thrd *x, double lrt)
+{
+  x->lrt_threshold = lrt;
+}
+
+void scan_thrd_set_multi_hits(struct scan_thrd *x, bool multihits)
+{
+  x->multi_hits = multihits;
+}
+
+void scan_thrd_set_hmmer3_compat(struct scan_thrd *x, bool h3compat)
+{
+  x->hmmer3_compat = h3compat;
+}
+
 int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
                   struct prod_thrd *y)
 {

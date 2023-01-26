@@ -84,7 +84,11 @@ int dcp_scan_run(struct dcp_scan *x, char const *outfile)
   for (int i = 0; i < x->nthreads; ++i)
   {
     long scan_id = seq_list_scan_id(&x->seq_list);
-    scan_thrd_init(x->threads + i, scan_db_reader(&x->db), i, scan_id);
+    struct scan_thrd *t = x->threads + i;
+    scan_thrd_init(t, scan_db_reader(&x->db), i, scan_id);
+    scan_thrd_set_lrt_threshold(t, x->lrt_threshold);
+    scan_thrd_set_multi_hits(t, x->multi_hits);
+    scan_thrd_set_hmmer3_compat(t, x->hmmer3_compat);
   }
 
   if ((rc = prod_file_setup(&x->prod_file, x->nthreads))) defer_return(rc);
