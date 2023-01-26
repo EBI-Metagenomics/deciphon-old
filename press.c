@@ -60,9 +60,11 @@ int dcp_press_open(struct dcp_press *press, char const *hmm, char const *db)
 
   prepare_reader(press);
 
-  protein_init(&press->protein, press->reader.h3.protein.meta.acc,
-               &press->writer.db.amino, &press->writer.db.code,
+  protein_init(&press->protein, &press->writer.db.amino, &press->writer.db.code,
                press->writer.db.cfg);
+
+  char const *acc = press->reader.h3.protein.meta.acc;
+  if ((rc = protein_set_accession(&press->protein, acc))) defer_return(rc);
 
   return rc;
 

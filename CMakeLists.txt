@@ -26,6 +26,8 @@ add_library(
   h3reader.c
   json.c
   lrt.c
+  match.c
+  match_iter.c
   model.c
   nuclt_dist.c
   partition_size.c

@@ -1,4 +1,5 @@
 #include "protein.h"
+#include "db_reader.h"
 #include "deciphon/errno.h"
 #include "expect.h"
 #include "imm/imm.h"
@@ -127,12 +128,10 @@ struct imm_dp const *protein_alt_dp(struct protein const *protein)
   return &protein->alt.dp;
 }
 
-void protein_init(struct protein *p, char const *accession,
-                  struct imm_amino const *amino,
+void protein_init(struct protein *p, struct imm_amino const *amino,
                   struct imm_nuclt_code const *code, struct cfg cfg)
 {
-  struct imm_nuclt const *nuclt = code->nuclt;
-  strlcpy(p->accession, accession, ACCESSION_SIZE);
+  strlcpy(p->accession, "", ACCESSION_SIZE);
   p->state_name = state_name;
   p->imm_code = &code->super;
   p->nuclt_code = code;
@@ -143,9 +142,16 @@ void protein_init(struct protein *p, char const *accession,
   p->consensus[0] = '\0';
   imm_dp_init(&p->null.dp, &code->super);
   imm_dp_init(&p->alt.dp, &code->super);
-  nuclt_dist_init(&p->null.ndist, nuclt);
-  nuclt_dist_init(&p->alt.insert_ndist, nuclt);
+  nuclt_dist_init(&p->null.ndist, code->nuclt);
+  nuclt_dist_init(&p->alt.insert_ndist, code->nuclt);
   p->alt.match_ndists = NULL;
+}
+
+int protein_set_accession(struct protein *x, char const *acc)
+{
+  return strlcpy(x->accession, acc, ACCESSION_SIZE) < ACCESSION_SIZE
+             ? 0
+             : DCP_ELARGEACC;
 }
 
 int protein_setup(struct protein *protein, unsigned seq_size, bool multi_hits,

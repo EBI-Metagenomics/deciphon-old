@@ -3,17 +3,17 @@
 #include "hope.h"
 #include "imm/imm.h"
 
-void test_protein_profile_uniform(void);
-void test_protein_profile_occupancy(void);
+void test_protein_uniform(void);
+void test_protein_occupancy(void);
 
 int main(void)
 {
-  test_protein_profile_uniform();
-  test_protein_profile_occupancy();
+  test_protein_uniform();
+  test_protein_occupancy();
   return hope_status();
 }
 
-void test_protein_profile_uniform(void)
+void test_protein_uniform(void)
 {
   struct imm_amino const *amino = &imm_amino_iupac;
   struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
@@ -21,18 +21,19 @@ void test_protein_profile_uniform(void)
   imm_nuclt_code_init(&code, nuclt);
   struct cfg cfg = {ENTRY_DIST_UNIFORM, 0.1f};
 
-  struct protein prof;
-  protein_init(&prof, "accession", amino, &code, cfg);
-  eq(protein_sample(&prof, 1, 2), 0);
+  struct protein protein = {0};
+  protein_init(&protein, amino, &code, cfg);
+  protein_set_accession(&protein, "accession");
+  eq(protein_sample(&protein, 1, 2), 0);
 
   char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-  struct imm_seq seq = imm_seq(IMM_STR(str), prof.imm_code->abc);
+  struct imm_seq seq = imm_seq(IMM_STR(str), protein.imm_code->abc);
 
-  eq(protein_setup(&prof, 0, true, false), DCP_EZEROSEQ);
-  eq(protein_setup(&prof, imm_seq_size(&seq), true, false), 0);
+  eq(protein_setup(&protein, 0, true, false), DCP_EZEROSEQ);
+  eq(protein_setup(&protein, imm_seq_size(&seq), true, false), 0);
 
   struct imm_prod prod = imm_prod();
-  struct imm_dp *dp = &prof.null.dp;
+  struct imm_dp *dp = &protein.null.dp;
   struct imm_task *task = imm_task_new(dp);
   notnull(task);
   eq(imm_task_setup(task, &seq), IMM_OK);
@@ -56,7 +57,7 @@ void test_protein_profile_uniform(void)
   imm_prod_reset(&prod);
   imm_del(task);
 
-  dp = &prof.alt.dp;
+  dp = &protein.alt.dp;
   task = imm_task_new(dp);
   notnull(task);
   eq(imm_task_setup(task, &seq), IMM_OK);
@@ -76,10 +77,10 @@ void test_protein_profile_uniform(void)
   state_name(imm_path_step(&prod.path, 13)->state_id, name);
   eq(name, "T");
 
-  struct codec codec = codec_init(&prof, &prod.path);
+  struct codec codec = codec_init(&protein, &prod.path);
   int rc = 0;
 
-  nuclt = prof.nuclt_code->nuclt;
+  nuclt = protein.nuclt_code->nuclt;
   struct imm_codon codons[10] = {
       IMM_CODON(nuclt, "ATG"), IMM_CODON(nuclt, "AAA"), IMM_CODON(nuclt, "CGC"),
       IMM_CODON(nuclt, "ATA"), IMM_CODON(nuclt, "GCA"), IMM_CODON(nuclt, "CCA"),
@@ -101,12 +102,12 @@ void test_protein_profile_uniform(void)
   eq(rc, 0);
   eq(i, 10);
 
-  protein_del(&prof);
+  protein_del(&protein);
   imm_del(&prod);
   imm_del(task);
 }
 
-void test_protein_profile_occupancy(void)
+void test_protein_occupancy(void)
 {
   struct imm_amino const *amino = &imm_amino_iupac;
   struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
@@ -114,17 +115,18 @@ void test_protein_profile_occupancy(void)
   imm_nuclt_code_init(&code, nuclt);
   struct cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.1f};
 
-  struct protein prof;
-  protein_init(&prof, "accession", amino, &code, cfg);
-  eq(protein_sample(&prof, 1, 2), 0);
+  struct protein protein = {0};
+  protein_init(&protein, amino, &code, cfg);
+  protein_set_accession(&protein, "accession");
+  eq(protein_sample(&protein, 1, 2), 0);
 
   char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
-  struct imm_seq seq = imm_seq(imm_str(str), prof.imm_code->abc);
+  struct imm_seq seq = imm_seq(imm_str(str), protein.imm_code->abc);
 
-  eq(protein_setup(&prof, imm_seq_size(&seq), true, false), 0);
+  eq(protein_setup(&protein, imm_seq_size(&seq), true, false), 0);
 
   struct imm_prod prod = imm_prod();
-  struct imm_dp *dp = &prof.null.dp;
+  struct imm_dp *dp = &protein.null.dp;
   struct imm_task *task = imm_task_new(dp);
   notnull(task);
   eq(imm_task_setup(task, &seq), IMM_OK);
@@ -148,7 +150,7 @@ void test_protein_profile_occupancy(void)
   imm_prod_reset(&prod);
   imm_del(task);
 
-  dp = &prof.alt.dp;
+  dp = &protein.alt.dp;
   task = imm_task_new(dp);
   notnull(task);
   eq(imm_task_setup(task, &seq), IMM_OK);
@@ -168,10 +170,10 @@ void test_protein_profile_occupancy(void)
   state_name(imm_path_step(&prod.path, 13)->state_id, name);
   eq(name, "T");
 
-  struct codec codec = codec_init(&prof, &prod.path);
+  struct codec codec = codec_init(&protein, &prod.path);
   int rc = 0;
 
-  nuclt = prof.nuclt_code->nuclt;
+  nuclt = protein.nuclt_code->nuclt;
   struct imm_codon codons[10] = {
       IMM_CODON(nuclt, "ATG"), IMM_CODON(nuclt, "AAA"), IMM_CODON(nuclt, "CGC"),
       IMM_CODON(nuclt, "ATA"), IMM_CODON(nuclt, "GCA"), IMM_CODON(nuclt, "CCA"),
@@ -193,7 +195,7 @@ void test_protein_profile_occupancy(void)
   eq(rc, 0);
   eq(i, 10);
 
-  protein_del(&prof);
+  protein_del(&protein);
   imm_del(&prod);
   imm_del(task);
 }

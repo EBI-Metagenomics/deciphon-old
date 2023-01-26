@@ -49,6 +49,7 @@ enum dcp_errno
   DCP_EIMMSETUPTASK = 41,
   DCP_EWRITEPROD    = 42,
   DCP_EINVALPART    = 43,
+  DCP_ELARGEACC     = 44,
 };
 // clang-format on
 

@@ -47,9 +47,12 @@ struct protein
   } alt;
 };
 
-void protein_init(struct protein *, char const *accession,
-                  struct imm_amino const *amino,
-                  struct imm_nuclt_code const *code, struct cfg cfg);
+struct db_reader;
+
+void protein_init(struct protein *, struct imm_amino const *,
+                  struct imm_nuclt_code const *, struct cfg);
+
+int protein_set_accession(struct protein *, char const *);
 
 int protein_setup(struct protein *, unsigned seq_size, bool multi_hits,
                   bool hmmer3_compat);

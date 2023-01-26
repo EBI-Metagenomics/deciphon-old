@@ -8,6 +8,7 @@
 
 struct scan_thread
 {
+  struct protein protein;
   struct protein_iter iter;
 
   double lrt_threshold;
@@ -26,5 +27,6 @@ struct protein_reader;
 void scan_thread_init(struct scan_thread *, struct protein_reader *,
                       int partition);
 int scan_thread_run(struct scan_thread *, struct imm_seq const *);
+void scan_thread_cleanup(struct scan_thread *);
 
 #endif

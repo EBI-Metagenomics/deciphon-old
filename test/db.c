@@ -32,7 +32,8 @@ void test_protein_db_writer(void)
   eq(db_writer_open(&db, fp, amino, nuclt, cfg), 0);
 
   struct protein protein = {0};
-  protein_init(&protein, "accession0", amino, &code, cfg);
+  protein_init(&protein, amino, &code, cfg);
+  protein_set_accession(&protein, "accession0");
 
   unsigned core_size = 2;
   protein_sample(&protein, 1, core_size);
@@ -67,14 +68,16 @@ void test_protein_db_reader(void)
   eq(protein_reader_setup(&reader, &db, 1), 0);
   struct protein_iter it = {0};
   eq(protein_reader_iter(&reader, 0, &it), 0);
-  while (!protein_iter_end(&it))
+  struct protein protein = {0};
+  protein_init(&protein, &db.amino, &db.code, db.cfg);
+  while (!(rc = protein_iter_next(&it, &protein)))
   {
-    if ((rc = protein_iter_next(&it))) break;
-    struct protein *protein = protein_iter_get(&it);
-    struct imm_task *task = imm_task_new(protein_alt_dp(protein));
+    if (protein_iter_end(&it)) break;
+
+    struct imm_task *task = imm_task_new(protein_alt_dp(&protein));
     struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
     eq(imm_task_setup(task, &seq), IMM_OK);
-    eq(imm_dp_viterbi(protein_alt_dp(protein), task, &prod), IMM_OK);
+    eq(imm_dp_viterbi(protein_alt_dp(&protein), task, &prod), IMM_OK);
     close(prod.loglik, logliks[nproteins]);
     imm_del(task);
     ++nproteins;
