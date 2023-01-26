@@ -9,7 +9,7 @@
 #include "protein_iter.h"
 #include "protein_reader.h"
 
-void scan_thrd_init(struct scan_thread *x, struct protein_reader *reader,
+void scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
                     int partition)
 {
   struct db_reader const *db = reader->db;
@@ -19,10 +19,10 @@ void scan_thrd_init(struct scan_thread *x, struct protein_reader *reader,
 
 static int write_product(struct prod *, struct protein const *,
                          struct imm_seq const *, struct imm_path const *,
-                         struct prod_thread *);
+                         struct prod_thrd *);
 
-int scan_thrd_run(struct scan_thread *x, struct imm_seq const *seq,
-                  struct prod_thread *p)
+int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
+                  struct prod_thrd *p)
 {
   int rc = 0;
 
@@ -74,11 +74,11 @@ cleanup:
   return rc;
 }
 
-void scan_thrd_cleanup(struct scan_thread *x) { protein_del(&x->protein); }
+void scan_thrd_cleanup(struct scan_thrd *x) { protein_del(&x->protein); }
 
 static int write_product(struct prod *prod, struct protein const *protein,
                          struct imm_seq const *seq, struct imm_path const *path,
-                         struct prod_thread *p)
+                         struct prod_thrd *p)
 {
   int rc = 0;
 

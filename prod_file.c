@@ -29,7 +29,7 @@ defer:
   return rc;
 }
 
-struct prod_thread *prod_file_thread(struct prod_file *x, int idx)
+struct prod_thrd *prod_file_thread(struct prod_file *x, int idx)
 {
   return x->prod_threads + idx;
 }

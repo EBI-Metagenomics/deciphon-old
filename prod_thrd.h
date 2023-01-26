@@ -6,16 +6,16 @@
 
 struct match;
 
-struct prod_thread
+struct prod_thrd
 {
   FILE *fp;
   struct prod prod;
 };
 
-void prod_thrd_init(struct prod_thread *, FILE *);
-int prod_thrd_write_begin(struct prod_thread *, struct prod const *);
-int prod_thrd_write_match(struct prod_thread *, struct match const *);
-int prod_thrd_write_sep(struct prod_thread *);
-int prod_thrd_write_end(struct prod_thread *);
+void prod_thrd_init(struct prod_thrd *, FILE *);
+int prod_thrd_write_begin(struct prod_thrd *, struct prod const *);
+int prod_thrd_write_match(struct prod_thrd *, struct match const *);
+int prod_thrd_write_sep(struct prod_thrd *);
+int prod_thrd_write_end(struct prod_thrd *);
 
 #endif

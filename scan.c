@@ -14,7 +14,7 @@
 struct dcp_scan
 {
   int nthreads;
-  struct scan_thread threads[DCP_NTHREADS_MAX];
+  struct scan_thrd threads[DCP_NTHREADS_MAX];
   struct prod_file prod_file;
 
   double lrt_threshold;
@@ -94,7 +94,7 @@ int dcp_scan_run(struct dcp_scan *x)
 
     for (int i = 0; i < nparts; ++i)
     {
-      struct scan_thread *t = x->threads + i;
+      struct scan_thrd *t = x->threads + i;
       scan_thrd_run(t, &seq, prod_file_thread(&x->prod_file, i));
     }
   }

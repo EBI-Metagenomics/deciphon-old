@@ -6,7 +6,7 @@
 #include "scan_task.h"
 #include <stdio.h>
 
-struct scan_thread
+struct scan_thrd
 {
   struct protein protein;
   struct protein_iter iter;
@@ -22,13 +22,12 @@ struct scan_thread
   // struct progress progress;
 };
 
-struct prod_thread;
+struct prod_thrd;
 struct protein_reader;
 
-void scan_thrd_init(struct scan_thread *, struct protein_reader *,
-                    int partition);
-int scan_thrd_run(struct scan_thread *, struct imm_seq const *,
-                  struct prod_thread *);
-void scan_thrd_cleanup(struct scan_thread *);
+void scan_thrd_init(struct scan_thrd *, struct protein_reader *, int partition);
+int scan_thrd_run(struct scan_thrd *, struct imm_seq const *,
+                  struct prod_thrd *);
+void scan_thrd_cleanup(struct scan_thrd *);
 
 #endif
