@@ -10,11 +10,20 @@
 #include "protein_reader.h"
 
 void scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
-                    int partition)
+                    int partition, long scan_id)
 {
+  prod_init(&x->prod);
   struct db_reader const *db = reader->db;
   protein_init(&x->protein, &db->amino, &db->code, db->cfg);
   protein_reader_iter(reader, partition, &x->iter);
+  struct imm_abc const *abc = imm_nuclt_super(&db->nuclt);
+  prod_set_abc(&x->prod, imm_abc_typeid_name(imm_abc_typeid(abc)));
+  prod_set_scan_id(&x->prod, scan_id);
+}
+
+void scan_thrd_set_seq_id(struct scan_thrd *x, long seq_id)
+{
+  prod_set_seq_id(&x->prod, seq_id);
 }
 
 int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,

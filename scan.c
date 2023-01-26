@@ -82,7 +82,10 @@ int dcp_scan_run(struct dcp_scan *x, char const *outfile)
   if ((rc = seq_list_open(&x->seq_list))) defer_return(rc);
 
   for (int i = 0; i < x->nthreads; ++i)
-    scan_thrd_init(x->threads + i, scan_db_reader(&x->db), i);
+  {
+    long scan_id = seq_list_scan_id(&x->seq_list);
+    scan_thrd_init(x->threads + i, scan_db_reader(&x->db), i, scan_id);
+  }
 
   if ((rc = prod_file_setup(&x->prod_file, x->nthreads))) defer_return(rc);
 
@@ -97,6 +100,7 @@ int dcp_scan_run(struct dcp_scan *x, char const *outfile)
     for (int i = 0; i < x->nthreads; ++i)
     {
       struct scan_thrd *t = x->threads + i;
+      scan_thrd_set_seq_id(t, seq_list_seq_id(&x->seq_list));
       scan_thrd_run(t, &seq, prod_file_thread(&x->prod_file, i));
     }
   }

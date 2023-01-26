@@ -45,7 +45,7 @@ int prod_thrd_write(struct prod_thrd *x, struct prod const *prod,
   while (!(rc = match_iter_next(it, match)))
   {
     if (match_iter_end(it)) break;
-    if (!i++ && (rc = write_sep(x))) return rc;
+    if (i++ && (rc = write_sep(x))) return rc;
     if ((rc = write_match(x, match))) return rc;
   }
 

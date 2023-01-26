@@ -25,7 +25,9 @@ struct scan_thrd
 struct prod_thrd;
 struct protein_reader;
 
-void scan_thrd_init(struct scan_thrd *, struct protein_reader *, int partition);
+void scan_thrd_init(struct scan_thrd *, struct protein_reader *, int partition,
+                    long scan_id);
+void scan_thrd_set_seq_id(struct scan_thrd *, long seq_id);
 int scan_thrd_run(struct scan_thrd *, struct imm_seq const *,
                   struct prod_thrd *);
 void scan_thrd_cleanup(struct scan_thrd *);
