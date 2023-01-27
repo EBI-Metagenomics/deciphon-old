@@ -3,7 +3,10 @@
 
 #include "deciphon/errno.h"
 #include "deciphon/export.h"
+#include "deciphon/limits.h"
 #include "deciphon/press.h"
+#include "deciphon/scan.h"
 #include "deciphon/strerror.h"
+#include "deciphon/version.h"
 
 #endif
