@@ -12,5 +12,6 @@ int fs_close(FILE *fp);
 int fs_readall(char const *filepath, long *size, unsigned char **data);
 int fs_tmpfile(FILE **out);
 int fs_copyp(FILE *restrict dst, FILE *restrict src);
+int fs_cksum(char const *filepath, long *chk);
 
 #endif

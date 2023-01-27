@@ -1,4 +1,5 @@
 #include "protein_reader.h"
+#include "array_size_field.h"
 #include "db_reader.h"
 #include "deciphon/errno.h"
 #include "defer_return.h"
@@ -6,7 +7,6 @@
 #include "fs.h"
 #include "partition_size.h"
 #include "protein_iter.h"
-#include "sizeof_field.h"
 #include <string.h>
 
 void protein_reader_init(struct protein_reader *x)

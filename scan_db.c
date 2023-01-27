@@ -23,7 +23,7 @@ int scan_db_open(struct scan_db *x, int nthreads)
 
 defer:
   scan_db_close(x);
-  return 0;
+  return rc;
 }
 
 void scan_db_close(struct scan_db *x)

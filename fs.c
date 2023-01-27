@@ -146,3 +146,34 @@ int fs_copyp(FILE *restrict dst, FILE *restrict src)
 
   return 0;
 }
+
+static int fletcher16(FILE *fp, uint8_t *buf, size_t bufsize, long *chk)
+{
+  size_t n = 0;
+  uint16_t sum1 = 0;
+  uint16_t sum2 = 0;
+  while ((n = fread(buf, 1, bufsize, fp)) > 0)
+  {
+    if (n < bufsize && ferror(fp)) return DCP_EFREAD;
+    for (int i = 0; i < (int)n; ++i)
+    {
+      sum1 = (sum1 + buf[i]) % 255;
+      sum2 = (sum2 + sum1) % 255;
+    }
+  }
+  if (ferror(fp)) return DCP_EFREAD;
+
+  *chk = (sum2 << 8) | sum1;
+  return 0;
+}
+
+int fs_cksum(char const *filepath, long *chk)
+{
+  static _Thread_local uint8_t buffer[8 * 1024];
+  FILE *fp = fopen(filepath, "rb");
+  if (!fp) return DCP_EFOPEN;
+
+  int rc = fletcher16(fp, buffer, sizeof(buffer), chk);
+  fclose(fp);
+  return rc;
+}

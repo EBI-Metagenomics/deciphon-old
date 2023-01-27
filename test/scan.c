@@ -1,5 +1,7 @@
 #include "deciphon/scan.h"
+#include "fs.h"
 #include "hope.h"
+#include <stdlib.h>
 
 void test_scan(void);
 
@@ -9,9 +11,7 @@ int main(void)
   return hope_status();
 }
 
-#define DB "/Users/horta/code/deciphon/build/minifam.dcp"
-#define SEQ "/Users/horta/code/deciphon/build/consensus.json"
-#define OUT "/Users/horta/code/deciphon/build/prod.tsv"
+static long checksum(char const *filename);
 
 void test_scan(void)
 {
@@ -22,10 +22,22 @@ void test_scan(void)
   dcp_scan_set_multi_hits(scan, true);
   dcp_scan_set_hmmer3_compat(scan, false);
 
-  eq(dcp_scan_set_db_file(scan, DB), 0);
-  eq(dcp_scan_set_seq_file(scan, SEQ), 0);
+  eq(dcp_scan_set_db_file(scan, ASSETS "/minifam.dcp"), 0);
+  eq(dcp_scan_set_seq_file(scan, ASSETS "/consensus.json"), 0);
 
-  eq(dcp_scan_run(scan, OUT), 0);
+  eq(dcp_scan_run(scan, TMPDIR "/prod.tsv"), 0);
+  eq(checksum(TMPDIR "/prod.tsv"), 22522);
 
   dcp_scan_del(scan);
+}
+
+static long checksum(char const *filename)
+{
+  long chk = 0;
+  if (fs_cksum(filename, &chk))
+  {
+    fprintf(stderr, "Failed to compute file checksum.\n");
+    exit(1);
+  }
+  return chk;
 }
