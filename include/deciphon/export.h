@@ -1,5 +1,5 @@
-#ifndef DECIPHON_API_H
-#define DECIPHON_API_H
+#ifndef DECIPHON_EXPORT_H
+#define DECIPHON_EXPORT_H
 
 /* clang-format off */
 #ifdef DECIPHON_STATIC_DEFINE

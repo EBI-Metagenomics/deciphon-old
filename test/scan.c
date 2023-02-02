@@ -26,7 +26,7 @@ void test_scan(void)
   eq(dcp_scan_set_seq_file(scan, ASSETS "/consensus.json"), 0);
 
   eq(dcp_scan_run(scan, TMPDIR "/prod.tsv"), 0);
-  // eq(checksum(TMPDIR "/prod.tsv"), 22522);
+  eq(checksum(TMPDIR "/prod.tsv"), 51207);
 
   dcp_scan_del(scan);
 }
