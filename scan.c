@@ -3,6 +3,7 @@
 #include "deciphon/errno.h"
 #include "deciphon/limits.h"
 #include "defer_return.h"
+#include "hmmer_dialer.h"
 #include "prod_file.h"
 #include "prod_thrd.h"
 #include "scan_db.h"
@@ -23,6 +24,7 @@ struct dcp_scan
 
   struct scan_db db;
   struct seq_list seq_list;
+  struct hmmer_dialer dialer;
 };
 
 struct dcp_scan *dcp_scan_new(void)
@@ -35,10 +37,22 @@ struct dcp_scan *dcp_scan_new(void)
   scan_db_init(&x->db);
   seq_list_init(&x->seq_list);
   prod_file_init(&x->prod_file);
+  if (hmmer_dialer_init(&x->dialer, 0))
+  {
+    free(x);
+    return NULL;
+  }
   return x;
 }
 
-void dcp_scan_del(struct dcp_scan const *x) { free((void *)x); }
+void dcp_scan_del(struct dcp_scan const *x)
+{
+  if (x)
+  {
+    hmmer_dialer_cleanup((struct hmmer_dialer *)&x->dialer);
+    free((void *)x);
+  }
+}
 
 int dcp_scan_set_nthreads(struct dcp_scan *x, int nthreads)
 {
@@ -85,7 +99,8 @@ int dcp_scan_run(struct dcp_scan *x, char const *outfile)
   {
     long scan_id = seq_list_scan_id(&x->seq_list);
     struct scan_thrd *t = x->threads + i;
-    scan_thrd_init(t, scan_db_reader(&x->db), i, scan_id);
+    struct protein_reader *r = scan_db_reader(&x->db);
+    if ((rc = scan_thrd_init(t, r, i, scan_id))) defer_return(rc);
     scan_thrd_set_lrt_threshold(t, x->lrt_threshold);
     scan_thrd_set_multi_hits(t, x->multi_hits);
     scan_thrd_set_hmmer3_compat(t, x->hmmer3_compat);

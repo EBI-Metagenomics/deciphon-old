@@ -2,6 +2,7 @@
 #define SCAN_THRD_H
 
 #include "chararray.h"
+#include "hmmer.h"
 #include "prod.h"
 #include "protein_iter.h"
 #include "scan_task.h"
@@ -19,8 +20,8 @@ struct scan_thrd
   bool hmmer3_compat;
 
   struct prod prod;
-  struct hmmer_result *hmmer_result;
   struct chararray amino;
+  struct hmmer hmmer;
 
   // struct progress progress;
 };
@@ -28,8 +29,8 @@ struct scan_thrd
 struct prod_thrd;
 struct protein_reader;
 
-void scan_thrd_init(struct scan_thrd *, struct protein_reader *, int partition,
-                    long scan_id);
+int scan_thrd_init(struct scan_thrd *, struct protein_reader *, int partition,
+                   long scan_id);
 void scan_thrd_cleanup(struct scan_thrd *);
 
 void scan_thrd_set_seq_id(struct scan_thrd *, long seq_id);
