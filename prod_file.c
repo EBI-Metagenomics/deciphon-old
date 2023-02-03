@@ -29,6 +29,9 @@ int prod_file_setup(struct prod_file *x, int size)
     prod_thrd_init(x->prod_threads + i, x->files[i]);
   }
 
+  if ((rc = fs_mkdir("prod", true))) defer_return(rc);
+  if ((rc = fs_mkdir("prod/hmmer", true))) defer_return(rc);
+
   return 0;
 
 defer:

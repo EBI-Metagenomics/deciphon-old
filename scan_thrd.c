@@ -120,7 +120,7 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
     if ((rc = infer_amino(&x->amino, &match, &mit))) break;
     if ((rc = hmmer_put(&x->hmmer, protein_iter_idx(it), x->amino.data))) break;
     if ((rc = hmmer_pop(&x->hmmer))) break;
-    // if ((rc = write_hmmer(t))) break;
+    if ((rc = prod_thrd_write_hmmer(y, &x->prod, &x->hmmer.result))) break;
   }
 
 cleanup:
@@ -141,48 +141,3 @@ static int infer_amino(struct chararray *x, struct match *match,
 
   return chararray_append(x, '\0');
 }
-
-#if 0
-static int query_hmmer(struct thread *t, int prof_idx,
-                       struct match *match, struct match_iter *it)
-{
-  char *y = NULL;
-  int rc = 0;
-  while (!(rc = match_iter_next(it, match)))
-  {
-    if (match_iter_end(it)) break;
-    if (!state_is_mute(match->step.state_id)) *y++ = match->amino;
-  }
-
-
-
-
-    info("querying hmmer on profidx: %d", prof_idx);
-    struct prot_match_iter iter = {0};
-    struct prot_match const *match = NULL;
-
-    prot_match_iter(&iter, prof, t->seq, &t->alt.prod.path);
-    match = prot_match_iter_next(&iter);
-
-    while ((match = prot_match_iter_next(&iter)))
-    {
-        char *y = t->amino_sequence;
-        while ((match = prot_match_iter_next(&iter)))
-        {
-            if (!match->mute) *y++ = match->amino;
-        }
-        *y = '\0';
-    }
-
-    int rc = hmmer_client_put(0, prof_idx, t->amino_sequence,
-                              hmmer_client_deadline(5000));
-    if (rc) efail("hmmerc_put failure: %d", rc);
-
-    rc = hmmer_client_pop(0, t->hmmer_result);
-    if (rc) efail("hmmerc_pop failure: %d", rc);
-
-    t->prod.evalue_log = hmmer_result_evalue_ln(t->hmmer_result);
-    info("log(e-value): %f", t->prod.evalue_log);
-    return 0;
-}
-#endif

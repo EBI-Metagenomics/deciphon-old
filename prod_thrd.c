@@ -1,6 +1,8 @@
 #include "prod_thrd.h"
 #include "dbl_fmt.h"
 #include "deciphon/errno.h"
+#include "fs.h"
+#include "hmmer_result.h"
 #include "match.h"
 #include "match_iter.h"
 #include "prod_thrd.h"
@@ -32,6 +34,7 @@ void prod_thrd_init(struct prod_thrd *x, FILE *fp)
 }
 
 int write_begin(struct prod_thrd *, struct prod const *);
+int write_match(struct prod_thrd *, struct match const *);
 int write_sep(struct prod_thrd *);
 int write_end(struct prod_thrd *);
 
@@ -50,6 +53,28 @@ int prod_thrd_write(struct prod_thrd *x, struct prod const *prod,
   }
 
   return write_end(x);
+}
+
+int prod_thrd_write_hmmer(struct prod_thrd *x, struct prod const *prod,
+                          struct hmmer_result const *result)
+{
+  char filename[128] = {0};
+  int rc = 0;
+
+  sprintf(filename, "prod/hmmer/%ld", prod->seq_id);
+  if ((rc = fs_mkdir(filename, true))) return rc;
+  sprintf(filename, "prod/hmmer/%ld/%s.h3r", prod->seq_id, prod->protein);
+
+  FILE *fp = fopen(filename, "wb");
+  if (!fp) return DCP_EFOPEN;
+
+  if ((rc = hmmer_result_pack(result, fp)))
+  {
+    fclose(fp);
+    return rc;
+  }
+
+  return fclose(fp) ? DCP_EFCLOSE : 0;
 }
 
 int write_begin(struct prod_thrd *x, struct prod const *y)

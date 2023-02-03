@@ -18,3 +18,8 @@ int hmmer_result_nhits(struct hmmer_result const *x)
 {
   return (int)h3c_result_nhits(x->handle);
 }
+
+int hmmer_result_pack(struct hmmer_result const *x, FILE *fp)
+{
+  return h3c_result_pack(x->handle, fp);
+}

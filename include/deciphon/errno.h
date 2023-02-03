@@ -53,6 +53,7 @@ enum dcp_errno
   DCP_EMANYTHREADS  = 45,
   DCP_ETMPFILE      = 46,
   DCP_EFFLUSH       = 47,
+  DCP_EMKDIR        = 48,
 };
 // clang-format on
 

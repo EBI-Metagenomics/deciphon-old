@@ -15,7 +15,7 @@ static long checksum(char const *filename);
 
 void test_scan(void)
 {
-  struct dcp_scan *scan = dcp_scan_new();
+  struct dcp_scan *scan = dcp_scan_new(40649);
 
   dcp_scan_set_nthreads(scan, 1);
   dcp_scan_set_lrt_threshold(scan, 10.);
