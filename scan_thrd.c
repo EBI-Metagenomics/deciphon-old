@@ -1,4 +1,5 @@
 #include "scan_thrd.h"
+#include "chararray.h"
 #include "db_reader.h"
 #include "lrt.h"
 #include "match.h"
@@ -19,6 +20,13 @@ void scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
   struct imm_abc const *abc = imm_nuclt_super(&db->nuclt);
   prod_set_abc(&x->prod, imm_abc_typeid_name(imm_abc_typeid(abc)));
   prod_set_scan_id(&x->prod, scan_id);
+  chararray_init(&x->amino);
+}
+
+void scan_thrd_cleanup(struct scan_thrd *x)
+{
+  protein_del(&x->protein);
+  chararray_cleanup(&x->amino);
 }
 
 void scan_thrd_set_seq_id(struct scan_thrd *x, long seq_id)
@@ -40,6 +48,9 @@ void scan_thrd_set_hmmer3_compat(struct scan_thrd *x, bool h3compat)
 {
   x->hmmer3_compat = h3compat;
 }
+
+static int infer_amino(struct chararray *x, struct match *match,
+                       struct match_iter *it);
 
 int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
                   struct prod_thrd *y)
@@ -94,12 +105,28 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
     if ((rc = prod_thrd_write(y, &x->prod, &match, &mit))) break;
 
     match_iter_init(&mit, seq, &alt.prod.path);
+    if ((rc = infer_amino(&x->amino, &match, &mit))) break;
     // if ((rc = query_hmmer(y, &x->prod, &match, &mit))) break;
 
     // if ((rc = write_hmmer(t))) break;
   }
 
 cleanup:
+  return rc;
+}
+
+static int infer_amino(struct chararray *x, struct match *match,
+                       struct match_iter *it)
+{
+  int rc = 0;
+
+  while (!(rc = match_iter_next(it, match)))
+  {
+    if (match_iter_end(it)) break;
+    if (match_state_is_mute(match)) continue;
+    if ((rc = chararray_append(x, match_amino(match)))) break;
+  }
+
   return rc;
 }
 
@@ -147,5 +174,3 @@ static int query_hmmer(struct thread *t, int prof_idx,
     return 0;
 }
 #endif
-
-void scan_thrd_cleanup(struct scan_thrd *x) { protein_del(&x->protein); }

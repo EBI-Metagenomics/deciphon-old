@@ -19,12 +19,16 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_library(
   deciphon
+  chararray.c
   codec.c
   db_reader.c
   db_writer.c
   expect.c
   fs.c
   h3reader.c
+  hmmer.c
+  hmmer_dialer.c
+  hmmer_result.c
   json.c
   lrt.c
   match.c
@@ -66,6 +70,7 @@ set_target_properties(deciphon PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(deciphon PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
 
+target_link_libraries(deciphon PUBLIC H3C::h3c)
 target_link_libraries(deciphon PUBLIC HMR::hmr)
 target_link_libraries(deciphon PUBLIC IMM::imm)
 target_link_libraries(deciphon PUBLIC LIP::lip)
