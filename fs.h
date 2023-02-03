@@ -1,6 +1,7 @@
 #ifndef FS_H
 #define FS_H
 
+#include <stdbool.h>
 #include <stdio.h>
 
 int fs_tell(FILE *restrict fp, long *offset);
@@ -13,5 +14,6 @@ int fs_readall(char const *filepath, long *size, unsigned char **data);
 int fs_tmpfile(FILE **out);
 int fs_copyp(FILE *restrict dst, FILE *restrict src);
 int fs_cksum(char const *filepath, long *chk);
+int fs_mkdir(char *dirpath, bool exist_ok);
 
 #endif

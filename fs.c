@@ -12,6 +12,7 @@
 #include "array_size.h"
 #include "deciphon/errno.h"
 #include <assert.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -177,4 +178,9 @@ int fs_cksum(char const *filepath, long *chk)
   int rc = fletcher16(fp, buffer, sizeof(buffer), chk);
   fclose(fp);
   return rc;
+}
+
+int fs_mkdir(char *x, bool exist_ok)
+{
+  return (mkdir(x, 0755) && !(errno == EEXIST && exist_ok)) ? DCP_EMKDIR : 0;
 }
