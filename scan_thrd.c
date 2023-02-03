@@ -1,6 +1,8 @@
 #include "scan_thrd.h"
 #include "chararray.h"
 #include "db_reader.h"
+#include "defer_return.h"
+#include "hmmer_dialer.h"
 #include "lrt.h"
 #include "match.h"
 #include "match_iter.h"
@@ -11,7 +13,7 @@
 #include "protein_reader.h"
 
 int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
-                   int partition, long scan_id)
+                   int partition, long scan_id, struct hmmer_dialer *dialer)
 {
   prod_init(&x->prod);
   struct db_reader const *db = reader->db;
@@ -21,13 +23,16 @@ int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
   prod_set_abc(&x->prod, imm_abc_typeid_name(imm_abc_typeid(abc)));
   prod_set_scan_id(&x->prod, scan_id);
   chararray_init(&x->amino);
+
   int rc = 0;
-  if ((rc = hmmer_init(&x->hmmer)))
-  {
-    protein_del(&x->protein);
-    chararray_cleanup(&x->amino);
-    return rc;
-  }
+  if ((rc = hmmer_init(&x->hmmer))) defer_return(rc);
+  if ((rc = hmmer_dialer_dial(dialer, &x->hmmer))) defer_return(rc);
+
+  return rc;
+
+defer:
+  protein_del(&x->protein);
+  chararray_cleanup(&x->amino);
   return rc;
 }
 
@@ -103,8 +108,6 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
 
     prod_set_protein(&x->prod, x->protein.accession);
 
-    // int idx = protein_iter_idx(it);
-    // if ((rc = query_hmmer(t, idx, pro))) break;
     struct match match = {0};
     match_init(&match, &x->protein);
 
@@ -115,8 +118,8 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
 
     match_iter_init(&mit, seq, &alt.prod.path);
     if ((rc = infer_amino(&x->amino, &match, &mit))) break;
-    // if ((rc = query_hmmer(y, &x->prod, &match, &mit))) break;
-
+    if ((rc = hmmer_put(&x->hmmer, protein_iter_idx(it), x->amino.data))) break;
+    if ((rc = hmmer_pop(&x->hmmer))) break;
     // if ((rc = write_hmmer(t))) break;
   }
 
@@ -133,10 +136,10 @@ static int infer_amino(struct chararray *x, struct match *match,
   {
     if (match_iter_end(it)) break;
     if (match_state_is_mute(match)) continue;
-    if ((rc = chararray_append(x, match_amino(match)))) break;
+    if ((rc = chararray_append(x, match_amino(match)))) return rc;
   }
 
-  return rc;
+  return chararray_append(x, '\0');
 }
 
 #if 0

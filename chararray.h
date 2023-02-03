@@ -6,6 +6,7 @@
 struct chararray
 {
   size_t size;
+  size_t capacity;
   char *data;
 };
 

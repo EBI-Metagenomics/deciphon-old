@@ -4,7 +4,6 @@
 #include "hmmer_dialer.h"
 #include "hmmer_result.h"
 #include <stdlib.h>
-#include <string.h>
 
 int hmmer_init(struct hmmer *x)
 {
@@ -23,8 +22,7 @@ int hmmer_put(struct hmmer *x, int hmmidx, char const *seq)
 {
   char cmd[128] = {0};
   sprintf(cmd, "--hmmdb 1 --hmmdb_range %d..%d --acc --cut_ga", hmmidx, hmmidx);
-  strcat(cmd, " --acc --cut_ga");
-  return h3c_stream_put(x->stream, cmd, "none", seq, h3c_deadline(1000));
+  return h3c_stream_put(x->stream, cmd, "none", seq, h3c_deadline(5000));
 }
 
 int hmmer_pop(struct hmmer *x)

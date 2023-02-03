@@ -5,6 +5,7 @@
 void chararray_init(struct chararray *x)
 {
   x->size = 0;
+  x->capacity = 0;
   x->data = NULL;
 }
 
@@ -12,6 +13,7 @@ void chararray_cleanup(struct chararray *x)
 {
   if (x->data) free(x->data);
   x->size = 0;
+  x->capacity = 0;
   x->data = NULL;
 }
 
@@ -19,29 +21,32 @@ size_t chararray_size(struct chararray const *x) { return x->size; }
 
 char *chararray_data(struct chararray *x) { return x->data; }
 
-static size_t next_size(size_t size);
+static size_t next_capacity(size_t size);
 
 int chararray_append(struct chararray *x, char c)
 {
-  char *data = realloc(x->data, next_size(x->size));
-  if (!data) return DCP_ENOMEM;
+  if (x->size + 1 > x->capacity)
+  {
+    char *data = realloc(x->data, next_capacity(x->capacity));
+    if (!data) return DCP_ENOMEM;
+    x->capacity = next_capacity(x->capacity);
+    x->data = data;
+  }
 
-  x->data = data;
-  x->data[x->size] = c;
-  x->size = next_size(x->size);
+  x->data[x->size++] = c;
 
   return 0;
 }
 
 void chararray_reset(struct chararray *x) { x->size = 0; }
 
-static size_t next_size(size_t size)
+static size_t next_capacity(size_t x)
 {
   size_t const mininc = 32;
   size_t const maxinc = 16 * 1024 * 1024;
 
-  if (size < mininc) return size + mininc;
-  if (size > maxinc) return size + maxinc;
+  if (x < mininc) return x + mininc;
+  if (x > maxinc) return x + maxinc;
 
-  return 2 * size;
+  return 2 * x;
 }

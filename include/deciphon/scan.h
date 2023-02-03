@@ -6,7 +6,7 @@
 
 struct dcp_scan;
 
-DCP_API struct dcp_scan *dcp_scan_new(void);
+DCP_API struct dcp_scan *dcp_scan_new(int port);
 DCP_API void dcp_scan_del(struct dcp_scan const *);
 
 DCP_API int dcp_scan_set_nthreads(struct dcp_scan *, int nthreads);

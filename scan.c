@@ -27,7 +27,7 @@ struct dcp_scan
   struct hmmer_dialer dialer;
 };
 
-struct dcp_scan *dcp_scan_new(void)
+struct dcp_scan *dcp_scan_new(int port)
 {
   struct dcp_scan *x = malloc(sizeof(*x));
   x->nthreads = 1;
@@ -37,7 +37,7 @@ struct dcp_scan *dcp_scan_new(void)
   scan_db_init(&x->db);
   seq_list_init(&x->seq_list);
   prod_file_init(&x->prod_file);
-  if (hmmer_dialer_init(&x->dialer, 0))
+  if (hmmer_dialer_init(&x->dialer, port))
   {
     free(x);
     return NULL;
@@ -100,7 +100,7 @@ int dcp_scan_run(struct dcp_scan *x, char const *outfile)
     long scan_id = seq_list_scan_id(&x->seq_list);
     struct scan_thrd *t = x->threads + i;
     struct protein_reader *r = scan_db_reader(&x->db);
-    if ((rc = scan_thrd_init(t, r, i, scan_id))) defer_return(rc);
+    if ((rc = scan_thrd_init(t, r, i, scan_id, &x->dialer))) defer_return(rc);
     scan_thrd_set_lrt_threshold(t, x->lrt_threshold);
     scan_thrd_set_multi_hits(t, x->multi_hits);
     scan_thrd_set_hmmer3_compat(t, x->hmmer3_compat);
