@@ -54,6 +54,10 @@ enum dcp_errno
   DCP_ETMPFILE      = 46,
   DCP_EFFLUSH       = 47,
   DCP_EMKDIR        = 48,
+  DCP_EH3CDIAL      = 49,
+  DCP_EH3CPUT       = 50,
+  DCP_EH3CPOP       = 51,
+  DCP_EH3CPACK      = 52,
 };
 // clang-format on
 

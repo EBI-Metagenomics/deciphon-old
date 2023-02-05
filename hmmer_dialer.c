@@ -17,8 +17,7 @@ void hmmer_dialer_cleanup(struct hmmer_dialer *x)
 
 int hmmer_dialer_dial(struct hmmer_dialer *x, struct hmmer *y)
 {
-  int rc = 0;
-  if ((rc = h3c_dialer_dial(x->dialer, h3c_deadline(1000)))) return rc;
+  if (h3c_dialer_dial(x->dialer, h3c_deadline(15000))) return DCP_EH3CDIAL;
   y->stream = h3c_dialer_stream(x->dialer);
-  return rc;
+  return 0;
 }

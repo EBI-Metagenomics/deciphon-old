@@ -22,11 +22,13 @@ int hmmer_put(struct hmmer *x, int hmmidx, char const *seq)
 {
   char cmd[128] = {0};
   sprintf(cmd, "--hmmdb 1 --hmmdb_range %d..%d --acc --cut_ga", hmmidx, hmmidx);
-  return h3c_stream_put(x->stream, cmd, "none", seq, h3c_deadline(5000));
+  return h3c_stream_put(x->stream, cmd, "none", seq, h3c_deadline(15000))
+             ? DCP_EH3CPUT
+             : 0;
 }
 
 int hmmer_pop(struct hmmer *x)
 {
   h3c_stream_wait(x->stream);
-  return h3c_stream_pop(x->stream, x->result.handle);
+  return h3c_stream_pop(x->stream, x->result.handle) ? DCP_EH3CPOP : 0;
 }

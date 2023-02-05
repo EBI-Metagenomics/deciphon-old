@@ -21,5 +21,5 @@ int hmmer_result_nhits(struct hmmer_result const *x)
 
 int hmmer_result_pack(struct hmmer_result const *x, FILE *fp)
 {
-  return h3c_result_pack(x->handle, fp);
+  return h3c_result_pack(x->handle, fp) ? DCP_EH3CPACK : 0;
 }
