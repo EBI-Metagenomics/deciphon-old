@@ -15,7 +15,7 @@ static long checksum(char const *filename);
 
 void test_scan(void)
 {
-  struct dcp_scan *scan = dcp_scan_new(40649);
+  struct dcp_scan *scan = dcp_scan_new(51371);
 
   dcp_scan_set_nthreads(scan, 1);
   dcp_scan_set_lrt_threshold(scan, 10.);
@@ -26,7 +26,7 @@ void test_scan(void)
   eq(dcp_scan_set_seq_file(scan, ASSETS "/consensus.json"), 0);
 
   eq(dcp_scan_run(scan, TMPDIR "/prod.tsv"), 0);
-  eq(checksum(TMPDIR "/prod.tsv"), 51207);
+  eq(checksum(TMPDIR "/prod.tsv"), 57604);
 
   dcp_scan_del(scan);
 }

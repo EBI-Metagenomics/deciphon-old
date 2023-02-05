@@ -2,7 +2,6 @@
 #define PROD_H
 
 #include "deciphon/limits.h"
-#include <stdio.h>
 
 struct prod
 {
@@ -17,8 +16,6 @@ struct prod
   double alt_loglik;
   double null_loglik;
   double evalue_log;
-
-  char version[DCP_VERSION_SIZE];
 };
 
 void prod_init(struct prod *);

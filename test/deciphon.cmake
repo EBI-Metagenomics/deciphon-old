@@ -3,7 +3,7 @@ function(dcp_add_test name)
   target_link_libraries(${name} PRIVATE DECIPHON::deciphon)
   target_compile_options(${name} PRIVATE ${WARNING_FLAGS})
   target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR})
-  add_test(NAME test_${name} COMMAND ${name})
+  add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
 function(dcp_download_assets dest)

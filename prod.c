@@ -1,11 +1,23 @@
 #include "prod.h"
 #include "dbl_fmt.h"
 #include "deciphon/errno.h"
-#include "deciphon/version.h"
 #include "lrt.h"
+#include "sizeof_field.h"
 #include <string.h>
 
-void prod_init(struct prod *x) { strcpy(x->version, DCP_VERSION); }
+void prod_init(struct prod *x)
+{
+  x->id = 0;
+  x->scan_id = 0;
+  x->seq_id = 0;
+
+  memset(x->protein, 0, sizeof_field(struct prod, protein));
+  memset(x->abc, 0, sizeof_field(struct prod, abc));
+
+  x->alt_loglik = 0;
+  x->null_loglik = 0;
+  x->evalue_log = 0;
+}
 
 void prod_set_protein(struct prod *x, char const *protein)
 {

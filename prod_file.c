@@ -51,7 +51,7 @@ int prod_file_finishup(struct prod_file *x, FILE *fp)
   if (fputs("scan_id\tseq_id\tprofile_name\t", fp) < 0) return DCP_EWRITEPROD;
   if (fputs("abc_name\talt_loglik\t", fp) < 0) return DCP_EWRITEPROD;
   if (fputs("null_loglik\tevalue_log\t", fp) < 0) return DCP_EWRITEPROD;
-  if (fputs("version\tmatch\n", fp) < 0) return DCP_EWRITEPROD;
+  if (fputs("match\n", fp) < 0) return DCP_EWRITEPROD;
 
   int rc = join_files(fp, x->size, x->files);
   prod_file_cleanup(x);

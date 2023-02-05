@@ -90,8 +90,6 @@ int write_begin(struct prod_thrd *x, struct prod const *y)
   if (fprintf(fp, DBL_FMT "\t", y->null_loglik) < 0) return DCP_EWRITEPROD;
   if (fprintf(fp, DBL_FMT "\t", y->evalue_log) < 0) return DCP_EWRITEPROD;
 
-  if (fprintf(fp, "%s\t", y->version) < 0) return DCP_EWRITEPROD;
-
   return 0;
 }
 
