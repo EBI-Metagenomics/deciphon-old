@@ -151,7 +151,7 @@ int protein_set_accession(struct protein *x, char const *acc)
 {
   return strlcpy(x->accession, acc, ACCESSION_SIZE) < ACCESSION_SIZE
              ? 0
-             : DCP_ELARGEACC;
+             : DCP_ELONGACC;
 }
 
 int protein_setup(struct protein *protein, unsigned seq_size, bool multi_hits,

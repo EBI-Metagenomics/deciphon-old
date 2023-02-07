@@ -49,7 +49,7 @@ enum dcp_errno
   DCP_EIMMSETUPTASK = 41,
   DCP_EWRITEPROD    = 42,
   DCP_EINVALPART    = 43,
-  DCP_ELARGEACC     = 44,
+  DCP_ELONGACC      = 44,
   DCP_EMANYTHREADS  = 45,
   DCP_ETMPFILE      = 46,
   DCP_EFFLUSH       = 47,
