@@ -17,6 +17,6 @@ DCP_API void dcp_scan_set_hmmer3_compat(struct dcp_scan *, bool);
 DCP_API int dcp_scan_set_db_file(struct dcp_scan *, char const *db);
 DCP_API int dcp_scan_set_seq_file(struct dcp_scan *, char const *seqs);
 
-DCP_API int dcp_scan_run(struct dcp_scan *, char const *outfile);
+DCP_API int dcp_scan_run(struct dcp_scan *, char const *name);
 
 #endif

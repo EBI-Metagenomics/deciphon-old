@@ -43,7 +43,7 @@ enum dcp_errno
   DCP_EJSONINVAL    = 35,
   DCP_EJSONRANGE    = 36,
   DCP_EJSONFOUND    = 37,
-  DCP_ELARGEPATH    = 38,
+  DCP_ELONGPATH    = 38,
   DCP_EIMMRESETTASK = 39,
   DCP_EIMMNEWTASK   = 40,
   DCP_EIMMSETUPTASK = 41,
@@ -58,6 +58,9 @@ enum dcp_errno
   DCP_EH3CPUT       = 50,
   DCP_EH3CPOP       = 51,
   DCP_EH3CPACK      = 52,
+  DCP_EFORMAT       = 53,
+  DCP_ERMDIR        = 54,
+  DCP_ERMFILE       = 55,
 };
 // clang-format on
 

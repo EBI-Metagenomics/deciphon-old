@@ -9,8 +9,8 @@ enum dcp_limits
   DCP_PROFILE_NAME_SIZE = 64,
   DCP_NPARTITIONS_MAX = 128,
   DCP_NTHREADS_MAX = 128,
+  DCP_SHORT_PATH_MAX = 128,
+  DCP_LONG_PATH_MAX = 512,
 };
-
-static_assert(DCP_NPARTITIONS_MAX == DCP_NTHREADS_MAX, "");
 
 #endif

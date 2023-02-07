@@ -1,2 +1,1 @@
-- Use strlcpy instead of strcpy in prod.c
-- Convert h3c return_code to our return_code
+- Zip the resulting product of scan

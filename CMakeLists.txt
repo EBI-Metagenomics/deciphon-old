@@ -24,6 +24,7 @@ add_library(
   db_reader.c
   db_writer.c
   expect.c
+  fmt.c
   fs.c
   h3reader.c
   hmmer.c
@@ -37,9 +38,9 @@ add_library(
   nuclt_dist.c
   partition_size.c
   press.c
-  prod.c
-  prod_file.c
-  prod_thrd.c
+  prod_match.c
+  prod_writer.c
+  prod_writer_thrd.c
   protein.c
   protein_iter.c
   protein_reader.c
@@ -50,6 +51,7 @@ add_library(
   seq_list.c
   state.c
   strerror.c
+  strkcpy.c
   strlcpy.c
   u16toa.c
   xtrans.c)

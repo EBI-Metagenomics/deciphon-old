@@ -59,7 +59,7 @@ void seq_list_close(struct seq_list *x)
 int seq_list_set_filename(struct seq_list *x, char const *filename)
 {
   size_t n = array_size_field(struct seq_list, filename);
-  return strlcpy(x->filename, filename, n) < n ? 0 : DCP_ELARGEPATH;
+  return strlcpy(x->filename, filename, n) < n ? 0 : DCP_ELONGPATH;
 }
 
 long seq_list_scan_id(struct seq_list const *x) { return x->scan_id; }

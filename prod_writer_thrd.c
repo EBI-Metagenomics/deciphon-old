@@ -1,13 +1,13 @@
-#include "prod_thrd.h"
+#include "prod_writer_thrd.h"
+#include "array_size.h"
 #include "dbl_fmt.h"
 #include "deciphon/errno.h"
+#include "defer_return.h"
+#include "fmt.h"
 #include "fs.h"
 #include "hmmer_result.h"
 #include "match.h"
 #include "match_iter.h"
-#include "prod_thrd.h"
-#include "protein.h"
-#include "state.h"
 #include <string.h>
 
 /* Output example for two matches.
@@ -27,45 +27,64 @@
  *                      ---------------
  */
 
-void prod_thrd_init(struct prod_thrd *x, FILE *fp)
+void prod_writer_thrd_init(struct prod_writer_thrd *x, int idx,
+                           char const *dirname)
 {
-  x->fp = fp;
-  prod_init(&x->prod);
+  x->idx = idx;
+  x->dirname = dirname;
+  prod_match_init(&x->match);
 }
 
-int write_begin(struct prod_thrd *, struct prod const *);
-int write_match(struct prod_thrd *, struct match const *);
-int write_sep(struct prod_thrd *);
-int write_end(struct prod_thrd *);
+static int write_begin(FILE *, struct prod_match const *);
+static int write_match(FILE *, struct match const *);
+static int write_sep(FILE *);
+static int write_end(FILE *);
 
-int prod_thrd_write(struct prod_thrd *x, struct prod const *prod,
-                    struct match *match, struct match_iter *it)
+int prod_writer_thrd_put(struct prod_writer_thrd *x, struct match *match,
+                         struct match_iter *it)
 {
+  char file[DCP_SHORT_PATH_MAX] = {0};
   int rc = 0;
-  if ((rc = write_begin(x, prod))) return rc;
+
+  if ((rc = FMT(file, "%s/.main.%03d.tsv", x->dirname, x->idx))) return rc;
+
+  FILE *fp = fopen(file, "ab");
+  if (!fp) return DCP_EFOPEN;
+
+  if ((rc = write_begin(fp, &x->match))) defer_return(rc);
 
   int i = 0;
   while (!(rc = match_iter_next(it, match)))
   {
     if (match_iter_end(it)) break;
-    if (i++ && (rc = write_sep(x))) return rc;
-    if ((rc = write_match(x, match))) return rc;
+    if (i++ && (rc = write_sep(fp))) defer_return(rc);
+    if ((rc = write_match(fp, match))) defer_return(rc);
   }
 
-  return write_end(x);
+  if ((rc = write_end(fp))) defer_return(rc);
+
+  return fclose(fp) ? DCP_EFCLOSE : 0;
+
+defer:
+  fclose(fp);
+  return rc;
 }
 
-int prod_thrd_write_hmmer(struct prod_thrd *x, struct prod const *prod,
-                          struct hmmer_result const *result)
+int prod_writer_thrd_put_hmmer(struct prod_writer_thrd *x,
+                               struct hmmer_result const *result)
 {
-  char filename[128] = {0};
+  char file[DCP_SHORT_PATH_MAX] = {0};
   int rc = 0;
+  char const *dirname = x->dirname;
 
-  sprintf(filename, "prod/hmmer/%ld", prod->seq_id);
-  if ((rc = fs_mkdir(filename, true))) return rc;
-  sprintf(filename, "prod/hmmer/%ld/%s.h3r", prod->seq_id, prod->protein);
+  if ((rc = FMT(file, "%s/hmmer/%ld", dirname, x->match.seq_id))) return rc;
+  if ((rc = fs_mkdir(file, true))) return rc;
 
-  FILE *fp = fopen(filename, "wb");
+  if ((rc = FMT(file, "%s/hmmer/%ld/%s.h3r", dirname, x->match.seq_id,
+                x->match.protein)))
+    return rc;
+
+  FILE *fp = fopen(file, "wb");
   if (!fp) return DCP_EFOPEN;
 
   if ((rc = hmmer_result_pack(result, fp)))
@@ -77,9 +96,8 @@ int prod_thrd_write_hmmer(struct prod_thrd *x, struct prod const *prod,
   return fclose(fp) ? DCP_EFCLOSE : 0;
 }
 
-int write_begin(struct prod_thrd *x, struct prod const *y)
+static int write_begin(FILE *fp, struct prod_match const *y)
 {
-  FILE *fp = x->fp;
   if (fprintf(fp, "%ld\t", y->scan_id) < 0) return DCP_EWRITEPROD;
   if (fprintf(fp, "%ld\t", y->seq_id) < 0) return DCP_EWRITEPROD;
 
@@ -93,7 +111,7 @@ int write_begin(struct prod_thrd *x, struct prod const *y)
   return 0;
 }
 
-int write_match(struct prod_thrd *x, struct match const *m)
+static int write_match(FILE *fp, struct match const *m)
 {
   char buff[IMM_STATE_NAME_SIZE + 20] = {0};
 
@@ -120,15 +138,15 @@ int write_match(struct prod_thrd *x, struct match const *m)
 
   *ptr = '\0';
 
-  return fputs(buff, x->fp) == EOF ? DCP_EFWRITE : 0;
+  return fputs(buff, fp) == EOF ? DCP_EFWRITE : 0;
 }
 
-int write_sep(struct prod_thrd *x)
+static int write_sep(FILE *fp)
 {
-  return fputc(';', x->fp) == EOF ? DCP_EWRITEPROD : 0;
+  return fputc(';', fp) == EOF ? DCP_EWRITEPROD : 0;
 }
 
-int write_end(struct prod_thrd *x)
+static int write_end(FILE *fp)
 {
-  return fputc('\n', x->fp) == EOF ? DCP_EWRITEPROD : 0;
+  return fputc('\n', fp) == EOF ? DCP_EWRITEPROD : 0;
 }

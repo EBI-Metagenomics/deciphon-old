@@ -39,7 +39,7 @@ void scan_db_close(struct scan_db *x)
 int scan_db_set_filename(struct scan_db *x, char const *filename)
 {
   size_t n = array_size_field(struct scan_db, filename);
-  return strlcpy(x->filename, filename, n) < n ? 0 : DCP_ELARGEPATH;
+  return strlcpy(x->filename, filename, n) < n ? 0 : DCP_ELONGPATH;
 }
 
 struct protein_reader *scan_db_reader(struct scan_db *x) { return &x->rdr; }

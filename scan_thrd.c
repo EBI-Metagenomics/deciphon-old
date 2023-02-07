@@ -6,22 +6,27 @@
 #include "lrt.h"
 #include "match.h"
 #include "match_iter.h"
-#include "prod.h"
-#include "prod_thrd.h"
+#include "prod_match.h"
+#include "prod_writer_thrd.h"
 #include "protein.h"
 #include "protein_iter.h"
 #include "protein_reader.h"
 
 int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
-                   int partition, long scan_id, struct hmmer_dialer *dialer)
+                   int partition, long scan_id,
+                   struct prod_writer_thrd *prod_thrd,
+                   struct hmmer_dialer *dialer)
 {
-  prod_init(&x->prod);
   struct db_reader const *db = reader->db;
   protein_init(&x->protein, &db->amino, &db->code, db->cfg);
   protein_reader_iter(reader, partition, &x->iter);
+
+  x->prod_thrd = prod_thrd;
   struct imm_abc const *abc = imm_nuclt_super(&db->nuclt);
-  prod_set_abc(&x->prod, imm_abc_typeid_name(imm_abc_typeid(abc)));
-  prod_set_scan_id(&x->prod, scan_id);
+  char const *abc_name = imm_abc_typeid_name(imm_abc_typeid(abc));
+  prod_match_set_abc(&x->prod_thrd->match, abc_name);
+  x->prod_thrd->match.scan_id = scan_id;
+
   chararray_init(&x->amino);
 
   int rc = 0;
@@ -45,7 +50,7 @@ void scan_thrd_cleanup(struct scan_thrd *x)
 
 void scan_thrd_set_seq_id(struct scan_thrd *x, long seq_id)
 {
-  prod_set_seq_id(&x->prod, seq_id);
+  x->prod_thrd->match.seq_id = seq_id;
 }
 
 void scan_thrd_set_lrt_threshold(struct scan_thrd *x, double lrt)
@@ -66,8 +71,7 @@ void scan_thrd_set_hmmer3_compat(struct scan_thrd *x, bool h3compat)
 static int infer_amino(struct chararray *x, struct match *match,
                        struct match_iter *it);
 
-int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
-                  struct prod_thrd *y)
+int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
 {
   int rc = 0;
 
@@ -98,15 +102,15 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
     if (imm_dp_viterbi(null_dp, null.task, &null.prod)) goto cleanup;
     if (imm_dp_viterbi(alt_dp, alt.task, &alt.prod)) goto cleanup;
 
-    prod_set_null_loglik(&x->prod, null.prod.loglik);
-    prod_set_alt_loglik(&x->prod, alt.prod.loglik);
+    x->prod_thrd->match.null_loglik = null.prod.loglik;
+    x->prod_thrd->match.alt_loglik = alt.prod.loglik;
 
     // progress_consume(&t->progress, 1);
-    imm_float lrt = prod_get_lrt(&x->prod);
+    imm_float lrt = prod_match_get_lrt(&x->prod_thrd->match);
 
     if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
 
-    prod_set_protein(&x->prod, x->protein.accession);
+    prod_match_set_protein(&x->prod_thrd->match, x->protein.accession);
 
     struct match match = {0};
     match_init(&match, &x->protein);
@@ -114,13 +118,14 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq,
     struct match_iter mit = {0};
 
     match_iter_init(&mit, seq, &alt.prod.path);
-    if ((rc = prod_thrd_write(y, &x->prod, &match, &mit))) break;
+    if ((rc = prod_writer_thrd_put(x->prod_thrd, &match, &mit))) break;
 
     match_iter_init(&mit, seq, &alt.prod.path);
     if ((rc = infer_amino(&x->amino, &match, &mit))) break;
     if ((rc = hmmer_put(&x->hmmer, protein_iter_idx(it), x->amino.data))) break;
     if ((rc = hmmer_pop(&x->hmmer))) break;
-    if ((rc = prod_thrd_write_hmmer(y, &x->prod, &x->hmmer.result))) break;
+    if ((rc = prod_writer_thrd_put_hmmer(x->prod_thrd, &x->hmmer.result)))
+      break;
   }
 
 cleanup:

@@ -4,8 +4,7 @@
 #include "deciphon/limits.h"
 #include "defer_return.h"
 #include "hmmer_dialer.h"
-#include "prod_file.h"
-#include "prod_thrd.h"
+#include "prod_writer.h"
 #include "scan_db.h"
 #include "scan_thrd.h"
 #include "seq_list.h"
@@ -16,7 +15,7 @@ struct dcp_scan
 {
   int nthreads;
   struct scan_thrd threads[DCP_NTHREADS_MAX];
-  struct prod_file prod_file;
+  struct prod_writer prod_writer;
 
   double lrt_threshold;
   bool multi_hits;
@@ -36,7 +35,7 @@ struct dcp_scan *dcp_scan_new(int port)
   x->hmmer3_compat = false;
   scan_db_init(&x->db);
   seq_list_init(&x->seq_list);
-  prod_file_init(&x->prod_file);
+  prod_writer_init(&x->prod_writer);
   if (hmmer_dialer_init(&x->dialer, port))
   {
     free(x);
@@ -86,27 +85,28 @@ int dcp_scan_set_seq_file(struct dcp_scan *x, char const *filename)
   return seq_list_set_filename(&x->seq_list, filename);
 }
 
-static int save_output(struct prod_file *prod_file, char const *outfile);
-
-int dcp_scan_run(struct dcp_scan *x, char const *outfile)
+int dcp_scan_run(struct dcp_scan *x, char const *name)
 {
   int rc = 0;
 
   if ((rc = scan_db_open(&x->db, x->nthreads))) defer_return(rc);
   if ((rc = seq_list_open(&x->seq_list))) defer_return(rc);
 
+  if ((rc = prod_writer_open(&x->prod_writer, x->nthreads, name)))
+    defer_return(rc);
+
   for (int i = 0; i < x->nthreads; ++i)
   {
     long scan_id = seq_list_scan_id(&x->seq_list);
     struct scan_thrd *t = x->threads + i;
     struct protein_reader *r = scan_db_reader(&x->db);
-    if ((rc = scan_thrd_init(t, r, i, scan_id, &x->dialer))) defer_return(rc);
+    struct prod_writer_thrd *wt = prod_writer_thrd(&x->prod_writer, i);
+    if ((rc = scan_thrd_init(t, r, i, scan_id, wt, &x->dialer)))
+      defer_return(rc);
     scan_thrd_set_lrt_threshold(t, x->lrt_threshold);
     scan_thrd_set_multi_hits(t, x->multi_hits);
     scan_thrd_set_hmmer3_compat(t, x->hmmer3_compat);
   }
-
-  if ((rc = prod_file_setup(&x->prod_file, x->nthreads))) defer_return(rc);
 
   while (!(rc = seq_list_next(&x->seq_list)))
   {
@@ -120,31 +120,18 @@ int dcp_scan_run(struct dcp_scan *x, char const *outfile)
     {
       struct scan_thrd *t = x->threads + i;
       scan_thrd_set_seq_id(t, seq_list_seq_id(&x->seq_list));
-      scan_thrd_run(t, &seq, prod_file_thread(&x->prod_file, i));
+      if ((rc = scan_thrd_run(t, &seq))) break;
     }
   }
   if (rc) defer_return(rc);
 
-  rc = save_output(&x->prod_file, outfile);
+  seq_list_close(&x->seq_list);
+  scan_db_close(&x->db);
+  return prod_writer_close(&x->prod_writer);
 
 defer:
-  prod_file_cleanup(&x->prod_file);
+  prod_writer_close(&x->prod_writer);
   seq_list_close(&x->seq_list);
   scan_db_close(&x->db);
   return rc;
-}
-
-static int save_output(struct prod_file *prod_file, char const *outfile)
-{
-  FILE *fp = fopen(outfile, "wb");
-  if (!fp) return DCP_EFOPEN;
-
-  int rc = 0;
-  if ((rc = prod_file_finishup(prod_file, fp)))
-  {
-    fclose(fp);
-    return rc;
-  }
-
-  return fclose(fp) ? DCP_EFCLOSE : 0;
 }
