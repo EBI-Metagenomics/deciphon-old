@@ -105,7 +105,6 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
     x->prod_thrd->match.null_loglik = null.prod.loglik;
     x->prod_thrd->match.alt_loglik = alt.prod.loglik;
 
-    // progress_consume(&t->progress, 1);
     imm_float lrt = prod_match_get_lrt(&x->prod_thrd->match);
 
     if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
@@ -118,14 +117,15 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
     struct match_iter mit = {0};
 
     match_iter_init(&mit, seq, &alt.prod.path);
-    if ((rc = prod_writer_thrd_put(x->prod_thrd, &match, &mit))) break;
-
-    match_iter_init(&mit, seq, &alt.prod.path);
     if ((rc = infer_amino(&x->amino, &match, &mit))) break;
     if ((rc = hmmer_put(&x->hmmer, protein_iter_idx(it), x->amino.data))) break;
     if ((rc = hmmer_pop(&x->hmmer))) break;
+    x->prod_thrd->match.evalue_log = hmmer_result_evalue_ln(&x->hmmer.result);
     if ((rc = prod_writer_thrd_put_hmmer(x->prod_thrd, &x->hmmer.result)))
       break;
+
+    match_iter_init(&mit, seq, &alt.prod.path);
+    if ((rc = prod_writer_thrd_put(x->prod_thrd, &match, &mit))) break;
   }
 
 cleanup:
