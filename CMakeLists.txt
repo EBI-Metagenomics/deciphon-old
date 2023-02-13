@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 project(
   deciphon
-  VERSION 0.4.7
+  VERSION 0.4.8
   LANGUAGES C)
 
 include(cmake/warnings.cmake)

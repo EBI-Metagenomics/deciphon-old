@@ -41,20 +41,21 @@ int prod_writer_close(struct prod_writer *x)
   char filename[DCP_SHORT_PATH_MAX] = {0};
   int rc = 0;
 
-  if ((rc = FMT(filename, "%s/main.tsv", x->dirname))) return rc;
+  if ((rc = FMT(filename, "%s/products.tsv", x->dirname))) return rc;
 
   FILE *fp = fopen(filename, "wb");
   if (!fp) return DCP_EFOPEN;
 
   bool ok = true;
-  ok &= fputs("scan_id\tseq_id\tprofile_name\tabc_name\talt_loglik\t", fp) >= 0;
-  ok &= fputs("null_loglik\tevalue_log\tmatch\n", fp) >= 0;
+  ok &= fputs("seq_id\tprofile\tabc\talt\t", fp) >= 0;
+  ok &= fputs("null\tevalue\tmatch\n", fp) >= 0;
   if (!ok) defer_return(DCP_EWRITEPROD);
 
   for (int i = 0; i < x->nthreads; ++i)
   {
     char file[DCP_SHORT_PATH_MAX] = {0};
-    if ((rc = FMT(file, "%s/.main.%03d.tsv", x->dirname, i))) defer_return(rc);
+    if ((rc = FMT(file, "%s/.products.%03d.tsv", x->dirname, i)))
+      defer_return(rc);
 
     FILE *tmp = fopen(file, "rb");
     if (!tmp) defer_return(rc);

@@ -13,8 +13,7 @@
 #include "protein_reader.h"
 
 int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
-                   int partition, long scan_id,
-                   struct prod_writer_thrd *prod_thrd,
+                   int partition, struct prod_writer_thrd *prod_thrd,
                    struct hmmer_dialer *dialer)
 {
   struct db_reader const *db = reader->db;
@@ -25,7 +24,6 @@ int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
   struct imm_abc const *abc = imm_nuclt_super(&db->nuclt);
   char const *abc_name = imm_abc_typeid_name(imm_abc_typeid(abc));
   prod_match_set_abc(&x->prod_thrd->match, abc_name);
-  x->prod_thrd->match.scan_id = scan_id;
 
   chararray_init(&x->amino);
 
@@ -102,8 +100,8 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
     if (imm_dp_viterbi(null_dp, null.task, &null.prod)) goto cleanup;
     if (imm_dp_viterbi(alt_dp, alt.task, &alt.prod)) goto cleanup;
 
-    x->prod_thrd->match.null_loglik = null.prod.loglik;
-    x->prod_thrd->match.alt_loglik = alt.prod.loglik;
+    x->prod_thrd->match.null = null.prod.loglik;
+    x->prod_thrd->match.alt = alt.prod.loglik;
 
     imm_float lrt = prod_match_get_lrt(&x->prod_thrd->match);
 
@@ -120,7 +118,7 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
     if ((rc = infer_amino(&x->amino, &match, &mit))) break;
     if ((rc = hmmer_put(&x->hmmer, protein_iter_idx(it), x->amino.data))) break;
     if ((rc = hmmer_pop(&x->hmmer))) break;
-    x->prod_thrd->match.evalue_log = hmmer_result_evalue_ln(&x->hmmer.result);
+    x->prod_thrd->match.evalue = hmmer_result_evalue_ln(&x->hmmer.result);
     if ((rc = prod_writer_thrd_put_hmmer(x->prod_thrd, &x->hmmer.result)))
       break;
 

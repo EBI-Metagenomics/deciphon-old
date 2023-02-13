@@ -29,8 +29,7 @@ struct protein_reader;
 struct hmmer_dialer;
 
 int scan_thrd_init(struct scan_thrd *, struct protein_reader *, int partition,
-                   long scan_id, struct prod_writer_thrd *,
-                   struct hmmer_dialer *);
+                   struct prod_writer_thrd *, struct hmmer_dialer *);
 void scan_thrd_cleanup(struct scan_thrd *);
 
 void scan_thrd_set_seq_id(struct scan_thrd *, long seq_id);

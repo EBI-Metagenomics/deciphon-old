@@ -7,15 +7,14 @@ struct prod_match
 {
   long id;
 
-  long scan_id;
   long seq_id;
 
   char protein[DCP_PROFILE_NAME_SIZE];
   char abc[DCP_ABC_NAME_SIZE];
 
-  double alt_loglik;
-  double null_loglik;
-  double evalue_log;
+  double alt;
+  double null;
+  double evalue;
 };
 
 void prod_match_init(struct prod_match *);

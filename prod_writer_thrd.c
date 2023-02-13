@@ -46,7 +46,7 @@ int prod_writer_thrd_put(struct prod_writer_thrd *x, struct match *match,
   char file[DCP_SHORT_PATH_MAX] = {0};
   int rc = 0;
 
-  if ((rc = FMT(file, "%s/.main.%03d.tsv", x->dirname, x->idx))) return rc;
+  if ((rc = FMT(file, "%s/.products.%03d.tsv", x->dirname, x->idx))) return rc;
 
   FILE *fp = fopen(file, "ab");
   if (!fp) return DCP_EFOPEN;
@@ -98,15 +98,14 @@ int prod_writer_thrd_put_hmmer(struct prod_writer_thrd *x,
 
 static int write_begin(FILE *fp, struct prod_match const *y)
 {
-  if (fprintf(fp, "%ld\t", y->scan_id) < 0) return DCP_EWRITEPROD;
   if (fprintf(fp, "%ld\t", y->seq_id) < 0) return DCP_EWRITEPROD;
 
   if (fprintf(fp, "%s\t", y->protein) < 0) return DCP_EWRITEPROD;
   if (fprintf(fp, "%s\t", y->abc) < 0) return DCP_EWRITEPROD;
 
-  if (fprintf(fp, DBL_FMT "\t", y->alt_loglik) < 0) return DCP_EWRITEPROD;
-  if (fprintf(fp, DBL_FMT "\t", y->null_loglik) < 0) return DCP_EWRITEPROD;
-  if (fprintf(fp, DBL_FMT "\t", y->evalue_log) < 0) return DCP_EWRITEPROD;
+  if (fprintf(fp, DBL_FMT "\t", y->alt) < 0) return DCP_EWRITEPROD;
+  if (fprintf(fp, DBL_FMT "\t", y->null) < 0) return DCP_EWRITEPROD;
+  if (fprintf(fp, DBL_FMT "\t", y->evalue) < 0) return DCP_EWRITEPROD;
 
   return 0;
 }

@@ -97,12 +97,10 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
 
   for (int i = 0; i < x->nthreads; ++i)
   {
-    long scan_id = seq_list_scan_id(&x->seq_list);
     struct scan_thrd *t = x->threads + i;
     struct protein_reader *r = scan_db_reader(&x->db);
     struct prod_writer_thrd *wt = prod_writer_thrd(&x->prod_writer, i);
-    if ((rc = scan_thrd_init(t, r, i, scan_id, wt, &x->dialer)))
-      defer_return(rc);
+    if ((rc = scan_thrd_init(t, r, i, wt, &x->dialer))) defer_return(rc);
     scan_thrd_set_lrt_threshold(t, x->lrt_threshold);
     scan_thrd_set_multi_hits(t, x->multi_hits);
     scan_thrd_set_hmmer3_compat(t, x->hmmer3_compat);
