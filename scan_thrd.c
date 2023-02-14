@@ -135,6 +135,7 @@ static int infer_amino(struct chararray *x, struct match *match,
 {
   int rc = 0;
 
+  chararray_reset(x);
   while (!(rc = match_iter_next(it, match)))
   {
     if (match_iter_end(it)) break;
