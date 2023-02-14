@@ -71,7 +71,7 @@ int prod_writer_close(struct prod_writer *x)
     if ((rc = fs_rmfile(file))) defer_return(rc);
   }
 
-  return rc;
+  return fclose(fp) ? DCP_EFCLOSE : 0;
 
 defer:
   fclose(fp);
