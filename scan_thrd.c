@@ -11,6 +11,7 @@
 #include "protein.h"
 #include "protein_iter.h"
 #include "protein_reader.h"
+#include "seq.h"
 
 int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
                    int partition, struct prod_writer_thrd *prod_thrd,
@@ -46,11 +47,6 @@ void scan_thrd_cleanup(struct scan_thrd *x)
   hmmer_cleanup(&x->hmmer);
 }
 
-void scan_thrd_set_seq_id(struct scan_thrd *x, long seq_id)
-{
-  x->prod_thrd->match.seq_id = seq_id;
-}
-
 void scan_thrd_set_lrt_threshold(struct scan_thrd *x, double lrt)
 {
   x->lrt_threshold = lrt;
@@ -69,11 +65,12 @@ void scan_thrd_set_hmmer3_compat(struct scan_thrd *x, bool h3compat)
 static int infer_amino(struct chararray *x, struct match *match,
                        struct match_iter *it);
 
-int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
+int scan_thrd_run(struct scan_thrd *x, struct seq const *seq)
 {
   int rc = 0;
 
   struct protein_iter *it = &x->iter;
+  x->prod_thrd->match.seq_id = seq->id;
 
   if ((rc = protein_iter_rewind(it))) goto cleanup;
 
@@ -83,7 +80,6 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
 
     struct imm_dp const *null_dp = protein_null_dp(&x->protein);
     struct imm_dp const *alt_dp = protein_alt_dp(&x->protein);
-    unsigned size = imm_seq_size(seq);
 
     struct scan_task null = {0};
     struct scan_task alt = {0};
@@ -94,7 +90,8 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
     rc = scan_task_setup(&alt, protein_alt_dp(&x->protein), seq);
     if (rc) goto cleanup;
 
-    rc = protein_setup(&x->protein, size, x->multi_hits, x->hmmer3_compat);
+    rc = protein_setup(&x->protein, seq_size(seq), x->multi_hits,
+                       x->hmmer3_compat);
     if (rc) goto cleanup;
 
     if (imm_dp_viterbi(null_dp, null.task, &null.prod)) goto cleanup;
@@ -114,15 +111,17 @@ int scan_thrd_run(struct scan_thrd *x, struct imm_seq const *seq)
 
     struct match_iter mit = {0};
 
-    match_iter_init(&mit, seq, &alt.prod.path);
+    match_iter_init(&mit, &seq->iseq, &alt.prod.path);
     if ((rc = infer_amino(&x->amino, &match, &mit))) break;
-    if ((rc = hmmer_put(&x->hmmer, protein_iter_idx(it), x->amino.data))) break;
+    if ((rc = hmmer_put(&x->hmmer, protein_iter_idx(it), seq->name,
+                        x->amino.data)))
+      break;
     if ((rc = hmmer_pop(&x->hmmer))) break;
     x->prod_thrd->match.evalue = hmmer_result_evalue_ln(&x->hmmer.result);
     if ((rc = prod_writer_thrd_put_hmmer(x->prod_thrd, &x->hmmer.result)))
       break;
 
-    match_iter_init(&mit, seq, &alt.prod.path);
+    match_iter_init(&mit, &seq->iseq, &alt.prod.path);
     if ((rc = prod_writer_thrd_put(x->prod_thrd, &match, &mit))) break;
   }
 

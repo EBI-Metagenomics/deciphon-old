@@ -48,6 +48,7 @@ add_library(
   scan_db.c
   scan_task.c
   scan_thrd.c
+  seq.c
   seq_list.c
   state.c
   strerror.c

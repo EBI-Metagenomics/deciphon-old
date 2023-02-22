@@ -110,14 +110,11 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
   {
     if (seq_list_end(&x->seq_list)) break;
 
-    struct imm_abc const *abc = scan_db_abc(&x->db);
-    struct imm_str str = imm_str(seq_list_seq_data(&x->seq_list));
-    struct imm_seq seq = imm_seq(str, abc);
+    struct seq seq = seq_list_get(&x->seq_list, scan_db_abc(&x->db));
 
     for (int i = 0; i < x->nthreads; ++i)
     {
       struct scan_thrd *t = x->threads + i;
-      scan_thrd_set_seq_id(t, seq_list_seq_id(&x->seq_list));
       if ((rc = scan_thrd_run(t, &seq))) break;
     }
   }

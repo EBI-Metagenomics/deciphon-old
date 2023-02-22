@@ -24,18 +24,18 @@ struct scan_thrd
   struct hmmer hmmer;
 };
 
+struct hmmer_dialer;
 struct prod_thrd;
 struct protein_reader;
-struct hmmer_dialer;
+struct seq;
 
 int scan_thrd_init(struct scan_thrd *, struct protein_reader *, int partition,
                    struct prod_writer_thrd *, struct hmmer_dialer *);
 void scan_thrd_cleanup(struct scan_thrd *);
 
-void scan_thrd_set_seq_id(struct scan_thrd *, long seq_id);
 void scan_thrd_set_lrt_threshold(struct scan_thrd *, double lrt);
 void scan_thrd_set_multi_hits(struct scan_thrd *, bool multihits);
 void scan_thrd_set_hmmer3_compat(struct scan_thrd *, bool h3compat);
-int scan_thrd_run(struct scan_thrd *, struct imm_seq const *);
+int scan_thrd_run(struct scan_thrd *, struct seq const *);
 
 #endif

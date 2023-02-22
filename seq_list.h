@@ -2,6 +2,7 @@
 #define SEQ_LIST_H
 
 #include "json.h"
+#include "seq.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -31,8 +32,6 @@ int seq_list_next(struct seq_list *);
 bool seq_list_end(struct seq_list const *);
 int seq_list_size(struct seq_list const *);
 
-long seq_list_seq_id(struct seq_list const *);
-char const *seq_list_seq_name(struct seq_list const *);
-char const *seq_list_seq_data(struct seq_list const *);
+struct seq seq_list_get(struct seq_list const *, struct imm_abc const *);
 
 #endif
