@@ -1,11 +1,11 @@
 #include "scan_task.h"
 #include "deciphon/errno.h"
-#include "seq.h"
+#include "iseq.h"
 
 void scan_task_init(struct scan_task *x) { x->task = NULL; }
 
 int scan_task_setup(struct scan_task *x, struct imm_dp const *dp,
-                    struct seq const *seq)
+                    struct iseq const *seq)
 {
   if (x->task && imm_task_reset(x->task, dp)) return DCP_EIMMRESETTASK;
   if (!x->task && !(x->task = imm_task_new(dp))) return DCP_EIMMNEWTASK;

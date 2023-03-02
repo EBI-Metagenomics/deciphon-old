@@ -93,9 +93,9 @@ bool seq_list_end(struct seq_list const *x) { return x->end; }
 
 int seq_list_size(struct seq_list const *x) { return x->size; }
 
-struct seq seq_list_get(struct seq_list const *x, struct imm_abc const *abc)
+struct iseq seq_list_get(struct seq_list const *x, struct imm_abc const *abc)
 {
-  return seq_init(x->seq_id, x->seq_name, x->seq_data, abc);
+  return iseq_init(x->seq_id, x->seq_name, x->seq_data, abc);
 }
 
 static int jerr(int rc)

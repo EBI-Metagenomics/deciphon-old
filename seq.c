@@ -1,11 +1,10 @@
 #include "seq.h"
+#include "deciphon/seq.h"
 
-struct seq seq_init(long id, char const *name, char const *data,
-                    struct imm_abc const *abc)
+void dcp_seq_setup(struct dcp_seq *seq, long id, char const *name,
+                   char const *data)
 {
-  return (struct seq){id, name, imm_seq(imm_str(data), abc)};
+  seq->id = id;
+  seq->name = name;
+  seq->data = data;
 }
-
-char const *seq_data(struct seq const *x) { return imm_seq_str(&x->iseq); }
-
-unsigned seq_size(struct seq const *x) { return imm_seq_size(&x->iseq); }

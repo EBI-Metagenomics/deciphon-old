@@ -1,18 +1,11 @@
-#ifndef SEQ_H
-#define SEQ_H
+#ifndef DCP_SEQ_H
+#define DCP_SEQ_H
 
-#include "imm/imm.h"
-
-struct seq
+struct dcp_seq
 {
   long id;
   char const *name;
-  struct imm_seq iseq;
+  char const *data;
 };
-
-struct seq seq_init(long id, char const *name, char const *data,
-                    struct imm_abc const *);
-char const *seq_data(struct seq const *);
-unsigned seq_size(struct seq const *);
 
 #endif

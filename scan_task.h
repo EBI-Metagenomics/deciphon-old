@@ -3,7 +3,7 @@
 
 #include "imm/imm.h"
 
-struct seq;
+struct iseq;
 
 struct scan_task
 {
@@ -13,6 +13,6 @@ struct scan_task
 
 void scan_task_init(struct scan_task *);
 int scan_task_setup(struct scan_task *, struct imm_dp const *,
-                    struct seq const *);
+                    struct iseq const *);
 
 #endif

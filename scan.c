@@ -110,7 +110,7 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
   {
     if (seq_list_end(&x->seq_list)) break;
 
-    struct seq seq = seq_list_get(&x->seq_list, scan_db_abc(&x->db));
+    struct iseq seq = seq_list_get(&x->seq_list, scan_db_abc(&x->db));
 
     for (int i = 0; i < x->nthreads; ++i)
     {

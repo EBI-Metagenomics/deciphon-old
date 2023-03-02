@@ -11,7 +11,7 @@ include(cmake/CPM.cmake)
 cpmaddpackage("gh:EBI-Metagenomics/hmr@0.6.0")
 cpmaddpackage("gh:EBI-Metagenomics/imm@2.1.10")
 cpmaddpackage("gh:EBI-Metagenomics/lip@0.5.0")
-cpmaddpackage("gh:EBI-Metagenomics/h3client@0.10.5")
+cpmaddpackage("gh:EBI-Metagenomics/h3c@0.10.5")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)
@@ -30,6 +30,7 @@ add_library(
   hmmer.c
   hmmer_dialer.c
   hmmer_result.c
+  iseq.c
   json.c
   lrt.c
   match.c
@@ -49,6 +50,7 @@ add_library(
   scan_task.c
   scan_thrd.c
   seq.c
+  seq_iter.c
   seq_list.c
   state.c
   strerror.c

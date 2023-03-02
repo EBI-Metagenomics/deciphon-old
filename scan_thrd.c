@@ -3,6 +3,7 @@
 #include "db_reader.h"
 #include "defer_return.h"
 #include "hmmer_dialer.h"
+#include "iseq.h"
 #include "lrt.h"
 #include "match.h"
 #include "match_iter.h"
@@ -11,7 +12,6 @@
 #include "protein.h"
 #include "protein_iter.h"
 #include "protein_reader.h"
-#include "seq.h"
 
 int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
                    int partition, struct prod_writer_thrd *prod_thrd,
@@ -65,7 +65,7 @@ void scan_thrd_set_hmmer3_compat(struct scan_thrd *x, bool h3compat)
 static int infer_amino(struct chararray *x, struct match *match,
                        struct match_iter *it);
 
-int scan_thrd_run(struct scan_thrd *x, struct seq const *seq)
+int scan_thrd_run(struct scan_thrd *x, struct iseq const *seq)
 {
   int rc = 0;
 
@@ -90,7 +90,7 @@ int scan_thrd_run(struct scan_thrd *x, struct seq const *seq)
     rc = scan_task_setup(&alt, protein_alt_dp(&x->protein), seq);
     if (rc) goto cleanup;
 
-    rc = protein_setup(&x->protein, seq_size(seq), x->multi_hits,
+    rc = protein_setup(&x->protein, iseq_size(seq), x->multi_hits,
                        x->hmmer3_compat);
     if (rc) goto cleanup;
 
