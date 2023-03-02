@@ -31,7 +31,6 @@ add_library(
   hmmer_dialer.c
   hmmer_result.c
   iseq.c
-  json.c
   lrt.c
   match.c
   match_iter.c
@@ -51,7 +50,6 @@ add_library(
   scan_thrd.c
   seq.c
   seq_iter.c
-  seq_list.c
   state.c
   strerror.c
   strkcpy.c

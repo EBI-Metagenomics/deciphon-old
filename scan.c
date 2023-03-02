@@ -4,10 +4,11 @@
 #include "deciphon/limits.h"
 #include "defer_return.h"
 #include "hmmer_dialer.h"
+#include "iseq.h"
 #include "prod_writer.h"
 #include "scan_db.h"
 #include "scan_thrd.h"
-#include "seq_list.h"
+#include "seq_iter.h"
 #include "strlcpy.h"
 #include <stdlib.h>
 
@@ -22,7 +23,7 @@ struct dcp_scan
   bool hmmer3_compat;
 
   struct scan_db db;
-  struct seq_list seq_list;
+  struct seq_iter seqit;
   struct hmmer_dialer dialer;
 };
 
@@ -34,7 +35,7 @@ struct dcp_scan *dcp_scan_new(int port)
   x->multi_hits = true;
   x->hmmer3_compat = false;
   scan_db_init(&x->db);
-  seq_list_init(&x->seq_list);
+  seq_iter_init(&x->seqit, NULL, NULL);
   prod_writer_init(&x->prod_writer);
   if (hmmer_dialer_init(&x->dialer, port))
   {
@@ -80,9 +81,10 @@ int dcp_scan_set_db_file(struct dcp_scan *x, char const *filename)
   return scan_db_set_filename(&x->db, filename);
 }
 
-int dcp_scan_set_seq_file(struct dcp_scan *x, char const *filename)
+void dcp_scan_set_seq_iter(struct dcp_scan *x, dcp_seq_next_fn *callb,
+                           void *arg)
 {
-  return seq_list_set_filename(&x->seq_list, filename);
+  seq_iter_init(&x->seqit, callb, arg);
 }
 
 int dcp_scan_run(struct dcp_scan *x, char const *name)
@@ -90,7 +92,6 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
   int rc = 0;
 
   if ((rc = scan_db_open(&x->db, x->nthreads))) defer_return(rc);
-  if ((rc = seq_list_open(&x->seq_list))) defer_return(rc);
 
   if ((rc = prod_writer_open(&x->prod_writer, x->nthreads, name)))
     defer_return(rc);
@@ -106,11 +107,10 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
     scan_thrd_set_hmmer3_compat(t, x->hmmer3_compat);
   }
 
-  while (!(rc = seq_list_next(&x->seq_list)))
+  while (seq_iter_next(&x->seqit))
   {
-    if (seq_list_end(&x->seq_list)) break;
-
-    struct iseq seq = seq_list_get(&x->seq_list, scan_db_abc(&x->db));
+    struct dcp_seq const *y = seq_iter_get(&x->seqit);
+    struct iseq seq = iseq_init(y->id, y->name, y->data, scan_db_abc(&x->db));
 
     for (int i = 0; i < x->nthreads; ++i)
     {
@@ -120,13 +120,11 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
   }
   if (rc) defer_return(rc);
 
-  seq_list_close(&x->seq_list);
   scan_db_close(&x->db);
   return prod_writer_close(&x->prod_writer);
 
 defer:
   prod_writer_close(&x->prod_writer);
-  seq_list_close(&x->seq_list);
   scan_db_close(&x->db);
   return rc;
 }
