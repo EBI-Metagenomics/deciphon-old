@@ -19,6 +19,7 @@ void protein_del(struct protein *protein)
     if (protein->alt.match_ndists) free(protein->alt.match_ndists);
     protein->alt.match_ndists = NULL;
     imm_del(&protein->null.dp);
+    imm_del(&protein->alt.dp0);
     imm_del(&protein->alt.dp);
   }
 }
@@ -41,7 +42,7 @@ int protein_unpack(struct protein *protein, struct lip_file *file)
   struct protein *p = (struct protein *)protein;
   unsigned size = 0;
   if (!lip_read_map_size(file, &size)) return DCP_EFREAD;
-  assert(size == 16);
+  assert(size == 17);
 
   int rc = 0;
 
@@ -51,6 +52,9 @@ int protein_unpack(struct protein *protein, struct lip_file *file)
 
   if ((rc = expect_map_key(file, "null"))) return rc;
   if (imm_dp_unpack(&p->null.dp, file)) return DCP_EDPUNPACK;
+
+  if ((rc = expect_map_key(file, "alt0"))) return rc;
+  if (imm_dp_unpack(&p->alt.dp0, file)) return DCP_EDPUNPACK;
 
   if ((rc = expect_map_key(file, "alt"))) return rc;
   if (imm_dp_unpack(&p->alt.dp, file)) return DCP_EDPUNPACK;
@@ -123,6 +127,11 @@ struct imm_dp const *protein_null_dp(struct protein const *protein)
   return &protein->null.dp;
 }
 
+struct imm_dp const *protein_alt0_dp(struct protein const *protein)
+{
+  return &protein->alt.dp0;
+}
+
 struct imm_dp const *protein_alt_dp(struct protein const *protein)
 {
   return &protein->alt.dp;
@@ -141,6 +150,7 @@ void protein_init(struct protein *p, struct imm_amino const *amino,
   p->core_size = 0;
   p->consensus[0] = '\0';
   imm_dp_init(&p->null.dp, &code->super);
+  imm_dp_init(&p->alt.dp0, &code->super);
   imm_dp_init(&p->alt.dp, &code->super);
   nuclt_dist_init(&p->null.ndist, code->nuclt);
   nuclt_dist_init(&p->alt.insert_ndist, code->nuclt);
@@ -217,7 +227,7 @@ int protein_setup(struct protein *protein, unsigned seq_size, bool multi_hits,
   return 0;
 }
 
-int protein_absorb(struct protein *p, struct model const *m)
+int protein_absorb(struct protein *p, struct model *m)
 {
   if (p->nuclt_code->nuclt != model_nuclt(m)) return DCP_EDIFFABC;
 
@@ -252,6 +262,19 @@ int protein_absorb(struct protein *p, struct model const *m)
   p->alt.J = imm_state_idx(imm_super(s.alt.J));
   p->alt.C = imm_state_idx(imm_super(s.alt.C));
   p->alt.T = imm_state_idx(imm_super(s.alt.T));
+
+  for (unsigned i = 0; i < m->core_size; ++i)
+  {
+    rc = imm_hmm_del_state(s.alt.hmm, imm_super(&m->alt.nodes[i].D));
+    if (rc) return rc;
+
+    rc = imm_hmm_del_state(s.alt.hmm, imm_super(&m->alt.nodes[i].I));
+    if (rc) return rc;
+  }
+
+  if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp0))
+    return DCP_EDPRESET;
+
   return 0;
 }
 
@@ -334,13 +357,16 @@ void protein_write_dot(struct protein const *p, FILE *fp)
 
 int protein_pack(struct protein const *protein, struct lip_file *file)
 {
-  if (!lip_write_map_size(file, 16)) return DCP_EFWRITE;
+  if (!lip_write_map_size(file, 17)) return DCP_EFWRITE;
 
   if (!lip_write_cstr(file, "accession")) return DCP_EFWRITE;
   if (!lip_write_cstr(file, protein->accession)) return DCP_EFWRITE;
 
   if (!lip_write_cstr(file, "null")) return DCP_EFWRITE;
   if (imm_dp_pack(&protein->null.dp, file)) return DCP_EDPPACK;
+
+  if (!lip_write_cstr(file, "alt0")) return DCP_EFWRITE;
+  if (imm_dp_pack(&protein->alt.dp0, file)) return DCP_EDPPACK;
 
   if (!lip_write_cstr(file, "alt")) return DCP_EFWRITE;
   if (imm_dp_pack(&protein->alt.dp, file)) return DCP_EDPPACK;

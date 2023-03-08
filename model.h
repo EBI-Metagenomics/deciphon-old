@@ -68,6 +68,6 @@ void model_write_dot(struct model const *, FILE *);
 
 struct imm_amino const *model_amino(struct model const *);
 struct imm_nuclt const *model_nuclt(struct model const *);
-struct model_summary model_summary(struct model const *);
+struct model_summary model_summary(struct model *);
 
 #endif

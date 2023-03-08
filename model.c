@@ -188,7 +188,7 @@ struct imm_nuclt const *model_nuclt(struct model const *m)
   return m->code->nuclt;
 }
 
-struct model_summary model_summary(struct model const *m)
+struct model_summary model_summary(struct model *m)
 {
   assert(have_finished_add(m));
   return (struct model_summary){

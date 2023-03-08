@@ -11,7 +11,7 @@ struct model_summary
 
   struct
   {
-    struct imm_hmm const *hmm;
+    struct imm_hmm *hmm;
     struct imm_mute_state const *S;
     struct imm_frame_state const *N;
     struct imm_mute_state const *B;

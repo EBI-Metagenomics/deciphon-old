@@ -36,6 +36,7 @@ struct protein
   {
     struct nuclt_dist *match_ndists;
     struct nuclt_dist insert_ndist;
+    struct imm_dp dp0;
     struct imm_dp dp;
     unsigned S;
     unsigned N;
@@ -57,7 +58,7 @@ int protein_set_accession(struct protein *, char const *);
 int protein_setup(struct protein *, unsigned seq_size, bool multi_hits,
                   bool hmmer3_compat);
 
-int protein_absorb(struct protein *, struct model const *model);
+int protein_absorb(struct protein *, struct model *model);
 
 int protein_sample(struct protein *, unsigned seed, unsigned core_size);
 
@@ -73,6 +74,7 @@ int protein_pack(struct protein const *, struct lip_file *file);
 void protein_del(struct protein *);
 int protein_unpack(struct protein *, struct lip_file *file);
 struct imm_dp const *protein_null_dp(struct protein const *);
+struct imm_dp const *protein_alt0_dp(struct protein const *);
 struct imm_dp const *protein_alt_dp(struct protein const *);
 
 #endif
