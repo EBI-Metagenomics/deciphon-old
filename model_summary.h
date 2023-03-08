@@ -16,7 +16,7 @@ struct model_summary
     struct imm_frame_state const *N;
     struct imm_mute_state const *B;
     struct imm_mute_state const *E;
-    struct imm_frame_state const *J;
+    struct imm_frame_state *J;
     struct imm_frame_state const *C;
     struct imm_mute_state const *T;
   } alt;

@@ -272,6 +272,9 @@ int protein_absorb(struct protein *p, struct model *m)
     if (rc) return rc;
   }
 
+  rc = imm_hmm_del_state(s.alt.hmm, imm_super(s.alt.J));
+  if (rc) return rc;
+
   if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp0))
     return DCP_EDPRESET;
 
