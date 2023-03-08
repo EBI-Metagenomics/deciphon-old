@@ -37,5 +37,6 @@ void scan_thrd_set_lrt_threshold(struct scan_thrd *, double lrt);
 void scan_thrd_set_multi_hits(struct scan_thrd *, bool multihits);
 void scan_thrd_set_hmmer3_compat(struct scan_thrd *, bool h3compat);
 int scan_thrd_run(struct scan_thrd *, struct iseq const *);
+int scan_thrd_run0(struct scan_thrd *, struct iseq const *);
 
 #endif

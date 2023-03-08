@@ -21,6 +21,7 @@ struct dcp_scan
   double lrt_threshold;
   bool multi_hits;
   bool hmmer3_compat;
+  bool heuristic;
 
   struct scan_db db;
   struct seq_iter seqit;
@@ -34,6 +35,7 @@ struct dcp_scan *dcp_scan_new(int port)
   x->lrt_threshold = 10.;
   x->multi_hits = true;
   x->hmmer3_compat = false;
+  x->heuristic = false;
   scan_db_init(&x->db);
   seq_iter_init(&x->seqit, NULL, NULL);
   prod_writer_init(&x->prod_writer);
@@ -76,6 +78,11 @@ void dcp_scan_set_hmmer3_compat(struct dcp_scan *x, bool h3compat)
   x->hmmer3_compat = h3compat;
 }
 
+void dcp_scan_set_heuristic(struct dcp_scan *x, bool heuristic)
+{
+  x->heuristic = heuristic;
+}
+
 int dcp_scan_set_db_file(struct dcp_scan *x, char const *filename)
 {
   return scan_db_set_filename(&x->db, filename);
@@ -107,6 +114,9 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
     scan_thrd_set_hmmer3_compat(t, x->hmmer3_compat);
   }
 
+  int (*run_scan_thrd)(struct scan_thrd *, struct iseq const *) = {
+      x->heuristic ? scan_thrd_run0 : scan_thrd_run};
+
   while (seq_iter_next(&x->seqit))
   {
     struct dcp_seq const *y = seq_iter_get(&x->seqit);
@@ -115,7 +125,7 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
     for (int i = 0; i < x->nthreads; ++i)
     {
       struct scan_thrd *t = x->threads + i;
-      if ((rc = scan_thrd_run(t, &seq))) break;
+      if ((rc = (*run_scan_thrd)(t, &seq))) break;
     }
   }
   if (rc) defer_return(rc);
