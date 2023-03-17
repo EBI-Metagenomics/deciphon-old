@@ -5,12 +5,12 @@ int main(void)
 {
   struct dcp_press *press = dcp_press_new();
 
-  char const *hmm = "/Users/horta/data/Pfam-shortest.hmm";
-  char const *db = TMPDIR "/Pfam-shortest.dcp";
+  char const *hmm = ASSETS "/minifam.hmm";
+  char const *db = TMPDIR "/minifam.dcp";
   int rc = dcp_press_open(press, hmm, db);
   eq(rc, 0);
 
-  eq(dcp_press_nproteins(press), 1);
+  eq(dcp_press_nproteins(press), 3);
   while (!dcp_press_end(press))
   {
     if ((rc = dcp_press_next(press))) break;
