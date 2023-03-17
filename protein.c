@@ -272,9 +272,6 @@ int protein_absorb(struct protein *p, struct model *m)
     if (rc) return rc;
   }
 
-  rc = imm_hmm_del_state(s.alt.hmm, imm_super(s.alt.J));
-  if (rc) return rc;
-
   if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp0))
     return DCP_EDPRESET;
 
@@ -356,6 +353,11 @@ int protein_decode(struct protein const *protein, struct imm_seq const *seq,
 void protein_write_dot(struct protein const *p, FILE *fp)
 {
   imm_dp_write_dot(&p->alt.dp, fp, state_name);
+}
+
+void protein_write_dot0(struct protein const *p, FILE *fp)
+{
+  imm_dp_write_dot(&p->alt.dp0, fp, state_name);
 }
 
 int protein_pack(struct protein const *protein, struct lip_file *file)

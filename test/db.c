@@ -59,7 +59,7 @@ void test_protein_db_reader(void)
   struct imm_abc const *abc = imm_super(&db.nuclt);
   eq(imm_abc_typeid(abc), IMM_DNA);
 
-  double logliks[] = {-2720.381428394979, -2854.53237780213};
+  double logliks[] = {-2720.381428394979, -2849.83007812500};
 
   unsigned nproteins = 0;
   struct imm_prod prod = imm_prod();

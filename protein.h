@@ -66,6 +66,7 @@ int protein_decode(struct protein const *, struct imm_seq const *seq,
                    unsigned state_id, struct imm_codon *codon);
 
 void protein_write_dot(struct protein const *, FILE *fp);
+void protein_write_dot0(struct protein const *, FILE *fp);
 
 struct lip_file;
 

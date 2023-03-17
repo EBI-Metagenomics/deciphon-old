@@ -138,6 +138,13 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
 
   if ((rc = protein_iter_rewind(it))) goto cleanup;
 
+  unsigned null_hits = 0;
+  unsigned alt0_hits = 0;
+  unsigned alt_hits = 0;
+  unsigned long long null_msec = 0;
+  unsigned long long alt0_msec = 0;
+  unsigned long long alt_msec = 0;
+  printf("IMPLEMENTACAO VER3\n");
   while (!(rc = protein_iter_next(it, &x->protein)))
   {
     if (protein_iter_end(it)) break;
@@ -158,12 +165,18 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
                        x->hmmer3_compat);
     if (rc) goto cleanup;
 
+    printf("NULL\n");
     if (imm_dp_viterbi(null_dp, null.task, &null.prod)) goto cleanup;
+    printf("ALT0\n");
     if (imm_dp_viterbi(alt0_dp, alt0.task, &alt0.prod)) goto cleanup;
 
     imm_float lrt = lrt(null.prod.loglik, alt0.prod.loglik);
 
-    if (!imm_lprob_is_finite(lrt) || lrt < 0) continue;
+    null_msec += null.prod.mseconds;
+    alt0_msec += alt0.prod.mseconds;
+    null_hits++;
+    alt0_hits++;
+    if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
 
     struct imm_dp const *alt_dp = protein_alt_dp(&x->protein);
     struct scan_task alt = {0};
@@ -178,6 +191,8 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
 
     lrt = prod_match_get_lrt(&x->prod_thrd->match);
 
+    alt_msec += alt.prod.mseconds;
+    alt_hits++;
     if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
 
     prod_match_set_protein(&x->prod_thrd->match, x->protein.accession);
@@ -200,6 +215,8 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
     match_iter_init(&mit, &seq->iseq, &alt.prod.path);
     if ((rc = prod_writer_thrd_put(x->prod_thrd, &match, &mit))) break;
   }
+  printf("%llu,%llu,%llu    %u %u %u\n", null_msec, alt0_msec, alt_msec,
+         null_hits, alt0_hits, alt_hits);
 
 cleanup:
   return rc;
