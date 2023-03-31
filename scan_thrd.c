@@ -22,8 +22,8 @@ int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
   protein_reader_iter(reader, partition, &x->iter);
 
   x->prod_thrd = prod_thrd;
-  struct imm_abc const *abc = imm_nuclt_super(&db->nuclt);
-  char const *abc_name = imm_abc_typeid_name(imm_abc_typeid(abc));
+  struct imm_abc const *abc = &db->nuclt.super;
+  char const *abc_name = imm_abc_typeid_name(abc->typeid);
   prod_match_set_abc(&x->prod_thrd->match, abc_name);
 
   chararray_init(&x->amino);
@@ -100,7 +100,7 @@ int scan_thrd_run(struct scan_thrd *x, struct iseq const *seq)
     x->prod_thrd->match.null = null.prod.loglik;
     x->prod_thrd->match.alt = alt.prod.loglik;
 
-    imm_float lrt = prod_match_get_lrt(&x->prod_thrd->match);
+    float lrt = prod_match_get_lrt(&x->prod_thrd->match);
 
     if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
 
@@ -170,7 +170,7 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
     printf("ALT0\n");
     if (imm_dp_viterbi(alt0_dp, alt0.task, &alt0.prod)) goto cleanup;
 
-    imm_float lrt = lrt(null.prod.loglik, alt0.prod.loglik);
+    float lrt = lrt(null.prod.loglik, alt0.prod.loglik);
 
     null_msec += null.prod.mseconds;
     alt0_msec += alt0.prod.mseconds;

@@ -9,14 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LOGN2 (imm_float)(-1.3862943611198906) /* log(1./4.) */
+#define LOGN2 (float)(-1.3862943611198906) /* log(1./4.) */
 #define LOG1 IMM_LPROB_ONE
 
-static imm_float const uniform_lprobs[IMM_NUCLT_SIZE] = {LOGN2, LOGN2, LOGN2,
-                                                         LOGN2};
+static float const uniform_lprobs[IMM_NUCLT_SIZE] = {LOGN2, LOGN2, LOGN2,
+                                                     LOGN2};
 
 /* Compute log(1 - p) given log(p). */
-static inline imm_float log1_p(imm_float logp) { return log1p(-exp(logp)); }
+static inline float log1_p(float logp) { return log1p(-exp(logp)); }
 
 int add_xnodes(struct model *);
 void init_xnodes(struct model *);
@@ -39,14 +39,13 @@ struct imm_codon_lprob codon_lprob(struct imm_amino const *,
                                    struct imm_nuclt const *);
 
 void setup_nuclt_dist(struct nuclt_dist *, struct imm_amino const *,
-                      struct imm_nuclt const *,
-                      imm_float const[IMM_AMINO_SIZE]);
+                      struct imm_nuclt const *, float const[IMM_AMINO_SIZE]);
 
 int setup_entry_trans(struct model *);
 int setup_exit_trans(struct model *);
 int setup_transitions(struct model *);
 
-int model_add_node(struct model *m, imm_float const lprobs[IMM_AMINO_SIZE],
+int model_add_node(struct model *m, float const lprobs[IMM_AMINO_SIZE],
                    char consensus)
 {
   if (!have_called_setup(m)) return DCP_EFUNCUSE;
@@ -55,7 +54,7 @@ int model_add_node(struct model *m, imm_float const lprobs[IMM_AMINO_SIZE],
 
   m->consensus[m->alt.node_idx] = consensus;
 
-  imm_float lodds[IMM_AMINO_SIZE];
+  float lodds[IMM_AMINO_SIZE];
   for (unsigned i = 0; i < IMM_AMINO_SIZE; ++i)
     lodds[i] = lprobs[i] - m->null.lprobs[i];
 
@@ -99,7 +98,7 @@ void model_del(struct model const *model)
 
 void model_init(struct model *m, struct imm_amino const *amino,
                 struct imm_nuclt_code const *code, struct cfg cfg,
-                imm_float const null_lprobs[IMM_AMINO_SIZE])
+                float const null_lprobs[IMM_AMINO_SIZE])
 
 {
   m->amino = amino;
@@ -117,7 +116,7 @@ void model_init(struct model *m, struct imm_amino const *amino,
 
   imm_hmm_init(&m->alt.hmm, &m->code->super);
 
-  imm_float const lodds[IMM_AMINO_SIZE] = {0};
+  float const lodds[IMM_AMINO_SIZE] = {0};
   setup_nuclt_dist(&m->alt.insert.nucltd, amino, nuclt, lodds);
 
   init_xnodes(m);
@@ -228,7 +227,7 @@ int add_xnodes(struct model *m)
 
 void init_xnodes(struct model *m)
 {
-  imm_float e = m->cfg.eps;
+  float e = m->cfg.eps;
   struct imm_nuclt_lprob const *nucltp = &m->null.nucltd.nucltp;
   struct imm_codon_marg const *codonm = &m->null.nucltd.codonm;
   struct xnode *n = &m->xnode;
@@ -253,16 +252,16 @@ void calculate_occupancy(struct model *m)
   for (unsigned i = 1; i < m->core_size; ++i)
   {
     ++trans;
-    imm_float v0 = m->alt.locc[i - 1] + imm_lprob_add(trans->MM, trans->MI);
-    imm_float v1 = log1_p(m->alt.locc[i - 1]) + trans->DM;
+    float v0 = m->alt.locc[i - 1] + imm_lprob_add(trans->MM, trans->MI);
+    float v1 = log1_p(m->alt.locc[i - 1]) + trans->DM;
     m->alt.locc[i] = imm_lprob_add(v0, v1);
   }
 
-  imm_float logZ = imm_lprob_zero();
+  float logZ = imm_lprob_zero();
   unsigned n = m->core_size;
   for (unsigned i = 0; i < m->core_size; ++i)
   {
-    logZ = imm_lprob_add(logZ, m->alt.locc[i] + imm_log(n - i));
+    logZ = imm_lprob_add(logZ, m->alt.locc[i] + log(n - i));
   }
 
   for (unsigned i = 0; i < m->core_size; ++i)
@@ -289,7 +288,7 @@ void init_delete(struct imm_mute_state *state, struct model *m)
 
 void init_insert(struct imm_frame_state *state, struct model *m)
 {
-  imm_float e = m->cfg.eps;
+  float e = m->cfg.eps;
   unsigned id = STATE_INSERT | (m->alt.node_idx + 1);
   struct imm_nuclt_lprob *nucltp = &m->alt.insert.nucltd.nucltp;
   struct imm_codon_marg *codonm = &m->alt.insert.nucltd.codonm;
@@ -300,7 +299,7 @@ void init_insert(struct imm_frame_state *state, struct model *m)
 void init_match(struct imm_frame_state *state, struct model *m,
                 struct nuclt_dist *d)
 {
-  imm_float e = m->cfg.eps;
+  float e = m->cfg.eps;
   unsigned id = STATE_MATCH | (m->alt.node_idx + 1);
   imm_frame_state_init(state, id, &d->nucltp, &d->codonm, e, imm_span(1, 5));
 }
@@ -346,16 +345,16 @@ int init_alt_xtrans(struct imm_hmm *hmm, struct xnode_alt *n)
 
 struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
 {
-  imm_float lprobs[] = {[0 ... IMM_NUCLT_SIZE - 1] = IMM_LPROB_ZERO};
+  float lprobs[] = {[0 ... IMM_NUCLT_SIZE - 1] = IMM_LPROB_ZERO};
 
-  imm_float const norm = imm_log((imm_float)3);
+  float const norm = log((float)3);
   for (unsigned i = 0; i < imm_gc_size(); ++i)
   {
     struct imm_codon codon = imm_gc_codon(1, i);
     /* Check for FIXME-1 for an explanation of this
      * temporary hacky */
     codon.nuclt = codonp->nuclt;
-    imm_float lprob = imm_codon_lprob_get(codonp, codon);
+    float lprob = imm_codon_lprob_get(codonp, codon);
     lprobs[codon.a] = imm_lprob_add(lprobs[codon.a], lprob - norm);
     lprobs[codon.b] = imm_lprob_add(lprobs[codon.b], lprob - norm);
     lprobs[codon.c] = imm_lprob_add(lprobs[codon.c], lprob - norm);
@@ -375,11 +374,11 @@ struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
 
   struct imm_abc const *abc = &amino->super;
   /* TODO: We don't need 255 positions*/
-  imm_float lprobs[] = {[0 ... 254] = IMM_LPROB_ZERO};
+  float lprobs[] = {[0 ... 254] = IMM_LPROB_ZERO};
   for (unsigned i = 0; i < imm_abc_size(abc); ++i)
   {
     char aa = imm_abc_symbols(abc)[i];
-    imm_float norm = imm_log((imm_float)count[(unsigned)aa]);
+    float norm = log((float)count[(unsigned)aa]);
     lprobs[(unsigned)aa] = imm_amino_lprob_get(aminop, aa) - norm;
   }
 
@@ -400,7 +399,7 @@ struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
 
 void setup_nuclt_dist(struct nuclt_dist *dist, struct imm_amino const *amino,
                       struct imm_nuclt const *nuclt,
-                      imm_float const lprobs[IMM_AMINO_SIZE])
+                      float const lprobs[IMM_AMINO_SIZE])
 {
   dist->nucltp = imm_nuclt_lprob(nuclt, uniform_lprobs);
   struct imm_amino_lprob aminop = imm_amino_lprob(amino, lprobs);
@@ -416,8 +415,8 @@ int setup_entry_trans(struct model *m)
 {
   if (m->cfg.edist == ENTRY_DIST_UNIFORM)
   {
-    imm_float M = (imm_float)m->core_size;
-    imm_float cost = imm_log(2.0 / (M * (M + 1))) * M;
+    float M = (float)m->core_size;
+    float cost = log(2.0 / (M * (M + 1))) * M;
 
     struct imm_state *B = &m->xnode.alt.B.super;
     for (unsigned i = 0; i < m->core_size; ++i)
@@ -449,13 +448,13 @@ int setup_exit_trans(struct model *m)
   for (unsigned i = 0; i < m->core_size; ++i)
   {
     struct node *node = m->alt.nodes + i;
-    if (imm_hmm_set_trans(&m->alt.hmm, &node->M.super, E, imm_log(1)))
+    if (imm_hmm_set_trans(&m->alt.hmm, &node->M.super, E, log(1)))
       return DCP_ESETTRANS;
   }
   for (unsigned i = 1; i < m->core_size; ++i)
   {
     struct node *node = m->alt.nodes + i;
-    if (imm_hmm_set_trans(&m->alt.hmm, &node->D.super, E, imm_log(1)))
+    if (imm_hmm_set_trans(&m->alt.hmm, &node->D.super, E, log(1)))
       return DCP_ESETTRANS;
   }
   return 0;

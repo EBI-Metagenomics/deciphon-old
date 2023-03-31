@@ -20,7 +20,7 @@ void test_protein_db_writer(void)
   remove(TMPDIR "/db.dcp");
 
   struct imm_amino const *amino = &imm_amino_iupac;
-  struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+  struct imm_nuclt const *nuclt = &imm_dna_iupac.super;
   struct imm_nuclt_code code = {0};
   imm_nuclt_code_init(&code, nuclt);
 
@@ -56,8 +56,8 @@ void test_protein_db_reader(void)
 
   eq(db.nproteins, 2);
 
-  struct imm_abc const *abc = imm_super(&db.nuclt);
-  eq(imm_abc_typeid(abc), IMM_DNA);
+  struct imm_abc const *abc = &db.nuclt.super;
+  eq(abc->typeid, IMM_DNA);
 
   double logliks[] = {-2720.381428394979, -2849.83007812500};
 
@@ -75,17 +75,17 @@ void test_protein_db_reader(void)
     if (protein_iter_end(&it)) break;
 
     struct imm_task *task = imm_task_new(protein_alt_dp(&protein));
-    struct imm_seq seq = imm_seq(imm_str(imm_example2_seq), abc);
-    eq(imm_task_setup(task, &seq), IMM_OK);
-    eq(imm_dp_viterbi(protein_alt_dp(&protein), task, &prod), IMM_OK);
+    struct imm_seq seq = imm_seq(imm_str(example2_seq), abc);
+    eq(imm_task_setup(task, &seq), 0);
+    eq(imm_dp_viterbi(protein_alt_dp(&protein), task, &prod), 0);
     close(prod.loglik, logliks[nproteins]);
-    imm_del(task);
+    imm_task_del(task);
     ++nproteins;
   }
   eq(rc, 0);
   eq(nproteins, 2);
 
-  imm_del(&prod);
+  imm_prod_del(&prod);
   db_reader_close(&db);
   fclose(fp);
 }

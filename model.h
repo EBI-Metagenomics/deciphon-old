@@ -30,7 +30,7 @@ struct model
 
   struct
   {
-    imm_float lprobs[IMM_AMINO_SIZE];
+    float lprobs[IMM_AMINO_SIZE];
     struct nuclt_dist nucltd;
     struct imm_hmm hmm;
   } null;
@@ -39,7 +39,7 @@ struct model
   {
     unsigned node_idx;
     struct node *nodes;
-    imm_float *locc;
+    float *locc;
     unsigned trans_idx;
     struct trans *trans;
     struct imm_hmm hmm;
@@ -51,7 +51,7 @@ struct model
   } alt;
 };
 
-int model_add_node(struct model *, imm_float const lp[IMM_AMINO_SIZE],
+int model_add_node(struct model *, float const lp[IMM_AMINO_SIZE],
                    char consensus);
 
 int model_add_trans(struct model *, struct trans);
@@ -60,7 +60,7 @@ void model_del(struct model const *);
 
 void model_init(struct model *, struct imm_amino const *,
                 struct imm_nuclt_code const *, struct cfg,
-                imm_float const null_lprobs[IMM_AMINO_SIZE]);
+                float const null_lprobs[IMM_AMINO_SIZE]);
 
 int model_setup(struct model *, unsigned core_size);
 

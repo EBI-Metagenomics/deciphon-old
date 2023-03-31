@@ -5,15 +5,15 @@
 
 struct xtrans
 {
-  imm_float NN;
-  imm_float CC;
-  imm_float JJ;
-  imm_float NB;
-  imm_float CT;
-  imm_float JB;
-  imm_float RR;
-  imm_float EJ;
-  imm_float EC;
+  float NN;
+  float CC;
+  float JJ;
+  float NB;
+  float CT;
+  float JB;
+  float RR;
+  float EJ;
+  float EC;
 };
 
 void xtrans_init(struct xtrans *);

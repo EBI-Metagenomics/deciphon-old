@@ -12,7 +12,7 @@ static int pack_entry_dist(struct lip_file *file, enum entry_dist const *edist)
   return 0;
 }
 
-static int pack_epsilon(struct lip_file *file, imm_float const *epsilon)
+static int pack_epsilon(struct lip_file *file, float const *epsilon)
 {
   if (!lip_write_cstr(file, "epsilon")) return DCP_EFWRITE;
   if (!lip_write_float(file, *epsilon)) return DCP_EFWRITE;
@@ -71,7 +71,8 @@ static int db_writer_pack_float_size(struct db_writer *db)
 {
   if (!lip_write_cstr(&db->tmp.header, "float_size")) return DCP_EFWRITE;
 
-  unsigned size = IMM_FLOAT_BYTES;
+  // unsigned size = IMM_FLOAT_BYTES;
+  unsigned size = 4;
   assert(size == 4 || size == 8);
   if (!lip_write_int(&db->tmp.header, size)) return DCP_EFWRITE;
 
@@ -180,7 +181,7 @@ int db_writer_open(struct db_writer *db, FILE *fp,
   imm_nuclt_code_init(&db->code, &db->nuclt);
   db->cfg = cfg;
 
-  imm_float const *epsilon = &db->cfg.eps;
+  float const *epsilon = &db->cfg.eps;
   enum entry_dist const *edist = &db->cfg.edist;
 
   struct imm_nuclt const *n = &db->nuclt;

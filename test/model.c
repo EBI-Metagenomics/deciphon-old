@@ -7,15 +7,15 @@ int main(void)
 {
   unsigned core_size = 3;
   struct imm_amino const *amino = &imm_amino_iupac;
-  struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+  struct imm_nuclt const *nuclt = &imm_dna_iupac.super;
   struct imm_nuclt_code code;
   imm_nuclt_code_init(&code, nuclt);
   struct cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.01f};
-  imm_float null_lprobs[IMM_AMINO_SIZE];
-  imm_float null_lodds[IMM_AMINO_SIZE];
-  imm_float match_lprobs1[IMM_AMINO_SIZE];
-  imm_float match_lprobs2[IMM_AMINO_SIZE];
-  imm_float match_lprobs3[IMM_AMINO_SIZE];
+  float null_lprobs[IMM_AMINO_SIZE];
+  float null_lodds[IMM_AMINO_SIZE];
+  float match_lprobs1[IMM_AMINO_SIZE];
+  float match_lprobs2[IMM_AMINO_SIZE];
+  float match_lprobs3[IMM_AMINO_SIZE];
   struct trans t[4];
 
   struct imm_rnd rnd = imm_rnd(942);

@@ -7,13 +7,13 @@
 struct cfg
 {
   enum entry_dist edist;
-  imm_float eps;
+  float eps;
 };
 
 #define CFG_DEFAULT                                                            \
   (struct cfg)                                                                 \
   {                                                                            \
-    ENTRY_DIST_OCCUPANCY, (imm_float)0.01                                      \
+    ENTRY_DIST_OCCUPANCY, (float)0.01                                          \
   }
 
 #endif

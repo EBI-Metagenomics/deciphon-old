@@ -18,9 +18,9 @@ void protein_del(struct protein *protein)
   {
     if (protein->alt.match_ndists) free(protein->alt.match_ndists);
     protein->alt.match_ndists = NULL;
-    imm_del(&protein->null.dp);
-    imm_del(&protein->alt.dp0);
-    imm_del(&protein->alt.dp);
+    imm_dp_del(&protein->null.dp);
+    imm_dp_del(&protein->alt.dp0);
+    imm_dp_del(&protein->alt.dp);
   }
 }
 
@@ -140,7 +140,7 @@ struct imm_dp const *protein_alt_dp(struct protein const *protein)
 void protein_init(struct protein *p, struct imm_amino const *amino,
                   struct imm_nuclt_code const *code, struct cfg cfg)
 {
-  strlcpy(p->accession, "", ACCESSION_SIZE);
+  imm_strlcpy(p->accession, "", ACCESSION_SIZE);
   p->state_name = state_name;
   p->imm_code = &code->super;
   p->nuclt_code = code;
@@ -159,7 +159,7 @@ void protein_init(struct protein *p, struct imm_amino const *amino,
 
 int protein_set_accession(struct protein *x, char const *acc)
 {
-  return strlcpy(x->accession, acc, ACCESSION_SIZE) < ACCESSION_SIZE
+  return imm_strlcpy(x->accession, acc, ACCESSION_SIZE) < ACCESSION_SIZE
              ? 0
              : DCP_ELONGACC;
 }
@@ -169,20 +169,20 @@ int protein_setup(struct protein *protein, unsigned seq_size, bool multi_hits,
 {
   if (seq_size == 0) return DCP_EZEROSEQ;
 
-  imm_float L = (imm_float)seq_size;
+  float L = (float)seq_size;
 
-  imm_float q = 0.0;
-  imm_float log_q = IMM_LPROB_ZERO;
+  float q = 0.0;
+  float log_q = IMM_LPROB_ZERO;
 
   if (multi_hits)
   {
     q = 0.5;
-    log_q = imm_log(0.5);
+    log_q = log(0.5);
   }
 
-  imm_float lp = imm_log(L) - imm_log(L + 2 + q / (1 - q));
-  imm_float l1p = imm_log(2 + q / (1 - q)) - imm_log(L + 2 + q / (1 - q));
-  imm_float lr = imm_log(L) - imm_log(L + 1);
+  float lp = log(L) - log(L + 2 + q / (1 - q));
+  float l1p = log(2 + q / (1 - q)) - log(L + 2 + q / (1 - q));
+  float lr = log(L) - log(L + 1);
 
   struct xtrans t;
 
@@ -190,11 +190,11 @@ int protein_setup(struct protein *protein, unsigned seq_size, bool multi_hits,
   t.NB = t.CT = t.JB = l1p;
   t.RR = lr;
   t.EJ = log_q;
-  t.EC = imm_log(1 - q);
+  t.EC = log(1 - q);
 
   if (hmmer3_compat)
   {
-    t.NN = t.CC = t.JJ = imm_log(1);
+    t.NN = t.CC = t.JJ = log(1);
   }
 
   struct imm_dp *dp = &protein->null.dp;
@@ -235,10 +235,10 @@ int protein_absorb(struct protein *p, struct model *m)
 
   struct model_summary s = model_summary(m);
 
-  if (imm_hmm_reset_dp(s.null.hmm, imm_super(s.null.R), &p->null.dp))
+  if (imm_hmm_reset_dp(s.null.hmm, &s.null.R->super, &p->null.dp))
     return DCP_EDPRESET;
 
-  if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp))
+  if (imm_hmm_reset_dp(s.alt.hmm, &s.alt.T->super, &p->alt.dp))
     return DCP_EDPRESET;
 
   p->core_size = m->core_size;
@@ -253,26 +253,26 @@ int protein_absorb(struct protein *p, struct model *m)
 
   p->alt.insert_ndist = m->alt.insert.nucltd;
 
-  p->null.R = imm_state_idx(imm_super(s.null.R));
+  p->null.R = imm_state_idx(&s.null.R->super);
 
-  p->alt.S = imm_state_idx(imm_super(s.alt.S));
-  p->alt.N = imm_state_idx(imm_super(s.alt.N));
-  p->alt.B = imm_state_idx(imm_super(s.alt.B));
-  p->alt.E = imm_state_idx(imm_super(s.alt.E));
-  p->alt.J = imm_state_idx(imm_super(s.alt.J));
-  p->alt.C = imm_state_idx(imm_super(s.alt.C));
-  p->alt.T = imm_state_idx(imm_super(s.alt.T));
+  p->alt.S = imm_state_idx(&s.alt.S->super);
+  p->alt.N = imm_state_idx(&s.alt.N->super);
+  p->alt.B = imm_state_idx(&s.alt.B->super);
+  p->alt.E = imm_state_idx(&s.alt.E->super);
+  p->alt.J = imm_state_idx(&s.alt.J->super);
+  p->alt.C = imm_state_idx(&s.alt.C->super);
+  p->alt.T = imm_state_idx(&s.alt.T->super);
 
   for (unsigned i = 0; i < m->core_size; ++i)
   {
-    rc = imm_hmm_del_state(s.alt.hmm, imm_super(&m->alt.nodes[i].D));
+    rc = imm_hmm_del_state(s.alt.hmm, &m->alt.nodes[i].D.super);
     if (rc) return rc;
 
-    rc = imm_hmm_del_state(s.alt.hmm, imm_super(&m->alt.nodes[i].I));
+    rc = imm_hmm_del_state(s.alt.hmm, &m->alt.nodes[i].I.super);
     if (rc) return rc;
   }
 
-  if (imm_hmm_reset_dp(s.alt.hmm, imm_super(s.alt.T), &p->alt.dp0))
+  if (imm_hmm_reset_dp(s.alt.hmm, &s.alt.T->super, &p->alt.dp0))
     return DCP_EDPRESET;
 
   return 0;
@@ -284,7 +284,7 @@ int protein_sample(struct protein *p, unsigned seed, unsigned core_size)
   p->core_size = core_size;
   struct imm_rnd rnd = imm_rnd(seed);
 
-  imm_float lprobs[IMM_AMINO_SIZE];
+  float lprobs[IMM_AMINO_SIZE];
 
   imm_lprob_sample(&rnd, IMM_AMINO_SIZE, lprobs);
   imm_lprob_normalize(IMM_AMINO_SIZE, lprobs);

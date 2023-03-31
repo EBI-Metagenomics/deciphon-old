@@ -16,7 +16,7 @@ int main(void)
 void test_protein_uniform(void)
 {
   struct imm_amino const *amino = &imm_amino_iupac;
-  struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+  struct imm_nuclt const *nuclt = &imm_dna_iupac.super;
   struct imm_nuclt_code code;
   imm_nuclt_code_init(&code, nuclt);
   struct cfg cfg = {ENTRY_DIST_UNIFORM, 0.1f};
@@ -36,8 +36,8 @@ void test_protein_uniform(void)
   struct imm_dp *dp = &protein.null.dp;
   struct imm_task *task = imm_task_new(dp);
   notnull(task);
-  eq(imm_task_setup(task, &seq), IMM_OK);
-  eq(imm_dp_viterbi(dp, task, &prod), IMM_OK);
+  eq(imm_task_setup(task, &seq), 0);
+  eq(imm_dp_viterbi(dp, task, &prod), 0);
 
   close(prod.loglik, -48.9272687711);
 
@@ -55,13 +55,13 @@ void test_protein_uniform(void)
   eq(name, "R");
 
   imm_prod_reset(&prod);
-  imm_del(task);
+  imm_task_del(task);
 
   dp = &protein.alt.dp;
   task = imm_task_new(dp);
   notnull(task);
-  eq(imm_task_setup(task, &seq), IMM_OK);
-  eq(imm_dp_viterbi(dp, task, &prod), IMM_OK);
+  eq(imm_task_setup(task, &seq), 0);
+  eq(imm_dp_viterbi(dp, task, &prod), 0);
 
   close(prod.loglik, -55.59428153448);
 
@@ -88,7 +88,7 @@ void test_protein_uniform(void)
       IMM_CODON(nuclt, "CAC"),
   };
 
-  unsigned any = imm_abc_any_symbol_id(imm_super(nuclt));
+  unsigned any = imm_abc_any_symbol_id(&nuclt->super);
   struct imm_codon codon = imm_codon(nuclt, any, any, any);
   unsigned i = 0;
   while (!(rc = codec_next(&codec, &seq, &codon)))
@@ -103,14 +103,14 @@ void test_protein_uniform(void)
   eq(i, 10);
 
   protein_del(&protein);
-  imm_del(&prod);
-  imm_del(task);
+  imm_prod_del(&prod);
+  imm_task_del(task);
 }
 
 void test_protein_occupancy(void)
 {
   struct imm_amino const *amino = &imm_amino_iupac;
-  struct imm_nuclt const *nuclt = imm_super(&imm_dna_iupac);
+  struct imm_nuclt const *nuclt = &imm_dna_iupac.super;
   struct imm_nuclt_code code;
   imm_nuclt_code_init(&code, nuclt);
   struct cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.1f};
@@ -129,8 +129,8 @@ void test_protein_occupancy(void)
   struct imm_dp *dp = &protein.null.dp;
   struct imm_task *task = imm_task_new(dp);
   notnull(task);
-  eq(imm_task_setup(task, &seq), IMM_OK);
-  eq(imm_dp_viterbi(dp, task, &prod), IMM_OK);
+  eq(imm_task_setup(task, &seq), 0);
+  eq(imm_dp_viterbi(dp, task, &prod), 0);
 
   close(prod.loglik, -48.9272687711);
 
@@ -148,13 +148,13 @@ void test_protein_occupancy(void)
   eq(name, "R");
 
   imm_prod_reset(&prod);
-  imm_del(task);
+  imm_task_del(task);
 
   dp = &protein.alt.dp;
   task = imm_task_new(dp);
   notnull(task);
-  eq(imm_task_setup(task, &seq), IMM_OK);
-  eq(imm_dp_viterbi(dp, task, &prod), IMM_OK);
+  eq(imm_task_setup(task, &seq), 0);
+  eq(imm_dp_viterbi(dp, task, &prod), 0);
 
   close(prod.loglik, -54.35543421312);
 
@@ -181,7 +181,7 @@ void test_protein_occupancy(void)
       IMM_CODON(nuclt, "CAC"),
   };
 
-  unsigned any = imm_abc_any_symbol_id(imm_super(nuclt));
+  unsigned any = imm_abc_any_symbol_id(&nuclt->super);
   struct imm_codon codon = imm_codon(nuclt, any, any, any);
   unsigned i = 0;
   while (!(rc = codec_next(&codec, &seq, &codon)))
@@ -196,6 +196,6 @@ void test_protein_occupancy(void)
   eq(i, 10);
 
   protein_del(&protein);
-  imm_del(&prod);
-  imm_del(task);
+  imm_prod_del(&prod);
+  imm_task_del(task);
 }

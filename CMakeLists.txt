@@ -9,7 +9,7 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 
 cpmaddpackage("gh:EBI-Metagenomics/hmr@0.6.0")
-cpmaddpackage("gh:EBI-Metagenomics/imm@2.3.2")
+cpmaddpackage("gh:EBI-Metagenomics/imm@3.0.0")
 cpmaddpackage("gh:EBI-Metagenomics/lip@0.5.0")
 cpmaddpackage("gh:EBI-Metagenomics/h3c@0.10.5")
 

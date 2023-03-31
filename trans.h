@@ -14,17 +14,17 @@ struct trans
   {
     struct
     {
-      imm_float MM;
-      imm_float MI;
-      imm_float MD;
-      imm_float IM;
-      imm_float II;
-      imm_float DM;
-      imm_float DD;
+      float MM;
+      float MI;
+      float MD;
+      float IM;
+      float II;
+      float DM;
+      float DD;
     } __attribute__((packed));
     struct
     {
-      imm_float data[TRANS_SIZE];
+      float data[TRANS_SIZE];
     };
   };
 };

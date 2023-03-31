@@ -16,7 +16,7 @@ static int unpack_entry_dist(struct lip_file *file, enum entry_dist *ed)
   return 0;
 }
 
-static int unpack_epsilon(struct lip_file *file, imm_float *epsilon)
+static int unpack_epsilon(struct lip_file *file, float *epsilon)
 {
   int rc = 0;
   if ((rc = expect_map_key(file, "epsilon"))) return rc;
@@ -100,7 +100,8 @@ int db_reader_unpack_float_size(struct db_reader *x)
   unsigned size = 0;
   if (!lip_read_int(&x->file, &size)) return DCP_EFREAD;
 
-  return size != IMM_FLOAT_BYTES ? DCP_EFDATA : 0;
+  // return size != IMM_FLOAT_BYTES ? DCP_EFDATA : 0;
+  return size != 4 ? DCP_EFDATA : 0;
 }
 
 static int unpack_header_protein_sizes(struct db_reader *x)

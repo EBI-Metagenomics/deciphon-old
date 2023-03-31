@@ -1,8 +1,8 @@
-#ifndef STRLCPY_H
-#define STRLCPY_H
+#ifndef IMM_STRLCPY_H
+#define IMM_STRLCPY_H
 
 #include <stddef.h>
 
-size_t strlcpy(char *dst, char const *src, size_t dsize);
+size_t imm_strlcpy(char *dst, char const *src, size_t dsize);
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef EXPECT_H
-#define EXPECT_H
+#ifndef DECIPHON_EXPECT_H
+#define DECIPHON_EXPECT_H
 
 #include "lip/lip.h"
 

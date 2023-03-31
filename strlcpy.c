@@ -15,7 +15,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-size_t strlcpy(char *dst, char const *src, size_t dsize)
+size_t imm_strlcpy(char *dst, char const *src, size_t dsize)
 {
   char const *osrc = src;
   size_t nleft = dsize;

@@ -161,7 +161,8 @@ static int protein_write(struct dcp_press *x)
   int rc = protein_absorb(&x->protein, &x->reader.h3.model);
   if (rc) return rc;
 
-  strlcpy(x->protein.accession, x->reader.h3.protein.meta.acc, ACCESSION_SIZE);
+  imm_strlcpy(x->protein.accession, x->reader.h3.protein.meta.acc,
+              ACCESSION_SIZE);
 
   return db_writer_pack(&x->writer.db, &x->protein);
 }
