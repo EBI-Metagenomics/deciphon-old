@@ -91,9 +91,12 @@ int model_add_trans(struct model *m, struct trans trans)
 
 void model_del(struct model const *model)
 {
-  free(model->alt.nodes);
-  free(model->alt.locc);
-  free(model->alt.trans);
+  if (model)
+  {
+    free(model->alt.nodes);
+    free(model->alt.locc);
+    free(model->alt.trans);
+  }
 }
 
 void model_init(struct model *m, struct imm_amino const *amino,

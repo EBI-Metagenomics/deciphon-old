@@ -86,6 +86,7 @@ void test_protein_db_reader(void)
   eq(nproteins, 2);
 
   imm_prod_del(&prod);
+  protein_del(&protein);
   db_reader_close(&db);
   fclose(fp);
 }

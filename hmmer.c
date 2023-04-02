@@ -13,9 +13,12 @@ int hmmer_init(struct hmmer *x)
 
 void hmmer_cleanup(struct hmmer *x)
 {
-  if (x->stream) h3c_stream_del(x->stream);
-  x->stream = NULL;
-  hmmer_result_cleanup(&x->result);
+  if (x)
+  {
+    if (x->stream) h3c_stream_del(x->stream);
+    x->stream = NULL;
+    hmmer_result_cleanup(&x->result);
+  }
 }
 
 int hmmer_put(struct hmmer *x, int hmmidx, char const *name, char const *seq)

@@ -10,8 +10,11 @@ int hmmer_result_init(struct hmmer_result *x)
 
 void hmmer_result_cleanup(struct hmmer_result *x)
 {
-  if (x->handle) h3c_result_del(x->handle);
-  x->handle = NULL;
+  if (x)
+  {
+    if (x->handle) h3c_result_del(x->handle);
+    x->handle = NULL;
+  }
 }
 
 int hmmer_result_nhits(struct hmmer_result const *x)

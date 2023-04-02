@@ -68,6 +68,8 @@ static int infer_amino(struct chararray *x, struct match *match,
 int scan_thrd_run(struct scan_thrd *x, struct iseq const *seq)
 {
   int rc = 0;
+  struct scan_task null = {0};
+  struct scan_task alt = {0};
 
   struct protein_iter *it = &x->iter;
   x->prod_thrd->match.seq_id = seq->id;
@@ -80,9 +82,6 @@ int scan_thrd_run(struct scan_thrd *x, struct iseq const *seq)
 
     struct imm_dp const *null_dp = protein_null_dp(&x->protein);
     struct imm_dp const *alt_dp = protein_alt_dp(&x->protein);
-
-    struct scan_task null = {0};
-    struct scan_task alt = {0};
 
     rc = scan_task_setup(&null, protein_null_dp(&x->protein), seq);
     if (rc) goto cleanup;
@@ -126,34 +125,37 @@ int scan_thrd_run(struct scan_thrd *x, struct iseq const *seq)
   }
 
 cleanup:
+  protein_del(&x->protein);
+  scan_task_cleanup(&null);
+  scan_task_cleanup(&alt);
   return rc;
 }
 
 int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
 {
   int rc = 0;
+  struct scan_task null = {0};
+  struct scan_task alt0 = {0};
+  struct scan_task alt = {0};
 
   struct protein_iter *it = &x->iter;
   x->prod_thrd->match.seq_id = seq->id;
 
   if ((rc = protein_iter_rewind(it))) goto cleanup;
 
-  unsigned null_hits = 0;
-  unsigned alt0_hits = 0;
-  unsigned alt_hits = 0;
-  unsigned long long null_msec = 0;
-  unsigned long long alt0_msec = 0;
-  unsigned long long alt_msec = 0;
-  printf("IMPLEMENTACAO VER3\n");
+  // unsigned null_hits = 0;
+  // unsigned alt0_hits = 0;
+  // unsigned alt_hits = 0;
+  // unsigned long long null_msec = 0;
+  // unsigned long long alt0_msec = 0;
+  // unsigned long long alt_msec = 0;
+  // printf("IMPLEMENTACAO VER3\n");
   while (!(rc = protein_iter_next(it, &x->protein)))
   {
     if (protein_iter_end(it)) break;
 
     struct imm_dp const *null_dp = protein_null_dp(&x->protein);
     struct imm_dp const *alt0_dp = protein_alt0_dp(&x->protein);
-
-    struct scan_task null = {0};
-    struct scan_task alt0 = {0};
 
     rc = scan_task_setup(&null, protein_null_dp(&x->protein), seq);
     if (rc) goto cleanup;
@@ -165,21 +167,20 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
                        x->hmmer3_compat);
     if (rc) goto cleanup;
 
-    printf("NULL\n");
+    // printf("NULL\n");
     if (imm_dp_viterbi(null_dp, null.task, &null.prod)) goto cleanup;
-    printf("ALT0\n");
+    // printf("ALT0\n");
     if (imm_dp_viterbi(alt0_dp, alt0.task, &alt0.prod)) goto cleanup;
 
     float lrt = lrt(null.prod.loglik, alt0.prod.loglik);
 
-    null_msec += null.prod.mseconds;
-    alt0_msec += alt0.prod.mseconds;
-    null_hits++;
-    alt0_hits++;
+    // null_msec += null.prod.mseconds;
+    // alt0_msec += alt0.prod.mseconds;
+    // null_hits++;
+    // alt0_hits++;
     if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
 
     struct imm_dp const *alt_dp = protein_alt_dp(&x->protein);
-    struct scan_task alt = {0};
 
     rc = scan_task_setup(&alt, protein_alt_dp(&x->protein), seq);
     if (rc) goto cleanup;
@@ -191,8 +192,8 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
 
     lrt = prod_match_get_lrt(&x->prod_thrd->match);
 
-    alt_msec += alt.prod.mseconds;
-    alt_hits++;
+    // alt_msec += alt.prod.mseconds;
+    // alt_hits++;
     if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
 
     prod_match_set_protein(&x->prod_thrd->match, x->protein.accession);
@@ -215,10 +216,14 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
     match_iter_init(&mit, &seq->iseq, &alt.prod.path);
     if ((rc = prod_writer_thrd_put(x->prod_thrd, &match, &mit))) break;
   }
-  printf("%llu,%llu,%llu    %u %u %u\n", null_msec, alt0_msec, alt_msec,
-         null_hits, alt0_hits, alt_hits);
+  // printf("%llu,%llu,%llu    %u %u %u\n", null_msec, alt0_msec, alt_msec,
+  //        null_hits, alt0_hits, alt_hits);
 
 cleanup:
+  protein_del(&x->protein);
+  scan_task_cleanup(&null);
+  scan_task_cleanup(&alt);
+  scan_task_cleanup(&alt0);
   return rc;
 }
 

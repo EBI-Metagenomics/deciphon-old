@@ -14,5 +14,6 @@ struct scan_task
 void scan_task_init(struct scan_task *);
 int scan_task_setup(struct scan_task *, struct imm_dp const *,
                     struct iseq const *);
+void scan_task_cleanup(struct scan_task *);
 
 #endif

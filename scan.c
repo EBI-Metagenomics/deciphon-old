@@ -97,6 +97,8 @@ void dcp_scan_set_seq_iter(struct dcp_scan *x, dcp_seq_next_fn *callb,
 int dcp_scan_run(struct dcp_scan *x, char const *name)
 {
   int rc = 0;
+  for (int i = 0; i < x->nthreads; ++i)
+    memset(&x->threads[i], 0, sizeof(x->threads[i]));
 
   if ((rc = scan_db_open(&x->db, x->nthreads))) defer_return(rc);
 
@@ -117,24 +119,40 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
   int (*run_scan_thrd)(struct scan_thrd *, struct iseq const *) = {
       x->heuristic ? scan_thrd_run0 : scan_thrd_run};
 
+  int seq_idx = 0;
   while (seq_iter_next(&x->seqit))
   {
+    fprintf(stderr, "Scanning sequence %d\n", seq_idx++);
     struct dcp_seq const *y = seq_iter_get(&x->seqit);
     struct iseq seq = iseq_init(y->id, y->name, y->data, scan_db_abc(&x->db));
 
+#pragma omp parallel for default(none) shared(x, run_scan_thrd, seq, rc)
     for (int i = 0; i < x->nthreads; ++i)
     {
       struct scan_thrd *t = x->threads + i;
-      if ((rc = (*run_scan_thrd)(t, &seq))) break;
+      int r = (*run_scan_thrd)(t, &seq);
+      if (r)
+      {
+#pragma omp critical
+        {
+          rc = r;
+        }
+#pragma omp cancel for
+      }
+#pragma omp cancellation point for
     }
   }
   if (rc) defer_return(rc);
 
   scan_db_close(&x->db);
+  for (int i = 0; i < x->nthreads; ++i)
+    scan_thrd_cleanup(x->threads + i);
   return prod_writer_close(&x->prod_writer);
 
 defer:
   prod_writer_close(&x->prod_writer);
   scan_db_close(&x->db);
+  for (int i = 0; i < x->nthreads; ++i)
+    scan_thrd_cleanup(x->threads + i);
   return rc;
 }

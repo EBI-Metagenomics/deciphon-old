@@ -11,10 +11,13 @@ void chararray_init(struct chararray *x)
 
 void chararray_cleanup(struct chararray *x)
 {
-  if (x->data) free(x->data);
-  x->size = 0;
-  x->capacity = 0;
-  x->data = NULL;
+  if (x)
+  {
+    free(x->data);
+    x->data = NULL;
+    x->size = 0;
+    x->capacity = 0;
+  }
 }
 
 size_t chararray_size(struct chararray const *x) { return x->size; }

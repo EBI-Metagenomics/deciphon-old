@@ -26,12 +26,16 @@ int protein_iter_next(struct protein_iter *x, struct protein *protein)
 {
   x->curr_idx += 1;
   if (protein_iter_end(x)) return 0;
-  return protein_unpack(protein, &x->file);
+  int rc = protein_unpack(protein, &x->file);
+  long offset = 0;
+  fs_tell(x->fp, &offset);
+  return rc;
 }
 
 bool protein_iter_end(struct protein_iter const *x)
 {
-  return x->start_idx + protein_reader_size(x->reader) == x->curr_idx;
+  int size = protein_reader_partition_size(x->reader, x->partition);
+  return x->start_idx + size == x->curr_idx;
 }
 
 int protein_iter_idx(struct protein_iter const *x) { return x->curr_idx; }

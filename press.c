@@ -119,6 +119,8 @@ int dcp_press_close(struct dcp_press *press)
   int rc_w = finish_writer(press);
   press->writer.fp = NULL;
   press->reader.fp = NULL;
+  protein_del(&press->protein);
+  h3reader_del(&press->reader.h3);
   return rc_r ? rc_r : (rc_w ? rc_w : 0);
 }
 
