@@ -75,7 +75,7 @@ void test_protein_db_reader(void)
     if (protein_iter_end(&it)) break;
 
     struct imm_task *task = imm_task_new(protein_alt_dp(&protein));
-    struct imm_seq seq = imm_seq(imm_str(example2_seq), abc);
+    struct imm_seq seq = imm_seq(imm_str(imm_ex2_seq), abc);
     eq(imm_task_setup(task, &seq), 0);
     eq(imm_dp_viterbi(protein_alt_dp(&protein), task, &prod), 0);
     close(prod.loglik, logliks[nproteins]);
