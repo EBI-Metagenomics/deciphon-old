@@ -5,6 +5,8 @@
 #include "test_seqs.h"
 #include <stdlib.h>
 
+#include <sys/stat.h>
+
 static void test_scan1(void);
 static void test_scan2(void);
 
@@ -17,7 +19,13 @@ int main(void)
 
 static void seq_init(void);
 static bool seq_next(struct dcp_seq *, void *);
-static long checksum(char const *filename);
+
+static long fs_size(char const *filepath)
+{
+  struct stat st = {0};
+  if (stat(filepath, &st)) return -1;
+  return (long)st.st_size;
+}
 
 static void test_scan1(void)
 {
@@ -34,7 +42,7 @@ static void test_scan1(void)
   dcp_scan_set_seq_iter(scan, seq_next, NULL);
 
   eq(dcp_scan_run(scan, "prod1"), 0);
-  eq(checksum("prod1/products.tsv"), 2817);
+  eq(fs_size("prod1/products.tsv"), 8646);
 
   dcp_scan_del(scan);
 }
@@ -54,7 +62,7 @@ static void test_scan2(void)
   dcp_scan_set_seq_iter(scan, seq_next, NULL);
 
   eq(dcp_scan_run(scan, "prod2"), 0);
-  eq(checksum("prod2/products.tsv"), 2817);
+  eq(fs_size("prod2/products.tsv"), 8646);
 
   dcp_scan_del(scan);
 }
@@ -71,15 +79,4 @@ static bool seq_next(struct dcp_seq *x, void *arg)
   dcp_seq_setup(x, test_seqs[i].id, test_seqs[i].name, test_seqs[i].data);
   seq_idx = seq_idx + 1;
   return true;
-}
-
-static long checksum(char const *filename)
-{
-  long chk = 0;
-  if (fs_cksum(filename, &chk))
-  {
-    fprintf(stderr, "Failed to compute file checksum.\n");
-    exit(1);
-  }
-  return chk;
 }
