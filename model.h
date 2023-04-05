@@ -20,6 +20,7 @@ enum
 
 struct model
 {
+  struct imm_gencode const *gencode;
   struct imm_amino const *amino;
   struct imm_nuclt_code const *code;
   struct cfg cfg;
@@ -58,9 +59,9 @@ int model_add_trans(struct model *, struct trans);
 
 void model_del(struct model const *);
 
-void model_init(struct model *, struct imm_amino const *,
-                struct imm_nuclt_code const *, struct cfg,
-                float const null_lprobs[IMM_AMINO_SIZE]);
+void model_init(struct model *, struct imm_gencode const *,
+                struct imm_amino const *, struct imm_nuclt_code const *,
+                struct cfg, float const null_lprobs[IMM_AMINO_SIZE]);
 
 int model_setup(struct model *, unsigned core_size);
 

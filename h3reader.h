@@ -17,8 +17,9 @@ struct h3reader
   bool end;
 };
 
-void h3reader_init(struct h3reader *, struct imm_amino const *,
-                   struct imm_nuclt_code const *, struct cfg, FILE *);
+void h3reader_init(struct h3reader *, struct imm_gencode const *,
+                   struct imm_amino const *, struct imm_nuclt_code const *,
+                   struct cfg, FILE *);
 int h3reader_next(struct h3reader *);
 bool h3reader_end(struct h3reader const *);
 void h3reader_del(struct h3reader const *);

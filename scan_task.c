@@ -19,6 +19,6 @@ void scan_task_cleanup(struct scan_task *x)
   {
     imm_task_del(x->task);
     x->task = NULL;
-    imm_prod_del(&x->prod);
+    imm_prod_cleanup(&x->prod);
   }
 }

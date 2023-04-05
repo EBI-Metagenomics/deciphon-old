@@ -32,7 +32,7 @@ struct dcp_press
 static int count_proteins(struct dcp_press *);
 static int prepare_writer(struct dcp_press *);
 static int finish_writer(struct dcp_press *);
-static void prepare_reader(struct dcp_press *);
+static void prepare_reader(struct dcp_press *, struct imm_gencode const *);
 static int protein_write(struct dcp_press *);
 
 struct dcp_press *dcp_press_new(void)
@@ -45,7 +45,8 @@ struct dcp_press *dcp_press_new(void)
   return p;
 }
 
-int dcp_press_open(struct dcp_press *press, char const *hmm, char const *db)
+int dcp_press_open(struct dcp_press *press, struct imm_gencode const *gc,
+                   char const *hmm, char const *db)
 {
   press->writer.fp = NULL;
   press->reader.fp = NULL;
@@ -58,10 +59,10 @@ int dcp_press_open(struct dcp_press *press, char const *hmm, char const *db)
   if ((rc = count_proteins(press))) defer_return(rc);
   if ((rc = prepare_writer(press))) defer_return(rc);
 
-  prepare_reader(press);
+  prepare_reader(press, gc);
 
-  protein_init(&press->protein, &press->writer.db.amino, &press->writer.db.code,
-               press->writer.db.cfg);
+  protein_init(&press->protein, gc, &press->writer.db.amino,
+               &press->writer.db.code, press->writer.db.cfg);
 
   char const *acc = press->reader.h3.protein.meta.acc;
   if ((rc = protein_set_accession(&press->protein, acc))) defer_return(rc);
@@ -119,7 +120,7 @@ int dcp_press_close(struct dcp_press *press)
   int rc_w = finish_writer(press);
   press->writer.fp = NULL;
   press->reader.fp = NULL;
-  protein_del(&press->protein);
+  protein_cleanup(&press->protein);
   h3reader_del(&press->reader.h3);
   return rc_r ? rc_r : (rc_w ? rc_w : 0);
 }
@@ -149,13 +150,14 @@ defer:
   return rc;
 }
 
-static void prepare_reader(struct dcp_press *press)
+static void prepare_reader(struct dcp_press *press,
+                           struct imm_gencode const *gc)
 {
   struct imm_amino const *amino = &press->writer.db.amino;
   struct imm_nuclt_code const *code = &press->writer.db.code;
   struct cfg cfg = press->writer.db.cfg;
 
-  h3reader_init(&press->reader.h3, amino, code, cfg, press->reader.fp);
+  h3reader_init(&press->reader.h3, gc, amino, code, cfg, press->reader.fp);
 }
 
 static int protein_write(struct dcp_press *x)

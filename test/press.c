@@ -1,5 +1,6 @@
 #include "deciphon/press.h"
 #include "hope.h"
+#include "imm/imm.h"
 
 int main(void)
 {
@@ -7,7 +8,7 @@ int main(void)
 
   char const *hmm = ASSETS "/minifam.hmm";
   char const *db = TMPDIR "/minifam.dcp";
-  int rc = dcp_press_open(press, hmm, db);
+  int rc = dcp_press_open(press, imm_gencode_get(1), hmm, db);
   eq(rc, 0);
 
   eq(dcp_press_nproteins(press), 3);

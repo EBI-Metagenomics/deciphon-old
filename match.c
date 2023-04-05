@@ -31,6 +31,9 @@ bool match_state_is_mute(struct match const *x)
   return state_is_mute(x->step.state_id);
 }
 
-char match_amino(struct match const *x) { return imm_gc_decode(1, x->codon); }
+char match_amino(struct match const *x)
+{
+  return imm_gencode_decode(x->protein->gencode, x->codon);
+}
 
 struct imm_codon match_codon(struct match const *x) { return x->codon; }

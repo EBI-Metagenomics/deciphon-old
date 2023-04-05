@@ -32,7 +32,7 @@ void test_protein_db_writer(void)
   eq(db_writer_open(&db, fp, amino, nuclt, cfg), 0);
 
   struct protein protein = {0};
-  protein_init(&protein, amino, &code, cfg);
+  protein_init(&protein, imm_gencode_get(1), amino, &code, cfg);
   protein_set_accession(&protein, "accession0");
 
   unsigned core_size = 2;
@@ -42,7 +42,7 @@ void test_protein_db_writer(void)
   protein_sample(&protein, 2, core_size);
   eq(db_writer_pack(&db, &protein), 0);
 
-  protein_del(&protein);
+  protein_cleanup(&protein);
   eq(db_writer_close(&db), 0);
   fclose(fp);
 }
@@ -69,7 +69,7 @@ void test_protein_db_reader(void)
   struct protein_iter it = {0};
   eq(protein_reader_iter(&reader, 0, &it), 0);
   struct protein protein = {0};
-  protein_init(&protein, &db.amino, &db.code, db.cfg);
+  protein_init(&protein, imm_gencode_get(1), &db.amino, &db.code, db.cfg);
   while (!(rc = protein_iter_next(&it, &protein)))
   {
     if (protein_iter_end(&it)) break;
@@ -85,8 +85,8 @@ void test_protein_db_reader(void)
   eq(rc, 0);
   eq(nproteins, 2);
 
-  imm_prod_del(&prod);
-  protein_del(&protein);
+  imm_prod_cleanup(&prod);
+  protein_cleanup(&protein);
   db_reader_close(&db);
   fclose(fp);
 }

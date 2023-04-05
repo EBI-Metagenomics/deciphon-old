@@ -14,6 +14,7 @@ enum
 
 struct protein
 {
+  struct imm_gencode const *gencode;
   char accession[ACCESSION_SIZE];
   imm_state_name *state_name;
   struct imm_code const *imm_code;
@@ -50,8 +51,9 @@ struct protein
 
 struct db_reader;
 
-void protein_init(struct protein *, struct imm_amino const *,
-                  struct imm_nuclt_code const *, struct cfg);
+void protein_init(struct protein *, struct imm_gencode const *,
+                  struct imm_amino const *, struct imm_nuclt_code const *,
+                  struct cfg);
 
 int protein_set_accession(struct protein *, char const *);
 
@@ -72,7 +74,7 @@ struct lip_file;
 
 int protein_pack(struct protein const *, struct lip_file *file);
 
-void protein_del(struct protein *);
+void protein_cleanup(struct protein *);
 int protein_unpack(struct protein *, struct lip_file *file);
 struct imm_dp const *protein_null_dp(struct protein const *);
 struct imm_dp const *protein_alt0_dp(struct protein const *);

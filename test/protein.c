@@ -22,7 +22,7 @@ void test_protein_uniform(void)
   struct cfg cfg = {ENTRY_DIST_UNIFORM, 0.1f};
 
   struct protein protein = {0};
-  protein_init(&protein, amino, &code, cfg);
+  protein_init(&protein, imm_gencode_get(1), amino, &code, cfg);
   protein_set_accession(&protein, "accession");
   eq(protein_sample(&protein, 1, 2), 0);
 
@@ -102,8 +102,8 @@ void test_protein_uniform(void)
   eq(rc, 0);
   eq(i, 10);
 
-  protein_del(&protein);
-  imm_prod_del(&prod);
+  protein_cleanup(&protein);
+  imm_prod_cleanup(&prod);
   imm_task_del(task);
 }
 
@@ -116,7 +116,7 @@ void test_protein_occupancy(void)
   struct cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.1f};
 
   struct protein protein = {0};
-  protein_init(&protein, amino, &code, cfg);
+  protein_init(&protein, imm_gencode_get(1), amino, &code, cfg);
   protein_set_accession(&protein, "accession");
   eq(protein_sample(&protein, 1, 2), 0);
 
@@ -195,7 +195,7 @@ void test_protein_occupancy(void)
   eq(rc, 0);
   eq(i, 10);
 
-  protein_del(&protein);
-  imm_prod_del(&prod);
+  protein_cleanup(&protein);
+  imm_prod_cleanup(&prod);
   imm_task_del(task);
 }

@@ -1,6 +1,7 @@
 #include "model.h"
 #include "deciphon/errno.h"
 #include "entry_dist.h"
+#include "imm/imm.h"
 #include "model.h"
 #include "node.h"
 #include "nuclt_dist.h"
@@ -33,13 +34,16 @@ void init_match(struct imm_frame_state *, struct model *, struct nuclt_dist *);
 int init_null_xtrans(struct imm_hmm *, struct xnode_null *);
 int init_alt_xtrans(struct imm_hmm *, struct xnode_alt *);
 
-struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *);
-struct imm_codon_lprob codon_lprob(struct imm_amino const *,
+struct imm_nuclt_lprob nuclt_lprob(struct imm_gencode const *,
+                                   struct imm_codon_lprob const *);
+struct imm_codon_lprob codon_lprob(struct imm_gencode const *,
+                                   struct imm_amino const *,
                                    struct imm_amino_lprob const *,
                                    struct imm_nuclt const *);
 
-void setup_nuclt_dist(struct nuclt_dist *, struct imm_amino const *,
-                      struct imm_nuclt const *, float const[IMM_AMINO_SIZE]);
+void setup_nuclt_dist(struct imm_gencode const *, struct nuclt_dist *,
+                      struct imm_amino const *, struct imm_nuclt const *,
+                      float const[IMM_AMINO_SIZE]);
 
 int setup_entry_trans(struct model *);
 int setup_exit_trans(struct model *);
@@ -60,7 +64,8 @@ int model_add_node(struct model *m, float const lprobs[IMM_AMINO_SIZE],
 
   struct node *n = m->alt.nodes + m->alt.node_idx;
 
-  setup_nuclt_dist(&n->match.nucltd, m->amino, m->code->nuclt, lodds);
+  setup_nuclt_dist(m->gencode, &n->match.nucltd, m->amino, m->code->nuclt,
+                   lodds);
 
   init_match(&n->M, m, &n->match.nucltd);
   if (imm_hmm_add_state(&m->alt.hmm, &n->M.super)) return DCP_EADDSTATE;
@@ -99,11 +104,13 @@ void model_del(struct model const *model)
   }
 }
 
-void model_init(struct model *m, struct imm_amino const *amino,
+void model_init(struct model *m, struct imm_gencode const *gc,
+                struct imm_amino const *amino,
                 struct imm_nuclt_code const *code, struct cfg cfg,
                 float const null_lprobs[IMM_AMINO_SIZE])
 
 {
+  m->gencode = gc;
   m->amino = amino;
   m->code = code;
   m->cfg = cfg;
@@ -115,12 +122,12 @@ void model_init(struct model *m, struct imm_amino const *amino,
 
   imm_hmm_init(&m->null.hmm, &m->code->super);
 
-  setup_nuclt_dist(&m->null.nucltd, amino, nuclt, null_lprobs);
+  setup_nuclt_dist(m->gencode, &m->null.nucltd, amino, nuclt, null_lprobs);
 
   imm_hmm_init(&m->alt.hmm, &m->code->super);
 
   float const lodds[IMM_AMINO_SIZE] = {0};
-  setup_nuclt_dist(&m->alt.insert.nucltd, amino, nuclt, lodds);
+  setup_nuclt_dist(m->gencode, &m->alt.insert.nucltd, amino, nuclt, lodds);
 
   init_xnodes(m);
 
@@ -346,14 +353,15 @@ int init_alt_xtrans(struct imm_hmm *hmm, struct xnode_alt *n)
   return 0;
 }
 
-struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
+struct imm_nuclt_lprob nuclt_lprob(struct imm_gencode const *gc,
+                                   struct imm_codon_lprob const *codonp)
 {
   float lprobs[] = {[0 ... IMM_NUCLT_SIZE - 1] = IMM_LPROB_ZERO};
 
   float const norm = log((float)3);
-  for (unsigned i = 0; i < imm_gc_size(); ++i)
+  for (unsigned i = 0; i < imm_gencode_size(gc); ++i)
   {
-    struct imm_codon codon = imm_gc_codon(1, i);
+    struct imm_codon codon = imm_gencode_codon(gc, i);
     /* Check for FIXME-1 for an explanation of this
      * temporary hacky */
     codon.nuclt = codonp->nuclt;
@@ -365,15 +373,16 @@ struct imm_nuclt_lprob nuclt_lprob(struct imm_codon_lprob const *codonp)
   return imm_nuclt_lprob(codonp->nuclt, lprobs);
 }
 
-struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
+struct imm_codon_lprob codon_lprob(struct imm_gencode const *gc,
+                                   struct imm_amino const *amino,
                                    struct imm_amino_lprob const *aminop,
                                    struct imm_nuclt const *nuclt)
 {
   /* FIXME: We don't need 255 positions*/
   unsigned count[] = {[0 ... 254] = 0};
 
-  for (unsigned i = 0; i < imm_gc_size(); ++i)
-    count[(unsigned)imm_gc_aa(1, i)] += 1;
+  for (unsigned i = 0; i < imm_gencode_size(gc); ++i)
+    count[(unsigned)imm_gencode_aa(gc, i)] += 1;
 
   struct imm_abc const *abc = &amino->super;
   /* TODO: We don't need 255 positions*/
@@ -390,27 +399,29 @@ struct imm_codon_lprob codon_lprob(struct imm_amino const *amino,
    * function is using imm_nuclt base of an imm_dna_iupac compatible alphabet
    */
   /* struct imm_codon_lprob codonp = imm_codon_lprob(nuclt); */
-  struct imm_codon_lprob codonp = imm_codon_lprob(&imm_gc_dna->super);
-  for (unsigned i = 0; i < imm_gc_size(); ++i)
+  struct imm_codon_lprob codonp = imm_codon_lprob(&imm_gencode_dna->super);
+  for (unsigned i = 0; i < imm_gencode_size(gc); ++i)
   {
-    char aa = imm_gc_aa(1, i);
-    imm_codon_lprob_set(&codonp, imm_gc_codon(1, i), lprobs[(unsigned)aa]);
+    char aa = imm_gencode_aa(gc, i);
+    imm_codon_lprob_set(&codonp, imm_gencode_codon(gc, i),
+                        lprobs[(unsigned)aa]);
   }
   codonp.nuclt = nuclt;
   return codonp;
 }
 
-void setup_nuclt_dist(struct nuclt_dist *dist, struct imm_amino const *amino,
+void setup_nuclt_dist(struct imm_gencode const *gc, struct nuclt_dist *dist,
+                      struct imm_amino const *amino,
                       struct imm_nuclt const *nuclt,
                       float const lprobs[IMM_AMINO_SIZE])
 {
   dist->nucltp = imm_nuclt_lprob(nuclt, uniform_lprobs);
   struct imm_amino_lprob aminop = imm_amino_lprob(amino, lprobs);
   struct imm_codon_lprob codonp =
-      codon_lprob(amino, &aminop, dist->nucltp.nuclt);
+      codon_lprob(gc, amino, &aminop, dist->nucltp.nuclt);
   imm_codon_lprob_normalize(&codonp);
 
-  dist->nucltp = nuclt_lprob(&codonp);
+  dist->nucltp = nuclt_lprob(gc, &codonp);
   dist->codonm = imm_codon_marg(&codonp);
 }
 

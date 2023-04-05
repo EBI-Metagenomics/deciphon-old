@@ -18,7 +18,7 @@ int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
                    struct hmmer_dialer *dialer)
 {
   struct db_reader const *db = reader->db;
-  protein_init(&x->protein, &db->amino, &db->code, db->cfg);
+  protein_init(&x->protein, NULL, &db->amino, &db->code, db->cfg);
   protein_reader_iter(reader, partition, &x->iter);
 
   x->prod_thrd = prod_thrd;
@@ -35,14 +35,14 @@ int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
   return rc;
 
 defer:
-  protein_del(&x->protein);
+  protein_cleanup(&x->protein);
   chararray_cleanup(&x->amino);
   return rc;
 }
 
 void scan_thrd_cleanup(struct scan_thrd *x)
 {
-  protein_del(&x->protein);
+  protein_cleanup(&x->protein);
   chararray_cleanup(&x->amino);
   hmmer_cleanup(&x->hmmer);
 }
@@ -125,7 +125,7 @@ int scan_thrd_run(struct scan_thrd *x, struct iseq const *seq)
   }
 
 cleanup:
-  protein_del(&x->protein);
+  protein_cleanup(&x->protein);
   scan_task_cleanup(&null);
   scan_task_cleanup(&alt);
   return rc;
@@ -220,7 +220,7 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
   //        null_hits, alt0_hits, alt_hits);
 
 cleanup:
-  protein_del(&x->protein);
+  protein_cleanup(&x->protein);
   scan_task_cleanup(&null);
   scan_task_cleanup(&alt);
   scan_task_cleanup(&alt0);

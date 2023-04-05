@@ -56,6 +56,7 @@ static char const *msg[] = {
     [DCP_EFORMAT] = "wrong file format",
     [DCP_ERMDIR] = "failed to remove directory",
     [DCP_ERMFILE] = "failed to remove file",
+    [DCP_ESETGENCODE] = "must set gencode first",
 };
 
 char const *dcp_strerror(int errno)
