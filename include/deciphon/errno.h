@@ -59,6 +59,7 @@ enum dcp_errno
   DCP_ERMDIR        = 51,
   DCP_ERMFILE       = 52,
   DCP_ESETGENCODE   = 53,
+  DCP_EGENCODEID    = 54,
 };
 // clang-format on
 

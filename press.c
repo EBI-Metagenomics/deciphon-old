@@ -45,9 +45,12 @@ struct dcp_press *dcp_press_new(void)
   return p;
 }
 
-int dcp_press_open(struct dcp_press *press, struct imm_gencode const *gc,
-                   char const *hmm, char const *db)
+int dcp_press_open(struct dcp_press *press, int gencode_id, char const *hmm,
+                   char const *db)
 {
+  struct imm_gencode const *gc = imm_gencode_get((unsigned)gencode_id);
+  if (!gc) return DCP_EGENCODEID;
+
   press->writer.fp = NULL;
   press->reader.fp = NULL;
 
