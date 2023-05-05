@@ -178,7 +178,8 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
     // alt0_msec += alt0.prod.mseconds;
     // null_hits++;
     // alt0_hits++;
-    if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
+    // if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
+    if (!imm_lprob_is_finite(lrt) || lrt < 2.) continue;
 
     struct imm_dp const *alt_dp = protein_alt_dp(&x->protein);
 
@@ -194,7 +195,8 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
 
     // alt_msec += alt.prod.mseconds;
     // alt_hits++;
-    if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
+    // if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
+    if (!imm_lprob_is_finite(lrt) || lrt < 2.) continue;
 
     prod_match_set_protein(&x->prod_thrd->match, x->protein.accession);
 

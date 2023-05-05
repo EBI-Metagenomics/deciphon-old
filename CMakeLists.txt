@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
 project(
   deciphon
-  VERSION 0.8.3
+  VERSION 0.8.4
   LANGUAGES C)
 
 include(cmake/warnings.cmake)
@@ -9,7 +9,7 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 
 cpmaddpackage("gh:EBI-Metagenomics/hmr@0.6.0")
-cpmaddpackage("gh:EBI-Metagenomics/imm@3.0.6")
+cpmaddpackage("gh:EBI-Metagenomics/imm@3.0.7")
 cpmaddpackage("gh:EBI-Metagenomics/lip@0.5.1")
 cpmaddpackage("gh:EBI-Metagenomics/h3c@0.10.6")
 find_package(OpenMP)
