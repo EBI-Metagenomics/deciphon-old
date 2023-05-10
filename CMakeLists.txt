@@ -43,7 +43,9 @@ add_library(
   prod_writer.c
   prod_writer_thrd.c
   protein.c
+  protein_alts.c
   protein_iter.c
+  protein_null.c
   protein_reader.c
   scan.c
   scan_db.c

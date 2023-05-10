@@ -167,7 +167,7 @@ defer:
 
 int db_writer_open(struct db_writer *db, FILE *fp,
                    struct imm_amino const *amino, struct imm_nuclt const *nuclt,
-                   struct cfg cfg)
+                   enum entry_dist entry_dist, float epsilon)
 {
   int rc = 0;
 
@@ -179,17 +179,15 @@ int db_writer_open(struct db_writer *db, FILE *fp,
   db->amino = *amino;
   db->nuclt = *nuclt;
   imm_nuclt_code_init(&db->code, &db->nuclt);
-  db->cfg = cfg;
-
-  float const *epsilon = &db->cfg.eps;
-  enum entry_dist const *edist = &db->cfg.edist;
+  db->entry_dist = entry_dist;
+  db->epsilon = epsilon;
 
   struct imm_nuclt const *n = &db->nuclt;
   struct imm_amino const *a = &db->amino;
   if ((rc = db_writer_pack_magic_number(db))) defer_return(rc);
   if ((rc = db_writer_pack_float_size(db))) defer_return(rc);
-  if ((rc = pack_entry_dist(&db->tmp.header, edist))) defer_return(rc);
-  if ((rc = pack_epsilon(&db->tmp.header, epsilon))) defer_return(rc);
+  if ((rc = pack_entry_dist(&db->tmp.header, &entry_dist))) defer_return(rc);
+  if ((rc = pack_epsilon(&db->tmp.header, &epsilon))) defer_return(rc);
   if ((rc = pack_nuclt(&db->tmp.header, n))) defer_return(rc);
   if ((rc = pack_amino(&db->tmp.header, a))) defer_return(rc);
   db->header_size += 4;

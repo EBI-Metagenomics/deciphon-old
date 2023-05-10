@@ -106,14 +106,15 @@ void model_del(struct model const *model)
 
 void model_init(struct model *m, struct imm_gencode const *gc,
                 struct imm_amino const *amino,
-                struct imm_nuclt_code const *code, struct cfg cfg,
-                float const null_lprobs[IMM_AMINO_SIZE])
+                struct imm_nuclt_code const *code, enum entry_dist entry_dist,
+                float epsilon, float const null_lprobs[IMM_AMINO_SIZE])
 
 {
   m->gencode = gc;
   m->amino = amino;
   m->code = code;
-  m->cfg = cfg;
+  m->entry_dist = entry_dist;
+  m->epsilon = epsilon;
   m->core_size = 0;
   m->consensus[0] = '\0';
   struct imm_nuclt const *nuclt = code->nuclt;
@@ -122,7 +123,7 @@ void model_init(struct model *m, struct imm_gencode const *gc,
 
   imm_hmm_init(&m->null.hmm, &m->code->super);
 
-  setup_nuclt_dist(m->gencode, &m->null.nucltd, amino, nuclt, null_lprobs);
+  setup_nuclt_dist(m->gencode, &m->null.nuclt_dist, amino, nuclt, null_lprobs);
 
   imm_hmm_init(&m->alt.hmm, &m->code->super);
 
@@ -170,7 +171,7 @@ int model_setup(struct model *m, unsigned core_size)
   if (!ptr && n > 0) return DCP_ENOMEM;
   m->alt.nodes = ptr;
 
-  if (m->cfg.edist == ENTRY_DIST_OCCUPANCY)
+  if (m->entry_dist == ENTRY_DIST_OCCUPANCY)
   {
     ptr = realloc(m->alt.locc, n * sizeof(*m->alt.locc));
     if (!ptr && n > 0) return DCP_ENOMEM;
@@ -237,9 +238,9 @@ int add_xnodes(struct model *m)
 
 void init_xnodes(struct model *m)
 {
-  float e = m->cfg.eps;
-  struct imm_nuclt_lprob const *nucltp = &m->null.nucltd.nucltp;
-  struct imm_codon_marg const *codonm = &m->null.nucltd.codonm;
+  float e = m->epsilon;
+  struct imm_nuclt_lprob const *nucltp = &m->null.nuclt_dist.nucltp;
+  struct imm_codon_marg const *codonm = &m->null.nuclt_dist.codonm;
   struct xnode *n = &m->xnode;
   struct imm_nuclt const *nuclt = m->code->nuclt;
 
@@ -298,7 +299,7 @@ void init_delete(struct imm_mute_state *state, struct model *m)
 
 void init_insert(struct imm_frame_state *state, struct model *m)
 {
-  float e = m->cfg.eps;
+  float e = m->epsilon;
   unsigned id = STATE_INSERT | (m->alt.node_idx + 1);
   struct imm_nuclt_lprob *nucltp = &m->alt.insert.nucltd.nucltp;
   struct imm_codon_marg *codonm = &m->alt.insert.nucltd.codonm;
@@ -309,7 +310,7 @@ void init_insert(struct imm_frame_state *state, struct model *m)
 void init_match(struct imm_frame_state *state, struct model *m,
                 struct nuclt_dist *d)
 {
-  float e = m->cfg.eps;
+  float e = m->epsilon;
   unsigned id = STATE_MATCH | (m->alt.node_idx + 1);
   imm_frame_state_init(state, id, &d->nucltp, &d->codonm, e, imm_span(1, 5));
 }
@@ -427,7 +428,7 @@ void setup_nuclt_dist(struct imm_gencode const *gc, struct nuclt_dist *dist,
 
 int setup_entry_trans(struct model *m)
 {
-  if (m->cfg.edist == ENTRY_DIST_UNIFORM)
+  if (m->entry_dist == ENTRY_DIST_UNIFORM)
   {
     float M = (float)m->core_size;
     float cost = log(2.0 / (M * (M + 1))) * M;
@@ -442,7 +443,7 @@ int setup_entry_trans(struct model *m)
   }
   else
   {
-    assert(m->cfg.edist == ENTRY_DIST_OCCUPANCY);
+    assert(m->entry_dist == ENTRY_DIST_OCCUPANCY);
     calculate_occupancy(m);
     struct imm_state *B = &m->xnode.alt.B.super;
     for (unsigned i = 0; i < m->core_size; ++i)

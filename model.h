@@ -1,7 +1,6 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-#include "cfg.h"
 #include "deciphon/errno.h"
 #include "entry_dist.h"
 #include "imm/imm.h"
@@ -23,7 +22,8 @@ struct model
   struct imm_gencode const *gencode;
   struct imm_amino const *amino;
   struct imm_nuclt_code const *code;
-  struct cfg cfg;
+  enum entry_dist entry_dist;
+  float epsilon;
   unsigned core_size;
   struct xnode xnode;
   struct xtrans xtrans;
@@ -32,7 +32,7 @@ struct model
   struct
   {
     float lprobs[IMM_AMINO_SIZE];
-    struct nuclt_dist nucltd;
+    struct nuclt_dist nuclt_dist;
     struct imm_hmm hmm;
   } null;
 
@@ -61,7 +61,8 @@ void model_del(struct model const *);
 
 void model_init(struct model *, struct imm_gencode const *,
                 struct imm_amino const *, struct imm_nuclt_code const *,
-                struct cfg, float const null_lprobs[IMM_AMINO_SIZE]);
+                enum entry_dist, float epsilon,
+                float const null_lprobs[IMM_AMINO_SIZE]);
 
 int model_setup(struct model *, unsigned core_size);
 

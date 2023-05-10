@@ -1,4 +1,5 @@
 #include "deciphon/press.h"
+#include "array_size_field.h"
 #include "db_writer.h"
 #include "deciphon/errno.h"
 #include "defer_return.h"
@@ -65,7 +66,8 @@ int dcp_press_open(struct dcp_press *press, int gencode_id, char const *hmm,
   prepare_reader(press, gc);
 
   protein_init(&press->protein, gc, &press->writer.db.amino,
-               &press->writer.db.code, press->writer.db.cfg);
+               &press->writer.db.code, press->writer.db.entry_dist,
+               press->writer.db.epsilon);
 
   char const *acc = press->reader.h3.protein.meta.acc;
   if ((rc = protein_set_accession(&press->protein, acc))) defer_return(rc);
@@ -134,9 +136,8 @@ static int prepare_writer(struct dcp_press *press)
 {
   struct imm_amino const *a = &imm_amino_iupac;
   struct imm_nuclt const *n = &imm_dna_iupac.super;
-  struct cfg cfg = CFG_DEFAULT;
-
-  return db_writer_open(&press->writer.db, press->writer.fp, a, n, cfg);
+  return db_writer_open(&press->writer.db, press->writer.fp, a, n,
+                        ENTRY_DIST_OCCUPANCY, 0.01);
 }
 
 static int finish_writer(struct dcp_press *press)
@@ -158,9 +159,11 @@ static void prepare_reader(struct dcp_press *press,
 {
   struct imm_amino const *amino = &press->writer.db.amino;
   struct imm_nuclt_code const *code = &press->writer.db.code;
-  struct cfg cfg = press->writer.db.cfg;
+  enum entry_dist entry_dist = press->writer.db.entry_dist;
+  float epsilon = press->writer.db.epsilon;
 
-  h3reader_init(&press->reader.h3, gc, amino, code, cfg, press->reader.fp);
+  h3reader_init(&press->reader.h3, gc, amino, code, entry_dist, epsilon,
+                press->reader.fp);
 }
 
 static int protein_write(struct dcp_press *x)
@@ -168,8 +171,8 @@ static int protein_write(struct dcp_press *x)
   int rc = protein_absorb(&x->protein, &x->reader.h3.model);
   if (rc) return rc;
 
-  imm_strlcpy(x->protein.accession, x->reader.h3.protein.meta.acc,
-              ACCESSION_SIZE);
+  unsigned n = array_size_field(struct protein, accession);
+  imm_strlcpy(x->protein.accession, x->reader.h3.protein.meta.acc, n);
 
   return db_writer_pack(&x->writer.db, &x->protein);
 }

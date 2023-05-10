@@ -6,12 +6,14 @@ static void init_null_lprobs(float[IMM_AMINO_SIZE]);
 
 void h3reader_init(struct h3reader *reader, struct imm_gencode const *gc,
                    struct imm_amino const *amino,
-                   struct imm_nuclt_code const *code, struct cfg cfg, FILE *fp)
+                   struct imm_nuclt_code const *code,
+                   enum entry_dist entry_dist, float epsilon, FILE *fp)
 {
   hmr_init(&reader->hmr, fp);
   hmr_prof_init(&reader->protein, &reader->hmr);
   init_null_lprobs(reader->null_lprobs);
-  model_init(&reader->model, gc, amino, code, cfg, reader->null_lprobs);
+  model_init(&reader->model, gc, amino, code, entry_dist, epsilon,
+             reader->null_lprobs);
   reader->end = false;
 }
 

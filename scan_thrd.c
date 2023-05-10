@@ -18,7 +18,8 @@ int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
                    struct hmmer_dialer *dialer)
 {
   struct db_reader const *db = reader->db;
-  protein_init(&x->protein, NULL, &db->amino, &db->code, db->cfg);
+  protein_init(&x->protein, NULL, &db->amino, &db->code, db->entry_dist,
+               db->epsilon);
   protein_reader_iter(reader, partition, &x->iter);
 
   x->prod_thrd = prod_thrd;
@@ -80,18 +81,16 @@ int scan_thrd_run(struct scan_thrd *x, struct iseq const *seq)
   {
     if (protein_iter_end(it)) break;
 
-    struct imm_dp const *null_dp = protein_null_dp(&x->protein);
-    struct imm_dp const *alt_dp = protein_alt_dp(&x->protein);
+    struct imm_dp const *null_dp = &x->protein.null.dp;
+    struct imm_dp const *alt_dp = &x->protein.alts.full.dp;
 
-    rc = scan_task_setup(&null, protein_null_dp(&x->protein), seq);
+    rc = scan_task_setup(&null, &x->protein.null.dp, seq);
     if (rc) goto cleanup;
 
-    rc = scan_task_setup(&alt, protein_alt_dp(&x->protein), seq);
+    rc = scan_task_setup(&alt, &x->protein.alts.full.dp, seq);
     if (rc) goto cleanup;
 
-    rc = protein_setup(&x->protein, iseq_size(seq), x->multi_hits,
-                       x->hmmer3_compat);
-    if (rc) goto cleanup;
+    protein_setup(&x->protein, iseq_size(seq), x->multi_hits, x->hmmer3_compat);
 
     if (imm_dp_viterbi(null_dp, null.task, &null.prod)) goto cleanup;
     if (imm_dp_viterbi(alt_dp, alt.task, &alt.prod)) goto cleanup;
@@ -143,47 +142,31 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
 
   if ((rc = protein_iter_rewind(it))) goto cleanup;
 
-  // unsigned null_hits = 0;
-  // unsigned alt0_hits = 0;
-  // unsigned alt_hits = 0;
-  // unsigned long long null_msec = 0;
-  // unsigned long long alt0_msec = 0;
-  // unsigned long long alt_msec = 0;
-  // printf("IMPLEMENTACAO VER3\n");
   while (!(rc = protein_iter_next(it, &x->protein)))
   {
     if (protein_iter_end(it)) break;
 
-    struct imm_dp const *null_dp = protein_null_dp(&x->protein);
-    struct imm_dp const *alt0_dp = protein_alt0_dp(&x->protein);
+    struct imm_dp const *null_dp = &x->protein.null.dp;
+    struct imm_dp const *alt0_dp = &x->protein.alts.zero.dp;
 
-    rc = scan_task_setup(&null, protein_null_dp(&x->protein), seq);
+    rc = scan_task_setup(&null, null_dp, seq);
     if (rc) goto cleanup;
 
-    rc = scan_task_setup(&alt0, protein_alt0_dp(&x->protein), seq);
+    rc = scan_task_setup(&alt0, alt0_dp, seq);
     if (rc) goto cleanup;
 
-    rc = protein_setup(&x->protein, iseq_size(seq), x->multi_hits,
-                       x->hmmer3_compat);
-    if (rc) goto cleanup;
+    protein_setup(&x->protein, iseq_size(seq), x->multi_hits, x->hmmer3_compat);
 
-    // printf("NULL\n");
     if (imm_dp_viterbi(null_dp, null.task, &null.prod)) goto cleanup;
-    // printf("ALT0\n");
     if (imm_dp_viterbi(alt0_dp, alt0.task, &alt0.prod)) goto cleanup;
 
-    float lrt = lrt(null.prod.loglik, alt0.prod.loglik);
+    float lrt0 = lrt(null.prod.loglik, alt0.prod.loglik);
 
-    // null_msec += null.prod.mseconds;
-    // alt0_msec += alt0.prod.mseconds;
-    // null_hits++;
-    // alt0_hits++;
-    // if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
-    if (!imm_lprob_is_finite(lrt) || lrt < 2.) continue;
+    if (!imm_lprob_is_finite(lrt0) || lrt0 < x->lrt_threshold) continue;
 
-    struct imm_dp const *alt_dp = protein_alt_dp(&x->protein);
+    struct imm_dp const *alt_dp = &x->protein.alts.full.dp;
 
-    rc = scan_task_setup(&alt, protein_alt_dp(&x->protein), seq);
+    rc = scan_task_setup(&alt, alt_dp, seq);
     if (rc) goto cleanup;
 
     if (imm_dp_viterbi(alt_dp, alt.task, &alt.prod)) goto cleanup;
@@ -191,12 +174,9 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
     x->prod_thrd->match.null = null.prod.loglik;
     x->prod_thrd->match.alt = alt.prod.loglik;
 
-    lrt = prod_match_get_lrt(&x->prod_thrd->match);
+    float lrt1 = prod_match_get_lrt(&x->prod_thrd->match);
 
-    // alt_msec += alt.prod.mseconds;
-    // alt_hits++;
-    // if (!imm_lprob_is_finite(lrt) || lrt < x->lrt_threshold) continue;
-    if (!imm_lprob_is_finite(lrt) || lrt < 2.) continue;
+    if (!imm_lprob_is_finite(lrt1) || lrt1 < x->lrt_threshold) continue;
 
     prod_match_set_protein(&x->prod_thrd->match, x->protein.accession);
 
@@ -218,8 +198,6 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
     match_iter_init(&mit, &seq->iseq, &alt.prod.path);
     if ((rc = prod_writer_thrd_put(x->prod_thrd, &match, &mit))) break;
   }
-  // printf("%llu,%llu,%llu    %u %u %u\n", null_msec, alt0_msec, alt_msec,
-  //        null_hits, alt0_hits, alt_hits);
 
 cleanup:
   protein_cleanup(&x->protein);

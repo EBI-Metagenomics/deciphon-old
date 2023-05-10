@@ -10,7 +10,6 @@ int main(void)
   struct imm_nuclt const *nuclt = &imm_dna_iupac.super;
   struct imm_nuclt_code code;
   imm_nuclt_code_init(&code, nuclt);
-  struct cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.01f};
   float null_lprobs[IMM_AMINO_SIZE];
   float null_lodds[IMM_AMINO_SIZE];
   float match_lprobs1[IMM_AMINO_SIZE];
@@ -32,7 +31,8 @@ int main(void)
   }
 
   struct model model;
-  model_init(&model, imm_gencode_get(1), amino, &code, cfg, null_lprobs);
+  model_init(&model, imm_gencode_get(1), amino, &code, ENTRY_DIST_OCCUPANCY,
+             0.01, null_lprobs);
 
   eq(model_setup(&model, core_size), 0);
 
@@ -46,7 +46,7 @@ int main(void)
   eq(model_add_trans(&model, t[3]), 0);
 
   struct protein protein = {0};
-  protein_init(&protein, NULL, amino, &code, cfg);
+  protein_init(&protein, NULL, amino, &code, ENTRY_DIST_OCCUPANCY, 0.01);
   protein_set_accession(&protein, "accession");
 
   eq(protein_absorb(&protein, &model), 0);

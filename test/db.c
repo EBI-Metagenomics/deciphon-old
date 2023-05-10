@@ -27,12 +27,12 @@ void test_protein_db_writer(void)
   FILE *fp = fopen(TMPDIR "/db.dcp", "wb");
   notnull(fp);
 
-  struct cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.01f};
   struct db_writer db = {0};
-  eq(db_writer_open(&db, fp, amino, nuclt, cfg), 0);
+  eq(db_writer_open(&db, fp, amino, nuclt, ENTRY_DIST_OCCUPANCY, 0.01), 0);
 
   struct protein protein = {0};
-  protein_init(&protein, imm_gencode_get(1), amino, &code, cfg);
+  protein_init(&protein, imm_gencode_get(1), amino, &code, ENTRY_DIST_OCCUPANCY,
+               0.01);
   protein_set_accession(&protein, "accession0");
 
   unsigned core_size = 2;
@@ -69,15 +69,16 @@ void test_protein_db_reader(void)
   struct protein_iter it = {0};
   eq(protein_reader_iter(&reader, 0, &it), 0);
   struct protein protein = {0};
-  protein_init(&protein, imm_gencode_get(1), &db.amino, &db.code, db.cfg);
+  protein_init(&protein, imm_gencode_get(1), &db.amino, &db.code,
+               ENTRY_DIST_OCCUPANCY, 0.01);
   while (!(rc = protein_iter_next(&it, &protein)))
   {
     if (protein_iter_end(&it)) break;
 
-    struct imm_task *task = imm_task_new(protein_alt_dp(&protein));
+    struct imm_task *task = imm_task_new(&protein.alts.full.dp);
     struct imm_seq seq = imm_seq(imm_str(imm_ex2_seq), abc);
     eq(imm_task_setup(task, &seq), 0);
-    eq(imm_dp_viterbi(protein_alt_dp(&protein), task, &prod), 0);
+    eq(imm_dp_viterbi(&protein.alts.full.dp, task, &prod), 0);
     close(prod.loglik, logliks[nproteins]);
     imm_task_del(task);
     ++nproteins;

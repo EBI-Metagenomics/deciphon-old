@@ -9,11 +9,13 @@
 
 static void test_scan1(void);
 static void test_scan2(void);
+static void test_scan3(void);
 
 int main(void)
 {
   test_scan1();
   test_scan2();
+  test_scan3();
   return hope_status();
 }
 
@@ -63,6 +65,27 @@ static void test_scan2(void)
 
   eq(dcp_scan_run(scan, "prod2"), 0);
   eq(fs_size("prod2/products.tsv"), 8646);
+
+  dcp_scan_del(scan);
+}
+
+static void test_scan3(void)
+{
+  fprintf(stderr, "test_scan3\n");
+  struct dcp_scan *scan = dcp_scan_new(51371);
+
+  dcp_scan_set_nthreads(scan, 2);
+  dcp_scan_set_lrt_threshold(scan, 2.);
+  dcp_scan_set_multi_hits(scan, true);
+  dcp_scan_set_hmmer3_compat(scan, false);
+  dcp_scan_set_heuristic(scan, true);
+
+  eq(dcp_scan_set_db_file(scan, ASSETS "/minifam.dcp"), 0);
+  seq_init();
+  dcp_scan_set_seq_iter(scan, seq_next, NULL);
+
+  eq(dcp_scan_run(scan, "prod3"), 0);
+  eq(fs_size("prod3/products.tsv"), 8646);
 
   dcp_scan_del(scan);
 }

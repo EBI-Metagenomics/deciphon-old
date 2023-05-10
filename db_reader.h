@@ -1,7 +1,6 @@
 #ifndef DB_READER_H
 #define DB_READER_H
 
-#include "cfg.h"
 #include "entry_dist.h"
 #include "imm/imm.h"
 #include "lip/lip.h"
@@ -16,7 +15,8 @@ struct db_reader
   struct imm_amino amino;
   struct imm_nuclt nuclt;
   struct imm_nuclt_code code;
-  struct cfg cfg;
+  enum entry_dist entry_dist;
+  float epsilon;
 };
 
 void db_reader_init(struct db_reader *);

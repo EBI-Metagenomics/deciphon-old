@@ -19,18 +19,17 @@ void test_protein_uniform(void)
   struct imm_nuclt const *nuclt = &imm_dna_iupac.super;
   struct imm_nuclt_code code;
   imm_nuclt_code_init(&code, nuclt);
-  struct cfg cfg = {ENTRY_DIST_UNIFORM, 0.1f};
 
   struct protein protein = {0};
-  protein_init(&protein, imm_gencode_get(1), amino, &code, cfg);
+  protein_init(&protein, imm_gencode_get(1), amino, &code, ENTRY_DIST_UNIFORM,
+               0.1);
   protein_set_accession(&protein, "accession");
   eq(protein_sample(&protein, 1, 2), 0);
 
   char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
   struct imm_seq seq = imm_seq(IMM_STR(str), protein.imm_code->abc);
 
-  eq(protein_setup(&protein, 0, true, false), DCP_EZEROSEQ);
-  eq(protein_setup(&protein, imm_seq_size(&seq), true, false), 0);
+  protein_setup(&protein, imm_seq_size(&seq), true, false);
 
   struct imm_prod prod = imm_prod();
   struct imm_dp *dp = &protein.null.dp;
@@ -57,7 +56,7 @@ void test_protein_uniform(void)
   imm_prod_reset(&prod);
   imm_task_del(task);
 
-  dp = &protein.alt.dp;
+  dp = &protein.alts.full.dp;
   task = imm_task_new(dp);
   notnull(task);
   eq(imm_task_setup(task, &seq), 0);
@@ -113,17 +112,17 @@ void test_protein_occupancy(void)
   struct imm_nuclt const *nuclt = &imm_dna_iupac.super;
   struct imm_nuclt_code code;
   imm_nuclt_code_init(&code, nuclt);
-  struct cfg cfg = {ENTRY_DIST_OCCUPANCY, 0.1f};
 
   struct protein protein = {0};
-  protein_init(&protein, imm_gencode_get(1), amino, &code, cfg);
+  protein_init(&protein, imm_gencode_get(1), amino, &code, ENTRY_DIST_OCCUPANCY,
+               0.1);
   protein_set_accession(&protein, "accession");
   eq(protein_sample(&protein, 1, 2), 0);
 
   char const str[] = "ATGAAACGCATTAGCACCACCATTACCACCAC";
   struct imm_seq seq = imm_seq(imm_str(str), protein.imm_code->abc);
 
-  eq(protein_setup(&protein, imm_seq_size(&seq), true, false), 0);
+  protein_setup(&protein, imm_seq_size(&seq), true, false);
 
   struct imm_prod prod = imm_prod();
   struct imm_dp *dp = &protein.null.dp;
@@ -150,7 +149,7 @@ void test_protein_occupancy(void)
   imm_prod_reset(&prod);
   imm_task_del(task);
 
-  dp = &protein.alt.dp;
+  dp = &protein.alts.full.dp;
   task = imm_task_new(dp);
   notnull(task);
   eq(imm_task_setup(task, &seq), 0);

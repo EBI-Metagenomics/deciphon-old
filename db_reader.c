@@ -60,8 +60,8 @@ int db_reader_open(struct db_reader *x, FILE *fp)
   if ((rc = expect_map_size(&x->file, 7))) return rc;
   if ((rc = db_reader_unpack_magic_number(x))) defer_return(rc);
   if ((rc = db_reader_unpack_float_size(x))) defer_return(rc);
-  if ((rc = unpack_entry_dist(&x->file, &x->cfg.edist))) defer_return(rc);
-  if ((rc = unpack_epsilon(&x->file, &x->cfg.eps))) defer_return(rc);
+  if ((rc = unpack_entry_dist(&x->file, &x->entry_dist))) defer_return(rc);
+  if ((rc = unpack_epsilon(&x->file, &x->epsilon))) defer_return(rc);
   if ((rc = unpack_nuclt(&x->file, &x->nuclt))) defer_return(rc);
   if ((rc = unpack_amino(&x->file, &x->amino))) defer_return(rc);
   imm_nuclt_code_init(&x->code, &x->nuclt);
