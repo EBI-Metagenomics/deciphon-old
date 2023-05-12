@@ -12,11 +12,12 @@ struct prod_writer_thrd
 {
   int idx;
   char const *dirname;
+  char prodname[DCP_SHORT_PATH_MAX];
   struct prod_match match;
 };
 
-void prod_writer_thrd_init(struct prod_writer_thrd *, int idx,
-                           char const *dirname);
+int prod_writer_thrd_init(struct prod_writer_thrd *, int idx,
+                          char const *dirname);
 int prod_writer_thrd_put(struct prod_writer_thrd *, struct match *,
                          struct match_iter *);
 int prod_writer_thrd_put_hmmer(struct prod_writer_thrd *,

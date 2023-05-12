@@ -17,5 +17,6 @@ int fs_cksum(char const *filepath, long *chk);
 int fs_mkdir(char const *dirpath, bool exist_ok);
 int fs_rmdir(char const *dirpath);
 int fs_rmfile(char const *filepath);
+int fs_touch(char const *filepath);
 
 #endif

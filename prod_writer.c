@@ -17,9 +17,6 @@ int prod_writer_open(struct prod_writer *x, int nthreads, char const *dir)
   if (!strkcpy(x->dirname, dir, array_size_field(struct prod_writer, dirname)))
     return DCP_ELONGPATH;
 
-  for (int i = 0; i < nthreads; ++i)
-    prod_writer_thrd_init(x->threads + i, i, x->dirname);
-
   int rc = 0;
 
   char hmmer_dir[DCP_SHORT_PATH_MAX] = {0};
@@ -27,6 +24,12 @@ int prod_writer_open(struct prod_writer *x, int nthreads, char const *dir)
 
   if ((rc = fs_mkdir(x->dirname, true))) defer_return(rc);
   if ((rc = fs_mkdir(hmmer_dir, true))) defer_return(rc);
+
+  for (int i = 0; i < nthreads; ++i)
+  {
+    if ((rc = prod_writer_thrd_init(x->threads + i, i, x->dirname)))
+      defer_return(rc);
+  }
 
   return rc;
 

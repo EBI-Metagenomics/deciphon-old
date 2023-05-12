@@ -188,3 +188,11 @@ int fs_mkdir(char const *x, bool exist_ok)
 int fs_rmdir(char const *x) { return rmdir(x) < 0 ? DCP_ERMDIR : 0; }
 
 int fs_rmfile(char const *x) { return unlink(x) < 0 ? DCP_ERMFILE : 0; }
+
+int fs_touch(char const *x)
+{
+  if (access(x, F_OK) == 0) return 0;
+  FILE *fp = fopen(x, "wb");
+  if (!fp) return DCP_EFOPEN;
+  return fclose(fp) ? DCP_EFCLOSE : 0;
+}

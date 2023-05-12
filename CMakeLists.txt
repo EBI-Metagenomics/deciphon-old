@@ -11,7 +11,7 @@ include(cmake/CPM.cmake)
 cpmaddpackage("gh:EBI-Metagenomics/hmr@0.6.0")
 cpmaddpackage("gh:EBI-Metagenomics/imm@3.0.7")
 cpmaddpackage("gh:EBI-Metagenomics/lip@0.5.1")
-cpmaddpackage("gh:EBI-Metagenomics/h3c@0.10.6")
+cpmaddpackage("gh:EBI-Metagenomics/h3c@0.11.0")
 find_package(OpenMP)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

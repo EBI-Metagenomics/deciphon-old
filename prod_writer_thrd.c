@@ -1,5 +1,6 @@
 #include "prod_writer_thrd.h"
 #include "array_size.h"
+#include "array_size_field.h"
 #include "dbl_fmt.h"
 #include "deciphon/errno.h"
 #include "defer_return.h"
@@ -27,12 +28,16 @@
  *                      ---------------
  */
 
-void prod_writer_thrd_init(struct prod_writer_thrd *x, int idx,
-                           char const *dirname)
+int prod_writer_thrd_init(struct prod_writer_thrd *x, int idx, char const *dir)
 {
+  int rc = 0;
   x->idx = idx;
-  x->dirname = dirname;
+  x->dirname = dir;
+  size_t n = array_size_field(struct prod_writer_thrd, prodname);
+  if ((rc = fmt(x->prodname, n, "%s/.products.%03d.tsv", dir, idx))) return rc;
+  if ((rc = fs_touch(x->prodname))) return rc;
   prod_match_init(&x->match);
+  return 0;
 }
 
 static int write_begin(FILE *, struct prod_match const *);
@@ -43,12 +48,9 @@ static int write_end(FILE *);
 int prod_writer_thrd_put(struct prod_writer_thrd *x, struct match *match,
                          struct match_iter *it)
 {
-  char file[DCP_SHORT_PATH_MAX] = {0};
   int rc = 0;
 
-  if ((rc = FMT(file, "%s/.products.%03d.tsv", x->dirname, x->idx))) return rc;
-
-  FILE *fp = fopen(file, "ab");
+  FILE *fp = fopen(x->prodname, "ab");
   if (!fp) return DCP_EFOPEN;
 
   if ((rc = write_begin(fp, &x->match))) defer_return(rc);
