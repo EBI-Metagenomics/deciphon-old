@@ -1,6 +1,7 @@
 #include "hmmer_result.h"
 #include "deciphon/errno.h"
 #include "h3c/h3c.h"
+#include <math.h>
 #include <stddef.h>
 
 int hmmer_result_init(struct hmmer_result *x)
@@ -24,7 +25,7 @@ int hmmer_result_nhits(struct hmmer_result const *x)
 
 double hmmer_result_evalue_ln(struct hmmer_result const *x)
 {
-  if (hmmer_result_nhits(x) == 0) return 0.;
+  if (hmmer_result_nhits(x) == 0) return -INFINITY;
   return h3c_result_hit_evalue_ln(x->handle, 0);
 }
 

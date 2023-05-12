@@ -115,6 +115,7 @@ int scan_thrd_run(struct scan_thrd *x, struct iseq const *seq)
                         x->amino.data)))
       break;
     if ((rc = hmmer_pop(&x->hmmer))) break;
+    if (hmmer_result_nhits(&x->hmmer.result) == 0) continue;
     x->prod_thrd->match.evalue = hmmer_result_evalue_ln(&x->hmmer.result);
     if ((rc = prod_writer_thrd_put_hmmer(x->prod_thrd, &x->hmmer.result)))
       break;
@@ -191,6 +192,7 @@ int scan_thrd_run0(struct scan_thrd *x, struct iseq const *seq)
                         x->amino.data)))
       break;
     if ((rc = hmmer_pop(&x->hmmer))) break;
+    if (hmmer_result_nhits(&x->hmmer.result) == 0) continue;
     x->prod_thrd->match.evalue = hmmer_result_evalue_ln(&x->hmmer.result);
     if ((rc = prod_writer_thrd_put_hmmer(x->prod_thrd, &x->hmmer.result)))
       break;
