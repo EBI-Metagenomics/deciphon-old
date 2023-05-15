@@ -2,6 +2,7 @@
 
 include(CMakeFindDependencyMacro)
 
+find_dependency(elapsed)
 find_dependency(hmr)
 find_dependency(lip)
 find_dependency(imm)
@@ -16,3 +17,4 @@ check_required_components(h3c)
 check_required_components(imm)
 check_required_components(lip)
 check_required_components(hmr)
+check_required_components(elapsed)

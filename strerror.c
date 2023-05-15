@@ -58,6 +58,7 @@ static char const *msg[] = {
     [DCP_ERMFILE] = "failed to remove file",
     [DCP_ESETGENCODE] = "must set gencode first",
     [DCP_EGENCODEID] = "invalid gencode id",
+    [DCP_EELAPSED] = "elapsed library failed",
 };
 
 char const *dcp_strerror(int errno)

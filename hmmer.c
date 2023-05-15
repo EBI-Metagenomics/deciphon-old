@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEADLINE 120000
+
 int hmmer_init(struct hmmer *x)
 {
   x->stream = NULL;
@@ -26,11 +28,13 @@ int hmmer_put(struct hmmer *x, int hmmidx, char const *name, char const *seq)
 {
   char cmd[128] = {0};
   sprintf(cmd, "--hmmdb 1 --hmmdb_range %d..%d --acc --cut_ga", hmmidx, hmmidx);
-  int rc = h3c_stream_put(x->stream, cmd, name, seq, h3c_deadline(30000));
-  fprintf(stderr, "seq: %s\n", seq);
+  if (elapsed_start(&x->elapsed)) return DCP_EELAPSED;
+  int rc = h3c_stream_put(x->stream, cmd, name, seq, h3c_deadline(DEADLINE));
+  fprintf(stderr, "(%p) seq: %s\n", x->stream, seq);
   if (rc)
   {
-    fprintf(stderr, "h3c_stream_put error: %s\n", h3c_strerror(rc));
+    fprintf(stderr, "(%p) h3c_stream_put error: %s\n", x->stream,
+            h3c_strerror(rc));
     return DCP_EH3CPUT;
   }
   return 0;
@@ -40,10 +44,17 @@ int hmmer_pop(struct hmmer *x)
 {
   h3c_stream_wait(x->stream);
   int rc = h3c_stream_pop(x->stream, x->result.handle);
+  if (elapsed_stop(&x->elapsed)) return DCP_EELAPSED;
+  long mseconds = elapsed_milliseconds(&x->elapsed);
   if (rc)
   {
-    fprintf(stderr, "h3c_stream_pop error: %s\n", h3c_strerror(rc));
+    fprintf(stderr, "(%p) h3c_stream_pop error [%ld msecs]: %s\n", x->stream,
+            mseconds, h3c_strerror(rc));
     return DCP_EH3CPOP;
+  }
+  else
+  {
+    fprintf(stderr, "(%p) hmmer took %ld msecs\n", x->stream, mseconds);
   }
   return 0;
 }

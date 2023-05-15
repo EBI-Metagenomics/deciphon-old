@@ -120,7 +120,7 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
       x->heuristic ? scan_thrd_run0 : scan_thrd_run};
 
   int seq_idx = 0;
-  while (seq_iter_next(&x->seqit))
+  while (seq_iter_next(&x->seqit) && !rc)
   {
     fprintf(stderr, "Scanning sequence %d\n", seq_idx++);
     struct dcp_seq const *y = seq_iter_get(&x->seqit);
@@ -131,12 +131,10 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
     {
       struct scan_thrd *t = x->threads + i;
       int r = (*run_scan_thrd)(t, &seq);
-      if (r)
-      {
 #pragma omp critical
-        {
-          rc = r;
-        }
+      if (r && !rc)
+      {
+        rc = r;
 #pragma omp cancel for
       }
 #pragma omp cancellation point for
