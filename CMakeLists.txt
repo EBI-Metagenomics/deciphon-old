@@ -10,7 +10,7 @@ include(cmake/CPM.cmake)
 
 cpmaddpackage("gh:horta/elapsed@3.1.2")
 cpmaddpackage("gh:EBI-Metagenomics/hmr@0.6.1")
-cpmaddpackage("gh:EBI-Metagenomics/imm@3.0.8")
+cpmaddpackage("gh:EBI-Metagenomics/imm@3.0.9")
 cpmaddpackage("gh:EBI-Metagenomics/lip@0.5.2")
 cpmaddpackage("gh:EBI-Metagenomics/h3c@0.11.1")
 find_package(OpenMP)
