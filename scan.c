@@ -129,15 +129,9 @@ int dcp_scan_run(struct dcp_scan *x, char const *name)
 #pragma omp parallel for default(none) shared(x, run_scan_thrd, seq, rc)
     for (int i = 0; i < x->nthreads; ++i)
     {
-      struct scan_thrd *t = x->threads + i;
-      int r = (*run_scan_thrd)(t, &seq);
+      int r = (*run_scan_thrd)(x->threads + i, &seq);
 #pragma omp critical
-      if (r && !rc)
-      {
-        rc = r;
-#pragma omp cancel for
-      }
-#pragma omp cancellation point for
+      if (r && !rc) rc = r;
     }
   }
   if (rc) defer_return(rc);

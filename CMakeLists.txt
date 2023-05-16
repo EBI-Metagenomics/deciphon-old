@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.21 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20.2 FATAL_ERROR)
 project(
   deciphon
-  VERSION 0.8.4
+  VERSION 0.8.5
   LANGUAGES C)
 
 include(cmake/warnings.cmake)
@@ -9,15 +9,18 @@ include(cmake/sanitizers.cmake)
 include(cmake/CPM.cmake)
 
 cpmaddpackage("gh:horta/elapsed@3.1.2")
-cpmaddpackage("gh:EBI-Metagenomics/hmr@0.6.0")
-cpmaddpackage("gh:EBI-Metagenomics/imm@3.0.7")
-cpmaddpackage("gh:EBI-Metagenomics/lip@0.5.1")
-cpmaddpackage("gh:EBI-Metagenomics/h3c@0.11.0")
+cpmaddpackage("gh:EBI-Metagenomics/hmr@0.6.1")
+cpmaddpackage("gh:EBI-Metagenomics/imm@3.0.8")
+cpmaddpackage("gh:EBI-Metagenomics/lip@0.5.2")
+cpmaddpackage("gh:EBI-Metagenomics/h3c@0.11.1")
 find_package(OpenMP)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_EXTENSIONS OFF)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 add_library(
   deciphon
@@ -75,21 +78,14 @@ target_include_directories(
 
 set_target_properties(deciphon PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(deciphon PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
-target_compile_options(deciphon PRIVATE ${WARNING_FLAGS})
 
 target_link_libraries(deciphon PRIVATE ELAPSED::elapsed)
-target_link_libraries(deciphon PUBLIC H3C::h3c)
-target_link_libraries(deciphon PUBLIC HMR::hmr)
-target_link_libraries(deciphon PUBLIC IMM::imm)
-target_link_libraries(deciphon PUBLIC LIP::lip)
+target_link_libraries(deciphon PRIVATE H3C::h3c)
+target_link_libraries(deciphon PRIVATE HMR::hmr)
+target_link_libraries(deciphon PRIVATE IMM::imm)
+target_link_libraries(deciphon PRIVATE LIP::lip)
 if(OpenMP_C_FOUND)
-  target_link_libraries(deciphon PUBLIC OpenMP::OpenMP_C)
-endif()
-
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  include(CheckIPOSupported)
-  check_ipo_supported()
-  set_target_properties(deciphon PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+  target_link_libraries(deciphon PRIVATE OpenMP::OpenMP_C)
 endif()
 
 install(

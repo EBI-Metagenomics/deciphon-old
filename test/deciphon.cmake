@@ -1,6 +1,7 @@
 function(dcp_add_test name)
   add_executable(${name} ${name}.c)
   target_link_libraries(${name} PRIVATE DECIPHON::deciphon)
+  target_link_libraries(${name} PRIVATE IMM::imm)
   target_compile_options(${name} PRIVATE ${WARNING_FLAGS})
   target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR})
   add_test(NAME ${name} COMMAND ${name})
