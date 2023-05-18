@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEADLINE 900000
+#define DEADLINE 30000
 
 int hmmer_init(struct hmmer *x)
 {
