@@ -20,7 +20,7 @@ bool state_is_mute(unsigned id)
 
 unsigned state_idx(unsigned id) { return (id & (0xFFFF >> 2)) - 1; }
 
-unsigned state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
+char *state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
 {
   unsigned msb = state_id_msb(id);
   if (msb == STATE_EXT)
@@ -42,7 +42,6 @@ unsigned state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
     else if (id == STATE_T)
       name[0] = 'T';
     name[1] = '\0';
-    return 1;
   }
   else
   {
@@ -52,6 +51,7 @@ unsigned state_name(unsigned id, char name[IMM_STATE_NAME_SIZE])
       name[0] = 'I';
     else if (msb == STATE_DELETE)
       name[0] = 'D';
-    return u16toa(name + 1, (uint16_t)(state_idx(id) + 1)) + 1;
+    u16toa(name + 1, (uint16_t)(state_idx(id) + 1));
   }
+  return name;
 }

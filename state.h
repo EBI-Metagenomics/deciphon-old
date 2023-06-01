@@ -30,6 +30,6 @@ bool state_is_insert(unsigned id);
 bool state_is_delete(unsigned id);
 bool state_is_mute(unsigned id);
 unsigned state_idx(unsigned id);
-unsigned state_name(unsigned id, char name[IMM_STATE_NAME_SIZE]);
+char *state_name(unsigned id, char name[IMM_STATE_NAME_SIZE]);
 
 #endif
