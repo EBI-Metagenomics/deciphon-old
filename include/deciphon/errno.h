@@ -61,6 +61,7 @@ enum dcp_errno
   DCP_ESETGENCODE   = 53,
   DCP_EGENCODEID    = 54,
   DCP_EELAPSED      = 55,
+  DCP_EMAXRETRY     = 56,
 };
 // clang-format on
 

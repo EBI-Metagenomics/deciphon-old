@@ -59,6 +59,7 @@ static char const *msg[] = {
     [DCP_ESETGENCODE] = "must set gencode first",
     [DCP_EGENCODEID] = "invalid gencode id",
     [DCP_EELAPSED] = "elapsed library failed",
+    [DCP_EMAXRETRY] = "reached maximum number of retries",
 };
 
 char const *dcp_strerror(int errno)

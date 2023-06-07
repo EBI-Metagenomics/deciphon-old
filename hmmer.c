@@ -6,7 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEADLINE 120000
+#define NUM_TRIALS 5
+#define REQUEST_DEADLINE 30000
+#define WARMUP_DEADLINE 5000
 
 int hmmer_init(struct hmmer *x)
 {
@@ -36,7 +38,7 @@ static int put(struct hmmer *x, int hmmidx, char const *name, char const *seq,
   {
     fprintf(stderr, "(%p) h3c_stream_put error: %s\n", x->stream,
             h3c_strerror(rc));
-    return DCP_EH3CPUT;
+    return rc;
   }
   return 0;
 }
@@ -44,7 +46,7 @@ static int put(struct hmmer *x, int hmmidx, char const *name, char const *seq,
 int hmmer_warmup(struct hmmer *x)
 {
   int rc = 0;
-  if ((rc = put(x, 0, "noname", "", 5000)))
+  if ((rc = put(x, 0, "noname", "", WARMUP_DEADLINE)))
   {
     fprintf(stderr, "hmmer_warmup put error: %s", h3c_strerror(rc));
     return rc;
@@ -57,9 +59,38 @@ int hmmer_warmup(struct hmmer *x)
   return rc;
 }
 
+int hmmer_get(struct hmmer *x, int hmmidx, char const *name, char const *seq)
+{
+  for (int i = 0; i < NUM_TRIALS; ++i)
+  {
+    if (i > 0) fprintf(stderr, "(%p) trying again on hmmer_get\n", x->stream);
+
+    int rc = 0;
+    if ((rc = put(x, hmmidx, name, seq, REQUEST_DEADLINE)))
+    {
+      fprintf(stderr, "(%p) giving up on hmmer_put\n", x->stream);
+      return rc;
+    }
+
+    if ((rc = hmmer_pop(x)) == H3C_ETIMEDOUT) continue;
+
+    if (rc)
+    {
+      fprintf(stderr, "(%p) giving up on hmmer_pop\n", x->stream);
+      return rc;
+    }
+
+    return 0;
+  }
+
+  fprintf(stderr, "(%p) reached maximum number of retries on hmmer_get\n",
+          x->stream);
+  return DCP_EMAXRETRY;
+}
+
 int hmmer_put(struct hmmer *x, int hmmidx, char const *name, char const *seq)
 {
-  return put(x, hmmidx, name, seq, DEADLINE);
+  return put(x, hmmidx, name, seq, REQUEST_DEADLINE) ? DCP_EH3CPUT : 0;
 }
 
 int hmmer_pop(struct hmmer *x)
