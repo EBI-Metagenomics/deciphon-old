@@ -24,12 +24,13 @@ void hmmer_cleanup(struct hmmer *x)
   }
 }
 
-int hmmer_put(struct hmmer *x, int hmmidx, char const *name, char const *seq)
+static int put(struct hmmer *x, int hmmidx, char const *name, char const *seq,
+               int deadline)
 {
   char cmd[128] = {0};
   sprintf(cmd, "--hmmdb 1 --hmmdb_range %d..%d --acc --cut_ga", hmmidx, hmmidx);
   if (elapsed_start(&x->elapsed)) return DCP_EELAPSED;
-  int rc = h3c_stream_put(x->stream, cmd, name, seq, h3c_deadline(DEADLINE));
+  int rc = h3c_stream_put(x->stream, cmd, name, seq, h3c_deadline(deadline));
   fprintf(stderr, "(%p) seq: %s\n", x->stream, seq);
   if (rc)
   {
@@ -38,6 +39,27 @@ int hmmer_put(struct hmmer *x, int hmmidx, char const *name, char const *seq)
     return DCP_EH3CPUT;
   }
   return 0;
+}
+
+int hmmer_warmup(struct hmmer *x)
+{
+  int rc = 0;
+  if ((rc = put(x, 0, "noname", "", 5000)))
+  {
+    fprintf(stderr, "hmmer_warmup put error: %s", h3c_strerror(rc));
+    return rc;
+  }
+  if ((rc = hmmer_pop(x)))
+  {
+    fprintf(stderr, "hmmer_warmup pop error: %s", h3c_strerror(rc));
+    return rc;
+  }
+  return rc;
+}
+
+int hmmer_put(struct hmmer *x, int hmmidx, char const *name, char const *seq)
+{
+  return put(x, hmmidx, name, seq, DEADLINE);
 }
 
 int hmmer_pop(struct hmmer *x)

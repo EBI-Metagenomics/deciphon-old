@@ -32,6 +32,7 @@ int scan_thrd_init(struct scan_thrd *x, struct protein_reader *reader,
   int rc = 0;
   if ((rc = hmmer_init(&x->hmmer))) defer_return(rc);
   if ((rc = hmmer_dialer_dial(dialer, &x->hmmer))) defer_return(rc);
+  if ((rc = hmmer_warmup(&x->hmmer))) defer_return(rc);
 
   return rc;
 
