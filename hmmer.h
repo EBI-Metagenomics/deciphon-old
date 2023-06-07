@@ -13,6 +13,7 @@ struct hmmer
 
 int hmmer_init(struct hmmer *);
 void hmmer_cleanup(struct hmmer *);
+int hmmer_warmup(struct hmmer *);
 
 int hmmer_put(struct hmmer *, int hmmidx, char const *name, char const *seq);
 int hmmer_pop(struct hmmer *);
