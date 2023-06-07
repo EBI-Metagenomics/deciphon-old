@@ -1,11 +1,11 @@
-#include "echo.h"
+#include "ouch.h"
 #include "vfprintf.h"
 #include <stdarg.h>
 
-void echo(char const *restrict fmt, ...)
+void ouch(char const *restrict fmt, ...)
 {
   va_list params;
   va_start(params, fmt);
-  dcp_vfprintf(stdout, fmt, params);
+  dcp_vfprintf(stderr, fmt, params);
   va_end(params);
 }

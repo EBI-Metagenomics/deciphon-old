@@ -3,8 +3,6 @@
 
 #include <stdio.h>
 
-void echof(FILE *restrict, char const *fmt, ...)
-    __attribute__((format(printf, 2, 3)));
-void echo(char const *fmt, ...) __attribute__((format(printf, 1, 2)));
+void echo(char const *restrict fmt, ...) __attribute__((format(printf, 1, 2)));
 
 #endif

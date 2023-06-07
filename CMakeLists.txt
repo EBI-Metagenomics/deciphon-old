@@ -28,6 +28,7 @@ add_library(
   codec.c
   db_reader.c
   db_writer.c
+  echo.c
   expect.c
   fmt.c
   fs.c
@@ -40,7 +41,9 @@ add_library(
   match.c
   match_iter.c
   model.c
+  now.c
   nuclt_dist.c
+  ouch.c
   partition_size.c
   press.c
   prod_match.c
@@ -61,6 +64,7 @@ add_library(
   strerror.c
   strkcpy.c
   strlcpy.c
+  vfprintf.c
   u16toa.c
   xtrans.c)
 add_library(DECIPHON::deciphon ALIAS deciphon)
